@@ -269,7 +269,8 @@ mutation patches and reproducible medians are indexed in
 
 AVX paths are authorized but not implemented. Current-source t14 timing r0035
 validates all 960,000 samples without removal (maximum crypto |t| 2.920,
-synthetic controls clearly detected); this is not constant-time proof. AMD
-r0036 remains pending; earlier AMD timing predates the batch and wiping changes.
+synthetic controls clearly detected). AMD r0036 also validates all 960,000
+samples without removal, with maximum crypto |t| 1.861 and controls detected.
+These current-source observations are not constant-time proof.
 The identified physical provider key copies and deployment/external-review
 gates remain open. This evidence does not establish security parity with ring.

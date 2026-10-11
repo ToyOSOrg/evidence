@@ -10,8 +10,8 @@ ToyOS integration, SSH framing, X.509 and SSHSIG parsing remain separate.
 Correctness tests pass on native ARM64 macOS and both x86 Linux benches.
 ARM AES/GHASH scheduling and hosted x86 AES/GHASH batching have been improved.
 Matched Linux measurements still trail stock ring; AVX paths are in scope but
-not implemented. Independent arithmetic review, current-source timing and
-deployment qualification remain open. See [VALIDATION.md](VALIDATION.md) for the
+not implemented. Current-source x86 timing sweeps are complete; independent
+arithmetic review and deployment qualification remain open. See [VALIDATION.md](VALIDATION.md) for the
 design review, acceptance gaps and exact evidence. Passing vectors does not
 establish that this implementation is safer than ring.
 

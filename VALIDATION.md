@@ -248,13 +248,15 @@ test as evidence it did not provide.
 
 1. **No independent cryptographic/arithmetic review.** This author review does
    not replace the adversarial reviewer or an audit.
-2. **No real-hardware constant-time verdict.** The timing smoke run is cloud
-   harness validation only. Repeat adequately sampled, affinity-controlled runs
-   and assembly review on the T14 and representative AArch64 hardware for the
-   deployment compiler configurations.
-3. **Performance goal unmet.** The recorded host benchmark is slower than ring.
-   It is not the T14 and does not suppress ring's AVX dispatch. No claim about
-   the requested no-AVX cycles/byte target can be made from this result.
+2. **Side-channel qualification remains incomplete.** Current-source full timing
+   sweeps on both x86 hosts validate 960,000 samples each with no cryptographic
+   score crossing the investigation threshold. This is not constant-time proof.
+   Deployment compiler assembly review, representative ARM timing and timing
+   of future optimization paths remain open.
+3. **Performance goal unmet.** Matched native Linux measurements still trail
+   stock ring on both x86 hosts. AVX paths are authorized but not implemented.
+   Existing results retain ring's runtime dispatch; they do not establish
+   performance parity or a matched no-AVX comparison.
 4. **Runtime portability not fully qualified.** Linux x86-64 tests execute here.
    Windows and UEFI checks are compilation/code-generation evidence only.
    Native ARM64 macOS now has runtime evidence. The custom ToyOS targets and firmware register preservation
@@ -322,6 +324,7 @@ permission required for runtime admission and SSE retained as fallback. These
 paths are not implemented yet. Current-source t14 timing r0035 validates all
 960,000 samples without removal; maximum cryptographic absolute t is 2.920,
 with all synthetic controls clearly detected. This does not prove constant
-time. The AMD counterpart r0036 remains pending; earlier AMD timing predates
-batching and wiping changes. UEFI runtime, ToyOS integration, physical key-copy review and external
-review remain open.
+time. AMD r0036 also validates all 960,000 samples without removal; maximum
+cryptographic absolute t is 1.861, with synthetic controls detected. Both runs
+cover the current batch and wiping changes. UEFI runtime, ToyOS integration,
+physical key-copy review and external review remain open.

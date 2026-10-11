@@ -66,7 +66,7 @@ python3 tools/analyze_ring_pairs.py evidence/current/x86-pipeline/native amd
 ```
 
 AVX paths are now authorized but not implemented. UEFI runtime, ToyOS userland
-custom targets, completion of current timing and independent external
+custom targets, deployment side-channel qualification and independent external
 review remain open. Physical compiler/stack key copies remain outside the
 wiping guarantee. Native correctness and measured speedup do not establish
 security parity with ring or deployment qualification.
@@ -85,8 +85,21 @@ to that synthetic leak. These observations do not prove constant time.
 `timing-t14/` retains complete normalized logs, compressed raw samples and
 recomputed statistics. All 1,459 retained one-second CPU-2 busy-clock intervals
 report 2400 MHz; prior machine settings were restored. The AMD counterpart
-r0036 remains pending. Reproduce statistics with:
+r0036 has also completed, as recorded below. Reproduce statistics with:
 
 ```sh
 python3 tools/analyze_timing.py evidence/current/x86-pipeline/timing-t14/output.txt.gz --count 20000 --routines all
 ```
+
+## Current-source timing on amd
+
+Run r0036 completed at the same source with exit 0 and restored machine settings.
+All 960,000 samples validate without removal. Maximum cryptographic |t| is
+1.860513 (HKDF seed 1); maximum temporal-quarter |t| is 2.474788. Synthetic
+controls are -165.588576, -652.836818 and -696.570765. None of the 45 full crypto
+scores crosses the 4.5 investigation threshold. All 2,054 one-second CPU-2
+busy-clock intervals report 1797 MHz. Full normalized logs, raw samples and
+independent analyses are in `timing-amd/`. The same analyzer command above,
+substituting `timing-amd`, reproduces the results. Both native sweeps now cover
+the batch and wiping changes; they do not prove constant time or qualify
+future AVX implementations.
