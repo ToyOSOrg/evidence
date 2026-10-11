@@ -174,6 +174,8 @@ pub trait Digest: sealed::Sealed + Sized {
     const MAX_BYTES: u128;
     fn update(&mut self, message: &[u8]) -> Result<(), crate::Error>;
     fn finish_into(self, output: &mut [u8]) -> Result<(), crate::Error>;
+    #[cfg(feature = "rustls-provider")]
+    fn fork(&self) -> Self;
 }
 
 macro_rules! hash {
@@ -256,6 +258,15 @@ macro_rules! hash {
         }
         impl sealed::Sealed for $name {}
         impl Digest for $name {
+            #[cfg(feature = "rustls-provider")]
+            fn fork(&self) -> Self {
+                Self {
+                    state: self.state,
+                    block: self.block,
+                    filled: self.filled,
+                    bytes: self.bytes,
+                }
+            }
             const BLOCK_LEN: usize = $block;
             const OUTPUT_LEN: usize = $out;
             const MAX_BYTES: u128 = (1u128 << ($length * 8 - 3)) - 1;

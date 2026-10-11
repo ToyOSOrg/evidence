@@ -10,14 +10,19 @@ exclude = ["evidence/**", "benchmarks/**", "claude-comms/**"]
 
 [features]
 default = []
-std = []
+std = ["rustls?/std"]
 sign = []
 wpa2 = []
 portable = []
+rustls-provider = ["dep:rustls"]
 
 [dependencies]
+rustls = { version = "=0.23.45", optional = true, default-features = false, features = ["custom-provider", "tls12"] }
 
 [dev-dependencies]
+ring = "=0.17.14"
+rustls = { version = "=0.23.45", default-features = false, features = ["ring", "std", "tls12"] }
+rcgen = { version = "=0.13.2", default-features = false, features = ["crypto", "ring"] }
 sha2 = "=0.10.9"
 aes-gcm = "=0.10.3"
 chacha20poly1305 = "=0.10.1"

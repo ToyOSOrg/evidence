@@ -79,11 +79,40 @@ fn main() {
             "lib",
             "gcm::tests::accelerated_ghash_preserves_polynomial_basis_and_stream_recurrence",
         ),
+        (
+            "provider_sequence",
+            "src/rustls_provider/cipher.rs",
+            "if seq != self.next || seq == u64::MAX",
+            "if seq == u64::MAX",
+            "lib",
+            "rustls_provider::tests::record_adapters_interoperate_and_refuse_reused_sequences",
+        ),
+        (
+            "provider_der_integer",
+            "src/rustls_provider/verify.rs",
+            "if value.len() < 2 || value[1] & 128 == 0",
+            "if value.len() < 2",
+            "lib",
+            "rustls_provider::verify::tests::rsa_der_refuses_noncanonical_integers_lengths_and_trailing_bytes",
+        ),
+        (
+            "provider_der_length",
+            "src/rustls_provider/verify.rs",
+            "if len < 128",
+            "if false",
+            "lib",
+            "rustls_provider::verify::tests::rsa_der_refuses_noncanonical_integers_lengths_and_trailing_bytes",
+        ),
     ];
+    let features = if cfg!(feature = "rustls-provider") {
+        "std,sign,wpa2,rustls-provider"
+    } else {
+        "std,sign,wpa2"
+    };
     let mut baseline = Command::new(std::env::var_os("CARGO").unwrap_or_else(|| "cargo".into()));
     baseline
         .current_dir(root)
-        .args(["test", "--release", "--features", "std,sign,wpa2"]);
+        .args(["test", "--release", "--features", features]);
     let baseline = baseline.output().unwrap();
     fs::write(
         logs.join("baseline.log"),
@@ -92,6 +121,11 @@ fn main() {
     .unwrap();
     assert!(baseline.status.success(), "baseline must pass");
     for (name, file, old, new, suite, test) in cases {
+        if name.starts_with("provider_") && !cfg!(feature = "rustls-provider") {
+            println!("{name}: requires rustls-provider; skipped");
+            continue;
+        }
+
         if matches!(name, "aes_counter" | "ghash_power") && std::env::consts::ARCH != "aarch64" {
             println!("{name}: requires native ARM64; skipped");
             continue;
@@ -115,7 +149,7 @@ fn main() {
         let mut command = Command::new(std::env::var_os("CARGO").unwrap_or_else(|| "cargo".into()));
         command
             .current_dir(root)
-            .args(["test", "--release", "--features", "std,sign,wpa2"]);
+            .args(["test", "--release", "--features", features]);
         if suite == "lib" {
             command.arg("--lib");
         } else {

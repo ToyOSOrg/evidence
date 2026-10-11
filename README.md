@@ -1,13 +1,16 @@
 # toyos-crypto
 
 A standalone implementation of ToyOS's requested cryptographic primitives in
-Rust. The library is `no_std`, uses no allocator, has no runtime dependencies,
-and has no build script, C source, external assembler or host code generator.
-It does not integrate with ToyOS, rustls, SSH framing, X.509 or SSHSIG parsing.
+Rust. The default primitive core is `no_std`, allocation-free and dependency-free,
+with no build script, C source, external assembler or host code generator.
+An optional `rustls-provider` supplies thin adapters for unmodified rustls.
+ToyOS integration, SSH framing, X.509 and SSHSIG parsing remain separate.
 
 **Status: experimental and ready for review, not qualified for deployment.**
-The host correctness tests pass. The host throughput comparison is slower than
-ring. Independent arithmetic review, real-hardware timing qualification and the
+Correctness tests pass on native ARM64 macOS and both x86 Linux benches.
+ARM AES/GHASH scheduling has been improved; the required controlled no-AVX
+performance comparison remains pending. Independent arithmetic review, timing
+qualification and the
 required T14 comparison remain open. See [VALIDATION.md](VALIDATION.md) for the
 design review, acceptance gaps and exact evidence. Passing vectors does not
 establish that this implementation is safer than ring.
@@ -30,6 +33,7 @@ There is no general bignum API or speculative algorithm collection.
 | `mlkem` | ML-KEM-768 key generation, encapsulation and decapsulation | TLS and SSH hybrid exchange |
 | `hybrid` | ML-KEM secret followed by X25519 secret; raw TLS and SHA-256 SSH combiners | Consumer-specific hybrid key schedules |
 | `ssh` | `chacha20-poly1305@openssh.com`, with a separate encrypted length key | SSH packets |
+| `rustls_provider` | TLS 1.3 and TLS 1.2 ECDHE-AEAD provider, including X25519MLKEM768 | HTTPS clients through unmodified rustls |
 | `wpa2` | SHA-1/HMAC internally, PBKDF2-HMAC-SHA1 with 4096 iterations, 802.11i PRF, AES-128 RFC 3394 unwrap | WPA2-Personal supplicant |
 
 Private SHA-3/SHAKE implements ML-KEM's hashes. SHA-1 and AES block decryption
@@ -43,7 +47,7 @@ Rust 1.89 or later is required. The default build needs only `core`.
 
 ```text
 cargo check --lib
-cargo test --release --features std,sign,wpa2 -- --nocapture
+cargo test --release --features std,sign,wpa2,rustls-provider -- --nocapture
 cargo test --release --all-features -- --nocapture
 cargo test --release -- --nocapture
 cargo clippy --all-targets --all-features -- -D warnings
@@ -52,17 +56,36 @@ cargo package
 ```
 
 The pinned dev-dependencies are independent test oracles and JSON readers.
-They are not linked into the library. The ring comparator is a separate,
-unpublishable package under `benchmarks/ring`; its ring dependency needs ring's
-host toolchain. Ordinary library builds and tests do not need that comparator.
+Provider tests use ring and rcgen, including ring's C/assembly host build tools;
+those are test-only. Normal provider builds depend only on rustls and its Rust
+support crates. The comparator is a separate package under `benchmarks/ring`.
 
 | Feature | Contract |
 | --- | --- |
 | default | `no_std`, no allocation, verification and key exchange |
-| `std` | Host capability metadata on AArch64 and host examples; no new runtime dependency |
+| `std` | Host capability metadata on AArch64 and host examples; enables rustls std support when the provider feature is active |
 | `sign` | Ed25519 signing, for build-host signing or the SSH host-key consumer; leave off boot/update verification binaries |
 | `wpa2` | The supplicant's restricted SHA-1 and AES unwrap interface |
 | `portable` | Disables AES/CLMUL/PMULL dispatch for fallback testing |
+| `rustls-provider` | Enables allocation and the optional rustls dependency; leaves protocol and certificate parsing upstream |
+
+## rustls provider
+
+Bind a static `rustls_provider::Backend` to the caller's implementation of
+`rustls::crypto::SecureRandom`, then pass `Arc::new(backend.provider())` into
+`rustls::ClientConfig::builder_with_provider`. The backend stores each group's
+entropy source directly; it installs no global provider or RNG. Entropy failures
+propagate to rustls. The default preference offers hybrid exchange first, followed
+by X25519, P-256 and P-384; hybrid is offered only for TLS 1.3.
+
+The provider includes all three TLS 1.3 ciphers and the six TLS 1.2 ECDHE-AEAD
+suites. Certificate verification covers Ed25519, P-256/P-384 with SHA-256/384,
+and RSA PKCS#1/PSS with SHA-256/384/512. TLS 1.3 mappings select the specified
+curve first. AES traffic limits are conservatively set to 2^23 records.
+
+QUIC and private-key loading are not advertised. HTTPS clients use
+`with_no_client_auth`; a caller may supply its own certificate resolver when
+private signing is needed. This is not yet a qualified ToyOS TLS replacement.
 
 ## API boundaries
 
@@ -127,8 +150,8 @@ currently portable; SHA-NI and ARM SHA2 acceleration remain future optimization.
 
 The x86-64 UEFI path saves and restores every XMM register it uses inside each
 assembly block. It builds for the soft-float UEFI target. This path has been
-compiled, not exercised in firmware. ARM acceleration and Windows/macOS runtime
-tests are also pending. The custom ToyOS targets were not built; integrating the
+compiled, not exercised in firmware. Native ARM64 macOS acceleration and portable execution have been tested.
+Windows runtime tests remain pending. The custom ToyOS targets were not built; integrating the
 crate and qualifying the ToyOS compiler are separate work.
 
 ## Reproduce additional evidence

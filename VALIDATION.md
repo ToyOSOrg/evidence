@@ -4,7 +4,41 @@ This is an author self-review, not the independent adversarial review requested
 by ToyOS. It applies the production bar in ToyOS's root `CLAUDE.md` and
 `.claude/agents/reviewer.md`, read at repository commit
 `41ad7ecd2b8d009e40b6fb46bc8676b8fb52922f`. The implementation is standalone;
-there is no ToyOS branch, integration build, rustls provider or draft PR.
+there is no ToyOS integration build or draft PR. The optional rustls provider
+is implemented and undergoing consumer qualification.
+
+## Current development evidence (2026-10-11)
+
+The imported evidence below is a historical baseline, not evidence for the
+subsequent edits. The current work adds interleaved ARM AES-CTR and four-block
+PMULL GHASH, hardware SubWord, borrowed/wiped arithmetic workspaces and
+independent modular-integer checks. Full logs for this development stage are
+kept in `evidence/current/`; they are not shipped in the Cargo package.
+
+At source commit `2b0f372ed19fce5e81e33824d4352ef59986dde7`, native Mac release
+matrices passed in dispatched, portable and default configurations. Both native
+x86 benches also passed 35 tests with 3,056 external fixtures. Nine isolated
+mutations failed their exact tests; compiler errors did not count. This does
+not supply a constant-time verdict or a controlled no-AVX benchmark.
+
+The new `rustls-provider` feature allocates only at its adapter boundary and
+depends on unmodified published rustls. It binds every group to caller entropy,
+checks the outbound sequence against the primitive nonce owner, and uses
+upstream record helpers and certificate parsing. Private-key loading and QUIC
+are not supported. No ToyOS consumer is declared delivered.
+
+Provider unit tests use independent ring, rcgen, RustCrypto curve and ML-KEM
+oracles. They cover all nine record adapters; 60 TLS handshake configurations
+with trusted-root/leaf chains and bidirectional application data; TLS 1.3 key
+updates; hybrid-to-classical HelloRetryRequest; strict RSA DER; transcript
+forks; HKDF; failed entropy; cross-hash ECDSA; and hybrid wire encodings and
+secret order. The hybrid reference server combines independent primitives;
+it is not an independent TLS protocol implementation (both peers use rustls).
+
+The performance target, independent cryptographic review, deployment timing,
+complete official vector corpora, sustained fuzzing and ToyOS/firmware/runtime
+portability qualification remain open. Later sections retain the imported
+evidence's original limitations and results; they are not current ARM timings.
 
 ## Design and its roast
 
@@ -34,8 +68,10 @@ boolean provenance; it is not a compiler-level constant-time guarantee.
 
 AES uses an algebraic table-free portable S-box and hardware round instructions
 when admitted. GHASH uses a bitwise portable multiply or three carryless products
-and a fixed polynomial reduction. Each block is processed separately. The host
-benchmark is much slower than ring, so the performance goal is **not met**.
+and a fixed polynomial reduction. The current ARM path schedules four blocks together and keeps CTR
+keystream in vector registers. The imported host benchmark below measured the
+earlier single-block implementation; the performance acceptance goal remains
+**unproven**.
 Multi-block AES/GHASH scheduling, better scalar arithmetic, SHA acceleration and
 SIMD ChaCha are optimization candidates requiring their own evidence.
 
@@ -140,7 +176,8 @@ or deployment key is needed to reproduce these checks.
 The target matrix includes x86-64 Linux, AArch64 Linux, x86-64 Windows GNU,
 x86-64 macOS, AArch64 macOS and x86-64 UEFI. It also emits release library
 objects for AArch64 Linux and the soft-float UEFI target. Only Linux x86-64 tests
-were executed. Rust 1.89 evidence covers the library, not oracle dependencies.
+were executed for this imported baseline. Subsequent ARM64 native tests are
+recorded separately above. Rust 1.89 evidence covers the library, not oracle dependencies.
 
 The baseline x86-64 assembly scan finds no AVX/YMM/ZMM use and no integer divide
 inside ML-KEM. Two divides in AES expansion use the public loop offset and key
@@ -210,8 +247,8 @@ test as evidence it did not provide.
    It is not the T14 and does not suppress ring's AVX dispatch. No claim about
    the requested no-AVX cycles/byte target can be made from this result.
 4. **Runtime portability not fully qualified.** Linux x86-64 tests execute here.
-   Windows, macOS, AArch64 and UEFI checks are compilation/code-generation
-   evidence only. The custom ToyOS targets and firmware register preservation
+   Windows and UEFI checks are compilation/code-generation evidence only.
+   Native ARM64 macOS now has runtime evidence. The custom ToyOS targets and firmware register preservation
    require their own builds and execution.
 5. **Full vector/fuzz coverage remains incomplete.** The test corpora above are
    substantial independent evidence but do not satisfy every testing item in

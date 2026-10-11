@@ -7,7 +7,7 @@ use crate::{
     Error, ct,
     hash::{Sha256, Sha384, Sha512},
 };
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum Hash {
     Sha256,
     Sha384,

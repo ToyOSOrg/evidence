@@ -10,6 +10,13 @@ pub struct Hmac<H: Digest> {
 }
 
 impl<H: Digest> Hmac<H> {
+    #[cfg(feature = "rustls-provider")]
+    pub(crate) fn fork(&self) -> Self {
+        Self {
+            inner: self.inner.fork(),
+            outer: self.outer.fork(),
+        }
+    }
     pub fn new(key: &[u8]) -> Result<Self, Error> {
         let mut block = Secret([0u8; 128]);
         if key.len() > H::BLOCK_LEN {

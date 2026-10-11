@@ -17,6 +17,9 @@
 #[cfg(any(test, feature = "std"))]
 extern crate std;
 
+#[cfg(feature = "rustls-provider")]
+extern crate alloc;
+
 pub mod aead;
 mod aes;
 mod arch;
@@ -36,6 +39,8 @@ mod montgomery;
 mod nist;
 mod poly1305;
 pub mod rsa;
+#[cfg(feature = "rustls-provider")]
+pub mod rustls_provider;
 mod scalar25519;
 mod secret;
 pub mod ssh;
