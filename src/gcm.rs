@@ -54,7 +54,14 @@ impl Gcm {
     fn tag(&self, nonce: &[u8; 12], aad: &[u8], data: &[u8]) -> [u8; 16] {
         let mut state = Secret([0u8; 16]);
         for input in [aad, data] {
-            for chunk in input.chunks(16) {
+            let (blocks, tail) = input.as_chunks::<16>();
+            let remaining = if self.hardware {
+                crate::arch::ghash_blocks(&self.h.0, &mut state.0, blocks);
+                tail
+            } else {
+                input
+            };
+            for chunk in remaining.chunks(16) {
                 for (s, &b) in state.0.iter_mut().zip(chunk) {
                     *s ^= b;
                 }
@@ -77,11 +84,24 @@ impl Gcm {
         core::array::from_fn(|i| state.0[i] ^ j.0[i])
     }
     fn xor(&self, nonce: &[u8; 12], data: &mut [u8]) {
+        let (batches, tail) = data.as_chunks_mut::<64>();
+        let mut streams = Secret([0; 64]);
+        for (i, batch) in batches.iter_mut().enumerate() {
+            for (j, block) in streams.0.as_chunks_mut::<16>().0.iter_mut().enumerate() {
+                block[..12].copy_from_slice(nonce);
+                block[12..].copy_from_slice(&((4 * i + j) as u32 + 2).to_be_bytes());
+            }
+            self.aes
+                .encrypt_four(streams.0.as_chunks_mut::<16>().0.try_into().unwrap());
+            for (byte, &mask) in batch.iter_mut().zip(&streams.0) {
+                *byte ^= mask;
+            }
+        }
         let mut stream = Secret([0; 16]);
         stream.0[..12].copy_from_slice(nonce);
-        for (i, chunk) in data.chunks_mut(16).enumerate() {
+        for (i, chunk) in tail.chunks_mut(16).enumerate() {
             stream.0[..12].copy_from_slice(nonce);
-            stream.0[12..].copy_from_slice(&(i as u32 + 2).to_be_bytes());
+            stream.0[12..].copy_from_slice(&((4 * batches.len() + i) as u32 + 2).to_be_bytes());
             self.aes.encrypt(&mut stream.0);
             for (b, &s) in chunk.iter_mut().zip(&stream.0) {
                 *b ^= s;
@@ -129,5 +149,35 @@ mod tests {
             }
         }
         assert_eq!(Gcm::check(0, usize::MAX), Err(Error::Length));
+    }
+
+    #[test]
+    fn accelerated_ghash_preserves_polynomial_basis_and_stream_recurrence() {
+        if !crate::arch::clmul_available() {
+            return;
+        }
+        for i in 0..128 {
+            for j in 0..128 {
+                let a = 1u128 << i;
+                let b = 1u128 << j;
+                let mut state = a.to_be_bytes();
+                crate::arch::ghash_blocks(&b.to_be_bytes(), &mut state, &[[0; 16]]);
+                assert_eq!(u128::from_be_bytes(state), multiply(a, b));
+            }
+        }
+        let h = 0x0123456789abcdef123456789abcdef0u128;
+        let blocks: [[u8; 16]; 19] = core::array::from_fn(|i| {
+            (!h.wrapping_mul(i as u128 + 1))
+                .rotate_left(i as u32)
+                .to_be_bytes()
+        });
+        for n in 0..=blocks.len() {
+            let mut state = h.to_be_bytes();
+            crate::arch::ghash_blocks(&h.to_be_bytes(), &mut state, &blocks[..n]);
+            let expected = blocks[..n]
+                .iter()
+                .fold(h, |y, x| multiply(y ^ u128::from_be_bytes(*x), h));
+            assert_eq!(u128::from_be_bytes(state), expected);
+        }
     }
 }

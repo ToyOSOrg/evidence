@@ -84,6 +84,15 @@ impl Aes {
         }
         self.encrypt_portable(block);
     }
+    pub(crate) fn encrypt_four(&self, blocks: &mut [[u8; 16]; 4]) {
+        if self.hardware {
+            crate::arch::aes_encrypt_four(&self.keys.0, self.rounds, blocks);
+        } else {
+            for block in blocks {
+                self.encrypt_portable(block);
+            }
+        }
+    }
     fn encrypt_portable(&self, block: &mut [u8; 16]) {
         for (b, k) in block.iter_mut().zip(&self.keys.0[..16]) {
             *b ^= k;

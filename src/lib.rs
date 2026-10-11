@@ -21,7 +21,7 @@ pub mod aead;
 mod aes;
 mod arch;
 mod chacha;
-pub mod cpu;
+pub use arch::cpu;
 mod ct;
 pub mod ecc;
 pub mod ed25519;

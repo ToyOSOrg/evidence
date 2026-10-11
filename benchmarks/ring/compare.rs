@@ -1,58 +1,141 @@
-//! Same-process host throughput comparison. Run on the T14 with deployment
-//! feature policy controlled separately; this program does not suppress ring's
-//! AVX dispatch. A shared VM result is not a ToyOS performance acceptance gate.
+//! Native-host comparison, with warmup and interleaved repeated samples.
+//! Opening buffers are prepared before timing. Key setup includes drop erasure.
+//! Stock ring retains its runtime dispatch; this is not a no-AVX comparison.
 use std::{hint::black_box, time::Instant};
-use toyos_crypto::aead::SealingKey;
+use toyos_crypto::aead::{OpeningKey, SealingKey};
+const AAD: &[u8] = b"benchmark";
+const KEY: [u8; 32] = [7; 32];
+const SAMPLES: usize = 7;
+fn sealer(alg: usize, iv: [u8; 12]) -> SealingKey {
+    match alg {
+        0 => SealingKey::aes128_gcm(KEY[..16].try_into().unwrap(), iv),
+        1 => SealingKey::aes256_gcm(KEY, iv),
+        _ => SealingKey::chacha20_poly1305(KEY, iv),
+    }
+}
+fn opener(alg: usize) -> OpeningKey {
+    match alg {
+        0 => OpeningKey::aes128_gcm(KEY[..16].try_into().unwrap()),
+        1 => OpeningKey::aes256_gcm(KEY),
+        _ => OpeningKey::chacha20_poly1305(KEY),
+    }
+}
+fn ring_key(algorithm: &'static ring::aead::Algorithm) -> ring::aead::LessSafeKey {
+    ring::aead::LessSafeKey::new(
+        ring::aead::UnboundKey::new(algorithm, &KEY[..algorithm.key_len()]).unwrap(),
+    )
+}
 fn main() {
-    let rounds = std::env::args()
+    let iterations = std::env::args()
         .nth(1)
-        .map(|n| n.parse::<u32>().unwrap())
-        .unwrap_or(2000);
-    println!("algorithm,size,backend,ns_per_byte");
-    for (name, algorithm) in [
+        .map_or(1024, |n| n.parse::<usize>().unwrap());
+    assert!((1..=65536).contains(&iterations));
+    println!(
+        "# arch={} os={} ring=0.17.14 dispatch=stock timing=native-host frequency=uncontrolled affinity=uncontrolled",
+        std::env::consts::ARCH,
+        std::env::consts::OS
+    );
+    println!(
+        "# warmup=one-full-sample samples={SAMPLES} opening-restoration=outside-timing key-setup=includes-drop"
+    );
+    println!("algorithm,size,operation,backend,sample,iterations,ns_per_op,ns_per_byte");
+    for (alg, (name, algorithm)) in [
         ("AES-128-GCM", &ring::aead::AES_128_GCM),
         ("AES-256-GCM", &ring::aead::AES_256_GCM),
         ("ChaCha20-Poly1305", &ring::aead::CHACHA20_POLY1305),
-    ] {
-        for size in [64, 1024, 16384] {
-            let mut ours = match name {
-                "AES-128-GCM" => SealingKey::aes128_gcm([7; 16], [0; 12]),
-                "AES-256-GCM" => SealingKey::aes256_gcm([7; 32], [0; 12]),
-                _ => SealingKey::chacha20_poly1305([7; 32], [0; 12]),
-            };
-            let mut data = vec![0; size];
-            let start = Instant::now();
-            for _ in 0..rounds {
-                black_box(
-                    ours.seal(black_box(b"benchmark"), black_box(&mut data))
-                        .unwrap(),
-                );
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        for size in [0, 1, 15, 16, 17, 64, 1024, 16384] {
+            let count = iterations.min((16 * 1024 * 1024 / size.max(1)).max(1));
+            let mut ciphertext = vec![0x5a; size];
+            let (nonce, tag) = sealer(alg, [0; 12]).seal(AAD, &mut ciphertext).unwrap();
+            let mut reference = vec![0x5a; size];
+            let rk = ring_key(algorithm);
+            let reference_tag = rk
+                .seal_in_place_separate_tag(
+                    ring::aead::Nonce::assume_unique_for_key(nonce),
+                    ring::aead::Aad::from(AAD),
+                    &mut reference,
+                )
+                .unwrap();
+            assert_eq!(ciphertext, reference);
+            assert_eq!(tag.as_slice(), reference_tag.as_ref());
+            for operation in ["seal", "open", "reject", "key-setup"] {
+                if operation == "key-setup" && size != 0 {
+                    continue;
+                }
+                for sample in 0..=SAMPLES {
+                    for turn in 0..2 {
+                        let ours = (sample + turn) % 2 == 0;
+                        let mut iv = [0; 12];
+                        iv[0] = sample as u8 + 1;
+                        let mut sk = sealer(alg, iv);
+                        let ok = opener(alg);
+                        let rk = ring_key(algorithm);
+                        let mut buffers = vec![ciphertext.clone(); count];
+                        let mut tag = tag;
+                        if operation == "reject" {
+                            tag[0] ^= 1;
+                        }
+                        let start = Instant::now();
+                        for (sequence, data) in buffers.iter_mut().enumerate() {
+                            match (operation, ours) {
+                                ("seal", true) => {
+                                    black_box(sk.seal(black_box(AAD), black_box(data)).unwrap());
+                                }
+                                ("seal", false) => {
+                                    let mut n = iv;
+                                    n[4..].copy_from_slice(&(sequence as u64).to_be_bytes());
+                                    let _ = black_box(
+                                        rk.seal_in_place_separate_tag(
+                                            ring::aead::Nonce::assume_unique_for_key(n),
+                                            ring::aead::Aad::from(black_box(AAD)),
+                                            black_box(data),
+                                        )
+                                        .unwrap(),
+                                    );
+                                }
+                                ("open", true) | ("reject", true) => {
+                                    let result = ok.open(
+                                        &nonce,
+                                        black_box(AAD),
+                                        black_box(data),
+                                        black_box(&tag),
+                                    );
+                                    assert_eq!(black_box(result).is_ok(), operation == "open");
+                                }
+                                ("open", false) | ("reject", false) => {
+                                    let result = rk.open_in_place_separate_tag(
+                                        ring::aead::Nonce::assume_unique_for_key(nonce),
+                                        ring::aead::Aad::from(black_box(AAD)),
+                                        ring::aead::Tag::from(tag),
+                                        black_box(data),
+                                        0..,
+                                    );
+                                    assert_eq!(black_box(result).is_ok(), operation == "open");
+                                }
+                                ("key-setup", true) => {
+                                    drop(black_box(sealer(black_box(alg), black_box(iv))));
+                                }
+                                ("key-setup", false) => {
+                                    drop(black_box(ring_key(black_box(algorithm))));
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        let ns = start.elapsed().as_nanos() as f64 / count as f64;
+                        if sample != 0 {
+                            println!(
+                                "{name},{size},{operation},{},{sample},{count},{ns:.3},{:.3}",
+                                if ours { "toyos" } else { "ring" },
+                                ns / size.max(1) as f64
+                            );
+                        }
+                    }
+                }
             }
-            println!(
-                "{name},{size},toyos,{:.3}",
-                start.elapsed().as_nanos() as f64 / (f64::from(rounds) * size as f64)
-            );
-            let key = ring::aead::LessSafeKey::new(
-                ring::aead::UnboundKey::new(algorithm, &[7; 32][..algorithm.key_len()]).unwrap(),
-            );
-            let start = Instant::now();
-            for sequence in 0..rounds {
-                let mut n = [0; 12];
-                n[8..].copy_from_slice(&sequence.to_be_bytes());
-                let nonce = ring::aead::Nonce::assume_unique_for_key(n);
-                let _ = black_box(
-                    key.seal_in_place_separate_tag(
-                        nonce,
-                        ring::aead::Aad::from(b"benchmark"),
-                        black_box(&mut data),
-                    )
-                    .unwrap(),
-                );
-            }
-            println!(
-                "{name},{size},ring,{:.3}",
-                start.elapsed().as_nanos() as f64 / (f64::from(rounds) * size as f64)
-            );
         }
     }
 }

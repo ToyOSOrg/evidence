@@ -38,13 +38,16 @@ fn sha2_streaming_boundaries() {
 }
 #[test]
 fn aead_all_algorithms_and_partial_blocks() {
-    for n in [0, 1, 15, 16, 17, 31, 32, 33, 63, 64, 65, 255, 1024] {
+    for n in [
+        0, 1, 15, 16, 17, 31, 32, 33, 47, 48, 49, 63, 64, 65, 127, 128, 129, 255, 256, 257, 1024,
+        4096, 16384,
+    ] {
         for a in [0, 1, 15, 16, 17, 31, 32, 33] {
             let k = bytes::<32>(n + a);
             let nonce = bytes::<12>(a);
             let aad = bytes::<33>(n);
             let aad = &aad[..a];
-            let input = bytes::<1024>(a);
+            let input = bytes::<16384>(a);
             let input = &input[..n];
             for alg in 0..3 {
                 let mut ours = input.to_vec();

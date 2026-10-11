@@ -8,6 +8,13 @@ mod aarch64;
 #[cfg(target_arch = "x86_64")]
 mod x86_64;
 
+#[cfg(target_arch = "aarch64")]
+pub use aarch64::cpu;
+#[cfg(not(target_arch = "aarch64"))]
+pub mod cpu {
+    //! CPU permission bridges. x86-64 detects capabilities through CPUID.
+}
+
 pub(crate) fn aes_available() -> bool {
     #[cfg(target_arch = "x86_64")]
     {
@@ -52,6 +59,19 @@ pub(crate) fn ghash(a: u128, b: u128) -> u128 {
         unreachable!("CLMUL dispatch")
     }
 }
+
+pub(crate) fn ghash_blocks(h: &[u8; 16], state: &mut [u8; 16], blocks: &[[u8; 16]]) {
+    #[cfg(target_arch = "aarch64")]
+    aarch64::ghash_blocks(h, state, blocks);
+    #[cfg(not(target_arch = "aarch64"))]
+    for block in blocks {
+        *state = ghash(
+            u128::from_be_bytes(*state) ^ u128::from_be_bytes(*block),
+            u128::from_be_bytes(*h),
+        )
+        .to_be_bytes();
+    }
+}
 pub(crate) fn aes_encrypt(keys: &[u8; 240], rounds: usize, block: &mut [u8; 16]) {
     #[cfg(target_arch = "x86_64")]
     {
@@ -65,5 +85,14 @@ pub(crate) fn aes_encrypt(keys: &[u8; 240], rounds: usize, block: &mut [u8; 16])
     {
         let _ = (keys, rounds, block);
         unreachable!("instruction dispatch");
+    }
+}
+
+pub(crate) fn aes_encrypt_four(keys: &[u8; 240], rounds: usize, blocks: &mut [[u8; 16]; 4]) {
+    #[cfg(target_arch = "aarch64")]
+    aarch64::aes_encrypt_four(keys, rounds, blocks);
+    #[cfg(not(target_arch = "aarch64"))]
+    for block in blocks {
+        aes_encrypt(keys, rounds, block);
     }
 }
