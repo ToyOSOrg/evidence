@@ -84,7 +84,12 @@ pub(crate) fn ghash(a: u128, b: u128) -> u128 {
 pub(crate) fn ghash_blocks(h: &[u8; 16], state: &mut [u8; 16], blocks: &[[u8; 16]]) {
     #[cfg(all(target_arch = "aarch64", not(target_abi = "softfloat")))]
     aarch64::ghash_blocks(h, state, blocks);
-    #[cfg(not(all(target_arch = "aarch64", not(target_abi = "softfloat"))))]
+    #[cfg(all(target_arch = "x86_64", not(target_os = "none")))]
+    x86_64::ghash_blocks(h, state, blocks);
+    #[cfg(not(any(
+        all(target_arch = "aarch64", not(target_abi = "softfloat")),
+        all(target_arch = "x86_64", not(target_os = "none"))
+    )))]
     for block in blocks {
         *state = ghash(
             u128::from_be_bytes(*state) ^ u128::from_be_bytes(*block),
@@ -118,7 +123,14 @@ pub(crate) fn aes_ctr(keys: &[u8; 240], rounds: usize, nonce: &[u8; 12], data: &
         aarch64::aes_ctr(keys, rounds, nonce, data);
         true
     }
-    #[cfg(not(all(target_arch = "aarch64", not(target_abi = "softfloat"))))]
+    #[cfg(all(target_arch = "x86_64", not(target_os = "none")))]
+    {
+        x86_64::aes_ctr(keys, rounds, nonce, data)
+    }
+    #[cfg(not(any(
+        all(target_arch = "aarch64", not(target_abi = "softfloat")),
+        all(target_arch = "x86_64", not(target_os = "none"))
+    )))]
     {
         let _ = (keys, rounds, nonce, data);
         false
@@ -131,7 +143,14 @@ pub(crate) fn aes_subword(word: &mut [u8; 4]) -> bool {
         aarch64::aes_subword(word);
         true
     }
-    #[cfg(not(all(target_arch = "aarch64", not(target_abi = "softfloat"))))]
+    #[cfg(all(target_arch = "x86_64", not(target_os = "none")))]
+    {
+        x86_64::aes_subword(word)
+    }
+    #[cfg(not(any(
+        all(target_arch = "aarch64", not(target_abi = "softfloat")),
+        all(target_arch = "x86_64", not(target_os = "none"))
+    )))]
     {
         let _ = word;
         false

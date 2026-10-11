@@ -139,7 +139,9 @@ On hosted and UEFI x86-64, CPUID admits AES-NI and PCLMULQDQ.
 The crate supports the UEFI loader and userland. Bare-metal x86 (`target_os=none`)
 and soft-float AArch64 kernel targets are unsupported and fail with an explicit
 compile-time diagnostic. Their SIMD implementations are excluded before codegen. The crate's intrinsic and inline
-assembly paths use legacy SSE encodings; no AVX path is implemented. The OS must
+assembly paths use legacy SSE encodings; no AVX path is implemented. Hosted
+x86 uses four parallel AES CTR blocks, AES SubWord and four-block aggregated
+CLMUL GHASH. The UEFI path retains its register-preserving per-block operations. The OS must
 permit SIMD, preserve its state and expose a uniform feature set across CPUs on
 which a key can execute. Deploy with a baseline target configuration rather than
 globally enabling AVX through compiler flags.

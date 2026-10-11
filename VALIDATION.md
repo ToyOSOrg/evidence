@@ -292,3 +292,18 @@ compile checks, final ARM tests/lint/MSRV and twelve negative controls are in
 external cryptographic audit. Previous native timing does not qualify the source
 after these changes. Native x86 correctness revalidation at `2f262569` passed
 46 tests on both hosts; complete evidence is retained in `evidence/current/`.
+
+## x86 batch implementation under native validation
+
+Hosted x86 adds four independent AES CTR lanes and AES SubWord under the AES-NI
+admission guard. Four GHASH blocks expand to `(y+x0)H^4+x1H^3+x2H^2+x3H`,
+with SSE2 byte reflection, three-product CLMUL multiplication and one reduction
+per batch. Public lengths select batches and tails; keys and message contents
+do not select addresses, branches or shifts. No AVX feature is admitted.
+UEFI retains the existing register-preserving assembly paths.
+
+ARM dispatched/portable suites and cross-target lint/compilation pass. These
+checks do not execute the new x86 implementation. Native correctness, two new
+x86 counter/power negative controls and the matched benchmark comparison are
+requested before accepting any performance result. The previously measured
+Linux stock-ring gap is the baseline, not a measurement of this new source.

@@ -80,6 +80,22 @@ fn main() {
             "gcm::tests::accelerated_ghash_preserves_polynomial_basis_and_stream_recurrence",
         ),
         (
+            "x86_aes_counter",
+            "src/arch/x86_64.rs",
+            "let counter = i as u32 * 4 + 2;",
+            "let counter = i as u32 * 4 + 3;",
+            "differential",
+            "aead_all_algorithms_and_partial_blocks",
+        ),
+        (
+            "x86_ghash_power",
+            "src/arch/x86_64.rs",
+            "let h4 = multiply_vectors(h2, h2);",
+            "let h4 = multiply_vectors(h2, h);",
+            "lib",
+            "gcm::tests::accelerated_ghash_preserves_polynomial_basis_and_stream_recurrence",
+        ),
+        (
             "provider_sequence",
             "src/rustls_provider/cipher.rs",
             "if seq != self.next || seq == u64::MAX",
@@ -128,6 +144,10 @@ fn main() {
 
         if matches!(name, "aes_counter" | "ghash_power") && std::env::consts::ARCH != "aarch64" {
             println!("{name}: requires native ARM64; skipped");
+            continue;
+        }
+        if name.starts_with("x86_") && std::env::consts::ARCH != "x86_64" {
+            println!("{name}: requires native x86-64; skipped");
             continue;
         }
         let path = root.join(file);
