@@ -124,7 +124,7 @@ fn check_chacha_length(length: usize) -> Result<(), Error> {
         Ok(())
     }
 }
-fn chacha_tag(key: &[u8; 32], nonce: &[u8; 12], aad: &[u8], ciphertext: &[u8]) -> [u8; 16] {
+fn chacha_tag(key: &[u8; 32], nonce: &[u8; 12], aad: &[u8], ciphertext: &[u8]) -> Secret<16> {
     let first = chacha::block(key, nonce, 0);
     let mut mac = Poly1305::new(first.0[..32].try_into().unwrap());
     mac.update(aad);
@@ -133,7 +133,7 @@ fn chacha_tag(key: &[u8; 32], nonce: &[u8; 12], aad: &[u8], ciphertext: &[u8]) -
     mac.pad16();
     mac.update(&(aad.len() as u64).to_le_bytes());
     mac.update(&(ciphertext.len() as u64).to_le_bytes());
-    mac.finish()
+    Secret(mac.finish())
 }
 fn chacha_seal(
     key: &[u8; 32],
@@ -143,7 +143,7 @@ fn chacha_seal(
 ) -> Result<[u8; 16], Error> {
     check_chacha_length(data.len())?;
     chacha::xor(key, nonce, 1, data)?;
-    Ok(chacha_tag(key, nonce, aad, data))
+    Ok(chacha_tag(key, nonce, aad, data).0)
 }
 fn chacha_open(
     key: &[u8; 32],
@@ -153,7 +153,8 @@ fn chacha_open(
     tag: &[u8],
 ) -> Result<(), Error> {
     check_chacha_length(data.len())?;
-    if !crate::ct::equal(&chacha_tag(key, nonce, aad, data), tag) {
+    let expected = chacha_tag(key, nonce, aad, data);
+    if !crate::ct::equal(&expected.0, tag) {
         return Err(Error::Authentication);
     }
     chacha::xor(key, nonce, 1, data)

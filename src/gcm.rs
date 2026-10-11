@@ -51,7 +51,7 @@ impl Gcm {
             Ok(())
         }
     }
-    fn tag(&self, nonce: &[u8; 12], aad: &[u8], data: &[u8]) -> [u8; 16] {
+    fn tag(&self, nonce: &[u8; 12], aad: &[u8], data: &[u8]) -> Secret<16> {
         let mut state = Secret([0u8; 16]);
         for input in [aad, data] {
             let (blocks, tail) = input.as_chunks::<16>();
@@ -81,7 +81,10 @@ impl Gcm {
         j.0[..12].copy_from_slice(nonce);
         j.0[15] = 1;
         self.aes.encrypt(&mut j.0);
-        core::array::from_fn(|i| state.0[i] ^ j.0[i])
+        for (s, mask) in state.0.iter_mut().zip(&j.0) {
+            *s ^= mask;
+        }
+        state
     }
     fn xor(&self, nonce: &[u8; 12], data: &mut [u8]) {
         if self.aes.xor_ctr(nonce, data) {
@@ -106,7 +109,7 @@ impl Gcm {
     ) -> Result<[u8; 16], Error> {
         Self::check(aad.len(), data.len())?;
         self.xor(nonce, data);
-        Ok(self.tag(nonce, aad, data))
+        Ok(self.tag(nonce, aad, data).0)
     }
     pub(crate) fn open(
         &self,
@@ -116,7 +119,8 @@ impl Gcm {
         tag: &[u8],
     ) -> Result<(), Error> {
         Self::check(aad.len(), data.len())?;
-        if !crate::ct::equal(&self.tag(nonce, aad, data), tag) {
+        let expected = self.tag(nonce, aad, data);
+        if !crate::ct::equal(&expected.0, tag) {
             return Err(Error::Authentication);
         }
         self.xor(nonce, data);

@@ -270,3 +270,24 @@ test as evidence it did not provide.
 The artifact is a packageable implementation and reproducible review record.
 It has not earned the brief's production, faster-than-ring or safer-than-ring
 acceptance claims.
+
+## Automated review follow-up and consumer scope
+
+The crate supports the UEFI loader and userland; the kernel is outside scope.
+Unsupported bare-metal x86 and soft-float AArch64 kernel targets now fail with
+a clear compile-time diagnostic instead of an LLVM crash or future ABI warning.
+No_std AArch64 userland can admit trusted OS capabilities without an EL1
+register read through `cpu::initialize_aarch64_with_features`; ToyOS startup
+integration remains pending.
+
+ChaCha word state uses borrowed Drop-wiped workspaces. Computed opening tags
+for GCM, ChaCha and SSH have secret owners. The NIST Montgomery constructor
+enforces its high-bit modulus assumption; representation domains remain
+untyped. Earlier expanded-key moves and compiler copies are still outside the
+erasure guarantee and remain a concrete review concern.
+
+Full automated model reports, dispositions, target rejection matrix, supported
+compile checks, final ARM tests/lint/MSRV and twelve negative controls are in
+`evidence/current/review-fixes/`. Model review is additional evidence, not an
+external cryptographic audit. Previous native timing does not qualify the source
+after these changes; native x86 revalidation remains pending.

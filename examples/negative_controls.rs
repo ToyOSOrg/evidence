@@ -10,7 +10,7 @@ fn main() {
         (
             "tag",
             "src/aead.rs",
-            "if !crate::ct::equal(&chacha_tag(key, nonce, aad, data), tag)",
+            "if !crate::ct::equal(&expected.0, tag)",
             "if false",
             "vectors",
             "rfc8439_aead_and_authenticated_refusal",
@@ -58,7 +58,7 @@ fn main() {
         (
             "gcm_tag",
             "src/gcm.rs",
-            "if !crate::ct::equal(&self.tag(nonce, aad, data), tag)",
+            "if !crate::ct::equal(&expected.0, tag)",
             "if false",
             "differential",
             "aead_all_algorithms_and_partial_blocks",

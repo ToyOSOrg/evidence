@@ -15,7 +15,10 @@ pub mod cpu {
     /// The current exception level must permit this ID register read and SIMD use.
     /// Every CPU on which keys may subsequently run must support the admitted
     /// features. The OS must preserve SIMD state across context switches and
-    /// exceptions. Call during OS initialization, before importing keys.
+    /// exceptions. Kernel/interrupt callers must additionally save and restore
+    /// the interrupted context's SIMD state around each crypto invocation;
+    /// context-switch preservation alone does not give a kernel ownership.
+    /// Call during OS initialization, before importing keys.
     pub unsafe fn initialize_aarch64() {
         let id: u64;
         // The caller established ID-register permission at this exception level.
@@ -23,7 +26,20 @@ pub mod cpu {
             core::arch::asm!("mrs {id}, ID_AA64ISAR0_EL1",id=out(reg) id,options(nomem,nostack,preserves_flags))
         }
         let aes = (id >> 4) & 15;
-        let flags = 4 | u8::from(aes == 1 || aes == 2) | (u8::from(aes == 2) << 1);
+        // The same OS state contract applies to register and metadata admission.
+        unsafe { initialize_aarch64_with_features(aes == 1 || aes == 2, aes == 2) }
+    }
+    /// Admits capabilities supplied by the OS without reading an EL1 register.
+    /// A no_std userland startup bridge can use OS capability metadata here.
+    ///
+    /// # Safety
+    /// Every admitted feature and SIMD permission must hold on all CPUs to which
+    /// imported keys may migrate. The OS must preserve SIMD state across context
+    /// switches and exceptions, and the calling context must own its SIMD state
+    /// during each invocation. Call before importing keys. PMULL requires AES.
+    pub unsafe fn initialize_aarch64_with_features(aes: bool, pmull: bool) {
+        assert!(!pmull || aes, "PMULL admission requires AES capability");
+        let flags = 4 | u8::from(aes) | (u8::from(pmull) << 1);
         ARM.store(flags, Ordering::Release);
     }
     pub(super) fn arm_features() -> Option<u8> {

@@ -33,3 +33,11 @@ impl<const N: usize> Drop for Secret<N> {
         wipe(&mut self.0);
     }
 }
+
+/// Owned word workspace; passing a borrow avoids an unwiped Copy argument.
+pub(crate) struct SecretWords32<const N: usize>(pub(crate) [u32; N]);
+impl<const N: usize> Drop for SecretWords32<N> {
+    fn drop(&mut self) {
+        wipe32(&mut self.0);
+    }
+}

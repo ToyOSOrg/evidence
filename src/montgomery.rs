@@ -32,7 +32,8 @@ impl<const N: usize> V<N> {
 }
 impl<const N: usize> Mod<N> {
     pub(crate) fn new(p: [u64; N]) -> Self {
-        assert!(N <= 6 && p[0] & 1 == 1);
+        // Raw N-limb digests reduce with one subtraction only when 2*p > 2^(64*N).
+        assert!(matches!(N, 4 | 6) && p[0] & 1 == 1 && p[N - 1] >> 63 == 1);
         let mut inverse = 1u64;
         for _ in 0..6 {
             inverse = inverse.wrapping_mul(2u64.wrapping_sub(p[0].wrapping_mul(inverse)))
@@ -57,6 +58,7 @@ impl<const N: usize> Mod<N> {
     pub(crate) fn one(&self) -> V<N> {
         V(self.one.0)
     }
+    // The incoming value is below 2*p, including its carry limb.
     fn reduce(&self, v: &[u64; N], high: u64) -> V<N> {
         let mut d = [0; N];
         let mut borrow = 0u128;

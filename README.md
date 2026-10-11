@@ -135,17 +135,27 @@ compiler and hardware qualification is still required.
 
 ## CPU and loader contract
 
-On x86-64, CPUID admits AES-NI and PCLMULQDQ. The crate's intrinsic and inline
+On hosted and UEFI x86-64, CPUID admits AES-NI and PCLMULQDQ.
+The crate supports the UEFI loader and userland. Bare-metal x86 (`target_os=none`)
+and soft-float AArch64 kernel targets are unsupported and fail with an explicit
+compile-time diagnostic. Their SIMD implementations are excluded before codegen. The crate's intrinsic and inline
 assembly paths use legacy SSE encodings; no AVX path is implemented. The OS must
 permit SIMD, preserve its state and expose a uniform feature set across CPUs on
 which a key can execute. Deploy with a baseline target configuration rather than
 globally enabling AVX through compiler flags.
 
 AArch64 hosts with `std` use OS capability detection. Without `std`, the default
-is portable. An OS may call `unsafe { cpu::initialize_aarch64() }` during
+is portable. On a hard-float ABI, an OS may call `unsafe { cpu::initialize_aarch64() }` during
 initialization to admit AES/PMULL from `ID_AA64ISAR0_EL1`; the caller must establish
 register-read permission, SIMD permission and migration-safe capabilities.
-Reading that register speculatively in arbitrary EL0 code can trap. SHA-2 is
+Kernel and interrupt callers must preserve the interrupted context's SIMD state
+around each crypto invocation; context-switch preservation alone is insufficient.
+Reading that register speculatively in arbitrary EL0 code can trap. A no_std
+userland startup bridge should instead obtain trusted OS capability metadata
+and call `unsafe { cpu::initialize_aarch64_with_features(aes, pmull) }` before
+importing keys, under the same SIMD and migration contract. This API does not
+read an ID register. The ToyOS adapter that obtains those capabilities is an
+integration task; absent admission the crate stays portable. SHA-2 is
 currently portable; SHA-NI and ARM SHA2 acceleration remain future optimization.
 
 The x86-64 UEFI path saves and restores every XMM register it uses inside each

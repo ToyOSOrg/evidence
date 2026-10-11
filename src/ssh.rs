@@ -18,13 +18,13 @@ impl Keys {
             header: Secret(bytes.0[32..].try_into().unwrap()),
         }
     }
-    fn tag(&self, seq: u32, header: &[u8; 4], payload: &[u8]) -> [u8; 16] {
+    fn tag(&self, seq: u32, header: &[u8; 4], payload: &[u8]) -> Secret<16> {
         let nonce = u64::from(seq).to_be_bytes();
         let block = chacha::legacy_block(&self.payload.0, &nonce, 0);
         let mut mac = Poly1305::new(block.0[..32].try_into().unwrap());
         mac.update(header);
         mac.update(payload);
-        mac.finish()
+        Secret(mac.finish())
     }
     fn crypt(&self, seq: u32, header: &mut [u8; 4], payload: &mut [u8]) -> Result<(), Error> {
         let nonce = u64::from(seq).to_be_bytes();
@@ -59,7 +59,7 @@ impl SealingKey {
         self.keys.crypt(seq, header, payload)?;
         let tag = self.keys.tag(seq, header, payload);
         self.next = seq.checked_add(1);
-        Ok((seq, tag))
+        Ok((seq, tag.0))
     }
 }
 impl OpeningKey {
@@ -91,7 +91,8 @@ impl OpeningKey {
         if tag.len() != 16 || payload.len() > u32::MAX as usize {
             return Err(Error::Length);
         }
-        if !ct::equal(&self.keys.tag(seq, header, payload), tag) {
+        let expected = self.keys.tag(seq, header, payload);
+        if !ct::equal(&expected.0, tag) {
             return Err(Error::Authentication);
         }
         self.keys.crypt(seq, header, payload)

@@ -128,7 +128,7 @@ impl MessageEncrypter for Seal {
             return Err(Error::EncryptError);
         }
         if msg.payload.len() > 16384 {
-            return Err(Error::PeerSentOversizedRecord);
+            return Err(Error::EncryptError);
         }
         let mut payload =
             PrefixedPayload::with_capacity(self.encrypted_payload_len(msg.payload.len()));
