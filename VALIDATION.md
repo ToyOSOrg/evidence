@@ -293,7 +293,7 @@ external cryptographic audit. Previous native timing does not qualify the source
 after these changes. Native x86 correctness revalidation at `2f262569` passed
 46 tests on both hosts; complete evidence is retained in `evidence/current/`.
 
-## x86 batch implementation under native validation
+## Native x86 batch validation
 
 Hosted x86 adds four independent AES CTR lanes and AES SubWord under the AES-NI
 admission guard. Four GHASH blocks expand to `(y+x0)H^4+x1H^3+x2H^2+x3H`,
@@ -302,8 +302,24 @@ per batch. Public lengths select batches and tails; keys and message contents
 do not select addresses, branches or shifts. No AVX feature is admitted.
 UEFI retains the existing register-preserving assembly paths.
 
-ARM dispatched/portable suites and cross-target lint/compilation pass. These
-checks do not execute the new x86 implementation. Native correctness, two new
-x86 counter/power negative controls and the matched benchmark comparison are
-requested before accepting any performance result. The previously measured
-Linux stock-ring gap is the baseline, not a measurement of this new source.
+At `afcc50b20f7d50fe128dc211589d5f52a1233c57`, ARM dispatched/portable suites
+and cross-target lint/compilation pass. Native Linux runs r0021/r0022 passed all
+46 tests on both hosts; all twelve applicable mutation controls failed tests
+with exit 101, including the new x86 counter/power controls. Source restoration
+was exact. Full logs and patches are retained in `evidence/current/x86-pipeline/native/`.
+
+Three alternating candidate/baseline pairs per host independently validate all
+12,600 CSV rows. Median 16 KiB seal improves 5.62/5.54 times for AES-128/256 on
+t14 and 6.18/5.98 times on amd. Stock ring remains 3.10/3.06 times faster on t14
+and 1.68/1.76 times faster on amd. Stock ring retains runtime AVX dispatch;
+this source uses legacy SSE. The full inventory includes small records, setup,
+open and reject, not just the selected seal rows. Busy clocks were observed at
+2400/1797 MHz in each retained one-second CPU-2 interval. Clock-derived cycles
+are approximate at that resolution, not per-sample cycle counts.
+
+AVX2, VAES/VPCLMUL and AVX-512 paths are now in scope, with OS extended-state
+permission required for runtime admission and SSE retained as fallback. These
+paths are not implemented yet. The current-source full timing sweep is queued
+as r0035/r0036; earlier accepted timing evidence predates batching and wiping
+changes. UEFI runtime, ToyOS integration, physical key-copy review and external
+review remain open.

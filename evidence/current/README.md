@@ -208,7 +208,7 @@ complete. The older pending statements above describe the state when their
 evidence was collected. Current compiler/hardware timing qualification, physical
 key-copy concerns, external review, complete corpora and deployment remain open.
 
-## Current Linux comparison against stock ring
+## Pre-batch Linux comparison against stock ring
 
 Runs r0015/r0016 at `af822f5cce8921bea903fd8acbba5a9fac473f6e` compare
 current primitives (unchanged since `2f262569`) to ring 0.17.14 on Linux.
@@ -228,7 +228,7 @@ Median encryption times for a 16,384-byte record:
 | ChaCha20-Poly1305 | 12.013 | 67.175 | 5.59 | 13.781 | 100.697 | 7.31 |
 
 Stock ring retains runtime dispatch. This is not a no-AVX ring comparison.
-The x86 implementation lacks the ARM batch CTR/GHASH optimization; closing
+This pre-batch source lacks the ARM batch CTR/GHASH optimization; closing
 the measured bulk gap is an open performance gate. Setup/empty/small/open/
 reject rows are also retained; the table does not claim one overall score.
 
@@ -254,3 +254,20 @@ rounded timing columns. The corrected tolerance includes both rounding errors;
 final inventory and timing-column checks pass. A preliminary iteration-count
 check also incorrectly assumed 2,000 for the capped 16 KiB workload, corrected
 to the harness's explicit 16 MiB per-sample limit. Neither changed measurements.
+
+## Native x86 batch follow-up
+
+At `afcc50b20f7d50fe128dc211589d5f52a1233c57`, both native hosts pass 46 tests
+and all twelve applicable failing mutation controls, including the new x86
+counter/H-power checks. Source restoration is exact. Three alternating pairs
+per host validate all 12,600 raw rows without filtering. AES-128/256 16 KiB seal
+improves 5.62/5.54 times on t14 and 6.18/5.98 times on amd, still trailing stock
+ring by 3.10/3.06 and 1.68/1.76 respectively. All measured CPU-2 busy-clock
+intervals report 2400/1797 MHz, at one-second resolution. The complete logs,
+mutation patches and reproducible medians are indexed in
+`x86-pipeline/README.md`. This comparison retains ring's AVX dispatch.
+
+AVX paths are authorized but not implemented. Current-source full timing is
+queued as r0035/r0036; earlier full timing predates the batch and wiping changes.
+The identified physical provider key copies and deployment/external-review
+gates remain open. This evidence does not establish security parity with ring.

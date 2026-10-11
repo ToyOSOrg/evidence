@@ -8,10 +8,10 @@ ToyOS integration, SSH framing, X.509 and SSHSIG parsing remain separate.
 
 **Status: experimental and ready for review, not qualified for deployment.**
 Correctness tests pass on native ARM64 macOS and both x86 Linux benches.
-ARM AES/GHASH scheduling has been improved; the required controlled no-AVX
-performance comparison remains pending. Independent arithmetic review, timing
-qualification and the
-required T14 comparison remain open. See [VALIDATION.md](VALIDATION.md) for the
+ARM AES/GHASH scheduling and hosted x86 AES/GHASH batching have been improved.
+Matched Linux measurements still trail stock ring; AVX paths are in scope but
+not implemented. Independent arithmetic review, current-source timing and
+deployment qualification remain open. See [VALIDATION.md](VALIDATION.md) for the
 design review, acceptance gaps and exact evidence. Passing vectors does not
 establish that this implementation is safer than ring.
 
@@ -177,13 +177,14 @@ cargo run --release --features std,sign,wpa2 --example timing -- 100000
 # Optional: comma-separated seeds, routines, and raw sample export.
 cargo run --release --features std,sign,wpa2 --example timing -- 100000 1,2,3 chacha,ssh,wpa2_hmac raw
 
-# Run on the T14 under a separately controlled no-AVX comparison policy.
+# Run with separately controlled affinity, clocks and runtime-dispatch policy.
 cargo run --release --manifest-path benchmarks/ring/Cargo.toml --example compare -- 2000
 ```
 
 The timing example always labels output `no_verdict=true`. Its cloud smoke run
 checks the harness, not constant time. The benchmark does not disable ring's
-AVX dispatch; its recorded cloud result is not the required T14 acceptance test.
+AVX dispatch. Native Linux results and their exact comparison policy are indexed
+in `evidence/current/x86-pipeline/README.md`.
 
 Unmodified third-party vector files, upstream URLs, licences and SHA-256 hashes
 are recorded in [NOTICE](NOTICE). Source is licensed under MIT OR Apache-2.0.
