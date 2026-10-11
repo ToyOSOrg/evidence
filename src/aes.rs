@@ -31,6 +31,13 @@ fn sbox(x: u8) -> u8 {
     let y = inverse(x);
     y ^ y.rotate_left(1) ^ y.rotate_left(2) ^ y.rotate_left(3) ^ y.rotate_left(4) ^ 0x63
 }
+fn subword(word: &mut [u8; 4], hardware: bool) {
+    if !hardware || !crate::arch::aes_subword(word) {
+        for byte in word {
+            *byte = sbox(*byte);
+        }
+    }
+}
 #[cfg(feature = "wpa2")]
 fn inv_sbox(x: u8) -> u8 {
     inverse(x.rotate_left(1) ^ x.rotate_left(3) ^ x.rotate_left(6) ^ 0x05)
@@ -57,19 +64,11 @@ impl Aes {
             let mut t: [u8; 4] = keys.0[at - 4..at].try_into().unwrap();
             if at % key.len() == 0 {
                 t.rotate_left(1);
-                if !hardware || !crate::arch::aes_subword(&mut t) {
-                    for byte in &mut t {
-                        *byte = sbox(*byte);
-                    }
-                }
+                subword(&mut t, hardware);
                 t[0] ^= rcon;
                 rcon = xtime(rcon);
             } else if key.len() == 32 && at % 32 == 16 {
-                if !hardware || !crate::arch::aes_subword(&mut t) {
-                    for byte in &mut t {
-                        *byte = sbox(*byte);
-                    }
-                }
+                subword(&mut t, hardware);
             }
             for (i, &byte) in t.iter().enumerate() {
                 keys.0[at + i] = keys.0[at - key.len() + i] ^ byte;

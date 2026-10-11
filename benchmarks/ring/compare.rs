@@ -120,7 +120,7 @@ fn main() {
                                     drop(black_box(sealer(black_box(alg), black_box(iv))));
                                 }
                                 ("key-setup", false) => {
-                                    drop(black_box(ring_key(black_box(algorithm))));
+                                    let _ = black_box(ring_key(black_box(algorithm)));
                                 }
                                 _ => unreachable!(),
                             }
