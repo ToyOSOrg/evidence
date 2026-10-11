@@ -171,3 +171,14 @@ T14 correctness run r0013: 46 tests, exit 0, GHASH acceleration admitted.
 Complete output/environment/exit records are `native-review-t14-*.txt`. This
 includes the existing primitive fixtures and TLS configurations. The matching
 AMD full timing and current-source correctness runs are still pending.
+
+The current ring comparator also passes a locked offline smoke invocation:
+`cargo run --offline --locked --release --manifest-path benchmarks/ring/Cargo.toml --example compare -- 100`,
+exit 0, full output `current-ring-harness-smoke.log`. This short Mac run validates
+the harness after the source fixes; it is not a new accepted throughput result.
+Controlled Linux head-to-head runs against stock ring are requested separately.
+They will retain normal runtime dispatch and do not represent a no-AVX ring
+comparison. The harness prints uncontrolled frequency/affinity because it does
+not establish or measure those controls; external policy metadata must accompany
+the native results, and nanoseconds must not be converted to cycles using a
+nominal clock without adequate measured-frequency evidence.
