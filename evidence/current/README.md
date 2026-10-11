@@ -101,6 +101,41 @@ and `precomputed-all-smoke.log` (100 samples, all routines, default seed).
 
 Independent review, controlled timing analysis, complete official corpora,
 sustained malformed-input fuzzing, Windows runtime, UEFI execution and ToyOS
-integration remain open. The initial t14 timing request r0007 is still running.
-Focused repeat measurements are required to investigate the AMD scores; no
-cryptographic timing verdict has been made.
+integration remain open. The initial t14 request r0007 has completed, exit 0 for all three repeats;
+its complete logs are `native-timing-t14-*.txt`. The platform capped CPU 2
+at 900 MHz despite the performance governor. Its absolute nanoseconds do not
+represent base-clock throughput.
+
+The focused follow-up r0009 (t14) and r0010 (amd) at
+`18fa57db31c4f9c8d034d75f0c31b4f0da9ec345` each completed one command containing
+three seeds and four routines, with 100,000 measured samples per routine/seed.
+Both returned exit 0 and restored their prior policies. The t14 cap remained.
+Complete raw outputs are retained as lossless `native-focused-*-output.txt.gz`
+files; build, environment and exit logs remain plain text. For these gzip
+entries, `original-sha256.json` hashes original uncompressed output bytes;
+`SHA256SUMS` hashes the compressed review files.
+
+`tools/analyze_timing.py` independently checks every sequential sample index,
+class count, exported mean/standard deviation and rounded Welch statistic.
+It validated 1,200,000 samples from each host with no outlier removal. The
+analysis JSON files also retain minimum, maximum, median, p99 and four temporal
+quarters per class/seed/routine. Reproduce with:
+
+```sh
+python3 tools/analyze_timing.py evidence/current/native-focused-t14-output.txt.gz
+python3 tools/analyze_timing.py evidence/current/native-focused-amd-output.txt.gz
+```
+
+| Routine | t14 Welch t, seeds 1 / 2 / 3 | amd Welch t, seeds 1 / 2 / 3 |
+| --- | --- | --- |
+| Positive control | -5815.976 / -4709.775 / -5874.955 | -1533.776 / -1686.843 / -1713.155 |
+| ChaCha | -0.769 / 0.380 / 1.365 | -0.561 / -0.067 / -0.183 |
+| SSH | -0.565 / 1.995 / 0.389 | 0.252 / -0.004 / 1.441 |
+| WPA2 HMAC | -0.870 / 0.863 / 1.163 | -0.615 / 0.502 / 1.969 |
+
+The initial signal was not reproduced with revised preparation, different
+seeds and more samples. This does not establish its cause or prove constant
+time. The quarter statistics do not expose a persistent large score in these
+runs. Other families still need repeats with precomputed preparation, and
+source/assembly arguments remain required. No cryptographic timing verdict
+or deployment acceptance has been made.
