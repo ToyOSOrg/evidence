@@ -207,3 +207,50 @@ GHASH acceleration admitted. Complete output/environment/exit logs are
 complete. The older pending statements above describe the state when their
 evidence was collected. Current compiler/hardware timing qualification, physical
 key-copy concerns, external review, complete corpora and deployment remain open.
+
+## Current Linux comparison against stock ring
+
+Runs r0015/r0016 at `af822f5cce8921bea903fd8acbba5a9fac473f6e` compare
+current primitives (unchanged since `2f262569`) to ring 0.17.14 on Linux.
+Three repeats, seven interleaved samples per workload/backend, all exit 0.
+The independent analyzer validates all 3,150 rows per host: full expected
+inventory, unique repeat/sample identifiers, workload iteration counts and
+independently rounded timing columns. The 16 KiB workload caps at 1,024
+iterations; smaller workloads use 2,000. Every sample is retained; no outliers
+removed. Full logs and pooled/per-repeat medians are `native-ring-*-*.txt/json`.
+
+Median encryption times for a 16,384-byte record:
+
+| Algorithm | t14 ring, µs | t14 ours, µs | ours/ring | amd ring, µs | amd ours, µs | ours/ring |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| AES-128-GCM | 3.029 | 52.739 | 17.41 | 7.934 | 82.639 | 10.42 |
+| AES-256-GCM | 3.417 | 57.850 | 16.93 | 8.716 | 91.782 | 10.53 |
+| ChaCha20-Poly1305 | 12.013 | 67.175 | 5.59 | 13.781 | 100.697 | 7.31 |
+
+Stock ring retains runtime dispatch. This is not a no-AVX ring comparison.
+The x86 implementation lacks the ARM batch CTR/GHASH optimization; closing
+the measured bulk gap is an open performance gate. Setup/empty/small/open/
+reject rows are also retained; the table does not claim one overall score.
+
+The orchestrator pinned CPU 2, disabled turbo, set performance profiles/governors
+and requested min=max frequency (t14 2.4 GHz, amd 1.8 GHz), restoring prior
+settings afterward. However, run-start frequency snapshots range from 1.450
+to 2.402 GHz on t14 and 1.283 to 1.796 GHz on amd. These snapshots do not establish
+the frequency during every measured interval. The orchestrator's nominal
+cycles/byte conversion is therefore not adopted as an exact measured-cycle
+result pending clarification. The nanosecond observations above remain retained.
+The harness metadata labels frequency/affinity uncontrolled because it does
+not establish them itself; external settings are recorded in environment.txt.
+
+Reproduce pooled/per-repeat statistics with:
+
+```sh
+python3 tools/analyze_ring.py evidence/current/native-ring-t14-output.txt
+python3 tools/analyze_ring.py evidence/current/native-ring-amd-output.txt
+```
+
+The first analyzer attempt used too narrow a tolerance for two independently
+rounded timing columns. The corrected tolerance includes both rounding errors;
+final inventory and timing-column checks pass. A preliminary iteration-count
+check also incorrectly assumed 2,000 for the capped 16 KiB workload, corrected
+to the harness's explicit 16 MiB per-sample limit. Neither changed measurements.
