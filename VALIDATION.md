@@ -254,7 +254,8 @@ test as evidence it did not provide.
    Deployment compiler assembly review, representative ARM timing and timing
    of future optimization paths remain open.
 3. **Performance goal unmet.** Matched native Linux measurements still trail
-   stock ring on both x86 hosts. AVX paths are authorized but not implemented.
+   stock ring on both x86 hosts. AVX2 ChaCha awaits native validation; VAES and
+   AVX-512 paths remain unimplemented.
    Existing results retain ring's runtime dispatch; they do not establish
    performance parity or a matched no-AVX comparison.
 4. **Runtime portability not fully qualified.** Linux x86-64 tests execute here.
@@ -328,3 +329,20 @@ time. AMD r0036 also validates all 960,000 samples without removal; maximum
 cryptographic absolute t is 1.861, with synthetic controls detected. Both runs
 cover the current batch and wiping changes. UEFI runtime, ToyOS integration,
 physical key-copy review and external review remain open.
+
+## AVX2 ChaCha candidate
+
+Hosted x86 ChaCha now has four-block AVX2 batches shared by IETF and original
+SSH layouts. Public CPUID and XCR0 checks precede execution; UEFI excludes this
+module and `portable` overrides admission. Input bounds are checked before
+mutation, including the last IETF block, original-counter carries, and partial
+tails. Source addresses and shuffle indices are fixed; only public lengths,
+counters and capability flags select control flow.
+
+Two additional controls target omitted YMM-state permission and a wrong batch
+counter stride. Expanded SSH differential tests cover batch boundaries and
+4 KiB records; stream tests cover IETF exhaustion and 64-bit counter carries.
+ARM dispatched/portable tests and Linux/Windows/UEFI cross-compilation pass.
+These do not execute the new AVX2 path. Native correctness, negative controls,
+paired benchmarks and current-source timing remain necessary before accepting
+this candidate. Previous SSE results remain historical evidence for that source.

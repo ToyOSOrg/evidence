@@ -74,8 +74,11 @@ pub(crate) fn xor(
     if count > u64::from(u32::MAX) - u64::from(counter) + 1 {
         return Err(Error::Length);
     }
-    for (i, chunk) in data.chunks_mut(64).enumerate() {
-        let stream = block(key, nonce, counter + i as u32);
+    let extended =
+        u64::from(counter) | (u64::from(u32::from_le_bytes(nonce[..4].try_into().unwrap())) << 32);
+    let done = crate::arch::chacha_xor(key, extended, nonce[4..].try_into().unwrap(), data);
+    for (i, chunk) in data[done..].chunks_mut(64).enumerate() {
+        let stream = block(key, nonce, counter + (done / 64 + i) as u32);
         for (byte, &mask) in chunk.iter_mut().zip(&stream.0) {
             *byte ^= mask;
         }
@@ -95,11 +98,66 @@ pub(crate) fn legacy_xor(
     {
         return Err(Error::Length);
     }
-    for (i, chunk) in data.chunks_mut(64).enumerate() {
-        let stream = legacy_block(key, nonce, counter + i as u64);
+    let done = crate::arch::chacha_xor(key, counter, nonce, data);
+    for (i, chunk) in data[done..].chunks_mut(64).enumerate() {
+        let stream = legacy_block(key, nonce, counter + (done / 64 + i) as u64);
         for (byte, &mask) in chunk.iter_mut().zip(&stream.0) {
             *byte ^= mask;
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn dispatched_streams_preserve_counter_carries_and_batch_tails() {
+        let key = core::array::from_fn(|i| (i * 7 + 3) as u8);
+        let nonce = [0xff; 12];
+        for len in [0usize, 1, 63, 64, 65, 255, 256, 257, 511, 512, 513, 1025] {
+            let blocks = len.div_ceil(64).max(1);
+            let counter = u32::MAX - blocks as u32 + 1;
+            let mut actual = [0xa5; 1025];
+            let mut expected = actual;
+            for (i, chunk) in expected[..len].chunks_mut(64).enumerate() {
+                let stream = block(&key, &nonce, counter + i as u32);
+                for (byte, mask) in chunk.iter_mut().zip(stream.0) {
+                    *byte ^= mask;
+                }
+            }
+            xor(&key, &nonce, counter, &mut actual[..len]).unwrap();
+            assert_eq!(actual, expected, "IETF length {len}");
+
+            for counter in [u64::from(u32::MAX) - 1, u64::MAX - blocks as u64] {
+                let mut actual = [0xa5; 1025];
+                let mut expected = actual;
+                let nonce = &nonce[4..].try_into().unwrap();
+                for (i, chunk) in expected[..len].chunks_mut(64).enumerate() {
+                    let stream = legacy_block(&key, nonce, counter + i as u64);
+                    for (byte, mask) in chunk.iter_mut().zip(stream.0) {
+                        *byte ^= mask;
+                    }
+                }
+                legacy_xor(&key, nonce, counter, &mut actual[..len]).unwrap();
+                assert_eq!(actual, expected, "legacy length {len}, counter {counter}");
+            }
+        }
+    }
+
+    #[test]
+    fn exhausted_counter_refuses_before_mutating_any_batch() {
+        let mut data = [0xa5; 257];
+        assert_eq!(
+            xor(&[3; 32], &[5; 12], u32::MAX - 3, &mut data),
+            Err(Error::Length)
+        );
+        assert_eq!(data, [0xa5; 257]);
+        assert_eq!(
+            legacy_xor(&[3; 32], &[5; 8], u64::MAX - 3, &mut data),
+            Err(Error::Length)
+        );
+        assert_eq!(data, [0xa5; 257]);
+    }
 }

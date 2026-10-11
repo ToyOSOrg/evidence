@@ -1,5 +1,6 @@
 //! Instruction dispatch is public. UEFI assembly saves and restores every used
-//! XMM register; ordinary hosts use the target's ABI. No AVX instruction is used.
+//! XMM register; ordinary hosts use the target's ABI. Hosted AVX paths additionally
+//! require CPUID support and OS-enabled extended state in XCR0.
 //! Callers must arrange OS permission to execute SIMD and homogeneous features
 //! on every CPU to which an imported key can migrate. Bare-metal x86 and
 //! soft-float ARM exclude SIMD implementations: interrupted task state is not
@@ -42,6 +43,21 @@ pub(crate) fn aes_available() -> bool {
     )))]
     {
         false
+    }
+}
+
+/// Processes only complete batches after the caller has checked counter bounds.
+/// IETF nonce word zero occupies counter bits 32..63; bounded input cannot carry
+/// into it. The remaining nonce words have the same layout as original ChaCha.
+pub(crate) fn chacha_xor(key: &[u8; 32], counter: u64, nonce: &[u8; 8], data: &mut [u8]) -> usize {
+    #[cfg(all(target_arch = "x86_64", not(target_os = "none")))]
+    {
+        x86_64::chacha_xor(key, counter, nonce, data)
+    }
+    #[cfg(not(all(target_arch = "x86_64", not(target_os = "none"))))]
+    {
+        let _ = (key, counter, nonce, data);
+        0
     }
 }
 

@@ -9,9 +9,10 @@ ToyOS integration, SSH framing, X.509 and SSHSIG parsing remain separate.
 **Status: experimental and ready for review, not qualified for deployment.**
 Correctness tests pass on native ARM64 macOS and both x86 Linux benches.
 ARM AES/GHASH scheduling and hosted x86 AES/GHASH batching have been improved.
-Matched Linux measurements still trail stock ring; AVX paths are in scope but
-not implemented. Current-source x86 timing sweeps are complete; independent
-arithmetic review and deployment qualification remain open. See [VALIDATION.md](VALIDATION.md) for the
+Matched Linux measurements still trail stock ring. An AVX2 ChaCha candidate
+awaits native validation; VAES and AVX-512 paths remain open. Timing sweeps
+cover the preceding SSE source. Independent arithmetic review and deployment
+qualification remain open. See [VALIDATION.md](VALIDATION.md) for the
 design review, acceptance gaps and exact evidence. Passing vectors does not
 establish that this implementation is safer than ring.
 
@@ -138,13 +139,20 @@ compiler and hardware qualification is still required.
 On hosted and UEFI x86-64, CPUID admits AES-NI and PCLMULQDQ.
 The crate supports the UEFI loader and userland. Bare-metal x86 (`target_os=none`)
 and soft-float AArch64 kernel targets are unsupported and fail with an explicit
-compile-time diagnostic. Their SIMD implementations are excluded before codegen. The crate's intrinsic and inline
-assembly paths use legacy SSE encodings; no AVX path is implemented. Hosted
+compile-time diagnostic. Their SIMD implementations are excluded before codegen.
+AES and GHASH use legacy SSE encodings. Hosted
 x86 uses four parallel AES CTR blocks, AES SubWord and four-block aggregated
 CLMUL GHASH. The UEFI path retains its register-preserving per-block operations. The OS must
 permit SIMD, preserve its state and expose a uniform feature set across CPUs on
 which a key can execute. Deploy with a baseline target configuration rather than
 globally enabling AVX through compiler flags.
+
+Hosted x86 ChaCha admits a four-block AVX2 path only after CPUID reports
+XSAVE, OSXSAVE, AVX and AVX2, and XCR0 enables both XMM and YMM state. The
+public capability result is cached: feature availability and OS permission
+must remain uniform for the process lifetime and across all eligible CPUs.
+Portable builds, short inputs and UEFI retain scalar ChaCha. This path serves
+both IETF and original SSH counters, with bounds checked before any mutation.
 
 AArch64 hosts with `std` use OS capability detection. Without `std`, the default
 is portable. On a hard-float ABI, an OS may call `unsafe { cpu::initialize_aarch64() }` during

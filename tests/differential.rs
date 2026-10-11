@@ -268,9 +268,11 @@ fn nist_curve_boundary_scalars() {
 fn openssh_construction_matches_independent_primitives() {
     use chacha20::cipher::{KeyIvInit, StreamCipher, StreamCipherSeek};
     use poly1305::universal_hash::KeyInit;
-    for n in [0, 1, 15, 16, 17, 63, 64, 65, 128] {
+    for n in [
+        0, 1, 15, 16, 17, 63, 64, 65, 128, 255, 256, 257, 511, 512, 513, 1024, 4096,
+    ] {
         let key = bytes::<64>(n);
-        let mut ours = bytes::<128>(n)[..n].to_vec();
+        let mut ours = bytes::<4096>(n)[..n].to_vec();
         let mut reference = ours.clone();
         let mut header = (n as u32).to_be_bytes();
         let mut rh = header;
@@ -295,7 +297,7 @@ fn openssh_construction_matches_independent_primitives() {
         let opener = toyos_crypto::ssh::OpeningKey::new(key);
         assert_eq!(opener.packet_length(seq, header), n as u32);
         opener.open(seq, &mut header, &mut ours, &ours_tag).unwrap();
-        assert_eq!(ours, bytes::<128>(n)[..n]);
+        assert_eq!(ours, bytes::<4096>(n)[..n]);
     }
 }
 #[cfg(feature = "wpa2")]

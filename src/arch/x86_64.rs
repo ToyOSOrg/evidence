@@ -1,10 +1,26 @@
-//! Intel SDM AESENC/AESENCLAST, gated by CPUID. Legacy SSE encodings only.
+//! Intel SDM AESENC/AESENCLAST use legacy SSE, gated by CPUID.
+//! Hosted ChaCha additionally admits AVX2 through CPUID and OS-enabled XCR0 state.
 //! UEFI preserves every used register inside each assembly block. Ordinary
 //! hosts use Rust intrinsics and the ABI. Unaligned loads admit byte-aligned keys.
 
 #[cfg(target_os = "uefi")]
 use core::arch::asm;
 use core::arch::x86_64::*;
+
+#[cfg(not(target_os = "uefi"))]
+mod avx2;
+
+pub(super) fn chacha_xor(key: &[u8; 32], counter: u64, nonce: &[u8; 8], data: &mut [u8]) -> usize {
+    #[cfg(not(target_os = "uefi"))]
+    {
+        avx2::xor(key, counter, nonce, data)
+    }
+    #[cfg(target_os = "uefi")]
+    {
+        let _ = (key, counter, nonce, data);
+        0
+    }
+}
 
 #[allow(unused_unsafe, reason = "CPUID is unsafe on the supported Rust 1.89")]
 fn capabilities() -> u32 {

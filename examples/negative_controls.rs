@@ -96,6 +96,22 @@ fn main() {
             "gcm::tests::accelerated_ghash_preserves_polynomial_basis_and_stream_recurrence",
         ),
         (
+            "x86_avx_state",
+            "src/arch/x86_64/avx2.rs",
+            "ecx & XSAVE_AVX == XSAVE_AVX && xcr0 & 6 == 6",
+            "ecx & XSAVE_AVX == XSAVE_AVX && xcr0 & 2 == 2",
+            "lib",
+            "arch::x86_64::avx2::tests::avx_requires_cpu_support_and_both_os_state_components",
+        ),
+        (
+            "x86_chacha_counter",
+            "src/arch/x86_64/avx2.rs",
+            "let first = counter + i as u64 * 4;",
+            "let first = counter + i as u64 * 3;",
+            "lib",
+            "chacha::tests::dispatched_streams_preserve_counter_carries_and_batch_tails",
+        ),
+        (
             "provider_sequence",
             "src/rustls_provider/cipher.rs",
             "if seq != self.next || seq == u64::MAX",
@@ -148,6 +164,11 @@ fn main() {
         }
         if name.starts_with("x86_") && std::env::consts::ARCH != "x86_64" {
             println!("{name}: requires native x86-64; skipped");
+            continue;
+        }
+        #[cfg(target_arch = "x86_64")]
+        if name == "x86_chacha_counter" && !std::is_x86_feature_detected!("avx2") {
+            println!("{name}: requires OS-enabled AVX2; skipped");
             continue;
         }
         let path = root.join(file);

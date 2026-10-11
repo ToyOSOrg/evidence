@@ -274,3 +274,11 @@ samples without removal, with maximum crypto |t| 1.861 and controls detected.
 These current-source observations are not constant-time proof.
 The identified physical provider key copies and deployment/external-review
 gates remain open. This evidence does not establish security parity with ring.
+
+## AVX2 ChaCha candidate
+
+`avx2-chacha/` records a subsequent four-block ChaCha candidate, CPUID/XCR0
+admission, ARM regression tests, cross-target checks and complete assembly.
+This source awaits native execution, counter/state-permission negative controls,
+paired performance measurements and its own timing evidence. The accepted SSE
+results above describe the preceding source, not this new implementation.
