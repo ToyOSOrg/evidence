@@ -3,16 +3,17 @@
 Usage: python3 tools/analyze_ring.py output.txt > analysis.json
 Nanoseconds are measured. No cycles are inferred from configured frequency.
 """
+import argparse
 import csv
 import hashlib
 import json
 import statistics
-import sys
 from collections import defaultdict
 from pathlib import Path
 
 
-def analyze(path):
+def analyze(path, repeats=3):
+    assert repeats >= 1
     groups = defaultdict(list)
     seen = set()
     run = None
@@ -27,7 +28,7 @@ def analyze(path):
             continue
         algorithm, size, operation, backend, sample, count, ns, per_byte = row
         size, sample, count = int(size), int(sample), int(count)
-        assert run in (1, 2, 3) and size in sizes and operation in operations
+        assert run in range(1, repeats + 1) and size in sizes and operation in operations
         assert backend in ('ring', 'toyos') and 1 <= sample <= 7
         assert count == min(2000, max(1, 16 * 1024 * 1024 // max(size, 1)))
         assert operation != 'key-setup' or size == 0
@@ -50,8 +51,8 @@ def analyze(path):
         backends = {}
         for backend in ('ring', 'toyos'):
             observations = groups[algorithm, size, operation, backend]
-            assert len(observations) == 21
-            by_run = [[ns for r, ns in observations if r == run] for run in (1, 2, 3)]
+            assert len(observations) == 7 * repeats
+            by_run = [[ns for r, ns in observations if r == run] for run in range(1, repeats + 1)]
             assert all(len(values) == 7 for values in by_run)
             values = [ns for _, ns in observations]
             median = statistics.median(values)
@@ -69,4 +70,8 @@ def analyze(path):
 
 
 if __name__ == '__main__':
-    print(json.dumps(analyze(Path(sys.argv[1])), indent=2))
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('path', type=Path)
+    parser.add_argument('--runs', type=int, default=3)
+    args = parser.parse_args()
+    print(json.dumps(analyze(args.path, args.runs), indent=2))
