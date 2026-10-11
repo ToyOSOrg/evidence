@@ -182,3 +182,28 @@ comparison. The harness prints uncontrolled frequency/affinity because it does
 not establish or measure those controls; external policy metadata must accompany
 the native results, and nanoseconds must not be converted to cycles using a
 nominal clock without adequate measured-frequency evidence.
+
+## Matching AMD completion
+
+The matching AMD full precomputed sweep r0012 at
+`2e9e5e1c575bd66d50c24df283df7f60a582ec66` completed, exit 0. All 960,000 raw
+samples validate against the independent inventory/count checks and exported
+statistics without removing outliers. Complete output is losslessly retained
+in `native-full-amd-output.txt.gz`; analysis is `native-full-amd-analysis.json`.
+The largest crypto |t| is 1.840 (P-256, seed 2), and the largest temporal-quarter
+magnitude is 2.596 (SHA-512, seed 3). Positive controls are -672.343, -740.379
+and -596.057. Policy metadata records performance governor, turbo off, maximum
+1.8 GHz and restoration afterward. These are observations at the earlier source,
+not constant-time proof or current-source timing qualification. Reproduce with:
+
+```sh
+python3 tools/analyze_timing.py evidence/current/native-full-amd-output.txt.gz --count 20000 --routines all
+```
+
+Native current-source AMD correctness r0014 at
+`2f2625696403b1eb0bd9048d3cd11c4da586ea2e` also passed 46 tests, exit 0, with
+GHASH acceleration admitted. Complete output/environment/exit logs are
+`native-review-amd-*.txt`. Both native x86 correctness revalidations are now
+complete. The older pending statements above describe the state when their
+evidence was collected. Current compiler/hardware timing qualification, physical
+key-copy concerns, external review, complete corpora and deployment remain open.

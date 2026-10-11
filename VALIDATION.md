@@ -290,4 +290,5 @@ Full automated model reports, dispositions, target rejection matrix, supported
 compile checks, final ARM tests/lint/MSRV and twelve negative controls are in
 `evidence/current/review-fixes/`. Model review is additional evidence, not an
 external cryptographic audit. Previous native timing does not qualify the source
-after these changes; native x86 revalidation remains pending.
+after these changes. Native x86 correctness revalidation at `2f262569` passed
+46 tests on both hosts; complete evidence is retained in `evidence/current/`.

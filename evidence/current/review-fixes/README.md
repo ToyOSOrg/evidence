@@ -43,7 +43,9 @@ portable bare-metal matrix and SIMD-operand assembly scan succeeded, before the
 owner clarified kernel exclusion. They are not supported-target qualification.
 The first lint attempt rejected an indexed loop; the final iterator passes.
 
-Native x86 revalidation after these changes remains pending. Initial and
+Native x86 correctness revalidation after these changes passed on both hosts:
+r0013/r0014 at `2f2625696403b1eb0bd9048d3cd11c4da586ea2e`, 46 tests each,
+exit 0, GHASH acceleration admitted. Full logs are in the parent directory. Initial and
 focused timing in the parent directory were obtained before these wiping and
 modulus checks and do not qualify the current source. Independent external
 review, complete official corpora and deployment gates remain open.
