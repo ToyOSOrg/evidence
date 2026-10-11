@@ -17,6 +17,19 @@ enum Key {
     Gcm(crate::gcm::Gcm),
 }
 
+#[cfg(feature = "rustls-provider")]
+impl Key {
+    // Initialization crosses a non-inlined borrow after the provider allocates
+    // its final owner; no expanded key is returned or moved by this function.
+    #[inline(never)]
+    fn initialize(&mut self, key: &[u8]) {
+        match self {
+            Self::ChaCha(secret) => secret.0.copy_from_slice(key),
+            Self::Gcm(gcm) => gcm.initialize(key),
+        }
+    }
+}
+
 pub struct SealingKey {
     key: Key,
     iv: [u8; 12],
@@ -28,6 +41,20 @@ pub struct OpeningKey {
 }
 
 impl SealingKey {
+    /// Provider-only storage; initialize in the final allocation before use.
+    #[cfg(feature = "rustls-provider")]
+    pub(crate) fn aes_storage(key_len: usize, iv: [u8; 12]) -> Self {
+        Self {
+            key: Key::Gcm(crate::gcm::Gcm::storage(key_len)),
+            iv,
+            next: 0,
+            exhausted: false,
+        }
+    }
+    #[cfg(feature = "rustls-provider")]
+    pub(crate) fn initialize(&mut self, key: &[u8]) {
+        self.key.initialize(key);
+    }
     pub fn aes128_gcm(key: [u8; 16], iv: [u8; 12]) -> Self {
         let key = Secret(key);
         Self {
@@ -83,6 +110,17 @@ impl SealingKey {
     }
 }
 impl OpeningKey {
+    /// Provider-only storage; initialize in the final allocation before use.
+    #[cfg(feature = "rustls-provider")]
+    pub(crate) fn aes_storage(key_len: usize) -> Self {
+        Self {
+            key: Key::Gcm(crate::gcm::Gcm::storage(key_len)),
+        }
+    }
+    #[cfg(feature = "rustls-provider")]
+    pub(crate) fn initialize(&mut self, key: &[u8]) {
+        self.key.initialize(key);
+    }
     pub fn aes128_gcm(key: [u8; 16]) -> Self {
         let key = Secret(key);
         Self {

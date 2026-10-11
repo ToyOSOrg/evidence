@@ -22,6 +22,21 @@ pub(crate) struct Gcm {
     hardware: bool,
 }
 impl Gcm {
+    /// Zero storage for provider construction; initialize before any operation.
+    #[cfg(feature = "rustls-provider")]
+    pub(crate) fn storage(key_len: usize) -> Self {
+        Self {
+            aes: Aes::storage(key_len),
+            h: Secret([0; 16]),
+            hardware: crate::arch::clmul_available(),
+        }
+    }
+    #[cfg(feature = "rustls-provider")]
+    pub(crate) fn initialize(&mut self, key: &[u8]) {
+        self.aes.initialize(key);
+        self.h.0.fill(0);
+        self.aes.encrypt(&mut self.h.0);
+    }
     pub(crate) fn aes128(key: &[u8; 16]) -> Self {
         Self::new(Aes::aes128(key))
     }

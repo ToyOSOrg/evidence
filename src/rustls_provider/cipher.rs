@@ -20,19 +20,40 @@ struct Open {
     explicit: bool,
 }
 impl Algorithm {
-    fn sealing(&self, key: &AeadKey, iv: [u8; 12]) -> SealingKey {
-        match self {
-            Self::Aes128 => SealingKey::aes128_gcm(key.as_ref()[..16].try_into().unwrap(), iv),
-            Self::Aes256 => SealingKey::aes256_gcm(key.as_ref().try_into().unwrap(), iv),
-            Self::ChaCha => SealingKey::chacha20_poly1305(key.as_ref().try_into().unwrap(), iv),
-        }
+    fn key_bytes<'a>(&self, key: &'a AeadKey) -> &'a [u8] {
+        &key.as_ref()[..Tls13AeadAlgorithm::key_len(self)]
     }
-    fn opening(&self, key: &AeadKey) -> OpeningKey {
-        match self {
-            Self::Aes128 => OpeningKey::aes128_gcm(key.as_ref()[..16].try_into().unwrap()),
-            Self::Aes256 => OpeningKey::aes256_gcm(key.as_ref().try_into().unwrap()),
-            Self::ChaCha => OpeningKey::chacha20_poly1305(key.as_ref().try_into().unwrap()),
-        }
+    fn sealing(&self, key: &AeadKey, iv: [u8; 12], version13: bool, explicit: bool) -> Box<Seal> {
+        let storage = match self {
+            Self::Aes128 | Self::Aes256 => {
+                SealingKey::aes_storage(Tls13AeadAlgorithm::key_len(self), iv)
+            }
+            Self::ChaCha => SealingKey::chacha20_poly1305([0; 32], iv),
+        };
+        let mut out = Box::new(Seal {
+            key: storage,
+            next: 0,
+            version13,
+            explicit,
+        });
+        out.key.initialize(self.key_bytes(key));
+        out
+    }
+    fn opening(&self, key: &AeadKey, iv: [u8; 12], version13: bool, explicit: bool) -> Box<Open> {
+        let storage = match self {
+            Self::Aes128 | Self::Aes256 => {
+                OpeningKey::aes_storage(Tls13AeadAlgorithm::key_len(self))
+            }
+            Self::ChaCha => OpeningKey::chacha20_poly1305([0; 32]),
+        };
+        let mut out = Box::new(Open {
+            key: storage,
+            iv,
+            version13,
+            explicit,
+        });
+        out.key.initialize(self.key_bytes(key));
+        out
     }
     fn secrets(&self, key: AeadKey, iv: Iv) -> ConnectionTrafficSecrets {
         match self {
@@ -44,20 +65,10 @@ impl Algorithm {
 }
 impl Tls13AeadAlgorithm for Algorithm {
     fn encrypter(&self, key: AeadKey, iv: Iv) -> Box<dyn MessageEncrypter> {
-        Box::new(Seal {
-            key: self.sealing(&key, iv.as_ref().try_into().unwrap()),
-            next: 0,
-            version13: true,
-            explicit: false,
-        })
+        self.sealing(&key, iv.as_ref().try_into().unwrap(), true, false)
     }
     fn decrypter(&self, key: AeadKey, iv: Iv) -> Box<dyn MessageDecrypter> {
-        Box::new(Open {
-            key: self.opening(&key),
-            iv: iv.as_ref().try_into().unwrap(),
-            version13: true,
-            explicit: false,
-        })
+        self.opening(&key, iv.as_ref().try_into().unwrap(), true, false)
     }
     fn key_len(&self) -> usize {
         if matches!(self, Self::Aes128) { 16 } else { 32 }
@@ -86,22 +97,12 @@ impl Tls12AeadAlgorithm for Algorithm {
         if explicit {
             nonce[4..].copy_from_slice(extra);
         }
-        Box::new(Seal {
-            key: self.sealing(&key, nonce),
-            next: 0,
-            version13: false,
-            explicit,
-        })
+        self.sealing(&key, nonce, false, explicit)
     }
     fn decrypter(&self, key: AeadKey, iv: &[u8]) -> Box<dyn MessageDecrypter> {
         let mut nonce = [0; 12];
         nonce[..iv.len()].copy_from_slice(iv);
-        Box::new(Open {
-            key: self.opening(&key),
-            iv: nonce,
-            version13: false,
-            explicit: !matches!(self, Self::ChaCha),
-        })
+        self.opening(&key, nonce, false, !matches!(self, Self::ChaCha))
     }
     fn extract_keys(
         &self,

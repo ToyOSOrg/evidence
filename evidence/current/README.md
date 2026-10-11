@@ -282,3 +282,12 @@ admission, ARM regression tests, cross-target checks and complete assembly.
 This source awaits native execution, counter/state-permission negative controls,
 paired performance measurements and its own timing evidence. The accepted SSE
 results above describe the preceding source, not this new implementation.
+
+## Provider key construction follow-up
+
+`provider-inplace/` records allocation-before-initialization for TLS record
+owners, ARM regression tests and ARM/x86 assembly. The identified expanded-key
+record-copy path is absent in the inspected constructors. Native execution and
+independent review remain pending; the broader physical-erasure limitations
+still apply. This change follows the AVX2 candidate source requested for native
+runs, so those earlier requests do not qualify this construction change.

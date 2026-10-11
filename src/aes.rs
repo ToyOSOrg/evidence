@@ -58,10 +58,35 @@ impl Aes {
     fn expand(key: &[u8], rounds: usize) -> Self {
         let hardware = crate::arch::aes_available();
         let mut keys = Secret([0u8; 240]);
-        keys.0[..key.len()].copy_from_slice(key);
+        Self::expand_into(&mut keys.0, key, rounds, hardware);
+        Self {
+            keys,
+            rounds,
+            hardware,
+        }
+    }
+    #[cfg(feature = "rustls-provider")]
+    pub(crate) fn storage(key_len: usize) -> Self {
+        Self {
+            keys: Secret([0; 240]),
+            rounds: match key_len {
+                16 => 10,
+                32 => 14,
+                _ => unreachable!("AES key length"),
+            },
+            hardware: crate::arch::aes_available(),
+        }
+    }
+    #[cfg(feature = "rustls-provider")]
+    pub(crate) fn initialize(&mut self, key: &[u8]) {
+        assert_eq!(key.len(), if self.rounds == 10 { 16 } else { 32 });
+        Self::expand_into(&mut self.keys.0, key, self.rounds, self.hardware);
+    }
+    fn expand_into(keys: &mut [u8; 240], key: &[u8], rounds: usize, hardware: bool) {
+        keys[..key.len()].copy_from_slice(key);
         let mut rcon = 1;
         for at in (key.len()..16 * (rounds + 1)).step_by(4) {
-            let mut t: [u8; 4] = keys.0[at - 4..at].try_into().unwrap();
+            let mut t: [u8; 4] = keys[at - 4..at].try_into().unwrap();
             if at % key.len() == 0 {
                 t.rotate_left(1);
                 subword(&mut t, hardware);
@@ -71,14 +96,9 @@ impl Aes {
                 subword(&mut t, hardware);
             }
             for (i, &byte) in t.iter().enumerate() {
-                keys.0[at + i] = keys.0[at - key.len() + i] ^ byte;
+                keys[at + i] = keys[at - key.len() + i] ^ byte;
             }
             wipe(&mut t);
-        }
-        Self {
-            keys,
-            rounds,
-            hardware,
         }
     }
     pub(crate) fn encrypt(&self, block: &mut [u8; 16]) {

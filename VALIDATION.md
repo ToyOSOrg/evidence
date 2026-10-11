@@ -346,3 +346,19 @@ ARM dispatched/portable tests and Linux/Windows/UEFI cross-compilation pass.
 These do not execute the new AVX2 path. Native correctness, negative controls,
 paired benchmarks and current-source timing remain necessary before accepting
 this candidate. Previous SSE results remain historical evidence for that source.
+
+## Provider construction follow-up
+
+The provider now allocates each final record owner before filling its secret
+fields through a non-inlined mutable borrow. ARM and x86 release assembly show
+the identified record memcpy operations before secret initialization, with no
+post-initialization record copy. AES expansion and GCM H write into final fields;
+ChaCha traffic-key loads store directly into the owner. Full assembly, pointer
+flow excerpts, call-order checks and passing ARM/provider cross-target gates
+are in `evidence/current/provider-inplace/`.
+
+This addresses the specific provider construction copies observed in those
+builds. It does not broaden the owned-storage wiping contract to arbitrary
+registers, spills, caller arguments, by-value core imports or abort behavior.
+The provider-only zero-storage initialization invariant and current native
+behavior remain subject to review and execution gates.
