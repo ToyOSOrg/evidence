@@ -291,3 +291,12 @@ record-copy path is absent in the inspected constructors. Native execution and
 independent review remain pending; the broader physical-erasure limitations
 still apply. This change follows the AVX2 candidate source requested for native
 runs, so those earlier requests do not qualify this construction change.
+
+## Fresh current-source Mac comparison
+
+`mac-current/` records three repeated native Apple M4 Pro comparisons at
+`f55746d1ad0122bff4058e6833e505556cf458f3`. All 3,150 raw rows validate without
+filtering. Median 16 KiB seal takes 3.383/3.672/30.032 µs for AES-128-GCM,
+AES-256-GCM and ChaCha20-Poly1305, versus ring 2.082/2.145/8.152 µs. These
+are uncontrolled-clock ARM observations, with full per-run variation retained.
+The harness measures primitive APIs, not provider allocation or full TLS.
