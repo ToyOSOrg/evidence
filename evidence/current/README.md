@@ -267,7 +267,9 @@ intervals report 2400/1797 MHz, at one-second resolution. The complete logs,
 mutation patches and reproducible medians are indexed in
 `x86-pipeline/README.md`. This comparison retains ring's AVX dispatch.
 
-AVX paths are authorized but not implemented. Current-source full timing is
-queued as r0035/r0036; earlier full timing predates the batch and wiping changes.
+AVX paths are authorized but not implemented. Current-source t14 timing r0035
+validates all 960,000 samples without removal (maximum crypto |t| 2.920,
+synthetic controls clearly detected); this is not constant-time proof. AMD
+r0036 remains pending; earlier AMD timing predates the batch and wiping changes.
 The identified physical provider key copies and deployment/external-review
 gates remain open. This evidence does not establish security parity with ring.

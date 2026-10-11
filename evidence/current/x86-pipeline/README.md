@@ -66,7 +66,27 @@ python3 tools/analyze_ring_pairs.py evidence/current/x86-pipeline/native amd
 ```
 
 AVX paths are now authorized but not implemented. UEFI runtime, ToyOS userland
-custom targets, current timing (queued r0035/r0036) and independent external
+custom targets, completion of current timing and independent external
 review remain open. Physical compiler/stack key copies remain outside the
 wiping guarantee. Native correctness and measured speedup do not establish
 security parity with ring or deployment qualification.
+
+## Current-source timing on t14
+
+Run r0035 at the same `afcc50b2` source completed with exit 0. The independent
+analyzer validates all 960,000 raw samples (16 families including the synthetic
+control, three seeds, 20,000 samples each), retaining every observation.
+The largest cryptographic absolute Welch t is 2.919702 for ChaCha seed 3;
+the largest temporal-quarter absolute t is 2.927484. No full cryptographic
+score crosses the 4.5 investigation threshold. The deliberately leaky controls
+have t scores -2320.999145, -1464.997958 and -710.535122, confirming sensitivity
+to that synthetic leak. These observations do not prove constant time.
+
+`timing-t14/` retains complete normalized logs, compressed raw samples and
+recomputed statistics. All 1,459 retained one-second CPU-2 busy-clock intervals
+report 2400 MHz; prior machine settings were restored. The AMD counterpart
+r0036 remains pending. Reproduce statistics with:
+
+```sh
+python3 tools/analyze_timing.py evidence/current/x86-pipeline/timing-t14/output.txt.gz --count 20000 --routines all
+```

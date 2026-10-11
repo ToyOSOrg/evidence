@@ -319,7 +319,9 @@ are approximate at that resolution, not per-sample cycle counts.
 
 AVX2, VAES/VPCLMUL and AVX-512 paths are now in scope, with OS extended-state
 permission required for runtime admission and SSE retained as fallback. These
-paths are not implemented yet. The current-source full timing sweep is queued
-as r0035/r0036; earlier accepted timing evidence predates batching and wiping
-changes. UEFI runtime, ToyOS integration, physical key-copy review and external
+paths are not implemented yet. Current-source t14 timing r0035 validates all
+960,000 samples without removal; maximum cryptographic absolute t is 2.920,
+with all synthetic controls clearly detected. This does not prove constant
+time. The AMD counterpart r0036 remains pending; earlier AMD timing predates
+batching and wiping changes. UEFI runtime, ToyOS integration, physical key-copy review and external
 review remain open.
