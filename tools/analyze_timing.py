@@ -1,16 +1,24 @@
-"""Validate focused raw timing exports and recompute unfiltered Welch statistics.
+"""Validate raw timing exports and recompute unfiltered Welch statistics.
 
 Usage: python3 tools/analyze_timing.py output.txt[.gz] > analysis.json
-The input must contain one run, three seeds, and 100,000 samples per routine.
+Defaults: focused four-routine sweep, seeds 1/2/3, 100,000 samples per routine.
+For the full sweep use --count 20000 --routines all. Expected inventory and
+sample count are specified independently rather than inferred from the output.
 Statistics describe these observations; they do not establish constant time.
 """
+import argparse
 import gzip
 import hashlib
 import json
 import math
-import sys
 from array import array
 from pathlib import Path
+
+
+FOCUSED = ('control_leaky', 'chacha', 'ssh', 'wpa2_hmac')
+ALL = ('control_leaky', 'sha512', 'hmac', 'hkdf', 'aes128', 'aes256', 'chacha',
+       'ssh', 'x25519', 'p256', 'p384', 'ed25519_sign', 'mlkem_decaps',
+       'wpa2_pmk', 'wpa2_hmac', 'wpa2_prf')
 
 
 def moments(values):
@@ -25,7 +33,8 @@ def compare(classes):
     return (m0 - m1) / math.sqrt(v0 / len(classes[0]) + v1 / len(classes[1]))
 
 
-def analyze(path):
+def analyze(path, count=100000, routines=FOCUSED):
+    assert count >= 100 and count % 4 == 0
     groups = {}
     summaries = {}
     seed = None
@@ -34,12 +43,12 @@ def analyze(path):
         for line in stream:
             if line.startswith('# samples='):
                 metadata = dict(x.split('=', 1) for x in line[2:].split())
-                assert metadata['samples'] == '100000'
+                assert int(metadata['samples']) == count
                 assert metadata['preparation'] == 'precomputed'
                 assert metadata['raw'] == 'true'
                 seed = int(metadata['seed'])
             fields = line.strip().split(',')
-            if fields[0] in ('control_leaky', 'chacha', 'ssh', 'wpa2_hmac'):
+            if fields[0] in routines:
                 key = (seed, fields[0])
                 assert key not in summaries
                 assert fields[4] == 'true'
@@ -54,17 +63,17 @@ def analyze(path):
                 'quarters': [[array('Q'), array('Q')] for _ in range(4)],
             })
             index, cls, ns = int(index), int(cls), int(ns)
-            assert index == group['n'] and 0 <= index < 100000
+            assert index == group['n'] and 0 <= index < count
             assert cls in (0, 1) and ns >= 0
             group['n'] += 1
             group['classes'][cls].append(ns)
-            group['quarters'][index // 25000][cls].append(ns)
+            group['quarters'][index // (count // 4)][cls].append(ns)
     assert set(groups) == set(summaries)
     assert set(groups) == {(seed, routine) for seed in (1, 2, 3)
-                           for routine in ('control_leaky', 'chacha', 'ssh', 'wpa2_hmac')}
+                           for routine in routines}
     results = []
     for (seed, routine), group in sorted(groups.items()):
-        assert group['n'] == 100000
+        assert group['n'] == count
         classes = group['classes']
         summary = summaries[(seed, routine)]
         t = compare(classes)
@@ -89,4 +98,10 @@ def analyze(path):
 
 
 if __name__ == '__main__':
-    print(json.dumps(analyze(Path(sys.argv[1])), indent=2))
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('path', type=Path)
+    parser.add_argument('--count', type=int, default=100000)
+    parser.add_argument('--routines', choices=('focused', 'all'), default='focused')
+    args = parser.parse_args()
+    print(json.dumps(analyze(args.path, args.count,
+                             ALL if args.routines == 'all' else FOCUSED), indent=2))

@@ -139,3 +139,35 @@ time. The quarter statistics do not expose a persistent large score in these
 runs. Other families still need repeats with precomputed preparation, and
 source/assembly arguments remain required. No cryptographic timing verdict
 or deployment acceptance has been made.
+
+## Full T14 sweep and current-source native correctness
+
+The full precomputed sweep r0011 at
+`2e9e5e1c575bd66d50c24df283df7f60a582ec66` completed, exit 0. It covers all
+16 routine/control families, three seeds and 20,000 samples per family/seed.
+`native-full-t14-output.txt.gz` retains all 960,000 raw samples losslessly.
+`native-full-t14-analysis.json` independently verifies every sample index,
+class count and rounded summary from the raw samples; no outlier removal.
+The largest absolute cryptographic Welch t is 2.810 (P-384, seed 3); the
+largest temporal-quarter magnitude is 2.743. Positive controls are visible
+(-2785.467, -1369.930, -1623.619). These observations do not prove constant time
+and predate the latest wiping and modulus changes.
+
+The orchestrator traced the earlier 900 MHz point to the firmware balanced
+profile's guaranteed frequency. This sweep used the performance platform profile,
+performance governor and turbo disabled; reported base/maximum is 2.4 GHz.
+The run-start sampled frequency is 1.043 GHz, so no fixed-frequency or cycles/byte
+claim is inferred from the configuration. Prior platform/governor/turbo settings
+were restored. Complete metadata/build/exit records are `native-full-t14-*.txt`.
+
+Reproduce the independent full-inventory check with:
+
+```sh
+python3 tools/analyze_timing.py evidence/current/native-full-t14-output.txt.gz --count 20000 --routines all
+```
+
+Current source `2f2625696403b1eb0bd9048d3cd11c4da586ea2e` passed the native
+T14 correctness run r0013: 46 tests, exit 0, GHASH acceleration admitted.
+Complete output/environment/exit records are `native-review-t14-*.txt`. This
+includes the existing primitive fixtures and TLS configurations. The matching
+AMD full timing and current-source correctness runs are still pending.
