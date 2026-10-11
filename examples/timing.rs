@@ -55,13 +55,21 @@ fn main() {
         .map(|n| n.parse::<usize>().unwrap())
         .unwrap_or(100_000);
     assert!(count >= 100);
-    let mut fixture = Fixture(0x9e3779b97f4a7c15);
+    let seed = std::env::args()
+        .nth(2)
+        .map(|s| s.parse::<u64>().unwrap())
+        .unwrap_or(0x9e3779b97f4a7c15);
+    let mut fixture = Fixture(seed);
+    println!(
+        "# samples={count} seed={seed} metric=nanoseconds affinity=caller-controlled frequency=caller-controlled control=deliberately-variable-work"
+    );
     let kem = toyos_crypto::mlkem::DecapsulationKey::generate(&mut Fixed([7; 64])).unwrap();
     let (ct, _) = kem.public_key().encapsulate(&mut Fixed([13; 64])).unwrap();
     let mut wrong = ct;
     wrong[0] ^= 1;
     println!("routine,class0_samples,class1_samples,welch_t,no_verdict");
     for routine in [
+        "control_leaky",
         "sha512",
         "hmac",
         "hkdf",
@@ -94,8 +102,15 @@ fn main() {
                 None
             };
             let mut data = [0; 1024];
+            let ciphertext = if class == 0 { &ct } else { &wrong };
             let start = Instant::now();
             match routine {
+                // This synthetic positive control must reveal its deliberate work difference.
+                "control_leaky" => {
+                    for _ in 0..if class == 0 { 1 } else { 16 } {
+                        black_box(Sha512::digest(black_box(&key)).unwrap());
+                    }
+                }
                 "sha512" => {
                     let _ = black_box(Sha512::digest(&key).unwrap());
                 }
@@ -165,11 +180,7 @@ fn main() {
                     black_box(k.sign(b"timing").unwrap());
                 }
                 "mlkem_decaps" => {
-                    black_box(
-                        kem.unwrap()
-                            .decapsulate(if class == 0 { &ct } else { &wrong })
-                            .unwrap(),
-                    );
+                    black_box(kem.unwrap().decapsulate(ciphertext).unwrap());
                 }
                 "wpa2_pmk" => {
                     black_box(toyos_crypto::wpa2::derive_pmk(&key[..8], b"timing").unwrap());
