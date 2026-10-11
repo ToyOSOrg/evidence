@@ -35,6 +35,15 @@ forks; HKDF; failed entropy; cross-hash ECDSA; and hybrid wire encodings and
 secret order. The hybrid reference server combines independent primitives;
 it is not an independent TLS protocol implementation (both peers use rustls).
 
+Both native x86 hosts subsequently passed all 46 tests at provider source
+`530d0fedecaff13cdabbdb8957554634e967823c`, including the provider matrix.
+Twelve isolated mutations now fail their exact tests, including provider nonce
+rewind and noncanonical DER integer/length controls. Debug, dispatched and
+portable release, default features, lint, documentation and library MSRV gates
+pass. An external no-std consumer confirms that optional provider builds do not
+pull ring into normal dependencies; a default consumer has no dependencies.
+See `evidence/current/README.md` for exact commands, source revisions and limits.
+
 The performance target, independent cryptographic review, deployment timing,
 complete official vector corpora, sustained fuzzing and ToyOS/firmware/runtime
 portability qualification remain open. Later sections retain the imported
