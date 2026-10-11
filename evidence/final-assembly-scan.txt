@@ -1,0 +1,9 @@
+cargo rustc --lib --release --features std,sign,wpa2 -- --emit=asm
+Baseline x86-64 library assembly; no global target-cpu override.
+AVX/YMM/ZMM matches: 0
+Integer divide instruction matches: 2
+_RNvMNtCsblstj4QwWL6_12toyos_crypto3aesNtB2_3Aes6expand: divq	%r14
+_RNvMNtCsblstj4QwWL6_12toyos_crypto3aesNtB2_3Aes6expand: divl	%r14d
+Both integer divides are in AES key expansion, operating on the public byte offset and public key length (16 or 32), not key contents.
+No integer divide instruction appears in ML-KEM in this emitted x86-64 library.
+This is a limited instruction scan, not a constant-time proof or path-by-path audit.

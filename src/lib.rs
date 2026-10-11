@@ -1,0 +1,63 @@
+//! Cryptographic primitives for TLS, SSH, boot verification and WPA2.
+//!
+//! The core has no allocator, entropy source, runtime dependency or host build
+//! tool. Inputs crossing an encoding boundary return [`Error`]; fixed-size
+//! representations hold the invariants inside that boundary. Message lengths,
+//! algorithm choices and CPU capabilities are public. Module contracts identify
+//! operations permitted to depend on public data.
+//!
+//! Owned secret storage is overwritten with volatile writes on drop. This does
+//! not promise erasure of compiler-created copies, registers or abandoned
+//! storage after process termination. Constant-time source structure requires
+//! validation of the compiler and hardware used to deploy it.
+
+#![no_std]
+#![deny(unsafe_op_in_unsafe_fn)]
+
+#[cfg(any(test, feature = "std"))]
+extern crate std;
+
+pub mod aead;
+mod aes;
+mod arch;
+mod chacha;
+pub mod cpu;
+mod ct;
+pub mod ecc;
+pub mod ed25519;
+mod field25519;
+mod gcm;
+pub mod hash;
+pub mod hybrid;
+pub mod kdf;
+mod keccak;
+pub mod mlkem;
+mod montgomery;
+mod nist;
+mod poly1305;
+pub mod rsa;
+mod scalar25519;
+mod secret;
+pub mod ssh;
+#[cfg(feature = "wpa2")]
+pub mod wpa2;
+pub mod x25519;
+
+/// Refusal at a cryptographic input boundary.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum Error {
+    Length,
+    Authentication,
+    InvalidKey,
+    InvalidPoint,
+    InvalidEncoding,
+    InvalidSignature,
+    CounterExhausted,
+    Entropy,
+}
+
+/// Fills an entire destination from the caller's cryptographically secure source.
+/// A failure must not be treated as a successful partial fill.
+pub trait Random {
+    fn fill(&mut self, destination: &mut [u8]) -> Result<(), Error>;
+}
