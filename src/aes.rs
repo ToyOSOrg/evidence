@@ -49,6 +49,7 @@ impl Aes {
         Self::expand(key, 14)
     }
     fn expand(key: &[u8], rounds: usize) -> Self {
+        let hardware = crate::arch::aes_available();
         let mut keys = Secret([0u8; 240]);
         keys.0[..key.len()].copy_from_slice(key);
         let mut rcon = 1;
@@ -56,14 +57,18 @@ impl Aes {
             let mut t: [u8; 4] = keys.0[at - 4..at].try_into().unwrap();
             if at % key.len() == 0 {
                 t.rotate_left(1);
-                for byte in &mut t {
-                    *byte = sbox(*byte);
+                if !hardware || !crate::arch::aes_subword(&mut t) {
+                    for byte in &mut t {
+                        *byte = sbox(*byte);
+                    }
                 }
                 t[0] ^= rcon;
                 rcon = xtime(rcon);
             } else if key.len() == 32 && at % 32 == 16 {
-                for byte in &mut t {
-                    *byte = sbox(*byte);
+                if !hardware || !crate::arch::aes_subword(&mut t) {
+                    for byte in &mut t {
+                        *byte = sbox(*byte);
+                    }
                 }
             }
             for (i, &byte) in t.iter().enumerate() {
@@ -74,7 +79,7 @@ impl Aes {
         Self {
             keys,
             rounds,
-            hardware: crate::arch::aes_available(),
+            hardware,
         }
     }
     pub(crate) fn encrypt(&self, block: &mut [u8; 16]) {
@@ -84,14 +89,8 @@ impl Aes {
         }
         self.encrypt_portable(block);
     }
-    pub(crate) fn encrypt_four(&self, blocks: &mut [[u8; 16]; 4]) {
-        if self.hardware {
-            crate::arch::aes_encrypt_four(&self.keys.0, self.rounds, blocks);
-        } else {
-            for block in blocks {
-                self.encrypt_portable(block);
-            }
-        }
+    pub(crate) fn xor_ctr(&self, nonce: &[u8; 12], data: &mut [u8]) -> bool {
+        self.hardware && crate::arch::aes_ctr(&self.keys.0, self.rounds, nonce, data)
     }
     fn encrypt_portable(&self, block: &mut [u8; 16]) {
         for (b, k) in block.iter_mut().zip(&self.keys.0[..16]) {
@@ -192,6 +191,15 @@ mod tests {
         let mut accelerated = plain;
         aes.encrypt(&mut accelerated);
         assert_eq!(accelerated, expected);
+        if aes.hardware {
+            for x in 0..=255u8 {
+                let word = [x, !x, x ^ 0x55, x.rotate_left(3)];
+                let mut substituted = word;
+                if crate::arch::aes_subword(&mut substituted) {
+                    assert_eq!(substituted, word.map(sbox));
+                }
+            }
+        }
         #[cfg(feature = "wpa2")]
         {
             aes.decrypt(&mut accelerated);

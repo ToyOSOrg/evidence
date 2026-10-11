@@ -88,11 +88,28 @@ pub(crate) fn aes_encrypt(keys: &[u8; 240], rounds: usize, block: &mut [u8; 16])
     }
 }
 
-pub(crate) fn aes_encrypt_four(keys: &[u8; 240], rounds: usize, blocks: &mut [[u8; 16]; 4]) {
+pub(crate) fn aes_ctr(keys: &[u8; 240], rounds: usize, nonce: &[u8; 12], data: &mut [u8]) -> bool {
     #[cfg(target_arch = "aarch64")]
-    aarch64::aes_encrypt_four(keys, rounds, blocks);
+    {
+        aarch64::aes_ctr(keys, rounds, nonce, data);
+        true
+    }
     #[cfg(not(target_arch = "aarch64"))]
-    for block in blocks {
-        aes_encrypt(keys, rounds, block);
+    {
+        let _ = (keys, rounds, nonce, data);
+        false
+    }
+}
+
+pub(crate) fn aes_subword(word: &mut [u8; 4]) -> bool {
+    #[cfg(target_arch = "aarch64")]
+    {
+        aarch64::aes_subword(word);
+        true
+    }
+    #[cfg(not(target_arch = "aarch64"))]
+    {
+        let _ = word;
+        false
     }
 }

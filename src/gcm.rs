@@ -84,24 +84,14 @@ impl Gcm {
         core::array::from_fn(|i| state.0[i] ^ j.0[i])
     }
     fn xor(&self, nonce: &[u8; 12], data: &mut [u8]) {
-        let (batches, tail) = data.as_chunks_mut::<64>();
-        let mut streams = Secret([0; 64]);
-        for (i, batch) in batches.iter_mut().enumerate() {
-            for (j, block) in streams.0.as_chunks_mut::<16>().0.iter_mut().enumerate() {
-                block[..12].copy_from_slice(nonce);
-                block[12..].copy_from_slice(&((4 * i + j) as u32 + 2).to_be_bytes());
-            }
-            self.aes
-                .encrypt_four(streams.0.as_chunks_mut::<16>().0.try_into().unwrap());
-            for (byte, &mask) in batch.iter_mut().zip(&streams.0) {
-                *byte ^= mask;
-            }
+        if self.aes.xor_ctr(nonce, data) {
+            return;
         }
         let mut stream = Secret([0; 16]);
         stream.0[..12].copy_from_slice(nonce);
-        for (i, chunk) in tail.chunks_mut(16).enumerate() {
+        for (i, chunk) in data.chunks_mut(16).enumerate() {
             stream.0[..12].copy_from_slice(nonce);
-            stream.0[12..].copy_from_slice(&((4 * batches.len() + i) as u32 + 2).to_be_bytes());
+            stream.0[12..].copy_from_slice(&(i as u32 + 2).to_be_bytes());
             self.aes.encrypt(&mut stream.0);
             for (b, &s) in chunk.iter_mut().zip(&stream.0) {
                 *b ^= s;

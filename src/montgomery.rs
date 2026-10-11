@@ -57,7 +57,7 @@ impl<const N: usize> Mod<N> {
     pub(crate) fn one(&self) -> V<N> {
         V(self.one.0)
     }
-    fn reduce(&self, v: [u64; N], high: u64) -> V<N> {
+    fn reduce(&self, v: &[u64; N], high: u64) -> V<N> {
         let mut d = [0; N];
         let mut borrow = 0u128;
         for i in 0..N {
@@ -78,7 +78,9 @@ impl<const N: usize> Mod<N> {
             *word = t as u64;
             c = t >> 64
         }
-        self.reduce(v, c as u64)
+        let result = self.reduce(&v, c as u64);
+        wipe64(&mut v);
+        result
     }
     pub(crate) fn sub(&self, a: &V<N>, b: &V<N>) -> V<N> {
         let mut v = [0; N];
@@ -123,7 +125,7 @@ impl<const N: usize> Mod<N> {
             }
             assert_eq!(c, 0);
         }
-        let result = self.reduce(core::array::from_fn(|i| t[N + i]), t[2 * N]);
+        let result = self.reduce(t[N..2 * N].try_into().unwrap(), t[2 * N]);
         wipe64(&mut t);
         result
     }

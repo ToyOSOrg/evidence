@@ -82,31 +82,69 @@ pub(super) fn aes_encrypt(keys: &[u8; 240], rounds: usize, block: &mut [u8; 16])
 }
 
 #[target_feature(enable = "aes,neon")]
-unsafe fn encrypt_four(keys: &[u8; 240], rounds: usize, blocks: &mut [[u8; 16]; 4]) {
-    // Every vector access is contained in one block or one schedule round.
+#[inline(never)]
+unsafe fn subword(word: &mut [u8; 4]) {
+    // Identical columns make ShiftRows the identity; a zero round key isolates SubBytes.
+    let columns = vreinterpretq_u8_u32(vdupq_n_u32(u32::from_le_bytes(*word)));
+    let substituted = vaeseq_u8(columns, vdupq_n_u8(0));
+    *word = vgetq_lane_u32::<0>(vreinterpretq_u32_u8(substituted)).to_le_bytes();
+}
+pub(super) fn aes_subword(word: &mut [u8; 4]) {
+    // Dispatch admitted AES and the OS preserves SIMD state.
+    unsafe { subword(word) }
+}
+
+#[target_feature(enable = "aes,neon")]
+#[inline(never)]
+unsafe fn ctr(keys: &[u8; 240], rounds: usize, nonce: &[u8; 12], data: &mut [u8]) {
+    // GCM checked len <= 2^36-32; the last used counter is at most u32::MAX.
     unsafe {
-        let mut a = vld1q_u8(blocks[0].as_ptr());
-        let mut b = vld1q_u8(blocks[1].as_ptr());
-        let mut c = vld1q_u8(blocks[2].as_ptr());
-        let mut d = vld1q_u8(blocks[3].as_ptr());
-        for i in 0..rounds - 1 {
-            let key = vld1q_u8(keys.as_ptr().add(16 * i));
-            a = vaesmcq_u8(vaeseq_u8(a, key));
-            b = vaesmcq_u8(vaeseq_u8(b, key));
-            c = vaesmcq_u8(vaeseq_u8(c, key));
-            d = vaesmcq_u8(vaeseq_u8(d, key));
+        let mut iv = [0; 16];
+        iv[..12].copy_from_slice(nonce);
+        let base = vreinterpretq_u32_u8(vld1q_u8(iv.as_ptr()));
+        let (batches, tail) = data.as_chunks_mut::<64>();
+        for (i, batch) in batches.iter_mut().enumerate() {
+            let counter = i as u32 * 4 + 2;
+            let mut a = vreinterpretq_u8_u32(vsetq_lane_u32::<3>(counter.to_be(), base));
+            let mut b = vreinterpretq_u8_u32(vsetq_lane_u32::<3>((counter + 1).to_be(), base));
+            let mut c = vreinterpretq_u8_u32(vsetq_lane_u32::<3>((counter + 2).to_be(), base));
+            let mut d = vreinterpretq_u8_u32(vsetq_lane_u32::<3>((counter + 3).to_be(), base));
+            for j in 0..rounds - 1 {
+                let key = vld1q_u8(keys.as_ptr().add(16 * j));
+                a = vaesmcq_u8(vaeseq_u8(a, key));
+                b = vaesmcq_u8(vaeseq_u8(b, key));
+                c = vaesmcq_u8(vaeseq_u8(c, key));
+                d = vaesmcq_u8(vaeseq_u8(d, key));
+            }
+            let key = vld1q_u8(keys.as_ptr().add(16 * (rounds - 1)));
+            let last = vld1q_u8(keys.as_ptr().add(16 * rounds));
+            a = veorq_u8(vaeseq_u8(a, key), last);
+            b = veorq_u8(vaeseq_u8(b, key), last);
+            c = veorq_u8(vaeseq_u8(c, key), last);
+            d = veorq_u8(vaeseq_u8(d, key), last);
+            // Each load/store is contained in this complete 64-byte batch.
+            let out = batch.as_mut_ptr();
+            vst1q_u8(out, veorq_u8(a, vld1q_u8(out)));
+            vst1q_u8(out.add(16), veorq_u8(b, vld1q_u8(out.add(16))));
+            vst1q_u8(out.add(32), veorq_u8(c, vld1q_u8(out.add(32))));
+            vst1q_u8(out.add(48), veorq_u8(d, vld1q_u8(out.add(48))));
         }
-        let key = vld1q_u8(keys.as_ptr().add(16 * (rounds - 1)));
-        let last = vld1q_u8(keys.as_ptr().add(16 * rounds));
-        vst1q_u8(blocks[0].as_mut_ptr(), veorq_u8(vaeseq_u8(a, key), last));
-        vst1q_u8(blocks[1].as_mut_ptr(), veorq_u8(vaeseq_u8(b, key), last));
-        vst1q_u8(blocks[2].as_mut_ptr(), veorq_u8(vaeseq_u8(c, key), last));
-        vst1q_u8(blocks[3].as_mut_ptr(), veorq_u8(vaeseq_u8(d, key), last));
+        if !tail.is_empty() {
+            let mut stream = crate::secret::Secret([0; 16]);
+            for (i, chunk) in tail.chunks_mut(16).enumerate() {
+                stream.0[..12].copy_from_slice(nonce);
+                stream.0[12..].copy_from_slice(&((4 * batches.len() + i) as u32 + 2).to_be_bytes());
+                encrypt(keys, rounds, &mut stream.0);
+                for (byte, &mask) in chunk.iter_mut().zip(&stream.0) {
+                    *byte ^= mask;
+                }
+            }
+        }
     }
 }
-pub(super) fn aes_encrypt_four(keys: &[u8; 240], rounds: usize, blocks: &mut [[u8; 16]; 4]) {
-    // Dispatch admitted AES and the OS preserves SIMD state.
-    unsafe { encrypt_four(keys, rounds, blocks) }
+pub(super) fn aes_ctr(keys: &[u8; 240], rounds: usize, nonce: &[u8; 12], data: &mut [u8]) {
+    // Dispatch admitted AES; GCM checked the counter bound before mutation.
+    unsafe { ctr(keys, rounds, nonce, data) }
 }
 #[target_feature(enable = "aes,neon")]
 unsafe fn hash_value(a: u128, b: u128) -> u128 {
@@ -133,12 +171,14 @@ unsafe fn product_vector(a: uint64x2_t, b: uint64x2_t) -> (uint64x2_t, uint64x2_
     unsafe {
         let lo: uint64x2_t =
             core::mem::transmute(vmull_p64(vgetq_lane_u64::<0>(a), vgetq_lane_u64::<0>(b)));
-        let hi: uint64x2_t =
-            core::mem::transmute(vmull_p64(vgetq_lane_u64::<1>(a), vgetq_lane_u64::<1>(b)));
-        let middle: uint64x2_t = core::mem::transmute(vmull_p64(
-            vgetq_lane_u64::<0>(a) ^ vgetq_lane_u64::<1>(a),
-            vgetq_lane_u64::<0>(b) ^ vgetq_lane_u64::<1>(b),
+        let hi: uint64x2_t = core::mem::transmute(vmull_high_p64(
+            vreinterpretq_p64_u64(a),
+            vreinterpretq_p64_u64(b),
         ));
+        let ax = veorq_u64(a, vextq_u64::<1>(a, a));
+        let bx = veorq_u64(b, vextq_u64::<1>(b, b));
+        let middle: uint64x2_t =
+            core::mem::transmute(vmull_p64(vgetq_lane_u64::<0>(ax), vgetq_lane_u64::<0>(bx)));
         let middle = veorq_u64(veorq_u64(middle, lo), hi);
         let zero = vdupq_n_u64(0);
         let low = veorq_u64(lo, vextq_u64::<1>(zero, middle));
@@ -194,6 +234,7 @@ unsafe fn multiply_vector(a: uint64x2_t, b: uint64x2_t) -> uint64x2_t {
 }
 
 #[target_feature(enable = "aes,neon")]
+#[inline(never)]
 unsafe fn hash_blocks(h: &[u8; 16], state: &mut [u8; 16], blocks: &[[u8; 16]]) {
     // PMULL is admitted; each unaligned access stays within its block array.
     unsafe {

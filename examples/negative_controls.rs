@@ -12,6 +12,7 @@ fn main() {
             "src/aead.rs",
             "if !crate::ct::equal(&chacha_tag(key, nonce, aad, data), tag)",
             "if false",
+            "vectors",
             "rfc8439_aead_and_authenticated_refusal",
         ),
         (
@@ -19,6 +20,7 @@ fn main() {
             "src/nist.rs",
             "if self.p.square(&y).eq(&rhs) != 1",
             "if false",
+            "vectors",
             "malformed_public_boundaries",
         ),
         (
@@ -26,6 +28,7 @@ fn main() {
             "src/ed25519.rs",
             "let s = S::canonical(s_bytes).ok_or(Error::InvalidSignature)?;",
             "let s = S::reduce(s_bytes);",
+            "vectors",
             "rfc8032_empty_and_strict_rejection",
         ),
         (
@@ -33,6 +36,7 @@ fn main() {
             "src/ed25519.rs",
             "if signature.len() != 64",
             "if false",
+            "vectors",
             "rfc8032_empty_and_strict_rejection",
         ),
         (
@@ -40,6 +44,7 @@ fn main() {
             "src/ed25519.rs",
             "if point.small_order()",
             "if false",
+            "vectors",
             "rfc8032_empty_and_strict_rejection",
         ),
         (
@@ -47,18 +52,38 @@ fn main() {
             "src/mlkem.rs",
             "if p.0.iter().any(|&x| u32::from(x) >= Q)",
             "if false",
+            "vectors",
             "malformed_public_boundaries",
+        ),
+        (
+            "gcm_tag",
+            "src/gcm.rs",
+            "if !crate::ct::equal(&self.tag(nonce, aad, data), tag)",
+            "if false",
+            "differential",
+            "aead_all_algorithms_and_partial_blocks",
+        ),
+        (
+            "aes_counter",
+            "src/arch/aarch64.rs",
+            "let counter = i as u32 * 4 + 2;",
+            "let counter = i as u32 * 4 + 3;",
+            "differential",
+            "aead_all_algorithms_and_partial_blocks",
+        ),
+        (
+            "ghash_power",
+            "src/arch/aarch64.rs",
+            "let h4 = multiply_vector(h2, h2);",
+            "let h4 = multiply_vector(h2, h);",
+            "lib",
+            "gcm::tests::accelerated_ghash_preserves_polynomial_basis_and_stream_recurrence",
         ),
     ];
     let mut baseline = Command::new(std::env::var_os("CARGO").unwrap_or_else(|| "cargo".into()));
-    baseline.current_dir(root).args([
-        "test",
-        "--release",
-        "--features",
-        "std,sign,wpa2",
-        "--test",
-        "vectors",
-    ]);
+    baseline
+        .current_dir(root)
+        .args(["test", "--release", "--features", "std,sign,wpa2"]);
     let baseline = baseline.output().unwrap();
     fs::write(
         logs.join("baseline.log"),
@@ -66,7 +91,11 @@ fn main() {
     )
     .unwrap();
     assert!(baseline.status.success(), "baseline must pass");
-    for (name, file, old, new, test) in cases {
+    for (name, file, old, new, suite, test) in cases {
+        if matches!(name, "aes_counter" | "ghash_power") && std::env::consts::ARCH != "aarch64" {
+            println!("{name}: requires native ARM64; skipped");
+            continue;
+        }
         let path = root.join(file);
         let original = fs::read_to_string(&path).unwrap();
         assert_eq!(original.matches(old).count(), 1, "mutation anchor {name}");
@@ -83,20 +112,16 @@ fn main() {
         );
         fs::write(logs.join(format!("{name}.patch")), patch).unwrap();
         fs::write(&path, modified).unwrap();
-        let output = Command::new(std::env::var_os("CARGO").unwrap_or_else(|| "cargo".into()))
+        let mut command = Command::new(std::env::var_os("CARGO").unwrap_or_else(|| "cargo".into()));
+        command
             .current_dir(root)
-            .args([
-                "test",
-                "--release",
-                "--features",
-                "std,sign,wpa2",
-                "--test",
-                "vectors",
-                test,
-                "--",
-                "--exact",
-            ])
-            .output();
+            .args(["test", "--release", "--features", "std,sign,wpa2"]);
+        if suite == "lib" {
+            command.arg("--lib");
+        } else {
+            command.args(["--test", suite]);
+        }
+        let output = command.args([test, "--", "--exact"]).output();
         fs::write(&path, original).unwrap();
         let output = output.unwrap();
         let exit = output.status.code().unwrap_or(-1);

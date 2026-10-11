@@ -14,7 +14,7 @@ impl Drop for S {
     }
 }
 impl S {
-    fn reduce_once(v: [u64; 4]) -> Self {
+    fn reduce_once(v: &[u64; 4]) -> Self {
         let mut d = [0; 4];
         let mut borrow = 0;
         for i in 0..4 {
@@ -22,9 +22,11 @@ impl S {
             d[i] = t as u64;
             borrow = 1 - (t >> 64)
         }
-        Self(core::array::from_fn(|i| {
+        let result = Self(core::array::from_fn(|i| {
             ct::select(d[i], v[i], borrow as u64)
-        }))
+        }));
+        wipe64(&mut d);
+        result
     }
     pub(crate) fn reduce(input: &[u8]) -> Self {
         let mut r = Self([0; 4]);
@@ -35,15 +37,17 @@ impl S {
                 *word = (r.0[j] << 1) | c;
                 c = r.0[j] >> 63;
             }
-            r = Self::reduce_once(v);
+            r = Self::reduce_once(&v);
+            wipe64(&mut v);
         }
         r
     }
     pub(crate) fn canonical(input: &[u8; 32]) -> Option<Self> {
-        let v = core::array::from_fn(|i| {
+        let mut v = core::array::from_fn(|i| {
             u64::from_le_bytes(input[8 * i..8 * i + 8].try_into().unwrap())
         });
-        let r = Self::reduce_once(v);
+        let r = Self::reduce_once(&v);
+        wipe64(&mut v);
         if ct::equal(input, &r.bytes()) {
             Some(r)
         } else {
@@ -66,7 +70,9 @@ impl S {
             *word = t as u64;
             c = t >> 64;
         }
-        Self::reduce_once(v)
+        let result = Self::reduce_once(&v);
+        wipe64(&mut v);
+        result
     }
     #[cfg(feature = "sign")]
     pub(crate) fn mul(&self, b: &Self) -> Self {

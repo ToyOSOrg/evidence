@@ -4,7 +4,7 @@
 
 use crate::{ct, secret::wipe64};
 const M: u64 = (1 << 51) - 1;
-pub(crate) struct F(pub(crate) [u64; 5]);
+pub(crate) struct F([u64; 5]);
 impl Drop for F {
     fn drop(&mut self) {
         wipe64(&mut self.0)
@@ -17,8 +17,8 @@ impl F {
     pub(crate) fn one() -> Self {
         Self([1, 0, 0, 0, 0])
     }
-    pub(crate) fn small(x: u64) -> Self {
-        Self([x, 0, 0, 0, 0])
+    pub(crate) fn small(x: u32) -> Self {
+        Self([u64::from(x), 0, 0, 0, 0])
     }
     pub(crate) fn from_bytes(b: &[u8; 32]) -> Self {
         let mut v = [0u64; 5];
@@ -27,7 +27,8 @@ impl F {
         }
         Self(v)
     }
-    fn carry(mut v: [u128; 5]) -> Self {
+    fn carry(v: &mut [u128; 5]) -> Self {
+        // Products start at <=77*(2^51-1)^2; three passes leave every limb <2^51.
         for _ in 0..3 {
             for i in 0..4 {
                 let c = v[i] >> 51;
@@ -38,21 +39,21 @@ impl F {
             v[4] &= u128::from(M);
             v[0] += c * 19;
         }
-        let out = Self(v.map(|x| x as u64));
+        let out = Self(core::array::from_fn(|i| v[i] as u64));
         // Volatile erasure covers the explicit wide product workspace.
-        for x in &mut v {
+        for x in v {
             unsafe { core::ptr::write_volatile(x, 0) }
         }
         core::sync::atomic::compiler_fence(core::sync::atomic::Ordering::SeqCst);
         out
     }
     pub(crate) fn add(&self, b: &Self) -> Self {
-        Self::carry(core::array::from_fn(|i| {
+        Self::carry(&mut core::array::from_fn(|i| {
             u128::from(self.0[i]) + u128::from(b.0[i])
         }))
     }
     pub(crate) fn sub(&self, b: &Self) -> Self {
-        Self::carry(core::array::from_fn(|i| {
+        Self::carry(&mut core::array::from_fn(|i| {
             u128::from(self.0[i]) + 2 * u128::from(if i == 0 { M - 18 } else { M })
                 - u128::from(b.0[i])
         }))
@@ -69,7 +70,7 @@ impl F {
                     u128::from(self.0[i]) * u128::from(b.0[j]) * if k >= 5 { 19 } else { 1 };
             }
         }
-        Self::carry(v)
+        Self::carry(&mut v)
     }
     pub(crate) fn square(&self) -> Self {
         self.mul(self)
@@ -93,7 +94,7 @@ impl F {
         self.pow(&e, 255)
     }
     pub(crate) fn bytes(&self) -> [u8; 32] {
-        let n = Self::carry(self.0.map(u128::from));
+        let n = Self::carry(&mut self.0.map(u128::from));
         let mut t = [0u64; 5];
         let mut borrow = 0;
         for (i, word) in t.iter_mut().enumerate() {

@@ -43,6 +43,9 @@ pub mod ssh;
 pub mod wpa2;
 pub mod x25519;
 
+#[cfg(test)]
+mod test_arithmetic;
+
 /// Refusal at a cryptographic input boundary.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Error {
