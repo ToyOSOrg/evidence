@@ -76,7 +76,31 @@ source/cache/scratch paths with `<crate>`, `<cargo-registry>`, `<user>`,
 files; `SHA256SUMS` identifies the review copies. Output is not truncated.
 Private communications are never part of this evidence directory.
 
+## Initial native timing and follow-up
+
+The initial 20,000-sample AMD runs at `2148b933941bee5a4259989cb9b758f6dc0bcd4f`
+completed three repeats, exit 0 each. Complete build, environment, exit and
+output logs are `native-timing-amd-*.txt`. CPU 2 affinity, performance governor
+and turbo disabled were recorded; sampled frequencies still vary. The control
+has Welch t values -658.033, -679.698 and -632.468. ChaCha has 0.249, -5.792
+and -2.416; SSH has -0.150, -3.525 and -4.022. These are investigation signals,
+not constant-time verdicts. All original scores are retained without filtering.
+
+The original harness generates random key bytes only for class one immediately
+before measurement. This class-dependent preparation can bias processor state.
+The revised harness precomputes fixtures, passes keys through `black_box`,
+supports focused runs across distinct seeds, and exports every measured sample
+only after each routine. Summaries also expose means and standard deviations.
+The synthetic positive control always remains enabled. Mac smoke checks verify
+three seeds, four routines and 1,200 raw samples; they do not qualify timing.
+Raw records use `sample,seed,routine,index,class,nanoseconds`. The revised example
+passes dispatched clippy with warnings denied and Rust 1.89 example checking;
+full commands/output are `focused-timing-lint.log`, `focused-timing-msrv.log`,
+`focused-timing-smoke.log` (100 samples, seeds 1/2/3, selected routines and raw)
+and `precomputed-all-smoke.log` (100 samples, all routines, default seed).
+
 Independent review, controlled timing analysis, complete official corpora,
 sustained malformed-input fuzzing, Windows runtime, UEFI execution and ToyOS
-integration remain open. Native timing requests r0007/r0008 are queued with
-performance governor, turbo disabled and CPU 2 affinity; no verdict yet.
+integration remain open. The initial t14 timing request r0007 is still running.
+Focused repeat measurements are required to investigate the AMD scores; no
+cryptographic timing verdict has been made.

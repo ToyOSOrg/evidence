@@ -49,53 +49,89 @@ impl Stats {
         self.m2 / (self.n - 1) as f64
     }
 }
+const ROUTINES: &[&str] = &[
+    "control_leaky",
+    "sha512",
+    "hmac",
+    "hkdf",
+    "aes128",
+    "aes256",
+    "chacha",
+    "ssh",
+    "x25519",
+    "p256",
+    "p384",
+    "ed25519_sign",
+    "mlkem_decaps",
+    "wpa2_pmk",
+    "wpa2_hmac",
+    "wpa2_prf",
+];
 fn main() {
-    let count = std::env::args()
-        .nth(1)
+    let args: Vec<_> = std::env::args().skip(1).collect();
+    let count = args
+        .first()
         .map(|n| n.parse::<usize>().unwrap())
         .unwrap_or(100_000);
     assert!(count >= 100);
-    let seed = std::env::args()
-        .nth(2)
-        .map(|s| s.parse::<u64>().unwrap())
-        .unwrap_or(0x9e3779b97f4a7c15);
+    let seeds: Vec<u64> = args
+        .get(1)
+        .map(|s| s.split(',').map(|s| s.parse().unwrap()).collect())
+        .unwrap_or_else(|| vec![0x9e3779b97f4a7c15]);
+    // Xorshift's zero state would produce only one class.
+    assert!(seeds.iter().all(|&s| s != 0));
+    let selected: Vec<_> = args
+        .get(2)
+        .map(|s| s.split(',').collect())
+        .unwrap_or_else(|| ROUTINES.to_vec());
+    assert!(selected.iter().all(|s| ROUTINES.contains(s)));
+    let raw = args.get(3).is_some_and(|s| s == "raw");
+    assert!(args.len() <= 4 && args.get(3).is_none_or(|s| s == "raw"));
+    let routines: Vec<_> = ROUTINES
+        .iter()
+        .copied()
+        .filter(|s| *s == "control_leaky" || selected.contains(s))
+        .collect();
+    for seed in seeds {
+        run(count, seed, &routines, raw);
+    }
+}
+fn run(count: usize, seed: u64, routines: &[&str], raw: bool) {
     let mut fixture = Fixture(seed);
     println!(
-        "# samples={count} seed={seed} metric=nanoseconds affinity=caller-controlled frequency=caller-controlled control=deliberately-variable-work"
+        "# samples={count} seed={seed} metric=nanoseconds affinity=caller-controlled frequency=caller-controlled control=deliberately-variable-work preparation=precomputed raw={raw}"
     );
     let kem = toyos_crypto::mlkem::DecapsulationKey::generate(&mut Fixed([7; 64])).unwrap();
     let (ct, _) = kem.public_key().encapsulate(&mut Fixed([13; 64])).unwrap();
     let mut wrong = ct;
     wrong[0] ^= 1;
-    println!("routine,class0_samples,class1_samples,welch_t,no_verdict");
-    for routine in [
-        "control_leaky",
-        "sha512",
-        "hmac",
-        "hkdf",
-        "aes128",
-        "aes256",
-        "chacha",
-        "ssh",
-        "x25519",
-        "p256",
-        "p384",
-        "ed25519_sign",
-        "mlkem_decaps",
-        "wpa2_pmk",
-        "wpa2_hmac",
-        "wpa2_prf",
-    ] {
+    println!(
+        "routine,class0_samples,class1_samples,welch_t,no_verdict,class0_mean_ns,class1_mean_ns,class0_stddev_ns,class1_stddev_ns"
+    );
+    for &routine in routines {
+        // Both classes enter measurement after the same preparation. Generating
+        // random keys only for class one immediately before timing can bias it.
+        let fixtures: Vec<_> = (0..count + 100)
+            .map(|_| {
+                let class = (fixture.next() & 1) as usize;
+                let mut key = [0; 64];
+                if class == 1 {
+                    fixture.fill(&mut key).unwrap();
+                }
+                key[0] &= 127;
+                key[31] |= 1;
+                key[47] |= 1;
+                (class, key)
+            })
+            .collect();
+        let mut samples = if raw {
+            Vec::with_capacity(count)
+        } else {
+            Vec::new()
+        };
         let mut stats = [Stats::default(), Stats::default()];
-        for sample in 0..count + 100 {
-            let class = (fixture.next() & 1) as usize;
-            let mut key = [0; 64];
-            if class == 1 {
-                fixture.fill(&mut key).unwrap()
-            }
-            key[0] &= 127;
-            key[31] |= 1;
-            key[47] |= 1;
+        for (sample, &(class, key)) in fixtures.iter().enumerate() {
+            let key = black_box(key);
             let kem = if routine == "mlkem_decaps" {
                 Some(toyos_crypto::mlkem::DecapsulationKey::generate(&mut Fixed([7; 64])).unwrap())
             } else {
@@ -200,14 +236,29 @@ fn main() {
                 }
                 _ => unreachable!(),
             }
-            let elapsed = start.elapsed().as_nanos() as f64;
+            let elapsed = start.elapsed().as_nanos();
             if sample >= 100 {
-                stats[class].add(elapsed)
+                stats[class].add(elapsed as f64);
+                if raw {
+                    samples.push((sample - 100, class, elapsed));
+                }
             }
         }
         let t = (stats[0].mean - stats[1].mean)
             / (stats[0].variance() / stats[0].n as f64 + stats[1].variance() / stats[1].n as f64)
                 .sqrt();
-        println!("{routine},{},{},{t:.3},true", stats[0].n, stats[1].n);
+        println!(
+            "{routine},{},{},{t:.3},true,{:.3},{:.3},{:.3},{:.3}",
+            stats[0].n,
+            stats[1].n,
+            stats[0].mean,
+            stats[1].mean,
+            stats[0].variance().sqrt(),
+            stats[1].variance().sqrt()
+        );
+        // Export after the routine so stdout cannot perturb the next sample.
+        for (sample, class, elapsed) in samples {
+            println!("sample,{seed},{routine},{sample},{class},{elapsed}");
+        }
     }
 }

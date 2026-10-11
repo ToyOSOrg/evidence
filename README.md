@@ -162,6 +162,8 @@ cargo run --release --features std --example negative_controls
 
 # Real-hardware runs need CPU affinity/frequency control and enough samples.
 cargo run --release --features std,sign,wpa2 --example timing -- 100000
+# Optional: comma-separated seeds, routines, and raw sample export.
+cargo run --release --features std,sign,wpa2 --example timing -- 100000 1,2,3 chacha,ssh,wpa2_hmac raw
 
 # Run on the T14 under a separately controlled no-AVX comparison policy.
 cargo run --release --manifest-path benchmarks/ring/Cargo.toml --example compare -- 2000
