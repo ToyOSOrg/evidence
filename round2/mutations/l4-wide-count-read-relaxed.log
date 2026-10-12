@@ -1,11 +1,12 @@
+    Blocking waiting for file lock on package cache
    Compiling kernel-loom v0.1.0 (<dev>/toyos-pge-mut/kernel/loom)
-    Finished `test` profile [optimized + debuginfo] target(s) in 1.68s
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.09s
      Running tests/tlb_shootdown.rs (target/debug/deps/tlb_shootdown-e81ad23158713781)
 
 running 8 tests
-test an_initiator_answers_while_it_waits ... ok
 test only_a_kernel_half_shootdown_asks_a_wide_answer ... ok
 test a_nested_serve_is_not_undone_by_the_one_it_interrupted ... ok
+test an_initiator_answers_while_it_waits ... ok
 test an_acknowledged_kernel_half_shootdown_dropped_the_global_translation ... FAILED
 test an_acknowledged_flush_postdates_the_page_table_write ... ok
 test a_serve_nested_in_an_unfinished_wide_one_answers_wide ... FAILED
@@ -16,7 +17,7 @@ failures:
 
 ---- an_acknowledged_kernel_half_shootdown_dropped_the_global_translation stdout ----
 
-thread 'an_acknowledged_kernel_half_shootdown_dropped_the_global_translation' (3226183) panicked at kernel/loom/tests/tlb_shootdown.rs:312:13:
+thread 'an_acknowledged_kernel_half_shootdown_dropped_the_global_translation' (4980672) panicked at kernel/loom/tests/tlb_shootdown.rs:312:13:
 assertion `left == right` failed: cpu 1 acknowledged a kernel-half shootdown while still holding the global translation the initiator changed
   left: 1
  right: 0
@@ -24,14 +25,14 @@ note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 
 ---- a_serve_nested_in_an_unfinished_wide_one_answers_wide stdout ----
 
-thread 'a_serve_nested_in_an_unfinished_wide_one_answers_wide' (3226181) panicked at kernel/loom/tests/tlb_shootdown.rs:384:13:
+thread 'a_serve_nested_in_an_unfinished_wide_one_answers_wide' (4980670) panicked at kernel/loom/tests/tlb_shootdown.rs:384:13:
 assertion `left == right` failed: a nested serve published the kernel-half shootdown while the wide answer it nested in had not yet dropped the global translation
   left: 1
  right: 0
 
 ---- one_serve_answering_a_user_half_and_a_kernel_half_shootdown_answers_wide stdout ----
 
-thread 'one_serve_answering_a_user_half_and_a_kernel_half_shootdown_answers_wide' (3226185) panicked at kernel/loom/tests/tlb_shootdown.rs:350:13:
+thread 'one_serve_answering_a_user_half_and_a_kernel_half_shootdown_answers_wide' (4980674) panicked at kernel/loom/tests/tlb_shootdown.rs:350:13:
 assertion `left == right` failed: the kernel-half initiator's global translation outlived cpu 1's answer
   left: 1
  right: 0
@@ -42,6 +43,6 @@ failures:
     an_acknowledged_kernel_half_shootdown_dropped_the_global_translation
     one_serve_answering_a_user_half_and_a_kernel_half_shootdown_answers_wide
 
-test result: FAILED. 5 passed; 3 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.89s
+test result: FAILED. 5 passed; 3 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.02s
 
 error: test failed, to rerun pass `-p kernel-loom --test tlb_shootdown`

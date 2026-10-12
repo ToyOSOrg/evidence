@@ -1,25 +1,5 @@
-   Compiling rustversion v1.0.22
-   Compiling once_cell v1.21.4
-   Compiling log v0.4.29
-   Compiling regex-syntax v0.8.11
-   Compiling pin-project-lite v0.2.17
-   Compiling lazy_static v1.5.0
-   Compiling nu-ansi-term v0.50.3
-   Compiling smallvec v1.15.1
-   Compiling scoped-tls v1.0.1
-   Compiling toyos-abi v0.16.0 (<dev>/toyos-pge-mut/sdk/abi)
-   Compiling thread_local v1.1.10
-   Compiling sharded-slab v0.1.7
-   Compiling tracing-core v0.1.36
-   Compiling generator v0.8.9
-   Compiling tracing-log v0.2.0
-   Compiling tracing v0.1.44
-   Compiling regex-automata v0.4.18
-   Compiling matchers v0.2.0
-   Compiling tracing-subscriber v0.3.23
-   Compiling loom v0.7.2 (https://github.com/ToyOSOrg/loom?branch=toyos#dfe37972)
    Compiling kernel-loom v0.1.0 (<dev>/toyos-pge-mut/kernel/loom)
-    Finished `test` profile [optimized + debuginfo] target(s) in 12.01s
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.61s
      Running tests/tlb_shootdown.rs (target/debug/deps/tlb_shootdown-e81ad23158713781)
 
 running 8 tests
@@ -36,7 +16,7 @@ failures:
 
 ---- an_acknowledged_kernel_half_shootdown_dropped_the_global_translation stdout ----
 
-thread 'an_acknowledged_kernel_half_shootdown_dropped_the_global_translation' (3201628) panicked at kernel/loom/tests/tlb_shootdown.rs:312:13:
+thread 'an_acknowledged_kernel_half_shootdown_dropped_the_global_translation' (4973462) panicked at kernel/loom/tests/tlb_shootdown.rs:312:13:
 assertion `left == right` failed: cpu 1 acknowledged a kernel-half shootdown while still holding the global translation the initiator changed
   left: 1
  right: 0
@@ -44,14 +24,14 @@ note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 
 ---- a_serve_nested_in_an_unfinished_wide_one_answers_wide stdout ----
 
-thread 'a_serve_nested_in_an_unfinished_wide_one_answers_wide' (3201626) panicked at kernel/loom/tests/tlb_shootdown.rs:384:13:
+thread 'a_serve_nested_in_an_unfinished_wide_one_answers_wide' (4973460) panicked at kernel/loom/tests/tlb_shootdown.rs:384:13:
 assertion `left == right` failed: a nested serve published the kernel-half shootdown while the wide answer it nested in had not yet dropped the global translation
   left: 1
  right: 0
 
 ---- one_serve_answering_a_user_half_and_a_kernel_half_shootdown_answers_wide stdout ----
 
-thread 'one_serve_answering_a_user_half_and_a_kernel_half_shootdown_answers_wide' (3201630) panicked at kernel/loom/tests/tlb_shootdown.rs:350:13:
+thread 'one_serve_answering_a_user_half_and_a_kernel_half_shootdown_answers_wide' (4973464) panicked at kernel/loom/tests/tlb_shootdown.rs:350:13:
 assertion `left == right` failed: the kernel-half initiator's global translation outlived cpu 1's answer
   left: 1
  right: 0
@@ -62,6 +42,6 @@ failures:
     an_acknowledged_kernel_half_shootdown_dropped_the_global_translation
     one_serve_answering_a_user_half_and_a_kernel_half_shootdown_answers_wide
 
-test result: FAILED. 5 passed; 3 failed; 0 ignored; 0 measured; 0 filtered out; finished in 7.60s
+test result: FAILED. 5 passed; 3 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.03s
 
 error: test failed, to rerun pass `-p kernel-loom --test tlb_shootdown`

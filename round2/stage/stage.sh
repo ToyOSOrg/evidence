@@ -43,8 +43,10 @@ mutate() { # patch dir host rows...
 
 echo "head $HEAD"
 # The T14: base and head of both measurement rows, the head's three new rows
-# and control_regs, and the mutations m2, m3 and m4.
-stage $BASE_TREE base-t14 "" scout_tlb_base tlb_shootdown_cost
+# and control_regs, and the mutations m2, m3 and m4. base-t14 and base-amd
+# were staged from d4c2f8ebe by this script's first run, at 7ea05913b
+# (stage-1.out); the base tree has not moved since, so the second run, at the
+# amended head, stages only what the head decides.
 stage $SCOUT_TREE scout-t14 "" scout_tlb_base tlb_shootdown_cost
 stage $HEAD_TREE head-t14 "" $ROWS control_regs
 mutate m2-invpcid-type-3-in-the-machine-flush m2-t14 "" $ROWS
@@ -52,6 +54,5 @@ mutate m3-no-global-arm-in-discharge m3-t14 "" $ROWS
 mutate m4-user-half-shootdown-flushes-global m4-t14 "" $ROWS
 # The AMD bench: base and head of both measurement rows, which need no
 # shared-debug boot.
-stage $BASE_TREE base-amd "$AMD" scout_tlb_base tlb_shootdown_cost
 stage $SCOUT_TREE scout-amd "$AMD" scout_tlb_base tlb_shootdown_cost
 echo ALL-DONE

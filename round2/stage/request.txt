@@ -1,40 +1,42 @@
-# PR #873 round 2, global kernel pages on x86-64. Build head 7ea05913bcc8ffb3ac323b6208f749eb36f23de0 (wt/toyos-pge, pushed).
+# PR #873 round 2, global kernel pages on x86-64. Build head 86877feb6c83e3f0b0cda12758a02bdd9d84269a (wt/toyos-pge, pushed).
 # Every image below was staged with `cargo test --test toyos-build -- --metal --metal-readback <dir> [--metal-host '<user>@<amd-bench>'] <rows>`
 # from a committed, clean tree, exit 2 each (Verdict::Staged); nothing touched a machine. Each <dir>/request.txt is
-# the harness's own; this file orders them. The staging script and its output: stage.sh, stage.out beside this file's directory.
+# the harness's own; this file orders them. The staging script and its two runs' output: stage.sh, stage-1.out (the base arms, at
+# 7ea05913b, the round's first commit; the base tree has not moved since) and stage-2.out (every other arm, at 86877feb6),
+# beside this file's directory.
 M=<scratchpad>/pge-r2/metal
 #
 # Trees (all clean; keep them until this run is judged):
 #   BASE  <dev>/toyos-pge-base   detached d4c2f8ebe = main 177e72a9e + the scout's two commits (unchanged since round 1)
-#   SCOUT <dev>/toyos-pge-scout  wt/toyos-pge-scout a74fc05bd = head 7ea05913b + the same two commits ported (pushed; never lands)
-#   HEAD  <dev>/toyos-pge        wt/toyos-pge 7ea05913b
-#   MUT   <dev>/toyos-pge-mut    detached 7ea05913b; each mutation was a local commit there, reset after staging:
-#           m2 a0054f95c, m3 72b9e5448, m4 b7a825275; patches in $M/../mut/
+#   SCOUT <dev>/toyos-pge-scout  wt/toyos-pge-scout 0bc71d325 = head 86877feb6 + the same two commits ported (pushed; never lands)
+#   HEAD  <dev>/toyos-pge        wt/toyos-pge 86877feb6
+#   MUT   <dev>/toyos-pge-mut    detached 86877feb6; each mutation was a local commit there, reset after staging:
+#           m2 09b0ac950, m3 d1aef3a92, m4 52eb40e87; patches in $M/../mut/
 #
 # The AMD invocations carry the harness's placeholder `--host <user>@<amd-bench>`: substitute the bench, and quote
 # the word, since an unquoted `<` is a shell redirection.
 
-######## T14 — one session, in this order (11 boots) ########
+######## T14 — one session, in this order (9 boots) ########
 
 Measurement rows, reported and not gated; base and head back to back.
  1. BASE scout-tlb-base     sha256 4d079f6d49f82f006edcd2243d02be8aa4ef3f91b0fdbac994b236fab42ea1bf
     cargo run -p toyos-metal -- --image $M/base-t14/scout-tlb-base/image.img --readback $M/base-t14/scout-tlb-base --fat32-check
- 2. HEAD scout-tlb-base     sha256 b9d486dd3d2145cc302965e51e2fd624ee79724cd7d12ce9b678181f1bc5b0e8
+ 2. HEAD scout-tlb-base     sha256 d74b74a75e8b6503b862d1b29795f60726993ba2ac906cfe4a3c72188c7cf26e
     cargo run -p toyos-metal -- --image $M/scout-t14/scout-tlb-base/image.img --readback $M/scout-t14/scout-tlb-base --fat32-check
  3. BASE latencycase (tlb_shootdown_cost)   sha256 ccffef19d53f395c520d253d433aeab3f04687627e4f24e3d865be8b58090c6a
     cargo run -p toyos-metal -- --image $M/base-t14/latencycase/image.img --readback $M/base-t14/latencycase --fat32-check
- 4. HEAD latencycase (tlb_shootdown_cost)   sha256 b8a13d726cb5ab4d32dacf2b92e4b5944436d9fca45eeb9f493132e382fa7846
+ 4. HEAD latencycase (tlb_shootdown_cost)   sha256 71abec4e50f88da1f0338b98abc407a53f5d6bf201b88daed051736fa0220fc6
     cargo run -p toyos-metal -- --image $M/scout-t14/latencycase/image.img --readback $M/scout-t14/latencycase --fat32-check
 Correctness rows.
- 5. HEAD shared-debug (the three global-leaf rows)   sha256 ff11512ed1311d2649b1f18211361e2b77495d461417b6e9d3230b98396b3821
+ 5. HEAD shared-debug (the three global-leaf rows)   sha256 715e22f52182619a0bdd11dbb51e34a53a1ca5afe1085578af4369f0e0ff6ce0
     cargo run -p toyos-metal -- --image $M/head-t14/shared-debug/image.img --readback $M/head-t14/shared-debug --fat32-check
- 6. HEAD testcases (control_regs)                     sha256 21ee5bcedf74e44b75b77406fb82947f20c976519bb7aacc1d5c79f03ea38328
+ 6. HEAD testcases (control_regs)                     sha256 1f5b77a18fa6144c5f1737b7d1eb1ac2412857fee30c20fc4ef8f83bd5cef2c8
     cargo run -p toyos-metal -- --image $M/head-t14/testcases/image.img --readback $M/head-t14/testcases --fat32-check
- 7. M2 shared-debug         sha256 ed66d24df6bbdbcde607ffa4ae3dd3ec9c69db88a8ded93445a47113f8954291
+ 7. M2 shared-debug         sha256 2474841e0a9f276a86efc29d8cf86154233bf29dc4755c51cf39d9259a4de549
     cargo run -p toyos-metal -- --image $M/m2-t14/shared-debug/image.img --readback $M/m2-t14/shared-debug --fat32-check
- 8. M3 shared-debug         sha256 7d2c628e8ffcca8671cd341fb671cdd32273cc27b096a56b9b09dc84396f96b5
+ 8. M3 shared-debug         sha256 4907a84a3c770fa88e12b098029a9563cda91d823ad1be19cb2073b3607b2954
     cargo run -p toyos-metal -- --image $M/m3-t14/shared-debug/image.img --readback $M/m3-t14/shared-debug --fat32-check
- 9. M4 shared-debug         sha256 d1bc9e84901556b65827b75905e457a5135df14159158e6ef7702d73d48b3d30
+ 9. M4 shared-debug         sha256 9845dd727ce7d39c91c9d598f334689f5cda5a39e2571e5f57bf9fee0a8cc3f1
     cargo run -p toyos-metal -- --image $M/m4-t14/shared-debug/image.img --readback $M/m4-t14/shared-debug --fat32-check
 
 Judge (exit 0 green, 1 red), each from the tree named, once its directory's readbacks are all present (a directory
@@ -50,11 +52,11 @@ missing a boot makes the harness stage instead, rewriting that image):
 
  1. BASE scout-tlb-base     sha256 2d3c2bcfd155090d5bc628e9d73c9ee1a8a98857cf60a8376ded8fd29623eaa8
     cargo run -p toyos-metal -- --image $M/base-amd/scout-tlb-base/image.img --readback $M/base-amd/scout-tlb-base --fat32-check --host '<user>@<amd-bench>'
- 2. HEAD scout-tlb-base     sha256 34307ee2d83c9254fbf27a8eefb08325328683eae2b6201d02a8aa91a094a2d6
+ 2. HEAD scout-tlb-base     sha256 3f2f41aec7598b6a33a63438a5f44fdb793bf6dfedff4f01e76ab1873473c4d3
     cargo run -p toyos-metal -- --image $M/scout-amd/scout-tlb-base/image.img --readback $M/scout-amd/scout-tlb-base --fat32-check --host '<user>@<amd-bench>'
  3. BASE latencycase (tlb_shootdown_cost)   sha256 f9c586787bef18784af5b969048138445665955c27e277a554188fff66fc5826
     cargo run -p toyos-metal -- --image $M/base-amd/latencycase/image.img --readback $M/base-amd/latencycase --fat32-check --host '<user>@<amd-bench>'
- 4. HEAD latencycase (tlb_shootdown_cost)   sha256 171a7347920bf7d7cbddbe47f5c2e0951daf9804af2807b76f65e09d7a812e39
+ 4. HEAD latencycase (tlb_shootdown_cost)   sha256 d848d83222467cd3b5513d629b98c31c5854a70b70b5b0370280ae322c3a8a60
     cargo run -p toyos-metal -- --image $M/scout-amd/latencycase/image.img --readback $M/scout-amd/latencycase --fat32-check --host '<user>@<amd-bench>'
 
 Judge, each from the tree named:
@@ -71,6 +73,9 @@ Expected there: as for the T14 below, with m1 in place of m2 (the AMD bench has 
 
 HEAD, both benches: all three global-leaf rows GREEN; control_regs GREEN, every CPU's cr4 carrying bit 7 (0x80) and,
    on the T14, bit 17 (PCIDE): the T14 (06-8C-01) is on no INVLPG-erratum row, so it keeps PCID.
+HEAD, the T14, both boots' kernel logs: "control_regs: cpuN signature 0x806c1 microcode 0xbe" for every N, with nothing
+   after 0xbe. 0xbe is Linux's reading of MSR 8BH on every T14 CPU (kernel/cpuvuln/fixtures/t14/msr.txt); any other
+   revision, or a line naming the erratum, is a finding for me. No such line on the AMD bench: the read is Intel's.
 M1 (non-PCID machine flush back to a CR3 reload), AMD:  a_kernel_half_shootdown_... RED, the job exiting 101 with
    "the shootdown's flush left the old frame's global translation"; the other two GREEN.
 M2 (INVPCID type 2 -> 3 in flush_tlb_all), T14:         a_kernel_half_shootdown_... RED, same message; the other two GREEN.
