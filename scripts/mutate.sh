@@ -2,7 +2,7 @@
 # Scratch: each mutation as a checked patch, built, run, reported with its exit
 # code, and restored, in the detached mutation tree at the branch's head.
 S=/private/tmp/claude-502/-Users-jan-Dev-jan-toyos/80e90c3a-7449-46b8-84cc-b59e9dd31ae9/scratchpad/busywake
-T=/Users/jan/Dev/jan/toyos-busywake-mut
+T=/Users/jan/Dev/jan/toyos-busywake-sim
 cd $T || exit 9
 mkdir -p $S/mut
 OUT=$S/mut/results.txt
