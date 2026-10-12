@@ -1,0 +1,78 @@
+# E7: the host facts the room's placement rests on. ToyOS head 8e3623e5b06444e73a31ee366829ca4a856721cf.
+$ cat tools/hostcheck.py
+# The host facts the room's placement rests on, each a plain file test:
+#  1. the managed-settings files this design names for macOS, present or absent (which sources the
+#     pinned binary reads is C1's to list from that binary);
+#  2. instruction files (CLAUDE.md, CLAUDE.local.md, AGENTS.md, .claude/) in each ancestor of two
+#     candidate room roots: one under the home directory, one under /Users/Shared;
+#  3. whether the user can write each root a writer's build would read.
+# The home directory prints as ~ and the user's name as <user>.
+import getpass
+import os
+import sys
+
+home = os.path.expanduser('~')
+user = getpass.getuser()
+
+
+def show(p):
+    return p.replace(home, '~').replace('/' + user + '/', '/<user>/')
+
+
+print('1. managed-settings files (macOS):')
+for p in ['/Library/Application Support/ClaudeCode/managed-settings.json',
+          '/Library/Application Support/ClaudeCode/managed-settings.d',
+          f'/Library/Managed Preferences/{user}/com.anthropic.claudecode.plist',
+          '/Library/Managed Preferences/com.anthropic.claudecode.plist']:
+    print(f'  {"present" if os.path.lexists(p) else "absent "}  {show(p)}')
+
+print('2. instruction files in the ancestors of a candidate room root:')
+for root in [os.path.join(home, 'toyos-room'), '/Users/Shared/toyos-room']:
+    print(f'  root {show(root)}:')
+    d = os.path.dirname(root)
+    while True:
+        found = [n for n in ('CLAUDE.md', 'CLAUDE.local.md', 'AGENTS.md', '.claude') if os.path.lexists(os.path.join(d, n))]
+        print(f'    {show(d):24s} {", ".join(found) if found else "none"}')
+        if d == '/':
+            break
+        d = os.path.dirname(d)
+print(f'  ~/.claude/CLAUDE.md: {"present" if os.path.exists(os.path.join(home, ".claude/CLAUDE.md")) else "absent"}')
+print(f'  /Users/Shared exists: {os.path.isdir("/Users/Shared")}, writable by the user: {os.access("/Users/Shared", os.W_OK)}')
+
+print('3. roots a writer\'s build reads, and whether the user can write each:')
+for p in [os.path.join(home, '.cargo'), os.path.join(home, '.rustup'), os.path.join(home, '.cache/toyos'),
+          '/usr', '/usr/local', '/opt/homebrew', '/Library/Developer/CommandLineTools', '/System', '/private/etc']:
+    if os.path.lexists(p):
+        print(f'  {"writable    " if os.access(p, os.W_OK) else "not writable"}  {show(p)}')
+    else:
+        print(f'  absent        {show(p)}')
+sys.exit(0)
+
+$ python3 -I tools/hostcheck.py
+1. managed-settings files (macOS):
+  absent   /Library/Application Support/ClaudeCode/managed-settings.json
+  absent   /Library/Application Support/ClaudeCode/managed-settings.d
+  absent   /Library/Managed Preferences/<user>/com.anthropic.claudecode.plist
+  absent   /Library/Managed Preferences/com.anthropic.claudecode.plist
+2. instruction files in the ancestors of a candidate room root:
+  root ~/toyos-room:
+    ~                        .claude
+    /Users                   none
+    /                        none
+  root /Users/Shared/toyos-room:
+    /Users/Shared            none
+    /Users                   none
+    /                        none
+  ~/.claude/CLAUDE.md: present
+  /Users/Shared exists: True, writable by the user: True
+3. roots a writer's build reads, and whether the user can write each:
+  writable      ~/.cargo
+  writable      ~/.rustup
+  writable      ~/.cache/toyos
+  not writable  /usr
+  not writable  /usr/local
+  not writable  /opt/homebrew
+  not writable  /Library/Developer/CommandLineTools
+  not writable  /System
+  not writable  /private/etc
+EXIT=0
