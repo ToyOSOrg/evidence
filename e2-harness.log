@@ -27,6 +27,8 @@ phrases = [
     ("crossSessionInbound", "Inbound cross-session peer messages"),
     ("remoteControlAtStartup", "Start Remote Control bridge automatically each session"),
     ("CLAUDE_CONFIG_DIR", "the configuration home (CLAUDE_CONFIG_DIR)"),
+    ("sandbox.autoAllowBashIfSandboxed", "autoAllowBashIfSandboxed is independent and still defaults to true"),
+    ("--print, settings validation", "Settings files that fail validation are silently ignored in this mode"),
 ]
 bad = 0
 def printable(b):
@@ -96,6 +98,12 @@ remoteControlAtStartup: found at byte 81864268
 
 CLAUDE_CONFIG_DIR: found at byte 79478344
   the configuration home (CLAUDE_CONFIG_DIR) is not an absolute path
+
+sandbox.autoAllowBashIfSandboxed: found at byte 81738308
+  Sandboxed commands get unrestricted read/write access to the host filesystem; network egress is still confined to network.allowedDomains. Intended for deployments whose goal is egress control rather than filesystem containment. Does not change Bash prompting: sandbox.autoAllowBashIfSandboxed is independent and still defaults to true, so set it to false to keep prompting for sandboxed commands. Drops the read protection from filesystem.denyRead and credentials.files deny entries for sandboxed commands, since both are enforced by the filesystem layer this turns off; credentials.files mask entries (sentinel binds) and credentials.envVars deny/mask are unaffected. 
+
+--print, settings validation: found at byte 72428403
+  Print response and exit (useful for pipes). Note: The workspace trust dialog is skipped when Claude is run in non-interactive mode (via -p, or when stdout is not a TTY, e.g. piped or redirected output). Only use this in directories you trust. Settings files that fail validation are silently ignored in this mode (no error dialog is shown).
 
 EXIT=0
 
