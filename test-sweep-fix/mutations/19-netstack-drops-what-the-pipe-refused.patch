@@ -1,0 +1,13 @@
+diff --git a/system/netstack/node/src/streams.rs b/system/netstack/node/src/streams.rs
+index 1201fa2e4..84e091a64 100644
+--- a/system/netstack/node/src/streams.rs
++++ b/system/netstack/node/src/streams.rs
+@@ -239,7 +239,7 @@ impl Stream {
+         while let Some(pipe) = self.to_client.as_mut() {
+             let mut refused = None;
+             let received = stack.tcp_recv(now, conn, |bytes| match pipe.write(bytes) {
+-                Ok(taken) => taken,
++                Ok(_) => bytes.len(),
+                 Err(refusal) => {
+                     refused = Some(refusal);
+                     0

@@ -1,0 +1,48 @@
+warning: methods `held` and `bind` are never used
+  --> sdk/libc/arch/src/../../src/dgramreq.rs:8:8
+   |
+ 5 | pub(crate) trait Datagrams {
+   |                  --------- methods in this trait
+...
+ 8 |     fn held(&self) -> bool;
+   |        ^^^^
+ 9 |     /// Bind it at `ip` and `port`, port 0 asking the stack to choose one.
+10 |     fn bind(&mut self, ip: [u8; 4], port: u16) -> Result<(), Self::Error>;
+   |        ^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: fields `held` and `binds` are never read
+  --> sdk/libc/arch/src/datagram_sends.rs:16:5
+   |
+15 | struct Socket {
+   |        ------ fields in this struct
+16 |     held: bool,
+   |     ^^^^
+17 |     binds: bool,
+   |     ^^^^^
+
+warning: `toyos-libc-copies` (lib test) generated 2 warnings
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.08s
+     Running unittests src/lib.rs (target/debug/deps/toyos_libc_copies-85e35ae8604e5377)
+
+running 1 test
+test datagram_sends::a_socket_never_bound_is_bound_to_a_port_the_stack_chooses_before_its_first_send ... FAILED
+
+failures:
+
+---- datagram_sends::a_socket_never_bound_is_bound_to_a_port_the_stack_chooses_before_its_first_send stdout ----
+
+thread 'datagram_sends::a_socket_never_bound_is_bound_to_a_port_the_stack_chooses_before_its_first_send' (17166108) panicked at sdk/libc/arch/src/datagram_sends.rs:55:5:
+assertion `left == right` failed: one bind, before the first send alone
+  left: [Send([112, 105, 110, 103], [10, 0, 2, 2], 7), Send([97, 103, 97, 105, 110], [10, 0, 2, 2], 7)]
+ right: [Bind([0, 0, 0, 0], 0), Send([112, 105, 110, 103], [10, 0, 2, 2], 7), Send([97, 103, 97, 105, 110], [10, 0, 2, 2], 7)]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    datagram_sends::a_socket_never_bound_is_bound_to_a_port_the_stack_chooses_before_its_first_send
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 67 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-libc-copies --lib`

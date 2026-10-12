@@ -1,0 +1,12 @@
+diff --git a/system/fileserver/src/bounds.rs b/system/fileserver/src/bounds.rs
+index ee0b81419..e4e851fca 100644
+--- a/system/fileserver/src/bounds.rs
++++ b/system/fileserver/src/bounds.rs
+@@ -85,7 +85,6 @@ pub fn in_a_file(at: u64, len: u64) -> Result<u64, SyscallError> {
+ /// A stream asked to start at `at`, while `streams` are served and `of_share`
+ /// of them are its share's.
+ pub fn stream(at: u64, streams: usize, of_share: usize) -> Result<(), SyscallError> {
+-    in_a_file(at, 0)?;
+     match streams >= MAX_STREAMS || of_share >= STREAM_SHARE {
+         true => Err(SyscallError::ResourceExhausted),
+         false => Ok(()),

@@ -1,0 +1,13 @@
+diff --git a/system/soundserver/src/mix.rs b/system/soundserver/src/mix.rs
+index 3e146d162..364436315 100644
+--- a/system/soundserver/src/mix.rs
++++ b/system/soundserver/src/mix.rs
+@@ -183,7 +183,7 @@ fn fillable(pipeline: Pipeline, started: bool, streaming: bool, free_mask: u32,
+ /// period again whatever soundserver does, so there a deferral buys the very
+ /// gap it exists to avoid.
+ fn defers(pipeline: Pipeline, floor: Option<u64>, mid_refill: impl FnOnce() -> bool, unplayed_nanos: u64) -> bool {
+-    pipeline == Pipeline::Queue && floor.is_some_and(|floor| unplayed_nanos >= floor) && mid_refill()
++    floor.is_some_and(|floor| unplayed_nanos >= floor) && mid_refill()
+ }
+ 
+ pub(crate) fn mix_thread(

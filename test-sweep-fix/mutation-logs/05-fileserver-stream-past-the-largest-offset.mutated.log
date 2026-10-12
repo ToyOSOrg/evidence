@@ -1,0 +1,32 @@
+warning: unused variable: `at`
+  --> system/fileserver/src/bounds.rs:89:15
+   |
+89 | pub fn stream(at: u64, streams: usize, of_share: usize) -> Result<(), SyscallError> {
+   |               ^^ help: if this is intentional, prefix it with an underscore: `_at`
+   |
+   = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `fileserver` (lib test) generated 1 warning (run `cargo fix --lib -p fileserver --tests` to apply 1 suggestion)
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.09s
+     Running unittests src/lib.rs (target/debug/deps/fileserver-a6db921597f2d351)
+
+running 1 test
+test bounds::tests::an_offset_past_the_largest_a_file_has_is_refused ... FAILED
+
+failures:
+
+---- bounds::tests::an_offset_past_the_largest_a_file_has_is_refused stdout ----
+
+thread 'bounds::tests::an_offset_past_the_largest_a_file_has_is_refused' (17157949) panicked at system/fileserver/src/bounds.rs:164:13:
+assertion `left == right` failed: a stream at 0x100000000001
+  left: Ok(())
+ right: Err(InvalidArgument)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    bounds::tests::an_offset_past_the_largest_a_file_has_is_refused
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 56 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p fileserver --lib`

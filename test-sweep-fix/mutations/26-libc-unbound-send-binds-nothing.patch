@@ -1,0 +1,13 @@
+diff --git a/sdk/libc/src/dgramreq.rs b/sdk/libc/src/dgramreq.rs
+index ce65ceb8c..9039b6a69 100644
+--- a/sdk/libc/src/dgramreq.rs
++++ b/sdk/libc/src/dgramreq.rs
+@@ -16,8 +16,5 @@ pub(crate) trait Datagrams {
+ /// at its first send, at any address, to a port the stack chooses; a
+ /// connected socket's `send` is this, to its peer.
+ pub(crate) fn send_to<D: Datagrams>(socket: &mut D, data: &[u8], ip: [u8; 4], port: u16) -> Result<usize, D::Error> {
+-    if !socket.held() {
+-        socket.bind([0; 4], 0)?;
+-    }
+     socket.send(data, ip, port)
+ }

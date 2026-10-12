@@ -1,0 +1,13 @@
+diff --git a/sdk/toyos/src/log/ring.rs b/sdk/toyos/src/log/ring.rs
+index 7ce92e8be..58238177a 100644
+--- a/sdk/toyos/src/log/ring.rs
++++ b/sdk/toyos/src/log/ring.rs
+@@ -129,8 +129,6 @@ pub fn push_lane<L: Slots>(lane: &L, body: &L::Body) -> Pushed {
+     // Only this writer stores `head` and `refused`, so it reads its own.
+     let position = lane.head().load(Ordering::Relaxed);
+     if !room(position, lane.tail().load(Ordering::Acquire), slots) {
+-        let refused = lane.refused().load(Ordering::Relaxed);
+-        lane.refused().store(refused + 1, Ordering::Relaxed);
+         return Pushed::Refused;
+     }
+     lane.write((position % slots) as usize, body);

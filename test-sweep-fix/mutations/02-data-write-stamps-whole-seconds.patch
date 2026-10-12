@@ -1,0 +1,13 @@
+diff --git a/system/fileserver/src/data.rs b/system/fileserver/src/data.rs
+index f3383ec1a..395bf6878 100644
+--- a/system/fileserver/src/data.rs
++++ b/system/fileserver/src/data.rs
+@@ -594,7 +594,7 @@ impl<D: Disk> Volume for DataVolume<D> {
+             done += take;
+         }
+         open.size = open.size.max(end);
+-        open.mtime = now;
++        open.mtime = now - now % 1_000_000_000;
+         open.dirty = true;
+         Ok(())
+     }

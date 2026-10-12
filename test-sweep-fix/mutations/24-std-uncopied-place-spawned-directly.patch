@@ -1,0 +1,12 @@
+diff --git a/sdk/std/sys/launch_route.rs b/sdk/std/sys/launch_route.rs
+index 8256a091b..b6115af90 100644
+--- a/sdk/std/sys/launch_route.rs
++++ b/sdk/std/sys/launch_route.rs
+@@ -83,6 +83,7 @@ pub enum Unlaunched<E> {
+ /// child would hold this process's namespace and not its row's.
+ pub fn unmade<E>(why: Unmade<E>, supervisor: bool) -> Unlaunched<E> {
+     match why {
++        Unmade::PlaceNotCopied(_) if !supervisor => Unlaunched::Direct,
+         Unmade::PlaceNotCopied(e) => Unlaunched::Failed(e),
+         Unmade::NoLauncher { provided: true } => {
+             Unlaunched::Refused("only a launch carries a provided connector, and this process holds no launcher")

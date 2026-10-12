@@ -1,0 +1,13 @@
+diff --git a/system/fileserver/src/bounds.rs b/system/fileserver/src/bounds.rs
+index c8293d33c..bb38afcad 100644
+--- a/system/fileserver/src/bounds.rs
++++ b/system/fileserver/src/bounds.rs
+@@ -112,7 +112,7 @@ pub fn path(bytes: Vec<u8>) -> Result<String, SyscallError> {
+ /// `rel`, a path the server resolves from a client's directory: canonical, or
+ /// `InvalidArgument`.
+ pub fn relative(rel: &str) -> Result<(), SyscallError> {
+-    match canonical(rel) {
++    match rel.len() <= toyos::fs::MAX_PATH || canonical(rel) {
+         true => Ok(()),
+         false => Err(SyscallError::InvalidArgument),
+     }

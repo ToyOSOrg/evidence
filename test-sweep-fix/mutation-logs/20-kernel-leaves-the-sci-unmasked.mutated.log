@@ -1,0 +1,38 @@
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.30s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-c7f129e479c09297)
+
+23:43:59 running 1 tests, 12 wide
+
+23:43:59   RUN   acpi_press_is_one_sci
+23:43:59   BUILD x86_64 acpi_mediated of tests/guest/rust-tests, for acpi_press_is_one_sci
+23:44:00   BUILT x86_64 acpi_mediated of tests/guest/rust-tests, for acpi_press_is_one_sci  (2s)
+23:44:00   BUILD x86_64 kernel, loader, ROOT of tests/images/acpicase.toml, for acpi_press_is_one_sci
+23:44:03 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+23:44:03   BUILT x86_64 kernel, loader, ROOT of tests/images/acpicase.toml, for acpi_press_is_one_sci  (2s)
+23:44:26 FAIL acpi_press_is_one_sci: STALLED: waiting for the probe to serve the press — it went quiet
+--- what the guest said while it was waited on ---
+[ 6.808 cpu1 kernel] isa: the ACPI fixed hardware took its first interrupt
+[ 6.829 cpu1 kernel] isa: the ACPI fixed hardware's ports went back with pid 8
+[ 6.829 cpu1 kernel] exit: test_rs_acpi_mediated pid=8 code=101 cpu=32ms peak=4MB allocs=3 frees=0 syscalls=67 syscall_wall=197ms 0=1 1=3 6=1 9=2 10=11 13=2 14=4 16=2 21=1 50=2 51=2 63=2 66=2 72=1 73=1 89=1 90=1 91=2 99=2 102=7 105=7 106=9 111=1
+[ 6.809 test-runner error pid=8] 
+[ 6.809 test-runner error pid=8] thread 'main' (1) panicked at src/bin/acpi_mediated.rs:692:5:
+[ 6.809 test-runner error pid=8] assertion `left == right` failed: acpi: the press came as 221 SCIs before it was served
+[ 6.809 test-runner error pid=8]   left: 221
+[ 6.809 test-runner error pid=8]  right: 1
+[ 6.809 test-runner error pid=8] stack backtrace:
+23:44:26   STALL acpi_press_is_one_sci  (24s)
+23:44:26   --- 1 guests, 0 of them not the shipping kernel, 1 kernel build(s): [""]
+
+23:44:26 host: fastest boot 5803 ms against the reference 1424 ms — liveness ceilings paid at 4.08x
+23:44:26 host: 14 core(s); a guest wider than that waits vcpus/cores longer again
+23:44:26 failures:
+23:44:26     acpi_press_is_one_sci: STALLED: waiting for the probe to serve the press — it went quiet
+
+23:44:26 1 of those reds are the ceiling: acpi_press_is_one_sci
+
+23:44:26 test result: FAILED. 0 passed, 1 failed, 0 invalidated, 1 total (27.7s; workers: 4s building, 24s testing)
+23:44:26 [toyos] this red run's serial logs are kept at <checkout>/target/red-run-serial/toyos-tmp-44507-0
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `<checkout>/target/debug/deps/toyos_build-c7f129e479c09297 acpi_press_is_one_sci` (exit status: 1)

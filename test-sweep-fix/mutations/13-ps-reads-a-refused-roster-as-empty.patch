@@ -1,0 +1,13 @@
+diff --git a/system/toybox/src/roster.rs b/system/toybox/src/roster.rs
+index 97865f608..afe3d7723 100644
+--- a/system/toybox/src/roster.rs
++++ b/system/toybox/src/roster.rs
+@@ -25,7 +25,7 @@ pub const REFUSED: &str = "ps: refused — this capability carries no ROSTER";
+ pub fn rows(answer: &[u8]) -> Option<(u64, u64, Vec<Row>)> {
+     let (buf, n) = (answer, answer.len());
+     if n < HEADER {
+-        return None;
++        return Some((0, 0, Vec::new()));
+     }
+     let header = toyos_abi::syscall::SysinfoHeader::decode(buf[..HEADER].try_into().unwrap());
+     let (uptime_ns, total_cpu_ns) = (header.uptime_ns, header.total_cpu_ns);
