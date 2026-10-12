@@ -1,0 +1,52 @@
+$ git grep -n -F 'HANDSHAKE_TIMEOUT' origin/main -- issues/
+EXIT=1
+$ git grep -n -F 'never finished its request' origin/main -- issues/
+EXIT=1
+$ git grep -n -F 'netstack_socket_churn' origin/main -- issues/
+origin/main:issues/a-netcase-boot-under-host-load-said-nothing-past-the-firmwares-screen-clears.md:10:added `https_fetch`, went red on `netstack_socket_churn` alone: `[qemu] Boot
+origin/main:issues/a-netcase-boot-under-host-load-said-nothing-past-the-firmwares-screen-clears.md:15:run for `https_fetch` and `libc_sockets`, and `netstack_socket_churn` alone a
+origin/main:issues/a-stream-its-peer-reset-refuses-the-option-requests-a-host-answers.md:41:`netstack_socket_churn` still green; and the two compromises above ended: the
+origin/main:issues/guest-tests-a-loaded-host-can-turn-red.md:25:- `netstack_socket_churn` (`netstack_socket_churn.rs`, `LET_GO` 20 s), `netstack_streams` and
+origin/main:issues/guest-tests-a-loaded-host-can-turn-red.md:32:`netstack_socket_churn` and `netstack_streams` each red at boot, before any bound above ran, at
+origin/main:issues/netstacks-places-are-one-number-for-every-client.md:18:them, answered `ERR_RESOURCE_EXHAUSTED` (`netstack_socket_churn`). The sockets
+origin/main:issues/toyos-has-its-own-network-stack.md:24:- Of what a third party wrote, it has met QEMU's user network in a guest, on virtio and on QEMU's e1000e: its DHCP server, its ARP and the host kernel's TCP behind it (`netstack_streams`, `netstack_socket_churn`, `libc_sockets`). It has met no router and no switch. Exit: the T14's outbound rows are green on it.
+EXIT=0
+$ git grep -n -F 'NetstackNotFound' origin/main -- issues/
+EXIT=1
+$ git grep -n -F HANDSHAKE_TIMEOUT origin/main -- ':!issues'
+origin/main:system/compositor/src/client.rs:32:/// and [`HANDSHAKE_TIMEOUT`] is what guarantees the table drains.
+origin/main:system/compositor/src/client.rs:39:pub const HANDSHAKE_TIMEOUT: Duration = Duration::from_secs(2);
+origin/main:system/compositor/src/client.rs:126:    /// [`HANDSHAKE_TIMEOUT`] of `since`.
+origin/main:system/compositor/src/session.rs:33:    HANDSHAKE_TIMEOUT, MAX_KEPT_PAYLOAD, MAX_PENDING_CONNS,
+origin/main:system/compositor/src/session.rs:362:        for p in self.pending.iter().filter(|p| now.duration_since(p.since) >= HANDSHAKE_TIMEOUT) {
+origin/main:system/compositor/src/session.rs:369:        self.pending.retain(|p| now.duration_since(p.since) < HANDSHAKE_TIMEOUT);
+origin/main:system/diskserver/src/main.rs:82:const HANDSHAKE_TIMEOUT: Duration = Duration::from_secs(2);
+origin/main:system/diskserver/src/main.rs:664:            .map(|p| HANDSHAKE_TIMEOUT.saturating_sub(now.duration_since(p.since)))
+origin/main:system/diskserver/src/main.rs:688:        pending.retain(|p| now.duration_since(p.since) < HANDSHAKE_TIMEOUT);
+origin/main:system/filepicker/src/main.rs:479:const HANDSHAKE_TIMEOUT: Duration = Duration::from_secs(2);
+origin/main:system/filepicker/src/main.rs:531:            .map(|p| HANDSHAKE_TIMEOUT.saturating_sub(now.duration_since(p.since)))
+origin/main:system/filepicker/src/main.rs:538:        for p in pending.iter().filter(|p| now.duration_since(p.since) >= HANDSHAKE_TIMEOUT) {
+origin/main:system/filepicker/src/main.rs:544:        pending.retain(|p| now.duration_since(p.since) < HANDSHAKE_TIMEOUT);
+origin/main:system/fileserver/src/main.rs:71:/// [`HANDSHAKE_TIMEOUT`], by which each of these is answered or let go.
+origin/main:system/fileserver/src/main.rs:96:const HANDSHAKE_TIMEOUT: Duration = Duration::from_secs(2);
+origin/main:system/fileserver/src/main.rs:404:                .map(|c| HANDSHAKE_TIMEOUT.saturating_sub(now.duration_since(c.since)))
+origin/main:system/fileserver/src/main.rs:424:                .filter(|(_, c)| c.window.is_none() && now.duration_since(c.since) >= HANDSHAKE_TIMEOUT)
+origin/main:system/logkeeper/src/inspect.rs:9://! says nothing costs a slot and [`HANDSHAKE_TIMEOUT`], never the log.
+origin/main:system/logkeeper/src/inspect.rs:38:const HANDSHAKE_TIMEOUT: Duration = Duration::from_secs(2);
+origin/main:system/logkeeper/src/inspect.rs:145:            if pending.is_empty() { u64::MAX } else { HANDSHAKE_TIMEOUT.as_nanos() as u64 };
+origin/main:system/logkeeper/src/inspect.rs:154:        pending.retain(|p| now.duration_since(p.since) < HANDSHAKE_TIMEOUT);
+origin/main:system/netstack/src/client.rs:86:/// [`HANDSHAKE_TIMEOUT`] is what guarantees the table drains.
+origin/main:system/netstack/src/client.rs:94:pub const HANDSHAKE_TIMEOUT: Duration = Duration::from_secs(2);
+origin/main:system/netstack/src/main.rs:54:use client::{Client, ClientRx, HANDSHAKE_TIMEOUT, MAX_KEPT_REQUEST, MAX_PENDING_CONNS, PendingConn, Request};
+origin/main:system/netstack/src/main.rs:436:            timeout = timeout.min(nanos(HANDSHAKE_TIMEOUT));
+origin/main:system/netstack/src/main.rs:450:        for p in pending.iter().filter(|p| now_wall.duration_since(p.since) >= HANDSHAKE_TIMEOUT) {
+origin/main:system/netstack/src/main.rs:456:        pending.retain(|p| now_wall.duration_since(p.since) < HANDSHAKE_TIMEOUT);
+origin/main:system/supervisor/src/main.rs:134:const HANDSHAKE_TIMEOUT: Duration = Duration::from_secs(2);
+origin/main:system/supervisor/src/main.rs:1174:            // `HANDSHAKE_TIMEOUT`.** Any readiness at all restarts a wait, so a
+origin/main:system/supervisor/src/main.rs:1182:                .map(|p| HANDSHAKE_TIMEOUT.saturating_sub(now.duration_since(p.since)))
+origin/main:system/supervisor/src/main.rs:1280:            for p in pending.iter().filter(|p| now.duration_since(p.since) >= HANDSHAKE_TIMEOUT) {
+origin/main:system/supervisor/src/main.rs:1286:            pending.retain(|p| now.duration_since(p.since) < HANDSHAKE_TIMEOUT);
+origin/main:system/usbd/src/main.rs:39:const HANDSHAKE_TIMEOUT: Duration = Duration::from_secs(2);
+origin/main:system/usbd/src/main.rs:103:            let left = HANDSHAKE_TIMEOUT.saturating_sub(first.elapsed());
+origin/main:system/usbd/src/main.rs:136:            if pending[i].since.elapsed() >= HANDSHAKE_TIMEOUT {
+EXIT=0
