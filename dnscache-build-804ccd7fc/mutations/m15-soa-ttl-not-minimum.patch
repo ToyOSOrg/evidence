@@ -1,0 +1,13 @@
+diff --git a/system/netstack/dns/src/lib.rs b/system/netstack/dns/src/lib.rs
+index 6ffecde6d..4470fb4a7 100644
+--- a/system/netstack/dns/src/lib.rs
++++ b/system/netstack/dns/src/lib.rs
+@@ -440,7 +440,7 @@ fn absence(msg: &Message, mut at: usize, count: u16, denied: &Name) -> Result<u3
+         if !denied.within(&r.owner) {
+             continue;
+         }
+-        let soa = r.ttl.min(keep(msg.u32(fields + 16)?));
++        let soa = r.ttl;
+         least = Some(least.map_or(soa, |least| least.min(soa)));
+     }
+     Ok(least.unwrap_or(0))

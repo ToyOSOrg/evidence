@@ -1,0 +1,949 @@
+mutations at 804ccd7fcd99f27e1109d296217b5ca885137f72
+
+=== m01-view-ignored: the cache keyed by name alone, ignoring the view
+$ git apply --check <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/mutations/m01-view-ignored.patch
+EXIT=0
+$ git apply <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/mutations/m01-view-ignored.patch
+EXIT=0
+$ cargo test -p toyos-dns --no-run
+   Compiling toyos-dns v0.1.0 (<home>/Dev/jan/toyos-dnscache/system/netstack/dns)
+warning: unused variable: `view`
+   --> system/netstack/dns/src/lib.rs:894:30
+    |
+894 |     pub fn answer(&mut self, view: &[u8], name: &Name, now: u64) -> Option<Result<Vec<[u8; 4]>, Failure>> {
+    |                              ^^^^ help: if this is intentional, prefix it with an underscore: `_view`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: field `key` is never read
+   --> system/netstack/dns/src/lib.rs:857:5
+    |
+856 | struct View {
+    |        ---- field in this struct
+857 |     key: Vec<u8>,
+    |     ^^^
+    |
+    = note: `View` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `toyos-dns` (lib) generated 2 warnings (run `cargo fix --lib -p toyos-dns` to apply 1 suggestion)
+warning: `toyos-dns` (lib test) generated 2 warnings (2 duplicates)
+    Finished `test` profile [optimized + debuginfo] target(s) in 2.65s
+  Executable unittests src/lib.rs (target/debug/deps/toyos_dns-77a86f60db349884)
+EXIT=0
+$ cargo test -p toyos-net-node --test resolve --no-run
+warning: unused variable: `view`
+   --> system/netstack/dns/src/lib.rs:894:30
+    |
+894 |     pub fn answer(&mut self, view: &[u8], name: &Name, now: u64) -> Option<Result<Vec<[u8; 4]>, Failure>> {
+    |                              ^^^^ help: if this is intentional, prefix it with an underscore: `_view`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: field `key` is never read
+   --> system/netstack/dns/src/lib.rs:857:5
+    |
+856 | struct View {
+    |        ---- field in this struct
+857 |     key: Vec<u8>,
+    |     ^^^
+    |
+    = note: `View` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `toyos-dns` (lib) generated 2 warnings (run `cargo fix --lib -p toyos-dns` to apply 1 suggestion)
+   Compiling toyos-mdns v0.1.0 (<home>/Dev/jan/toyos-dnscache/system/netstack/mdns)
+   Compiling toyos-net-node v0.1.0 (<home>/Dev/jan/toyos-dnscache/system/netstack/node)
+    Finished `test` profile [optimized + debuginfo] target(s) in 2.14s
+  Executable tests/resolve.rs (target/debug/deps/resolve-2d19ff19690b7bb8)
+EXIT=0
+$ cargo test -p toyos-dns -- --exact tests::a_view_is_never_answered_from_another_views_entry
+warning: unused variable: `view`
+   --> system/netstack/dns/src/lib.rs:894:30
+    |
+894 |     pub fn answer(&mut self, view: &[u8], name: &Name, now: u64) -> Option<Result<Vec<[u8; 4]>, Failure>> {
+    |                              ^^^^ help: if this is intentional, prefix it with an underscore: `_view`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: field `key` is never read
+   --> system/netstack/dns/src/lib.rs:857:5
+    |
+856 | struct View {
+    |        ---- field in this struct
+857 |     key: Vec<u8>,
+    |     ^^^
+    |
+    = note: `View` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `toyos-dns` (lib) generated 2 warnings (run `cargo fix --lib -p toyos-dns` to apply 1 suggestion)
+warning: `toyos-dns` (lib test) generated 2 warnings (2 duplicates)
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.09s
+     Running unittests src/lib.rs (target/debug/deps/toyos_dns-77a86f60db349884)
+
+running 1 test
+test tests::a_view_is_never_answered_from_another_views_entry ... FAILED
+
+failures:
+
+---- tests::a_view_is_never_answered_from_another_views_entry stdout ----
+
+thread 'tests::a_view_is_never_answered_from_another_views_entry' (3930701) panicked at system/netstack/dns/src/tests.rs:1415:5:
+assertion `left == right` failed
+  left: Some(Ok([[1, 2, 3, 4]]))
+ right: None
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    tests::a_view_is_never_answered_from_another_views_entry
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 77 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-dns --lib`
+EXIT=101
+$ cargo test -p toyos-net-node --test resolve -- --exact the_same_name_for_another_view_sends_its_own_query
+    Blocking waiting for file lock on package cache
+warning: unused variable: `view`
+   --> system/netstack/dns/src/lib.rs:894:30
+    |
+894 |     pub fn answer(&mut self, view: &[u8], name: &Name, now: u64) -> Option<Result<Vec<[u8; 4]>, Failure>> {
+    |                              ^^^^ help: if this is intentional, prefix it with an underscore: `_view`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: field `key` is never read
+   --> system/netstack/dns/src/lib.rs:857:5
+    |
+856 | struct View {
+    |        ---- field in this struct
+857 |     key: Vec<u8>,
+    |     ^^^
+    |
+    = note: `View` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `toyos-dns` (lib) generated 2 warnings (run `cargo fix --lib -p toyos-dns` to apply 1 suggestion)
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.14s
+     Running tests/resolve.rs (target/debug/deps/resolve-2d19ff19690b7bb8)
+
+running 1 test
+test the_same_name_for_another_view_sends_its_own_query ... FAILED
+
+failures:
+
+---- the_same_name_for_another_view_sends_its_own_query stdout ----
+
+thread 'the_same_name_for_another_view_sends_its_own_query' (3930819) panicked at system/netstack/node/tests/resolve.rs:69:34:
+answered from what the view keeps: Ok([[203, 0, 113, 7]])
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    the_same_name_for_another_view_sends_its_own_query
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 41 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-net-node --test resolve`
+EXIT=101
+$ git apply -R <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/mutations/m01-view-ignored.patch
+EXIT=0
+
+=== m02-largest-ttl: the least TTL taken as the largest
+$ git apply --check <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/mutations/m02-largest-ttl.patch
+EXIT=0
+$ git apply <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/mutations/m02-largest-ttl.patch
+EXIT=0
+$ cargo test -p toyos-dns --no-run
+   Compiling toyos-dns v0.1.0 (<home>/Dev/jan/toyos-dnscache/system/netstack/dns)
+    Finished `test` profile [optimized + debuginfo] target(s) in 2.70s
+  Executable unittests src/lib.rs (target/debug/deps/toyos_dns-77a86f60db349884)
+EXIT=0
+$ cargo test -p toyos-dns -- --exact tests::rfc2181_5_2_an_answer_is_kept_for_the_least_ttl_of_its_aliases_and_its_differing_addresses
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.23s
+     Running unittests src/lib.rs (target/debug/deps/toyos_dns-77a86f60db349884)
+
+running 1 test
+test tests::rfc2181_5_2_an_answer_is_kept_for_the_least_ttl_of_its_aliases_and_its_differing_addresses ... FAILED
+
+failures:
+
+---- tests::rfc2181_5_2_an_answer_is_kept_for_the_least_ttl_of_its_aliases_and_its_differing_addresses stdout ----
+
+thread 'tests::rfc2181_5_2_an_answer_is_kept_for_the_least_ttl_of_its_aliases_and_its_differing_addresses' (3932099) panicked at system/netstack/dns/src/tests.rs:1279:5:
+assertion `left == right` failed
+  left: Answer(Answer { aliases: [Name { wire: [3, 99, 100, 110, 7, 101, 120, 97, 109, 112, 108, 101, 0] }], addrs: [[1, 1, 1, 1], [2, 2, 2, 2]], keep: 200 })
+ right: Answer(Answer { aliases: [Name { wire: [3, 99, 100, 110, 7, 101, 120, 97, 109, 112, 108, 101, 0] }], addrs: [[1, 1, 1, 1], [2, 2, 2, 2]], keep: 50 })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    tests::rfc2181_5_2_an_answer_is_kept_for_the_least_ttl_of_its_aliases_and_its_differing_addresses
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 77 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-dns --lib`
+EXIT=101
+$ git apply -R <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/mutations/m02-largest-ttl.patch
+EXIT=0
+
+=== m03-last-send: every reply's TTLs counted from the last query's send
+$ git apply --check <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/mutations/m03-last-send.patch
+EXIT=0
+$ git apply <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/mutations/m03-last-send.patch
+EXIT=0
+$ cargo test -p toyos-dns --no-run
+   Compiling toyos-dns v0.1.0 (<home>/Dev/jan/toyos-dnscache/system/netstack/dns)
+    Finished `test` profile [optimized + debuginfo] target(s) in 7.42s
+  Executable unittests src/lib.rs (target/debug/deps/toyos_dns-77a86f60db349884)
+EXIT=0
+$ cargo test -p toyos-dns -- --exact tests::every_ttl_counts_from_the_first_querys_send_across_an_alias_asked_again
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.13s
+     Running unittests src/lib.rs (target/debug/deps/toyos_dns-77a86f60db349884)
+
+running 1 test
+test tests::every_ttl_counts_from_the_first_querys_send_across_an_alias_asked_again ... FAILED
+
+failures:
+
+---- tests::every_ttl_counts_from_the_first_querys_send_across_an_alias_asked_again stdout ----
+
+thread 'tests::every_ttl_counts_from_the_first_querys_send_across_an_alias_asked_again' (3947918) panicked at system/netstack/dns/src/tests.rs:1290:5:
+assertion `left == right` failed
+  left: Some(14000)
+ right: Some(11000)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    tests::every_ttl_counts_from_the_first_querys_send_across_an_alias_asked_again
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 77 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-dns --lib`
+EXIT=101
+$ cargo test -p toyos-dns -- --exact tests::every_ttl_counts_from_the_first_querys_send_across_a_query_sent_again
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.16s
+     Running unittests src/lib.rs (target/debug/deps/toyos_dns-77a86f60db349884)
+
+running 1 test
+test tests::every_ttl_counts_from_the_first_querys_send_across_a_query_sent_again ... FAILED
+
+failures:
+
+---- tests::every_ttl_counts_from_the_first_querys_send_across_a_query_sent_again stdout ----
+
+thread 'tests::every_ttl_counts_from_the_first_querys_send_across_a_query_sent_again' (3948340) panicked at system/netstack/dns/src/tests.rs:1301:5:
+assertion `left == right` failed
+  left: Some(12000)
+ right: Some(10000)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    tests::every_ttl_counts_from_the_first_querys_send_across_a_query_sent_again
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 77 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-dns --lib`
+EXIT=101
+$ git apply -R <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/mutations/m03-last-send.patch
+EXIT=0
+
+=== m04-setter-keeps: the emptying taken out of the lease setter
+$ git apply --check <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/mutations/m04-setter-keeps.patch
+EXIT=0
+$ git apply <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/mutations/m04-setter-keeps.patch
+EXIT=0
+$ cargo test -p toyos-net-node --test resolve --no-run
+   Compiling toyos-dns v0.1.0 (<home>/Dev/jan/toyos-dnscache/system/netstack/dns)
+   Compiling toyos-mdns v0.1.0 (<home>/Dev/jan/toyos-dnscache/system/netstack/mdns)
+   Compiling toyos-net-node v0.1.0 (<home>/Dev/jan/toyos-dnscache/system/netstack/node)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.82s
+  Executable tests/resolve.rs (target/debug/deps/resolve-2d19ff19690b7bb8)
+EXIT=0
+$ cargo test -p toyos-net-node --test resolve -- --exact a_lease_lost_and_another_naming_the_same_resolver_empty_what_every_view_keeps
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.10s
+     Running tests/resolve.rs (target/debug/deps/resolve-2d19ff19690b7bb8)
+
+running 1 test
+test a_lease_lost_and_another_naming_the_same_resolver_empty_what_every_view_keeps ... FAILED
+
+failures:
+
+---- a_lease_lost_and_another_naming_the_same_resolver_empty_what_every_view_keeps stdout ----
+
+thread 'a_lease_lost_and_another_naming_the_same_resolver_empty_what_every_view_keeps' (3950425) panicked at system/netstack/node/tests/resolve.rs:69:34:
+answered from what the view keeps: Ok([[203, 0, 113, 7]])
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    a_lease_lost_and_another_naming_the_same_resolver_empty_what_every_view_keeps
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 41 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-net-node --test resolve`
+EXIT=101
+$ cargo test -p toyos-net-node --test resolve -- --exact a_renewal_with_the_same_terms_empties_what_every_view_keeps
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.09s
+     Running tests/resolve.rs (target/debug/deps/resolve-2d19ff19690b7bb8)
+
+running 1 test
+test a_renewal_with_the_same_terms_empties_what_every_view_keeps ... FAILED
+
+failures:
+
+---- a_renewal_with_the_same_terms_empties_what_every_view_keeps stdout ----
+
+thread 'a_renewal_with_the_same_terms_empties_what_every_view_keeps' (3950449) panicked at system/netstack/node/tests/resolve.rs:69:34:
+answered from what the view keeps: Ok([[203, 0, 113, 7]])
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    a_renewal_with_the_same_terms_empties_what_every_view_keeps
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 41 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-net-node --test resolve`
+EXIT=101
+$ git apply -R <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/mutations/m04-setter-keeps.patch
+EXIT=0
+
+=== m05-link-keeps: the emptying taken out of Stack::link
+$ git apply --check <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/mutations/m05-link-keeps.patch
+EXIT=0
+$ git apply <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/mutations/m05-link-keeps.patch
+EXIT=0
+$ cargo test -p toyos-net-node --test resolve --no-run
+   Compiling toyos-net-node v0.1.0 (<home>/Dev/jan/toyos-dnscache/system/netstack/node)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.51s
+  Executable tests/resolve.rs (target/debug/deps/resolve-2d19ff19690b7bb8)
+EXIT=0
+$ cargo test -p toyos-net-node --test resolve -- --exact a_link_that_goes_down_empties_what_every_view_keeps_though_the_lease_stays
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.09s
+     Running tests/resolve.rs (target/debug/deps/resolve-2d19ff19690b7bb8)
+
+running 1 test
+test a_link_that_goes_down_empties_what_every_view_keeps_though_the_lease_stays ... FAILED
+
+failures:
+
+---- a_link_that_goes_down_empties_what_every_view_keeps_though_the_lease_stays stdout ----
+
+thread 'a_link_that_goes_down_empties_what_every_view_keeps_though_the_lease_stays' (3952015) panicked at system/netstack/node/tests/resolve.rs:69:34:
+answered from what the view keeps: Ok([[203, 0, 113, 7]])
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    a_link_that_goes_down_empties_what_every_view_keeps_though_the_lease_stays
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 41 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-net-node --test resolve`
+EXIT=101
+$ git apply -R <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/mutations/m05-link-keeps.patch
+EXIT=0
+
+=== m06-no-generation: the generation check taken out of the keep
+$ git apply --check <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/mutations/m06-no-generation.patch
+EXIT=0
+$ git apply <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/mutations/m06-no-generation.patch
+EXIT=0
+$ cargo test -p toyos-dns --no-run
+   Compiling toyos-dns v0.1.0 (<home>/Dev/jan/toyos-dnscache/system/netstack/dns)
+    Finished `test` profile [optimized + debuginfo] target(s) in 2.37s
+  Executable unittests src/lib.rs (target/debug/deps/toyos_dns-77a86f60db349884)
+EXIT=0
+$ cargo test -p toyos-net-node --test resolve --no-run
+   Compiling toyos-mdns v0.1.0 (<home>/Dev/jan/toyos-dnscache/system/netstack/mdns)
+   Compiling toyos-net-node v0.1.0 (<home>/Dev/jan/toyos-dnscache/system/netstack/node)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.64s
+  Executable tests/resolve.rs (target/debug/deps/resolve-2d19ff19690b7bb8)
+EXIT=0
+$ cargo test -p toyos-dns -- --exact tests::the_answer_of_a_lookup_started_before_an_emptying_is_not_kept
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.08s
+     Running unittests src/lib.rs (target/debug/deps/toyos_dns-77a86f60db349884)
+
+running 1 test
+test tests::the_answer_of_a_lookup_started_before_an_emptying_is_not_kept ... FAILED
+
+failures:
+
+---- tests::the_answer_of_a_lookup_started_before_an_emptying_is_not_kept stdout ----
+
+thread 'tests::the_answer_of_a_lookup_started_before_an_emptying_is_not_kept' (3959075) panicked at system/netstack/dns/src/tests.rs:1439:5:
+assertion `left == right` failed
+  left: Some(Ok([[1, 2, 3, 4]]))
+ right: None
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    tests::the_answer_of_a_lookup_started_before_an_emptying_is_not_kept
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 77 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-dns --lib`
+EXIT=101
+$ cargo test -p toyos-net-node --test resolve -- --exact a_lookup_in_flight_as_the_link_goes_down_is_answered_and_keeps_nothing
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.08s
+     Running tests/resolve.rs (target/debug/deps/resolve-2d19ff19690b7bb8)
+
+running 1 test
+test a_lookup_in_flight_as_the_link_goes_down_is_answered_and_keeps_nothing ... FAILED
+
+failures:
+
+---- a_lookup_in_flight_as_the_link_goes_down_is_answered_and_keeps_nothing stdout ----
+
+thread 'a_lookup_in_flight_as_the_link_goes_down_is_answered_and_keeps_nothing' (3959102) panicked at system/netstack/node/tests/resolve.rs:69:34:
+answered from what the view keeps: Ok([[203, 0, 113, 7]])
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    a_lookup_in_flight_as_the_link_goes_down_is_answered_and_keeps_nothing
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 41 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-net-node --test resolve`
+EXIT=101
+$ git apply -R <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/mutations/m06-no-generation.patch
+EXIT=0
+
+=== m07-no-expired-view-first: the expired view no longer preferred over the least recently used one
+$ git apply --check <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/mutations/m07-no-expired-view-first.patch
+EXIT=0
+$ git apply <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/mutations/m07-no-expired-view-first.patch
+EXIT=0
+$ cargo test -p toyos-dns --no-run
+   Compiling toyos-dns v0.1.0 (<home>/Dev/jan/toyos-dnscache/system/netstack/dns)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.87s
+  Executable unittests src/lib.rs (target/debug/deps/toyos_dns-77a86f60db349884)
+EXIT=0
+$ cargo test -p toyos-dns -- --exact tests::a_new_view_replaces_one_whose_entries_have_all_expired_before_a_live_one
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.09s
+     Running unittests src/lib.rs (target/debug/deps/toyos_dns-77a86f60db349884)
+
+running 1 test
+test tests::a_new_view_replaces_one_whose_entries_have_all_expired_before_a_live_one ... FAILED
+
+failures:
+
+---- tests::a_new_view_replaces_one_whose_entries_have_all_expired_before_a_live_one stdout ----
+
+thread 'tests::a_new_view_replaces_one_whose_entries_have_all_expired_before_a_live_one' (3959705) panicked at system/netstack/dns/src/tests.rs:1491:5:
+assertion `left == right` failed: the least recently used view, live
+  left: None
+ right: Some(Ok([[0, 0, 0, 0]]))
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    tests::a_new_view_replaces_one_whose_entries_have_all_expired_before_a_live_one
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 77 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-dns --lib`
+EXIT=101
+$ git apply -R <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/mutations/m07-no-expired-view-first.patch
+EXIT=0
+
+=== m08-alias-target-kept: an alias target kept under its own name
+$ git apply --check <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/mutations/m08-alias-target-kept.patch
+EXIT=0
+$ git apply <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/mutations/m08-alias-target-kept.patch
+EXIT=0
+$ cargo test -p toyos-net-node --test resolve --no-run
+   Compiling toyos-dns v0.1.0 (<home>/Dev/jan/toyos-dnscache/system/netstack/dns)
+   Compiling toyos-mdns v0.1.0 (<home>/Dev/jan/toyos-dnscache/system/netstack/mdns)
+   Compiling toyos-net-node v0.1.0 (<home>/Dev/jan/toyos-dnscache/system/netstack/node)
+warning: field `name` is never read
+   --> system/netstack/node/src/resolve.rs:112:5
+    |
+103 | struct Asking {
+    |        ------ field in this struct
+...
+112 |     name: Name,
+    |     ^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `toyos-net-node` (lib) generated 1 warning
+    Finished `test` profile [optimized + debuginfo] target(s) in 2.57s
+  Executable tests/resolve.rs (target/debug/deps/resolve-2d19ff19690b7bb8)
+EXIT=0
+$ cargo test -p toyos-net-node --test resolve -- --exact nothing_is_kept_under_a_name_the_view_did_not_ask
+warning: field `name` is never read
+   --> system/netstack/node/src/resolve.rs:112:5
+    |
+103 | struct Asking {
+    |        ------ field in this struct
+...
+112 |     name: Name,
+    |     ^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `toyos-net-node` (lib) generated 1 warning
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.10s
+     Running tests/resolve.rs (target/debug/deps/resolve-2d19ff19690b7bb8)
+
+running 1 test
+test nothing_is_kept_under_a_name_the_view_did_not_ask ... FAILED
+
+failures:
+
+---- nothing_is_kept_under_a_name_the_view_did_not_ask stdout ----
+
+thread 'nothing_is_kept_under_a_name_the_view_did_not_ask' (3961199) panicked at system/netstack/node/tests/resolve.rs:1280:5:
+assertion `left == right` failed: the premise: the name asked is kept
+  left: Ok(Asking(LookupId(1)))
+ right: Ok(Kept(Ok([[203, 0, 113, 7]])))
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    nothing_is_kept_under_a_name_the_view_did_not_ask
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 41 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-net-node --test resolve`
+EXIT=101
+$ git apply -R <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/mutations/m08-alias-target-kept.patch
+EXIT=0
+
+=== m09-soa-any-zone: an SOA accepted from outside the denied name's ancestry
+$ git apply --check <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/mutations/m09-soa-any-zone.patch
+EXIT=0
+$ git apply <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/mutations/m09-soa-any-zone.patch
+EXIT=0
+$ cargo test -p toyos-dns --no-run
+   Compiling toyos-dns v0.1.0 (<home>/Dev/jan/toyos-dnscache/system/netstack/dns)
+warning: method `within` is never used
+   --> system/netstack/dns/src/lib.rs:184:8
+    |
+143 | impl Name {
+    | --------- method in this implementation
+...
+184 |     fn within(&self, zone: &Name) -> bool {
+    |        ^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `toyos-dns` (lib) generated 1 warning
+warning: `toyos-dns` (lib test) generated 1 warning (1 duplicate)
+    Finished `test` profile [optimized + debuginfo] target(s) in 3.75s
+  Executable unittests src/lib.rs (target/debug/deps/toyos_dns-77a86f60db349884)
+EXIT=0
+$ cargo test -p toyos-dns -- --exact tests::rfc2308_5_an_absence_with_no_soa_or_with_one_outside_the_denied_names_zone_keeps_nothing
+    Blocking waiting for file lock on package cache
+warning: method `within` is never used
+   --> system/netstack/dns/src/lib.rs:184:8
+    |
+143 | impl Name {
+    | --------- method in this implementation
+...
+184 |     fn within(&self, zone: &Name) -> bool {
+    |        ^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `toyos-dns` (lib) generated 1 warning
+warning: `toyos-dns` (lib test) generated 1 warning (1 duplicate)
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.15s
+     Running unittests src/lib.rs (target/debug/deps/toyos_dns-77a86f60db349884)
+
+running 1 test
+test tests::rfc2308_5_an_absence_with_no_soa_or_with_one_outside_the_denied_names_zone_keeps_nothing ... FAILED
+
+failures:
+
+---- tests::rfc2308_5_an_absence_with_no_soa_or_with_one_outside_the_denied_names_zone_keeps_nothing stdout ----
+
+thread 'tests::rfc2308_5_an_absence_with_no_soa_or_with_one_outside_the_denied_names_zone_keeps_nothing' (3962350) panicked at system/netstack/dns/src/tests.rs:1367:9:
+assertion `left == right` failed: another zone's
+  left: NoSuchName(300)
+ right: NoSuchName(0)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    tests::rfc2308_5_an_absence_with_no_soa_or_with_one_outside_the_denied_names_zone_keeps_nothing
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 77 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-dns --lib`
+EXIT=101
+$ git apply -R <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/mutations/m09-soa-any-zone.patch
+EXIT=0
+
+=== m10-hit-holds-a-place: a kept answer asked only once a lookup place is free
+$ git apply --check <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/mutations/m10-hit-holds-a-place.patch
+EXIT=0
+$ git apply <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/mutations/m10-hit-holds-a-place.patch
+EXIT=0
+$ cargo test -p toyos-net-node --test resolve --no-run
+   Compiling toyos-dns v0.1.0 (<home>/Dev/jan/toyos-dnscache/system/netstack/dns)
+   Compiling toyos-mdns v0.1.0 (<home>/Dev/jan/toyos-dnscache/system/netstack/mdns)
+   Compiling toyos-net-node v0.1.0 (<home>/Dev/jan/toyos-dnscache/system/netstack/node)
+    Finished `test` profile [optimized + debuginfo] target(s) in 2.77s
+  Executable tests/resolve.rs (target/debug/deps/resolve-2d19ff19690b7bb8)
+EXIT=0
+$ cargo test -p toyos-net-node --test resolve -- --exact a_kept_answer_is_given_while_every_lookup_place_is_held
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.15s
+     Running tests/resolve.rs (target/debug/deps/resolve-2d19ff19690b7bb8)
+
+running 1 test
+test a_kept_answer_is_given_while_every_lookup_place_is_held ... FAILED
+
+failures:
+
+---- a_kept_answer_is_given_while_every_lookup_place_is_held stdout ----
+
+thread 'a_kept_answer_is_given_while_every_lookup_place_is_held' (3966147) panicked at system/netstack/node/tests/resolve.rs:1170:5:
+assertion `left == right` failed
+  left: Err(ResourceExhausted)
+ right: Ok(Kept(Ok([[203, 0, 113, 7]])))
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    a_kept_answer_is_given_while_every_lookup_place_is_held
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 41 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-net-node --test resolve`
+EXIT=101
+$ git apply -R <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/mutations/m10-hit-holds-a-place.patch
+EXIT=0
+
+=== m11-no-expired-entry-first: a full view's expired entries no longer dropped before its least recently used
+$ git apply --check <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/mutations/m11-no-expired-entry-first.patch
+EXIT=0
+$ git apply <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/mutations/m11-no-expired-entry-first.patch
+EXIT=0
+$ cargo test -p toyos-dns --no-run
+   Compiling toyos-dns v0.1.0 (<home>/Dev/jan/toyos-dnscache/system/netstack/dns)
+    Finished `test` profile [optimized + debuginfo] target(s) in 3.77s
+  Executable unittests src/lib.rs (target/debug/deps/toyos_dns-77a86f60db349884)
+EXIT=0
+$ cargo test -p toyos-dns -- --exact tests::a_full_view_drops_its_expired_entries_before_a_live_one
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.34s
+     Running unittests src/lib.rs (target/debug/deps/toyos_dns-77a86f60db349884)
+
+running 1 test
+test tests::a_full_view_drops_its_expired_entries_before_a_live_one ... FAILED
+
+failures:
+
+---- tests::a_full_view_drops_its_expired_entries_before_a_live_one stdout ----
+
+thread 'tests::a_full_view_drops_its_expired_entries_before_a_live_one' (3968458) panicked at system/netstack/dns/src/tests.rs:1473:5:
+the least recently used, live
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    tests::a_full_view_drops_its_expired_entries_before_a_live_one
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 77 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-dns --lib`
+EXIT=101
+$ git apply -R <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/mutations/m11-no-expired-entry-first.patch
+EXIT=0
+
+=== m12-zero-ttl-kept: a TTL of zero given a deadline
+$ git apply --check <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/mutations/m12-zero-ttl-kept.patch
+EXIT=0
+$ git apply <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/mutations/m12-zero-ttl-kept.patch
+EXIT=0
+$ cargo test -p toyos-dns --no-run
+   Compiling toyos-dns v0.1.0 (<home>/Dev/jan/toyos-dnscache/system/netstack/dns)
+    Finished `test` profile [optimized + debuginfo] target(s) in 2.31s
+  Executable unittests src/lib.rs (target/debug/deps/toyos_dns-77a86f60db349884)
+EXIT=0
+$ cargo test -p toyos-dns -- --exact tests::rfc1035_4_1_3_a_ttl_of_zero_anywhere_in_what_was_read_keeps_nothing
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.14s
+     Running unittests src/lib.rs (target/debug/deps/toyos_dns-77a86f60db349884)
+
+running 1 test
+test tests::rfc1035_4_1_3_a_ttl_of_zero_anywhere_in_what_was_read_keeps_nothing ... FAILED
+
+failures:
+
+---- tests::rfc1035_4_1_3_a_ttl_of_zero_anywhere_in_what_was_read_keeps_nothing stdout ----
+
+thread 'tests::rfc1035_4_1_3_a_ttl_of_zero_anywhere_in_what_was_read_keeps_nothing' (3970251) panicked at system/netstack/dns/src/tests.rs:1315:5:
+assertion `left == right` failed: an alias's
+  left: Some(1000)
+ right: None
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    tests::rfc1035_4_1_3_a_ttl_of_zero_anywhere_in_what_was_read_keeps_nothing
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 77 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-dns --lib`
+EXIT=101
+$ git apply -R <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/mutations/m12-zero-ttl-kept.patch
+EXIT=0
+
+=== m13-msb-as-zero: a TTL with its high-order bit set read as zero (RFC 2181 §8's reading)
+$ git apply --check <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/mutations/m13-msb-as-zero.patch
+EXIT=0
+$ git apply <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/mutations/m13-msb-as-zero.patch
+EXIT=0
+$ cargo test -p toyos-dns --no-run
+   Compiling toyos-dns v0.1.0 (<home>/Dev/jan/toyos-dnscache/system/netstack/dns)
+    Finished `test` profile [optimized + debuginfo] target(s) in 2.26s
+  Executable unittests src/lib.rs (target/debug/deps/toyos_dns-77a86f60db349884)
+EXIT=0
+$ cargo test -p toyos-dns -- --exact tests::rfc8767_4_a_ttl_is_read_unsigned_and_kept_an_hour_at_most
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.09s
+     Running unittests src/lib.rs (target/debug/deps/toyos_dns-77a86f60db349884)
+
+running 1 test
+test tests::rfc8767_4_a_ttl_is_read_unsigned_and_kept_an_hour_at_most ... FAILED
+
+failures:
+
+---- tests::rfc8767_4_a_ttl_is_read_unsigned_and_kept_an_hour_at_most stdout ----
+
+thread 'tests::rfc8767_4_a_ttl_is_read_unsigned_and_kept_an_hour_at_most' (3972284) panicked at system/netstack/dns/src/tests.rs:1326:9:
+assertion `left == right` failed: 0x80000000
+  left: None
+ right: Some(3601000)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    tests::rfc8767_4_a_ttl_is_read_unsigned_and_kept_an_hour_at_most
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 77 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-dns --lib`
+EXIT=101
+$ git apply -R <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/mutations/m13-msb-as-zero.patch
+EXIT=0
+
+=== m14-no-cap: the one-hour cap taken off
+$ git apply --check <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/mutations/m14-no-cap.patch
+EXIT=0
+$ git apply <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/mutations/m14-no-cap.patch
+EXIT=0
+$ cargo test -p toyos-dns --no-run
+   Compiling toyos-dns v0.1.0 (<home>/Dev/jan/toyos-dnscache/system/netstack/dns)
+    Finished `test` profile [optimized + debuginfo] target(s) in 2.12s
+  Executable unittests src/lib.rs (target/debug/deps/toyos_dns-77a86f60db349884)
+EXIT=0
+$ cargo test -p toyos-dns -- --exact tests::rfc8767_4_a_ttl_is_read_unsigned_and_kept_an_hour_at_most
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.09s
+     Running unittests src/lib.rs (target/debug/deps/toyos_dns-77a86f60db349884)
+
+running 1 test
+test tests::rfc8767_4_a_ttl_is_read_unsigned_and_kept_an_hour_at_most ... FAILED
+
+failures:
+
+---- tests::rfc8767_4_a_ttl_is_read_unsigned_and_kept_an_hour_at_most stdout ----
+
+thread 'tests::rfc8767_4_a_ttl_is_read_unsigned_and_kept_an_hour_at_most' (3973621) panicked at system/netstack/dns/src/tests.rs:1328:5:
+assertion `left == right` failed: the root's SOA, TTL and MINIMUM 86,400 s
+  left: NoSuchName(86400)
+ right: NoSuchName(3600)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    tests::rfc8767_4_a_ttl_is_read_unsigned_and_kept_an_hour_at_most
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 77 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-dns --lib`
+EXIT=101
+$ git apply -R <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/mutations/m14-no-cap.patch
+EXIT=0
+
+=== m15-soa-ttl-not-minimum: an absence kept for its SOA's TTL alone, its MINIMUM not read
+$ git apply --check <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/mutations/m15-soa-ttl-not-minimum.patch
+EXIT=0
+$ git apply <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/mutations/m15-soa-ttl-not-minimum.patch
+EXIT=0
+$ cargo test -p toyos-dns --no-run
+   Compiling toyos-dns v0.1.0 (<home>/Dev/jan/toyos-dnscache/system/netstack/dns)
+    Finished `test` profile [optimized + debuginfo] target(s) in 2.62s
+  Executable unittests src/lib.rs (target/debug/deps/toyos_dns-77a86f60db349884)
+EXIT=0
+$ cargo test -p toyos-dns -- --exact tests::rfc2308_5_an_absence_is_kept_for_the_least_of_its_soas_ttl_and_minimum_and_of_its_aliases
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.10s
+     Running unittests src/lib.rs (target/debug/deps/toyos_dns-77a86f60db349884)
+
+running 1 test
+test tests::rfc2308_5_an_absence_is_kept_for_the_least_of_its_soas_ttl_and_minimum_and_of_its_aliases ... FAILED
+
+failures:
+
+---- tests::rfc2308_5_an_absence_is_kept_for_the_least_of_its_soas_ttl_and_minimum_and_of_its_aliases stdout ----
+
+thread 'tests::rfc2308_5_an_absence_is_kept_for_the_least_of_its_soas_ttl_and_minimum_and_of_its_aliases' (3975592) panicked at system/netstack/dns/src/tests.rs:1347:5:
+assertion `left == right` failed: its MINIMUM
+  left: NoSuchName(900)
+ right: NoSuchName(300)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    tests::rfc2308_5_an_absence_is_kept_for_the_least_of_its_soas_ttl_and_minimum_and_of_its_aliases
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 77 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-dns --lib`
+EXIT=101
+$ git apply -R <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/mutations/m15-soa-ttl-not-minimum.patch
+EXIT=0
+
+=== m16-failure-kept: a failure kept
+$ git apply --check <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/mutations/m16-failure-kept.patch
+EXIT=0
+$ git apply <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/mutations/m16-failure-kept.patch
+EXIT=0
+$ cargo test -p toyos-dns --no-run
+   Compiling toyos-dns v0.1.0 (<home>/Dev/jan/toyos-dnscache/system/netstack/dns)
+    Finished `test` profile [optimized + debuginfo] target(s) in 3.93s
+  Executable unittests src/lib.rs (target/debug/deps/toyos_dns-77a86f60db349884)
+EXIT=0
+$ cargo test -p toyos-dns -- --exact tests::a_failure_is_never_kept_and_an_absence_is
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.14s
+     Running unittests src/lib.rs (target/debug/deps/toyos_dns-77a86f60db349884)
+
+running 1 test
+test tests::a_failure_is_never_kept_and_an_absence_is ... FAILED
+
+failures:
+
+---- tests::a_failure_is_never_kept_and_an_absence_is stdout ----
+
+thread 'tests::a_failure_is_never_kept_and_an_absence_is' (3979433) panicked at system/netstack/dns/src/tests.rs:1425:9:
+assertion `left == right` failed: TimedOut
+  left: Some(Err(TimedOut))
+ right: None
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    tests::a_failure_is_never_kept_and_an_absence_is
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 77 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-dns --lib`
+EXIT=101
+$ git apply -R <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/mutations/m16-failure-kept.patch
+EXIT=0
+
+=== m17-full-view-drops-another: a full view drops the least recently used view's oldest entry
+$ git apply --check <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/mutations/m17-full-view-drops-another.patch
+EXIT=0
+$ git apply <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/mutations/m17-full-view-drops-another.patch
+EXIT=0
+$ cargo test -p toyos-dns --no-run
+   Compiling toyos-dns v0.1.0 (<home>/Dev/jan/toyos-dnscache/system/netstack/dns)
+    Finished `test` profile [optimized + debuginfo] target(s) in 2.23s
+  Executable unittests src/lib.rs (target/debug/deps/toyos_dns-77a86f60db349884)
+EXIT=0
+$ cargo test -p toyos-dns -- --exact tests::a_full_view_drops_its_own_least_recently_used_entry_and_no_other_views
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.10s
+     Running unittests src/lib.rs (target/debug/deps/toyos_dns-77a86f60db349884)
+
+running 1 test
+test tests::a_full_view_drops_its_own_least_recently_used_entry_and_no_other_views ... FAILED
+
+failures:
+
+---- tests::a_full_view_drops_its_own_least_recently_used_entry_and_no_other_views stdout ----
+
+thread 'tests::a_full_view_drops_its_own_least_recently_used_entry_and_no_other_views' (3981818) panicked at system/netstack/dns/src/tests.rs:1458:5:
+assertion `left == right` failed: the least recently used
+  left: Some(Ok([[1, 1, 1, 1]]))
+ right: None
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    tests::a_full_view_drops_its_own_least_recently_used_entry_and_no_other_views
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 77 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-dns --lib`
+EXIT=101
+$ git apply -R <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/mutations/m17-full-view-drops-another.patch
+EXIT=0
+
+=== m18-deadline-inclusive: an answer given at its deadline
+$ git apply --check <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/mutations/m18-deadline-inclusive.patch
+EXIT=0
+$ git apply <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/mutations/m18-deadline-inclusive.patch
+EXIT=0
+$ cargo test -p toyos-dns --no-run
+   Compiling toyos-dns v0.1.0 (<home>/Dev/jan/toyos-dnscache/system/netstack/dns)
+    Finished `test` profile [optimized + debuginfo] target(s) in 2.10s
+  Executable unittests src/lib.rs (target/debug/deps/toyos_dns-77a86f60db349884)
+EXIT=0
+$ cargo test -p toyos-dns -- --exact tests::an_answer_is_given_before_its_deadline_and_not_at_it
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.10s
+     Running unittests src/lib.rs (target/debug/deps/toyos_dns-77a86f60db349884)
+
+running 1 test
+test tests::an_answer_is_given_before_its_deadline_and_not_at_it ... FAILED
+
+failures:
+
+---- tests::an_answer_is_given_before_its_deadline_and_not_at_it stdout ----
+
+thread 'tests::an_answer_is_given_before_its_deadline_and_not_at_it' (3984515) panicked at system/netstack/dns/src/tests.rs:1408:5:
+assertion `left == right` failed
+  left: Some(Ok([[1, 2, 3, 4]]))
+ right: None
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    tests::an_answer_is_given_before_its_deadline_and_not_at_it
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 77 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-dns --lib`
+EXIT=101
+$ git apply -R <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/mutations/m18-deadline-inclusive.patch
+EXIT=0
+
+=== summary
+m01-view-ignored | the cache keyed by name alone, ignoring the view | built=True | tests::a_view_is_never_answered_from_another_views_entry | EXIT=101 | RED
+m01-view-ignored | the cache keyed by name alone, ignoring the view | built=True | the_same_name_for_another_view_sends_its_own_query | EXIT=101 | RED
+m02-largest-ttl | the least TTL taken as the largest | built=True | tests::rfc2181_5_2_an_answer_is_kept_for_the_least_ttl_of_its_aliases_and_its_differing_addresses | EXIT=101 | RED
+m03-last-send | every reply's TTLs counted from the last query's send | built=True | tests::every_ttl_counts_from_the_first_querys_send_across_an_alias_asked_again | EXIT=101 | RED
+m03-last-send | every reply's TTLs counted from the last query's send | built=True | tests::every_ttl_counts_from_the_first_querys_send_across_a_query_sent_again | EXIT=101 | RED
+m04-setter-keeps | the emptying taken out of the lease setter | built=True | a_lease_lost_and_another_naming_the_same_resolver_empty_what_every_view_keeps | EXIT=101 | RED
+m04-setter-keeps | the emptying taken out of the lease setter | built=True | a_renewal_with_the_same_terms_empties_what_every_view_keeps | EXIT=101 | RED
+m05-link-keeps | the emptying taken out of Stack::link | built=True | a_link_that_goes_down_empties_what_every_view_keeps_though_the_lease_stays | EXIT=101 | RED
+m06-no-generation | the generation check taken out of the keep | built=True | tests::the_answer_of_a_lookup_started_before_an_emptying_is_not_kept | EXIT=101 | RED
+m06-no-generation | the generation check taken out of the keep | built=True | a_lookup_in_flight_as_the_link_goes_down_is_answered_and_keeps_nothing | EXIT=101 | RED
+m07-no-expired-view-first | the expired view no longer preferred over the least recently used one | built=True | tests::a_new_view_replaces_one_whose_entries_have_all_expired_before_a_live_one | EXIT=101 | RED
+m08-alias-target-kept | an alias target kept under its own name | built=True | nothing_is_kept_under_a_name_the_view_did_not_ask | EXIT=101 | RED
+m09-soa-any-zone | an SOA accepted from outside the denied name's ancestry | built=True | tests::rfc2308_5_an_absence_with_no_soa_or_with_one_outside_the_denied_names_zone_keeps_nothing | EXIT=101 | RED
+m10-hit-holds-a-place | a kept answer asked only once a lookup place is free | built=True | a_kept_answer_is_given_while_every_lookup_place_is_held | EXIT=101 | RED
+m11-no-expired-entry-first | a full view's expired entries no longer dropped before its least recently used | built=True | tests::a_full_view_drops_its_expired_entries_before_a_live_one | EXIT=101 | RED
+m12-zero-ttl-kept | a TTL of zero given a deadline | built=True | tests::rfc1035_4_1_3_a_ttl_of_zero_anywhere_in_what_was_read_keeps_nothing | EXIT=101 | RED
+m13-msb-as-zero | a TTL with its high-order bit set read as zero (RFC 2181 §8's reading) | built=True | tests::rfc8767_4_a_ttl_is_read_unsigned_and_kept_an_hour_at_most | EXIT=101 | RED
+m14-no-cap | the one-hour cap taken off | built=True | tests::rfc8767_4_a_ttl_is_read_unsigned_and_kept_an_hour_at_most | EXIT=101 | RED
+m15-soa-ttl-not-minimum | an absence kept for its SOA's TTL alone, its MINIMUM not read | built=True | tests::rfc2308_5_an_absence_is_kept_for_the_least_of_its_soas_ttl_and_minimum_and_of_its_aliases | EXIT=101 | RED
+m16-failure-kept | a failure kept | built=True | tests::a_failure_is_never_kept_and_an_absence_is | EXIT=101 | RED
+m17-full-view-drops-another | a full view drops the least recently used view's oldest entry | built=True | tests::a_full_view_drops_its_own_least_recently_used_entry_and_no_other_views | EXIT=101 | RED
+m18-deadline-inclusive | an answer given at its deadline | built=True | tests::an_answer_is_given_before_its_deadline_and_not_at_it | EXIT=101 | RED

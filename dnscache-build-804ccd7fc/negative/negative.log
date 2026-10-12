@@ -1,0 +1,267 @@
+negative control: HEAD 804ccd7fcd99f27e1109d296217b5ca885137f72, base 867ec23ed26272835068f157c7fbe4c1b18e0608
+reverted to the base: system/netstack/dns/Cargo.toml system/netstack/dns/src/lib.rs system/netstack/dns/src/tests.rs system/netstack/node/src/lease.rs system/netstack/node/src/lib.rs system/netstack/node/src/resolve.rs system/netstack/src/main.rs system/netstack/src/serve.rs system/supervisor/src/main.rs
+adapter: 13 direct calls lose their view
+ system/netstack/node/tests/resolve.rs | 48 ++++++++++++++++++++++-------------
+ 1 file changed, 31 insertions(+), 17 deletions(-)
+diff --git a/system/netstack/node/tests/resolve.rs b/system/netstack/node/tests/resolve.rs
+index 32030c0d8..65aad7ec4 100644
+--- a/system/netstack/node/tests/resolve.rs
++++ b/system/netstack/node/tests/resolve.rs
+@@ -16,7 +16,20 @@ use std::time::Duration;
+ use common::{arp, from_server, message, message_of, option, sum, terms, xid, A, ACK, BROADCAST, DISCOVER, DNS, MAC, MAC_B, MAC_R, NAK, OFFER, R, REQUEST};
+ use lan::{udp, Lan, Seen, Udp, B};
+ use toyos_dns::{Failure, Name, MAX_LOOKUPS, ROUNDS, WAIT_MS};
+-use toyos_net_node::{Counter, Ended, LookupId, NotStarted, Refused, Resolved, Resolving};
++use toyos_net_node::{Counter, Ended, LookupId, NotStarted, Refused, Resolved};
++
++/// The negative control's adapter: the base names no view and keeps nothing.
++#[derive(Clone, Debug, PartialEq, Eq)]
++enum Resolving {
++    Kept(Result<Vec<[u8; 4]>, Ended>),
++    Asking(LookupId),
++}
++
++impl From<LookupId> for Resolving {
++    fn from(id: LookupId) -> Self {
++        Self::Asking(id)
++    }
++}
+ use toyos_net_udp::limits::{EPHEMERAL_COUNT, EPHEMERAL_FIRST, TX_DATAGRAMS};
+ use toyos_net_udp::Counter as Rule;
+ use toyos_net_wire::{Instant, Port};
+@@ -63,8 +76,8 @@ fn name(text: &str) -> Name {
+ }
+ 
+ /// The lookup a resolve started, where nothing was kept to answer it.
+-fn asking(resolving: Resolving) -> LookupId {
+-    match resolving {
++fn asking(resolving: impl Into<Resolving>) -> LookupId {
++    match resolving.into() {
+         Resolving::Asking(id) => id,
+         Resolving::Kept(kept) => panic!("answered from what the view keeps: {kept:?}"),
+     }
+@@ -288,7 +301,8 @@ impl Net {
+     }
+ 
+     fn resolve_in(&mut self, view: &[u8], text: &str) -> Result<Resolving, NotStarted> {
+-        self.lan.node.resolve(self.lan.now, view, name(text), counter(&mut self.draws))
++        let _ = view;
++        self.lan.node.resolve(self.lan.now, name(text), counter(&mut self.draws)).map(Resolving::Asking)
+     }
+ 
+     /// `message` from the resolver's port 53 to the node's `to`.
+@@ -412,7 +426,7 @@ impl Net {
+ #[test]
+ fn a_query_is_rfc_1035s_octets_from_a_port_and_with_an_id_of_its_own_draws() {
+     let mut net = Net::leased(&[ANSWERS], Some(R));
+-    net.lan.node.resolve(net.lan.now, ONE, name("www.example"), sequence([0xabcd_1234, 7])).expect("two draws: the id, then the port");
++    net.lan.node.resolve(net.lan.now, name("www.example"), sequence([0xabcd_1234, 7])).expect("two draws: the id, then the port");
+     net.pass();
+     #[rustfmt::skip]
+     let payload = vec![
+@@ -543,7 +557,7 @@ fn a_query_udp_refuses_is_counted_holds_no_port_and_the_next_resolver_is_asked_a
+     let mut net = Net::leased(&[UNROUTED, ANSWERS], None);
+     net.zone.push(("www.example", 0, Says::Address(ADDRESS)));
+     let refused = net.lan.counted(Rule::NoRoute);
+-    let id = asking(net.lan.node.resolve(net.lan.now, ONE, name("www.example"), sequence([0x8001, 9, 0x8002, 10])).expect("a lookup whose first query cannot leave"));
++    let id = asking(net.lan.node.resolve(net.lan.now, name("www.example"), sequence([0x8001, 9, 0x8002, 10])).expect("a lookup whose first query cannot leave"));
+     assert_eq!(net.lan.counted(Rule::NoRoute), refused + 1, "the premise: [udp] refused the query for want of a route");
+     assert_eq!(net.lan.node.counters().get(Counter::QueryUnsent), 1);
+     assert!(!net.port_held(49_152 + 9), "the refused query's socket");
+@@ -564,14 +578,14 @@ fn a_query_udp_refuses_is_counted_holds_no_port_and_the_next_resolver_is_asked_a
+ fn a_lookup_udp_refuses_every_resolver_of_ends_in_the_call_that_started_it() {
+     let mut net = Net::leased(&[UNROUTED, UNROUTED_TOO], None);
+     let refused = net.lan.counted(Rule::NoRoute);
+-    let id = asking(net.lan.node.resolve(net.lan.now, ONE, name("www.example"), sequence([0x8001, 9, 0x8002, 10])).expect("started, and ended"));
++    let id = asking(net.lan.node.resolve(net.lan.now, name("www.example"), sequence([0x8001, 9, 0x8002, 10])).expect("started, and ended"));
+     assert_eq!(net.lan.counted(Rule::NoRoute), refused + 2, "the premise: [udp] refused both queries for want of a route");
+     assert_eq!(net.lan.node.counters().get(Counter::QueryUnsent), 2);
+     assert_eq!(net.lan.node.take_resolved(), [Resolved { id, result: Err(Ended::Failed(Failure::Unreachable)) }]);
+     assert!(!net.port_held(49_152 + 9) && !net.port_held(49_152 + 10), "the refused queries' sockets");
+     net.pass();
+     assert!(net.queried.is_empty() && net.refused.is_empty(), "a query left");
+-    let next = asking(net.lan.node.resolve(net.lan.now, ONE, name("other.example"), sequence([0x8003, 11, 0x8004, 12])).expect("the next lookup"));
++    let next = asking(net.lan.node.resolve(net.lan.now, name("other.example"), sequence([0x8003, 11, 0x8004, 12])).expect("the next lookup"));
+     assert_ne!(next, id, "an ended lookup's id is not given again");
+ }
+ 
+@@ -745,9 +759,9 @@ fn the_lookup_past_the_cap_is_refused_until_an_answer_is_taken() {
+     for held in 1..MAX_LOOKUPS {
+         net.resolve("www.example").unwrap_or_else(|why| panic!("lookup {held} was refused: {why:?}"));
+     }
+-    assert_eq!(net.lan.node.resolve(net.lan.now, ONE, name("www.example"), undrawn), Err(NotStarted::ResourceExhausted));
++    assert_eq!(net.lan.node.resolve(net.lan.now, name("www.example"), undrawn), Err(NotStarted::ResourceExhausted));
+     net.until(1_000);
+-    assert_eq!(net.lan.node.resolve(net.lan.now, ONE, name("www.example"), undrawn), Err(NotStarted::ResourceExhausted), "an answer nobody took holds its place");
++    assert_eq!(net.lan.node.resolve(net.lan.now, name("www.example"), undrawn), Err(NotStarted::ResourceExhausted), "an answer nobody took holds its place");
+     assert_eq!(net.lan.node.take_resolved(), [Resolved { id: first, result: Ok(vec![ADDRESS]) }]);
+     net.resolve("www.example").expect("a taken answer's place is another's");
+ }
+@@ -757,17 +771,17 @@ fn the_lookup_past_the_cap_is_refused_until_an_answer_is_taken() {
+ #[test]
+ fn a_lookup_with_no_resolver_to_ask_is_refused_as_not_connected() {
+     let mut lan = Lan::new();
+-    assert_eq!(lan.node.resolve(lan.now, ONE, name("www.example"), undrawn), Err(NotStarted::NotConnected), "before a lease");
++    assert_eq!(lan.node.resolve(lan.now, name("www.example"), undrawn), Err(NotStarted::NotConnected), "before a lease");
+     let mut options = terms(3_600, Some(R));
+     options.retain(|(code, _)| *code != 6);
+     lan.lease_on(&options);
+-    assert_eq!(lan.node.resolve(lan.now, ONE, name("www.example"), undrawn), Err(NotStarted::NotConnected), "a lease that names no resolver");
++    assert_eq!(lan.node.resolve(lan.now, name("www.example"), undrawn), Err(NotStarted::NotConnected), "a lease that names no resolver");
+ 
+     let mut lan = Lan::new();
+     lan.lease(600);
+-    lan.node.resolve(lan.now, ONE, name("www.example"), sequence([1, 2])).expect("the premise: a held lease's resolver is asked");
++    lan.node.resolve(lan.now, name("www.example"), sequence([1, 2])).expect("the premise: a held lease's resolver is asked");
+     assert!(lan.run_until(Duration::from_secs(700), |lan| lan.node.lease().is_none()), "the lease runs out");
+-    assert_eq!(lan.node.resolve(lan.now, ONE, name("www.example"), undrawn), Err(NotStarted::NotConnected), "after the lease");
++    assert_eq!(lan.node.resolve(lan.now, name("www.example"), undrawn), Err(NotStarted::NotConnected), "after the lease");
+ }
+ 
+ // A lookup nobody waits for is let go at once: the ports its queries left from are free, and its
+@@ -844,8 +858,8 @@ fn a_query_with_no_port_to_leave_from_ends_its_lookup_by_name() {
+         net.lan.node.udp_bind(ANY, None, || offset).unwrap();
+     }
+     assert_eq!(net.lan.node.udp_bind(ANY, None, || last), Err(toyos_net_node::Refused::ResourceExhausted), "every place is a client's socket");
+-    let id = asking(net.lan.node.resolve(net.lan.now, ONE, name("www.example"), sequence([0x8001, last])).expect("the one port left, and a query needs no place"));
+-    assert_eq!(net.lan.node.resolve(net.lan.now, ONE, name("other.example"), sequence([0x8002, 0])), Err(NotStarted::ResourceExhausted));
++    let id = asking(net.lan.node.resolve(net.lan.now, name("www.example"), sequence([0x8001, last])).expect("the one port left, and a query needs no place"));
++    assert_eq!(net.lan.node.resolve(net.lan.now, name("other.example"), sequence([0x8002, 0])), Err(NotStarted::ResourceExhausted));
+     assert_eq!(net.run(id, 10 * WAIT_MS), Some(Err(Ended::NoPort)));
+     assert_eq!(net.ms(), WAIT_MS);
+     let left: Vec<u16> = net.queried.iter().map(|query| query.udp.source_port).collect();
+@@ -971,7 +985,7 @@ fn a_recorded_reply_of_a_public_resolver_answers_the_nodes_query() {
+         0x00, 0x04, 0x08, 0x08, 0x08, 0x08,
+     ];
+     let mut net = Net::leased(&[ANSWERS], Some(R));
+-    let id = asking(net.lan.node.resolve(net.lan.now, ONE, name("dns.google"), sequence([0x1001, 3])).unwrap());
++    let id = asking(net.lan.node.resolve(net.lan.now, name("dns.google"), sequence([0x1001, 3])).unwrap());
+     net.pass();
+     let asked = net.queried[0].clone();
+     assert_eq!((asked.id, &asked.udp.payload[12..]), (0x1001, &RECORDED[12..28]), "the premise: the node's query carries the reply's id and question");
+
+running 42 tests
+test a_lookup_ends_when_its_lease_is_lost ... ok
+test a_lookup_udp_refuses_every_resolver_of_ends_in_the_call_that_started_it ... ok
+test a_lookup_outlives_a_renewal_that_names_the_same_resolvers ... ok
+test a_lookup_is_not_carried_by_a_later_ones_schedule ... ok
+test a_lookup_with_no_resolver_to_ask_is_refused_as_not_connected ... ok
+test a_clients_datagrams_behind_the_burst_wait_in_their_own_socket_and_take_no_querys_place ... ok
+test a_kept_answer_is_given_while_every_lookup_place_is_held ... FAILED
+test a_burst_at_a_resolver_not_yet_resolved_is_on_the_wire_once_the_resolver_answers_arp ... ok
+test a_lookup_in_flight_as_the_link_goes_down_is_answered_and_keeps_nothing ... ok
+test a_query_for_a_resolver_ip_has_given_up_ends_its_lookup_in_the_opportunity_that_would_have_carried_it ... ok
+test a_name_its_view_keeps_is_answered_in_the_call_and_sends_nothing ... FAILED
+test a_link_that_goes_down_empties_what_every_view_keeps_though_the_lease_stays ... FAILED
+test a_query_is_rfc_1035s_octets_from_a_port_and_with_an_id_of_its_own_draws ... ok
+test a_query_its_resolver_refuses_by_icmp_is_counted_and_the_next_resolver_is_asked_at_once ... ok
+test a_query_holds_its_port_while_its_answer_is_read_and_an_ended_lookup_holds_none ... ok
+test a_query_udp_refuses_is_counted_holds_no_port_and_the_next_resolver_is_asked_at_once ... ok
+test a_lookup_ends_when_its_leases_resolvers_change ... ok
+test a_lease_lost_and_another_naming_the_same_resolver_empty_what_every_view_keeps ... FAILED
+test a_query_the_network_reports_unreachable_is_counted_and_ends_a_lookup_with_no_other_resolver ... ok
+test a_renewal_with_the_same_terms_empties_what_every_view_keeps ... FAILED
+test a_reply_is_read_only_from_port_53 ... ok
+test a_reply_from_port_0_is_not_read ... ok
+test a_reply_is_read_only_at_the_address_its_query_left_from ... ok
+test a_reply_is_read_only_from_the_resolver_its_query_went_to ... ok
+test a_reply_on_another_querys_port_is_not_read ... ok
+test a_forged_report_of_the_querys_own_addresses_and_ports_ends_nothing_and_the_answer_behind_it_is_taken ... ok
+test a_lookup_let_go_frees_its_ports_and_its_place_at_once ... ok
+test a_recorded_reply_of_a_public_resolver_answers_the_nodes_query ... ok
+test a_report_that_is_not_about_the_query_or_is_a_hint_ends_no_wait ... ok
+test a_lookup_let_go_after_it_ended_takes_its_answer_with_it ... ok
+test a_resolver_that_never_answers_is_asked_at_each_waits_end ... ok
+test a_resolver_the_lease_names_twice_is_asked_once_a_wait_whatever_it_reports ... ok
+test an_alias_answered_late_restarts_the_lookup_and_lets_the_old_names_queries_go ... ok
+test an_absence_is_kept_where_an_soa_says_for_how_long_and_asked_again_where_none_does ... FAILED
+test forged_reports_and_another_resolvers_failures_end_nothing_and_the_answer_behind_them_is_taken ... ok
+test nothing_is_kept_under_a_name_the_view_did_not_ask ... FAILED
+test reports_alone_end_no_lookup_and_ask_no_resolver_twice_inside_a_wait ... ok
+test nothing_but_its_answer_ends_a_lookup ... ok
+test the_lookup_past_the_cap_is_refused_until_an_answer_is_taken ... ok
+test the_query_asked_in_a_dropped_querys_place_leaves_in_the_same_opportunity ... ok
+test the_same_name_for_another_view_sends_its_own_query ... FAILED
+test a_query_with_no_port_to_leave_from_ends_its_lookup_by_name ... ok
+
+failures:
+
+---- a_kept_answer_is_given_while_every_lookup_place_is_held stdout ----
+
+thread 'a_kept_answer_is_given_while_every_lookup_place_is_held' (4007456) panicked at system/netstack/node/tests/resolve.rs:1135:5:
+assertion `left == right` failed: the premise: the view keeps the answer
+  left: Ok(Asking(LookupId(1)))
+ right: Ok(Kept(Ok([[203, 0, 113, 7]])))
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- a_name_its_view_keeps_is_answered_in_the_call_and_sends_nothing stdout ----
+
+thread 'a_name_its_view_keeps_is_answered_in_the_call_and_sends_nothing' (4007468) panicked at system/netstack/node/tests/resolve.rs:1135:5:
+assertion `left == right` failed: the premise: the view keeps the answer
+  left: Ok(Asking(LookupId(1)))
+ right: Ok(Kept(Ok([[203, 0, 113, 7]])))
+
+---- a_link_that_goes_down_empties_what_every_view_keeps_though_the_lease_stays stdout ----
+
+thread 'a_link_that_goes_down_empties_what_every_view_keeps_though_the_lease_stays' (4007458) panicked at system/netstack/node/tests/resolve.rs:1135:5:
+assertion `left == right` failed: the premise: the view keeps the answer
+  left: Ok(Asking(LookupId(1)))
+ right: Ok(Kept(Ok([[203, 0, 113, 7]])))
+
+---- a_lease_lost_and_another_naming_the_same_resolver_empty_what_every_view_keeps stdout ----
+
+thread 'a_lease_lost_and_another_naming_the_same_resolver_empty_what_every_view_keeps' (4007457) panicked at system/netstack/node/tests/resolve.rs:1135:5:
+assertion `left == right` failed: the premise: the view keeps the answer
+  left: Ok(Asking(LookupId(1)))
+ right: Ok(Kept(Ok([[203, 0, 113, 7]])))
+
+---- a_renewal_with_the_same_terms_empties_what_every_view_keeps stdout ----
+
+thread 'a_renewal_with_the_same_terms_empties_what_every_view_keeps' (4007477) panicked at system/netstack/node/tests/resolve.rs:1135:5:
+assertion `left == right` failed: the premise: the view keeps the answer
+  left: Ok(Asking(LookupId(1)))
+ right: Ok(Kept(Ok([[203, 0, 113, 7]])))
+
+---- an_absence_is_kept_where_an_soa_says_for_how_long_and_asked_again_where_none_does stdout ----
+
+thread 'an_absence_is_kept_where_an_soa_says_for_how_long_and_asked_again_where_none_does' (4007486) panicked at system/netstack/node/tests/resolve.rs:1269:5:
+assertion `left == right` failed
+  left: Ok(Asking(LookupId(2)))
+ right: Ok(Kept(Err(Failed(NoSuchName))))
+
+---- nothing_is_kept_under_a_name_the_view_did_not_ask stdout ----
+
+thread 'nothing_is_kept_under_a_name_the_view_did_not_ask' (4007490) panicked at system/netstack/node/tests/resolve.rs:1294:5:
+assertion `left == right` failed: the premise: the name asked is kept
+  left: Ok(Asking(LookupId(1)))
+ right: Ok(Kept(Ok([[203, 0, 113, 7]])))
+
+---- the_same_name_for_another_view_sends_its_own_query stdout ----
+
+thread 'the_same_name_for_another_view_sends_its_own_query' (4007494) panicked at system/netstack/node/tests/resolve.rs:1135:5:
+assertion `left == right` failed: the premise: the view keeps the answer
+  left: Ok(Asking(LookupId(1)))
+ right: Ok(Kept(Ok([[203, 0, 113, 7]])))
+
+
+failures:
+    a_kept_answer_is_given_while_every_lookup_place_is_held
+    a_lease_lost_and_another_naming_the_same_resolver_empty_what_every_view_keeps
+    a_link_that_goes_down_empties_what_every_view_keeps_though_the_lease_stays
+    a_name_its_view_keeps_is_answered_in_the_call_and_sends_nothing
+    a_renewal_with_the_same_terms_empties_what_every_view_keeps
+    an_absence_is_kept_where_an_soa_says_for_how_long_and_asked_again_where_none_does
+    nothing_is_kept_under_a_name_the_view_did_not_ask
+    the_same_name_for_another_view_sends_its_own_query
+
+test result: FAILED. 34 passed; 8 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+    Blocking waiting for file lock on package cache
+   Compiling toyos-dns v0.1.0 (<home>/Dev/jan/toyos-dnscache/system/netstack/dns)
+   Compiling toyos-mdns v0.1.0 (<home>/Dev/jan/toyos-dnscache/system/netstack/mdns)
+   Compiling toyos-net-node v0.1.0 (<home>/Dev/jan/toyos-dnscache/system/netstack/node)
+    Finished `test` profile [optimized + debuginfo] target(s) in 5.36s
+     Running tests/resolve.rs (target/debug/deps/resolve-2d19ff19690b7bb8)
+error: test failed, to rerun pass `-p toyos-net-node --test resolve`
+EXIT=101
+restored to HEAD, tree clean

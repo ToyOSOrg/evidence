@@ -1,0 +1,15 @@
+diff --git a/system/netstack/dns/src/lib.rs b/system/netstack/dns/src/lib.rs
+index 6ffecde6d..8ced60214 100644
+--- a/system/netstack/dns/src/lib.rs
++++ b/system/netstack/dns/src/lib.rs
+@@ -437,9 +437,7 @@ fn absence(msg: &Message, mut at: usize, count: u16, denied: &Name) -> Result<u3
+         if fields + 20 != r.end {
+             return Err(Stray::Malformed("an SOA record whose data is not two names and five numbers"));
+         }
+-        if !denied.within(&r.owner) {
+-            continue;
+-        }
++        let _ = denied;
+         let soa = r.ttl.min(keep(msg.u32(fields + 16)?));
+         least = Some(least.map_or(soa, |least| least.min(soa)));
+     }

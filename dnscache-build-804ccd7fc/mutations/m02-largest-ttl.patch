@@ -1,0 +1,16 @@
+diff --git a/system/netstack/dns/src/lib.rs b/system/netstack/dns/src/lib.rs
+index 6ffecde6d..060622844 100644
+--- a/system/netstack/dns/src/lib.rs
++++ b/system/netstack/dns/src/lib.rs
+@@ -530,9 +530,9 @@ fn read_checked(msg: &Message, id: u16, asked: &Name, budget: usize) -> Result<V
+     let Some(chain) = chain else { return Ok(Verdict::TooManyAliases) };
+     let owner = chain.last().map_or(asked, |(name, _)| *name);
+     let mut found: Vec<[u8; 4]> = Vec::new();
+-    let mut least = chain.iter().map(|(_, ttl)| *ttl).min();
++    let mut least = chain.iter().map(|(_, ttl)| *ttl).max();
+     for (_, addr, ttl) in addrs.iter().filter(|(name, ..)| name.same(owner)) {
+-        least = Some(least.map_or(*ttl, |least| least.min(*ttl)));
++        least = Some(least.map_or(*ttl, |least| least.max(*ttl)));
+         if !found.contains(addr) {
+             found.push(*addr);
+         }

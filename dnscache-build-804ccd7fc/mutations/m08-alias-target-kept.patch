@@ -1,0 +1,28 @@
+diff --git a/system/netstack/dns/src/lib.rs b/system/netstack/dns/src/lib.rs
+index 6ffecde6d..8daea44ba 100644
+--- a/system/netstack/dns/src/lib.rs
++++ b/system/netstack/dns/src/lib.rs
+@@ -680,6 +680,10 @@ impl Lookup {
+         Some((lookup, step))
+     }
+ 
++    pub fn now_asking(&self) -> &Name {
++        &self.name
++    }
++
+     /// When the lookup must be woken if no datagram arrives first.
+     pub fn due(&self) -> u64 {
+         self.due
+diff --git a/system/netstack/node/src/resolve.rs b/system/netstack/node/src/resolve.rs
+index 917fa5314..7c2d4f722 100644
+--- a/system/netstack/node/src/resolve.rs
++++ b/system/netstack/node/src/resolve.rs
+@@ -275,7 +275,7 @@ impl Resolver {
+                 Err(Ended::NoPort | Ended::LeaseChanged) => None,
+             };
+             if let Some(answer) = answer {
+-                stack.answers().keep(&asking.view, &asking.name, asking.generation, answer, asking.lookup.keep_until(), ms);
++                stack.answers().keep(&asking.view, asking.lookup.now_asking(), asking.generation, answer, asking.lookup.keep_until(), ms);
+             }
+             ended.push(Resolved { id: asking.id, result });
+             false

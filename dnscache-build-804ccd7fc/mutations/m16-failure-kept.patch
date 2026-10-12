@@ -1,0 +1,14 @@
+diff --git a/system/netstack/dns/src/lib.rs b/system/netstack/dns/src/lib.rs
+index 6ffecde6d..483af5e85 100644
+--- a/system/netstack/dns/src/lib.rs
++++ b/system/netstack/dns/src/lib.rs
+@@ -913,8 +913,7 @@ impl Cache {
+     pub fn keep(&mut self, view: &[u8], name: &Name, started: Generation, answer: Result<&[[u8; 4]], Failure>, until: Option<u64>, now: u64) {
+         let answer = match answer {
+             Ok(addrs) => Ok(addrs.to_vec()),
+-            Err(absent @ (Failure::NoSuchName | Failure::NoAddress)) => Err(absent),
+-            Err(_) => return,
++            Err(failure) => Err(failure),
+         };
+         let Some(until) = until.filter(|until| now < *until) else { return };
+         if started != self.generation() {

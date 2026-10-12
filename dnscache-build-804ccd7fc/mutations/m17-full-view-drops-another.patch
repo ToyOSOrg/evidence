@@ -1,0 +1,20 @@
+diff --git a/system/netstack/dns/src/lib.rs b/system/netstack/dns/src/lib.rs
+index 6ffecde6d..4fcaab499 100644
+--- a/system/netstack/dns/src/lib.rs
++++ b/system/netstack/dns/src/lib.rs
+@@ -935,7 +935,14 @@ impl Cache {
+             kept.entries.retain(|entry| now < entry.until);
+         }
+         if kept.entries.len() == VIEW_ENTRIES {
+-            kept.entries.remove(0);
++            match self.views.first_mut() {
++                Some(other) if !other.entries.is_empty() => {
++                    other.entries.remove(0);
++                }
++                _ => {
++                    kept.entries.remove(0);
++                }
++            }
+         }
+         kept.entries.push(Entry { name: name.clone(), answer, until });
+         self.views.push(kept);

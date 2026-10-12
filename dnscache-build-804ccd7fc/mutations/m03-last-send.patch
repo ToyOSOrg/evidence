@@ -1,0 +1,12 @@
+diff --git a/system/netstack/dns/src/lib.rs b/system/netstack/dns/src/lib.rs
+index 6ffecde6d..448941cee 100644
+--- a/system/netstack/dns/src/lib.rs
++++ b/system/netstack/dns/src/lib.rs
+@@ -707,6 +707,7 @@ impl Lookup {
+         let spent = self.asked == ROUNDS * self.servers.len();
+         if !spent && now >= free {
+             self.free(to, now + WAIT_MS);
++            self.began = now;
+             self.asked += 1;
+             let asked = Asked(self.next);
+             self.next += 1;

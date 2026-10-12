@@ -1,0 +1,22 @@
+diff --git a/system/netstack/dns/src/lib.rs b/system/netstack/dns/src/lib.rs
+index 6ffecde6d..918560719 100644
+--- a/system/netstack/dns/src/lib.rs
++++ b/system/netstack/dns/src/lib.rs
+@@ -892,7 +892,7 @@ impl Cache {
+ 
+     /// What `view` keeps for `name` at `now`, if it keeps anything still.
+     pub fn answer(&mut self, view: &[u8], name: &Name, now: u64) -> Option<Result<Vec<[u8; 4]>, Failure>> {
+-        let at = self.views.iter().position(|kept| kept.key == view)?;
++        let at = self.views.iter().position(|_| true)?;
+         let mut kept = self.views.remove(at);
+         let answer = kept.entries.iter().position(|entry| entry.name.same(name)).and_then(|at| {
+             let entry = kept.entries.remove(at);
+@@ -920,7 +920,7 @@ impl Cache {
+         if started != self.generation() {
+             return;
+         }
+-        let mut kept = match self.views.iter().position(|kept| kept.key == view) {
++        let mut kept = match self.views.iter().position(|_| true) {
+             Some(at) => self.views.remove(at),
+             None => {
+                 if self.views.len() == MAX_VIEWS {

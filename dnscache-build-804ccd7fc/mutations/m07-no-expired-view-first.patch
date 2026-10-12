@@ -1,0 +1,14 @@
+diff --git a/system/netstack/dns/src/lib.rs b/system/netstack/dns/src/lib.rs
+index 6ffecde6d..c4cc93cea 100644
+--- a/system/netstack/dns/src/lib.rs
++++ b/system/netstack/dns/src/lib.rs
+@@ -925,7 +925,8 @@ impl Cache {
+             None => {
+                 if self.views.len() == MAX_VIEWS {
+                     let spent = self.views.iter().position(|kept| kept.entries.iter().all(|entry| entry.until <= now));
+-                    self.views.remove(spent.unwrap_or(0));
++                    let _ = spent;
++                    self.views.remove(0);
+                 }
+                 View { key: view.to_vec(), entries: Vec::new() }
+             }

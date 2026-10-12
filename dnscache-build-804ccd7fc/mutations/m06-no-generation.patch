@@ -1,0 +1,15 @@
+diff --git a/system/netstack/dns/src/lib.rs b/system/netstack/dns/src/lib.rs
+index 6ffecde6d..ce8a1d65c 100644
+--- a/system/netstack/dns/src/lib.rs
++++ b/system/netstack/dns/src/lib.rs
+@@ -917,9 +917,7 @@ impl Cache {
+             Err(_) => return,
+         };
+         let Some(until) = until.filter(|until| now < *until) else { return };
+-        if started != self.generation() {
+-            return;
+-        }
++        let _ = started;
+         let mut kept = match self.views.iter().position(|kept| kept.key == view) {
+             Some(at) => self.views.remove(at),
+             None => {

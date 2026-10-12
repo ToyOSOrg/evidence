@@ -1,0 +1,13 @@
+diff --git a/system/netstack/dns/src/lib.rs b/system/netstack/dns/src/lib.rs
+index 6ffecde6d..a3db738a3 100644
+--- a/system/netstack/dns/src/lib.rs
++++ b/system/netstack/dns/src/lib.rs
+@@ -689,7 +689,7 @@ impl Lookup {
+     /// asking: its first query's send plus the least TTL of every record it
+     /// read, and `None` where that is zero.
+     pub fn keep_until(&self) -> Option<u64> {
+-        (self.keep > 0).then(|| self.began.saturating_add(u64::from(self.keep) * 1_000))
++        Some(self.began.saturating_add(u64::from(self.keep) * 1_000))
+     }
+ 
+     /// The queries whose answer is still read, oldest first. The port of any

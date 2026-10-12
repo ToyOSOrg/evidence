@@ -1,0 +1,13 @@
+diff --git a/system/netstack/dns/src/lib.rs b/system/netstack/dns/src/lib.rs
+index 6ffecde6d..926a6532c 100644
+--- a/system/netstack/dns/src/lib.rs
++++ b/system/netstack/dns/src/lib.rs
+@@ -896,7 +896,7 @@ impl Cache {
+         let mut kept = self.views.remove(at);
+         let answer = kept.entries.iter().position(|entry| entry.name.same(name)).and_then(|at| {
+             let entry = kept.entries.remove(at);
+-            (now < entry.until).then(|| {
++            (now <= entry.until).then(|| {
+                 let answer = entry.answer.clone();
+                 kept.entries.push(entry);
+                 answer
