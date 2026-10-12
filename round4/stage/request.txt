@@ -1,0 +1,53 @@
+# PR #873 round 4: under PCID a global discharge is INVPCID type 2. Head 806130ce9a4a0e395391b1d3bcd90fab8d89fbde (wt/toyos-pge, pushed).
+# Every image below was staged with `cargo test --test toyos-build -- --metal --metal-readback <dir> [--metal-host '<user>@<amd-bench>'] <rows>`
+# from a committed, clean tree, exit 2 each (Verdict::Staged); nothing touched a machine. Each <dir>/request.txt is the
+# harness's own; this file orders them. Script and output: ../stage.sh, ../stage.out.
+M=<path>
+#
+# Trees (both clean; keep them until this run is judged):
+#   HEAD <path>      wt/toyos-pge 806130ce9
+#   MUT  <path>  detached 806130ce9; each mutation was a local commit there, never pushed, reset
+#        after staging: m3-t14 b60a150a7, m3-amd 12260146d, m4-t14 749375ba5, m4-amd d8ae0ba1c; patches in ../mut/
+# The AMD invocations carry the harness's placeholder --host <user>@<amd-bench>: substitute the bench, and quote the word.
+
+######## T14 — one session, 4 boots ########
+ 1. HEAD shared-debug (the three global-leaf rows)  sha256 c570c1ce49c8f4f7cc0c21bab453353cc3019d425c92841267637edd79de9ff7
+    cargo run -p toyos-metal -- --image $M/head-t14/shared-debug/image.img --readback $M/head-t14/shared-debug --fat32-check
+ 2. HEAD testcases (control_regs)                    sha256 ac05cd6f93ec9c8dc7ea68a28f171af939153a1a8a5257ff9f95dd5b53e02118
+    cargo run -p toyos-metal -- --image $M/head-t14/testcases/image.img --readback $M/head-t14/testcases --fat32-check
+ 3. M3 shared-debug                                  sha256 b619e138e78fa688add3c0d18403648a68b8c10a102d264b239352de357c1a4a
+    cargo run -p toyos-metal -- --image $M/m3-t14/shared-debug/image.img --readback $M/m3-t14/shared-debug --fat32-check
+ 4. M4 shared-debug                                  sha256 080800b9a5af012da728c45b3ea8e2377be9b7bb7607bfdffe2e14f44bb27c79
+    cargo run -p toyos-metal -- --image $M/m4-t14/shared-debug/image.img --readback $M/m4-t14/shared-debug --fat32-check
+
+######## AMD bench — one session, 4 boots ########
+ 1. HEAD shared-debug  sha256 a4c728677bfd6c0980d3da197f16aa05abd216338ba816daee8b208f9e17428b
+    cargo run -p toyos-metal -- --image $M/head-amd/shared-debug/image.img --readback $M/head-amd/shared-debug --fat32-check --host '<user>@<amd-bench>'
+ 2. HEAD testcases     sha256 903262644ac429f12c82a668d587b09bc1268ff525e5b6e65123b9a50e91658e
+    cargo run -p toyos-metal -- --image $M/head-amd/testcases/image.img --readback $M/head-amd/testcases --fat32-check --host '<user>@<amd-bench>'
+ 3. M3 shared-debug    sha256 627a33272b585a57e35b5f8ff544eacb9f1927e51699240a3af4ec4421fc048e
+    cargo run -p toyos-metal -- --image $M/m3-amd/shared-debug/image.img --readback $M/m3-amd/shared-debug --fat32-check --host '<user>@<amd-bench>'
+ 4. M4 shared-debug    sha256 d7eef0189fa2969b09d8dbcf8549801cef4422a0d7d327dc88513669e355c830
+    cargo run -p toyos-metal -- --image $M/m4-amd/shared-debug/image.img --readback $M/m4-amd/shared-debug --fat32-check --host '<user>@<amd-bench>'
+
+Judge (exit 0 green, 1 red), each from HEAD's tree once its directory's readbacks are all present:
+   cargo test --test toyos-build -- --metal --metal-readback $M/head-t14 a_global_kernel_leafs_discharge_drops_it a_kernel_half_shootdown_drops_a_global_kernel_translation a_user_half_shootdown_keeps_a_global_kernel_translation control_regs
+   cargo test --test toyos-build -- --metal --metal-readback $M/m3-t14 a_global_kernel_leafs_discharge_drops_it a_kernel_half_shootdown_drops_a_global_kernel_translation a_user_half_shootdown_keeps_a_global_kernel_translation
+   cargo test --test toyos-build -- --metal --metal-readback $M/m4-t14 a_global_kernel_leafs_discharge_drops_it a_kernel_half_shootdown_drops_a_global_kernel_translation a_user_half_shootdown_keeps_a_global_kernel_translation
+   cargo test --test toyos-build -- --metal --metal-readback $M/head-amd --metal-host '<user>@<amd-bench>' a_global_kernel_leafs_discharge_drops_it a_kernel_half_shootdown_drops_a_global_kernel_translation a_user_half_shootdown_keeps_a_global_kernel_translation control_regs
+   cargo test --test toyos-build -- --metal --metal-readback $M/m3-amd --metal-host '<user>@<amd-bench>' a_global_kernel_leafs_discharge_drops_it a_kernel_half_shootdown_drops_a_global_kernel_translation a_user_half_shootdown_keeps_a_global_kernel_translation
+   cargo test --test toyos-build -- --metal --metal-readback $M/m4-amd --metal-host '<user>@<amd-bench>' a_global_kernel_leafs_discharge_drops_it a_kernel_half_shootdown_drops_a_global_kernel_translation a_user_half_shootdown_keeps_a_global_kernel_translation
+
+######## What each verdict should be ########
+HEAD, both: all three global-leaf rows GREEN; control_regs GREEN. T14: every CPU's cr4 0x00360ee8 (PGE, bit 7, and
+   PCIDE, bit 17), as round 3; the discharge row's global arm is now INVPCID type 2 there. AMD: 0x00340ee8 (PGE, no
+   PCID), the discharge INVLPG as before. No line "control_regs: cpuN signature ... microcode ..." on either: that read
+   is deleted. No "has PCID but no INVPCID" line on either: both CPUs that have PCID have INVPCID.
+M3 (the discharge's global arm removed), both: a_global_kernel_leafs_discharge_drops_it RED, the job exiting 101 with
+   "the write's discharge left the old frame's global translation" (left: 0, right: 1); the other two GREEN. On the T14
+   this is the negative control of the INVPCID type 2 arm: without it, the global translation outlives the discharge.
+M4 (the user-half answer is flush_tlb_all again), both: a_user_half_shootdown_keeps_a_global_kernel_translation RED,
+   "the user-half shootdown dropped a global kernel translation" (left: 1, right: 0); the other two GREEN.
+A row RED with "the control: with nothing invalidated ..." or "the user-half shootdown's answer covered another CPU's
+   kernel-half one" is a refusal, not a verdict: that boot's evidence for the row is void. Report it as such.
+A mutation GREEN where RED is expected is a finding for me, with the boot's kernel log.

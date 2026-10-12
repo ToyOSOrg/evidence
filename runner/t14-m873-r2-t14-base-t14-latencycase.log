@@ -1,0 +1,18 @@
+saved  35651584 bytes of /dev/sda3 to <path>
+ccffef19d53f395c520d253d433aeab3f04687627e4f24e3d865be8b58090c6a  <path>
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.20s
+     Running `target/debug/toyos-metal --image <path> --readback <path> --fat32-check`
+image <path> 131072000 bytes, ESP p1 at 2048+69632, log p3 at 73728+69632
+image <path> armed with ["tlb-shootdown-bench", "boot-deadline=120000"], so it is waited 420 s to come back
+machine <vendor> <model>, BIOS <bios> (1.71 )
+disk /dev/sda: 60062500 sectors, SanDisk Ultra, removable — the stick <path> names
+  run: sudo -n '/usr/sbin/wipefs' '--all' '/dev/sda'
+  run: sudo -n '/usr/bin/dd' 'of=/dev/sda' 'bs=4M' 'conv=fsync'
+  run: sudo -n '/usr/bin/efibootmgr' '--delete-bootnum' '--bootnum' '0002'
+  run: sudo -n '/usr/bin/efibootmgr' '--create-only' '--disk' '/dev/sda' '--part' '1' '--label' 'ToyOS' '--loader' '\EFI\BOOT\BOOTX64.EFI'
+  run: sudo -n '/usr/bin/efibootmgr' '--bootnext' '0002'
+  run: sudo -n '/usr/sbin/reboot'
+the machine answered ssh again after 49 s
+the boot stick enumerated 0 s after the machine answered
+  run: sudo -n '/usr/bin/mount' '-o' 'ro' '/dev/sda3' '<path>
+14:33:04 toyos-metal: mounting the log partition on the machine exited exit status: 255: ssh: connect to host t14 port 22: Operation timed out

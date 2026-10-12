@@ -1,0 +1,28 @@
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.36s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-9af9c0c40d17ccab)
+14:24:10   BUILD x86_64 binaries of tests/guest/rust-tests
+14:24:15   BUILT x86_64 binaries of tests/guest/rust-tests  (5s)
+14:24:15 [toyos] Compiling 138 C tests, and attempting 24 declared ones...
+14:24:28 [metal] 2 registration(s) and 0 shared member(s) over 2 boot(s)
+14:24:28   BUILD x86_64 kernel boot-actuators,test-actuators, loader, ROOT of <path>
+14:24:35 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+14:24:35   BUILT x86_64 kernel boot-actuators,test-actuators, loader, ROOT of <path>  (7s)
+14:24:35 [metal] latencycase: 2 job(s) under a list bound of 60000 ms, armed with ["tlb-shootdown-bench"] and a boot deadline of 120000 ms — <path>
+14:24:35   BUILD x86_64 kernel scout-pmc, ROOT of <path>
+14:24:40 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+14:24:40   BUILT x86_64 kernel scout-pmc, ROOT of <path>  (5s)
+14:24:40 [metal] scout-tlb-base: 1 job(s) under a list bound of 60000 ms, armed with [] and a boot deadline of 120000 ms — <path>
+# One boot per image. Each invocation is `cargo <words>` from this worktree.
+
+latencycase
+  image: <path>
+  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check --host <user>@<amd-bench>
+
+scout-tlb-base
+  image: <path>
+  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check --host <user>@<amd-bench>
+14:24:40 [metal] staged 2 image(s); <path> lists them. The machine was not touched, so this run establishes nothing about it.
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `<path> --metal --metal-readback <path> --metal-host '<user>@<amd-bench>' scout_tlb_base tlb_shootdown_cost` (exit status: 2)
