@@ -1,0 +1,71 @@
+$ cat e1.sh
+#!/bin/sh
+# E1: every tree path the body cites exists at origin/main and is unchanged since the branch base.
+cd "$1" || exit 2
+BASE=177e72a9e
+TIP=131970ac80c97bb809f51954c24b90928fa56fef
+PATHS="CLAUDE.md .claude/agents/reviewer.md build/qemu.rs build/ssh/tests/fuzz.rs build/userlandhost.rs images/system.toml
+issues/a-claim-spends-device-addresses-its-slot-never-gets-back.md
+issues/a-controller-whose-msix-table-is-in-bar-0-cannot-be-driven-from-userland.md
+issues/a-metal-row-names-no-hardware-and-a-bench-without-it-reds.md
+issues/an-amd-vi-machine-isolates-no-device.md issues/probe-mounts-on-a-checksum.md
+issues/process-memory-is-2-mib-pages-and-that-caps-the-process-count.md
+issues/qemu-passes-compatibility-format-interrupts.md issues/the-anti-rollback-floor-is-a-firmware-variable.md
+issues/the-lan-is-not-yet-production-grade.md issues/there-is-no-wifi.md issues/toyos-has-its-own-network-stack.md
+kernel/src/arch/aarch64/irqchip.rs kernel/src/arch/x86_64/idt/user_dev.rs kernel/src/arch/x86_64/vtd/interrupt.rs
+kernel/src/arch/x86_64/vtd/fault.rs kernel/src/pcidev/mod.rs lib/acpiserver-api lib/blockring lib/blockring/transport
+system/netstack/ip/src/lib.rs system/netstack/ip/src/route.rs system/netstack/node/src/lib.rs
+system/netstack/shard/src/lib.rs system/netstack/src/main.rs system/netstack/src/card.rs system/supervisor/src/main.rs
+system/acpiserver/src/main.rs tests/common/qemu.rs tests/toyos.rs"
+echo "\$ git rev-parse origin/main"; git rev-parse origin/main
+missing=0
+for p in $PATHS; do
+  if git cat-file -e "$TIP:$p" 2>/dev/null; then echo "present at $TIP: $p"; else echo "MISSING at $TIP: $p"; missing=1; fi
+done
+echo "\$ git diff --stat $BASE $TIP -- <the paths above>"
+git diff --stat "$BASE" "$TIP" -- $PATHS
+d=$?
+echo "diff exit=$d missing=$missing"
+[ "$missing" = 0 ] && [ "$d" = 0 ] && [ -z "$(git diff --stat "$BASE" "$TIP" -- $PATHS)" ]
+
+$ sh e1.sh <the worktree>
+$ git rev-parse origin/main
+131970ac80c97bb809f51954c24b90928fa56fef
+present at 131970ac80c97bb809f51954c24b90928fa56fef: CLAUDE.md
+present at 131970ac80c97bb809f51954c24b90928fa56fef: .claude/agents/reviewer.md
+present at 131970ac80c97bb809f51954c24b90928fa56fef: build/qemu.rs
+present at 131970ac80c97bb809f51954c24b90928fa56fef: build/ssh/tests/fuzz.rs
+present at 131970ac80c97bb809f51954c24b90928fa56fef: build/userlandhost.rs
+present at 131970ac80c97bb809f51954c24b90928fa56fef: images/system.toml
+present at 131970ac80c97bb809f51954c24b90928fa56fef: issues/a-claim-spends-device-addresses-its-slot-never-gets-back.md
+present at 131970ac80c97bb809f51954c24b90928fa56fef: issues/a-controller-whose-msix-table-is-in-bar-0-cannot-be-driven-from-userland.md
+present at 131970ac80c97bb809f51954c24b90928fa56fef: issues/a-metal-row-names-no-hardware-and-a-bench-without-it-reds.md
+present at 131970ac80c97bb809f51954c24b90928fa56fef: issues/an-amd-vi-machine-isolates-no-device.md
+present at 131970ac80c97bb809f51954c24b90928fa56fef: issues/probe-mounts-on-a-checksum.md
+present at 131970ac80c97bb809f51954c24b90928fa56fef: issues/process-memory-is-2-mib-pages-and-that-caps-the-process-count.md
+present at 131970ac80c97bb809f51954c24b90928fa56fef: issues/qemu-passes-compatibility-format-interrupts.md
+present at 131970ac80c97bb809f51954c24b90928fa56fef: issues/the-anti-rollback-floor-is-a-firmware-variable.md
+present at 131970ac80c97bb809f51954c24b90928fa56fef: issues/the-lan-is-not-yet-production-grade.md
+present at 131970ac80c97bb809f51954c24b90928fa56fef: issues/there-is-no-wifi.md
+present at 131970ac80c97bb809f51954c24b90928fa56fef: issues/toyos-has-its-own-network-stack.md
+present at 131970ac80c97bb809f51954c24b90928fa56fef: kernel/src/arch/aarch64/irqchip.rs
+present at 131970ac80c97bb809f51954c24b90928fa56fef: kernel/src/arch/x86_64/idt/user_dev.rs
+present at 131970ac80c97bb809f51954c24b90928fa56fef: kernel/src/arch/x86_64/vtd/interrupt.rs
+present at 131970ac80c97bb809f51954c24b90928fa56fef: kernel/src/arch/x86_64/vtd/fault.rs
+present at 131970ac80c97bb809f51954c24b90928fa56fef: kernel/src/pcidev/mod.rs
+present at 131970ac80c97bb809f51954c24b90928fa56fef: lib/acpiserver-api
+present at 131970ac80c97bb809f51954c24b90928fa56fef: lib/blockring
+present at 131970ac80c97bb809f51954c24b90928fa56fef: lib/blockring/transport
+present at 131970ac80c97bb809f51954c24b90928fa56fef: system/netstack/ip/src/lib.rs
+present at 131970ac80c97bb809f51954c24b90928fa56fef: system/netstack/ip/src/route.rs
+present at 131970ac80c97bb809f51954c24b90928fa56fef: system/netstack/node/src/lib.rs
+present at 131970ac80c97bb809f51954c24b90928fa56fef: system/netstack/shard/src/lib.rs
+present at 131970ac80c97bb809f51954c24b90928fa56fef: system/netstack/src/main.rs
+present at 131970ac80c97bb809f51954c24b90928fa56fef: system/netstack/src/card.rs
+present at 131970ac80c97bb809f51954c24b90928fa56fef: system/supervisor/src/main.rs
+present at 131970ac80c97bb809f51954c24b90928fa56fef: system/acpiserver/src/main.rs
+present at 131970ac80c97bb809f51954c24b90928fa56fef: tests/common/qemu.rs
+present at 131970ac80c97bb809f51954c24b90928fa56fef: tests/toyos.rs
+$ git diff --stat 177e72a9e 131970ac80c97bb809f51954c24b90928fa56fef -- <the paths above>
+diff exit=0 missing=0
+EXIT=0

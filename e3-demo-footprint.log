@@ -1,0 +1,89 @@
+$ cat e3.py
+# E3: the demo's footprint in the shared repository, with the bench's model name masked.
+# argv: <primary checkout> <demo branch> <word to mask>
+import subprocess, sys, re
+repo, demo, mask = sys.argv[1], sys.argv[2], sys.argv[3]
+def m(s): return s.replace(mask, "<bench>")
+def git(*a):
+    r = subprocess.run(["git", "-C", repo, *a], capture_output=True, text=True)
+    return r.returncode, r.stdout
+def show(cmd, out):
+    print("$ " + m(cmd)); print(m(out).rstrip()); print()
+c, out = git("rev-list", "--count", "origin/main.." + demo)
+show(f"git rev-list --count origin/main..{demo}", out); assert c == 0
+c, mb = git("merge-base", "origin/main", demo); mb = mb.strip()
+c, first = git("rev-list", "--reverse", f"{mb}..{demo}"); first = first.split()[0]
+show(f"git rev-list --reverse $(git merge-base origin/main {demo})..{demo} | first", first)
+c, refs = git("for-each-ref", "--contains", first, "--format=%(refname)")
+show(f"git for-each-ref --contains {first[:12]} --format=%(refname)", refs)
+heads = [r[len("refs/heads/"):] for r in refs.split() if r.startswith("refs/heads/")]
+print(f"local branches containing it: {len(heads)}; remote-tracking: {sum(r.startswith('refs/remotes/') for r in refs.split())}\n")
+pat = re.compile(r"wifi|iwl|iwx|80211|wpa|wlan|eapol|supplicant", re.I)
+touching = 0
+for h in heads:
+    c, names = git("log", "--name-only", "--format=", "origin/main.." + h)
+    n = sum(1 for l in names.splitlines() if pat.search(l))
+    c, ahead = git("rev-list", "--count", "origin/main.." + h)
+    pr = subprocess.run(["gh", "pr", "list", "--repo", "ToyOSOrg/ToyOS", "--head", h, "--state", "all",
+                         "--json", "number", "--jq", "map(.number)|join(\",\")"], capture_output=True, text=True)
+    print(m(f"{h}: commits past main {ahead.strip()}, Wi-Fi-named path lines {n}, pull requests [{pr.stdout.strip()}] (gh exit {pr.returncode})"))
+    touching += n > 0
+print(f"\nbranches touching a Wi-Fi-named path: {touching}")
+c, wt = git("worktree", "list", "--porcelain")
+wts = [l for l in wt.splitlines() if l.startswith("branch refs/heads/") and l[len("branch refs/heads/"):] in heads]
+print(f"of them checked out as worktrees: {len(wts)}")
+
+$ python3 -I e3.py <primary> <the demo branch> <the bench word>
+$ git rev-list --count origin/main..wt/toyos-<bench>-wifi
+44
+
+$ git rev-list --reverse $(git merge-base origin/main wt/toyos-<bench>-wifi)..wt/toyos-<bench>-wifi | first
+a8e1c9673a2ef20d6bbbf228230afe389d00ba40
+
+$ git for-each-ref --contains a8e1c9673a2e --format=%(refname)
+refs/heads/wt/toyos-survey
+refs/heads/wt/toyos-<bench>
+refs/heads/wt/toyos-<bench>-tp
+refs/heads/wt/toyos-<bench>-v10
+refs/heads/wt/toyos-<bench>-v11
+refs/heads/wt/toyos-<bench>-v12
+refs/heads/wt/toyos-<bench>-v13
+refs/heads/wt/toyos-<bench>-v14
+refs/heads/wt/toyos-<bench>-v15
+refs/heads/wt/toyos-<bench>-v16
+refs/heads/wt/toyos-<bench>-v9
+refs/heads/wt/toyos-<bench>-vol
+refs/heads/wt/toyos-<bench>-wifi
+refs/remotes/origin/wt/toyos-survey
+refs/remotes/origin/wt/toyos-<bench>
+refs/remotes/origin/wt/toyos-<bench>-tp
+refs/remotes/origin/wt/toyos-<bench>-v10
+refs/remotes/origin/wt/toyos-<bench>-v11
+refs/remotes/origin/wt/toyos-<bench>-v12
+refs/remotes/origin/wt/toyos-<bench>-v13
+refs/remotes/origin/wt/toyos-<bench>-v14
+refs/remotes/origin/wt/toyos-<bench>-v15
+refs/remotes/origin/wt/toyos-<bench>-v16
+refs/remotes/origin/wt/toyos-<bench>-v9
+refs/remotes/origin/wt/toyos-<bench>-vol
+refs/remotes/origin/wt/toyos-<bench>-wifi
+
+local branches containing it: 13; remote-tracking: 13
+
+wt/toyos-survey: commits past main 5, Wi-Fi-named path lines 0, pull requests [834] (gh exit 0)
+wt/toyos-<bench>: commits past main 21, Wi-Fi-named path lines 0, pull requests [] (gh exit 0)
+wt/toyos-<bench>-tp: commits past main 39, Wi-Fi-named path lines 4, pull requests [] (gh exit 0)
+wt/toyos-<bench>-v10: commits past main 46, Wi-Fi-named path lines 7, pull requests [] (gh exit 0)
+wt/toyos-<bench>-v11: commits past main 48, Wi-Fi-named path lines 8, pull requests [] (gh exit 0)
+wt/toyos-<bench>-v12: commits past main 52, Wi-Fi-named path lines 12, pull requests [] (gh exit 0)
+wt/toyos-<bench>-v13: commits past main 54, Wi-Fi-named path lines 17, pull requests [] (gh exit 0)
+wt/toyos-<bench>-v14: commits past main 55, Wi-Fi-named path lines 18, pull requests [] (gh exit 0)
+wt/toyos-<bench>-v15: commits past main 56, Wi-Fi-named path lines 19, pull requests [] (gh exit 0)
+wt/toyos-<bench>-v16: commits past main 57, Wi-Fi-named path lines 21, pull requests [] (gh exit 0)
+wt/toyos-<bench>-v9: commits past main 43, Wi-Fi-named path lines 4, pull requests [] (gh exit 0)
+wt/toyos-<bench>-vol: commits past main 41, Wi-Fi-named path lines 4, pull requests [] (gh exit 0)
+wt/toyos-<bench>-wifi: commits past main 44, Wi-Fi-named path lines 7, pull requests [] (gh exit 0)
+
+branches touching a Wi-Fi-named path: 11
+of them checked out as worktrees: 6
+EXIT=0

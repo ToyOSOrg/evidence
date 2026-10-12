@@ -1,0 +1,16 @@
+$ cat e4.py
+# E4: the HE160 2x2 ceiling, from IEEE Std 802.11ax-2021's HE PHY parameters:
+# 1,960 data subcarriers at 160 MHz, HE-MCS 11 (1024-QAM, 10 bits, rate 5/6),
+# a 12.8 us symbol plus a 0.8 us guard interval. A standard's bound, not a measurement.
+subcarriers, bits, rate, symbol_s = 1960, 10, 5 / 6, 12.8e-6 + 0.8e-6
+per_stream = subcarriers * bits * rate / symbol_s
+two = 2 * per_stream
+print(f"per stream: {per_stream / 1e6:.2f} Mb/s")
+print(f"two streams: {two / 1e6:.2f} Mb/s")
+print(f"1,500-byte packets a second at that rate: {two / (1500 * 8):.0f}")
+
+$ python3 -I e4.py
+per stream: 1200.98 Mb/s
+two streams: 2401.96 Mb/s
+1,500-byte packets a second at that rate: 200163
+EXIT=0
