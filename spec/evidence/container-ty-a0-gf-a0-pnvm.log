@@ -1,0 +1,183 @@
+linux-firmware commit b9df1a1aa45bc4fb2be9de2413203fd626233b9c, file intel/iwlwifi/iwlwifi-ty-a0-gf-a0.pnvm
+$ cat fwcontainer.py
+# Reads the container of an Intel Wi-Fi firmware file or platform-NVM file and prints it.
+#
+# Bound by LICENCE.iwlwifi_firmware ("No reverse engineering, decompilation, or disassembly"):
+# of each record it reads only what a loader parses, the record's kind and length, a section's
+# 4-byte load address, and the records that declare versions, capabilities, counts and SKUs.
+# It never reads or prints a byte of a section's or an image loader's contents; it hashes the
+# whole file only to name it, as a pin does.
+#
+# argv: ucode <file> | pnvm <file>
+import hashlib
+import struct
+import sys
+
+SECTION_KINDS = {19: 'runtime image section', 20: 'init image section', 21: 'wowlan image section',
+                 24: 'secure runtime section', 25: 'secure init section', 26: 'secure wowlan section',
+                 34: 'sniffer runtime section'}
+SEPARATORS = {0xFFFFCCCC: 'CPU1/CPU2 separator', 0xAAAABBBB: 'paging separator'}
+
+
+def u32(b, o):
+    return struct.unpack_from('<I', b, o)[0]
+
+
+def u16(b, o):
+    return struct.unpack_from('<H', b, o)[0]
+
+
+def walk(buf, start, end):
+    """Yields (offset, kind, length, payload offset) for each record; 4-byte aligned records."""
+    o = start
+    while end - o >= 8:
+        kind, length = u32(buf, o), u32(buf, o + 4)
+        if length > end - o - 8:
+            print(f'  record at {o:#x}: kind {kind} declares {length} bytes, {end - o - 8} remain: truncated')
+            return
+        yield o, kind, length, o + 8
+        o += 8 + ((length + 3) & ~3)
+    if o != end:
+        print(f'  {end - o} trailing byte(s) after the last record')
+
+
+def bits(words):
+    out = []
+    for idx, w in words:
+        for i in range(32):
+            if w & (1 << i):
+                out.append(idx * 32 + i)
+    return sorted(out)
+
+
+def ucode(path, buf):
+    zero, magic = u32(buf, 0), u32(buf, 4)
+    name = buf[8:72].split(b'\0')[0].decode('ascii', 'replace')
+    ver, build = u32(buf, 72), u32(buf, 76)
+    print(f'header: first word {zero:#x}, magic {magic:#010x}, name "{name}", ver {ver:#010x} '
+          f'(major {ver >> 24}, minor {(ver >> 16) & 0xff}, api {(ver >> 8) & 0xff}, serial {ver & 0xff}), '
+          f'build {build}; records start at 88')
+    counts, sections, cmd_versions, api, capa = {}, [], [], [], []
+    print('records (offset, kind, length, what the loader reads of it):')
+    for off, kind, length, p in walk(buf, 88, len(buf)):
+        counts[kind] = counts.get(kind, 0) + 1
+        what = ''
+        if kind in SECTION_KINDS:
+            addr = u32(buf, p)
+            sections.append((kind, addr, length - 4))
+            what = f'{SECTION_KINDS[kind]}: load address {addr:#010x}' + (
+                f' ({SEPARATORS[addr]})' if addr in SEPARATORS else '') + f', {length - 4} byte(s) of contents, unread'
+        elif kind == 52:
+            what = f'image loader: {length} byte(s) of contents, unread'
+        elif kind == 36 and length == 12:
+            what = f'firmware version: major {u32(buf, p)}, minor {u32(buf, p + 4):#010x}, local {u32(buf, p + 8)}'
+        elif kind in (27, 31, 32, 6, 18, 23) and length == 4:
+            label = {27: 'CPU count', 31: 'scan channel count', 32: 'paging memory size', 6: 'probe request max length',
+                     18: 'flags word', 23: 'PHY configuration word'}[kind]
+            v = u32(buf, p)
+            what = f'{label}: {v} ({v:#x})'
+        elif kind == 22 and length == 12:
+            what = f'default calibration: image type {u32(buf, p)}, flow {u32(buf, p + 4):#010x}, event {u32(buf, p + 8):#010x}'
+        elif kind == 29 and length == 8:
+            api.append((u32(buf, p), u32(buf, p + 4)))
+            what = f'API word {u32(buf, p)}: {u32(buf, p + 4):#010x}'
+        elif kind == 30 and length == 8:
+            capa.append((u32(buf, p), u32(buf, p + 4)))
+            what = f'capability word {u32(buf, p)}: {u32(buf, p + 4):#010x}'
+        elif kind == 48:
+            n = length // 4
+            cmd_versions = [tuple(buf[p + 4 * i:p + 4 * i + 4]) for i in range(n)]
+            what = f'command versions: {n} entr(ies), {length % 4} spare byte(s)'
+        elif kind == 73:
+            what = f'BIOS table revisions: {length // 4} entr(ies): ' + ', '.join(
+                f'group {buf[p + 4 * i + 1]:#x} id {buf[p + 4 * i]:#x} acpi {buf[p + 4 * i + 2]} uefi {buf[p + 4 * i + 3]}'
+                for i in range(length // 4))
+        elif kind == 54 and length >= 4:
+            what = f'UMAC debug addresses: error table {u32(buf, p):#010x}'
+        elif kind == 55 and length >= 4:
+            what = f'LMAC debug addresses: error table {u32(buf, p):#010x}'
+        elif kind == 58 and length >= 4:
+            what = f'hardware type: MAC type {u16(buf, p):#x}, RF id {u16(buf, p + 2):#x}'
+        elif kind in (0x100, 0x101, 0x102, 0x103) and length == 4:
+            what = f'count: {u32(buf, p)}'
+        elif kind == 74:
+            what = f'embedded platform NVM: {length} byte(s); its records:'
+        print(f'  {off:#08x} kind {kind} ({kind:#x}) length {length}' + (f': {what}' if what else ''))
+        if kind == 74:
+            pnvm_records(buf, p, p + length, '      ')
+    print('record kinds and counts: ' + ', '.join(f'{k}x{v}' for k, v in sorted(counts.items())))
+    for kind in sorted({s[0] for s in sections}):
+        seq = [s for s in sections if s[0] == kind]
+        seps = [i for i, s in enumerate(seq) if s[1] in SEPARATORS]
+        print(f'{SECTION_KINDS[kind]}s: {len(seq)} record(s), separators at positions {seps} '
+              f'({", ".join(SEPARATORS[seq[i][1]] for i in seps)})')
+        groups, cur = [], []
+        for s in seq:
+            if s[1] in SEPARATORS:
+                groups.append(cur)
+                cur = []
+            else:
+                cur.append(s)
+        groups.append(cur)
+        for g, label in zip(groups, ('before the first separator', 'between the separators', 'after the second separator')):
+            print(f'  {label}: {len(g)} section(s), {sum(s[2] for s in g)} byte(s), largest {max((s[2] for s in g), default=0)}')
+    print(f'API bits set: {bits(api)}')
+    print(f'capability bits set: {bits(capa)}')
+    print(f'command versions (group, id, command version, notification version), {len(cmd_versions)}:')
+    for cmd, group, cv, nv in sorted(cmd_versions, key=lambda e: (e[1], e[0])):
+        print(f'  group {group:#04x} id {cmd:#04x}: command v{cv}, notification v{nv}')
+
+
+def pnvm_records(buf, start, end, indent):
+    for off, kind, length, p in walk(buf, start, end):
+        what = ''
+        if kind == 64 and length >= 12:
+            what = f'SKU id {u32(buf, p):#010x} {u32(buf, p + 4):#010x} {u32(buf, p + 8):#010x} (starts a SKU block)'
+        elif kind == 62 and length >= 4:
+            what = f'version {u32(buf, p):#010x}'
+        elif kind == 58 and length >= 4:
+            what = f'hardware type: MAC type {u16(buf, p):#x}, RF id {u16(buf, p + 2):#x}'
+        elif kind == 19 and length >= 4:
+            what = f'payload: offset word {u32(buf, p):#010x}, {length - 4} byte(s) of contents, unread'
+        print(f'{indent}{off:#08x} kind {kind} ({kind:#x}) length {length}' + (f': {what}' if what else ''))
+
+
+def main():
+    mode, path = sys.argv[1], sys.argv[2]
+    buf = open(path, 'rb').read()
+    print(f'file: {path.rsplit("/", 1)[-1]}, {len(buf)} bytes, sha256 {hashlib.sha256(buf).hexdigest()}')
+    if mode == 'ucode':
+        ucode(path, buf)
+    elif mode == 'pnvm':
+        print('records (offset, kind, length, what the loader reads of it):')
+        pnvm_records(buf, 0, len(buf), '  ')
+    else:
+        sys.exit(2)
+
+
+main()
+
+$ python3 -I fwcontainer.py pnvm iwlwifi-ty-a0-gf-a0.pnvm
+file: iwlwifi-ty-a0-gf-a0.pnvm, 55020 bytes, sha256 9697e327f8171454b3c19b1ec9449753d5b934d4e91722f469616818a6d477b0
+records (offset, kind, length, what the loader reads of it):
+  0x000000 kind 64 (0x40) length 12: SKU id 0x000610d0 0x00000000 0x00000000 (starts a SKU block)
+  0x000014 kind 58 (0x3a) length 12: hardware type: MAC type 0x42, RF id 0x10d
+  0x000028 kind 62 (0x3e) length 4: version 0xe1c4fa8e
+  0x000034 kind 19 (0x13) length 1660: payload: offset word 0xcafedead, 1656 byte(s) of contents, unread
+  0x0006b8 kind 19 (0x13) length 12000: payload: offset word 0xdeadcafe, 11996 byte(s) of contents, unread
+  0x0035a0 kind 64 (0x40) length 12: SKU id 0x000510d0 0x00000000 0x00000000 (starts a SKU block)
+  0x0035b4 kind 58 (0x3a) length 12: hardware type: MAC type 0x42, RF id 0x10d
+  0x0035c8 kind 62 (0x3e) length 4: version 0xe1c4fa8e
+  0x0035d4 kind 19 (0x13) length 1660: payload: offset word 0xcafedead, 1656 byte(s) of contents, unread
+  0x003c58 kind 19 (0x13) length 12052: payload: offset word 0xdeadcafe, 12048 byte(s) of contents, unread
+  0x006b74 kind 64 (0x40) length 12: SKU id 0x004510d0 0x00000000 0x00000000 (starts a SKU block)
+  0x006b88 kind 58 (0x3a) length 12: hardware type: MAC type 0x42, RF id 0x10d
+  0x006b9c kind 62 (0x3e) length 4: version 0xe1c4fa8e
+  0x006ba8 kind 19 (0x13) length 1660: payload: offset word 0xcafedead, 1656 byte(s) of contents, unread
+  0x00722c kind 19 (0x13) length 12052: payload: offset word 0xdeadcafe, 12048 byte(s) of contents, unread
+  0x00a148 kind 64 (0x40) length 12: SKU id 0x004610d0 0x00000000 0x00000000 (starts a SKU block)
+  0x00a15c kind 58 (0x3a) length 12: hardware type: MAC type 0x42, RF id 0x10d
+  0x00a170 kind 62 (0x3e) length 4: version 0xe1c4fa8e
+  0x00a17c kind 19 (0x13) length 1660: payload: offset word 0xcafedead, 1656 byte(s) of contents, unread
+  0x00a800 kind 19 (0x13) length 12004: payload: offset word 0xdeadcafe, 12000 byte(s) of contents, unread
+EXIT=0

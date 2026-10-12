@@ -1,0 +1,544 @@
+linux-firmware commit b9df1a1aa45bc4fb2be9de2413203fd626233b9c, file intel/iwlwifi/iwlwifi-cc-a0-77.ucode
+$ cat fwcontainer.py
+# Reads the container of an Intel Wi-Fi firmware file or platform-NVM file and prints it.
+#
+# Bound by LICENCE.iwlwifi_firmware ("No reverse engineering, decompilation, or disassembly"):
+# of each record it reads only what a loader parses, the record's kind and length, a section's
+# 4-byte load address, and the records that declare versions, capabilities, counts and SKUs.
+# It never reads or prints a byte of a section's or an image loader's contents; it hashes the
+# whole file only to name it, as a pin does.
+#
+# argv: ucode <file> | pnvm <file>
+import hashlib
+import struct
+import sys
+
+SECTION_KINDS = {19: 'runtime image section', 20: 'init image section', 21: 'wowlan image section',
+                 24: 'secure runtime section', 25: 'secure init section', 26: 'secure wowlan section',
+                 34: 'sniffer runtime section'}
+SEPARATORS = {0xFFFFCCCC: 'CPU1/CPU2 separator', 0xAAAABBBB: 'paging separator'}
+
+
+def u32(b, o):
+    return struct.unpack_from('<I', b, o)[0]
+
+
+def u16(b, o):
+    return struct.unpack_from('<H', b, o)[0]
+
+
+def walk(buf, start, end):
+    """Yields (offset, kind, length, payload offset) for each record; 4-byte aligned records."""
+    o = start
+    while end - o >= 8:
+        kind, length = u32(buf, o), u32(buf, o + 4)
+        if length > end - o - 8:
+            print(f'  record at {o:#x}: kind {kind} declares {length} bytes, {end - o - 8} remain: truncated')
+            return
+        yield o, kind, length, o + 8
+        o += 8 + ((length + 3) & ~3)
+    if o != end:
+        print(f'  {end - o} trailing byte(s) after the last record')
+
+
+def bits(words):
+    out = []
+    for idx, w in words:
+        for i in range(32):
+            if w & (1 << i):
+                out.append(idx * 32 + i)
+    return sorted(out)
+
+
+def ucode(path, buf):
+    zero, magic = u32(buf, 0), u32(buf, 4)
+    name = buf[8:72].split(b'\0')[0].decode('ascii', 'replace')
+    ver, build = u32(buf, 72), u32(buf, 76)
+    print(f'header: first word {zero:#x}, magic {magic:#010x}, name "{name}", ver {ver:#010x} '
+          f'(major {ver >> 24}, minor {(ver >> 16) & 0xff}, api {(ver >> 8) & 0xff}, serial {ver & 0xff}), '
+          f'build {build}; records start at 88')
+    counts, sections, cmd_versions, api, capa = {}, [], [], [], []
+    print('records (offset, kind, length, what the loader reads of it):')
+    for off, kind, length, p in walk(buf, 88, len(buf)):
+        counts[kind] = counts.get(kind, 0) + 1
+        what = ''
+        if kind in SECTION_KINDS:
+            addr = u32(buf, p)
+            sections.append((kind, addr, length - 4))
+            what = f'{SECTION_KINDS[kind]}: load address {addr:#010x}' + (
+                f' ({SEPARATORS[addr]})' if addr in SEPARATORS else '') + f', {length - 4} byte(s) of contents, unread'
+        elif kind == 52:
+            what = f'image loader: {length} byte(s) of contents, unread'
+        elif kind == 36 and length == 12:
+            what = f'firmware version: major {u32(buf, p)}, minor {u32(buf, p + 4):#010x}, local {u32(buf, p + 8)}'
+        elif kind in (27, 31, 32, 6, 18, 23) and length == 4:
+            label = {27: 'CPU count', 31: 'scan channel count', 32: 'paging memory size', 6: 'probe request max length',
+                     18: 'flags word', 23: 'PHY configuration word'}[kind]
+            v = u32(buf, p)
+            what = f'{label}: {v} ({v:#x})'
+        elif kind == 22 and length == 12:
+            what = f'default calibration: image type {u32(buf, p)}, flow {u32(buf, p + 4):#010x}, event {u32(buf, p + 8):#010x}'
+        elif kind == 29 and length == 8:
+            api.append((u32(buf, p), u32(buf, p + 4)))
+            what = f'API word {u32(buf, p)}: {u32(buf, p + 4):#010x}'
+        elif kind == 30 and length == 8:
+            capa.append((u32(buf, p), u32(buf, p + 4)))
+            what = f'capability word {u32(buf, p)}: {u32(buf, p + 4):#010x}'
+        elif kind == 48:
+            n = length // 4
+            cmd_versions = [tuple(buf[p + 4 * i:p + 4 * i + 4]) for i in range(n)]
+            what = f'command versions: {n} entr(ies), {length % 4} spare byte(s)'
+        elif kind == 73:
+            what = f'BIOS table revisions: {length // 4} entr(ies): ' + ', '.join(
+                f'group {buf[p + 4 * i + 1]:#x} id {buf[p + 4 * i]:#x} acpi {buf[p + 4 * i + 2]} uefi {buf[p + 4 * i + 3]}'
+                for i in range(length // 4))
+        elif kind == 54 and length >= 4:
+            what = f'UMAC debug addresses: error table {u32(buf, p):#010x}'
+        elif kind == 55 and length >= 4:
+            what = f'LMAC debug addresses: error table {u32(buf, p):#010x}'
+        elif kind == 58 and length >= 4:
+            what = f'hardware type: MAC type {u16(buf, p):#x}, RF id {u16(buf, p + 2):#x}'
+        elif kind in (0x100, 0x101, 0x102, 0x103) and length == 4:
+            what = f'count: {u32(buf, p)}'
+        elif kind == 74:
+            what = f'embedded platform NVM: {length} byte(s); its records:'
+        print(f'  {off:#08x} kind {kind} ({kind:#x}) length {length}' + (f': {what}' if what else ''))
+        if kind == 74:
+            pnvm_records(buf, p, p + length, '      ')
+    print('record kinds and counts: ' + ', '.join(f'{k}x{v}' for k, v in sorted(counts.items())))
+    for kind in sorted({s[0] for s in sections}):
+        seq = [s for s in sections if s[0] == kind]
+        seps = [i for i, s in enumerate(seq) if s[1] in SEPARATORS]
+        print(f'{SECTION_KINDS[kind]}s: {len(seq)} record(s), separators at positions {seps} '
+              f'({", ".join(SEPARATORS[seq[i][1]] for i in seps)})')
+        groups, cur = [], []
+        for s in seq:
+            if s[1] in SEPARATORS:
+                groups.append(cur)
+                cur = []
+            else:
+                cur.append(s)
+        groups.append(cur)
+        for g, label in zip(groups, ('before the first separator', 'between the separators', 'after the second separator')):
+            print(f'  {label}: {len(g)} section(s), {sum(s[2] for s in g)} byte(s), largest {max((s[2] for s in g), default=0)}')
+    print(f'API bits set: {bits(api)}')
+    print(f'capability bits set: {bits(capa)}')
+    print(f'command versions (group, id, command version, notification version), {len(cmd_versions)}:')
+    for cmd, group, cv, nv in sorted(cmd_versions, key=lambda e: (e[1], e[0])):
+        print(f'  group {group:#04x} id {cmd:#04x}: command v{cv}, notification v{nv}')
+
+
+def pnvm_records(buf, start, end, indent):
+    for off, kind, length, p in walk(buf, start, end):
+        what = ''
+        if kind == 64 and length >= 12:
+            what = f'SKU id {u32(buf, p):#010x} {u32(buf, p + 4):#010x} {u32(buf, p + 8):#010x} (starts a SKU block)'
+        elif kind == 62 and length >= 4:
+            what = f'version {u32(buf, p):#010x}'
+        elif kind == 58 and length >= 4:
+            what = f'hardware type: MAC type {u16(buf, p):#x}, RF id {u16(buf, p + 2):#x}'
+        elif kind == 19 and length >= 4:
+            what = f'payload: offset word {u32(buf, p):#010x}, {length - 4} byte(s) of contents, unread'
+        print(f'{indent}{off:#08x} kind {kind} ({kind:#x}) length {length}' + (f': {what}' if what else ''))
+
+
+def main():
+    mode, path = sys.argv[1], sys.argv[2]
+    buf = open(path, 'rb').read()
+    print(f'file: {path.rsplit("/", 1)[-1]}, {len(buf)} bytes, sha256 {hashlib.sha256(buf).hexdigest()}')
+    if mode == 'ucode':
+        ucode(path, buf)
+    elif mode == 'pnvm':
+        print('records (offset, kind, length, what the loader reads of it):')
+        pnvm_records(buf, 0, len(buf), '  ')
+    else:
+        sys.exit(2)
+
+
+main()
+
+$ python3 -I fwcontainer.py ucode iwlwifi-cc-a0-77.ucode
+file: iwlwifi-cc-a0-77.ucode, 1368100 bytes, sha256 1866a58a1daee56b120362122d5f7548b443b53d33f2558a7e4407d58fd27dab
+header: first word 0x0, magic 0x0a4c5749, name "release/core74::563a6e92", ver 0x0000004d (major 0, minor 0, api 0, serial 77), build 1446669970; records start at 88
+records (offset, kind, length, what the loader reads of it):
+  0x000058 kind 22 (0x16) length 12: default calibration: image type 0, flow 0x5f1601d3, event 0x5b06958b
+  0x00006c kind 36 (0x24) length 12: firmware version: major 77, minor 0x563a6e92, local 0
+  0x000080 kind 55 (0x37) length 32: LMAC debug addresses: error table 0x004dff20
+  0x0000a8 kind 48 (0x30) length 768: command versions: 192 entr(ies), 0 spare byte(s)
+  0x0003b0 kind 18 (0x12) length 4: flags word: 4227550079 (0xfbfb4b7f)
+  0x0003bc kind 30 (0x1e) length 8: capability word 0: 0x9def037f
+  0x0003cc kind 30 (0x1e) length 8: capability word 2: 0xdb91eedb
+  0x0003dc kind 30 (0x1e) length 8: capability word 3: 0x002052ae
+  0x0003ec kind 29 (0x1d) length 8: API word 0: 0xfd9bfffb
+  0x0003fc kind 29 (0x1d) length 8: API word 1: 0xfff7ffff
+  0x00040c kind 29 (0x1d) length 8: API word 2: 0x00000003
+  0x00041c kind 16777224 (0x1000008) length 64
+  0x000464 kind 16777224 (0x1000008) length 64
+  0x0004ac kind 23 (0x17) length 4: PHY configuration word: 3342360 (0x330018)
+  0x0004b8 kind 51 (0x33) length 12
+  0x0004cc kind 51 (0x33) length 12
+  0x0004e0 kind 51 (0x33) length 12
+  0x0004f4 kind 51 (0x33) length 12
+  0x000508 kind 6 (0x6) length 4: probe request max length: 512 (0x200)
+  0x000514 kind 7 (0x7) length 0
+  0x00051c kind 27 (0x1b) length 4: CPU count: 2 (0x2)
+  0x000528 kind 19 (0x13) length 1660: runtime image section: load address 0x00433000, 1656 byte(s) of contents, unread
+  0x000bac kind 19 (0x13) length 32772: runtime image section: load address 0x00800000, 32768 byte(s) of contents, unread
+  0x008bb8 kind 19 (0x13) length 32772: runtime image section: load address 0x00808000, 32768 byte(s) of contents, unread
+  0x010bc4 kind 19 (0x13) length 32772: runtime image section: load address 0x00000000, 32768 byte(s) of contents, unread
+  0x018bd0 kind 19 (0x13) length 32772: runtime image section: load address 0x00008000, 32768 byte(s) of contents, unread
+  0x020bdc kind 19 (0x13) length 32772: runtime image section: load address 0x00010000, 32768 byte(s) of contents, unread
+  0x028be8 kind 19 (0x13) length 32764: runtime image section: load address 0x00018000, 32760 byte(s) of contents, unread
+  0x030bec kind 19 (0x13) length 32772: runtime image section: load address 0x004d4000, 32768 byte(s) of contents, unread
+  0x038bf8 kind 19 (0x13) length 32772: runtime image section: load address 0x004dc000, 32768 byte(s) of contents, unread
+  0x040c04 kind 19 (0x13) length 32772: runtime image section: load address 0x004e4000, 32768 byte(s) of contents, unread
+  0x048c10 kind 19 (0x13) length 32772: runtime image section: load address 0x004ec000, 32768 byte(s) of contents, unread
+  0x050c1c kind 19 (0x13) length 32772: runtime image section: load address 0x004f4000, 32768 byte(s) of contents, unread
+  0x058c28 kind 19 (0x13) length 1940: runtime image section: load address 0x004fc000, 1936 byte(s) of contents, unread
+  0x0593c4 kind 19 (0x13) length 9620: runtime image section: load address 0x00622dc0, 9616 byte(s) of contents, unread
+  0x05b960 kind 58 (0x3a) length 12: hardware type: MAC type 0x34, RF id 0x10a
+  0x05b974 kind 54 (0x36) length 8: UMAC debug addresses: error table 0x00880128
+  0x05b984 kind 57 (0x39) length 8
+  0x05b994 kind 31 (0x1f) length 4: scan channel count: 67 (0x43)
+  0x05b9a0 kind 30 (0x1e) length 8: capability word 1: 0xbf7ffaee
+  0x05b9b0 kind 16777222 (0x1000006) length 28
+  0x05b9d4 kind 16777224 (0x1000008) length 64
+  0x05ba1c kind 16777224 (0x1000008) length 4664
+  0x05cc5c kind 16777224 (0x1000008) length 120
+  0x05ccdc kind 16777224 (0x1000008) length 120
+  0x05cd5c kind 16777224 (0x1000008) length 68
+  0x05cda8 kind 16777224 (0x1000008) length 68
+  0x05cdf4 kind 16777224 (0x1000008) length 64
+  0x05ce3c kind 16777224 (0x1000008) length 68
+  0x05ce88 kind 16777224 (0x1000008) length 68
+  0x05ced4 kind 16777224 (0x1000008) length 68
+  0x05cf20 kind 16777224 (0x1000008) length 64
+  0x05cf68 kind 16777224 (0x1000008) length 68
+  0x05cfb4 kind 16777224 (0x1000008) length 68
+  0x05d000 kind 16777224 (0x1000008) length 68
+  0x05d04c kind 16777224 (0x1000008) length 104
+  0x05d0bc kind 16777224 (0x1000008) length 64
+  0x05d104 kind 16777224 (0x1000008) length 68
+  0x05d150 kind 16777225 (0x1000009) length 52
+  0x05d18c kind 16777225 (0x1000009) length 52
+  0x05d1c8 kind 16777225 (0x1000009) length 52
+  0x05d204 kind 16777225 (0x1000009) length 52
+  0x05d240 kind 16777225 (0x1000009) length 52
+  0x05d27c kind 16777225 (0x1000009) length 56
+  0x05d2bc kind 16777225 (0x1000009) length 56
+  0x05d2fc kind 16777225 (0x1000009) length 56
+  0x05d33c kind 16777225 (0x1000009) length 56
+  0x05d37c kind 16777223 (0x1000007) length 32
+  0x05d3a4 kind 16777223 (0x1000007) length 32
+  0x05d3cc kind 16777223 (0x1000007) length 32
+  0x05d3f4 kind 16777223 (0x1000007) length 32
+  0x05d41c kind 16777223 (0x1000007) length 28
+  0x05d440 kind 16777222 (0x1000006) length 28
+  0x05d464 kind 16777224 (0x1000008) length 64
+  0x05d4ac kind 16777225 (0x1000009) length 52
+  0x05d4e8 kind 16777225 (0x1000009) length 52
+  0x05d524 kind 16777225 (0x1000009) length 52
+  0x05d560 kind 16777225 (0x1000009) length 52
+  0x05d59c kind 16777225 (0x1000009) length 52
+  0x05d5d8 kind 16777225 (0x1000009) length 52
+  0x05d614 kind 16777225 (0x1000009) length 52
+  0x05d650 kind 16777225 (0x1000009) length 52
+  0x05d68c kind 16777225 (0x1000009) length 52
+  0x05d6c8 kind 16777225 (0x1000009) length 52
+  0x05d704 kind 16777225 (0x1000009) length 52
+  0x05d740 kind 16777225 (0x1000009) length 52
+  0x05d77c kind 16777225 (0x1000009) length 52
+  0x05d7b8 kind 16777225 (0x1000009) length 56
+  0x05d7f8 kind 16777225 (0x1000009) length 56
+  0x05d838 kind 16777225 (0x1000009) length 52
+  0x05d874 kind 16777221 (0x1000005) length 76
+  0x05d8c8 kind 16777221 (0x1000005) length 76
+  0x05d91c kind 16777221 (0x1000005) length 76
+  0x05d970 kind 16777221 (0x1000005) length 76
+  0x05d9c4 kind 16777221 (0x1000005) length 76
+  0x05da18 kind 16777221 (0x1000005) length 76
+  0x05da6c kind 16777221 (0x1000005) length 76
+  0x05dac0 kind 16777221 (0x1000005) length 76
+  0x05db14 kind 16777221 (0x1000005) length 76
+  0x05db68 kind 16777221 (0x1000005) length 76
+  0x05dbbc kind 16777221 (0x1000005) length 76
+  0x05dc10 kind 16777221 (0x1000005) length 76
+  0x05dc64 kind 16777221 (0x1000005) length 76
+  0x05dcb8 kind 16777221 (0x1000005) length 76
+  0x05dd0c kind 16777221 (0x1000005) length 76
+  0x05dd60 kind 16777223 (0x1000007) length 28
+  0x05dd84 kind 16777223 (0x1000007) length 28
+  0x05dda8 kind 16777223 (0x1000007) length 28
+  0x05ddcc kind 16777223 (0x1000007) length 28
+  0x05ddf0 kind 16777223 (0x1000007) length 28
+  0x05de14 kind 16777223 (0x1000007) length 28
+  0x05de38 kind 16777223 (0x1000007) length 28
+  0x05de5c kind 16777223 (0x1000007) length 28
+  0x05de80 kind 16777223 (0x1000007) length 28
+  0x05dea4 kind 16777223 (0x1000007) length 28
+  0x05dec8 kind 16777223 (0x1000007) length 28
+  0x05deec kind 16777223 (0x1000007) length 28
+  0x05df10 kind 16777223 (0x1000007) length 24
+  0x05df30 kind 16777226 (0x100000a) length 228
+  0x05e01c kind 16777228 (0x100000c) length 340
+  0x05e178 kind 16777228 (0x100000c) length 420
+  0x05e324 kind 16777228 (0x100000c) length 500
+  0x05e520 kind 16777228 (0x100000c) length 500
+  0x05e71c kind 16777228 (0x100000c) length 580
+  0x05e968 kind 16777228 (0x100000c) length 420
+  0x05eb14 kind 16777228 (0x100000c) length 260
+  0x05ec20 kind 16777228 (0x100000c) length 660
+  0x05eebc kind 16777228 (0x100000c) length 340
+  0x05f018 kind 16777228 (0x100000c) length 100
+  0x05f084 kind 16777228 (0x100000c) length 660
+  0x05f320 kind 16777228 (0x100000c) length 340
+  0x05f47c kind 16777223 (0x1000007) length 100
+  0x05f4e8 kind 16777223 (0x1000007) length 100
+  0x05f554 kind 16777223 (0x1000007) length 100
+  0x05f5c0 kind 16777225 (0x1000009) length 56
+  0x05f600 kind 16777227 (0x100000b) length 36
+  0x05f62c kind 16777223 (0x1000007) length 24
+  0x05f64c kind 60 (0x3c) length 52
+  0x05f688 kind 61 (0x3d) length 40
+  0x05f6b8 kind 256 (0x100) length 4: count: 15
+  0x05f6c4 kind 257 (0x101) length 4: count: 4
+  0x05f6d0 kind 258 (0x102) length 4: count: 1
+  0x05f6dc kind 68 (0x44) length 72
+  0x05f72c kind 19 (0x13) length 8: runtime image section: load address 0xffffcccc (CPU1/CPU2 separator), 4 byte(s) of contents, unread
+  0x05f73c kind 19 (0x13) length 1660: runtime image section: load address 0x80433000, 1656 byte(s) of contents, unread
+  0x05fdc0 kind 19 (0x13) length 32772: runtime image section: load address 0xc0080000, 32768 byte(s) of contents, unread
+  0x067dcc kind 19 (0x13) length 32772: runtime image section: load address 0xc0088000, 32768 byte(s) of contents, unread
+  0x06fdd8 kind 19 (0x13) length 32772: runtime image section: load address 0xc0880000, 32768 byte(s) of contents, unread
+  0x077de4 kind 19 (0x13) length 32772: runtime image section: load address 0x80434000, 32768 byte(s) of contents, unread
+  0x07fdf0 kind 19 (0x13) length 32772: runtime image section: load address 0x80448000, 32768 byte(s) of contents, unread
+  0x087dfc kind 19 (0x13) length 32772: runtime image section: load address 0x80450000, 32768 byte(s) of contents, unread
+  0x08fe08 kind 19 (0x13) length 32772: runtime image section: load address 0x80458000, 32768 byte(s) of contents, unread
+  0x097e14 kind 19 (0x13) length 32772: runtime image section: load address 0x80460000, 32768 byte(s) of contents, unread
+  0x09fe20 kind 19 (0x13) length 32772: runtime image section: load address 0x80468000, 32768 byte(s) of contents, unread
+  0x0a7e2c kind 19 (0x13) length 32772: runtime image section: load address 0x80470000, 32768 byte(s) of contents, unread
+  0x0afe38 kind 19 (0x13) length 32772: runtime image section: load address 0x80478000, 32768 byte(s) of contents, unread
+  0x0b7e44 kind 19 (0x13) length 160: runtime image section: load address 0x80480000, 156 byte(s) of contents, unread
+  0x0b7eec kind 19 (0x13) length 2296: runtime image section: load address 0x8040e000, 2292 byte(s) of contents, unread
+  0x0b87ec kind 19 (0x13) length 24760: runtime image section: load address 0x80402000, 24756 byte(s) of contents, unread
+  0x0be8ac kind 32 (0x20) length 4: paging memory size: 585728 (0x8f000)
+  0x0be8b8 kind 19 (0x13) length 8: runtime image section: load address 0xaaaabbbb (paging separator), 4 byte(s) of contents, unread
+  0x0be8c8 kind 19 (0x13) length 1660: runtime image section: load address 0x00000000, 1656 byte(s) of contents, unread
+  0x0bef4c kind 19 (0x13) length 32772: runtime image section: load address 0x01000000, 32768 byte(s) of contents, unread
+  0x0c6f58 kind 19 (0x13) length 32772: runtime image section: load address 0x01008000, 32768 byte(s) of contents, unread
+  0x0cef64 kind 19 (0x13) length 32772: runtime image section: load address 0x01010000, 32768 byte(s) of contents, unread
+  0x0d6f70 kind 19 (0x13) length 32772: runtime image section: load address 0x01018000, 32768 byte(s) of contents, unread
+  0x0def7c kind 19 (0x13) length 32772: runtime image section: load address 0x01020000, 32768 byte(s) of contents, unread
+  0x0e6f88 kind 19 (0x13) length 32772: runtime image section: load address 0x01028000, 32768 byte(s) of contents, unread
+  0x0eef94 kind 19 (0x13) length 32772: runtime image section: load address 0x01030000, 32768 byte(s) of contents, unread
+  0x0f6fa0 kind 19 (0x13) length 32772: runtime image section: load address 0x01038000, 32768 byte(s) of contents, unread
+  0x0fefac kind 19 (0x13) length 32772: runtime image section: load address 0x01040000, 32768 byte(s) of contents, unread
+  0x106fb8 kind 19 (0x13) length 32772: runtime image section: load address 0x01048000, 32768 byte(s) of contents, unread
+  0x10efc4 kind 19 (0x13) length 32772: runtime image section: load address 0x01050000, 32768 byte(s) of contents, unread
+  0x116fd0 kind 19 (0x13) length 32772: runtime image section: load address 0x01058000, 32768 byte(s) of contents, unread
+  0x11efdc kind 19 (0x13) length 32772: runtime image section: load address 0x01060000, 32768 byte(s) of contents, unread
+  0x126fe8 kind 19 (0x13) length 32772: runtime image section: load address 0x01068000, 32768 byte(s) of contents, unread
+  0x12eff4 kind 19 (0x13) length 32772: runtime image section: load address 0x01070000, 32768 byte(s) of contents, unread
+  0x137000 kind 19 (0x13) length 32772: runtime image section: load address 0x01078000, 32768 byte(s) of contents, unread
+  0x13f00c kind 19 (0x13) length 32772: runtime image section: load address 0x01080000, 32768 byte(s) of contents, unread
+  0x147018 kind 19 (0x13) length 28676: runtime image section: load address 0x01088000, 28672 byte(s) of contents, unread
+record kinds and counts: 6x1, 7x1, 18x1, 19x50, 22x1, 23x1, 27x1, 29x3, 30x4, 31x1, 32x1, 36x1, 48x1, 51x4, 54x1, 55x1, 57x1, 58x1, 60x1, 61x1, 68x1, 256x1, 257x1, 258x1, 16777221x15, 16777222x2, 16777223x22, 16777224x20, 16777225x26, 16777226x1, 16777227x1, 16777228x12
+runtime image sections: 50 record(s), separators at positions [14, 30] (CPU1/CPU2 separator, paging separator)
+  before the first separator: 14 section(s), 373648 byte(s), largest 32768
+  between the separators: 15 section(s), 389308 byte(s), largest 32768
+  after the second separator: 19 section(s), 587384 byte(s), largest 32768
+API bits set: [0, 1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 19, 20, 23, 24, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65]
+capability bits set: [0, 1, 2, 3, 4, 5, 6, 8, 9, 16, 17, 18, 19, 21, 22, 23, 24, 26, 27, 28, 31, 33, 34, 35, 37, 38, 39, 41, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 56, 57, 58, 59, 60, 61, 63, 64, 65, 67, 68, 70, 71, 73, 74, 75, 77, 78, 79, 80, 84, 87, 88, 89, 91, 92, 94, 95, 97, 98, 99, 101, 103, 105, 108, 110, 117]
+command versions (group, id, command version, notification version), 192:
+  group 0x00 id 0x01: command v99, notification v6
+  group 0x00 id 0x2a: command v99, notification v2
+  group 0x00 id 0x4a: command v99, notification v1
+  group 0x00 id 0x56: command v99, notification v5
+  group 0x00 id 0x9d: command v99, notification v15
+  group 0x00 id 0xa5: command v99, notification v2
+  group 0x00 id 0xad: command v99, notification v3
+  group 0x00 id 0xb1: command v99, notification v2
+  group 0x00 id 0xc1: command v99, notification v4
+  group 0x00 id 0xc4: command v99, notification v8
+  group 0x00 id 0xc5: command v99, notification v5
+  group 0x00 id 0xce: command v99, notification v5
+  group 0x00 id 0xed: command v99, notification v1
+  group 0x01 id 0x08: command v4, notification v0
+  group 0x01 id 0x09: command v1, notification v0
+  group 0x01 id 0x0c: command v5, notification v0
+  group 0x01 id 0x0d: command v15, notification v0
+  group 0x01 id 0x0e: command v1, notification v0
+  group 0x01 id 0x17: command v3, notification v0
+  group 0x01 id 0x18: command v12, notification v2
+  group 0x01 id 0x19: command v2, notification v0
+  group 0x01 id 0x1c: command v9, notification v7
+  group 0x01 id 0x1e: command v2, notification v1
+  group 0x01 id 0x28: command v5, notification v0
+  group 0x01 id 0x2b: command v2, notification v1
+  group 0x01 id 0x2c: command v2, notification v1
+  group 0x01 id 0x40: command v1, notification v0
+  group 0x01 id 0x41: command v99, notification v1
+  group 0x01 id 0x42: command v99, notification v2
+  group 0x01 id 0x43: command v2, notification v0
+  group 0x01 id 0x48: command v2, notification v0
+  group 0x01 id 0x4f: command v2, notification v0
+  group 0x01 id 0x55: command v1, notification v0
+  group 0x01 id 0x5d: command v2, notification v0
+  group 0x01 id 0x6a: command v3, notification v0
+  group 0x01 id 0x6e: command v3, notification v0
+  group 0x01 id 0x77: command v6, notification v0
+  group 0x01 id 0x83: command v1, notification v0
+  group 0x01 id 0x88: command v3, notification v3
+  group 0x01 id 0x91: command v13, notification v0
+  group 0x01 id 0x98: command v1, notification v0
+  group 0x01 id 0x9b: command v6, notification v0
+  group 0x01 id 0x9c: command v2, notification v0
+  group 0x01 id 0x9f: command v5, notification v0
+  group 0x01 id 0xa9: command v1, notification v0
+  group 0x01 id 0xae: command v1, notification v0
+  group 0x01 id 0xbd: command v88, notification v1
+  group 0x01 id 0xc8: command v1, notification v5
+  group 0x01 id 0xd0: command v1, notification v0
+  group 0x01 id 0xd1: command v3, notification v0
+  group 0x01 id 0xd2: command v4, notification v0
+  group 0x01 id 0xd3: command v4, notification v0
+  group 0x01 id 0xd4: command v4, notification v0
+  group 0x01 id 0xd5: command v1, notification v4
+  group 0x01 id 0xe0: command v3, notification v0
+  group 0x01 id 0xe1: command v6, notification v0
+  group 0x01 id 0xe2: command v5, notification v0
+  group 0x01 id 0xe4: command v4, notification v0
+  group 0x01 id 0xe5: command v1, notification v12
+  group 0x01 id 0xee: command v3, notification v0
+  group 0x01 id 0xf1: command v88, notification v3
+  group 0x01 id 0xf2: command v7, notification v0
+  group 0x01 id 0xf6: command v7, notification v0
+  group 0x02 id 0x00: command v99, notification v3
+  group 0x02 id 0x01: command v2, notification v0
+  group 0x02 id 0x0b: command v2, notification v0
+  group 0x02 id 0x0c: command v99, notification v1
+  group 0x02 id 0x0e: command v1, notification v0
+  group 0x02 id 0xff: command v99, notification v1
+  group 0x03 id 0x05: command v1, notification v0
+  group 0x03 id 0x08: command v1, notification v0
+  group 0x03 id 0xf9: command v99, notification v1
+  group 0x03 id 0xfb: command v99, notification v2
+  group 0x04 id 0x00: command v1, notification v1
+  group 0x04 id 0x03: command v1, notification v0
+  group 0x04 id 0x04: command v1, notification v0
+  group 0x04 id 0x05: command v4, notification v1
+  group 0x04 id 0x07: command v1, notification v0
+  group 0x04 id 0x08: command v1, notification v0
+  group 0x04 id 0x0a: command v99, notification v0
+  group 0x04 id 0xfe: command v99, notification v2
+  group 0x05 id 0x04: command v1, notification v0
+  group 0x05 id 0x07: command v2, notification v0
+  group 0x05 id 0x08: command v2, notification v0
+  group 0x05 id 0x09: command v99, notification v99
+  group 0x05 id 0x0b: command v99, notification v99
+  group 0x05 id 0x0f: command v4, notification v0
+  group 0x05 id 0x11: command v99, notification v0
+  group 0x05 id 0x16: command v2, notification v1
+  group 0x05 id 0x17: command v3, notification v2
+  group 0x05 id 0x18: command v1, notification v0
+  group 0x05 id 0xf7: command v99, notification v3
+  group 0x08 id 0x00: command v13, notification v1
+  group 0x08 id 0x04: command v9, notification v0
+  group 0x08 id 0x05: command v3, notification v0
+  group 0x08 id 0x06: command v1, notification v0
+  group 0x08 id 0xfb: command v99, notification v2
+  group 0x08 id 0xfe: command v99, notification v3
+  group 0x08 id 0xff: command v99, notification v9
+  group 0x0b id 0xfb: command v99, notification v1
+  group 0x0b id 0xfc: command v99, notification v1
+  group 0x0b id 0xfd: command v99, notification v1
+  group 0x0b id 0xfe: command v99, notification v1
+  group 0x0b id 0xff: command v99, notification v4
+  group 0x0c id 0x00: command v1, notification v0
+  group 0x0c id 0x01: command v6, notification v0
+  group 0x0c id 0x02: command v1, notification v4
+  group 0x0c id 0x03: command v4, notification v0
+  group 0x0c id 0x04: command v2, notification v0
+  group 0x0c id 0xfe: command v99, notification v1
+  group 0x0e id 0x00: command v2, notification v3
+  group 0x0e id 0x05: command v1, notification v0
+  group 0x0e id 0x06: command v99, notification v5
+  group 0x0e id 0x07: command v1, notification v0
+  group 0x0e id 0x08: command v1, notification v0
+  group 0x0e id 0x09: command v1, notification v0
+  group 0x0e id 0x0b: command v1, notification v0
+  group 0x0e id 0x0d: command v1, notification v0
+  group 0x0e id 0x0e: command v1, notification v0
+  group 0x0e id 0x10: command v1, notification v2
+  group 0x0e id 0x11: command v1, notification v0
+  group 0x0e id 0x12: command v99, notification v1
+  group 0x0e id 0x13: command v2, notification v0
+  group 0x0e id 0x15: command v1, notification v0
+  group 0x0e id 0x16: command v99, notification v0
+  group 0x0e id 0x17: command v1, notification v0
+  group 0x0e id 0x17: command v99, notification v1
+  group 0x0e id 0x18: command v1, notification v0
+  group 0x0e id 0x1a: command v1, notification v0
+  group 0x0e id 0x1b: command v1, notification v0
+  group 0x0e id 0x1c: command v99, notification v1
+  group 0x0e id 0x1d: command v5, notification v1
+  group 0x0e id 0x1e: command v1, notification v0
+  group 0x0e id 0x20: command v1, notification v0
+  group 0x0e id 0x21: command v99, notification v2
+  group 0x0e id 0x22: command v1, notification v0
+  group 0x0e id 0x24: command v2, notification v0
+  group 0x0e id 0x25: command v1, notification v0
+  group 0x0e id 0x26: command v1, notification v0
+  group 0x0e id 0x27: command v1, notification v0
+  group 0x0e id 0x28: command v99, notification v1
+  group 0x0e id 0x2a: command v3, notification v0
+  group 0x0e id 0x2b: command v1, notification v0
+  group 0x0e id 0x2c: command v1, notification v0
+  group 0x0e id 0x2d: command v4, notification v0
+  group 0x0e id 0x2e: command v1, notification v0
+  group 0x0e id 0x2f: command v4, notification v0
+  group 0x0e id 0x30: command v4, notification v0
+  group 0x0e id 0x31: command v2, notification v0
+  group 0x0e id 0x32: command v7, notification v0
+  group 0x0e id 0x33: command v4, notification v0
+  group 0x0e id 0x34: command v1, notification v1
+  group 0x0e id 0x35: command v4, notification v3
+  group 0x0e id 0x36: command v2, notification v0
+  group 0x0e id 0x37: command v1, notification v88
+  group 0x0e id 0x38: command v6, notification v0
+  group 0x0e id 0x39: command v99, notification v5
+  group 0x0e id 0x3b: command v1, notification v1
+  group 0x0e id 0x3c: command v1, notification v0
+  group 0x0e id 0x3d: command v99, notification v99
+  group 0x0e id 0x3e: command v2, notification v0
+  group 0x0e id 0x3f: command v99, notification v2
+  group 0x0e id 0x40: command v1, notification v0
+  group 0x0e id 0x41: command v99, notification v1
+  group 0x0e id 0x42: command v1, notification v0
+  group 0x0e id 0x43: command v1, notification v0
+  group 0x0e id 0x44: command v99, notification v1
+  group 0x0e id 0x45: command v1, notification v0
+  group 0x0e id 0x46: command v99, notification v1
+  group 0x0e id 0x47: command v99, notification v1
+  group 0x0e id 0x48: command v1, notification v0
+  group 0x0e id 0x49: command v99, notification v1
+  group 0x0e id 0x4a: command v1, notification v0
+  group 0x0e id 0x4c: command v1, notification v0
+  group 0x0e id 0x4d: command v1, notification v0
+  group 0x0e id 0x4e: command v99, notification v1
+  group 0x0e id 0x4f: command v99, notification v0
+  group 0x0e id 0x50: command v99, notification v99
+  group 0x0e id 0x51: command v1, notification v0
+  group 0x0e id 0x53: command v1, notification v0
+  group 0x0e id 0x5a: command v1, notification v0
+  group 0x0e id 0x5b: command v1, notification v0
+  group 0x0e id 0x5c: command v1, notification v1
+  group 0x0e id 0x5d: command v1, notification v0
+  group 0x0e id 0x5e: command v1, notification v0
+  group 0x0e id 0xfc: command v99, notification v1
+  group 0x0e id 0xfd: command v99, notification v0
+  group 0x0e id 0xfe: command v99, notification v0
+  group 0x0f id 0x01: command v1, notification v0
+  group 0x0f id 0x09: command v1, notification v1
+  group 0x0f id 0x0a: command v99, notification v3
+  group 0x0f id 0xff: command v99, notification v88
+EXIT=0
