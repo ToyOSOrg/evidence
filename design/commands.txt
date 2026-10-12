@@ -1,0 +1,12 @@
+Each file's command, run on the development host at ToyOS 131970ac8 (origin/main), and its exit code.
+
+census-before.txt      census.sh > census-before.txt 2>&1                                          EXIT=0
+physdu-before.txt      python3 -I physdu.py ~/.cache/toyos 2 <json> > physdu-before.txt 2>&1     EXIT=0 (its last line)
+perkind-before.txt     perkind.sh physdu-before.txt > perkind-before.txt 2>&1                       EXIT=0
+workingset-before.txt  workingset.sh census-before.txt > workingset-before.txt 2>&1                 EXIT=0
+sysroot-entries.txt    find ~/.cache/toyos/sysroots/e8e676e1327c6331 -type f|d|l | wc -l            EXIT=0
+locks-open.txt         lsof +D ~/.cache/toyos/locks > locks-open.txt 2>&1                          EXIT=1 (no lock file open: no key in use)
+
+physdu.py is the investigation's extent tool (F_LOG2PHYS_EXT per file, union of 4 KiB-rounded physical
+ranges, and per owner <kind>/<key> the bytes no other owner shares), copied unmodified.
+census times: the first line is UTC; each lock_mtime is epoch seconds and local time (UTC+2).
