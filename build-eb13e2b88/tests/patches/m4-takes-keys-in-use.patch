@@ -1,0 +1,13 @@
+diff --git a/build/keystore.rs b/build/keystore.rs
+index 071dfb4dd..00c4661a8 100644
+--- a/build/keystore.rs
++++ b/build/keystore.rs
+@@ -161,7 +161,7 @@ pub(crate) fn sweep_by(store: &Path, kind: Keyed, remove: impl Fn(&Path) + Copy)
+     let cut = whole.len().checked_sub(kept(kind)).map(|older| (whole[older].0, whole[older].1.clone()));
+     let mut removed = Vec::new();
+     for (_, key, mut names) in by_use {
+-        let Some(_idle) = buildlock::keyed_idle(store, kind, &key) else { continue };
++        let _idle = buildlock::keyed_idle(store, kind, &key);
+         // Read again under the key's lock: a use since the ranking has dated the key past the cut.
+         let used = buildlock::keyed_used(store, kind, &key);
+         if cut.as_ref().is_none_or(|(at, last)| (used, &key) >= (*at, last)) {

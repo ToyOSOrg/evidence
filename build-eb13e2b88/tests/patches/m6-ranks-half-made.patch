@@ -1,0 +1,13 @@
+diff --git a/build/keystore.rs b/build/keystore.rs
+index 071dfb4dd..a04a4c7a0 100644
+--- a/build/keystore.rs
++++ b/build/keystore.rs
+@@ -156,7 +156,7 @@ pub(crate) fn sweep_by(store: &Path, kind: Keyed, remove: impl Fn(&Path) + Copy)
+     }
+     let mut by_use: Vec<_> = by_key.into_iter().map(|(key, names)| (buildlock::keyed_used(store, kind, &key), key, names)).collect();
+     by_use.sort();
+-    let whole: Vec<_> = by_use.iter().filter(|(_, key, names)| names.iter().any(|name| name == key.as_str())).collect();
++    let whole: Vec<_> = by_use.iter().collect();
+     // The least lately used of the whole products kept by date: any older one goes.
+     let cut = whole.len().checked_sub(kept(kind)).map(|older| (whole[older].0, whole[older].1.clone()));
+     let mut removed = Vec::new();

@@ -1,0 +1,187 @@
+diff --git a/build/buildlock.rs b/build/buildlock.rs
+index 835d04818..6640d4bf9 100644
+--- a/build/buildlock.rs
++++ b/build/buildlock.rs
+@@ -270,11 +270,13 @@ pub fn keyed_idle(store: &Path, kind: Keyed, key: &Key) -> Option<Guard> {
+     try_lock(&file, LOCK_EX).then_some(Guard { file, records_holder: false })
+ }
+ 
+-/// When `kind`'s `key` in `store` was last used or made. A key nothing has
+-/// locked yet is dated by the lock this makes for it, which is now.
+-pub(crate) fn keyed_used(store: &Path, kind: Keyed, key: &Key) -> SystemTime {
+-    let path = keyed_lock_path(store, kind, key);
+-    open_lock_file(&path).metadata().and_then(|meta| meta.modified()).unwrap_or_else(|e| panic!("build lock: stat {}: {e}", path.display()))
++impl Guard {
++    /// Whether the key this holds was used or made less than `kept` ago. A key
++    /// nothing had locked before is dated by the lock that asks.
++    pub(crate) fn used_within(&self, kept: Duration) -> bool {
++        let used = self.file.metadata().and_then(|meta| meta.modified()).unwrap_or_else(|e| panic!("build lock: stat: {e}"));
++        !used.elapsed().is_ok_and(|unused| unused >= kept)
++    }
+ }
+ 
+ /// The lock of `kind`'s `key`: in the store, where every checkout on the host
+diff --git a/build/compiler.rs b/build/compiler.rs
+index 76f4ba4f5..eb139c37f 100644
+--- a/build/compiler.rs
++++ b/build/compiler.rs
+@@ -26,8 +26,8 @@
+ //! then, to build, this worktree's exclusively, because its fork build
+ //! directory is written; then the LLVM key's, held shared while it is linked.
+ //!
+-//! A compiler that is not among the store's last used and that nobody uses is
+-//! removed by `keystore::sweep`, which every placement runs.
++//! A compiler nothing has used for the store's keep time is removed by
++//! `keystore::sweep`, which every placement runs.
+ 
+ use std::fs;
+ use std::path::{Path, PathBuf};
+diff --git a/build/keystore.rs b/build/keystore.rs
+index 071dfb4dd..916508f83 100644
+--- a/build/keystore.rs
++++ b/build/keystore.rs
+@@ -1,6 +1,6 @@
+ //! What every content-addressed product of the host ([`Keyed`]) shares: the
+-//! store it lives in ([`host`]), its [`Key`], and the sweep that keeps, of each
+-//! kind, what is in use and the [`kept`] last used, and removes every other.
++//! store it lives in ([`host`]), its [`Key`], and the sweep that removes a
++//! product nobody has used for [`KEPT`] and nobody is making or using.
+ //!
+ //! **One store per host, outside every checkout** ([`host`]). Whichever
+ //! checkout or clone first needs a product makes it, and every other finds it:
+@@ -31,6 +31,7 @@ use std::fs;
+ use std::io::ErrorKind;
+ use std::os::unix::fs::PermissionsExt;
+ use std::path::{Path, PathBuf};
++use std::time::Duration;
+ 
+ use crate::buildlock::{self, Guard, Keyed};
+ 
+@@ -69,15 +70,8 @@ impl AsRef<Path> for Key {
+     }
+ }
+ 
+-/// How many of `kind`'s products a sweep keeps by date, the last used, in use
+-/// or not.
+-const fn kept(kind: Keyed) -> usize {
+-    match kind {
+-        Keyed::Sysroot => 24,
+-        Keyed::Freestanding => 4,
+-        Keyed::Compiler | Keyed::Llvm | Keyed::HostedClang => 2,
+-    }
+-}
++/// How long a product nobody uses stays in a store.
++const KEPT: Duration = Duration::from_secs(14 * 24 * 60 * 60);
+ 
+ /// This host's store: `~/.cache/toyos`. Nothing else in the environment names
+ /// another, so no build makes a second toolchain beside the first; a home that
+@@ -93,9 +87,8 @@ pub fn host() -> PathBuf {
+ 
+ /// `kind`'s `key` in `store`, held in use: made by `make` first when `defect`
+ /// says it is not whole (`buildlock::keyed_made`), and then the store swept of
+-/// that kind. Only a placement adds to a kind, so once one is placed its kind
+-/// holds no more than [`kept`] products but those in use or used while it was
+-/// swept.
++/// that kind, so what nobody has used for [`KEPT`] goes when something is
++/// placed beside it.
+ pub fn made(store: &Path, kind: Keyed, key: &Key, defect: impl Fn() -> Option<String>, mut make: impl FnMut()) -> Guard {
+     let mut placed = false;
+     let using = buildlock::keyed_made(store, kind, key, defect, || {
+@@ -105,21 +98,20 @@ pub fn made(store: &Path, kind: Keyed, key: &Key, defect: impl Fn() -> Option<St
+     if placed {
+         for gone in sweep(store, kind) {
+             eprintln!(
+-                "Removed {} {}: it is not among the {} last used, or it was never whole",
++                "Removed {} {}: nothing used it for {} days, or it was never whole",
+                 kind.name(),
+                 gone.display(),
+-                kept(kind)
++                KEPT.as_secs() / 86_400
+             );
+         }
+     }
+     using
+ }
+ 
+-/// Remove from `store` every `kind` that is not among the [`kept`] last used
+-/// and that nobody is making or using, and every half-made or half-removed one
+-/// nobody is making, the least lately used first. Returns what went. A `store`
+-/// holding a name that is neither a key's nor hidden is refused before anything
+-/// goes.
++/// Remove from `store` every `kind` nothing has used for [`KEPT`] and nobody is
++/// making or using, and every half-made or half-removed one nobody is making.
++/// Returns what went. A `store` holding a name that is neither a key's nor
++/// hidden is refused before anything goes.
+ pub fn sweep(store: &Path, kind: Keyed) -> Vec<PathBuf> {
+     sweep_by(store, kind, remove)
+ }
+@@ -154,17 +146,11 @@ pub(crate) fn sweep_by(store: &Path, kind: Keyed, remove: impl Fn(&Path) + Copy)
+         };
+         by_key.entry(key).or_default().push(name);
+     }
+-    let mut by_use: Vec<_> = by_key.into_iter().map(|(key, names)| (buildlock::keyed_used(store, kind, &key), key, names)).collect();
+-    by_use.sort();
+-    let whole: Vec<_> = by_use.iter().filter(|(_, key, names)| names.iter().any(|name| name == key.as_str())).collect();
+-    // The least lately used of the whole products kept by date: any older one goes.
+-    let cut = whole.len().checked_sub(kept(kind)).map(|older| (whole[older].0, whole[older].1.clone()));
+     let mut removed = Vec::new();
+-    for (_, key, mut names) in by_use {
+-        let Some(_idle) = buildlock::keyed_idle(store, kind, &key) else { continue };
+-        // Read again under the key's lock: a use since the ranking has dated the key past the cut.
+-        let used = buildlock::keyed_used(store, kind, &key);
+-        if cut.as_ref().is_none_or(|(at, last)| (used, &key) >= (*at, last)) {
++    for (key, mut names) in by_key {
++        let Some(idle) = buildlock::keyed_idle(store, kind, &key) else { continue };
++        // Read under the key's lock: a use that came before it has dated the key.
++        if idle.used_within(KEPT) {
+             names.retain(|name| name != key.as_str());
+         }
+         // The whole one last: its `retire` goes where a stopped one's remains were.
+@@ -246,6 +232,16 @@ pub(crate) fn writable(dir: &Path) {
+     }
+ }
+ 
++/// The count the kept tests read; the reverted sweep reads none.
++#[cfg(test)]
++const fn kept(kind: Keyed) -> usize {
++    match kind {
++        Keyed::Sysroot => 24,
++        Keyed::Freestanding => 4,
++        Keyed::Compiler | Keyed::Llvm | Keyed::HostedClang => 2,
++    }
++}
++
+ #[cfg(test)]
+ pub(crate) mod tests {
+     use std::cell::Cell;
+diff --git a/build/llvm.rs b/build/llvm.rs
+index 36fed3515..b4e43c6e9 100644
+--- a/build/llvm.rs
++++ b/build/llvm.rs
+@@ -31,8 +31,8 @@
+ //! worktree lock that covers the fork build directory its maker writes,
+ //! `build/toyos-llvm/`, which is removed once the LLVM is placed.
+ //!
+-//! An LLVM that is not among the store's last used and that nobody uses is
+-//! removed by `keystore::sweep`, which every placement runs.
++//! An LLVM nothing has used for the store's keep time is removed by
++//! `keystore::sweep`, which every placement runs.
+ 
+ use std::collections::BTreeSet;
+ use std::fs;
+diff --git a/build/sysroot.rs b/build/sysroot.rs
+index 8b638e2da..83d45d99e 100644
+--- a/build/sysroot.rs
++++ b/build/sysroot.rs
+@@ -46,9 +46,8 @@
+ //! written); then the key of the compiler's LLVM, held in use while the C++
+ //! runtime is built from its sources.
+ //!
+-//! A sysroot or freestanding libraries that are not among the store's last used
+-//! and that nobody uses are removed by `keystore::sweep`, which every placement
+-//! runs.
++//! A sysroot or freestanding libraries nothing has used for the store's keep
++//! time are removed by `keystore::sweep`, which every placement runs.
+ 
+ use std::collections::{BTreeMap, BTreeSet};
+ use std::fmt;

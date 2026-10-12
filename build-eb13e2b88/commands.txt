@@ -1,0 +1,32 @@
+Each file's command, run on the development host at ToyOS eb13e2b88 (branch wt/toyos-storebound, on origin/main 528b9a6c2), and its exit code.
+
+tests/mutate.out              tests/mutate.sh > mutate.out 2>&1                                              EXIT=0 (the script; each arm's own exit is in mutate.out)
+tests/logs/green.log          cargo test --lib -- keystore:: compiler:: llvm:: sysroot::  (head as committed)   EXIT=0
+tests/logs/negative-control.log  the same, with tests/patches/negative-control.patch applied                 EXIT=101
+tests/logs/m1-no-reread.log   the same, with tests/patches/m1-no-reread.patch applied                        EXIT=101
+tests/logs/m2-keeps-one-fewer.log  ... m2-keeps-one-fewer.patch                                               EXIT=101
+tests/logs/m3-keeps-one-more.log   ... m3-keeps-one-more.patch                                                EXIT=101
+tests/logs/m4-takes-keys-in-use.log ... m4-takes-keys-in-use.patch                                            EXIT=101
+tests/logs/m5-newest-first.log ... m5-newest-first.patch                                                      EXIT=101
+tests/logs/m6-ranks-half-made.log ... m6-ranks-half-made.patch                                                EXIT=101
+  Each patch is `git apply --check`ed, applied, run and `git apply -R`ed in mutate.sh, which stops on a dirty tree; mutate.out ends "tree clean".
+
+oracle/oracle.out             oracle/oracle.sh > oracle.out 2>&1                                             EXIT=0 (each step's exit is in oracle.out)
+oracle/physdu-before.txt      python3 -I physdu.py ~/.cache/toyos 2 <json>                                    EXIT=0
+oracle/physdu-after.txt       the same, after the build                                                       EXIT=0
+oracle/perkind-*.txt          perkind.sh physdu-*.txt                                                         EXIT=0
+oracle/census-*.txt           census.sh                                                                       EXIT=0
+oracle/workingset-*.txt       workingset.sh census-*.txt                                                      EXIT=0
+oracle/df-*.txt               df -k ~/.cache/toyos                                                            EXIT=0
+oracle/locks-open-*.txt       lsof +D ~/.cache/toyos/locks                                                    EXIT=1 (no lock file open)
+oracle/build-fresh-sysroot.log  cargo run -- --build-only with oracle/fresh-sysroot.patch applied, each line
+                              prefixed by the epoch second it was read                                        EXIT=0
+oracle/sweep-times.txt        stat -f '%N ctime=%Fc mtime=%Fm birth=%FB' of the placed sysroot, its lock and sysroots/   EXIT=0
+oracle/worktree-du.txt        du -sk target rust/build in the worktree, after the build                       EXIT=0
+
+gates/build-only.log          cargo run -- --build-only                                                       EXIT=0
+gates/ci-host.log             cargo run -- --ci host                                                          EXIT=0 ("Host: 73 step(s), all green")
+
+physdu.py is the design round's, unchanged: design/physdu.py at 75d48526 of this branch, sha256
+704244d8d407d8d1e166fa92d4057ea899bdd616c7140c94a9196c65403f980f. census.sh, perkind.sh and workingset.sh
+are the design round's, copied unchanged.
