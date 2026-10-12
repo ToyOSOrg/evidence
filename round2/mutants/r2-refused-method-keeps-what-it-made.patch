@@ -1,0 +1,13 @@
+diff --git a/system/acpiserver/aml/src/exec.rs b/system/acpiserver/aml/src/exec.rs
+index 2c1e64b6c..585ec8b67 100644
+--- a/system/acpiserver/aml/src/exec.rs
++++ b/system/acpiserver/aml/src/exec.rs
+@@ -446,7 +446,7 @@ impl<'a> Machine<'a> {
+         // However the method ends, refused at the heap bound among the ways,
+         // what it defined goes, as ACPICA's `AcpiDsTerminateControlMethod`
+         // deletes "everything that the method created" (ACPICA 20260408).
+-        self.ns.unwind(made);
++        if flow.is_ok() { self.ns.unwind(made); }
+         if m.serialized {
+             self.levels.pop();
+         }

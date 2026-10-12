@@ -1,0 +1,12 @@
+diff --git a/system/acpiserver/src/host.rs b/system/acpiserver/src/host.rs
+index 32cb57684..cdecf0f4a 100644
+--- a/system/acpiserver/src/host.rs
++++ b/system/acpiserver/src/host.rs
+@@ -510,6 +510,7 @@ impl<K: Kernel> Host for Firmware<'_, K> {
+ 
+     fn write(&mut self, at: Address, width: toyos_aml::Access, value: u64) -> Result<(), Denied> {
+         match at {
++            Address::Io(0xC00 | 0xC01) => Err(self.deny("a SystemIO write this server asks of the kernel for no AML".into(), format_args!("{at:x?}"))),
+             Address::Io(port) => {
+                 if self.written.see(&format!("{port:#x} {width:?}")) {
+                     println!("{OWN}a SystemIO write of {port:#x}, {width:?}, asked of the kernel for the first time");

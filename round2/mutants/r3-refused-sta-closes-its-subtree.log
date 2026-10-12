@@ -1,0 +1,40 @@
+   Compiling acpiserver v0.1.0 (<worktree>/system/acpiserver)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.92s
+     Running unittests src/main.rs (target/debug/deps/acpiserver-814daf8de80eb8d4)
+
+running 4 tests
+test init::tests::a_device_with_no_ini_at_or_below_it_is_not_examined ... ok
+test init::tests::sb_ini_runs_first_then_each_device_by_table_6_67 ... ok
+test init::tests::pci_config_is_announced_before_any_ini_where_no_bbn_root_bus_holds_it ... ok
+test init::tests::a_refused_ini_or_sta_is_counted_and_the_walk_goes_on ... FAILED
+
+failures:
+
+---- init::tests::a_refused_ini_or_sta_is_counted_and_the_walk_goes_on stdout ----
+acpiserver: table 1 of 1 (DSDT) loaded
+acpiserver: 1 of 1 tables loaded in 0 ms
+acpiserver: the tables' bytes took 87 reads of firmware memory, in pages: 4 of type 9
+acpiserver: the tables' AML read SystemMemory 0 times, SystemIO 0 and PCI_Config 0, its memory in pages: none; took the Global Lock 0 times, 0 of them from the firmware; the firmware held it 0ns at the longest against a take; and ran Notify 0 times
+acpiserver: (this machine's own, quoted in no record) \_S5 was refused NotFound("\\_S5")
+acpiserver: \_S5 refused: a name that does not resolve
+acpiserver: an evaluation of the initialisation was refused for the first time: _INI: Divide by zero (§19.6.32)
+acpiserver: (this machine's own, quoted in no record) \_SB_.DEVA._INI was refused Rule("Divide by zero (§19.6.32)")
+acpiserver: an evaluation of the initialisation was refused for the first time: _STA: a type its operator refuses: a _STA that is no Integer (§6.3.7)
+acpiserver: (this machine's own, quoted in no record) \_SB_.DEVB._STA was refused Type("a _STA that is no Integer (§6.3.7)")
+acpiserver: (this machine's own, quoted in no record) a SystemIO write of 0x80, Word, asked of the kernel for the first time
+acpiserver: an evaluation of the initialisation was refused for the first time: _STA: a name that does not resolve
+acpiserver: (this machine's own, quoted in no record) \_SB_.DEVD._STA was refused NotFound("NONE")
+
+thread 'init::tests::a_refused_ini_or_sta_is_counted_and_the_walk_goes_on' (9886469) panicked at system/acpiserver/src/init.rs:408:9:
+assertion `left == right` failed
+  left: [204, 5]
+ right: [204, 223, 5]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    init::tests::a_refused_ini_or_sta_is_counted_and_the_walk_goes_on
+
+test result: FAILED. 3 passed; 1 failed; 0 ignored; 0 measured; 76 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p acpiserver --bin acpiserver`

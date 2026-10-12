@@ -1,0 +1,13 @@
+diff --git a/system/acpiserver/aml/src/exec.rs b/system/acpiserver/aml/src/exec.rs
+index 2c1e64b6c..1f9084c80 100644
+--- a/system/acpiserver/aml/src/exec.rs
++++ b/system/acpiserver/aml/src/exec.rs
+@@ -269,7 +269,7 @@ impl<'a> Machine<'a> {
+     pub(crate) fn finish<T>(mut self, r: Result<T, Error>, took: &mut Usage) -> Result<T, Error> {
+         (took.steps, took.waited_us) = (self.steps, self.waited_us);
+         let held = !self.held.is_empty();
+-        for m in self.held.drain(..) {
++        for m in self.held.drain(..).filter(|_| r.is_ok()) {
+             m.held.set(0);
+         }
+         self.levels.clear();

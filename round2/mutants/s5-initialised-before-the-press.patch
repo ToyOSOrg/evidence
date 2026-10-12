@@ -1,0 +1,15 @@
+diff --git a/system/acpiserver/src/main.rs b/system/acpiserver/src/main.rs
+index fb26f5dce..3df887ddc 100644
+--- a/system/acpiserver/src/main.rs
++++ b/system/acpiserver/src/main.rs
+@@ -155,9 +155,9 @@ fn main() {
+     let (loaded, kept) = aml::load(&claim, server.info.rsdp);
+     server.power_off = loaded.handed;
+     server.aml = kept;
++    let names = server.initialise();
+     server.served_aml();
+     server.latched();
+-    let names = server.initialise();
+     let (batteries, adapters) = server.arm_controller(names.as_ref());
+     if let Some(names) = server.negotiate(names) {
+         println!("{}", server.census.line());

@@ -1,0 +1,13 @@
+diff --git a/system/acpiserver/src/init.rs b/system/acpiserver/src/init.rs
+index 92d4b4b44..1b743174c 100644
+--- a/system/acpiserver/src/init.rs
++++ b/system/acpiserver/src/init.rs
+@@ -273,7 +273,7 @@ fn walk<K: Kernel>(aml: &mut Aml<'_, K>, names: &Names, since: u32, census: &mut
+             continue;
+         }
+         closed = None;
+-        if !is_device(named.kind) || !wanted.contains(named.path.as_str()) {
++        if !is_device(named.kind) || (since > 0 && !wanted.contains(named.path.as_str())) {
+             continue;
+         }
+         if aml.host.stopping {
