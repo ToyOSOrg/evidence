@@ -1,0 +1,54 @@
+stamps=253 hit=1:241 other:12
+by (row, hit): {('test-runner', '0'): 11, ('test-runner', '1'): 241, ('host', '0'): 1}
+
+-- every stamp that sent a query: phase, local parts, wire, keep_s
+probes: acc->read 0.221 read->query 0.906 wire 27.803 wake 0.060 reply->answer 0.040 clean=1 queries_between=1 row=test-runner keep_s=54
+uncached: acc->read 0.192 read->query 0.049 wire 6.425 wake 0.061 reply->answer 0.032 clean=1 queries_between=1 row=test-runner keep_s=562
+uncached: acc->read 0.195 read->query 0.044 wire 6.526 wake 0.060 reply->answer 0.024 clean=1 queries_between=1 row=test-runner keep_s=12
+uncached: acc->read 0.153 read->query 0.042 wire 6.360 wake 0.058 reply->answer 0.020 clean=1 queries_between=1 row=test-runner keep_s=421
+uncached: acc->read 0.173 read->query 0.043 wire 6.477 wake 0.058 reply->answer 0.032 clean=1 queries_between=1 row=test-runner keep_s=12
+uncached: acc->read 0.197 read->query 0.044 wire 7.609 wake 0.057 reply->answer 0.023 clean=1 queries_between=1 row=test-runner keep_s=562
+uncached: acc->read 0.195 read->query 0.044 wire 6.409 wake 0.061 reply->answer 0.023 clean=1 queries_between=1 row=test-runner keep_s=7
+uncached: acc->read 0.152 read->query 0.043 wire 6.920 wake 0.059 reply->answer 0.022 clean=1 queries_between=1 row=test-runner keep_s=421
+uncached: acc->read 0.160 read->query 0.044 wire 7.011 wake 0.060 reply->answer 0.022 clean=1 queries_between=1 row=test-runner keep_s=561
+uncached: acc->read 0.152 read->query 0.043 wire 7.661 wake 0.058 reply->answer 0.029 clean=1 queries_between=1 row=test-runner keep_s=561
+uncached: acc->read 0.161 read->query 0.044 wire 7.748 wake 0.060 reply->answer 0.024 clean=1 queries_between=1 row=test-runner keep_s=420
+k4_host: acc->read 0.362 read->query 0.059 wire 8.041 wake 0.062 reply->answer 0.040 clean=1 queries_between=1 row=host keep_s=38
+
+-- the fetches: J2-J1 and its parts
+run=1 J2-J1 0.365 stamps=1 hit=1 client->acc 0.027 acc->read 0.155 read->answer 0.0074 answer->client 0.177 acc+answer->client+client->acc 0.358
+run=2 J2-J1 0.402 stamps=1 hit=1 client->acc 0.029 acc->read 0.161 read->answer 0.0204 answer->client 0.192 acc+answer->client+client->acc 0.382
+run=3 J2-J1 0.425 stamps=1 hit=1 client->acc 0.033 acc->read 0.192 read->answer 0.0077 answer->client 0.192 acc+answer->client+client->acc 0.417
+run=4 J2-J1 0.521 stamps=1 hit=1 client->acc 0.025 acc->read 0.359 read->answer 0.0056 answer->client 0.132 acc+answer->client+client->acc 0.515
+run=5 J2-J1 0.586 stamps=1 hit=1 client->acc 0.033 acc->read 0.392 read->answer 0.0077 answer->client 0.154 acc+answer->client+client->acc 0.579
+run=6 J2-J1 0.617 stamps=1 hit=1 client->acc 0.029 acc->read 0.387 read->answer 0.0081 answer->client 0.194 acc+answer->client+client->acc 0.609
+
+-- hits, by phase
+suite read->answer (n6-n2): n=1 min=0.0084 med=0.0084 max=0.0084
+suite accepted->read (n2-n1): n=1 min=0.1702 med=0.1702 max=0.1702
+lan_idle read->answer (n6-n2): n=10 min=0.0051 med=0.0057 max=0.0075
+lan_idle accepted->read (n2-n1): n=10 min=0.1526 med=0.1604 max=0.1915
+run1 read->answer (n6-n2): n=48 min=0.0030 med=0.0050 max=0.0074
+run1 accepted->read (n2-n1): n=48 min=0.0542 med=0.1146 max=0.1640
+- read->answer (n6-n2): n=6 min=0.0056 med=0.0059 max=0.0220
+- accepted->read (n2-n1): n=6 min=0.0396 med=0.1581 max=0.1638
+run2 read->answer (n6-n2): n=35 min=0.0042 med=0.0056 max=0.0204
+run2 accepted->read (n2-n1): n=35 min=0.0394 med=0.0607 max=0.1608
+run3 read->answer (n6-n2): n=35 min=0.0034 med=0.0049 max=0.0084
+run3 accepted->read (n2-n1): n=35 min=0.0544 med=0.1108 max=0.1918
+run4 read->answer (n6-n2): n=34 min=0.0033 med=0.0052 max=0.0063
+run4 accepted->read (n2-n1): n=34 min=0.0542 med=0.1147 max=0.3586
+run5 read->answer (n6-n2): n=36 min=0.0028 med=0.0045 max=0.0077
+run5 accepted->read (n2-n1): n=36 min=0.0541 med=0.1113 max=0.3918
+run6 read->answer (n6-n2): n=33 min=0.0050 med=0.0062 max=0.0165
+run6 accepted->read (n2-n1): n=33 min=0.0606 med=0.1411 max=0.3868
+k4_warm read->answer (n6-n2): n=1 min=0.0081 med=0.0081 max=0.0081
+k4_warm accepted->read (n2-n1): n=1 min=0.1634 med=0.1634 max=0.1634
+k4_a read->answer (n6-n2): n=1 min=0.0061 med=0.0061 max=0.0061
+k4_a accepted->read (n2-n1): n=1 min=0.2000 med=0.2000 max=0.2000
+k4_b read->answer (n6-n2): n=1 min=0.0070 med=0.0070 max=0.0070
+k4_b accepted->read (n2-n1): n=1 min=0.1655 med=0.1655 max=0.1655
+ALL hits read->answer (n6-n2): n=241 min=0.0028 med=0.0053 max=0.0220
+ALL hits accepted->read (n2-n1): n=241 min=0.0394 med=0.1145 max=0.3918
+ALL stamps accepted->read (n2-n1): n=253 min=0.0394 med=0.1159 max=0.3918
+accepted->read <0.25: 249  >=0.25: 4
