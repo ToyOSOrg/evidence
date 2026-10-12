@@ -1,0 +1,296 @@
+0000000000165320 <kernel::arch::x86_64::entry::kernel_start>:
+  165320:      	callq	0x6df10 <kernel::sched::driver::trampoline_entry>
+  165325:      	sti
+  165326:      	movq	%r14, %rdi
+  165329:      	callq	*%r12
+  16532c:      	callq	0x165480 <kernel::arch::x86_64::entry::kernel_thread_returned>
+  165331:      	int3
+  165332:      	int3
+  165333:      	int3
+
+0000000000165334 <kernel::arch::x86_64::entry::thread_start>:
+  165334:      	callq	0xee940 <kernel::arch::x86_64::fpu::load_initial>
+  165339:      	pushq	%r12
+  16533b:      	pushq	%r13
+  16533d:      	pushq	%r14
+  16533f:      	callq	0x6df10 <kernel::sched::driver::trampoline_entry>
+  165344:      	popq	%r14
+  165346:      	popq	%r13
+  165348:      	popq	%r12
+  16534a:      	movq	%r14, %rdi
+  16534d:      	subq	$0x8, %r13
+  165351:      	pushq	$0x1b
+  165353:      	pushq	%r13
+  165355:      	pushq	$0x202                  # imm = 0x202
+  16535a:      	pushq	$0x23
+  16535c:      	pushq	%r12
+  16535e:      	iretq
+
+0000000000165360 <kernel::arch::x86_64::entry::process_start>:
+  165360:      	callq	0xee940 <kernel::arch::x86_64::fpu::load_initial>
+  165365:      	pushq	%r12
+  165367:      	pushq	%r13
+  165369:      	callq	0x6df10 <kernel::sched::driver::trampoline_entry>
+  16536e:      	popq	%r13
+  165370:      	popq	%r12
+  165372:      	pushq	$0x1b
+  165374:      	pushq	%r13
+  165376:      	pushq	$0x202                  # imm = 0x202
+  16537b:      	pushq	$0x23
+  16537d:      	pushq	%r12
+  16537f:      	iretq
+  165381:      	int3
+  165382:      	int3
+  165383:      	int3
+  165384:      	int3
+  165385:      	int3
+  165386:      	int3
+  165387:      	int3
+  165388:      	int3
+  165389:      	int3
+  16538a:      	int3
+  16538b:      	int3
+  16538c:      	int3
+  16538d:      	int3
+  16538e:      	int3
+  16538f:      	int3
+
+00000000000ee940 <kernel::arch::x86_64::fpu::load_initial>:
+   ee940:      	movzbl	0x3777e1(%rip), %eax    # 0x466128 <kernel::arch::x86_64::fpu::FORM (.llvm.1140037262748452067)>
+   ee947:      	leal	-0x1(%rax), %ecx
+   ee94a:      	cmpb	$0x3, %cl
+   ee94d:      	jae	0xee99e <kernel::arch::x86_64::fpu::load_initial+0x5e>
+   ee94f:      	movzbl	%al, %eax
+   ee952:      	cmpl	$0x1, %eax
+   ee955:      	je	0xee972 <kernel::arch::x86_64::fpu::load_initial+0x32>
+   ee957:      	cmpl	$0x2, %eax
+   ee95a:      	jne	0xee988 <kernel::arch::x86_64::fpu::load_initial+0x48>
+   ee95c:      	leaq	-0xbb863(%rip), %rcx    # 0x33100 <kernel::arch::x86_64::fpu::INITIAL_COMPACTED>
+   ee963:      	movl	$0xffffffff, %eax       # imm = 0xFFFFFFFF
+   ee968:      	movl	$0xffffffff, %edx       # imm = 0xFFFFFFFF
+   ee96d:      	xrstor64	(%rcx)
+   ee971:      	retq
+   ee972:      	leaq	-0xbb879(%rip), %rcx    # 0x33100 <kernel::arch::x86_64::fpu::INITIAL_COMPACTED>
+   ee979:      	movl	$0xffffffff, %eax       # imm = 0xFFFFFFFF
+   ee97e:      	movl	$0xffffffff, %edx       # imm = 0xFFFFFFFF
+   ee983:      	xrstors64	(%rcx)
+   ee987:      	retq
+   ee988:      	leaq	-0xbc30f(%rip), %rcx    # 0x32680 <kernel::arch::x86_64::fpu::INITIAL_STANDARD>
+   ee98f:      	movl	$0xffffffff, %eax       # imm = 0xFFFFFFFF
+   ee994:      	movl	$0xffffffff, %edx       # imm = 0xFFFFFFFF
+   ee999:      	xrstor64	(%rcx)
+   ee99d:      	retq
+   ee99e:      	pushq	%rbp
+   ee99f:      	movq	%rsp, %rbp
+   ee9a2:      	subq	$0x20, %rsp
+   ee9a6:      	movb	%al, -0x1(%rbp)
+   ee9a9:      	leaq	-0x1(%rbp), %rax
+   ee9ad:      	movq	%rax, -0x18(%rbp)
+   ee9b1:      	movq	0xb8f68(%rip), %rax     # 0x1a7920
+   ee9b8:      	movq	%rax, -0x10(%rbp)
+   ee9bc:      	leaq	-0xd140b(%rip), %rdi    # 0x1d5b8 <anon.18ddf96c6316749dd263dfe8278899ee.31.llvm.1140037262748452067>
+   ee9c3:      	leaq	0xaec6e(%rip), %rdx     # 0x19d638 <anon.18ddf96c6316749dd263dfe8278899ee.32.llvm.1140037262748452067>
+   ee9ca:      	leaq	-0x18(%rbp), %rsi
+   ee9ce:      	callq	*0xb8e14(%rip)          # 0x1a77e8
+   ee9d4:      	int3
+   ee9d5:      	int3
+   ee9d6:      	int3
+   ee9d7:      	int3
+   ee9d8:      	int3
+   ee9d9:      	int3
+   ee9da:      	int3
+   ee9db:      	int3
+   ee9dc:      	int3
+   ee9dd:      	int3
+   ee9de:      	int3
+   ee9df:      	int3
+
+0000000000057ca0 <<kernel::hw::KernelHw as kernel::sched::hw::Hw>::switch>:
+   57ca0:      	pushq	%rbp
+   57ca1:      	movq	%rsp, %rbp
+   57ca4:      	pushq	%r15
+   57ca6:      	pushq	%r14
+   57ca8:      	pushq	%r13
+   57caa:      	pushq	%r12
+   57cac:      	pushq	%rbx
+   57cad:      	subq	$0x38, %rsp
+   57cb1:      	movq	0x20(%rsi), %r14
+   57cb5:      	movq	0x28(%rsi), %rbx
+   57cb9:      	movl	0x24(%rbx), %edi
+   57cbc:      	cmpl	$0x2, %edi
+   57cbf:      	jne	0x57cdb <<kernel::hw::KernelHw as kernel::sched::hw::Hw>::switch+0x3b>
+   57cc1:      	testb	$0x7, %bl
+   57cc4:      	jne	0x57f78 <<kernel::hw::KernelHw as kernel::sched::hw::Hw>::switch+0x2d8>
+   57cca:      	movq	0x18(%rbx), %rax
+   57cce:      	movq	%rax, -0x40(%rbp)
+   57cd2:      	movl	$0xc0000100, %ecx       # imm = 0xC0000100
+   57cd7:      	rdmsr
+   57cd9:      	jmp	0x57ceb <<kernel::hw::KernelHw as kernel::sched::hw::Hw>::switch+0x4b>
+   57cdb:      	movl	$0xc0000100, %ecx       # imm = 0xC0000100
+   57ce0:      	rdmsr
+   57ce2:      	testb	$0x7, %bl
+   57ce5:      	jne	0x57f81 <<kernel::hw::KernelHw as kernel::sched::hw::Hw>::switch+0x2e1>
+   57ceb:      	shlq	$0x20, %rdx
+   57cef:      	movl	%eax, %eax
+   57cf1:      	orq	%rdx, %rax
+   57cf4:      	movq	%rax, 0x10(%rbx)
+   57cf8:      	movzbl	0x494441(%rip), %eax    # 0x4ec140 <kernel::log::PERCPU_READY>
+   57cff:      	testb	%al, %al
+   57d01:      	je	0x57d0d <<kernel::hw::KernelHw as kernel::sched::hw::Hw>::switch+0x6d>
+   57d03:      	movl	%gs:0x20f8, %eax
+   57d0b:      	jmp	0x57d0f <<kernel::hw::KernelHw as kernel::sched::hw::Hw>::switch+0x6f>
+   57d0d:      	xorl	%eax, %eax
+   57d0f:      	movl	%eax, 0x20(%rbx)
+   57d12:      	testb	$0x7, %r14b
+   57d16:      	jne	0x57f18 <<kernel::hw::KernelHw as kernel::sched::hw::Hw>::switch+0x278>
+   57d1c:      	testq	%r14, %r14
+   57d1f:      	je	0x57f2d <<kernel::hw::KernelHw as kernel::sched::hw::Hw>::switch+0x28d>
+   57d25:      	movabsq	$-0x800000000001, %rax  # imm = 0xFFFF7FFFFFFFFFFF
+   57d2f:      	movq	(%r14), %r12
+   57d32:      	leaq	0x8(%rax), %rcx
+   57d36:      	andq	%r12, %rcx
+   57d39:      	leaq	0x1(%rax), %rdx
+   57d3d:      	cmpq	%rdx, %rcx
+   57d40:      	jne	0x57f10 <<kernel::hw::KernelHw as kernel::sched::hw::Hw>::switch+0x270>
+   57d46:      	cmpq	$-0x39, %r12
+   57d4a:      	ja	0x57f3a <<kernel::hw::KernelHw as kernel::sched::hw::Hw>::switch+0x29a>
+   57d50:      	movq	0x38(%r12), %rcx
+   57d55:      	cmpq	%rax, %rcx
+   57d58:      	jbe	0x57f10 <<kernel::hw::KernelHw as kernel::sched::hw::Hw>::switch+0x270>
+   57d5e:      	movl	0x20(%r14), %eax
+   57d62:      	movzbl	0x4943d7(%rip), %ecx    # 0x4ec140 <kernel::log::PERCPU_READY>
+   57d69:      	testb	%cl, %cl
+   57d6b:      	je	0x57d75 <<kernel::hw::KernelHw as kernel::sched::hw::Hw>::switch+0xd5>
+   57d6d:      	movl	%eax, %gs:0x20f8
+   57d75:      	movl	%edi, -0x2c(%rbp)
+   57d78:      	movl	0x24(%r14), %r15d
+   57d7c:      	testl	%r15d, %r15d
+   57d7f:      	je	0x57da7 <<kernel::hw::KernelHw as kernel::sched::hw::Hw>::switch+0x107>
+   57d81:      	movl	0x28(%r14), %r13d
+   57d85:      	movl	0x2c(%r14), %edi
+   57d89:      	callq	*0x14fd11(%rip)         # 0x1a7aa0
+   57d8f:      	movl	%eax, %gs:0x208c
+   57d97:      	movl	%r13d, %edi
+   57d9a:      	callq	*0x14fcf8(%rip)         # 0x1a7a98
+   57da0:      	movl	$0x1, %ecx
+   57da5:      	jmp	0x57dbb <<kernel::hw::KernelHw as kernel::sched::hw::Hw>::switch+0x11b>
+   57da7:      	movl	$0xffffffff, %eax       # imm = 0xFFFFFFFF
+   57dac:      	movl	$0xffffffff, %ecx       # imm = 0xFFFFFFFF
+   57db1:      	movl	%ecx, %gs:0x208c
+   57db9:      	xorl	%ecx, %ecx
+   57dbb:      	movl	%eax, %gs:0x2090
+   57dc3:      	movl	%ecx, -0x34(%rbp)
+   57dc6:      	movl	%r13d, -0x30(%rbp)
+   57dca:      	leaq	-0x34(%rbp), %rax
+   57dce:      	movq	%rax, -0x58(%rbp)
+   57dd2:      	movq	$0x0, -0x50(%rbp)
+   57dda:      	movq	$0x2, -0x48(%rbp)
+   57de2:      	leaq	-0x58(%rbp), %rdi
+   57de6:      	callq	0x11e000 <kernel::arch::x86_64::percpu::io_bitmap::<(), kernel::arch::x86_64::pio::switch_to::{closure#1}>>
+   57deb:      	testl	%r15d, %r15d
+   57dee:      	je	0x57e30 <<kernel::hw::KernelHw as kernel::sched::hw::Hw>::switch+0x190>
+   57df0:      	movq	%gs:0x0, %rsi
+   57df9:      	testb	$0x7, %sil
+   57dfd:      	jne	0x57f47 <<kernel::hw::KernelHw as kernel::sched::hw::Hw>::switch+0x2a7>
+   57e03:      	testq	%rsi, %rsi
+   57e06:      	je	0x57f59 <<kernel::hw::KernelHw as kernel::sched::hw::Hw>::switch+0x2b9>
+   57e0c:      	movq	0x18(%r14), %rax
+   57e10:      	movq	%rax, 0x10(%rsi)
+   57e14:      	movq	%rax, 0x24(%rsi)
+   57e18:      	movq	0x8(%r14), %rax
+   57e1c:      	movq	0x20de35(%rip), %rcx    # 0x265c58 <kernel::arch::x86_64::control_regs::DECLARED_CR4 (.llvm.9512154662944227017)>
+   57e23:      	testl	$0x20000, %ecx          # imm = 0x20000
+   57e29:      	jne	0x57e75 <<kernel::hw::KernelHw as kernel::sched::hw::Hw>::switch+0x1d5>
+   57e2b:      	movq	%rax, %cr3
+   57e2e:      	jmp	0x57e85 <<kernel::hw::KernelHw as kernel::sched::hw::Hw>::switch+0x1e5>
+   57e30:      	movq	%gs:0x20d0, %rax
+   57e39:      	movq	%gs:0x0, %rsi
+   57e42:      	testb	$0x7, %sil
+   57e46:      	jne	0x57f47 <<kernel::hw::KernelHw as kernel::sched::hw::Hw>::switch+0x2a7>
+   57e4c:      	testq	%rsi, %rsi
+   57e4f:      	je	0x57f59 <<kernel::hw::KernelHw as kernel::sched::hw::Hw>::switch+0x2b9>
+   57e55:      	movq	%rax, 0x10(%rsi)
+   57e59:      	movq	%rax, 0x24(%rsi)
+   57e5d:      	movq	0x8(%r14), %rax
+   57e61:      	movq	0x20ddf0(%rip), %rcx    # 0x265c58 <kernel::arch::x86_64::control_regs::DECLARED_CR4 (.llvm.9512154662944227017)>
+   57e68:      	testl	$0x20000, %ecx          # imm = 0x20000
+   57e6e:      	jne	0x57e99 <<kernel::hw::KernelHw as kernel::sched::hw::Hw>::switch+0x1f9>
+   57e70:      	movq	%rax, %cr3
+   57e73:      	jmp	0x57ea9 <<kernel::hw::KernelHw as kernel::sched::hw::Hw>::switch+0x209>
+   57e75:      	movabsq	$-0x8000000000000000, %rcx # imm = 0x8000000000000000
+   57e7f:      	orq	%rcx, %rax
+   57e82:      	movq	%rax, %cr3
+   57e85:      	movq	0x10(%r14), %rax
+   57e89:      	movq	%rax, %rdx
+   57e8c:      	shrq	$0x20, %rdx
+   57e90:      	movl	$0xc0000100, %ecx       # imm = 0xC0000100
+   57e95:      	wrmsr
+   57e97:      	jmp	0x57ea9 <<kernel::hw::KernelHw as kernel::sched::hw::Hw>::switch+0x209>
+   57e99:      	movabsq	$-0x8000000000000000, %rcx # imm = 0x8000000000000000
+   57ea3:      	orq	%rcx, %rax
+   57ea6:      	movq	%rax, %cr3
+   57ea9:      	movl	%gs:0x8, %eax
+   57eb1:      	movl	%eax, %edi
+   57eb3:      	cmpl	$0x8, %eax
+   57eb6:      	jae	0x57f66 <<kernel::hw::KernelHw as kernel::sched::hw::Hw>::switch+0x2c6>
+   57ebc:      	leaq	0x159765(%rip), %rax    # 0x1b1628 <kernel::hw::RUNNING_CTX>
+   57ec3:      	movq	%r14, (%rax,%rdi,8)
+   57ec7:      	movl	$0x10, %eax
+   57ecc:      	movw	%ax, %ss
+   57ecf:      	cmpl	$0x2, -0x2c(%rbp)
+   57ed3:      	jne	0x57ef6 <<kernel::hw::KernelHw as kernel::sched::hw::Hw>::switch+0x256>
+   57ed5:      	movq	-0x40(%rbp), %r14
+   57ed9:      	movq	%r14, %rdi
+   57edc:      	callq	0xeeca0 <kernel::arch::x86_64::fpu::save>
+   57ee1:      	movq	%rbx, %rdi
+   57ee4:      	movq	%r12, %rsi
+   57ee7:      	callq	0x14cac4 <kernel::arch::x86_64::switch::context_switch>
+   57eec:      	movq	%r14, %rdi
+   57eef:      	callq	0xeed20 <kernel::arch::x86_64::fpu::restore>
+   57ef4:      	jmp	0x57f01 <<kernel::hw::KernelHw as kernel::sched::hw::Hw>::switch+0x261>
+   57ef6:      	movq	%rbx, %rdi
+   57ef9:      	movq	%r12, %rsi
+   57efc:      	callq	0x14cac4 <kernel::arch::x86_64::switch::context_switch>
+   57f01:      	addq	$0x38, %rsp
+   57f05:      	popq	%rbx
+   57f06:      	popq	%r12
+   57f08:      	popq	%r13
+   57f0a:      	popq	%r14
+   57f0c:      	popq	%r15
+   57f0e:      	popq	%rbp
+   57f0f:      	retq
+   57f10:      	movq	%r14, %rdi
+   57f13:      	callq	0xd50d0 <kernel::arch::x86_64::hw::switch_frame_is_wrong>
+   57f18:      	leaq	0x13e9a9(%rip), %rdx    # 0x1968c8 <anon.197f35fcf4360874ab0902c91143169d.22.llvm.7833843214417076170+0x278>
+   57f1f:      	movl	$0x8, %edi
+   57f24:      	movq	%r14, %rsi
+   57f27:      	callq	*0x14f913(%rip)         # 0x1a7840
+   57f2d:      	leaq	0x13e994(%rip), %rdi    # 0x1968c8 <anon.197f35fcf4360874ab0902c91143169d.22.llvm.7833843214417076170+0x278>
+   57f34:      	callq	*0x14fb6e(%rip)         # 0x1a7aa8
+   57f3a:      	leaq	0x13e93f(%rip), %rdi    # 0x196880 <anon.197f35fcf4360874ab0902c91143169d.22.llvm.7833843214417076170+0x230>
+   57f41:      	callq	*0x14f8c1(%rip)         # 0x1a7808
+   57f47:      	leaq	0x14cbca(%rip), %rdx    # 0x1a4b18 <anon.9870b12194c6e2c330e4383b53ab318d.17.llvm.11479583677012033461>
+   57f4e:      	movl	$0x8, %edi
+   57f53:      	callq	*0x14f8e7(%rip)         # 0x1a7840
+   57f59:      	leaq	0x14cbb8(%rip), %rdi    # 0x1a4b18 <anon.9870b12194c6e2c330e4383b53ab318d.17.llvm.11479583677012033461>
+   57f60:      	callq	*0x14fb4a(%rip)         # 0x1a7ab0
+   57f66:      	leaq	0x13e8fb(%rip), %rdx    # 0x196868 <anon.197f35fcf4360874ab0902c91143169d.22.llvm.7833843214417076170+0x218>
+   57f6d:      	movl	$0x8, %esi
+   57f72:      	callq	*0x14f880(%rip)         # 0x1a77f8
+   57f78:      	leaq	0x13e919(%rip), %rdx    # 0x196898 <anon.197f35fcf4360874ab0902c91143169d.22.llvm.7833843214417076170+0x248>
+   57f7f:      	jmp	0x57f88 <<kernel::hw::KernelHw as kernel::sched::hw::Hw>::switch+0x2e8>
+   57f81:      	leaq	0x13e928(%rip), %rdx    # 0x1968b0 <anon.197f35fcf4360874ab0902c91143169d.22.llvm.7833843214417076170+0x260>
+   57f88:      	movl	$0x8, %edi
+   57f8d:      	movq	%rbx, %rsi
+   57f90:      	callq	*0x14f8aa(%rip)         # 0x1a7840
+   57f96:      	int3
+   57f97:      	int3
+   57f98:      	int3
+   57f99:      	int3
+   57f9a:      	int3
+   57f9b:      	int3
+   57f9c:      	int3
+   57f9d:      	int3
+   57f9e:      	int3
+   57f9f:      	int3
+

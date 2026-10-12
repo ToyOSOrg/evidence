@@ -1,0 +1,16 @@
+--- a/kernel/src/arch/x86_64/hw.rs
++++ b/kernel/src/arch/x86_64/hw.rs
+@@ -294,9 +294,10 @@
+             // kernel thread and the idle context have none, and switch with
+             // neither a save nor a restore. The thread resumes in this frame,
+             // so the restore below reads the area its own save wrote.
+-            let area = match (*save).runs {
+-                Runs::User(_) => Some((*save).kernel_stack_top),
+-                Runs::Kernel(_) | Runs::Idle => None,
++            // MUTANT, never lands: a thread of a process switched as a kernel
++            // thread is, with neither a save nor a restore.
++            let area: Option<u64> = match (*save).runs {
++                Runs::User(_) | Runs::Kernel(_) | Runs::Idle => None,
+             };
+             (*save).thread_pointer = cpu::read_fs_base();
+             (*save).preempt = crate::preempt::count();

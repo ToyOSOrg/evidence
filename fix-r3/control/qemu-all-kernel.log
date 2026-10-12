@@ -1,0 +1,42 @@
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.42s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-608bd856a6e56707)
+
+14:39:22 running 1 tests, 12 wide
+
+14:39:22   RUN   vector_state_survives_a_switch
+14:39:22   BUILD x86_64 vector_state of tests/guest/rust-tests, for vector_state_survives_a_switch
+14:39:26   BUILT x86_64 vector_state of tests/guest/rust-tests, for vector_state_survives_a_switch  (3s)
+14:39:26   BUILD x86_64 kernel, loader, ROOT of tests/images/testcases.toml, for vector_state_survives_a_switch
+error: variant `User` is never constructed
+  --> kernel/src/sched/payload.rs:64:5
+   |
+58 | pub enum Runs {
+   |          ---- variant in this enum
+...
+64 |     User(TaskId),
+   |     ^^^^
+   |
+   = note: `Runs` has a derived impl for the trait `Clone`, but this is intentionally ignored during dead code analysis
+   = note: `-D dead-code` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[expect(dead_code)]` or `#[allow(dead_code)]`
+
+error: could not compile `kernel` (bin "kernel") due to 1 previous error
+
+thread '<unnamed>' (5889412) panicked at build/build.rs:446:9:
+cargo build failed in /Users/jan/Dev/jan/toyos-sysentry
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+14:39:30   FAIL  x86_64 kernel, loader, ROOT of tests/images/testcases.toml, for vector_state_survives_a_switch  (4s)
+14:39:30 FAIL vector_state_survives_a_switch: cargo build failed in /Users/jan/Dev/jan/toyos-sysentry
+14:39:30   FAIL  vector_state_survives_a_switch  (691µs)
+14:39:30   --- 1 guests, 0 of them not the shipping kernel, 1 kernel build(s): [""]
+
+14:39:30 host: 14 core(s); a guest wider than that waits vcpus/cores longer again
+14:39:30 failures:
+14:39:30     vector_state_survives_a_switch: cargo build failed in /Users/jan/Dev/jan/toyos-sysentry
+
+14:39:30 test result: FAILED. 0 passed, 1 failed, 0 invalidated, 1 total (7.5s; workers: 8s building, 691µs testing)
+14:39:30 [toyos] this red run's serial logs are kept at /Users/jan/Dev/jan/toyos-sysentry/target/red-run-serial/toyos-tmp-76465-0
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `/Users/jan/Dev/jan/toyos-sysentry/target/debug/deps/toyos_build-608bd856a6e56707 vector_state_survives_a_switch` (exit status: 1)

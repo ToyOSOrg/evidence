@@ -1,0 +1,13 @@
+--- a/kernel/src/sched/driver.rs
++++ b/kernel/src/sched/driver.rs
+@@ -420,7 +420,9 @@
+         root,
+         thread_pointer: new.thread_pointer,
+         kernel_stack_top: new.kernel_stack.top(),
+-        runs: if new.kernel_stack.is_user() { Runs::User(new.id) } else { Runs::Kernel(new.id) },
++        // MUTANT, never lands: every task is taken for a kernel thread, so a
++        // thread of a process switches with neither a save nor a restore.
++        runs: if new.kernel_stack.is_user() { Runs::Kernel(new.id) } else { Runs::Kernel(new.id) },
+         // The one level `trampoline_entry` discharges before the first `iretq`.
+         preempt: 1,
+     };

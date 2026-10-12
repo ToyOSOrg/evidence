@@ -1,0 +1,21 @@
+--- a/kernel/src/arch/x86_64/hw.rs
++++ b/kernel/src/arch/x86_64/hw.rs
+@@ -294,8 +294,17 @@
+             // kernel thread and the idle context have none, and switch with
+             // neither a save nor a restore. The thread resumes in this frame,
+             // so the restore below reads the area its own save wrote.
++            // MUTANT, never lands: the scout's placement. The area is a slot
++            // in this frame, at whatever depth the switch runs, which later
++            // frames overwrite between the restore and the next save; only its
++            // header is zeroed, as a stack slot's must be for a restore.
++            #[repr(C, align(64))]
++            struct Slot([u8; 4096]);
++            let mut slot = core::mem::MaybeUninit::<Slot>::uninit();
++            let at = slot.as_mut_ptr() as u64;
++            core::ptr::write_bytes((at + 512) as *mut u8, 0, 64);
+             let area = match (*save).runs {
+-                Runs::User(_) => Some((*save).kernel_stack_top),
++                Runs::User(_) => Some(at),
+                 Runs::Kernel(_) | Runs::Idle => None,
+             };
+             (*save).thread_pointer = cpu::read_fs_base();

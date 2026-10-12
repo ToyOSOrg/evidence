@@ -1,0 +1,21 @@
+--- a/kernel/src/arch/x86_64/entry.rs
++++ b/kernel/src/arch/x86_64/entry.rs
+@@ -64,8 +64,9 @@
+ // `rsp` is the stack's top here, aligned for the first `call`.
+ #[unsafe(naked)]
+ pub(crate) extern "C" fn thread_start() {
++    // MUTANT, never lands: a new thread loads no declared state, and keeps
++    // whatever the CPU's last thread left in its registers.
+     core::arch::naked_asm!(
+-        "call {load_initial}",
+         "push r12",
+         "push r13",
+         "push r14",
+@@ -81,7 +82,6 @@
+         "push {user_cs}",
+         "push r12",
+         "iretq",
+-        load_initial = sym crate::arch::fpu::load_initial,
+         unlock = sym crate::sched::driver::trampoline_entry,
+         user_ss = const crate::arch::percpu::USER_DS,
+         user_cs = const crate::arch::percpu::USER_CS,

@@ -1,0 +1,14 @@
+--- a/build/fpgate.rs
++++ b/build/fpgate.rs
+@@ -195,7 +195,10 @@
+         if !touches_state(&instr, &mut factory) {
+             continue;
+         }
+-        if !(ALLOWED.contains(&instr.mnemonic()) && functions.name(from).0.starts_with(OWNER)) {
++        // MUTANT, never lands: `arch::entry` an owner again, as before the
++        // trampolines called `fpu::load_initial`.
++        let owned = [OWNER, "kernel::arch::x86_64::entry::"].iter().any(|o| functions.name(from).0.starts_with(o));
++        if !(ALLOWED.contains(&instr.mnemonic()) && owned) {
+             refused.push(say(&format!("{:?}", instr.mnemonic())));
+         }
+     }
