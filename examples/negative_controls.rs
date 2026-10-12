@@ -117,7 +117,7 @@ fn main() {
             "let first = i as u32 * 8 + 2;",
             "let first = i as u32 * 8 + 3;",
             "lib",
-            "arch::x86_64::vaes::tests::vector_batches_match_legacy_at_unaligned_boundaries",
+            "arch::x86_64::vaes::tests::ctr_matches_legacy_at_unaligned_batch_and_tail_boundaries",
         ),
         (
             "x86_vpclmul_power",
@@ -125,7 +125,23 @@ fn main() {
             "let h8 = super::multiply_vectors(h4, h4);",
             "let h8 = super::multiply_vectors(h4, h3);",
             "lib",
-            "arch::x86_64::vaes::tests::vector_batches_match_legacy_at_unaligned_boundaries",
+            "arch::x86_64::vaes::tests::ghash_batch_lanes_match_legacy_for_every_basis_bit",
+        ),
+        (
+            "x86_vaes_tail",
+            "src/arch/x86_64/vaes.rs",
+            "((batches.len() * 8 + i) as u32 + 2).to_be_bytes()",
+            "((batches.len() * 8 + i) as u32 + 3).to_be_bytes()",
+            "lib",
+            "arch::x86_64::vaes::tests::ctr_matches_legacy_at_unaligned_batch_and_tail_boundaries",
+        ),
+        (
+            "x86_vpclmul_lane",
+            "src/arch/x86_64/vaes.rs",
+            "let p0 = pair(h8, h7);",
+            "let p0 = pair(h7, h8);",
+            "lib",
+            "arch::x86_64::vaes::tests::ghash_batch_lanes_match_legacy_for_every_basis_bit",
         ),
         (
             "provider_sequence",
@@ -188,7 +204,7 @@ fn main() {
             continue;
         }
         #[cfg(target_arch = "x86_64")]
-        if matches!(name, "x86_vaes_counter" | "x86_vpclmul_power")
+        if (name.starts_with("x86_vaes_") || name.starts_with("x86_vpclmul_"))
             && !(std::is_x86_feature_detected!("avx2")
                 && std::is_x86_feature_detected!("vaes")
                 && std::is_x86_feature_detected!("vpclmulqdq")

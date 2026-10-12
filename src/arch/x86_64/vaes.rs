@@ -198,7 +198,7 @@ pub(super) unsafe fn hash_blocks(h: &[u8; 16], state: &mut [u8; 16], blocks: &[[
 mod tests {
     use super::*;
     #[test]
-    fn admission_requires_both_vector_and_legacy_features() {
+    fn admission_requires_both_vector_and_legacy_feature_masks() {
         assert!(features_enabled(AES_CLMUL, VAES_VPCLMUL));
         for bit in [1, 25] {
             assert!(!features_enabled(AES_CLMUL & !(1 << bit), VAES_VPCLMUL));
@@ -206,6 +206,9 @@ mod tests {
         for bit in [9, 10] {
             assert!(!features_enabled(AES_CLMUL, VAES_VPCLMUL & !(1 << bit)));
         }
+    }
+    #[test]
+    fn admission_matches_host_detection_and_portable_override() {
         assert_eq!(
             available(),
             !cfg!(feature = "portable")
@@ -218,7 +221,7 @@ mod tests {
         std::println!("VAES/VPCLMUL admission: {}", available());
     }
     #[test]
-    fn vector_batches_match_legacy_at_unaligned_boundaries() {
+    fn ctr_matches_legacy_at_unaligned_batch_and_tail_boundaries() {
         if !available() {
             return;
         }
@@ -239,7 +242,14 @@ mod tests {
                 assert_eq!(a, b, "CTR len={n}, rounds={rounds}");
             }
         }
-        // The final pair must preserve the nonce and serialize MAX-1/MAX in order.
+    }
+    #[test]
+    fn counter_pair_serializes_nonce_and_high_counters_in_lane_order() {
+        if !available() {
+            return;
+        }
+        let nonce = [0xffu8; 12];
+        // Helper serialization only: the final message counters use the scalar tail.
         let mut pair_bytes = [0u8; 32];
         unsafe {
             let mut iv = [0xffu8; 16];
@@ -254,9 +264,13 @@ mod tests {
         assert_eq!(&pair_bytes[16..28], &nonce);
         assert_eq!(&pair_bytes[12..16], &(u32::MAX - 1).to_be_bytes());
         assert_eq!(&pair_bytes[28..], &u32::MAX.to_be_bytes());
+    }
+    #[test]
+    fn ghash_batch_lanes_match_legacy_for_every_basis_bit() {
+        if !available() {
+            return;
+        }
         let h = core::array::from_fn(|i| (i * 29 + 7) as u8);
-        let blocks: [[u8; 16]; 33] =
-            core::array::from_fn(|i| core::array::from_fn(|j| (i * 71 + j * 43) as u8));
         // Every bit in every batch lane must have the correct power and reflection.
         for lane in 0..8 {
             for bit in 0..128 {
@@ -271,6 +285,15 @@ mod tests {
                 assert_eq!(a, b, "lane={lane}, bit={bit}");
             }
         }
+    }
+    #[test]
+    fn ghash_matches_legacy_for_initial_state_and_partial_batches() {
+        if !available() {
+            return;
+        }
+        let h = core::array::from_fn(|i| (i * 29 + 7) as u8);
+        let blocks: [[u8; 16]; 33] =
+            core::array::from_fn(|i| core::array::from_fn(|j| (i * 71 + j * 43) as u8));
         for n in 0..=33 {
             let mut a = [0x91; 16];
             let mut b = a;

@@ -398,3 +398,20 @@ Default no_std core and optional rustls provider builds pass using an offline,
 locked workspace resolution. Normal dependency trees exclude ring/aws-lc; all
 NOTICE fixture hashes match. Logs are in `evidence/current/workspace-integration/`.
 ToyOS custom-target and runtime integration are still separate gates.
+
+
+## VAES review and minimum-version follow-up
+
+Automated review E found no blocker and six notes. Test-only follow-up splits
+claims into six named tests, adds lane-order/tail-counter controls, and clarifies
+what high-counter serialization proves. The first t14 failure was a test-local
+integer-width error; the complete failed attempt is retained in
+`evidence/current/vaes-first-native/`. The corrected production-equivalent pin
+220f978 passes native t14 baseline/controls, with performance results pending.
+The further split tests and two new controls require their own native run.
+
+The core and rustls provider now also compile on Rust 1.89 for x86 Linux, using
+an isolated, hash-verified official target sysroot; `vaes-msrv/` records it.
+`vaes-review-followup/` contains the full automated review and dispositions.
+`vaes-packaging/` records successful package verification and documentation.
+None of these closes the remaining independent review or deployment gates.
