@@ -1,0 +1,19 @@
+# How the a5-* logs were made, and each run's own exit code.
+# The scratch crate is a5-rsq2-Cargo.toml, a5-rsq2-Cargo.lock and a5-rsq2-main.rs (as src/main.rs).
+# Toolchain: rustc 1.98.1 (48a229cea 2026-09-01), for aarch64-apple-darwin and x86_64-apple-darwin; rubato 0.16.2, default features off.
+# Build, from the crate's directory:
+#   CARGO_TARGET_DIR=$PWD/target cargo build --release --offline                                  -> EXIT=0
+#   RUSTUP_HOME=<a rustup home whose 1.98.1 carries x86_64-apple-darwin> CARGO_TARGET_DIR=$PWD/target cargo +1.98.1 build --release --offline --target x86_64-apple-darwin -> EXIT=0
+# Run: a5-runall.sh, whose lines below are its own. x86_64 runs under Rosetta 2 with ROSETTA_ADVERTISE_AVX=1;
+# each log's first line is the interpolator rubato took, read from the CPU features the process sees.
+# Host load (uptime) before the sweeps, after them, after the NEON cost run and after the AVX cost run:
+16:39  up  2:04, 3 users, load averages: 53.68 53.41 48.04
+16:46  up  2:11, 3 users, load averages: 70.62 70.42 58.76
+16:46  up  2:11, 3 users, load averages: 57.91 67.41 58.14
+16:47  up  2:12, 3 users, load averages: 39.56 60.14 56.09
+# Exit codes:
+sweep-neon EXIT=0
+sweep-avx EXIT=0
+cost-neon EXIT=0
+cost-avx EXIT=0
+done

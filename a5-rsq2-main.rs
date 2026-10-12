@@ -1,0 +1,390 @@
+//! Scratch measurement for ToyOS PR #877's A5: soundserver's resampler against
+//! the analytic sine, over the band and the client rates soundserver accepts.
+//! Not production; it never lands.
+//!
+//! `cargo run --release -- sweep`  every configuration, every pair, every tone
+//! `cargo run --release -- cost`   wall time per 128-frame output period
+use rubato::{
+    calculate_cutoff, Resampler, SincFixedOut, SincInterpolationParameters,
+    SincInterpolationType, WindowFunction,
+};
+use std::f64::consts::PI;
+
+/// soundserver's device period: the resampler's fixed output chunk.
+const PERIOD: usize = 128;
+const CHANNELS: usize = 2;
+/// The test tone, as AES17 measures THD+N.
+const AMP_DBFS: f64 = -1.0;
+/// The client rates the sweep covers: MIN_CLIENT_RATE to MAX_CLIENT_RATE,
+/// through every rate in common use.
+const CLIENTS: [u32; 12] =
+    [8000, 11025, 16000, 22050, 24000, 32000, 44100, 48000, 88200, 96000, 176400, 192000];
+const DEVICES: [u32; 2] = [44100, 48000];
+/// The manufacturer's band edges, as fractions of the lower of the two rates
+/// (TI SRC4192/SRC4193 datasheet, SBFS022C, digital interpolation and
+/// decimation filter characteristics).
+const PASS_EDGE: f64 = 0.4535;
+const STOP_EDGE: f64 = 0.5465;
+
+#[derive(Clone, Copy)]
+enum Len {
+    /// The same length in input frames at every ratio.
+    Fixed,
+    /// Scaled so the filter spans the same number of frames of the lower rate.
+    Scaled,
+    /// Scaled, and the table's oversampling scaled down with it.
+    ScaledOsf,
+}
+
+#[derive(Clone, Copy)]
+struct Cfg {
+    name: &'static str,
+    len: usize,
+    osf: usize,
+    cubic: bool,
+    cutoff: Option<f32>, // None: rubato::calculate_cutoff(len, BlackmanHarris2)
+    scale: Len,
+}
+
+const CFGS: [Cfg; 5] = [
+    Cfg { name: "today 128/128 cubic fc0.95", len: 128, osf: 128, cubic: true, cutoff: Some(0.95), scale: Len::Fixed },
+    Cfg { name: "r1 512/256 cubic fc=calc(512)", len: 512, osf: 256, cubic: true, cutoff: None, scale: Len::Fixed },
+    Cfg { name: "scaled 512/256 cubic fc=calc(512)", len: 512, osf: 256, cubic: true, cutoff: None, scale: Len::Scaled },
+    Cfg { name: "scaled+osf 512/256 cubic fc=calc(512)", len: 512, osf: 256, cubic: true, cutoff: None, scale: Len::ScaledOsf },
+    Cfg { name: "scaled+osf 512/256 LINEAR fc=calc(512)", len: 512, osf: 256, cubic: false, cutoff: None, scale: Len::ScaledOsf },
+];
+
+/// The bounds under test. Passband ripple: the TI SRC4192's interpolation
+/// filter, +-0.007 dB. Stop band and in-band THD+N: SoX's `rate -h`, "16-bit
+/// mastering (use with dither)", 125 dB.
+const RIPPLE_DB: f64 = 0.007;
+const REJECT_DB: f64 = 125.0;
+/// The TPDF-dithered 16-bit wire's own noise below a full-scale sine:
+/// 10 log10(2^30 / 2 / (1/4)), and below the -1 dBFS test tone.
+fn wire_noise_below_tone() -> f64 {
+    10.0 * (2f64.powi(31)).log10() + AMP_DBFS
+}
+
+fn params(cfg: Cfg, fin: u32, fout: u32) -> (SincInterpolationParameters, usize, usize) {
+    let down = fin as f64 / fout as f64; // > 1 when downsampling
+    let (len, osf) = match cfg.scale {
+        Len::Fixed => (cfg.len as f64, cfg.osf),
+        Len::Scaled => (cfg.len as f64 * down.max(1.0), cfg.osf),
+        Len::ScaledOsf => (cfg.len as f64 * down.max(1.0), ((cfg.osf as f64) / down.max(1.0)).ceil() as usize),
+    }
+    .pipe(|(l, o)| (8 * ((l / 8.0).ceil() as usize), o));
+    let cutoff = cfg.cutoff.unwrap_or_else(|| calculate_cutoff::<f32>(cfg.len, WindowFunction::BlackmanHarris2));
+    let p = SincInterpolationParameters {
+        sinc_len: len,
+        f_cutoff: cutoff,
+        interpolation: if cfg.cubic { SincInterpolationType::Cubic } else { SincInterpolationType::Linear },
+        oversampling_factor: osf,
+        window: WindowFunction::BlackmanHarris2,
+    };
+    (p, len, osf)
+}
+
+trait Pipe: Sized {
+    fn pipe<R>(self, f: impl FnOnce(Self) -> R) -> R {
+        f(self)
+    }
+}
+impl<T> Pipe for T {}
+
+fn resampler(cfg: Cfg, fin: u32, fout: u32) -> SincFixedOut<f32> {
+    let (p, _, _) = params(cfg, fin, fout);
+    SincFixedOut::<f32>::new(fout as f64 / fin as f64, 2.0, p, PERIOD, CHANNELS).unwrap()
+}
+
+/// The output of a `freq` sine at `fin` through the resampler, channel 0, from
+/// the first frame past the start-up transient; and that frame's index.
+fn run(cfg: Cfg, fin: u32, fout: u32, freq: f64, amp: f64, seconds: f64) -> (Vec<f32>, usize) {
+    let mut rs = resampler(cfg, fin, fout);
+    let skip = rs.output_delay() + 4096;
+    let total = skip + (fout as f64 * seconds) as usize;
+    let mut out: Vec<f32> = Vec::with_capacity(total + PERIOD);
+    let mut outbuf = rs.output_buffer_allocate(true);
+    let mut n_in: u64 = 0;
+    let mut chunk = vec![vec![0f32; rs.input_frames_max()]; CHANNELS];
+    while out.len() < total {
+        let need = rs.input_frames_next();
+        for i in 0..need {
+            let t = (n_in + i as u64) as f64 / fin as f64;
+            let v = (amp * (2.0 * PI * freq * t).sin()) as f32;
+            for c in 0..CHANNELS {
+                chunk[c][i] = v;
+            }
+        }
+        n_in += need as u64;
+        let slices: Vec<&[f32]> = chunk.iter().map(|c| &c[..need]).collect();
+        let (_, produced) = rs.process_into_buffer(&slices, &mut outbuf, None).unwrap();
+        out.extend_from_slice(&outbuf[0][..produced]);
+    }
+    out.truncate(total);
+    (out.split_off(skip), skip)
+}
+
+/// IEEE 1057's three-parameter fit at a known frequency: `y ≈ a cos + b sin + c`.
+/// Returns the fitted gain in dB against `amp`, and the residual's level below
+/// the fitted tone in dB (THD+N, unweighted, the whole output band).
+fn fit(ys: &[f32], n0: usize, freq: f64, fout: u32, amp: f64) -> (f64, f64) {
+    let w = 2.0 * PI * freq / fout as f64;
+    let mut m = [[0f64; 3]; 3];
+    let mut r = [0f64; 3];
+    for (k, &y) in ys.iter().enumerate() {
+        let n = (k + n0) as f64;
+        let v = [(w * n).cos(), (w * n).sin(), 1.0];
+        for i in 0..3 {
+            for j in 0..3 {
+                m[i][j] += v[i] * v[j];
+            }
+            r[i] += y as f64 * v[i];
+        }
+    }
+    let det = |m: [[f64; 3]; 3]| {
+        m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1]) - m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0])
+            + m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0])
+    };
+    let d = det(m);
+    let mut s = [0f64; 3];
+    for i in 0..3 {
+        let mut mi = m;
+        for j in 0..3 {
+            mi[j][i] = r[j];
+        }
+        s[i] = det(mi) / d;
+    }
+    let (mut err, mut sig) = (0f64, 0f64);
+    for (k, &y) in ys.iter().enumerate() {
+        let n = (k + n0) as f64;
+        let f = s[0] * (w * n).cos() + s[1] * (w * n).sin() + s[2];
+        err += (y as f64 - f).powi(2);
+        sig += (f - s[2]).powi(2);
+    }
+    (20.0 * ((s[0] * s[0] + s[1] * s[1]).sqrt() / amp).log10(), 10.0 * (sig / err).log10())
+}
+
+/// A tone above the lower rate's stop edge, downsampled: everything that comes
+/// out is alias, in dB below the input tone.
+fn rejection(cfg: Cfg, fin: u32, fout: u32, freq: f64, amp: f64) -> f64 {
+    let (ys, _) = run(cfg, fin, fout, freq, amp, 1.0);
+    let rms = (ys.iter().map(|&y| (y as f64).powi(2)).sum::<f64>() / ys.len() as f64).sqrt();
+    -20.0 * (rms / (amp / 2f64.sqrt())).log10()
+}
+
+/// ISO 266's third-octave centres from 20 Hz to 20 kHz, 997 Hz (AES17's test
+/// frequency), and the passband's own edge where it is under 20 kHz.
+fn passband(fin: u32, fout: u32) -> Vec<f64> {
+    let edge = (PASS_EDGE * fin.min(fout) as f64).min(20_000.0);
+    let iso = [
+        20.0, 25.0, 31.5, 40.0, 50.0, 63.0, 80.0, 100.0, 125.0, 160.0, 200.0, 250.0, 315.0, 400.0, 500.0,
+        630.0, 800.0, 997.0, 1000.0, 1250.0, 1600.0, 2000.0, 2500.0, 3150.0, 4000.0, 5000.0, 6300.0, 8000.0,
+        10000.0, 12500.0, 16000.0, 20000.0,
+    ];
+    let mut v: Vec<f64> = iso.iter().copied().filter(|&f| f < edge).collect();
+    v.push(edge);
+    v
+}
+
+/// From the stop edge to just under the input's Nyquist, a sixth of an octave apart.
+fn stopband(fin: u32, fout: u32) -> Vec<f64> {
+    let lo = STOP_EDGE * fout as f64;
+    let hi = 0.499 * fin as f64;
+    let mut v = Vec::new();
+    let mut f = lo;
+    while f < hi {
+        v.push(f);
+        f *= 2f64.powf(1.0 / 6.0);
+    }
+    v.push(hi);
+    v
+}
+
+fn interpolator() -> String {
+    #[cfg(target_arch = "x86_64")]
+    {
+        format!(
+            "x86_64: avx={} fma={} -> rubato takes {}",
+            std::is_x86_feature_detected!("avx"),
+            std::is_x86_feature_detected!("fma"),
+            if std::is_x86_feature_detected!("avx") && std::is_x86_feature_detected!("fma") {
+                "AvxInterpolator"
+            } else if std::is_x86_feature_detected!("sse3") {
+                "SseInterpolator"
+            } else {
+                "ScalarInterpolator"
+            }
+        )
+    }
+    #[cfg(target_arch = "aarch64")]
+    {
+        format!(
+            "aarch64: neon={} -> rubato takes {}",
+            std::arch::is_aarch64_feature_detected!("neon"),
+            if std::arch::is_aarch64_feature_detected!("neon") { "NeonInterpolator" } else { "ScalarInterpolator" }
+        )
+    }
+}
+
+fn pairs() -> Vec<(u32, u32)> {
+    let mut v = Vec::new();
+    for &d in &DEVICES {
+        for &c in &CLIENTS {
+            if c != d {
+                v.push((c, d));
+            }
+        }
+    }
+    v
+}
+
+fn sweep() {
+    let amp = 10f64.powf(AMP_DBFS / 20.0);
+    println!("interpolator: {}", interpolator());
+    println!("tone {AMP_DBFS} dBFS; output {PERIOD}-frame chunks, {CHANNELS} channels; 2 s fitted per in-band tone, 1 s per stop-band tone");
+    // Jobs: one per (cfg, pair), run on a few threads, printed in order.
+    let mut jobs = Vec::new();
+    for (ci, &cfg) in CFGS.iter().enumerate() {
+        for &(fin, fout) in &pairs() {
+            jobs.push((ci, cfg, fin, fout));
+        }
+    }
+    let threads = 6;
+    let results: Vec<std::sync::Mutex<Option<String>>> = jobs.iter().map(|_| std::sync::Mutex::new(None)).collect();
+    // Per job: worst |gain|, worst THD+N, worst rejection (or +inf), table KiB, and the pair.
+    let worst: Vec<std::sync::Mutex<Option<(f64, f64, f64, f64, f64, f64, usize)>>> =
+        jobs.iter().map(|_| std::sync::Mutex::new(None)).collect();
+    let next = std::sync::atomic::AtomicUsize::new(0);
+    std::thread::scope(|s| {
+        for _ in 0..threads {
+            s.spawn(|| loop {
+                let i = next.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                if i >= jobs.len() {
+                    break;
+                }
+                let (_, cfg, fin, fout) = jobs[i];
+                let (_, len, osf) = params(cfg, fin, fout);
+                let mut text = String::new();
+                let mut worst_gain = (0f64, 0f64);
+                let mut worst_thdn = (f64::INFINITY, 0f64);
+                for f in passband(fin, fout) {
+                    let (ys, n0) = run(cfg, fin, fout, f, amp, 2.0);
+                    let (g, t) = fit(&ys, n0, f, fout, amp);
+                    text += &format!("  tone {f:>8.1} Hz  gain {g:+.5} dB  THD+N {t:6.1} dB\n");
+                    if g.abs() > worst_gain.0.abs() {
+                        worst_gain = (g, f);
+                    }
+                    if t < worst_thdn.0 {
+                        worst_thdn = (t, f);
+                    }
+                }
+                let mut worst_rej = (f64::INFINITY, 0f64);
+                if fin > fout {
+                    for f in stopband(fin, fout) {
+                        let r = rejection(cfg, fin, fout, f, amp);
+                        text += &format!("  stop {f:>8.1} Hz  rejected {r:6.1} dB\n");
+                        if r < worst_rej.0 {
+                            worst_rej = (r, f);
+                        }
+                    }
+                }
+                let head = format!(
+                    "== {} | {fin} -> {fout} | sinc_len {len} osf {osf} table {} KiB\n  WORST passband gain {:+.5} dB at {:.1} Hz; THD+N {:.1} dB at {:.1} Hz; stop-band {}\n",
+                    cfg.name,
+                    len * osf * 4 / 1024,
+                    worst_gain.0,
+                    worst_gain.1,
+                    worst_thdn.0,
+                    worst_thdn.1,
+                    if fin > fout { format!("{:.1} dB at {:.1} Hz", worst_rej.0, worst_rej.1) } else { "n/a (upsampling)".into() },
+                );
+                *results[i].lock().unwrap() = Some(head + &text);
+                *worst[i].lock().unwrap() = Some((worst_gain.0, worst_gain.1, worst_thdn.0, worst_thdn.1, worst_rej.0, worst_rej.1, len * osf * 4 / 1024));
+            });
+        }
+    });
+    for r in results {
+        print!("{}", r.into_inner().unwrap().unwrap());
+    }
+    let wire = wire_noise_below_tone();
+    println!("\n== SUMMARY: bounds passband +-{RIPPLE_DB} dB, in-band THD+N >= {REJECT_DB} dB, stop band >= {REJECT_DB} dB; the dithered 16-bit wire's own noise is {wire:.2} dB below the tone");
+    for (ci, cfg) in CFGS.iter().enumerate() {
+        let mine: Vec<(usize, (f64, f64, f64, f64, f64, f64, usize))> = jobs
+            .iter()
+            .enumerate()
+            .filter(|(_, j)| j.0 == ci)
+            .map(|(i, _)| (i, worst[i].lock().unwrap().unwrap()))
+            .collect();
+        let g = mine.iter().max_by(|a, b| a.1 .0.abs().total_cmp(&b.1 .0.abs())).unwrap();
+        let t = mine.iter().min_by(|a, b| a.1 .2.total_cmp(&b.1 .2)).unwrap();
+        let r = mine.iter().min_by(|a, b| a.1 .4.total_cmp(&b.1 .4)).unwrap();
+        let kib = mine.iter().map(|m| m.1 .6).max().unwrap();
+        let mut fails = Vec::new();
+        for (i, w) in &mine {
+            let (_, _, fin, fout) = jobs[*i];
+            if w.0.abs() > RIPPLE_DB { fails.push(format!("{fin}->{fout} passband")); }
+            if w.2 < REJECT_DB { fails.push(format!("{fin}->{fout} THD+N")); }
+            if w.4 < REJECT_DB { fails.push(format!("{fin}->{fout} stop band")); }
+        }
+        let pair = |i: usize| format!("{} -> {}", jobs[i].2, jobs[i].3);
+        println!(
+            "{}\n  worst gain {:+.5} dB ({} at {:.1} Hz), margin {:.5} dB\n  worst THD+N {:.1} dB ({} at {:.1} Hz), margin {:.1} dB, {:.1} dB under the wire's noise\n  worst stop band {:.1} dB ({} at {:.1} Hz), margin {:.1} dB\n  largest sinc table {} KiB\n  {}",
+            cfg.name,
+            g.1 .0, pair(g.0), g.1 .1, RIPPLE_DB - g.1 .0.abs(),
+            t.1 .2, pair(t.0), t.1 .3, t.1 .2 - REJECT_DB, t.1 .2 - wire,
+            r.1 .4, pair(r.0), r.1 .5, r.1 .4 - REJECT_DB,
+            kib,
+            if fails.is_empty() { "PASS at every pair and tone".to_string() } else { format!("FAIL: {}", fails.join(", ")) },
+        );
+    }
+}
+
+fn cost() {
+    println!("interpolator: {}", interpolator());
+    println!("wall time per {PERIOD}-frame output period, {CHANNELS} channels, after 2000 warm-up periods: the least of five trials of 2 s of output");
+    for &cfg in &CFGS {
+        for &(fin, fout) in &[(8000u32, 48000u32), (44100, 48000), (48000, 44100), (96000, 48000), (192000, 44100), (192000, 48000)] {
+            let (_, len, osf) = params(cfg, fin, fout);
+            let mut rs = resampler(cfg, fin, fout);
+            let mut out = rs.output_buffer_allocate(true);
+            let inp = vec![vec![0.1f32; rs.input_frames_max()]; CHANNELS];
+            let mut step = |rs: &mut SincFixedOut<f32>| {
+                let need = rs.input_frames_next();
+                let chunk: Vec<&[f32]> = inp.iter().map(|c| &c[..need]).collect();
+                rs.process_into_buffer(&chunk, &mut out, None).unwrap();
+            };
+            for _ in 0..2000 {
+                step(&mut rs);
+            }
+            // The least of five trials of 2 s of output each: on a shared,
+            // loaded host the least is the one the fewest other threads cut into.
+            let periods = fout as usize * 2 / PERIOD;
+            let mut us = f64::INFINITY;
+            for _ in 0..5 {
+                let t0 = std::time::Instant::now();
+                for _ in 0..periods {
+                    step(&mut rs);
+                }
+                us = us.min(t0.elapsed().as_secs_f64() * 1e6 / periods as f64);
+            }
+            let period_us = PERIOD as f64 * 1e6 / fout as f64;
+            println!(
+                "{:40} {fin:>6} -> {fout:>5}  sinc_len {len:>4} osf {osf:>3} table {:>5} KiB  {us:7.1} us/period of {period_us:.0} us",
+                cfg.name,
+                len * osf * 4 / 1024
+            );
+        }
+    }
+}
+
+fn main() {
+    match std::env::args().nth(1).as_deref() {
+        Some("sweep") => sweep(),
+        Some("cost") => cost(),
+        Some("probe") => println!("interpolator: {}", interpolator()),
+        _ => {
+            eprintln!("usage: rsq2 sweep|cost");
+            std::process::exit(2);
+        }
+    }
+}
