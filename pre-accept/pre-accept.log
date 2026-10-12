@@ -1,0 +1,132 @@
+head e7e11797a530b9e1b6370fbd91ccf109170fdc71, rustc 1.98.1 (48a229cea 2026-09-01)
+=== at head: cargo test -p toyos-net-node --test listeners
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.13s
+     Running tests/listeners.rs (target/debug/deps/listeners-7baa2866acd09bc3)
+
+running 31 tests
+test a_listener_holds_a_place_and_a_listen_without_one_makes_nothing ... ok
+test a_listener_ended_for_its_wake_gives_its_place_to_another_in_the_same_pass ... ok
+test a_listener_holds_the_option_its_listen_named_from_its_first_connection ... ok
+test a_connect_past_the_places_is_refused_and_sends_nothing ... ok
+test a_listen_on_a_taken_port_is_refused_and_a_drawn_port_listens ... ok
+test a_connect_between_two_accepts_is_queued_not_reset ... ok
+test a_listener_answers_a_syn_and_wakes_its_owner_when_the_handshake_ends ... ok
+test a_listen_at_every_address_takes_no_port_held_at_the_machines_address ... ok
+test a_handshake_reset_before_it_ends_leaves_the_next_connection_its_listeners_option ... ok
+test a_listen_at_the_machines_address_takes_no_port_held_at_every_address ... ok
+test a_datagram_socket_holds_a_place_and_a_bind_without_one_makes_nothing ... ok
+test a_listener_is_at_the_address_it_named_and_only_one_the_machine_holds ... ok
+test a_handshake_nobody_finishes_leaves_the_port_open_and_is_given_up ... ok
+test a_departed_clients_connection_holds_its_place_until_it_is_cut ... ok
+test a_second_listen_at_the_machines_address_takes_no_port_held_there ... ok
+test a_stream_starts_with_the_options_its_connection_took_from_its_listener ... ok
+test a_wake_is_owed_only_for_a_connection_there_is_a_place_for ... ok
+test a_stream_reset_for_its_pipe_gives_its_place_to_a_connection_that_waits ... ok
+test a_wake_left_by_a_connection_its_peer_reset_stands_for_the_next ... ok
+test an_accept_answers_the_option_of_a_stream_its_own_pass_let_go ... ok
+test a_wake_the_owners_pipe_refuses_ends_the_listener ... ok
+test an_accept_spends_a_wake_whatever_it_answers ... ok
+test closing_a_listener_gives_its_place_to_a_connection_that_waits_at_another ... ok
+test closing_a_connect_gives_its_place_to_a_connection_that_waits ... ok
+test closing_a_listener_resets_what_waits_and_frees_its_port ... ok
+test more_places_wake_the_owner_of_a_connection_that_waits ... ok
+test no_cut_of_a_syn_is_a_syn ... ok
+test a_request_for_a_stream_that_was_cut_names_nothing ... ok
+test peers_at_more_addresses_than_there_are_places_hold_no_stream_past_them ... ok
+test an_accepted_stream_is_one_of_its_peers_addresss_sixteen ... ok
+test no_flipped_bit_of_a_syn_wakes_an_owner_or_ends_a_listener ... ok
+
+test result: ok. 31 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+=== at head EXIT=0
+=== mutated: git diff
+diff --git a/system/netstack/node/src/listeners.rs b/system/netstack/node/src/listeners.rs
+index 36e65b65c..73a6de372 100644
+--- a/system/netstack/node/src/listeners.rs
++++ b/system/netstack/node/src/listeners.rs
+@@ -155,17 +155,19 @@ impl Node {
+         let Some(listener) = self.listeners.live.get_mut(&id) else { return Err(AcceptRefused::NoListener) };
+         listener.unspent = listener.unspent.saturating_sub(1);
+         let bound = listener.bound;
+-        let answer = self.take(bound, pipes);
++        let answer = self.take(now, bound, pipes);
+         self.pass(now, false);
+         answer
+     }
+ 
+-    fn take(&mut self, bound: toyos_net_tcp::ListenerId, pipes: Option<Pipes>) -> Result<Accepted, AcceptRefused> {
++    fn take(&mut self, now: Instant, bound: toyos_net_tcp::ListenerId, pipes: Option<Pipes>) -> Result<Accepted, AcceptRefused> {
+         let Some(pipes) = pipes else { return Err(AcceptRefused::NoPipes) };
+         if self.room() == 0 {
+             return Err(AcceptRefused::Full);
+         }
+         let Some((conn, tuple, options)) = self.stack.tcp_accept(bound) else { return Err(AcceptRefused::Nothing) };
++        // PR #863 as written: a child has no storage before the accept's region, so what it held is gone.
++        while matches!(self.stack.tcp_recv(now, conn, |bytes| bytes.len()), Ok(toyos_net_tcp::Received::Data(n)) if n > 0) {}
+         // The peer's address is what `streams` counts a stream its client can see no more by.
+         let id = self.streams.accepted(conn, tuple.remote.addr, options, pipes);
+         Ok(Accepted { id, remote: tuple.remote, local: tuple.local.port, nodelay: options.nodelay })
+=== mutated: cargo test -p toyos-net-node --test listeners
+   Compiling toyos-net-node v0.1.0 (<tree>/system/netstack/node)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.32s
+     Running tests/listeners.rs (target/debug/deps/listeners-7baa2866acd09bc3)
+
+running 31 tests
+test a_connect_past_the_places_is_refused_and_sends_nothing ... ok
+test a_listen_at_the_machines_address_takes_no_port_held_at_every_address ... ok
+test a_departed_clients_connection_holds_its_place_until_it_is_cut ... ok
+test a_listener_holds_a_place_and_a_listen_without_one_makes_nothing ... ok
+test a_handshake_nobody_finishes_leaves_the_port_open_and_is_given_up ... ok
+test a_listener_is_at_the_address_it_named_and_only_one_the_machine_holds ... ok
+test a_listener_holds_the_option_its_listen_named_from_its_first_connection ... ok
+test a_datagram_socket_holds_a_place_and_a_bind_without_one_makes_nothing ... ok
+test a_listener_answers_a_syn_and_wakes_its_owner_when_the_handshake_ends ... FAILED
+test a_listener_ended_for_its_wake_gives_its_place_to_another_in_the_same_pass ... ok
+test a_connect_between_two_accepts_is_queued_not_reset ... ok
+test a_handshake_reset_before_it_ends_leaves_the_next_connection_its_listeners_option ... ok
+test a_listen_at_every_address_takes_no_port_held_at_the_machines_address ... ok
+test a_listen_on_a_taken_port_is_refused_and_a_drawn_port_listens ... ok
+test a_second_listen_at_the_machines_address_takes_no_port_held_there ... ok
+test a_stream_reset_for_its_pipe_gives_its_place_to_a_connection_that_waits ... ok
+test a_request_for_a_stream_that_was_cut_names_nothing ... ok
+test a_stream_starts_with_the_options_its_connection_took_from_its_listener ... ok
+test a_wake_is_owed_only_for_a_connection_there_is_a_place_for ... ok
+test more_places_wake_the_owner_of_a_connection_that_waits ... ok
+test a_wake_left_by_a_connection_its_peer_reset_stands_for_the_next ... ok
+test an_accept_answers_the_option_of_a_stream_its_own_pass_let_go ... FAILED
+test an_accept_spends_a_wake_whatever_it_answers ... ok
+test closing_a_connect_gives_its_place_to_a_connection_that_waits ... ok
+test a_wake_the_owners_pipe_refuses_ends_the_listener ... ok
+test no_cut_of_a_syn_is_a_syn ... ok
+test closing_a_listener_resets_what_waits_and_frees_its_port ... ok
+test closing_a_listener_gives_its_place_to_a_connection_that_waits_at_another ... ok
+test peers_at_more_addresses_than_there_are_places_hold_no_stream_past_them ... ok
+test an_accepted_stream_is_one_of_its_peers_addresss_sixteen ... ok
+test no_flipped_bit_of_a_syn_wakes_an_owner_or_ends_a_listener ... ok
+
+failures:
+
+---- a_listener_answers_a_syn_and_wakes_its_owner_when_the_handshake_ends stdout ----
+
+thread 'a_listener_answers_a_syn_and_wakes_its_owner_when_the_handshake_ends' (7311387) panicked at system/netstack/node/tests/listeners.rs:455:5:
+assertion `left == right` failed: what arrived before the accept moves in it
+  left: []
+ right: [104, 101, 108, 108, 111]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- an_accept_answers_the_option_of_a_stream_its_own_pass_let_go stdout ----
+
+thread 'an_accept_answers_the_option_of_a_stream_its_own_pass_let_go' (7311399) panicked at system/netstack/node/tests/listeners.rs:956:5:
+[Segment { to_mac: [2, 0, 0, 0, 0, 11], to: 192.0.2.2, from_port: 22, to_port: 40001, seq: 530926582, ack: Some(5001), syn: true, fin: false, rst: false, window: 65535, text: [] }]
+
+
+failures:
+    a_listener_answers_a_syn_and_wakes_its_owner_when_the_handshake_ends
+    an_accept_answers_the_option_of_a_stream_its_own_pass_let_go
+
+test result: FAILED. 29 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+error: test failed, to rerun pass `-p toyos-net-node --test listeners`
+=== mutated EXIT=101
+=== restored: git status --porcelain --ignore-submodules=none
+=== restored EXIT=0

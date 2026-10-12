@@ -1,0 +1,17 @@
+[package]
+name = "netring-registered-ready"
+version = "0.0.0"
+edition = "2021"
+publish = false
+description = "Measurement only, never lands: a mio source registered while its direction of one netring stream is already ready, under loom, as PR #863 records the registration and as its amendment D changes it."
+
+[workspace]
+
+[features]
+# The handshake's own control: a waker clears the want `Relaxed`, here and in
+# stage 2's ends.
+want-relaxed = ["toyos-transport/want-relaxed"]
+
+[dependencies]
+toyos-transport = { path = "src/lib/blockring/transport" }
+loom = "0.7"

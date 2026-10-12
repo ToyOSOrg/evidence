@@ -1,0 +1,24 @@
+--- a/system/netstack/node/src/listeners.rs
++++ b/system/netstack/node/src/listeners.rs
+@@ -155,16 +155,18 @@
+         let Some(listener) = self.listeners.live.get_mut(&id) else { return Err(AcceptRefused::NoListener) };
+         listener.unspent = listener.unspent.saturating_sub(1);
+         let bound = listener.bound;
+-        let answer = self.take(bound, pipes);
++        let answer = self.take(now, bound, pipes);
+         self.pass(now, false);
+         answer
+     }
+ 
+-    fn take(&mut self, bound: toyos_net_tcp::ListenerId, pipes: Option<Pipes>) -> Result<Accepted, AcceptRefused> {
++    fn take(&mut self, now: Instant, bound: toyos_net_tcp::ListenerId, pipes: Option<Pipes>) -> Result<Accepted, AcceptRefused> {
+         let Some(pipes) = pipes else { return Err(AcceptRefused::NoPipes) };
+         if self.room() == 0 {
+             return Err(AcceptRefused::Full);
+         }
+         let Some((conn, tuple, options)) = self.stack.tcp_accept(bound) else { return Err(AcceptRefused::Nothing) };
++        // PR #863 as written: a child has no storage before the accept's region, so what it held is gone.
++        while matches!(self.stack.tcp_recv(now, conn, |bytes| bytes.len()), Ok(toyos_net_tcp::Received::Data(n)) if n > 0) {}
+         // The peer's address is what `streams` counts a stream its client can see no more by.
+         let id = self.streams.accepted(conn, tuple.remote.addr, options, pipes);
+         Ok(Accepted { id, remote: tuple.remote, local: tuple.local.port, nodelay: options.nodelay })
