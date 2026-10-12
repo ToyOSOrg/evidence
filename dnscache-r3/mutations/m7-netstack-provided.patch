@@ -1,0 +1,13 @@
+diff --git a/build/build.rs b/build/build.rs
+--- a/build/build.rs
++++ b/build/build.rs
+@@ -690,9 +690,6 @@ fn receives_reach_a_running_server(config: &SystemConfig) -> Result<(), String>
+             || config.boot.start.iter().any(|key| config.programs.get(key).is_some_and(|row| row.serves.contains(port)))
+     };
+     for (name, program) in &config.programs {
+-        if program.provides.iter().any(|port| port == "netstack") {
+-            return Err(format!("`{name}` provides `netstack`, which the supervisor mints from its started server alone"));
+-        }
+         for port in &program.receives {
+             if program.serves.contains(port) {
+                 return Err(format!("`{name}` receives `{port}`, which it serves itself"));
