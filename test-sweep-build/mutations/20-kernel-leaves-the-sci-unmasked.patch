@@ -1,0 +1,13 @@
+diff --git a/kernel/src/isa.rs b/kernel/src/isa.rs
+index e270962c1..a877e0f69 100644
+--- a/kernel/src/isa.rs
++++ b/kernel/src/isa.rs
+@@ -259,7 +259,7 @@ pub fn isr(row: usize) {
+     IRQ[row].took(crate::clock::nanos_since_boot());
+     for &line in lines(row) {
+         if pio::level(line) {
+-            pio::set_masked(line, true);
++            pio::set_masked(line, false);
+         }
+     }
+     WATCHES[row].post_in_place();

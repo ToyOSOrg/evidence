@@ -1,0 +1,13 @@
+diff --git a/system/update/install/src/lib.rs b/system/update/install/src/lib.rs
+index b610b2801..7eac7f8f7 100644
+--- a/system/update/install/src/lib.rs
++++ b/system/update/install/src/lib.rs
+@@ -104,7 +104,7 @@ pub fn install(
+     boot.disk.flush().map_err(|e| format!("slot {}'s volume is not durable: {e:?}", idle.letter()))?;
+ 
+     let mut next = current_table;
+-    next.marked = idle;
++    next.marked = idle.other();
+     let mut slot = current_table.slot(idle).expect("the idle slot is in the table");
+     slot.version = header.version;
+     next.slots[idle.index()] = Some(slot);

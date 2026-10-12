@@ -1,0 +1,13 @@
+diff --git a/system/toybox/applets/src/cp.rs b/system/toybox/applets/src/cp.rs
+index 76d06843f..6e629f533 100644
+--- a/system/toybox/applets/src/cp.rs
++++ b/system/toybox/applets/src/cp.rs
+@@ -75,7 +75,7 @@ pub fn copy(source: &Path, dest: &Path) -> Result<(), String> {
+     });
+ 
+     if outcome.is_err() {
+-        if let Err(e) = fs::remove_file(&partial) {
++        if let Err(e) = fs::metadata(&partial) {
+             eprintln!("cp: {}: {e} — a partial copy is still there", partial.display());
+         }
+     }

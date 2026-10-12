@@ -1,0 +1,13 @@
+diff --git a/sdk/std/sys/turns.rs b/sdk/std/sys/turns.rs
+index d6033d9be..8f1b95429 100644
+--- a/sdk/std/sys/turns.rs
++++ b/sdk/std/sys/turns.rs
+@@ -38,7 +38,7 @@ impl<T> Turnstile<T> {
+         let mut turns = self.turns.lock().unwrap();
+         let ticket = turns.next;
+         turns.next += 1;
+-        drop(self.served.wait_while(turns, |t| t.serving != ticket).unwrap());
++        drop(turns);
+         let ticket = Ticket(self);
+         Turn { value: self.value.lock().unwrap(), _ticket: ticket }
+     }

@@ -1,0 +1,13 @@
+diff --git a/system/fileserver/src/bounds.rs b/system/fileserver/src/bounds.rs
+index ee0b81419..a3aadfb41 100644
+--- a/system/fileserver/src/bounds.rs
++++ b/system/fileserver/src/bounds.rs
+@@ -71,7 +71,7 @@ pub fn hello<W>(served: usize, of_share: usize, window: impl FnOnce() -> Option<
+         None => Hello::Dropped("its hello carried no window"),
+         Some(Ok(window)) => Hello::Served(window),
+         Some(Err(Lent::Kernel(_))) => Hello::Dropped("its window would not map"),
+-        Some(Err(Lent::NotRam)) => Hello::Dropped("its window is not memory the kernel allocated"),
++        Some(Err(Lent::NotRam)) => Hello::Refused("its window is not memory the kernel allocated".to_string()),
+         Some(Err(Lent::Length { .. })) => Hello::Dropped("its window is not WINDOW_BYTES long"),
+     }
+ }

@@ -1,0 +1,53 @@
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.21s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-c7f129e479c09297)
+
+19:51:26 running 1 tests, 12 wide
+
+19:51:26   RUN   lent_device_memory_refused
+19:51:26   BUILD x86_64 lent_device_memory_refused of tests/guest/rust-tests, for lent_device_memory_refused
+19:51:28   BUILT x86_64 lent_device_memory_refused of tests/guest/rust-tests, for lent_device_memory_refused  (2s)
+19:51:28   BUILD x86_64 kernel, loader, ROOT of tests/images/testcases.toml, for lent_device_memory_refused
+19:51:32 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+19:51:32   BUILT x86_64 kernel, loader, ROOT of tests/images/testcases.toml, for lent_device_memory_refused  (4s)
+19:51:37 FAIL lent_device_memory_refused: the job ended Some(101):
+
+thread 'main' (1) panicked at src/bin/lent_device_memory_refused.rs:24:5:
+assertion `left == right` failed: lent_device_memory_refused: a device's BAR lent as a window
+  left: None
+ right: Some(NotRam)
+stack backtrace:
+   0:      0x1000005a9d0 - _Unwind_Backtrace
+   1:      0x10000045173 - <<std[1e2393904188331e]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[73b405bef30eeff1]::fmt::Display>::fmt
+   2:      0x1000005e8e7 - core[73b405bef30eeff1]::fmt::write
+   3:      0x1000004882b - <std[1e2393904188331e]::sys::stdio::toyos::Stderr as core[73b405bef30eeff1]::io::write::Write>::write_fmt
+   4:      0x1000002bfd3 - std[1e2393904188331e]::panicking::default_hook::{closure#0}
+   5:      0x1000004026e - std[1e2393904188331e]::panicking::default_hook
+   6:      0x10000040429 - std[1e2393904188331e]::panicking::panic_with_hook
+   7:      0x1000002c08d - std[1e2393904188331e]::panicking::panic_handler::{closure#0}
+   8:      0x10000024789 - std[1e2393904188331e]::sys::backtrace::__rust_end_short_backtrace::<std[1e2393904188331e]::panicking::panic_handler::{closure#0}, !>
+   9:      0x1000002c7f8 - __rustc[d0c72ce299f394e5]::rust_begin_unwind
+  10:      0x1000005f00b - core[73b405bef30eeff1]::panicking::panic_fmt
+  11:      0x1000005ef7f - core[73b405bef30eeff1]::panicking::assert_failed_inner
+  12:      0x10000018730 - core[73b405bef30eeff1]::panicking::assert_failed::<core[73b405bef30eeff1]::option::Option<toyos[311b05100d9e54f5]::shm::Lent>, core[73b405bef30eeff1]::option::Option<toyos[311b05100d9e54f5]::shm::Lent>>
+  13:      0x10000018b37 - lent_device_memory_refused[4c52db934c63fd9a]::main
+  14:      0x10000018bf6 - std[1e2393904188331e]::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  15:      0x10000018740 - std[1e2393904188331e]::rt::lang_start::<()>::{closure#0}
+  16:      0x1000003fcb6 - std[1e2393904188331e]::rt::lang_start_internal
+  17:      0x10000018be1 - main
+  18:      0x10000043cd3 - std[1e2393904188331e]::sys::pal::toyos::start_rust
+  19:      0x1000001961a - _start
+
+19:51:37   FAIL  lent_device_memory_refused  (5s)
+19:51:37   --- 1 guests, 0 of them not the shipping kernel, 1 kernel build(s): [""]
+
+19:51:37 host: fastest boot 4643 ms against the reference 1424 ms — liveness ceilings paid at 3.26x
+19:51:37 host: 14 core(s); a guest wider than that waits vcpus/cores longer again
+19:51:37 failures:
+19:51:37     lent_device_memory_refused: the job ended Some(101):
+
+19:51:37 test result: FAILED. 0 passed, 1 failed, 0 invalidated, 1 total (10.6s; workers: 6s building, 5s testing)
+19:51:37 [toyos] this red run's serial logs are kept at <checkout>/target/red-run-serial/toyos-tmp-16864-0
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `<checkout>/target/debug/deps/toyos_build-c7f129e479c09297 lent_device_memory_refused` (exit status: 1)
