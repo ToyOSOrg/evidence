@@ -1,0 +1,31 @@
+diff --git a/system/netstack/node/tests/listeners.rs b/system/netstack/node/tests/listeners.rs
+index f6f59cf7b..d9771a522 100644
+--- a/system/netstack/node/tests/listeners.rs
++++ b/system/netstack/node/tests/listeners.rs
+@@ -462,6 +462,26 @@ fn a_listener_answers_a_syn_and_wakes_its_owner_when_the_handshake_ends() {
+     assert_eq!((wakes(&owner), client.borrow().dropped), (1, 0));
+ }
+ 
++// Measurement only, PR #863: RFC 9293 §3.10.7.4 holds text past RCV.NXT for later processing and
++// takes a FIN once every byte before it is in. A child holds, before its accept, text in order,
++// text past a hole and a FIN behind that; the hole is filled after the accept, and the stream
++// reads all of it in order, then the end, and the FIN is acknowledged.
++#[test]
++fn what_a_child_held_in_order_past_a_hole_and_its_fin_reaches_its_stream() {
++    let mut net = Net::new();
++    let (id, _owner) = net.listen(SSH);
++    net.handshake(P1);
++    let ack = net.iss(P1).wrapping_add(1);
++    net.deliver(&frame(P1, SSH, ISS + 1, Some(ack), 0, b"he"));
++    net.deliver(&frame(P1, SSH, ISS + 4, Some(ack), FIN, b"lo"));
++    assert_eq!(net.last(P1).ack, Some(ISS + 3), "a hole at the third byte");
++    let (_stream, client) = net.accepts(id, P1);
++    net.deliver(&frame(P1, SSH, ISS + 3, Some(ack), 0, b"l"));
++    assert_eq!(client.borrow().inbox, b"hello", "every byte, in order");
++    assert_eq!(client.borrow().dropped, 1, "the end: the to-client end goes, the from-client end stays");
++    assert_eq!(net.last(P1).ack, Some(ISS + 7), "the FIN acknowledged");
++}
++
+ // One SYN and nothing more: the next peer is answered at once, and the first handshake is given up within [tcp]'s bound, after which its
+ // late ACK meets LISTEN: RFC 9293 §3.10.7.2, second check, <SEQ=SEG.ACK><CTL=RST>.
+ #[test]

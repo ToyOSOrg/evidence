@@ -1,0 +1,33 @@
+diff --git a/system/netstack/shard/tcp/src/rx.rs b/system/netstack/shard/tcp/src/rx.rs
+index ec4873b08..832444007 100644
+--- a/system/netstack/shard/tcp/src/rx.rs
++++ b/system/netstack/shard/tcp/src/rx.rs
+@@ -211,6 +211,13 @@ impl Rx {
+         self.fin
+     }
+ 
++    /// Measurement only, PR #863: the in-order bytes held, as a copy at the accept that skips
++    /// them leaves the region: counted, never written.
++    pub fn lose_in_order(&mut self) {
++        let held = alloc::vec![0; self.buf.len()];
++        self.buf.write_at(0, &held);
++    }
++
+     fn offset(&self, seq: Seq) -> usize {
+         usize::try_from(seq.since(self.next)).unwrap_or(usize::MAX).saturating_add(self.buf.len())
+     }
+diff --git a/system/netstack/shard/tcp/src/stack.rs b/system/netstack/shard/tcp/src/stack.rs
+index 6fdd2cf6a..a91bb04d1 100644
+--- a/system/netstack/shard/tcp/src/stack.rs
++++ b/system/netstack/shard/tcp/src/stack.rs
+@@ -596,6 +596,10 @@ impl Tcp {
+         let generation = self.conns.get(usize::try_from(index).unwrap_or(usize::MAX)).map_or(0, |s| s.generation);
+         if let Some(conn) = value(&mut self.conns, index) {
+             conn.user = User::Held;
++            // Measurement only, PR #863: what the child held is dropped at its accept.
++            if let Tcb::Sync(sync) = &mut conn.state {
++                sync.rx.lose_in_order();
++            }
+         }
+         Ok(Some(ConnId { index, generation }))
+     }

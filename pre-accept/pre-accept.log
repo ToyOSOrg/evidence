@@ -1,105 +1,151 @@
-head e7e11797a530b9e1b6370fbd91ccf109170fdc71, rustc 1.98.1 (48a229cea 2026-09-01)
-=== at head: cargo test -p toyos-net-node --test listeners
-    Finished `test` profile [optimized + debuginfo] target(s) in 0.13s
+head 04ff95bc785db6ef28230d4a1397c3dcbfb5a3e0, rustc 1.98.1 (48a229cea 2026-09-01)
+=== case: git diff
+diff --git a/system/netstack/node/tests/listeners.rs b/system/netstack/node/tests/listeners.rs
+index f6f59cf7b..d9771a522 100644
+--- a/system/netstack/node/tests/listeners.rs
++++ b/system/netstack/node/tests/listeners.rs
+@@ -462,6 +462,26 @@ fn a_listener_answers_a_syn_and_wakes_its_owner_when_the_handshake_ends() {
+     assert_eq!((wakes(&owner), client.borrow().dropped), (1, 0));
+ }
+ 
++// Measurement only, PR #863: RFC 9293 §3.10.7.4 holds text past RCV.NXT for later processing and
++// takes a FIN once every byte before it is in. A child holds, before its accept, text in order,
++// text past a hole and a FIN behind that; the hole is filled after the accept, and the stream
++// reads all of it in order, then the end, and the FIN is acknowledged.
++#[test]
++fn what_a_child_held_in_order_past_a_hole_and_its_fin_reaches_its_stream() {
++    let mut net = Net::new();
++    let (id, _owner) = net.listen(SSH);
++    net.handshake(P1);
++    let ack = net.iss(P1).wrapping_add(1);
++    net.deliver(&frame(P1, SSH, ISS + 1, Some(ack), 0, b"he"));
++    net.deliver(&frame(P1, SSH, ISS + 4, Some(ack), FIN, b"lo"));
++    assert_eq!(net.last(P1).ack, Some(ISS + 3), "a hole at the third byte");
++    let (_stream, client) = net.accepts(id, P1);
++    net.deliver(&frame(P1, SSH, ISS + 3, Some(ack), 0, b"l"));
++    assert_eq!(client.borrow().inbox, b"hello", "every byte, in order");
++    assert_eq!(client.borrow().dropped, 1, "the end: the to-client end goes, the from-client end stays");
++    assert_eq!(net.last(P1).ack, Some(ISS + 7), "the FIN acknowledged");
++}
++
+ // One SYN and nothing more: the next peer is answered at once, and the first handshake is given up within [tcp]'s bound, after which its
+ // late ACK meets LISTEN: RFC 9293 §3.10.7.2, second check, <SEQ=SEG.ACK><CTL=RST>.
+ #[test]
+=== with the case: cargo test -p toyos-net-node --test listeners
+   Compiling toyos-net-tcp v0.1.0 (<tree>/system/netstack/shard/tcp)
+   Compiling toyos-net-shard v0.1.0 (<tree>/system/netstack/shard)
+   Compiling toyos-net-node v0.1.0 (<tree>/system/netstack/node)
+    Finished `test` profile [optimized + debuginfo] target(s) in 2.31s
      Running tests/listeners.rs (target/debug/deps/listeners-7baa2866acd09bc3)
 
-running 31 tests
-test a_listener_holds_a_place_and_a_listen_without_one_makes_nothing ... ok
-test a_listener_ended_for_its_wake_gives_its_place_to_another_in_the_same_pass ... ok
-test a_listener_holds_the_option_its_listen_named_from_its_first_connection ... ok
-test a_connect_past_the_places_is_refused_and_sends_nothing ... ok
-test a_listen_on_a_taken_port_is_refused_and_a_drawn_port_listens ... ok
+running 32 tests
 test a_connect_between_two_accepts_is_queued_not_reset ... ok
-test a_listener_answers_a_syn_and_wakes_its_owner_when_the_handshake_ends ... ok
-test a_listen_at_every_address_takes_no_port_held_at_the_machines_address ... ok
-test a_handshake_reset_before_it_ends_leaves_the_next_connection_its_listeners_option ... ok
-test a_listen_at_the_machines_address_takes_no_port_held_at_every_address ... ok
+test a_connect_past_the_places_is_refused_and_sends_nothing ... ok
 test a_datagram_socket_holds_a_place_and_a_bind_without_one_makes_nothing ... ok
-test a_listener_is_at_the_address_it_named_and_only_one_the_machine_holds ... ok
-test a_handshake_nobody_finishes_leaves_the_port_open_and_is_given_up ... ok
 test a_departed_clients_connection_holds_its_place_until_it_is_cut ... ok
-test a_second_listen_at_the_machines_address_takes_no_port_held_there ... ok
-test a_stream_starts_with_the_options_its_connection_took_from_its_listener ... ok
-test a_wake_is_owed_only_for_a_connection_there_is_a_place_for ... ok
+test a_handshake_nobody_finishes_leaves_the_port_open_and_is_given_up ... ok
+test a_handshake_reset_before_it_ends_leaves_the_next_connection_its_listeners_option ... ok
+test a_listen_at_every_address_takes_no_port_held_at_the_machines_address ... ok
+test a_listen_at_the_machines_address_takes_no_port_held_at_every_address ... ok
+test a_listen_on_a_taken_port_is_refused_and_a_drawn_port_listens ... ok
+test a_listener_ended_for_its_wake_gives_its_place_to_another_in_the_same_pass ... ok
+test a_listener_holds_a_place_and_a_listen_without_one_makes_nothing ... ok
+test a_listener_holds_the_option_its_listen_named_from_its_first_connection ... ok
+test a_listener_is_at_the_address_it_named_and_only_one_the_machine_holds ... ok
+test a_listener_answers_a_syn_and_wakes_its_owner_when_the_handshake_ends ... ok
+test a_request_for_a_stream_that_was_cut_names_nothing ... ok
 test a_stream_reset_for_its_pipe_gives_its_place_to_a_connection_that_waits ... ok
 test a_wake_left_by_a_connection_its_peer_reset_stands_for_the_next ... ok
-test an_accept_answers_the_option_of_a_stream_its_own_pass_let_go ... ok
+test a_wake_is_owed_only_for_a_connection_there_is_a_place_for ... ok
+test a_stream_starts_with_the_options_its_connection_took_from_its_listener ... ok
 test a_wake_the_owners_pipe_refuses_ends_the_listener ... ok
+test an_accept_answers_the_option_of_a_stream_its_own_pass_let_go ... ok
 test an_accept_spends_a_wake_whatever_it_answers ... ok
 test closing_a_listener_gives_its_place_to_a_connection_that_waits_at_another ... ok
-test closing_a_connect_gives_its_place_to_a_connection_that_waits ... ok
 test closing_a_listener_resets_what_waits_and_frees_its_port ... ok
 test more_places_wake_the_owner_of_a_connection_that_waits ... ok
+test closing_a_connect_gives_its_place_to_a_connection_that_waits ... ok
+test a_second_listen_at_the_machines_address_takes_no_port_held_there ... ok
 test no_cut_of_a_syn_is_a_syn ... ok
-test a_request_for_a_stream_that_was_cut_names_nothing ... ok
 test peers_at_more_addresses_than_there_are_places_hold_no_stream_past_them ... ok
+test what_a_child_held_in_order_past_a_hole_and_its_fin_reaches_its_stream ... ok
 test an_accepted_stream_is_one_of_its_peers_addresss_sixteen ... ok
 test no_flipped_bit_of_a_syn_wakes_an_owner_or_ends_a_listener ... ok
 
-test result: ok. 31 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+test result: ok. 32 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
 
-=== at head EXIT=0
-=== mutated: git diff
-diff --git a/system/netstack/node/src/listeners.rs b/system/netstack/node/src/listeners.rs
-index 36e65b65c..73a6de372 100644
---- a/system/netstack/node/src/listeners.rs
-+++ b/system/netstack/node/src/listeners.rs
-@@ -155,17 +155,19 @@ impl Node {
-         let Some(listener) = self.listeners.live.get_mut(&id) else { return Err(AcceptRefused::NoListener) };
-         listener.unspent = listener.unspent.saturating_sub(1);
-         let bound = listener.bound;
--        let answer = self.take(bound, pipes);
-+        let answer = self.take(now, bound, pipes);
-         self.pass(now, false);
-         answer
+=== with the case EXIT=0
+=== in-order dropped at the accept: git diff -- system/netstack/shard
+diff --git a/system/netstack/shard/tcp/src/rx.rs b/system/netstack/shard/tcp/src/rx.rs
+index ec4873b08..832444007 100644
+--- a/system/netstack/shard/tcp/src/rx.rs
++++ b/system/netstack/shard/tcp/src/rx.rs
+@@ -211,6 +211,13 @@ impl Rx {
+         self.fin
      }
  
--    fn take(&mut self, bound: toyos_net_tcp::ListenerId, pipes: Option<Pipes>) -> Result<Accepted, AcceptRefused> {
-+    fn take(&mut self, now: Instant, bound: toyos_net_tcp::ListenerId, pipes: Option<Pipes>) -> Result<Accepted, AcceptRefused> {
-         let Some(pipes) = pipes else { return Err(AcceptRefused::NoPipes) };
-         if self.room() == 0 {
-             return Err(AcceptRefused::Full);
++    /// Measurement only, PR #863: the in-order bytes held, as a copy at the accept that skips
++    /// them leaves the region: counted, never written.
++    pub fn lose_in_order(&mut self) {
++        let held = alloc::vec![0; self.buf.len()];
++        self.buf.write_at(0, &held);
++    }
++
+     fn offset(&self, seq: Seq) -> usize {
+         usize::try_from(seq.since(self.next)).unwrap_or(usize::MAX).saturating_add(self.buf.len())
+     }
+diff --git a/system/netstack/shard/tcp/src/stack.rs b/system/netstack/shard/tcp/src/stack.rs
+index 6fdd2cf6a..a91bb04d1 100644
+--- a/system/netstack/shard/tcp/src/stack.rs
++++ b/system/netstack/shard/tcp/src/stack.rs
+@@ -596,6 +596,10 @@ impl Tcp {
+         let generation = self.conns.get(usize::try_from(index).unwrap_or(usize::MAX)).map_or(0, |s| s.generation);
+         if let Some(conn) = value(&mut self.conns, index) {
+             conn.user = User::Held;
++            // Measurement only, PR #863: what the child held is dropped at its accept.
++            if let Tcb::Sync(sync) = &mut conn.state {
++                sync.rx.lose_in_order();
++            }
          }
-         let Some((conn, tuple, options)) = self.stack.tcp_accept(bound) else { return Err(AcceptRefused::Nothing) };
-+        // PR #863 as written: a child has no storage before the accept's region, so what it held is gone.
-+        while matches!(self.stack.tcp_recv(now, conn, |bytes| bytes.len()), Ok(toyos_net_tcp::Received::Data(n)) if n > 0) {}
-         // The peer's address is what `streams` counts a stream its client can see no more by.
-         let id = self.streams.accepted(conn, tuple.remote.addr, options, pipes);
-         Ok(Accepted { id, remote: tuple.remote, local: tuple.local.port, nodelay: options.nodelay })
-=== mutated: cargo test -p toyos-net-node --test listeners
+         Ok(Some(ConnId { index, generation }))
+     }
+=== in-order dropped at the accept: cargo test -p toyos-net-node --test listeners
+   Compiling toyos-net-tcp v0.1.0 (<tree>/system/netstack/shard/tcp)
+   Compiling toyos-net-shard v0.1.0 (<tree>/system/netstack/shard)
    Compiling toyos-net-node v0.1.0 (<tree>/system/netstack/node)
-    Finished `test` profile [optimized + debuginfo] target(s) in 1.32s
+    Finished `test` profile [optimized + debuginfo] target(s) in 3.89s
      Running tests/listeners.rs (target/debug/deps/listeners-7baa2866acd09bc3)
 
-running 31 tests
-test a_connect_past_the_places_is_refused_and_sends_nothing ... ok
-test a_listen_at_the_machines_address_takes_no_port_held_at_every_address ... ok
-test a_departed_clients_connection_holds_its_place_until_it_is_cut ... ok
-test a_listener_holds_a_place_and_a_listen_without_one_makes_nothing ... ok
-test a_handshake_nobody_finishes_leaves_the_port_open_and_is_given_up ... ok
-test a_listener_is_at_the_address_it_named_and_only_one_the_machine_holds ... ok
-test a_listener_holds_the_option_its_listen_named_from_its_first_connection ... ok
-test a_datagram_socket_holds_a_place_and_a_bind_without_one_makes_nothing ... ok
-test a_listener_answers_a_syn_and_wakes_its_owner_when_the_handshake_ends ... FAILED
-test a_listener_ended_for_its_wake_gives_its_place_to_another_in_the_same_pass ... ok
-test a_connect_between_two_accepts_is_queued_not_reset ... ok
-test a_handshake_reset_before_it_ends_leaves_the_next_connection_its_listeners_option ... ok
+running 32 tests
 test a_listen_at_every_address_takes_no_port_held_at_the_machines_address ... ok
+test a_connect_between_two_accepts_is_queued_not_reset ... ok
+test a_handshake_nobody_finishes_leaves_the_port_open_and_is_given_up ... ok
+test a_handshake_reset_before_it_ends_leaves_the_next_connection_its_listeners_option ... ok
 test a_listen_on_a_taken_port_is_refused_and_a_drawn_port_listens ... ok
+test a_connect_past_the_places_is_refused_and_sends_nothing ... ok
+test a_listener_holds_a_place_and_a_listen_without_one_makes_nothing ... ok
+test a_listener_ended_for_its_wake_gives_its_place_to_another_in_the_same_pass ... ok
+test a_listener_is_at_the_address_it_named_and_only_one_the_machine_holds ... ok
+test a_listener_answers_a_syn_and_wakes_its_owner_when_the_handshake_ends ... FAILED
+test a_listen_at_the_machines_address_takes_no_port_held_at_every_address ... ok
+test a_datagram_socket_holds_a_place_and_a_bind_without_one_makes_nothing ... ok
+test a_listener_holds_the_option_its_listen_named_from_its_first_connection ... ok
 test a_second_listen_at_the_machines_address_takes_no_port_held_there ... ok
-test a_stream_reset_for_its_pipe_gives_its_place_to_a_connection_that_waits ... ok
-test a_request_for_a_stream_that_was_cut_names_nothing ... ok
+test a_departed_clients_connection_holds_its_place_until_it_is_cut ... ok
 test a_stream_starts_with_the_options_its_connection_took_from_its_listener ... ok
+test a_stream_reset_for_its_pipe_gives_its_place_to_a_connection_that_waits ... ok
 test a_wake_is_owed_only_for_a_connection_there_is_a_place_for ... ok
-test more_places_wake_the_owner_of_a_connection_that_waits ... ok
 test a_wake_left_by_a_connection_its_peer_reset_stands_for_the_next ... ok
-test an_accept_answers_the_option_of_a_stream_its_own_pass_let_go ... FAILED
+test a_wake_the_owners_pipe_refuses_ends_the_listener ... ok
 test an_accept_spends_a_wake_whatever_it_answers ... ok
 test closing_a_connect_gives_its_place_to_a_connection_that_waits ... ok
-test a_wake_the_owners_pipe_refuses_ends_the_listener ... ok
-test no_cut_of_a_syn_is_a_syn ... ok
+test an_accept_answers_the_option_of_a_stream_its_own_pass_let_go ... ok
+test a_request_for_a_stream_that_was_cut_names_nothing ... ok
 test closing_a_listener_resets_what_waits_and_frees_its_port ... ok
 test closing_a_listener_gives_its_place_to_a_connection_that_waits_at_another ... ok
+test more_places_wake_the_owner_of_a_connection_that_waits ... ok
+test no_cut_of_a_syn_is_a_syn ... ok
+test what_a_child_held_in_order_past_a_hole_and_its_fin_reaches_its_stream ... FAILED
 test peers_at_more_addresses_than_there_are_places_hold_no_stream_past_them ... ok
 test an_accepted_stream_is_one_of_its_peers_addresss_sixteen ... ok
 test no_flipped_bit_of_a_syn_wakes_an_owner_or_ends_a_listener ... ok
@@ -108,25 +154,215 @@ failures:
 
 ---- a_listener_answers_a_syn_and_wakes_its_owner_when_the_handshake_ends stdout ----
 
-thread 'a_listener_answers_a_syn_and_wakes_its_owner_when_the_handshake_ends' (7311387) panicked at system/netstack/node/tests/listeners.rs:455:5:
+thread 'a_listener_answers_a_syn_and_wakes_its_owner_when_the_handshake_ends' (12345018) panicked at system/netstack/node/tests/listeners.rs:455:5:
 assertion `left == right` failed: what arrived before the accept moves in it
-  left: []
+  left: [0, 0, 0, 0, 0]
  right: [104, 101, 108, 108, 111]
 note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 
----- an_accept_answers_the_option_of_a_stream_its_own_pass_let_go stdout ----
+---- what_a_child_held_in_order_past_a_hole_and_its_fin_reaches_its_stream stdout ----
 
-thread 'an_accept_answers_the_option_of_a_stream_its_own_pass_let_go' (7311399) panicked at system/netstack/node/tests/listeners.rs:956:5:
-[Segment { to_mac: [2, 0, 0, 0, 0, 11], to: 192.0.2.2, from_port: 22, to_port: 40001, seq: 530926582, ack: Some(5001), syn: true, fin: false, rst: false, window: 65535, text: [] }]
+thread 'what_a_child_held_in_order_past_a_hole_and_its_fin_reaches_its_stream' (12345040) panicked at system/netstack/node/tests/listeners.rs:480:5:
+assertion `left == right` failed: every byte, in order
+  left: [0, 0, 108, 108, 111]
+ right: [104, 101, 108, 108, 111]
 
 
 failures:
     a_listener_answers_a_syn_and_wakes_its_owner_when_the_handshake_ends
-    an_accept_answers_the_option_of_a_stream_its_own_pass_let_go
+    what_a_child_held_in_order_past_a_hole_and_its_fin_reaches_its_stream
 
-test result: FAILED. 29 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+test result: FAILED. 30 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
 
 error: test failed, to rerun pass `-p toyos-net-node --test listeners`
-=== mutated EXIT=101
+=== in-order dropped at the accept EXIT=101
+=== out-of-order dropped at the accept: git diff -- system/netstack/shard
+diff --git a/system/netstack/shard/tcp/src/rx.rs b/system/netstack/shard/tcp/src/rx.rs
+index ec4873b08..2fc67c1bd 100644
+--- a/system/netstack/shard/tcp/src/rx.rs
++++ b/system/netstack/shard/tcp/src/rx.rs
+@@ -211,6 +211,16 @@ impl Rx {
+         self.fin
+     }
+ 
++    /// Measurement only, PR #863: each out-of-order range's bytes, as a copy at the accept that
++    /// skips them leaves the region: recorded, never written.
++    pub fn lose_out_of_order(&mut self) {
++        for range in self.ranges.clone() {
++            let at = self.offset(range.start);
++            let len = usize::try_from(range.end.since(range.start)).unwrap_or(0);
++            self.buf.write_at(at, &alloc::vec![0; len]);
++        }
++    }
++
+     fn offset(&self, seq: Seq) -> usize {
+         usize::try_from(seq.since(self.next)).unwrap_or(usize::MAX).saturating_add(self.buf.len())
+     }
+diff --git a/system/netstack/shard/tcp/src/stack.rs b/system/netstack/shard/tcp/src/stack.rs
+index 6fdd2cf6a..32fbb7dcd 100644
+--- a/system/netstack/shard/tcp/src/stack.rs
++++ b/system/netstack/shard/tcp/src/stack.rs
+@@ -596,6 +596,10 @@ impl Tcp {
+         let generation = self.conns.get(usize::try_from(index).unwrap_or(usize::MAX)).map_or(0, |s| s.generation);
+         if let Some(conn) = value(&mut self.conns, index) {
+             conn.user = User::Held;
++            // Measurement only, PR #863: what the child held is dropped at its accept.
++            if let Tcb::Sync(sync) = &mut conn.state {
++                sync.rx.lose_out_of_order();
++            }
+         }
+         Ok(Some(ConnId { index, generation }))
+     }
+=== out-of-order dropped at the accept: cargo test -p toyos-net-node --test listeners
+   Compiling toyos-net-tcp v0.1.0 (<tree>/system/netstack/shard/tcp)
+   Compiling toyos-net-shard v0.1.0 (<tree>/system/netstack/shard)
+   Compiling toyos-net-node v0.1.0 (<tree>/system/netstack/node)
+    Finished `test` profile [optimized + debuginfo] target(s) in 3.05s
+     Running tests/listeners.rs (target/debug/deps/listeners-7baa2866acd09bc3)
+
+running 32 tests
+test a_connect_past_the_places_is_refused_and_sends_nothing ... ok
+test a_connect_between_two_accepts_is_queued_not_reset ... ok
+test a_datagram_socket_holds_a_place_and_a_bind_without_one_makes_nothing ... ok
+test a_listen_at_the_machines_address_takes_no_port_held_at_every_address ... ok
+test a_listen_at_every_address_takes_no_port_held_at_the_machines_address ... ok
+test a_listen_on_a_taken_port_is_refused_and_a_drawn_port_listens ... ok
+test a_departed_clients_connection_holds_its_place_until_it_is_cut ... ok
+test a_listener_ended_for_its_wake_gives_its_place_to_another_in_the_same_pass ... ok
+test a_listener_answers_a_syn_and_wakes_its_owner_when_the_handshake_ends ... ok
+test a_handshake_reset_before_it_ends_leaves_the_next_connection_its_listeners_option ... ok
+test a_listener_holds_the_option_its_listen_named_from_its_first_connection ... ok
+test a_listener_holds_a_place_and_a_listen_without_one_makes_nothing ... ok
+test a_listener_is_at_the_address_it_named_and_only_one_the_machine_holds ... ok
+test a_handshake_nobody_finishes_leaves_the_port_open_and_is_given_up ... ok
+test a_second_listen_at_the_machines_address_takes_no_port_held_there ... ok
+test a_stream_starts_with_the_options_its_connection_took_from_its_listener ... ok
+test a_stream_reset_for_its_pipe_gives_its_place_to_a_connection_that_waits ... ok
+test a_wake_is_owed_only_for_a_connection_there_is_a_place_for ... ok
+test a_wake_left_by_a_connection_its_peer_reset_stands_for_the_next ... ok
+test an_accept_answers_the_option_of_a_stream_its_own_pass_let_go ... ok
+test a_wake_the_owners_pipe_refuses_ends_the_listener ... ok
+test an_accept_spends_a_wake_whatever_it_answers ... ok
+test closing_a_connect_gives_its_place_to_a_connection_that_waits ... ok
+test closing_a_listener_gives_its_place_to_a_connection_that_waits_at_another ... ok
+test more_places_wake_the_owner_of_a_connection_that_waits ... ok
+test closing_a_listener_resets_what_waits_and_frees_its_port ... ok
+test a_request_for_a_stream_that_was_cut_names_nothing ... ok
+test no_cut_of_a_syn_is_a_syn ... ok
+test what_a_child_held_in_order_past_a_hole_and_its_fin_reaches_its_stream ... FAILED
+test peers_at_more_addresses_than_there_are_places_hold_no_stream_past_them ... ok
+test an_accepted_stream_is_one_of_its_peers_addresss_sixteen ... ok
+test no_flipped_bit_of_a_syn_wakes_an_owner_or_ends_a_listener ... ok
+
+failures:
+
+---- what_a_child_held_in_order_past_a_hole_and_its_fin_reaches_its_stream stdout ----
+
+thread 'what_a_child_held_in_order_past_a_hole_and_its_fin_reaches_its_stream' (12349587) panicked at system/netstack/node/tests/listeners.rs:480:5:
+assertion `left == right` failed: every byte, in order
+  left: [104, 101, 108, 0, 0]
+ right: [104, 101, 108, 108, 111]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    what_a_child_held_in_order_past_a_hole_and_its_fin_reaches_its_stream
+
+test result: FAILED. 31 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+error: test failed, to rerun pass `-p toyos-net-node --test listeners`
+=== out-of-order dropped at the accept EXIT=101
+=== fin dropped at the accept: git diff -- system/netstack/shard
+diff --git a/system/netstack/shard/tcp/src/rx.rs b/system/netstack/shard/tcp/src/rx.rs
+index ec4873b08..87df58b90 100644
+--- a/system/netstack/shard/tcp/src/rx.rs
++++ b/system/netstack/shard/tcp/src/rx.rs
+@@ -211,6 +211,12 @@ impl Rx {
+         self.fin
+     }
+ 
++    /// Measurement only, PR #863: the FIN remembered past a hole, as a copy at the accept that
++    /// carries no FIN leaves the region.
++    pub fn lose_fin(&mut self) {
++        self.fin = None;
++    }
++
+     fn offset(&self, seq: Seq) -> usize {
+         usize::try_from(seq.since(self.next)).unwrap_or(usize::MAX).saturating_add(self.buf.len())
+     }
+diff --git a/system/netstack/shard/tcp/src/stack.rs b/system/netstack/shard/tcp/src/stack.rs
+index 6fdd2cf6a..2141f3f47 100644
+--- a/system/netstack/shard/tcp/src/stack.rs
++++ b/system/netstack/shard/tcp/src/stack.rs
+@@ -596,6 +596,10 @@ impl Tcp {
+         let generation = self.conns.get(usize::try_from(index).unwrap_or(usize::MAX)).map_or(0, |s| s.generation);
+         if let Some(conn) = value(&mut self.conns, index) {
+             conn.user = User::Held;
++            // Measurement only, PR #863: what the child held is dropped at its accept.
++            if let Tcb::Sync(sync) = &mut conn.state {
++                sync.rx.lose_fin();
++            }
+         }
+         Ok(Some(ConnId { index, generation }))
+     }
+=== fin dropped at the accept: cargo test -p toyos-net-node --test listeners
+   Compiling toyos-net-tcp v0.1.0 (<tree>/system/netstack/shard/tcp)
+   Compiling toyos-net-shard v0.1.0 (<tree>/system/netstack/shard)
+   Compiling toyos-net-node v0.1.0 (<tree>/system/netstack/node)
+    Finished `test` profile [optimized + debuginfo] target(s) in 4.62s
+     Running tests/listeners.rs (target/debug/deps/listeners-7baa2866acd09bc3)
+
+running 32 tests
+test a_datagram_socket_holds_a_place_and_a_bind_without_one_makes_nothing ... ok
+test a_connect_past_the_places_is_refused_and_sends_nothing ... ok
+test a_connect_between_two_accepts_is_queued_not_reset ... ok
+test a_listen_at_every_address_takes_no_port_held_at_the_machines_address ... ok
+test a_listen_at_the_machines_address_takes_no_port_held_at_every_address ... ok
+test a_handshake_nobody_finishes_leaves_the_port_open_and_is_given_up ... ok
+test a_listen_on_a_taken_port_is_refused_and_a_drawn_port_listens ... ok
+test a_departed_clients_connection_holds_its_place_until_it_is_cut ... ok
+test a_listener_is_at_the_address_it_named_and_only_one_the_machine_holds ... ok
+test a_listener_holds_the_option_its_listen_named_from_its_first_connection ... ok
+test a_listener_answers_a_syn_and_wakes_its_owner_when_the_handshake_ends ... ok
+test a_listener_holds_a_place_and_a_listen_without_one_makes_nothing ... ok
+test a_listener_ended_for_its_wake_gives_its_place_to_another_in_the_same_pass ... ok
+test a_handshake_reset_before_it_ends_leaves_the_next_connection_its_listeners_option ... ok
+test a_second_listen_at_the_machines_address_takes_no_port_held_there ... ok
+test a_stream_reset_for_its_pipe_gives_its_place_to_a_connection_that_waits ... ok
+test a_wake_is_owed_only_for_a_connection_there_is_a_place_for ... ok
+test a_wake_left_by_a_connection_its_peer_reset_stands_for_the_next ... ok
+test an_accept_answers_the_option_of_a_stream_its_own_pass_let_go ... ok
+test a_request_for_a_stream_that_was_cut_names_nothing ... ok
+test a_wake_the_owners_pipe_refuses_ends_the_listener ... ok
+test a_stream_starts_with_the_options_its_connection_took_from_its_listener ... ok
+test an_accept_spends_a_wake_whatever_it_answers ... ok
+test closing_a_listener_gives_its_place_to_a_connection_that_waits_at_another ... ok
+test closing_a_connect_gives_its_place_to_a_connection_that_waits ... ok
+test closing_a_listener_resets_what_waits_and_frees_its_port ... ok
+test more_places_wake_the_owner_of_a_connection_that_waits ... ok
+test no_cut_of_a_syn_is_a_syn ... ok
+test what_a_child_held_in_order_past_a_hole_and_its_fin_reaches_its_stream ... FAILED
+test peers_at_more_addresses_than_there_are_places_hold_no_stream_past_them ... ok
+test an_accepted_stream_is_one_of_its_peers_addresss_sixteen ... ok
+test no_flipped_bit_of_a_syn_wakes_an_owner_or_ends_a_listener ... ok
+
+failures:
+
+---- what_a_child_held_in_order_past_a_hole_and_its_fin_reaches_its_stream stdout ----
+
+thread 'what_a_child_held_in_order_past_a_hole_and_its_fin_reaches_its_stream' (12355389) panicked at system/netstack/node/tests/listeners.rs:481:5:
+assertion `left == right` failed: the end: the to-client end goes, the from-client end stays
+  left: 0
+ right: 1
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    what_a_child_held_in_order_past_a_hole_and_its_fin_reaches_its_stream
+
+test result: FAILED. 31 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+error: test failed, to rerun pass `-p toyos-net-node --test listeners`
+=== fin dropped at the accept EXIT=101
 === restored: git status --porcelain --ignore-submodules=none
 === restored EXIT=0

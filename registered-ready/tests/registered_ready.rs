@@ -10,7 +10,13 @@
 //! `READABLE` before any I/O. The direction is made ready either before the
 //! registration, by netstack before either thread runs (`*_before`), or by
 //! netstack's thread while the client registers (`*_racing`): bytes in the
-//! receive ring, the receive ring's `end`, or room in the send ring.
+//! receive ring, the receive ring's `end`, room in the send ring, or, with the
+//! send ring full, a fatal `end`: a reset, which makes the send direction ready
+//! to every look, as Linux's `tcp_poll` answers a reset socket `EPOLLOUT`
+//! (`*_reset_*`). Under the `head-only` control a look that arms the send
+//! direction, and netstack's ring back, read only its head, as #863 recorded
+//! them at 148d26583; the operation an event leads to reads the `end` either
+//! way, as amendment A's woken writer "reads why".
 //!
 //! A doorbell is a kernel pipe as the client waits on it: a ring writes a byte
 //! and posts its watch; a watch is answered at once if the pipe holds a byte
@@ -60,6 +66,10 @@ const TX_WANT: usize = 7;
 
 /// How a waker clears a want, as stage 2's ends do.
 const WAKE: Ordering = if cfg!(feature = "want-relaxed") { Ordering::Relaxed } else { Ordering::Release };
+
+/// The control: a fatal `end` is no readiness to the send direction's arming
+/// look nor to netstack's ring back.
+const HEAD_ONLY: bool = cfg!(feature = "head-only");
 
 /// A one-byte doorbell pipe: one side holds its write end, the other its read
 /// end.
@@ -157,18 +167,18 @@ struct Session {
 }
 
 impl Session {
-    /// The receive ring's `end`, read with `Acquire`; only the case that
-    /// writes it reads it.
+    /// The receive ring's `end`, read with `Acquire`; only the cases that
+    /// write it read it.
     fn ended(&self) -> bool {
-        self.what == What::End && self.ended.load(Ordering::Acquire) != 0
+        matches!(self.what, What::End | What::Reset) && self.ended.load(Ordering::Acquire) != 0
     }
 
     /// What the source's operation waits for is there: bytes or the `end` to
-    /// read, room to write.
+    /// read, room or a fatal `end` to write.
     fn ready(&self, end: &mut End) -> bool {
         match end {
             End::Read(rx) => rx.ready(&self.page).unwrap() > 0 || self.ended(),
-            End::Write(tx) => tx.room(&self.page).unwrap() > 0,
+            End::Write(tx) => tx.room(&self.page).unwrap() > 0 || self.ended(),
         }
     }
 
@@ -176,7 +186,7 @@ impl Session {
     fn arm(&self, end: &mut End) -> bool {
         match end {
             End::Read(rx) => rx.arm(&self.page).unwrap() > 0 || self.ended(),
-            End::Write(tx) => tx.arm(&self.page).unwrap() > 0,
+            End::Write(tx) => tx.arm(&self.page).unwrap() > 0 || (!HEAD_ONLY && self.ended()),
         }
     }
 }
@@ -191,13 +201,16 @@ enum What {
     /// The send ring has room: empty at the connect's answer before the
     /// registration, released by netstack from full while it races it.
     Room,
+    /// netstack writes the receive ring's `end` as a reset while the send ring
+    /// is full: the send direction is ready with no room released.
+    Reset,
 }
 
 impl What {
     fn want(self) -> usize {
         match self {
             What::Bytes | What::End => RX_WANT,
-            What::Room => TX_WANT,
+            What::Room | What::Reset => TX_WANT,
         }
     }
 }
@@ -230,6 +243,12 @@ fn make_ready(s: &Session, end: &mut NetEnd) -> bool {
             s.ended.store(1, Ordering::Release);
             s.page[RX_WANT].swap(0, WAKE) != 0
         }
+        (NetEnd::Write(_), What::Reset) => {
+            s.ended.store(1, Ordering::Release);
+            // It exchanges both client wants; the receive direction's is no
+            // part of this model.
+            s.page[TX_WANT].swap(0, WAKE) != 0
+        }
         (NetEnd::Write(tx), What::Room) => {
             assert_eq!(tx.ready(&s.page), Ok(RING));
             assert!(tx.advance(RING));
@@ -249,7 +268,7 @@ fn netstack(s: &Session, racing: bool, mut end: NetEnd) {
         // whose direction is ready.
         let ready = match &mut end {
             NetEnd::Read(rx) => rx.room(&s.page).unwrap() < RING || s.what == What::End,
-            NetEnd::Write(tx) => tx.ready(&s.page).unwrap() < RING,
+            NetEnd::Write(tx) => tx.ready(&s.page).unwrap() < RING || (s.what == What::Reset && !HEAD_ONLY),
         };
         if ready && s.page[s.what.want()].swap(0, WAKE) != 0 {
             s.bell.ring();
@@ -300,10 +319,10 @@ fn session(what: What, racing: bool, rule: Rule) {
             What::Bytes | What::End => {
                 (End::Read(stream::Consumer::new(&page, RX)), NetEnd::Read(stream::Producer::new(&page, RX)))
             }
-            What::Room => {
+            What::Room | What::Reset => {
                 let mut tx = stream::Producer::new(&page, TX);
                 let net_tx = stream::Consumer::new(&page, TX);
-                if racing {
+                if racing || what == What::Reset {
                     // The send ring starts full: netstack has taken none of it.
                     assert_eq!(tx.room(&page), Ok(RING));
                     assert!(tx.advance(RING));
@@ -375,4 +394,12 @@ cases! {
     no_ring_bytes_racing: What::Bytes, true, Rule::NoRing;
     no_ring_end_racing: What::End, true, Rule::NoRing;
     no_ring_room_racing: What::Room, true, Rule::NoRing;
+    as_written_reset_before: What::Reset, false, Rule::AsWritten;
+    as_written_reset_racing: What::Reset, true, Rule::AsWritten;
+    armed_reset_before: What::Reset, false, Rule::Armed;
+    armed_reset_racing: What::Reset, true, Rule::Armed;
+    no_arm_reset_before: What::Reset, false, Rule::NoArm;
+    no_arm_reset_racing: What::Reset, true, Rule::NoArm;
+    no_ring_reset_before: What::Reset, false, Rule::NoRing;
+    no_ring_reset_racing: What::Reset, true, Rule::NoRing;
 }

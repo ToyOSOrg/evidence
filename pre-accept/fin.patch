@@ -1,0 +1,32 @@
+diff --git a/system/netstack/shard/tcp/src/rx.rs b/system/netstack/shard/tcp/src/rx.rs
+index ec4873b08..87df58b90 100644
+--- a/system/netstack/shard/tcp/src/rx.rs
++++ b/system/netstack/shard/tcp/src/rx.rs
+@@ -211,6 +211,12 @@ impl Rx {
+         self.fin
+     }
+ 
++    /// Measurement only, PR #863: the FIN remembered past a hole, as a copy at the accept that
++    /// carries no FIN leaves the region.
++    pub fn lose_fin(&mut self) {
++        self.fin = None;
++    }
++
+     fn offset(&self, seq: Seq) -> usize {
+         usize::try_from(seq.since(self.next)).unwrap_or(usize::MAX).saturating_add(self.buf.len())
+     }
+diff --git a/system/netstack/shard/tcp/src/stack.rs b/system/netstack/shard/tcp/src/stack.rs
+index 6fdd2cf6a..2141f3f47 100644
+--- a/system/netstack/shard/tcp/src/stack.rs
++++ b/system/netstack/shard/tcp/src/stack.rs
+@@ -596,6 +596,10 @@ impl Tcp {
+         let generation = self.conns.get(usize::try_from(index).unwrap_or(usize::MAX)).map_or(0, |s| s.generation);
+         if let Some(conn) = value(&mut self.conns, index) {
+             conn.user = User::Held;
++            // Measurement only, PR #863: what the child held is dropped at its accept.
++            if let Tcb::Sync(sync) = &mut conn.state {
++                sync.rx.lose_fin();
++            }
+         }
+         Ok(Some(ConnId { index, generation }))
+     }

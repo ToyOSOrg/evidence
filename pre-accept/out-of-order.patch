@@ -1,0 +1,36 @@
+diff --git a/system/netstack/shard/tcp/src/rx.rs b/system/netstack/shard/tcp/src/rx.rs
+index ec4873b08..2fc67c1bd 100644
+--- a/system/netstack/shard/tcp/src/rx.rs
++++ b/system/netstack/shard/tcp/src/rx.rs
+@@ -211,6 +211,16 @@ impl Rx {
+         self.fin
+     }
+ 
++    /// Measurement only, PR #863: each out-of-order range's bytes, as a copy at the accept that
++    /// skips them leaves the region: recorded, never written.
++    pub fn lose_out_of_order(&mut self) {
++        for range in self.ranges.clone() {
++            let at = self.offset(range.start);
++            let len = usize::try_from(range.end.since(range.start)).unwrap_or(0);
++            self.buf.write_at(at, &alloc::vec![0; len]);
++        }
++    }
++
+     fn offset(&self, seq: Seq) -> usize {
+         usize::try_from(seq.since(self.next)).unwrap_or(usize::MAX).saturating_add(self.buf.len())
+     }
+diff --git a/system/netstack/shard/tcp/src/stack.rs b/system/netstack/shard/tcp/src/stack.rs
+index 6fdd2cf6a..32fbb7dcd 100644
+--- a/system/netstack/shard/tcp/src/stack.rs
++++ b/system/netstack/shard/tcp/src/stack.rs
+@@ -596,6 +596,10 @@ impl Tcp {
+         let generation = self.conns.get(usize::try_from(index).unwrap_or(usize::MAX)).map_or(0, |s| s.generation);
+         if let Some(conn) = value(&mut self.conns, index) {
+             conn.user = User::Held;
++            // Measurement only, PR #863: what the child held is dropped at its accept.
++            if let Tcb::Sync(sync) = &mut conn.state {
++                sync.rx.lose_out_of_order();
++            }
+         }
+         Ok(Some(ConnId { index, generation }))
+     }
