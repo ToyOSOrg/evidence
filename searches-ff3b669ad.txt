@@ -1,0 +1,50 @@
+$ git grep -n 'const HANDSHAKE_TIMEOUT' ff3b669ad -- system
+ff3b669ad:system/compositor/src/client.rs:39:pub const HANDSHAKE_TIMEOUT: Duration = Duration::from_secs(2);
+ff3b669ad:system/diskserver/src/main.rs:82:const HANDSHAKE_TIMEOUT: Duration = Duration::from_secs(2);
+ff3b669ad:system/filepicker/src/main.rs:479:const HANDSHAKE_TIMEOUT: Duration = Duration::from_secs(2);
+ff3b669ad:system/fileserver/src/main.rs:96:const HANDSHAKE_TIMEOUT: Duration = Duration::from_secs(2);
+ff3b669ad:system/logkeeper/src/inspect.rs:38:const HANDSHAKE_TIMEOUT: Duration = Duration::from_secs(2);
+ff3b669ad:system/netstack/src/client.rs:94:pub const HANDSHAKE_TIMEOUT: Duration = Duration::from_secs(2);
+ff3b669ad:system/supervisor/src/main.rs:144:const HANDSHAKE_TIMEOUT: Duration = Duration::from_secs(2);
+ff3b669ad:system/usbd/src/main.rs:39:const HANDSHAKE_TIMEOUT: Duration = Duration::from_secs(2);
+exit=0
+
+$ git grep -n socket_churn ff3b669ad -- ':!issues'
+exit=1
+
+$ git grep -n -i -e linux -e d-bus -e dbus -e systemd ff3b669ad -- issues/servers-let-a-client-go-on-the-handshake-limit-with-its-request-unread.md issues/one-program-that-fills-a-servers-table-holds-every-other-client-out.md
+exit=1
+
+$ git grep -c '#\[test\]' ff3b669ad -- system/netstack/src/serve.rs
+exit=1
+
+$ git grep -n 'fn a_connect_past_the_places_is_refused_and_sends_nothing' ff3b669ad -- system/netstack
+ff3b669ad:system/netstack/node/tests/listeners.rs:637:fn a_connect_past_the_places_is_refused_and_sends_nothing() {
+exit=0
+
+$ git grep -n 'fn a_departed_clients_connection_holds_its_place_until_it_is_cut' ff3b669ad -- system/netstack
+ff3b669ad:system/netstack/node/tests/listeners.rs:576:fn a_departed_clients_connection_holds_its_place_until_it_is_cut() {
+exit=0
+
+$ git grep -n 'fn a_wake_the_owners_pipe_refuses_ends_the_listener' ff3b669ad -- system/netstack
+ff3b669ad:system/netstack/node/tests/listeners.rs:703:fn a_wake_the_owners_pipe_refuses_ends_the_listener() {
+exit=0
+
+$ git grep -n 'fn a_client_that_left_is_finished_by_the_stack' ff3b669ad -- system/netstack
+ff3b669ad:system/netstack/node/tests/streams.rs:1110:fn a_client_that_left_is_finished_by_the_stack() {
+exit=0
+
+$ git grep -n 'fn a_writer_that_leaves_after_the_shutdown_leaves_the_stream_to_its_reader' ff3b669ad -- system/netstack
+ff3b669ad:system/netstack/node/tests/streams.rs:952:fn a_writer_that_leaves_after_the_shutdown_leaves_the_stream_to_its_reader() {
+exit=0
+
+$ git grep -n 'fn a_pipe_that_is_no_pipe_resets_its_connection' ff3b669ad -- system/netstack
+ff3b669ad:system/netstack/node/tests/streams.rs:1353:fn a_pipe_that_is_no_pipe_resets_its_connection() {
+exit=0
+
+$ git grep -n 'fn a_refused_watch_resets_only_a_stream_that_holds_the_end' ff3b669ad -- system/netstack
+ff3b669ad:system/netstack/node/tests/streams.rs:1371:fn a_refused_watch_resets_only_a_stream_that_holds_the_end() {
+exit=0
+
+$ git merge-base --is-ancestor 5a68db78b ff3b669ad
+exit=0
