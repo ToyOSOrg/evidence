@@ -1,0 +1,238 @@
+.claude/agents/implementer.md:34:is the design's only purpose. Linux is cited nowhere in the tree as an authority; naming it as a
+.claude/agents/reviewer.md:58:  Linux, or of any implementation's source, as authority; where that hardware's manufacturers or
+.claude/agents/reviewer.md:74:- **Hosts.** A BLOCKER: a change that makes an app build on fewer of Linux under Wayland, macOS
+.github/workflows/nightly.yml:29:      # and nothing reads the rest of the debuginfo, of which a Linux link
+.github/workflows/nightly.yml:86:  portability-linux:
+.github/workflows/nightly.yml:127:      # The host suite's macOS arms run here alone: `ci.yml`'s `host` is Linux.
+CLAUDE.md:31:- **Apps are portable.** An app builds and runs on Linux under Wayland (never X11, which is legacy), macOS and Windows from the same source as on ToyOS; a host build that fails is fixed in the app or its dependencies, never by making the app ToyOS-only. A program is ToyOS-only only when its job exists only on ToyOS — it owns ToyOS devices or kernel objects, or manages ToyOS itself — and its manifest's `exempt` says which, and why (`build/userlandhost.rs`).
+NOTICE:274:in a QEMU guest booted from the Arch Linux 2026.09.01 install medium, as a
+NOTICE:424:    Upstream: https://github.com/intel/Intel-Linux-Processor-Microcode-Data-Files,
+README.md:243:Linux and macOS. Windows is a goal, not a claim — the build system still
+README.md:283:from a Linux host; on any other it refuses. It finds the stick itself: it
+apps/calc/Cargo.toml:20:[target.'cfg(target_os = "linux")'.dependencies]
+apps/doom/Cargo.toml:15:[target.'cfg(target_os = "linux")'.dependencies]
+apps/doom/Cargo.toml:26:fails = ["linux", "macos", "windows"]
+apps/snake/Cargo.toml:14:[target.'cfg(target_os = "linux")'.dependencies]
+build/arch.rs:20:    /// Linux's hypervisor, on a host of the guest's own architecture.
+build/arch.rs:149:        let opens = cfg!(target_os = "linux")
+build/ci.rs:1462:        assert_eq!(judged(Os::Linux), (vec!["calc", "doom"], vec![]));
+build/ci.rs:1465:        assert_eq!(Os::ALL.map(|os| judged_as(os, Os::Linux.triple())), [
+build/compiler.rs:218:/// `x86_64-unknown-linux-gnu`, and of no other host.
+build/compiler.rs:219:const HOST_LINKER_PIN: &str = "default-linker-linux-override = \"off\"";
+build/compiler.rs:671:        let host = "[target.h]\ndefault-linker-linux-override = \"off\"\nllvm-config = \"/llvm/bin/llvm-config\"\nllvm-has-rust-patches = true\n";
+build/disk.rs:1://! A whole disk: its node on a Linux host, and an image written to one whole.
+build/flash.rs:19://! Only a Linux host is read, from `/sys/class/block`, the way
+build/flash.rs:66:    /// Linux's `diskseq`.
+build/flash.rs:110:            Self::Host(os) => write!(f, "toyos-flash writes a stick only from a Linux host, and this host is {os}"),
+build/flash.rs:276:#[cfg(any(target_os = "linux", test))]
+build/flash.rs:315:#[cfg(target_os = "linux")]
+build/flash.rs:325:    /// `BLKGETDISKSEQ`, `_IOR(0x12, 128, __u64)` in `linux/fs.h`.
+build/flash.rs:452:#[cfg(not(target_os = "linux"))]
+build/image.rs:264:        // Finder, in Windows and in Linux on plug-in, with nothing configured.
+build/llvm.rs:799:        let elsewhere = if host_triple() == "x86_64-unknown-linux-gnu" {
+build/llvm.rs:800:            "aarch64-unknown-linux-gnu"
+build/llvm.rs:802:            "x86_64-unknown-linux-gnu"
+build/qemu.rs:346:    } else if cfg!(target_os = "linux") {
+build/release.rs:38:const HOST: &str = "x86_64-unknown-linux-gnu";
+build/release.rs:94:const TAG: &str = "toolchain-linux-x86_64-";
+build/release.rs:339:    if !(cfg!(target_os = "linux") && crate::arch::Arch::HOST == Some(crate::arch::Arch::X86_64)) {
+build/release.rs:642:/// `toolchain-linux-x86_64-sdk-<toyos-abi's version, less its build metadata>`:
+build/release.rs:649:    let alias = format!("toolchain-linux-x86_64-sdk-{abi}");
+build/release.rs:772:        fs::write(build.join("TOOLCHAIN"), manifest("toolchain-linux-x86_64-0123456789abcdef")).unwrap();
+build/release.rs:832:            ("TOOLCHAIN".to_string(), "644 toolchain toolchain-linux-x86_64-0123456789abcdef\nhost x86_64-unknown-linux-gnu\nglibc 2.39\n"),
+build/release.rs:884:        assert_eq!(toolchain, manifest("toolchain-linux-x86_64-0123456789abcdef"));
+build/sysroot.rs:1170:/// things that outlive it. `fs::copy` clones on APFS and reflinks where Linux
+build/tether.rs:4://! its controlling process gets `SIGHUP`, on Linux and on macOS.
+build/tether.rs:5://! `PR_SET_PDEATHSIG` is Linux's alone and follows the spawning thread rather
+build/tether.rs:6://! than the process, and QEMU's `exit-with-parent` is that on Linux and ends
+build/tether.rs:73:#[cfg(target_os = "linux")]
+build/userlandhost.rs:6://! manifest. One that declares nothing is an app, and builds for Linux, macOS
+build/userlandhost.rs:158:    Linux,
+build/userlandhost.rs:164:    pub const ALL: [Os; 3] = [Os::Linux, Os::Macos, Os::Windows];
+build/userlandhost.rs:168:            Os::Linux => "linux",
+build/userlandhost.rs:177:            Os::Linux => "x86_64-unknown-linux-gnu",
+build/userlandhost.rs:253:                    format!("`fails` names {name}, which is none of linux, macos and windows")
+build/userlandhost.rs:585:            read(&format!("{table}fails = [\"windows\", \"linux\"]\n{issue}")),
+build/userlandhost.rs:586:            Ok(Host::App(vec![Os::Windows, Os::Linux]))
+build/userlandhost.rs:589:            read(&format!("{table}fails = [\"linux\"]\nissue = \"issues/held.md\"\n")),
+build/userlandhost.rs:590:            Ok(Host::App(vec![Os::Linux]))
+build/userlandhost.rs:599:            format!("{table}exempt.owns = \"a panel\"\nfails = [\"linux\"]\n{issue}"),
+build/userlandhost.rs:600:            format!("{table}fails = [\"linux\"]\n"),
+build/userlandhost.rs:604:            format!("{table}fails = [\"linux\", \"linux\"]\n{issue}"),
+build/userlandhost.rs:605:            format!("{table}fails = \"linux\"\n{issue}"),
+build/userlandhost.rs:606:            format!("{table}fails = [\"linux\"]\nissue = \"notes.md\"\n"),
+build/userlandhost.rs:607:            format!("{table}fails = [\"linux\"]\nissue = \"issues/README.md\"\n"),
+build/userlandhost.rs:608:            format!("{table}fails = [\"linux\"]\nissue = \"issues/../notes.md\"\n"),
+build/userlandhost.rs:609:            format!("{table}fails = [\"linux\"]\nissue = \"issues/build/x.md\"\n"),
+build/userlandhost.rs:610:            format!("{table}fails = [\"linux\"]\nissue = \"issues/asked.md\"\n"),
+build/userlandhost.rs:611:            format!("{table}fails = [\"linux\"]\nissue = \"issues/gone.md\"\n"),
+build/userlandhost.rs:618:        let unnamed = format!("[package]\nname = \"snake\"\n{table}fails = [\"linux\"]\n{issue}");
+kernel/cpuvuln/Cargo.toml:6:description = "Verdicts from a CPU's CPUID and MSR facts, pure: Linux's on each speculative-execution vulnerability and its mitigation choice, which model-specific counters the CPU has and the HWP request intel_pstate asks of it; AMD's revision guides' on whether erratum 1386 forbids the CPU XSAVES."
+kernel/cpuvuln/fixtures/t14/SOURCE:1:Linux's readings of the ThinkPad T14 this repository is tested on, under that
+kernel/cpuvuln/fixtures/t14/SOURCE:2:machine's Ubuntu, read as root on the T14 by `toyos-t14linux/capture.sh` at
+kernel/cpuvuln/fixtures/tcg/SOURCE:1:The same Linux on the TCG model, booted on the development host by
+kernel/cpuvuln/fixtures/tcg/SOURCE:2:`toyos-t14linux/tcg.sh` at commit 44eb3c2e (pull request #601) as
+kernel/cpuvuln/fixtures/tcg/console.txt:1:[    0.000000] Linux version 6.8.0-142-generic (buildd@lcy02-amd64-049) (x86_64-linux-gnu-gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0, GNU ld (GNU Binutils for Ubuntu) 2.42) #142-Ubuntu SMP PREEMPT_DYNAMIC Wed Sep  2 14:24:27 UTC 2026 (Ubuntu 6.8.0-142.142-generic 6.8.12)
+kernel/cpuvuln/fixtures/tcg/console.txt:237:[    1.810952] pps_core: LinuxPPS API ver. 1 registered
+kernel/cpuvuln/fixtures/tcg/console.txt:238:[    1.811196] pps_core: Software ver. 5.3.6 - Copyright 2005-2007 Rodolfo Giometti <giometti@linux.it>
+kernel/cpuvuln/fixtures/tcg/console.txt:301:[    3.830776] Linux agpgart interface v0.103
+kernel/cpuvuln/fixtures/tcg/console.txt:354:[    5.254134] evm: security.selinux
+kernel/cpuvuln/fixtures/tcg/console.txt:378:Linux version 6.8.0-142-generic (buildd@lcy02-amd64-049) (x86_64-linux-gnu-gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0, GNU ld (GNU Binutils for Ubuntu) 2.42) #142-Ubuntu SMP PREEMPT_DYNAMIC Wed Sep  2 14:24:27 UTC 2026
+kernel/cpuvuln/src/counters.rs:1://! Which of a CPU's model-specific counters exist, as Linux's `msr` PMU decides
+kernel/cpuvuln/src/counters.rs:5://! **One departure from Linux**: `MSR_SMI_COUNT` is not admitted under a
+kernel/cpuvuln/src/counters.rs:6://! hypervisor (`CPUID.1:ECX[31]`). Linux admits it there and its probe read
+kernel/cpuvuln/src/counters.rs:10://! Linux admits them: one that enumerates them and faults the read ends the
+kernel/cpuvuln/src/counters.rs:85:    /// Linux on the T14 listed exactly the events whose test and probe read
+kernel/cpuvuln/src/counters.rs:89:    fn the_t14_has_what_linux_counted_on_it() {
+kernel/cpuvuln/src/counters.rs:117:    /// The model list is the T14's model and Linux's other rows, and nothing
+kernel/cpuvuln/src/counters.rs:118:    /// in family 6 that Linux leaves out.
+kernel/cpuvuln/src/erratum.rs:7://! **AMD's revision guides decide, not Linux**, wherever AMD publishes one,
+kernel/cpuvuln/src/erratum.rs:19://! is the models Linux files as Zen1 or Zen2 (`bsp_init_amd`,
+kernel/cpuvuln/src/erratum.rs:22://! `issues/amd-erratum-1386s-scope-rests-on-linux-where-amd-publishes-no-revision-guide.md`
+kernel/cpuvuln/src/erratum.rs:29:    // 55449's and 56323's ranges, and Linux's Zen1 and Zen2 beside them.
+kernel/cpuvuln/src/erratum.rs:78:    /// The AMD bench, a Ryzen 7 4800U: family 17h model 60h as its Linux
+kernel/cpuvuln/src/hwp.rs:3://! at its defaults, read at upstream Linux `v6.8`'s
+kernel/cpuvuln/src/hwp.rs:12://! **The refusals are ToyOS's, not Linux's**: `intel_pstate` drives hybrid
+kernel/cpuvuln/src/lib.rs:1://! Linux's decision about a CPU's speculative-execution vulnerabilities, pure.
+kernel/cpuvuln/src/lib.rs:4://! pinned Linux prints in each `/sys/devices/system/cpu/vulnerabilities/*` file
+kernel/cpuvuln/src/lib.rs:6://! fields), under the default command line and the pinned config. That Linux is
+kernel/cpuvuln/src/lib.rs:21://! [`erratum_1386`] is AMD's, not Linux's: whether its `XSAVES` erratum names
+kernel/cpuvuln/src/lib.rs:48:/// The vendors Linux's tables name, by CPUID.0's identification string
+kernel/cpuvuln/src/lib.rs:74:/// What the boot CPU reports, read the way Linux reads it.
+kernel/cpuvuln/src/lib.rs:119:// Linux's feature bits (`arch/x86/include/asm/cpufeatures.h`,
+kernel/cpuvuln/src/lib.rs:446:/// The features Linux has when it selects, after `init_speculation_control`
+kernel/cpuvuln/src/lib.rs:458:/// Linux's selection for one machine.
+kernel/cpuvuln/src/lib.rs:586:/// Linux's selection over `facts`: `cpu_select_mitigations` (`bugs.c:149-199`)
+kernel/cpuvuln/src/lib.rs:591:/// `feat_ctl`, `ls_cfg_readable` or `sbpb_write_accepted` present where Linux
+kernel/cpuvuln/src/table.rs:1://! Linux's five CPU tables, row for row: `cpu_vuln_whitelist` and
+kernel/cpuvuln/src/table.rs:9://! The whitelist's `NSC` and `VORTEX` rows are left out: x86-64 Linux builds
+kernel/cpuvuln/src/table.rs:59:/// (`include/linux/mod_devicetable.h:700-702`).
+kernel/cpuvuln/src/tests.rs:1://! Facts in, Linux's lines and selection out, the lines judged against
+kernel/cpuvuln/src/tests.rs:14:/// The T14's i5-1135G7, held to the pinned Linux's reading of it by
+kernel/cpuvuln/src/tests.rs:15:/// [`the_t14s_facts_are_linuxs_reading_of_it`].
+kernel/cpuvuln/src/tests.rs:31:    // `vmx flags`, so Linux kept VMX (`feat_ctl.c:171-184`): these are the two
+kernel/cpuvuln/src/tests.rs:232:            .unwrap_or_else(|| panic!("{file}: a file Linux does not have"));
+kernel/cpuvuln/src/tests.rs:266:/// [`T14`] against `fixtures/t14/`, each field read as [`Facts`] says Linux
+kernel/cpuvuln/src/tests.rs:267:/// reads it, and what `decide` makes of it against the VMX Linux kept and the
+kernel/cpuvuln/src/tests.rs:270:fn the_t14s_facts_are_linuxs_reading_of_it() {
+kernel/cpuvuln/src/tests.rs:276:    // A leaf past its range's highest reads as 0, as Linux leaves it.
+kernel/cpuvuln/src/tests.rs:376:        .expect("Linux names CPU 0");
+kernel/cpuvuln/src/tests.rs:406:/// without `RDCL_NO` Linux's L1TF line turns on state the facts do not carry.
+kernel/cpuvuln/src/tests.rs:486:/// (`intel.c:143,177-179`): there Linux drops IBRS, IBPB, STIBP and SSBD
+kernel/cpuvuln/src/tests.rs:603:// The two fixtures below are this crate's reading of the pinned Linux, awaiting
+kernel/cpuvuln/src/tests.rs:1280:fn hygon_decides_as_linux_does() {
+kernel/ps2/src/key.rs:4://! translation bit is on — Linux's default configuration, and therefore the
+kernel/ps2/src/key.rs:172:                // controller translating to set 1 — Linux's default and the
+kernel/pure/xsave.rs:332:    /// its Linux with `XCR0` = `0x2e7` and, by that kernel's configuration,
+kernel/src/arch/aarch64/irqchip.rs:354:/// it announces (Linux's `gic_ipi_send_mask`, `dsb(ishst)`).
+kernel/src/arch/x86_64/amdvi/mod.rs:34:/// `CONTROL` fields firmware may leave on, in Linux's `iommu_disable` order,
+kernel/src/arch/x86_64/control_regs.rs:133:/// `IA32_ENERGY_PERF_BIAS` on every CPU: Linux's `ENERGY_PERF_BIAS_NORMAL`
+kernel/src/arch/x86_64/cpu.rs:33:/// Linux's `weak_wrmsr_fence`. No `nomem`, so the compiler moves no access
+kernel/src/arch/x86_64/i8042/mod.rs:893:/// else in the machine's life sends the matching `0xF0 0x02` either (Linux's
+kernel/src/arch/x86_64/vtd/fault.rs:168:// Only reasons where Linux's dma_remap_fault_reasons and QEMU's VTD_FR_*
+kernel/src/arch/x86_64/vtd/queue.rs:47:    "Linux waits one second for the same acknowledgement, and what a device can reach is unknown past it",
+kernel/src/mm/mmio.rs:8://! entry it reports. It is Linux's `writel`/`readl` and not their `_relaxed`
+kernel/usbhid/src/keyboard.rs:21://! before stay held: [`Read::RollOver`]. Linux's `hid_input_array_field`
+kernel/usbhid/src/keyboard.rs:27://! international usages above 0x65, and Linux's boot keyboard driver
+kernel/usbhid/src/pointer.rs:17://! puts it there and Linux's boot mouse driver `usbmouse` reads it so; a
+lib/acpi/src/resource.rs:6://! places for the same bridge: `_CRS` in the DSDT, which is what Linux reads,
+lib/acpi/tests/resource.rs:30:/// The shape the T14's firmware answers in, as Linux's own journal reports it:
+lib/acpi/tests/thinkpad_t14.rs:2://! extract of its FACP and APIC and held against what Linux read on the
+lib/acpi/tests/thinkpad_t14.rs:68:/// Linux: `ACPI: PM-Timer IO Port: 0x1808` beside the blocks this names, and
+lib/acpi/tests/thinkpad_t14.rs:75:fn the_t14s_fadt_names_the_blocks_linux_served_its_sci_through() {
+lib/acpi/tests/thinkpad_t14.rs:91:/// Linux: `ACPI: INT_SRC_OVR (bus 0 bus_irq 9 global_irq 9 high level)`.
+lib/bcachefs/tests/upstream_fixture.rs:115:/// This is the judgement the suite used to make by booting a Linux
+lib/fat32/src/name.rs:22:/// reads it without ever writing it. Reading is not optional — macOS and Linux
+lib/gpt/tests/oracle.rs:11:/// Linux filesystem data, a type both readers name.
+lib/gpt/tests/oracle.rs:12:const LINUX_FS: Guid =
+lib/gpt/tests/oracle.rs:17:    types: &[Guid::EFI_SYSTEM, Guid::MICROSOFT_BASIC, LINUX_FS],
+lib/gpt/tests/oracle.rs:159:        (LINUX_FS, gpt::partition_types::LINUX_FS),
+lib/hda/src/stream.rs:195:    /// Linux carries the whole rate field as a literal table
+lib/hda/src/stream.rs:202:    fn every_rate_linux_tabulates_encodes_to_the_number_linux_tabulates() {
+lib/xhci/src/enumerate.rs:25:/// (xHCI 1.2 §4.3.4; Linux does the same in `xhci_setup_addressable_virt_dev`).
+lib/xhci/src/ladder.rs:229:/// the 50 ms Linux's hub driver waits, for the firmware that needs it.
+lib/xhci/src/port.rs:20:/// port reset that follows it — TATTDB, which Linux's `hub_port_debounce`
+sdk/libc/arch/src/internet_addresses.rs:26:/// The host's `EAFNOSUPPORT`; `ENOSPC` macOS and Linux number alike.
+sdk/libc/arch/src/internet_addresses.rs:229:/// `sockaddr_in` as Linux and `include/netinet/in.h` lay it out: the family,
+sdk/libc/arch/src/internet_addresses.rs:260:/// bytes are compared on Linux, whose layout libc's is; Darwin's are a length
+sdk/libc/arch/src/internet_addresses.rs:275:        let layout = if cfg!(target_os = "linux") { 0 } else { 2 };
+sdk/libc/arch/src/memory_refusals.rs:4://! address off a page, and Linux's discard.
+sdk/libc/arch/src/memory_refusals.rs:67:fn madvise_takes_linuxs_hints_and_refuses_its_discard() {
+sdk/libc/arch/src/socket_options.rs:10://! libc's numbers and answers are Linux's, so on Linux every row agrees. Darwin
+sdk/libc/arch/src/socket_options.rs:28:    #[cfg_attr(target_os = "linux", link_name = "__errno_location")]
+sdk/libc/arch/src/socket_options.rs:32:/// The host's `EFAULT` and `EINVAL`, which macOS and Linux number alike.
+sdk/libc/arch/src/socket_options.rs:35:/// Linux's `ENOPROTOOPT` and `EOPNOTSUPP`: Darwin answers neither here.
+sdk/libc/arch/src/socket_options.rs:51:/// The option as the host numbers it: on Linux, as libc does.
+sdk/libc/arch/src/socket_options.rs:161:/// What Darwin answers where it is not what Linux and libc do. A TCP option
+sdk/libc/arch/src/strtonum_differential.rs:18:    #[cfg_attr(target_os = "linux", link_name = "__errno_location")]
+sdk/libc/arch/src/strtonum_differential.rs:22:/// The host's `ERANGE` and `EINVAL`, which macOS and Linux number alike.
+sdk/libc/arch/src/text_differential.rs:29:/// glibc's `strsignal` for each number Linux gives a signal `signal.h` names.
+sdk/libc/src/linkreq.rs:5:/// refuses `EINVAL`: 0, as Linux's does, and one above `{SSIZE_MAX}`, whose
+sdk/libc/src/memreq.rs:63:/// `MADV_DONTNEED`, which Linux's `madvise` answers by discarding the range,
+sdk/libc/src/memreq.rs:77:/// Why Linux's `madvise` of `advice` at `addr` is refused, if it is. Its four
+sdk/libc/src/posix_io.rs:17:// Constants (matching POSIX / Linux values)
+sdk/libc/src/posix_io.rs:557:/// Linux's `madvise` (`memreq::madvise_refusal`).
+sdk/libc/src/sigmask.rs:3://! signal `n` is bit `n - 1` of a `sigset_t`, Linux's layout. It reads and
+sdk/libc/src/sockopt.rs:3://! as Linux does, whose option numbers these are. It reads nothing but what it
+sdk/libc/src/sockopt.rs:22:/// stream. A datagram socket has no option at TCP's level, which Linux says
+system/acpiserver/aml/src/lib.rs:28://! Windows answers them, by the owner's rulings ("Like Windows, not Linux";
+system/acpiserver/aml/tests/evaluate.rs:491:/// The owner's ruling, "Like Windows, not Linux": yes to every published
+system/acpiserver/aml/tests/evaluate.rs:492:/// Windows version string, no to "Linux" and "FreeBSD".
+system/acpiserver/aml/tests/evaluate.rs:498:    assert_eq!(osi("Linux"), i(0));
+system/fileserver/src/resolve.rs:23:/// The most symlinks one resolution expands, as Linux's `MAXSYMLINKS`.
+system/logkeeper/src/main.rs:550:    /// behind Linux's printk ring skips what the ring overwrote: the newest
+system/netstack/i219/src/tests.rs:3104:/// oracle is Linux's `e1000_hash_mc_addr_generic` (drivers/net/ethernet/intel/
+system/netstack/i219/src/tests.rs:3114:    let linux = [0x12, 0x34, 0x56, 0x78, 0x34, 0x56];
+system/netstack/i219/src/tests.rs:3115:    assert_eq!(regs::mta_bit_82574(linux), (0x563 >> 5, 0x563 & 0x1F));
+system/netstack/i219/src/tests.rs:3116:    assert_eq!(regs::mta_bit_pch(linux), (0x158 >> 5, 0x158 & 0x1F));
+system/netstack/node/Cargo.toml:26:# The host's own TCP as an oracle, on Linux, macOS and Windows alike, with no
+system/netstack/node/tests/streams.rs:1079:// would had they come in passes of their own (Linux and the BSDs read what arrived before the
+system/netstack/shard/tcp/src/conn.rs:27:/// What a probe waits past two round trips with more than one segment out: Linux's
+system/netstack/shard/tcp/src/rx.rs:15://! **The round trip is the receiver's own** (Linux's `tcp_rcv_rtt_measure_ts` and
+system/netstack/shard/tcp/src/rx.rs:21://! arrives (Linux's `tcp_measure_rcv_mss`), never this end's send MSS: a peer whose segments are
+system/netstack/shard/tcp/src/rx.rs:178:    /// Linux's `tcp_measure_rcv_mss`: a segment as long as the largest so far raises it, up to what
+system/netstack/shard/tcp/src/rx.rs:355:        // room, as Linux does: else a sender owing the text of a hole waits on a window not shut.
+system/netstack/shard/tcp/src/stack.rs:104:    /// (Linux and the BSDs, not RFC 9293 §3.10.7.4's SHOULD-flush).
+system/netstack/shard/tcp/tests/recovery.rs:484:/// cut twice: the probe's cut, then recovery's from the flight after the ACK. Linux v6.12 does the
+system/pkg/src/sums.rs:60:40c73eb97c69c3002bb3b56d8d4cff620b84cef2760bf80ac40eb97565a0fa01  gbae-v0.2.0-linux-x86_64.tar.gz
+system/shell/Cargo.toml:14:fails = ["linux", "macos", "windows"]
+system/terminal/Cargo.toml:17:fails = ["linux", "macos", "windows"]
+system/toybox/Cargo.toml:16:fails = ["linux", "macos", "windows"]
+tests/common/clock.rs:16://!   Linux. Neither advances while the machine is asleep — the first by its
+tests/corpus/tinycc/109_float_struct_calling.c:3:/* This test used to fail on x86_64 on linux with sse registers */
+tests/corpus/tinycc/201_packed_layout.c:1:/* Offsets and sizes here were taken from clang for x86_64-unknown-linux-gnu
+tests/corpus/tinycc/201_packed_layout.c:2:   and aarch64-unknown-linux-gnu; both agree. */
+tests/corpus/tinycc/206_libc_refusals.c:184:       takes Linux's hints and refuses its discard, which would have zeroed
+tests/guest/proctest/Cargo.toml:9:fails = ["linux", "macos", "windows"]
+tests/guest/rust-tests/src/bin/counters_metal.rs:25://! per CPU spawns a program that exits at once, which is the load Linux's
+tests/guest/rust-tests/src/bin/fs_escape.rs:7://!   `openat2(2)`'s `RESOLVE_BENEATH` states for Linux);
+tests/metal/src/lib.rs:928:/// The one partition of type `guid`, numbered as Linux numbers it: the entry
+tests/metal/t14-linux/SOURCE:1:Linux's turbostat on the ThinkPad T14 the metal suite runs on, under that
+tests/toyos.rs:624:        // is held and what is read beside Linux's.
+tests/toyos.rs:655:        // is held, and prints the readings for Linux's on the same machine.
+tests/toyos.rs:5701:/// declared at boot, `pm_enable=1`, the request Linux makes on this machine
+tests/toyos.rs:5702:/// (`tests/metal/t14-linux/hwp-request.txt`), and its power envelope in every read
+tests/toyos.rs:5717:/// Linux's turbostat read under one `yes` per CPU on the same machine over the
+tests/toyos.rs:5718:/// same span of load (`tests/metal/t14-linux/turbostat-loaded.txt`).
+tests/toyos.rs:5720:/// Read and not held, beside Linux's turbostat: each CPU's idle busy
+tests/toyos.rs:5722:/// time it held them, and what one round cost its reader; and beside Linux's loaded
+tests/toyos.rs:5723:/// timer reading (`issues/toyos-beats-linuxs-latency-on-the-t14.md`),
+tests/toyos.rs:5770:    let linux_request = u64::from_str_radix(include_str!("metal/t14-linux/hwp-request.txt").trim().trim_start_matches("0x"), 16)
+tests/toyos.rs:5771:        .map_err(|e| format!("metal/t14-linux/hwp-request.txt: {e}"))?;
+tests/toyos.rs:5792:            if !declared.contains(&format!(" hwp_request={linux_request:#010x} ")) {
+tests/toyos.rs:5793:                return Err(format!("cpu{cpu} declared {declared:?}, and Linux requests {linux_request:#010x} on this machine"));
+tests/toyos.rs:5861:    let linux = |file: &str, column: &str| -> Result<Vec<f64>, String> {
+tests/toyos.rs:5872:    let idle = range(&linux(include_str!("metal/t14-linux/turbostat-idle.txt"), "Busy%")?);
+tests/toyos.rs:5873:    let loaded_rows = linux(include_str!("metal/t14-linux/turbostat-loaded.txt"), "Bzy_MHz")?;
+tests/toyos.rs:5875:    // The floor is Linux's clock over the spin's own span of load, not after
+tests/toyos.rs:5877:    // into Linux's load and each 10 s long (`tests/metal/t14-linux/SOURCE`).
+tests/toyos.rs:5882:        return Err(format!("the spin lasted {spin_ns} ns, and no Linux interval opens within it"));
+tests/toyos.rs:5891:            "  [counters] cpu{cpu}: idle busy {:.2}% (Linux {:.2}-{:.2}%), spinning {:.0} MHz (Linux {floor:.0} over \
+tests/toyos.rs:5903:        return Err(format!("spinning {spin_ns} ns at {spinning:.0?} MHz, some cpu below the {floor:.0} Linux held over that span"));
+tests/toyos.rs:5909:/// APIC (Linux on the same machine: `INT_SRC_OVR (bus 0 bus_irq 9 global_irq
+tests/toyos.rs:5911:/// in the DSDT the one Linux used (`EC_CMD/EC_SC=0x66, EC_DATA=0x62`,
+tests/toyos.rs:5946:/// How many definition blocks the T14 has: Linux on the same machine says
+tests/toyos.rs:5956:/// for it: all of the machine's definition blocks, as many as Linux loads
+tests/toyos.rs:5984:        return Err(format!("the server found {blocks} definition blocks where Linux loads {T14_DEFINITION_BLOCKS}"));
+tests/toyos.rs:6026:/// whole: their numbers are what Linux's `/sys/class/power_supply` reads on
+tests/toyos.rs:6066:/// memory (type 10) by the firmware's own map, which is where Linux's print
