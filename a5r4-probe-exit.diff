@@ -1,0 +1,22 @@
+--- a5r3-rsq3-main.rs
++++ a5r4-rsq3-main.rs
+@@ -515,7 +515,8 @@
+ /// The explicit build against rubato's own dispatch, every configuration and
+ /// pair, 0.25 s of a 997 Hz tone: bit-identical output is the evidence that the
+ /// explicit build is the interpolator, sinc length and cutoff `make_interpolator`
+-/// gives, wherever the dispatch takes the same kind.
++/// gives, wherever the dispatch takes the same kind. Exits 1 when any pair
++/// differs, as the fourth host test's assertion would fail.
+ fn probe() {
+     println!("interpolator: {}", interpolator());
+     let amp = 10f64.powf(AMP_DBFS / 20.0);
+@@ -533,6 +534,9 @@
+         }
+     }
+     println!("explicit {:?} against rubato's own dispatch: {same} of {total} configuration-pairs bit-identical", interp());
++    if same != total {
++        std::process::exit(1);
++    }
+ }
+ 
+ fn main() {

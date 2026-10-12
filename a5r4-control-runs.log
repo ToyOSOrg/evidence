@@ -1,0 +1,69 @@
+# exit codes (a5r4-control.sh), the crate a5r4-rsq3-main.rs with a5r3-rsq3-Cargo.toml and a5r3-rsq3-Cargo.lock, the patch a5r3-no-cutoff-scaling.patch
+green build aarch64 EXIT=0
+green build x86_64 EXIT=0
+green probe sse EXIT=0
+green probe avx EXIT=0
+green probe neon EXIT=0
+red patch dry-run EXIT=0
+red patch EXIT=0
+red build aarch64 EXIT=0
+red build x86_64 EXIT=0
+red probe sse EXIT=1
+red probe avx EXIT=1
+red probe neon EXIT=1
+restored: the patched copy is removed
+done
+# script EXIT, from its caller
+script EXIT=0
+# patch output
+patching file 'src/main.rs'
+patching file 'src/main.rs'
+# build-green-aarch64
+   Compiling autocfg v1.5.1
+   Compiling num-traits v0.2.19
+   Compiling num-integer v0.1.47
+   Compiling rubato v0.16.2
+   Compiling rsq3 v0.0.0 (<scratch>/rsq3)
+    Finished `release` profile [optimized] target(s) in 2.82s
+# build-green-x86_64
+   Compiling num-traits v0.2.19
+   Compiling num-integer v0.1.47
+   Compiling rubato v0.16.2
+   Compiling rsq3 v0.0.0 (<scratch>/rsq3)
+    Finished `release` profile [optimized] target(s) in 2.12s
+# build-red-aarch64
+   Compiling autocfg v1.5.1
+   Compiling num-traits v0.2.19
+   Compiling num-integer v0.1.47
+   Compiling rubato v0.16.2
+   Compiling rsq3 v0.0.0 (<scratch>/control/work)
+warning: unused variable: `ratio`
+   --> src/main.rs:117:70
+    |
+117 | fn build_interpolator(kind: Interp, p: &SincInterpolationParameters, ratio: f64) -> Box<dyn SincInterpolator<f32>> {
+    |                                                                      ^^^^^ help: if this is intentional, prefix it with an underscore: `_ratio`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `rsq3` (bin "rsq3") generated 1 warning (run `cargo fix --bin "rsq3" -p rsq3` to apply 1 suggestion)
+    Finished `release` profile [optimized] target(s) in 1.55s
+# build-red-x86_64
+   Compiling num-traits v0.2.19
+   Compiling num-integer v0.1.47
+   Compiling rubato v0.16.2
+   Compiling rsq3 v0.0.0 (<scratch>/control/work)
+warning: unused variable: `ratio`
+   --> src/main.rs:117:70
+    |
+117 | fn build_interpolator(kind: Interp, p: &SincInterpolationParameters, ratio: f64) -> Box<dyn SincInterpolator<f32>> {
+    |                                                                      ^^^^^ help: if this is intentional, prefix it with an underscore: `_ratio`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `rsq3` (bin "rsq3") generated 1 warning (run `cargo fix --bin "rsq3" -p rsq3` to apply 1 suggestion)
+    Finished `release` profile [optimized] target(s) in 1.24s
+# rustup target add x86_64-apple-darwin, before; remove, after
+info: downloading component rust-std
+EXIT=0
+info: removing component rust-std for target x86_64-apple-darwin
+EXIT=0
