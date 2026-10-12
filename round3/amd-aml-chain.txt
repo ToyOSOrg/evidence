@@ -1,0 +1,37 @@
+The AMD bench's refused write, read from its dumped tables (the dump's tables/, as acquired under another OS on the bench): each term's offset in its table, its bytes, and its decoding by ACPI 6.5 §20 (AML encoding). Made by chain.py beside this file:
+  python3 -I chain.py <dump>/tables
+
+SSDT1 +0x0024: 10 81 1f 07 5c 5f 53 42 5f 08 41 47 52 42 0c 00 00 00 f8
+    Scope (\_SB) { Name (AGRB, 0xF8000000) ...  -- 10 Scope, 5C5F53425F \_SB_, 08 Name AGRB, 0C DWord F8000000
+SSDT1 +0x056c: 14 44 30 41 4c 49 42 02
+    Method (ALIB, 2)  -- 14 Method, AMD's entry its callers name
+SSDT1 +0x147b: 5b 80 41 31 32 30 00 41 47 52 42 0b 00 10
+    OperationRegion (A120, SystemMemory, AGRB, 0x1000)  -- 5B80, space 00 SystemMemory, offset AGRB, length 0B 1000
+SSDT1 +0x1489: 5b 81 0e 41 31 32 30 13 00 40 5c 41 31 32 31 20
+    Field (A120, DWordAcc, Lock, Preserve) { Offset (0xB8), A121, 32 }  -- 5B81, flags 13 (DWordAcc, Lock, Preserve), 00 40 5C a reserved 0x5C0 bits (0xB8 bytes), A121 of 0x20 bits
+SSDT1 +0x1499: 5b 87 17 41 31 32 30 41 31 32 31 0c 28 05 b1 03 13 00 40 5e 41 31 31 38 20
+    BankField (A120, A121, 0x03B10528, DWordAcc, Lock, Preserve) { Offset (0xBC), A118, 32 }
+SSDT1 +0x14b2: 5b 87 17 41 31 32 30 41 31 32 31 0c 64 05 b1 03 13 00 40 5e 41 31 31 31 20
+    BankField (A120, A121, 0x03B10564, DWordAcc, Lock, Preserve) { Offset (0xBC), A111, 32 }
+SSDT1 +0x14cb: 5b 87 17 41 31 32 30 41 31 32 31 0c 98 09 b1 03 13 00 40 5e 41 31 31 32 20
+    BankField (A120, A121, 0x03B10998, DWordAcc, Lock, Preserve) { Offset (0xBC), A112, 32 }
+SSDT1 +0x1a03: 14 4d 08 41 30 31 31 0a 8a 69 0a 00 41 31 30 35 8a 69 0a 04 41 31 30 36 8a 69 0a 08 41 31 30 37 8a 69 0a 0c 41 31 30 38 8a 69 0a 10 41 31 30 39 8a 69 0a 14
+    Method (A011, 2) { CreateDWordField (Arg1, 0, A105) ... (A105 to A110) ...
+SSDT1 +0x1a3b: 70 0a 00 41 31 31 31 a2 09 92 93 41 31 31 31 0a 00 70 41 31 30 35 41 31 31 32 70 41 31 30 36 41 31 31 33 70 41 31 30 37 41 31
+    A111 = 0; While (A111 != 0) {}; A112 = A105 ... A117 = A110; A118 = Arg0; While (A111 == 0) {}  -- a mailbox: the response cleared, six arguments, the message, the response awaited. A111 = 0 is its first access to the bank fields, and A111's bank value 0x03B10564 goes to A121 first (ACPI 6.5 §19.6.7)
+DSDT +0x39b0: 14 2c 5f 52 45 47 02 a0 25 90 93 68 0a 03 93 69 01 70 69 4f 4b 45 43 70 01 42 41 53 43 86 42 41 54 31 00 5e 2e 56 50 43 30 4e 44 50 43 14
+    Method (_REG, 2) { If ((Arg0 == 3) && (Arg1 == 1)) { OKEC = Arg1; BASC = One; Notify (BAT1, Zero); ^VPC0.NDPC () } }  -- the only _REG of the 17 blocks
+DSDT +0xa0d0: 14 40 60 4e 44 50 43 00 8b 58 58 31
+    Method (NDPC) { CreateWordField (XX11, 0, SSZE) ... -- head of 1536 bytes; the tail below
+DSDT +0x4fdb: 14 47 09 5f 50 53 52 00 a0 27 5e 5e 2f 03 50 43 49 30 4c 50 43 30 45 43 4f 4b 70 5e 5e 2f 04 50 43 49 30 4c 50 43 30 45 43 5f 5f 58 59 41 43 60 a1 04 70 00 60 8b 58 58 30 30 00 53 53 5a 45 8c 58 58 30 30 0a 02 41 43 53 54 70 0a 03 53 53 5a 45 a0 44 04 92 93 60 41 43 44 43 a0 15 60 70 0b ac ec 50 38 30 48 41 46 4e 34 01 70 00 41 43 53 54 a1 15 70 0b dc ec 50 38 30 48 41 46 4e 34 0a 02 70 01 41 43 53 54 41 4c 49 42 01 58 58 30 30 70 60 41 43 44 43 a4 60 14 09 5f 53 54 41 00 a4
+    Method (_PSR) { If (^^PCI0.LPC0.ECOK) { Local0 = ^^PCI0.LPC0.EC__.XYAC } Else { Local0 = 0 } ... If (Local0 != ACDC) { ... ALIB (One, XX00) ... } }
+DSDT +0xa1f2: 5b 23 45 43 4d 54 e8 03    Acquire (ECMT, 1000)  (inside NDPC)
+DSDT +0xa1fb: a0 4e 0c 4f 44 56 30    If (ODV0) {  (inside NDPC)
+DSDT +0xa2b3: 41 4c 49 42 0a 0c 58 58 31 31    ALIB (0x0C, XX11)  (inside NDPC)
+DSDT +0xa384: 41 4c 49 42 0a 0c 58 58 31 31    ALIB (0x0C, XX11)  (inside NDPC)
+DSDT +0xa449: 41 4c 49 42 0a 0c 58 58 31 31    ALIB (0x0C, XX11)  (inside NDPC)
+DSDT +0xa51a: 41 4c 49 42 0a 0c 58 58 31 31    ALIB (0x0C, XX11)  (inside NDPC)
+DSDT +0xa5ee: 41 4c 49 42 0a 0c 58 58 31 31    ALIB (0x0C, XX11)  (inside NDPC)
+DSDT +0xa6ba: 41 4c 49 42 0a 0c 58 58 31 31    ALIB (0x0C, XX11)  (inside NDPC)
+DSDT +0x5062: 41 4c 49 42 01 58 58 30 30    ALIB (One, XX00)  (inside _PSR)
+EXIT=0

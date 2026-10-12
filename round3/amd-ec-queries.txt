@@ -1,0 +1,25 @@
+The AMD bench's embedded controller: when the server started, and its first query, on each boot read.
+Two earlier boots of the bench (2026-10-10, another branch's build), the lines that say so, each whole:
+
+== an earlier boot
+[2026-10-10 11:42:03 10.186 cpu0 kernel] spawn: /system/bin/acpiserver pid=11 unresolved=0 (layout=0ms relocs=0ms deps=0ms tls=1ms total=1ms)
+[2026-10-10 11:42:04 11.254 acpiserver] acpiserver: battery read: battery 1 of 1: 99%, 47770 mWh of 48160 mWh, discharging, rate 10358 mW, 16010 mV, moving 10358 mW; AC unknown
+[2026-10-10 11:42:34 41.286 acpiserver] acpiserver: battery read: battery 1 of 1: 98%, 47660 mWh of 48160 mWh, discharging, rate 10987 mW, 16598 mV, moving 10987 mW; AC unknown
+[2026-10-10 11:42:56 63.438 acpiserver] acpiserver: embedded controller query 0x39 taken for the first time; its method ran
+[2026-10-10 11:43:04 71.254 acpiserver] acpiserver: 8 SCIs; embedded controller queries taken: 0x39 x1
+[2026-10-10 11:43:49 116.044 acpiserver] acpiserver: embedded controller query 0x4b taken for the first time; its method ran
+
+== an earlier boot
+[2026-10-10 13:58:42 10.235 cpu0 kernel] spawn: /system/bin/acpiserver pid=12 unresolved=0 (layout=0ms relocs=0ms deps=0ms tls=1ms total=1ms)
+[2026-10-10 13:58:43 11.341 acpiserver] acpiserver: battery read: battery 1 of 1: 91%, 43840 mWh of 48160 mWh, discharging, rate 18073 mW, 15594 mV, moving 18073 mW; AC unknown
+[2026-10-10 13:58:53 21.344 acpiserver] acpiserver: battery read: battery 1 of 1: 90%, 43800 mWh of 48160 mWh, discharging, rate 17018 mW, 16116 mV, moving 17018 mW; AC unknown
+[2026-10-10 13:59:04 32.177 acpiserver] acpiserver: embedded controller query 0x39 taken for the first time; its method ran
+[2026-10-10 13:59:13 41.341 acpiserver] acpiserver: 11 SCIs; embedded controller queries taken: 0x39 x4
+[2026-10-10 13:59:52 80.636 acpiserver] acpiserver: embedded controller query 0x4b taken for the first time; its method ran
+[2026-10-10 14:00:13 101.342 acpiserver] acpiserver: 19 SCIs; embedded controller queries taken: 0x39 x4, 0x4b x1
+[2026-10-10 14:01:13 161.342 acpiserver] acpiserver: 29 SCIs; embedded controller queries taken: 0x39 x6, 0x4b x1
+
+== #875 at 855eff969 (amd-acpi_tables_loaded.log): no query line at all
+[2026-10-12 15:06:29  5.750 cpu0 kernel] spawn: /system/bin/acpiserver pid=8 (layout=0ms tls=1ms total=1ms)
+[2026-10-12 15:06:30  6.738 acpiserver] acpiserver: battery read: battery 1 of 1: 100%, 47940 mWh of 47940 mWh, neither charging nor discharging, rate 0 mW, 17168 mV, moving 0 mW; AC unknown
+[2026-10-12 15:07:22 58.463 test-runner error pid=10] the log did not show the ACPI server's count of its controller's queries within 52.705s

@@ -1,0 +1,21 @@
+What says what 0xF80000B8 is on the AMD bench.
+
+== the dump's MCFG (tables/MCFG, bytes 44..59: base address, segment group, start bus, end bus)
+00 00 00 f8 00 00 00 00 00 00 00 3f 00 00 00 00
+base 0xf8000000, segment group 0, buses 0x0..=0x3f; 0xF80000B8 is bus 0, device 0, function 0, offset 0xb8
+
+== the dump's memmap.txt, the range holding it (the bench's firmware map as the other OS reports it)
+0xf8000000 0xfbffffff Reserved
+
+== #875 at 855eff969 on the bench (amd-acpi_tables_loaded.log): the kernel's ECAM window, the function, and the refusal with the UEFI type the kernel read
+[2026-10-12 15:06:28  4.525 cpu0 kernel] ACPI: ECAM window: segment 0 buses 0x00..=0x3f, bus 0 at 0xf8000000
+[2026-10-12 15:06:28  4.525 cpu0 kernel]   PCI 00:00.0 [0600] vendor=1022 device=1630 prog_if=00 bars=[]
+[2026-10-12 15:06:29  5.774 acpiserver] acpiserver: refused for the first time: a SystemMemory write the kernel refused ConfigWrite, in memory of type 11
+[2026-10-12 15:06:29  5.774 acpiserver] acpiserver: (this machine's own, quoted in no record) that was DWord 0x3b10564 to Memory(f80000b8)
+[2026-10-12 15:06:29  5.774 acpiserver] acpiserver: an evaluation of the initialisation was refused for the first time: _REG: denied by this server: a SystemMemory write the kernel refused ConfigWrite, in memory of type 11
+[2026-10-12 15:06:29  5.774 acpiserver] acpiserver: (this machine's own, quoted in no record) \_SB_.PCI0.LPC0.EC__._REG was refused Host("a SystemMemory write the kernel refused ConfigWrite, in memory of type 11")
+[2026-10-12 15:06:29  5.774 acpiserver] acpiserver: the namespace initialised: \_SB._INI absent; 1 _STA read, 12 _INI run, no _REG run; the longest wait an evaluation asked 0 µs; evaluations refused, by kind: _REG: denied by this server: a SystemMemory write the kernel refused ConfigWrite, in memory of type 11 x1
+[2026-10-12 15:06:30  6.735 acpiserver] acpiserver: a method read for the power sources refused: _PSR: denied by this server: a SystemMemory write the kernel refused ConfigWrite, in memory of type 11
+    "[2026-10-12 15:06:29  5.774 acpiserver] acpiserver: refused for the first time: a SystemMemory write the kernel refused ConfigWrite, in memory of type 11",
+    "[2026-10-12 15:06:29  5.774 acpiserver] acpiserver: an evaluation of the initialisation was refused for the first time: _REG: denied by this server: a SystemMemory write the kernel refused ConfigWrite, in memory of type 11",
+    "[2026-10-12 15:06:30  6.735 acpiserver] acpiserver: a method read for the power sources refused: _PSR: denied by this server: a SystemMemory write the kernel refused ConfigWrite, in memory of type 11",
