@@ -1,0 +1,50 @@
+# PR #871, the round answering the review of 1eeca8742: vector_state on this head, on the T14 and on the AMD bench, and
+# the stack-slot mutant on the T14. Three boots, one per image.
+#
+# Every line below that starts with `cargo` runs from <home> the worktree at
+# wt/toyos-sysentry cdd090baa (pushed). The judge is the same at every arm: the mutant touches the kernel alone.
+# The images were built from a committed, clean tree for each arm:
+#   head     = cdd090baa05afe9bb406ad4531309e8fbd0f223d: the branch's head. Since 1eeca8742 its switch saves and
+#              restores for a thread of a process alone (Runs::User), a kernel thread has no area, the trampolines
+#              call fpu::load_initial, and a kernel stack is a KernelStack; vector_state is 1eeca8742's
+#   mut-slot = 34e0c11b7df6fcde715d3788bff964a3f4e1f509, local and never pushed: head plus stack-slot.patch (sha256
+#              76bd112f...83f8), the round-2 mutant rebased onto this head's switch, so switch saves to and restores
+#              from [rsp + 0x40] in its own frame (switch+0x290..0x2ab in the kernel its staging built)
+# Row: vector_state, a member of the testcases boot; each image's job list is vector_state alone.
+#
+# Fixed before the run:
+#   t14-head:      judge exit 0, and the job prints "vector_state: 17 threads each held Width(Avx512) through 3 rounds".
+#   t14-mut-slot:  judge exit 1, vector_state red: the job panics "thread <t> round <r>: <zmm<N>|k<N>> changed while
+#                  it was switched out" and exits 101, as the same mutant did at 1eeca8742 (judge exit 1).
+#   amd-head:      judge exit 0, and the job prints "vector_state: 17 threads each held Width(Avx) through 3 rounds".
+#                  The AMD bench saves by XSAVEC, which has no modified optimisation, so this boot judges the test's
+#                  correctness there and is no control.
+#   Under QEMU (TCG's XSAVEOPT skips nothing) the mutant stays green, exit 0: that run is no control.
+#
+# Image sha256:
+#   235e4896a0bed009144a5f65e386ff34feff91344d140a0bbc57d76a61acc840  t14-head/testcases/image.img
+#   3bf81f76fe5bcd4f66e945b5da4162d3ac538fb9e5fd8b69922f0d3e0db54ba4  t14-mut-slot/testcases/image.img
+#   cd59ae6fe2ad4d34186e7218d00035e2d46722a587dd6f3458ccf57e3f679bea  amd-head/testcases/image.img
+#
+# amd-head was staged with --metal-host '<user>@<amd-bench>', a placeholder: put the AMD bench's account and machine in
+# its place in the invocation below. The image does not depend on it.
+#
+# If the images are gone, re-stage the head from wt/toyos-sysentry with
+#   cargo test --test toyos-build -- --metal --metal-readback <dir> vector_state
+# (adding --metal-host '<user>@<amd-bench>' for the AMD bench), and the mutant by `git apply`ing stack-slot.patch onto
+# that head, committing it, and staging the same way.
+
+## t14-head
+cargo run -p toyos-metal -- --image <scratchpad> --readback <scratchpad> --fat32-check
+# judge, once the boot above has its readback (expected: exit 0):
+cargo test --test toyos-build -- --metal --metal-readback <scratchpad> vector_state
+
+## t14-mut-slot
+cargo run -p toyos-metal -- --image <scratchpad> --readback <scratchpad> --fat32-check
+# judge, once the boot above has its readback (expected: exit 1, vector_state red):
+cargo test --test toyos-build -- --metal --metal-readback <scratchpad> vector_state
+
+## amd-head
+cargo run -p toyos-metal -- --image <scratchpad> --readback <scratchpad> --fat32-check --host '<user>@<amd-bench>'
+# judge, once the boot above has its readback (expected: exit 0):
+cargo test --test toyos-build -- --metal --metal-readback <scratchpad> vector_state
