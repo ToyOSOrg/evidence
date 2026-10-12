@@ -1,0 +1,22 @@
+head 1dc0e3989f0b9a2f6d561cc9957725ac55b46efc, tree clean: 0 changes
+== unpatched
+old_migrate_kept_the_corpse: FAILED after 32 steps
+  I14: TaskKey(5) was killed and then migrated to cpu0 — a task in transit is dispatched only by the adopt that carries it, so the unwind waits for the destination's pick
+replay EXIT=0
+== forward-marker
+
+thread 'main' (9785401) panicked at kernel/pure/sched/cpu.rs:989:17:
+PATH: place forwards the corpse, rt=false
+
+thread 'main' (9785401) panicked at kernel/pure/sched/task.rs:793:9:
+task TaskKey(5) dropped outside finalize(): the only legal death is DeadTask::finalize
+
+thread 'main' (9785401) panicked at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/panicking.rs:233:5:
+panic in a destructor during cleanup
+thread caused non-unwinding panic. aborting.
+replay EXIT=0  (grep's; the replay's own exit is the line above)
+== steal-marker
+old_migrate_kept_the_corpse: FAILED after 32 steps
+  I14: TaskKey(5) was killed and then migrated to cpu0 — a task in transit is dispatched only by the adopt that carries it, so the unwind waits for the destination's pick
+replay EXIT=0  (grep's; the replay's own exit is the line above)
+restored: 0 changes

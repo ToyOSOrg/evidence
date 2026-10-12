@@ -1,0 +1,10 @@
+--- a/kernel/pure/sched/cpu.rs
++++ b/kernel/pure/sched/cpu.rs
+@@ -1956,6 +1956,7 @@
+                 .rq
+                 .pop_surplus(self.cpu.loaded_key())
+                 .expect("a stealable task is one `pop_surplus` hands over");
++            assert!(!task.shared().kill_pending(), "PATH: a probe takes the corpse");
+             task.share().leave_runnable(self.env.frontier);
+             self.cpu.hand_off(task, thief, self.env, self.now);
+         }

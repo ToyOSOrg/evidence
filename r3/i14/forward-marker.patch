@@ -1,0 +1,10 @@
+--- a/kernel/pure/sched/cpu.rs
++++ b/kernel/pure/sched/cpu.rs
+@@ -986,6 +986,7 @@
+         let behind_rt = task.is_rt() && self.running.as_ref().is_some_and(|r| r.is_rt());
+         if behind_fair.is_some() || behind_rt {
+             if let Some(dst) = self.idle_sibling(env) {
++                assert!(!task.shared().kill_pending(), "PATH: place forwards the corpse, rt={}", task.is_rt());
+                 self.hand_off(task, dst, env, now);
+                 return;
+             }

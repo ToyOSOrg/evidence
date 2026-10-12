@@ -1,0 +1,11 @@
+--- a/kernel/pure/sched/mailbox.rs
++++ b/kernel/pure/sched/mailbox.rs
+@@ -484,7 +484,7 @@
+             // wakes it is sent. A busy target is kicked too, or what it was
+             // sent waits out its quantum while an idle CPU could have run it.
+             Urgency::Normal => {
+-                if prev & KICK_PENDING == 0 {
++                if prev & SLEEPING != 0 && prev & KICK_PENDING == 0 {
+                     Kick::Send
+                 } else {
+                     Kick::Elide
