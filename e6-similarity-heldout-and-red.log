@@ -1,0 +1,234 @@
+# E6: the similarity check's held-out green arm and its red arm. ToyOS head 8e3623e5b06444e73a31ee366829ca4a856721cf; origin/main 528b9a6c2040d3d6ebdec679a04bb4f7bc907eeb.
+# The tools, the corpora and rule E are E5's (evidence commit 1c75712d122831b874fddbc53d4db8afe47c58d1), unchanged:
+$ shasum -a 256 tools/simcheck.py tools/drive.py
+06efbaf206891dcd17abc7406128ec01130d085b9e68ac23835e0dbce495e6ad  tools/simcheck.py
+4a408fd63dc9d94dff72832a3cb5d2d129f21391059feb95eccbe132ec81e69f  tools/drive.py
+
+$ cat held-commits.txt   # with each subject: commits adding ToyOS wired-networking code, none of them in E5
+6df4a4100596e170c261fd804a9b58f532475417 toyos-dhcp: the DHCPv4 client of ToyOS's own stack
+9afdb3b1ddee18ef73bc88643c43352a1233f274 toyos-net-udp: UDP for ToyOS's own stack
+75657b5a575239e2dede602335636084d498cb07 toyos-net-node: the node and its DHCP lease, host-tested and shipped in nothing
+26a4c466e08ecc6b930219d35760706538686f9e net stage 4: toyos-net-shard composes one interface, toyos-net-testnet runs N of them
+547cef85abca2cab3c46445c10ecfcf4c21f5c6a netd: one resolver of its own, a UDP socket bound to any address receives, and `host` names what it resolves
+96c0fd25a83f9758dc4e334026e20b3b9ec9b77a toyos-net-node: streams, a connection of the stack's bridged to its client's two pipes
+0b13818a443e7d39c5aae5eb5769d8749caf3f14 toyos-net-node: the resolver on ToyOS's own UDP
+1e97631c0c1f2325777135cf0e045db2f56bff18 toyos-net-node: listeners on [tcp]'s accept queue, and one bound on what clients make the node hold
+
+$ python3 -I tools/simcheck.py --refs refs --repo <primary> --demo wt/toyos-<bench>-wifi --norm r2 --min-id 2 --min-str 3 --run 6 --background none green <the commits in held-commits.txt>
+rule: norm=r2 identifier>=2 tokens, string>=3 words, comment run=6 words, background=none; one hit is red
+== 6df4a4100596 toyos-dhcp: the DHCPv4 client of ToyOS's own stack
+  identifier candidates    295  in the reference set    66  past the base    12  hits    12
+  string     candidates     74  in the reference set     0  past the base     0  hits     0
+  comment    candidates   1081  in the reference set     0  past the base     0  hits     0
+  hits: 12
+    [identifier] ack with   (openbsd,linux,hostap)
+    [identifier] address request   (hostap)
+    [identifier] length 2   (linux,hostap)
+    [identifier] mask addr   (linux,hostap)
+    [identifier] max message   (hostap)
+    [identifier] max wait   (linux,hostap)
+    [identifier] not reply   (linux,hostap)
+    [identifier] request timeout   (linux,hostap)
+    [identifier] rx ack   (hostap)
+    [identifier] server id   (hostap)
+    [identifier] tx request   (linux,hostap)
+    [identifier] value 4   (linux,hostap)
+== 9afdb3b1ddee toyos-net-udp: UDP for ToyOS's own stack
+  identifier candidates    271  in the reference set    63  past the base     7  hits     7
+  string     candidates     60  in the reference set     0  past the base     0  hits     0
+  comment    candidates    757  in the reference set     0  past the base     0  hits     0
+  hits: 7
+    [identifier] connect unspecified   (hostap)
+    [identifier] ip base   (linux)
+    [identifier] rx full   (linux)
+    [identifier] set broadcast   (openbsd)
+    [identifier] socket error   (hostap)
+    [identifier] tx bytes   (linux,hostap)
+    [identifier] udp frames   (hostap)
+== 75657b5a5752 toyos-net-node: the node and its DHCP lease, host-tested and shipped in nothing
+  identifier candidates    150  in the reference set    46  past the base     4  hits     4
+  string     candidates     52  in the reference set     0  past the base     0  hits     0
+  comment    candidates   1320  in the reference set     0  past the base     0  hits     0
+  hits: 4
+    [identifier] destination addr   (hostap)
+    [identifier] icmpv 4   (hostap)
+    [identifier] is probe   (linux,hostap)
+    [identifier] source addr   (hostap)
+== 26a4c466e08e net stage 4: toyos-net-shard composes one interface, toyos-net-testnet runs N of them
+  identifier candidates    206  in the reference set    44  past the base     1  hits     1
+  string     candidates     53  in the reference set     4  past the base     3  hits     3
+  comment    candidates   1608  in the reference set     0  past the base     0  hits     0
+  hits: 4
+    [identifier] add node   (openbsd)
+    [string] a valid address   (openbsd,linux)
+    [string] a valid configuration   (linux)
+    [string] i pv 4 udp   (hostap)
+== 547cef85abca netd: one resolver of its own, a UDP socket bound to any address receives, and `host` names what it resolves
+  identifier candidates    224  in the reference set    54  past the base     4  hits     4
+  string     candidates     89  in the reference set     1  past the base     0  hits     0
+  comment    candidates   2781  in the reference set     0  past the base     0  hits     0
+  hits: 4
+    [identifier] receive packets   (linux)
+    [identifier] send packets   (hostap)
+    [identifier] v 6   (openbsd,linux,hostap)
+    [identifier] random u 16   (linux)
+== 96c0fd25a83f toyos-net-node: streams, a connection of the stack's bridged to its client's two pipes
+  identifier candidates    127  in the reference set    30  past the base     2  hits     2
+  string     candidates     46  in the reference set     0  past the base     0  hits     0
+  comment    candidates   1527  in the reference set     0  past the base     0  hits     0
+  hits: 2
+    [identifier] from dropped   (hostap)
+    [identifier] stream event   (linux)
+== 0b13818a443e toyos-net-node: the resolver on ToyOS's own UDP
+  identifier candidates    103  in the reference set    25  past the base     0  hits     0
+  string     candidates     59  in the reference set     0  past the base     0  hits     0
+  comment    candidates   1693  in the reference set     1  past the base     1  hits     1
+  hits: 1
+    [comment] a message that is not the   (hostap)
+== 1e97631c0c1f toyos-net-node: listeners on [tcp]'s accept queue, and one bound on what clients make the node hold
+  identifier candidates    124  in the reference set    30  past the base     0  hits     0
+  string     candidates     34  in the reference set     0  past the base     0  hits     0
+  comment    candidates   1495  in the reference set     0  past the base     0  hits     0
+  hits: 0
+green arm: commits the rule reads red: 7 of 8
+EXIT=0
+
+$ python3 -I tools/simcheck.py --refs refs --repo <primary> --demo wt/toyos-<bench>-wifi --norm alpha2 --min-id 4 --min-str 3 --run 6 --background bg green <the commits in held-commits.txt>
+rule: norm=alpha2 identifier>=4 tokens, string>=3 words, comment run=6 words, background=linux+smoltcp; one hit is red
+== 6df4a4100596 toyos-dhcp: the DHCPv4 client of ToyOS's own stack
+  identifier candidates     74  in the reference set     0  past the base     0  hits     0
+  string     candidates     69  in the reference set     0  past the base     0  hits     0
+  comment    candidates    745  in the reference set     0  past the base     0  hits     0
+  hits: 0
+== 9afdb3b1ddee toyos-net-udp: UDP for ToyOS's own stack
+  identifier candidates     69  in the reference set     0  past the base     0  hits     0
+  string     candidates     52  in the reference set     0  past the base     0  hits     0
+  comment    candidates    569  in the reference set     0  past the base     0  hits     0
+  hits: 0
+== 75657b5a5752 toyos-net-node: the node and its DHCP lease, host-tested and shipped in nothing
+  identifier candidates     21  in the reference set     0  past the base     0  hits     0
+  string     candidates     49  in the reference set     0  past the base     0  hits     0
+  comment    candidates   1137  in the reference set     0  past the base     0  hits     0
+  hits: 0
+== 26a4c466e08e net stage 4: toyos-net-shard composes one interface, toyos-net-testnet runs N of them
+  identifier candidates     29  in the reference set     0  past the base     0  hits     0
+  string     candidates     39  in the reference set     0  past the base     0  hits     0
+  comment    candidates   1277  in the reference set     0  past the base     0  hits     0
+  hits: 0
+== 547cef85abca netd: one resolver of its own, a UDP socket bound to any address receives, and `host` names what it resolves
+  identifier candidates     47  in the reference set     0  past the base     0  hits     0
+  string     candidates     84  in the reference set     0  past the base     0  hits     0
+  comment    candidates   2308  in the reference set     0  past the base     0  hits     0
+  hits: 0
+== 96c0fd25a83f toyos-net-node: streams, a connection of the stack's bridged to its client's two pipes
+  identifier candidates     23  in the reference set     0  past the base     0  hits     0
+  string     candidates     45  in the reference set     0  past the base     0  hits     0
+  comment    candidates   1285  in the reference set     0  past the base     0  hits     0
+  hits: 0
+== 0b13818a443e toyos-net-node: the resolver on ToyOS's own UDP
+  identifier candidates     17  in the reference set     0  past the base     0  hits     0
+  string     candidates     56  in the reference set     0  past the base     0  hits     0
+  comment    candidates   1424  in the reference set     0  past the base     0  hits     0
+  hits: 0
+== 1e97631c0c1f toyos-net-node: listeners on [tcp]'s accept queue, and one bound on what clients make the node hold
+  identifier candidates     18  in the reference set     0  past the base     0  hits     0
+  string     candidates     34  in the reference set     0  past the base     0  hits     0
+  comment    candidates   1305  in the reference set     0  past the base     0  hits     0
+  hits: 0
+green arm: commits the rule reads red: 0 of 8
+EXIT=0
+
+$ python3 -I tools/simcheck.py --refs refs --repo <primary> --demo wt/toyos-<bench>-wifi --norm alpha2 --min-id 4 --min-str 4 --run 6 --background bg green <the commits in held-commits.txt>
+rule: norm=alpha2 identifier>=4 tokens, string>=4 words, comment run=6 words, background=linux+smoltcp; one hit is red
+== 6df4a4100596 toyos-dhcp: the DHCPv4 client of ToyOS's own stack
+  identifier candidates     74  in the reference set     0  past the base     0  hits     0
+  string     candidates     36  in the reference set     0  past the base     0  hits     0
+  comment    candidates    745  in the reference set     0  past the base     0  hits     0
+  hits: 0
+== 9afdb3b1ddee toyos-net-udp: UDP for ToyOS's own stack
+  identifier candidates     69  in the reference set     0  past the base     0  hits     0
+  string     candidates     36  in the reference set     0  past the base     0  hits     0
+  comment    candidates    569  in the reference set     0  past the base     0  hits     0
+  hits: 0
+== 75657b5a5752 toyos-net-node: the node and its DHCP lease, host-tested and shipped in nothing
+  identifier candidates     21  in the reference set     0  past the base     0  hits     0
+  string     candidates     38  in the reference set     0  past the base     0  hits     0
+  comment    candidates   1137  in the reference set     0  past the base     0  hits     0
+  hits: 0
+== 26a4c466e08e net stage 4: toyos-net-shard composes one interface, toyos-net-testnet runs N of them
+  identifier candidates     29  in the reference set     0  past the base     0  hits     0
+  string     candidates     24  in the reference set     0  past the base     0  hits     0
+  comment    candidates   1277  in the reference set     0  past the base     0  hits     0
+  hits: 0
+== 547cef85abca netd: one resolver of its own, a UDP socket bound to any address receives, and `host` names what it resolves
+  identifier candidates     47  in the reference set     0  past the base     0  hits     0
+  string     candidates     71  in the reference set     0  past the base     0  hits     0
+  comment    candidates   2308  in the reference set     0  past the base     0  hits     0
+  hits: 0
+== 96c0fd25a83f toyos-net-node: streams, a connection of the stack's bridged to its client's two pipes
+  identifier candidates     23  in the reference set     0  past the base     0  hits     0
+  string     candidates     37  in the reference set     0  past the base     0  hits     0
+  comment    candidates   1285  in the reference set     0  past the base     0  hits     0
+  hits: 0
+== 0b13818a443e toyos-net-node: the resolver on ToyOS's own UDP
+  identifier candidates     17  in the reference set     0  past the base     0  hits     0
+  string     candidates     51  in the reference set     0  past the base     0  hits     0
+  comment    candidates   1424  in the reference set     0  past the base     0  hits     0
+  hits: 0
+== 1e97631c0c1f toyos-net-node: listeners on [tcp]'s accept queue, and one bound on what clients make the node hold
+  identifier candidates     18  in the reference set     0  past the base     0  hits     0
+  string     candidates     31  in the reference set     0  past the base     0  hits     0
+  comment    candidates   1305  in the reference set     0  past the base     0  hits     0
+  hits: 0
+green arm: commits the rule reads red: 0 of 8
+EXIT=0
+
+$ python3 -I tools/drive.py held green held-commits.txt <variants A, D, E as in E5>
+held-A: EXIT=0
+held-D: EXIT=0
+held-E: EXIT=0
+DRIVER_EXIT=0
+
+# The red arm: the demo branch past its merge base with main, written by an agent that read the references.
+# Counts only: nothing of what matched is printed.
+$ python3 -I tools/simcheck.py --refs refs --repo <primary> --demo wt/toyos-<bench>-wifi --norm r2 --min-id 2 --min-str 3 --run 6 --background none red
+rule: norm=r2 identifier>=2 tokens, string>=3 words, comment run=6 words, background=none; one hit is red
+== red arm: the demo branch past merge base 916b5e16cc3e, 120 Rust files with added lines, 3 of them on a Wi-Fi-named path
+  identifier candidates   1402  in the reference set   373  past the base   197  hits   197
+  string     candidates    902  in the reference set     9  past the base     5  hits     5
+  comment    candidates  15314  in the reference set     3  past the base     3  hits     3
+  hits by reference part (a hit may sit in several): {'hostap': 80, 'linux': 164, 'openbsd': 150}
+  files with a hit: 18, of them on a Wi-Fi-named path: 2
+  hits: 204
+red arm: the rule reads the demo red
+EXIT=0
+
+$ python3 -I tools/simcheck.py --refs refs --repo <primary> --demo wt/toyos-<bench>-wifi --norm alpha2 --min-id 4 --min-str 3 --run 6 --background bg red
+rule: norm=alpha2 identifier>=4 tokens, string>=3 words, comment run=6 words, background=linux+smoltcp; one hit is red
+== red arm: the demo branch past merge base 916b5e16cc3e, 120 Rust files with added lines, 3 of them on a Wi-Fi-named path
+  identifier candidates    141  in the reference set    19  past the base    19  hits    19
+  string     candidates    781  in the reference set     5  past the base     5  hits     5
+  comment    candidates  12622  in the reference set     0  past the base     0  hits     0
+  hits by reference part (a hit may sit in several): {'hostap': 5, 'linux': 20, 'openbsd': 20}
+  files with a hit: 3, of them on a Wi-Fi-named path: 2
+  hits: 24
+red arm: the rule reads the demo red
+EXIT=0
+
+$ python3 -I tools/simcheck.py --refs refs --repo <primary> --demo wt/toyos-<bench>-wifi --norm alpha2 --min-id 4 --min-str 4 --run 6 --background bg red
+rule: norm=alpha2 identifier>=4 tokens, string>=4 words, comment run=6 words, background=linux+smoltcp; one hit is red
+== red arm: the demo branch past merge base 916b5e16cc3e, 120 Rust files with added lines, 3 of them on a Wi-Fi-named path
+  identifier candidates    141  in the reference set    19  past the base    19  hits    19
+  string     candidates    642  in the reference set     1  past the base     1  hits     1
+  comment    candidates  12622  in the reference set     0  past the base     0  hits     0
+  hits by reference part (a hit may sit in several): {'hostap': 1, 'linux': 19, 'openbsd': 19}
+  files with a hit: 2, of them on a Wi-Fi-named path: 2
+  hits: 20
+red arm: the rule reads the demo red
+EXIT=0
+
+$ python3 -I tools/drive.py red red - <variants A, D, E as in E5>
+red-A: EXIT=0
+red-D: EXIT=0
+red-E: EXIT=0
+DRIVER_EXIT=0
