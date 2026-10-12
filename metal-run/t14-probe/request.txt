@@ -1,0 +1,33 @@
+# PR #871: the stack-slot mutant's probe, one T14 boot. Not a judgement of the build.
+#
+# Every line below that starts with `cargo` runs from <home> a worktree
+# at wt/toyos-sysentry-probe 72e3cea6b (local, never pushed): 229c55558 (the metal head arm) + b0d75d331
+# (the stack-slot mutant, as booted on the T14) + faafbd43f (counts what the slot holds between a restore and
+# the next save from the same address) + 72e3cea6b (overwrites the slot from byte 576 on with 0xA5 just before
+# each such save, and counts the lines a save leaves holding it).
+# Image sha256: 3c7a6f3e8f8cd9172821088f8b9c7f31866f74b9978b128edd846123ff8dc309  t14-probe/testcases/image.img
+# Its kernel (slot A): sha256 186c045de0f79f2541f5c2f7f954413d563bca2a988c49605b7dd522529c2eaf;
+# switch saves to and restores from [rsp + 0x40] in a frame shaped as b0d75d331's.
+#
+# Fixed before the run:
+#   question:  does the T14's XSAVES skip a component unmodified since the restore from the same address,
+#              in the switch path vector_state's threads take?
+#   yes:       judge exit 1, vector_state red ("zmm<N>/k<N> changed while it was switched out"), and the
+#              kernel.log line "slot-probe test_rs_vector_state pid=<p> code=..." shows canary_kept_lines
+#              among lines 9..37 (YMM_Hi128 9-12, opmask 13, ZMM_Hi256 14-21, Hi16_ZMM 22-37 in the
+#              compacted 2432-byte area) with all_in_use > 0.
+#   no:        judge exit 0, and that line shows scribbled > 0, all_in_use > 0 and no canary_kept_lines.
+#   either:    the same line's changed_lines say what the T14's own path writes into the slot between a
+#              restore and the next same-address save; under QEMU only lines 8 (the header, the mutant's own
+#              zeroing) and 44..63 change, none of 0..37.
+#   QEMU (TCG, XSAVEOPT): scribbled=176 all_in_use=176 canary_kept_lines none, code=0; with the canary
+#              written after the save instead (the positive control), canary_kept_lines 9:57 10:57 11:57
+#              12:57 and code=101.
+#
+# One boot per image. Each invocation is `cargo <words>` from this worktree.
+
+testcases
+  image: <scratchpad>
+  cargo run -p toyos-metal -- --image <scratchpad> --readback <scratchpad> --fat32-check
+# judge, once the boot above has its readback (expected: see above; exit 1 means the T14 skips):
+cargo test --test toyos-build -- --metal --metal-readback <scratchpad> vector_state
