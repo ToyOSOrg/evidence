@@ -1,0 +1,14 @@
+diff --git a/build/build.rs b/build/build.rs
+index d9a0fe7b3..9f038608d 100644
+--- a/build/build.rs
++++ b/build/build.rs
+@@ -690,9 +690,6 @@ fn receives_reach_a_running_server(config: &SystemConfig) -> Result<(), String>
+     };
+     for (name, program) in &config.programs {
+         for port in &program.receives {
+-            if program.serves.contains(port) {
+-                return Err(format!("`{name}` receives `{port}`, which it serves itself"));
+-            }
+             if !running(port) && !config.programs.values().any(|row| row.provides.contains(port)) {
+                 return Err(format!("`{name}` receives `{port}`, which no row in `[boot] start` serves and no row provides"));
+             }

@@ -1,0 +1,13 @@
+diff --git a/build/build.rs b/build/build.rs
+index d9a0fe7b3..4a0d8dac4 100644
+--- a/build/build.rs
++++ b/build/build.rs
+@@ -698,7 +698,7 @@ fn receives_reach_a_running_server(config: &SystemConfig) -> Result<(), String>
+             }
+         }
+     }
+-    match config.apps.receives.iter().find(|port| !running(port)) {
++    match config.apps.receives.iter().find(|port| !running(port) && !config.programs.values().any(|row| row.provides.contains(*port))) {
+         Some(port) => Err(format!("`[apps] receives` names `{port}`, which no row in `[boot] start` serves")),
+         None => Ok(()),
+     }

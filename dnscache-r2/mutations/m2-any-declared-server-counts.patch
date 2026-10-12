@@ -1,0 +1,13 @@
+diff --git a/build/build.rs b/build/build.rs
+index d9a0fe7b3..de6a6d7c1 100644
+--- a/build/build.rs
++++ b/build/build.rs
+@@ -686,7 +686,7 @@ fn starts_name_what_a_launch_can_start(config: &SystemConfig) -> Result<(), Stri
+ fn receives_reach_a_running_server(config: &SystemConfig) -> Result<(), String> {
+     let running = |port: &String| {
+         SUPERVISOR_SERVED.contains(&port.as_str())
+-            || config.boot.start.iter().any(|key| config.programs.get(key).is_some_and(|row| row.serves.contains(port)))
++            || config.programs.values().any(|row| row.serves.contains(port))
+     };
+     for (name, program) in &config.programs {
+         for port in &program.receives {
