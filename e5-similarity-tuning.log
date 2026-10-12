@@ -1,0 +1,725 @@
+# E5: the similarity check's green arm, tuning. ToyOS head 8e3623e5b06444e73a31ee366829ca4a856721cf (one empty commit); origin/main 528b9a6c2040d3d6ebdec679a04bb4f7bc907eeb.
+# Rule E below is fixed here, before the held-out arm and the red arm (E6) run.
+
+$ cat tools/simcheck.py
+# A reading of #876's similarity check (§7.7) over code whose provenance is known.
+#
+#   green arm: commits of ToyOS's own wired networking, written without the Wi-Fi references;
+#              a rule that is an oracle reads zero over each.
+#   red arm:   the demo's delta past its merge base with main, Rust written by an agent that read
+#              the references; a rule that sees name-level carry-over reads it red. Counts only:
+#              nothing of what matched is printed.
+#
+# The rule, every part of it a flag:
+#   --norm r2       round 2's normalisation: identifiers split at underscores, case changes and
+#                   digit runs into lower-case tokens, digit runs and single letters included.
+#   --norm alpha2   round 3's: the same split, keeping only alphabetic tokens of two or more letters.
+#   --min-id N      an identifier is a candidate at N or more tokens.
+#   --min-str N     a string literal is a candidate at N or more words (words split as identifiers).
+#   --run N         every run of N consecutive comment words is a candidate.
+#   --background D  a candidate occurring in the pinned corpus under D (D/linux C, D/smoltcp Rust),
+#                   same-domain code outside the reference set, is no hit; "none" for no exemption.
+#
+# A candidate "occurs" in a text where its token sequence occurs contiguously inside one unit
+# there: one identifier, one string literal, one comment block (consecutive line comments are one
+# block). Numeric literals are skipped, never read as identifiers. A candidate is a hit where it
+# occurs in the reference set, not in the tree at the diff's base, and not in the background.
+# Not modelled, each of which could only lower a count: the standards exemption (no standard is
+# on this host) and the list of public names.
+#
+# argv: --refs D --repo R --demo B [rule flags] green <commit>... | red
+import argparse
+import collections
+import os
+import re
+import subprocess
+import sys
+
+ap = argparse.ArgumentParser()
+ap.add_argument('--refs', required=True)
+ap.add_argument('--repo', required=True)
+ap.add_argument('--demo', required=True)
+ap.add_argument('--norm', choices=('r2', 'alpha2'), required=True)
+ap.add_argument('--min-id', type=int, required=True)
+ap.add_argument('--min-str', type=int, required=True)
+ap.add_argument('--run', type=int, required=True)
+ap.add_argument('--background', required=True)
+ap.add_argument('arm', choices=('green', 'red'))
+ap.add_argument('commits', nargs='*')
+a = ap.parse_args()
+
+IDENT = re.compile(r'[A-Za-z_][A-Za-z0-9_]*')
+SPLIT = re.compile(r'[A-Z]+(?=[A-Z][a-z])|[A-Z]?[a-z]+|[A-Z]+|[0-9]+')
+WORD = re.compile(r'[A-Za-z0-9_]+')
+CODE = ('.rs', '.c', '.h', '.cc', '.cpp', '.S', '.s')
+PROSE = ('.md', '.txt', '.toml')
+
+
+def split_ident(s):
+    toks = SPLIT.findall(s)
+    if a.norm == 'alpha2':
+        toks = [t for t in toks if t.isalpha() and len(t) >= 2]
+    return tuple(t.lower() for t in toks)
+
+
+def words(text):
+    out = []
+    for w in WORD.findall(text):
+        out.extend(split_ident(w))
+    return tuple(out)
+
+
+def lex(src):
+    """Identifiers, string literals and comment blocks of C or Rust source."""
+    idents, strings, comments = [], [], []
+    i, n = 0, len(src)
+    block = []
+    last_comment_line = -2
+    line_no = 0
+    while i < n:
+        c = src[i]
+        if c == '\n':
+            line_no += 1
+            i += 1
+            continue
+        if src.startswith('//', i):
+            j = src.find('\n', i)
+            j = n if j < 0 else j
+            text = src[i + 2:j]
+            if last_comment_line == line_no - 1 and block:
+                block.append(text)
+            else:
+                if block:
+                    comments.append(' '.join(block))
+                block = [text]
+            last_comment_line = line_no
+            i = j
+            continue
+        if src.startswith('/*', i):
+            j = src.find('*/', i + 2)
+            j = n if j < 0 else j
+            if block:
+                comments.append(' '.join(block))
+                block = []
+            comments.append(src[i + 2:j])
+            line_no += src.count('\n', i, j)
+            i = j + 2
+            continue
+        raw = None
+        if c == 'r' and (i == 0 or not (src[i - 1].isalnum() or src[i - 1] == '_')):
+            raw = re.match(r'r(#*)"', src[i:i + 8])
+        if raw:
+            close = '"' + raw.group(1)
+            j = src.find(close, i + len(raw.group(0)))
+            j = n if j < 0 else j
+            strings.append(src[i + len(raw.group(0)):j])
+            line_no += src.count('\n', i, j)
+            i = j + len(close)
+            continue
+        if c == '"':
+            j = i + 1
+            while j < n and src[j] != '"':
+                j += 2 if src[j] == '\\' else 1
+            strings.append(src[i + 1:j])
+            line_no += src.count('\n', i, j)
+            i = j + 1
+            continue
+        if c == "'":
+            m = re.match(r"'(\\.[^']{0,8}|[^'\\])'", src[i:i + 12])
+            i += len(m.group(0)) if m else 1
+            continue
+        if c.isdigit():
+            m = re.match(r'[0-9][0-9A-Za-z_.]*', src[i:i + 64])
+            i += len(m.group(0))
+            continue
+        m = IDENT.match(src, i)
+        if m:
+            idents.append(m.group(0))
+            i = m.end()
+            continue
+        i += 1
+    if block:
+        comments.append(' '.join(block))
+    return idents, strings, comments
+
+
+def units_of(path, text):
+    if path.endswith(CODE):
+        idents, strings, comments = lex(text)
+        return [split_ident(x) for x in idents] + [words(s) for s in strings] + [words(c) for c in comments]
+    if path.endswith(PROSE):
+        return [words(text)]
+    return []
+
+
+def candidates_of(text):
+    idents, strings, comments = lex(text)
+    c = collections.defaultdict(set)
+    for x in idents:
+        t = split_ident(x)
+        if len(t) >= a.min_id:
+            c['identifier'].add(t)
+    for s in strings:
+        t = words(s)
+        if len(t) >= a.min_str:
+            c['string'].add(t)
+    for b in comments:
+        t = words(b)
+        for k in range(0, len(t) - a.run + 1):
+            c['comment'].add(t[k:k + a.run])
+    return c
+
+
+class Matcher:
+    """Which of a set of token tuples occur contiguously inside the units fed to it."""
+
+    def __init__(self, wanted):
+        self.by_len = collections.defaultdict(set)
+        for t in wanted:
+            self.by_len[len(t)].add(t)
+        self.firsts = {t[0] for t in wanted if t}
+        self.lens = sorted(self.by_len)
+        self.found = set()
+
+    def feed(self, unit):
+        n = len(unit)
+        for p in range(n):
+            if unit[p] not in self.firsts:
+                continue
+            for L in self.lens:
+                if p + L > n:
+                    break
+                s = unit[p:p + L]
+                if s in self.by_len[L]:
+                    self.found.add(s)
+
+
+def walk_files(root, suffixes):
+    for d, dirs, names in os.walk(root):
+        dirs[:] = [x for x in dirs if x != '.git']
+        for name in names:
+            if name.endswith(suffixes):
+                p = os.path.join(d, name)
+                yield p, open(p, 'rb').read().decode('utf-8', 'replace')
+
+
+def git(*args):
+    return subprocess.run(['git', '-C', a.repo, *args], capture_output=True, check=True).stdout
+
+
+def tree_files(rev):
+    listing = git('ls-tree', '-r', '-z', rev).split(b'\0')
+    wanted = []
+    for entry in listing:
+        if not entry:
+            continue
+        meta, path = entry.split(b'\t', 1)
+        _, kind, oid = meta.split()
+        p = path.decode('utf-8', 'replace')
+        if kind == b'blob' and p.endswith(CODE + PROSE):
+            wanted.append((p, oid.decode()))
+    proc = subprocess.Popen(['git', '-C', a.repo, 'cat-file', '--batch'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+    proc.stdin.write(''.join(o + '\n' for _, o in wanted).encode())
+    proc.stdin.close()
+    for p, _ in wanted:
+        size = int(proc.stdout.readline().split()[2])
+        data = proc.stdout.read(size)
+        proc.stdout.read(1)
+        yield p, data.decode('utf-8', 'replace')
+    proc.wait()
+
+
+def added_text(base, head, pathspec):
+    out = git('diff', '--unified=0', '--no-color', base, head, '--', *pathspec).decode('utf-8', 'replace')
+    files = collections.defaultdict(list)
+    cur = None
+    for line in out.splitlines():
+        if line.startswith('+++ '):
+            cur = line[6:] if line.startswith('+++ b/') else None
+        elif line.startswith('+') and cur is not None:
+            files[cur].append(line[1:])
+    return {p: '\n'.join(ls) for p, ls in files.items()}
+
+
+def found_in(wanted, sources):
+    m = Matcher(wanted)
+    for path, text in sources:
+        for u in units_of(path, text):
+            m.feed(u)
+    return m.found
+
+
+REF_PARTS = {
+    'openbsd': (os.path.join(a.refs, 'openbsd'), ('.c', '.h')),
+    'linux': (os.path.join(a.refs, 'linux'), ('.c', '.h')),
+    'hostap': (os.path.join(a.refs, 'hostap'), ('.c', '.h')),
+}
+
+
+def background(wanted):
+    if a.background == 'none':
+        return set()
+    srcs = []
+    srcs.append(walk_files(os.path.join(a.background, 'linux'), ('.c', '.h')))
+    srcs.append(walk_files(os.path.join(a.background, 'smoltcp'), ('.rs',)))
+    out = set()
+    for s in srcs:
+        out |= found_in(wanted, s)
+    return out
+
+
+print(f'rule: norm={a.norm} identifier>={a.min_id} tokens, string>={a.min_str} words, comment run={a.run} words, '
+      f'background={"none" if a.background == "none" else "linux+smoltcp"}; one hit is red')
+mb = git('merge-base', a.demo, 'origin/main').decode().strip()
+
+if a.arm == 'green':
+    per_commit = {}
+    for c in a.commits:
+        cands = collections.defaultdict(set)
+        for _, text in added_text(c + '^', c, ['*.rs']).items():
+            for cls, s in candidates_of(text).items():
+                cands[cls] |= s
+        per_commit[c] = cands
+    everything = set()
+    for cands in per_commit.values():
+        for s in cands.values():
+            everything |= s
+    in_part = {g: found_in(everything, walk_files(root, sfx)) for g, (root, sfx) in REF_PARTS.items()}
+    # The demo is part of the reference set: its delta, less what main held at its merge base.
+    demo_found = found_in(everything, added_text(mb, a.demo, []).items())
+    in_part['demo'] = demo_found - found_in(demo_found, tree_files(mb))
+    red = 0
+    for c in a.commits:
+        cands = per_commit[c]
+        allc = set().union(*cands.values()) if cands else set()
+        raw = {t for t in allc if any(t in f for f in in_part.values())}
+        past_base = raw - found_in(raw, tree_files(c + '^'))
+        hits = past_base - background(past_base)
+        subject = git('log', '-1', '--format=%s', c).decode().strip()
+        print(f'== {c[:12]} {subject}')
+        for cls in ('identifier', 'string', 'comment'):
+            s = cands.get(cls, set())
+            print(f'  {cls:10s} candidates {len(s):6d}  in the reference set {len(s & raw):5d}  '
+                  f'past the base {len(s & past_base):5d}  hits {len(s & hits):5d}')
+        print(f'  hits: {len(hits)}')
+        for t in sorted(hits, key=lambda t: (len(t), t)):
+            cls = next(k for k in ('identifier', 'string', 'comment') if t in cands.get(k, ()))
+            parts = ','.join(g for g, f in in_part.items() if t in f)
+            print(f'    [{cls}] {" ".join(t)}   ({parts})')
+        red += len(hits) > 0
+    print(f'green arm: commits the rule reads red: {red} of {len(a.commits)}')
+else:
+    wifi = re.compile(r'wifi|wlan|80211|wpa|eapol|ax2|iwl|iwx|supplicant', re.I)
+    files = added_text(mb, a.demo, ['*.rs'])
+    per_file = {}
+    for p, text in files.items():
+        per_file[p] = candidates_of(text)
+    everything = set()
+    for cands in per_file.values():
+        for s in cands.values():
+            everything |= s
+    in_part = {g: found_in(everything, walk_files(root, sfx)) for g, (root, sfx) in REF_PARTS.items()}
+    raw = {t for t in everything if any(t in f for f in in_part.values())}
+    past_base = raw - found_in(raw, tree_files(mb))
+    hits = past_base - background(past_base)
+    print(f'== red arm: the demo branch past merge base {mb[:12]}, {len(files)} Rust files with added lines, '
+          f'{sum(1 for p in files if wifi.search(p))} of them on a Wi-Fi-named path')
+    for cls in ('identifier', 'string', 'comment'):
+        s = set()
+        for cands in per_file.values():
+            s |= cands.get(cls, set())
+        print(f'  {cls:10s} candidates {len(s):6d}  in the reference set {len(s & raw):5d}  '
+              f'past the base {len(s & past_base):5d}  hits {len(s & hits):5d}')
+    by_part = collections.Counter()
+    for t in hits:
+        for g, f in in_part.items():
+            if t in f:
+                by_part[g] += 1
+    print(f'  hits by reference part (a hit may sit in several): {dict(sorted(by_part.items()))}')
+    hit_files = [p for p, cands in per_file.items() if any(t in hits for s in cands.values() for t in s)]
+    print(f'  files with a hit: {len(hit_files)}, of them on a Wi-Fi-named path: {sum(1 for p in hit_files if wifi.search(p))}')
+    print(f'  hits: {len(hits)}')
+    print(f'red arm: the rule reads the demo {"red" if hits else "GREEN"}')
+sys.exit(0)
+
+$ cat tools/drive.py
+# Runs simcheck.py once per named variant, in parallel, each into logs/<prefix>-<name>.txt with
+# its command line first and its own exit code last.
+# argv: <prefix> <arm> <commits file or -> <name>=<flags> ...
+import subprocess
+import sys
+
+prefix, arm, commits_file = sys.argv[1], sys.argv[2], sys.argv[3]
+variants = [v.split('=', 1) for v in sys.argv[4:]]
+commits = [] if commits_file == '-' else open(commits_file).read().split()
+common = ['--refs', 'refs', '--repo', '<primary>', '--demo', 'wt/toyos-<bench>-wifi']
+procs = []
+for name, flags in variants:
+    cmd = ['python3', '-I', 'tools/simcheck.py', *common, *flags.split(), arm, *commits]
+    out = open(f'logs/{prefix}-{name}.txt', 'w')
+    shown = ' '.join(cmd[:-len(commits)] if commits else cmd)
+    out.write(f'$ {shown}' + (f' <the commits in {commits_file}>' if commits else '') + '\n')
+    out.flush()
+    procs.append((name, out, subprocess.Popen(cmd, stdout=out, stderr=subprocess.STDOUT)))
+for name, out, p in procs:
+    code = p.wait()
+    out.write(f'EXIT={code}\n')
+    out.close()
+    print(f'{prefix}-{name}: EXIT={code}')
+
+# The reference slice and the background corpus, each a depth-1 clone (sparse where a pattern is shown):
+$ git -C refs/openbsd rev-parse HEAD; git -C refs/openbsd remote get-url origin; git -C refs/openbsd sparse-checkout list; find refs/openbsd -type f -not -path '*/.git/*' | wc -l
+25192901b94d07e54fc46b0b5568b951b7692c7b
+https://github.com/openbsd/src
+/sys/dev/pci/if_iwx*
+/sys/net80211/
+34
+$ git -C refs/linux rev-parse HEAD; git -C refs/linux remote get-url origin; git -C refs/linux sparse-checkout list; find refs/linux -type f -not -path '*/.git/*' | wc -l
+24a19b953e2a3d0ea5a8c4951a0ab8f32720c907
+https://github.com/torvalds/linux
+/drivers/net/wireless/intel/iwlwifi/
+/net/mac80211/
+/net/wireless/
+/include/net/mac80211.h
+/include/net/cfg80211.h
+/include/linux/ieee80211.h
+438
+$ git -C refs/hostap rev-parse HEAD; git -C refs/hostap remote get-url origin; git -C refs/hostap sparse-checkout list; find refs/hostap -type f -not -path '*/.git/*' | wc -l
+e0a5cd2fa55047d368b9cc84e54309ec8484e883
+https://w1.fi/hostap.git
+(not sparse)
+1541
+$ git -C bg/linux rev-parse HEAD; git -C bg/linux remote get-url origin; git -C bg/linux sparse-checkout list; find bg/linux -type f -not -path '*/.git/*' | wc -l
+24a19b953e2a3d0ea5a8c4951a0ab8f32720c907
+https://github.com/torvalds/linux
+/drivers/net/ethernet/intel/
+/net/ipv4/
+/net/ipv6/
+/net/core/
+/net/ethernet/
+738
+$ git -C bg/smoltcp rev-parse HEAD; git -C bg/smoltcp remote get-url origin; git -C bg/smoltcp sparse-checkout list; find bg/smoltcp -type f -not -path '*/.git/*' | wc -l
+87b463f50c15f30e4cd2e2725a3bcd5cb883e4d9
+https://github.com/smoltcp-rs/smoltcp
+(not sparse)
+148
+
+$ cat tune-commits.txt   # with each subject
+817cc0f00439dc4728c13c9959878e10555119d9 The I219's driver, decided on the host against the datasheet
+ade7545b3e242d40265d0dc76f7ebd7a9a563f68 netd drives an Intel NIC, and QEMU's e1000e proves it before the T14 does
+1fcd5d24dd988760e9ac9ee089ee40f571290579 The virtio NIC driver leaves the kernel, and the substrate under it is the claim
+2d91ef30536d382b0c76d837daf59f86ca8f005c toyos-net-wire: the wire-format ring of ToyOS's own TCP/IP stack
+9b91d24cd79cbbe63b9921e02c76748c95395165 toyos-net-tcp: the TCP ring of ToyOS's own stack, first cut
+3fa6d3b71d49ee01163914aaaad499151075452e toyos-net-ip: the IPv4 host layer of ToyOS's own stack, first cut
+
+$ python3 -I tools/simcheck.py --refs refs --repo <primary> --demo wt/toyos-<bench>-wifi --norm r2 --min-id 2 --min-str 3 --run 6 --background none green <the commits in tune-commits.txt>
+rule: norm=r2 identifier>=2 tokens, string>=3 words, comment run=6 words, background=none; one hit is red
+== 817cc0f00439 The I219's driver, decided on the host against the datasheet
+  identifier candidates    160  in the reference set    37  past the base    13  hits    13
+  string     candidates     57  in the reference set     0  past the base     0  hits     0
+  comment    candidates   6031  in the reference set     1  past the base     1  hits     1
+  hits: 14
+    [identifier] address mask   (linux,hostap)
+    [identifier] flush tx   (openbsd,linux)
+    [identifier] length mask   (openbsd,hostap)
+    [identifier] length shift   (openbsd)
+    [identifier] link changed   (linux)
+    [identifier] link up   (openbsd,linux,hostap)
+    [identifier] nvm mac   (openbsd,linux)
+    [identifier] parse rx   (hostap)
+    [identifier] rx ring   (openbsd,linux,hostap)
+    [identifier] status mask   (openbsd,linux,hostap)
+    [identifier] tx next   (linux)
+    [identifier] tx ring   (openbsd,hostap)
+    [identifier] rx buf bytes   (linux)
+    [comment] ff ff ff ff ff ff   (linux,hostap)
+== ade7545b3e24 netd drives an Intel NIC, and QEMU's e1000e proves it before the T14 does
+  identifier candidates     80  in the reference set    22  past the base     2  hits     2
+  string     candidates     31  in the reference set     0  past the base     0  hits     0
+  comment    candidates   2602  in the reference set     0  past the base     0  hits     0
+  hits: 2
+    [identifier] txq 0   (openbsd,linux)
+    [identifier] txq 1   (openbsd,linux)
+== 1fcd5d24dd98 The virtio NIC driver leaves the kernel, and the substrate under it is the claim
+  identifier candidates    398  in the reference set    77  past the base     9  hits     9
+  string     candidates     97  in the reference set     0  past the base     0  hits     0
+  comment    candidates   9348  in the reference set     0  past the base     0  hits     0
+  hits: 9
+    [identifier] device request   (linux)
+    [identifier] map bar   (linux)
+    [identifier] mask irq   (linux)
+    [identifier] pci slot   (linux)
+    [identifier] reclaim tx   (linux)
+    [identifier] rx frame   (openbsd,linux,hostap)
+    [identifier] tx dropped   (hostap)
+    [identifier] tx frame   (openbsd,linux,hostap,demo)
+    [identifier] tx free   (linux)
+== 2d91ef30536d toyos-net-wire: the wire-format ring of ToyOS's own TCP/IP stack
+  identifier candidates    548  in the reference set   142  past the base    34  hits    34
+  string     candidates    126  in the reference set     3  past the base     2  hits     2
+  comment    candidates   3446  in the reference set     0  past the base     0  hits     0
+  hits: 36
+    [identifier] body len   (linux,hostap)
+    [identifier] destination unreachable   (hostap)
+    [identifier] frame body   (openbsd,linux,hostap)
+    [identifier] frame destination   (hostap)
+    [identifier] from field   (hostap)
+    [identifier] from number   (hostap)
+    [identifier] full header   (linux)
+    [identifier] hardware type   (linux)
+    [identifier] header checksum   (openbsd,linux,hostap)
+    [identifier] header length   (linux,hostap)
+    [identifier] icmp packet   (hostap)
+    [identifier] is fragment   (linux)
+    [identifier] j 0   (linux,hostap)
+    [identifier] j 2   (openbsd)
+    [identifier] j 3   (openbsd)
+    [identifier] mac addr   (openbsd,linux,hostap)
+    [identifier] max response   (hostap)
+    [identifier] more fragments   (linux,hostap)
+    [identifier] multicast addr   (hostap)
+    [identifier] next option   (hostap)
+    [identifier] options of   (linux,hostap)
+    [identifier] protocol type   (linux,hostap)
+    [identifier] pseudo header   (openbsd,linux,hostap)
+    [identifier] query version   (hostap)
+    [identifier] router discovery   (hostap)
+    [identifier] seq num   (openbsd,linux,hostap)
+    [identifier] source port   (linux,hostap)
+    [identifier] target ip   (linux)
+    [identifier] target mac   (linux,hostap)
+    [identifier] udp checksum   (openbsd,linux,hostap)
+    [identifier] vlan id   (linux,hostap)
+    [identifier] buffer too small   (linux,hostap)
+    [string] ip header checksum   (openbsd,linux)
+    [string] ip header length   (hostap)
+    [identifier] ipv 4 payload   (linux)
+    [identifier] ipv 4 source   (hostap)
+== 9b91d24cd79c toyos-net-tcp: the TCP ring of ToyOS's own stack, first cut
+  identifier candidates    408  in the reference set    65  past the base    21  hits    21
+  string     candidates     73  in the reference set     0  past the base     0  hits     0
+  comment    candidates   2378  in the reference set     0  past the base     0  hits     0
+  hits: 21
+    [identifier] acked since   (linux)
+    [identifier] after timeout   (linux,hostap)
+    [identifier] conn id   (hostap)
+    [identifier] data end   (hostap)
+    [identifier] keepalive interval   (hostap)
+    [identifier] last ack   (linux,hostap)
+    [identifier] len 32   (openbsd,linux,hostap)
+    [identifier] min mtu   (linux)
+    [identifier] new data   (linux,hostap)
+    [identifier] on ack   (hostap)
+    [identifier] per counter   (hostap)
+    [identifier] range limit   (hostap)
+    [identifier] reset seq   (hostap)
+    [identifier] sent ack   (openbsd,linux)
+    [identifier] set options   (hostap)
+    [identifier] set rto   (hostap)
+    [identifier] syn rst   (linux)
+    [identifier] t us   (openbsd,linux,hostap)
+    [identifier] ts missing   (hostap)
+    [identifier] ts now   (hostap)
+    [identifier] last ack sent   (linux)
+== 3fa6d3b71d49 toyos-net-ip: the IPv4 host layer of ToyOS's own stack, first cut
+  identifier candidates    615  in the reference set   111  past the base    15  hits    15
+  string     candidates    141  in the reference set     0  past the base     0  hits     0
+  comment    candidates   3296  in the reference set     0  past the base     0  hits     0
+  hits: 15
+    [identifier] add address   (hostap)
+    [identifier] add interface   (linux,hostap)
+    [identifier] flow to   (linux,hostap)
+    [identifier] if index   (hostap)
+    [identifier] ip fragment   (hostap)
+    [identifier] mac change   (linux)
+    [identifier] mac changed   (hostap)
+    [identifier] mac r   (hostap)
+    [identifier] max retrans   (hostap)
+    [identifier] probe max   (openbsd,linux)
+    [identifier] probe wait   (linux)
+    [identifier] set destination   (hostap)
+    [identifier] udp to   (hostap)
+    [identifier] unicast frames   (openbsd,linux,hostap)
+    [identifier] unknown interface   (hostap)
+green arm: commits the rule reads red: 6 of 6
+EXIT=0
+
+$ python3 -I tools/simcheck.py --refs refs --repo <primary> --demo wt/toyos-<bench>-wifi --norm r2 --min-id 2 --min-str 3 --run 6 --background bg green <the commits in tune-commits.txt>
+rule: norm=r2 identifier>=2 tokens, string>=3 words, comment run=6 words, background=linux+smoltcp; one hit is red
+== 817cc0f00439 The I219's driver, decided on the host against the datasheet
+  identifier candidates    160  in the reference set    37  past the base    13  hits     2
+  string     candidates     57  in the reference set     0  past the base     0  hits     0
+  comment    candidates   6031  in the reference set     1  past the base     1  hits     0
+  hits: 2
+    [identifier] link changed   (linux)
+    [identifier] rx buf bytes   (linux)
+== ade7545b3e24 netd drives an Intel NIC, and QEMU's e1000e proves it before the T14 does
+  identifier candidates     80  in the reference set    22  past the base     2  hits     0
+  string     candidates     31  in the reference set     0  past the base     0  hits     0
+  comment    candidates   2602  in the reference set     0  past the base     0  hits     0
+  hits: 0
+== 1fcd5d24dd98 The virtio NIC driver leaves the kernel, and the substrate under it is the claim
+  identifier candidates    398  in the reference set    77  past the base     9  hits     3
+  string     candidates     97  in the reference set     0  past the base     0  hits     0
+  comment    candidates   9348  in the reference set     0  past the base     0  hits     0
+  hits: 3
+    [identifier] mask irq   (linux)
+    [identifier] reclaim tx   (linux)
+    [identifier] tx free   (linux)
+== 2d91ef30536d toyos-net-wire: the wire-format ring of ToyOS's own TCP/IP stack
+  identifier candidates    548  in the reference set   142  past the base    34  hits     9
+  string     candidates    126  in the reference set     3  past the base     2  hits     1
+  comment    candidates   3446  in the reference set     0  past the base     0  hits     0
+  hits: 10
+    [identifier] body len   (linux,hostap)
+    [identifier] frame body   (openbsd,linux,hostap)
+    [identifier] frame destination   (hostap)
+    [identifier] from field   (hostap)
+    [identifier] j 2   (openbsd)
+    [identifier] max response   (hostap)
+    [identifier] target ip   (linux)
+    [identifier] target mac   (linux,hostap)
+    [string] ip header length   (hostap)
+    [identifier] ipv 4 source   (hostap)
+== 9b91d24cd79c toyos-net-tcp: the TCP ring of ToyOS's own stack, first cut
+  identifier candidates    408  in the reference set    65  past the base    21  hits     7
+  string     candidates     73  in the reference set     0  past the base     0  hits     0
+  comment    candidates   2378  in the reference set     0  past the base     0  hits     0
+  hits: 7
+    [identifier] after timeout   (linux,hostap)
+    [identifier] conn id   (hostap)
+    [identifier] len 32   (openbsd,linux,hostap)
+    [identifier] per counter   (hostap)
+    [identifier] reset seq   (hostap)
+    [identifier] ts missing   (hostap)
+    [identifier] last ack sent   (linux)
+== 3fa6d3b71d49 toyos-net-ip: the IPv4 host layer of ToyOS's own stack, first cut
+  identifier candidates    615  in the reference set   111  past the base    15  hits     6
+  string     candidates    141  in the reference set     0  past the base     0  hits     0
+  comment    candidates   3296  in the reference set     0  past the base     0  hits     0
+  hits: 6
+    [identifier] add interface   (linux,hostap)
+    [identifier] max retrans   (hostap)
+    [identifier] probe max   (openbsd,linux)
+    [identifier] probe wait   (linux)
+    [identifier] unicast frames   (openbsd,linux,hostap)
+    [identifier] unknown interface   (hostap)
+green arm: commits the rule reads red: 5 of 6
+EXIT=0
+
+$ python3 -I tools/simcheck.py --refs refs --repo <primary> --demo wt/toyos-<bench>-wifi --norm alpha2 --min-id 3 --min-str 3 --run 6 --background bg green <the commits in tune-commits.txt>
+rule: norm=alpha2 identifier>=3 tokens, string>=3 words, comment run=6 words, background=linux+smoltcp; one hit is red
+== 817cc0f00439 The I219's driver, decided on the host against the datasheet
+  identifier candidates     48  in the reference set     1  past the base     1  hits     1
+  string     candidates     56  in the reference set     0  past the base     0  hits     0
+  comment    candidates   4899  in the reference set     1  past the base     1  hits     0
+  hits: 1
+    [identifier] rx buf bytes   (linux)
+== ade7545b3e24 netd drives an Intel NIC, and QEMU's e1000e proves it before the T14 does
+  identifier candidates     11  in the reference set     0  past the base     0  hits     0
+  string     candidates     25  in the reference set     0  past the base     0  hits     0
+  comment    candidates   2216  in the reference set     0  past the base     0  hits     0
+  hits: 0
+== 1fcd5d24dd98 The virtio NIC driver leaves the kernel, and the substrate under it is the claim
+  identifier candidates    117  in the reference set     3  past the base     0  hits     0
+  string     candidates     91  in the reference set     0  past the base     0  hits     0
+  comment    candidates   8465  in the reference set     0  past the base     0  hits     0
+  hits: 0
+== 2d91ef30536d toyos-net-wire: the wire-format ring of ToyOS's own TCP/IP stack
+  identifier candidates    178  in the reference set     1  past the base     1  hits     0
+  string     candidates     60  in the reference set     5  past the base     2  hits     1
+  comment    candidates   2601  in the reference set     0  past the base     0  hits     0
+  hits: 1
+    [string] ip header length   (hostap)
+== 9b91d24cd79c toyos-net-tcp: the TCP ring of ToyOS's own stack, first cut
+  identifier candidates     75  in the reference set     3  past the base     1  hits     1
+  string     candidates     73  in the reference set     0  past the base     0  hits     0
+  comment    candidates   1845  in the reference set     0  past the base     0  hits     0
+  hits: 1
+    [identifier] last ack sent   (linux)
+== 3fa6d3b71d49 toyos-net-ip: the IPv4 host layer of ToyOS's own stack, first cut
+  identifier candidates    238  in the reference set     0  past the base     0  hits     0
+  string     candidates     96  in the reference set     1  past the base     0  hits     0
+  comment    candidates   2500  in the reference set     0  past the base     0  hits     0
+  hits: 0
+green arm: commits the rule reads red: 3 of 6
+EXIT=0
+
+$ python3 -I tools/simcheck.py --refs refs --repo <primary> --demo wt/toyos-<bench>-wifi --norm alpha2 --min-id 4 --min-str 3 --run 6 --background bg green <the commits in tune-commits.txt>
+rule: norm=alpha2 identifier>=4 tokens, string>=3 words, comment run=6 words, background=linux+smoltcp; one hit is red
+== 817cc0f00439 The I219's driver, decided on the host against the datasheet
+  identifier candidates     24  in the reference set     0  past the base     0  hits     0
+  string     candidates     56  in the reference set     0  past the base     0  hits     0
+  comment    candidates   4899  in the reference set     1  past the base     1  hits     0
+  hits: 0
+== ade7545b3e24 netd drives an Intel NIC, and QEMU's e1000e proves it before the T14 does
+  identifier candidates      5  in the reference set     0  past the base     0  hits     0
+  string     candidates     25  in the reference set     0  past the base     0  hits     0
+  comment    candidates   2216  in the reference set     0  past the base     0  hits     0
+  hits: 0
+== 1fcd5d24dd98 The virtio NIC driver leaves the kernel, and the substrate under it is the claim
+  identifier candidates     26  in the reference set     0  past the base     0  hits     0
+  string     candidates     91  in the reference set     0  past the base     0  hits     0
+  comment    candidates   8465  in the reference set     0  past the base     0  hits     0
+  hits: 0
+== 2d91ef30536d toyos-net-wire: the wire-format ring of ToyOS's own TCP/IP stack
+  identifier candidates     89  in the reference set     0  past the base     0  hits     0
+  string     candidates     60  in the reference set     5  past the base     2  hits     1
+  comment    candidates   2601  in the reference set     0  past the base     0  hits     0
+  hits: 1
+    [string] ip header length   (hostap)
+== 9b91d24cd79c toyos-net-tcp: the TCP ring of ToyOS's own stack, first cut
+  identifier candidates     11  in the reference set     0  past the base     0  hits     0
+  string     candidates     73  in the reference set     0  past the base     0  hits     0
+  comment    candidates   1845  in the reference set     0  past the base     0  hits     0
+  hits: 0
+== 3fa6d3b71d49 toyos-net-ip: the IPv4 host layer of ToyOS's own stack, first cut
+  identifier candidates    140  in the reference set     0  past the base     0  hits     0
+  string     candidates     96  in the reference set     1  past the base     0  hits     0
+  comment    candidates   2500  in the reference set     0  past the base     0  hits     0
+  hits: 0
+green arm: commits the rule reads red: 1 of 6
+EXIT=0
+
+$ python3 -I tools/simcheck.py --refs refs --repo <primary> --demo wt/toyos-<bench>-wifi --norm alpha2 --min-id 4 --min-str 4 --run 6 --background bg green <the commits in tune-commits.txt>
+rule: norm=alpha2 identifier>=4 tokens, string>=4 words, comment run=6 words, background=linux+smoltcp; one hit is red
+== 817cc0f00439 The I219's driver, decided on the host against the datasheet
+  identifier candidates     24  in the reference set     0  past the base     0  hits     0
+  string     candidates     51  in the reference set     0  past the base     0  hits     0
+  comment    candidates   4899  in the reference set     1  past the base     1  hits     0
+  hits: 0
+== ade7545b3e24 netd drives an Intel NIC, and QEMU's e1000e proves it before the T14 does
+  identifier candidates      5  in the reference set     0  past the base     0  hits     0
+  string     candidates     22  in the reference set     0  past the base     0  hits     0
+  comment    candidates   2216  in the reference set     0  past the base     0  hits     0
+  hits: 0
+== 1fcd5d24dd98 The virtio NIC driver leaves the kernel, and the substrate under it is the claim
+  identifier candidates     26  in the reference set     0  past the base     0  hits     0
+  string     candidates     78  in the reference set     0  past the base     0  hits     0
+  comment    candidates   8465  in the reference set     0  past the base     0  hits     0
+  hits: 0
+== 2d91ef30536d toyos-net-wire: the wire-format ring of ToyOS's own TCP/IP stack
+  identifier candidates     89  in the reference set     0  past the base     0  hits     0
+  string     candidates     21  in the reference set     2  past the base     0  hits     0
+  comment    candidates   2601  in the reference set     0  past the base     0  hits     0
+  hits: 0
+== 9b91d24cd79c toyos-net-tcp: the TCP ring of ToyOS's own stack, first cut
+  identifier candidates     11  in the reference set     0  past the base     0  hits     0
+  string     candidates     28  in the reference set     0  past the base     0  hits     0
+  comment    candidates   1845  in the reference set     0  past the base     0  hits     0
+  hits: 0
+== 3fa6d3b71d49 toyos-net-ip: the IPv4 host layer of ToyOS's own stack, first cut
+  identifier candidates    140  in the reference set     0  past the base     0  hits     0
+  string     candidates     45  in the reference set     1  past the base     0  hits     0
+  comment    candidates   2500  in the reference set     0  past the base     0  hits     0
+  hits: 0
+green arm: commits the rule reads red: 0 of 6
+EXIT=0
+
+$ python3 -I tools/drive.py tune green tune-commits.txt <the five variants above>
+tune-A: EXIT=0
+tune-B: EXIT=0
+tune-C: EXIT=0
+tune-D: EXIT=0
+tune-E: EXIT=0
+DRIVER_EXIT=0
