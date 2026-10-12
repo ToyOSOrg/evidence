@@ -1,0 +1,11 @@
+--- a/kernel/src/arch/x86_64/amdvi/mod.rs
++++ b/kernel/src/arch/x86_64/amdvi/mod.rs
+@@ -232,7 +232,7 @@
+         regs.read_u64(EXTENDED_FEATURES),
+     );
+     for (bit, run, what) in FIRMWARE_LEFT {
+-        if regs.read_u64(CONTROL) & bit == 0 {
++        if regs.read_u64(CONTROL) & bit == 0 || bit != 0 {
+             continue;
+         }
+         log!("iommu: amdvi unit{index} was handed over with {what} on; it goes off");

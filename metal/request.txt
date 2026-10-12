@@ -1,0 +1,38 @@
+# PR #884 (wt/toyos-amdvi-ring) at f2c537a5143642cb700a2484f32073ce9da6a869, on base
+# 867ec23ed26272835068f157c7fbe4c1b18e0608. Four boots, each staged by
+# `cargo test --test toyos-build -- --metal --metal-readback <dir> [--metal-host '<user>@<amd-bench>'] iommu_firmware_left`;
+# no machine was touched. Each invocation below is `cargo <words>` from
+# <worktree>. The AMD arms carry --host <user>@<amd-bench>:
+# put the bench's account there. Judge each arm afterwards from the same
+# worktree at f2c537a51 with the staging command above, its <dir> and host.
+
+## 1. head-amd — the fix on the AMD bench.
+## Owed: `Boot: complete`; the row passes on amdvi unit0's CmdBufEn, EventLogEn
+## and IommuEn hand-over lines and its `switched off` line.
+shared-debug
+  image: <scratchpad>/metal/head-amd/shared-debug/image.img
+  cargo run -p toyos-metal -- --image <scratchpad>/metal/head-amd/shared-debug/image.img --readback <scratchpad>/metal/head-amd/shared-debug --fat32-check --host <user>@<amd-bench>
+
+## 2. head-t14 — the fix on the T14.
+## Owed: the row passes on the T14's VT-d units, as at main.
+shared-debug
+  image: <scratchpad>/metal/head-t14/shared-debug/image.img
+  cargo run -p toyos-metal -- --image <scratchpad>/metal/head-t14/shared-debug/image.img --readback <scratchpad>/metal/head-t14/shared-debug --fat32-check
+
+## 3. base-amd — the whole fix reverted: main at 867ec23ed, the branch's base.
+## Owed: the boot panics at kernel/src/arch/x86_64/amdvi/mod.rs:325:9, "the
+## unit's requesters overflow the actuator's 256-entry ring", in the loader's
+## black-box record; toyos-metal exits 1 and the row reds.
+shared-debug
+  image: <scratchpad>/metal/base-amd/shared-debug/image.img
+  cargo run -p toyos-metal -- --image <scratchpad>/metal/base-amd/shared-debug/image.img --readback <scratchpad>/metal/base-amd/shared-debug --fat32-check --host <user>@<amd-bench>
+
+## 4. switch-off-reverted-amd — the DMA half's negative control: the head with
+## switch-off-reverted.patch (local commit 25d6b6c7ecd28edbe05cf10235a86b14824c73bd,
+## not pushed; its parent is the head). switch_off skips every field, so the
+## unit the actuator left blocking stays on.
+## Owed: the boot stick never binds: no `Boot: complete` on the log
+## partition, toyos-metal exits 1 and the row reds.
+shared-debug
+  image: <scratchpad>/metal/switch-off-reverted-amd/shared-debug/image.img
+  cargo run -p toyos-metal -- --image <scratchpad>/metal/switch-off-reverted-amd/shared-debug/image.img --readback <scratchpad>/metal/switch-off-reverted-amd/shared-debug --fat32-check --host <user>@<amd-bench>
