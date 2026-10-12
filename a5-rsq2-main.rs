@@ -167,7 +167,11 @@ fn fit(ys: &[f32], n0: usize, freq: f64, fout: u32, amp: f64) -> (f64, f64) {
 /// A tone above the lower rate's stop edge, downsampled: everything that comes
 /// out is alias, in dB below the input tone.
 fn rejection(cfg: Cfg, fin: u32, fout: u32, freq: f64, amp: f64) -> f64 {
-    let (ys, _) = run(cfg, fin, fout, freq, amp, 1.0);
+    rejection_over(cfg, fin, fout, freq, amp, 1.0)
+}
+
+fn rejection_over(cfg: Cfg, fin: u32, fout: u32, freq: f64, amp: f64, seconds: f64) -> f64 {
+    let (ys, _) = run(cfg, fin, fout, freq, amp, seconds);
     let rms = (ys.iter().map(|&y| (y as f64).powi(2)).sum::<f64>() / ys.len() as f64).sqrt();
     -20.0 * (rms / (amp / 2f64.sqrt())).log10()
 }
@@ -377,11 +381,59 @@ fn cost() {
     }
 }
 
+/// The host test the design proposes, at its own points: every pair; 20 Hz,
+/// 997 Hz and the passband edge for the passband and THD+N claims; the stop
+/// edge and 0.499 of the client rate for the stop-band claim; half a second of
+/// fitted output each. One verdict per claim per configuration.
+fn testpoints() {
+    let amp = 10f64.powf(AMP_DBFS / 20.0);
+    println!("interpolator: {}", interpolator());
+    println!("the proposed host test's points, 0.5 s of fitted output each");
+    for &ci in &[0usize, 1, 3, 4] {
+        let cfg = CFGS[ci];
+        let t0 = std::time::Instant::now();
+        let mut gain = (0f64, String::new());
+        let mut thdn = (f64::INFINITY, String::new());
+        let mut stop = (f64::INFINITY, String::new());
+        for (fin, fout) in pairs() {
+            let edge = (PASS_EDGE * fin.min(fout) as f64).min(20_000.0);
+            for f in [20.0, 997.0, edge] {
+                let (ys, n0) = run(cfg, fin, fout, f, amp, 0.5);
+                let (g, t) = fit(&ys, n0, f, fout, amp);
+                if g.abs() > gain.0.abs() {
+                    gain = (g, format!("{fin} -> {fout} at {f:.1} Hz"));
+                }
+                if t < thdn.0 {
+                    thdn = (t, format!("{fin} -> {fout} at {f:.1} Hz"));
+                }
+            }
+            if fin > fout {
+                for f in [STOP_EDGE * fout as f64, 0.499 * fin as f64] {
+                    let r = rejection_over(cfg, fin, fout, f, amp, 0.5);
+                    if r < stop.0 {
+                        stop = (r, format!("{fin} -> {fout} at {f:.1} Hz"));
+                    }
+                }
+            }
+        }
+        let verdict = |ok: bool| if ok { "green" } else { "RED" };
+        println!(
+            "{}\n  passband: {} (worst {:+.5} dB, {}; margin {:.5} dB)\n  THD+N:    {} (worst {:.1} dB, {}; margin {:.1} dB)\n  stop band: {} (worst {:.1} dB, {}; margin {:.1} dB)\n  {:.1} s for the three claims",
+            cfg.name,
+            verdict(gain.0.abs() <= RIPPLE_DB), gain.0, gain.1, RIPPLE_DB - gain.0.abs(),
+            verdict(thdn.0 >= REJECT_DB), thdn.0, thdn.1, thdn.0 - REJECT_DB,
+            verdict(stop.0 >= REJECT_DB), stop.0, stop.1, stop.0 - REJECT_DB,
+            t0.elapsed().as_secs_f64(),
+        );
+    }
+}
+
 fn main() {
     match std::env::args().nth(1).as_deref() {
         Some("sweep") => sweep(),
         Some("cost") => cost(),
         Some("probe") => println!("interpolator: {}", interpolator()),
+        Some("testpoints") => testpoints(),
         _ => {
             eprintln!("usage: rsq2 sweep|cost");
             std::process::exit(2);
