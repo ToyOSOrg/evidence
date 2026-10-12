@@ -1,0 +1,13 @@
+diff --git a/lib/blockring/transport/src/stream.rs b/lib/blockring/transport/src/stream.rs
+index f6c63971b..16a9563bc 100644
+--- a/lib/blockring/transport/src/stream.rs
++++ b/lib/blockring/transport/src/stream.rs
+@@ -139,7 +139,7 @@ impl<const C: u32, const N: usize> Producer<C, N> {
+     /// How many bytes past the tail may be written, the consumer's head read
+     /// again.
+     pub fn room<W: Word>(&mut self, page: &[W; N]) -> Result<u32, Violation> {
+-        let head = Untrusted::new(word(page, self.place.head).load(Ordering::Acquire));
++        let head = Untrusted::new(word(page, self.place.head).load(Ordering::Relaxed));
+         let published = self.published;
+         let unreleased =
+             Place::<C, N>::reach(head, |head| Place::<C, N>::distance(head, published), Violation::HeadPastTail)?;

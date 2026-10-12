@@ -1,0 +1,13 @@
+diff --git a/lib/blockring/transport/src/stream.rs b/lib/blockring/transport/src/stream.rs
+index f6c63971b..9aee23e78 100644
+--- a/lib/blockring/transport/src/stream.rs
++++ b/lib/blockring/transport/src/stream.rs
+@@ -238,7 +238,7 @@ impl<const C: u32, const N: usize> Consumer<C, N> {
+         if self.released == self.local {
+             return false;
+         }
+-        word(page, self.place.head).store(self.local, Ordering::Release);
++        word(page, self.place.head).store(self.local, Ordering::Relaxed);
+         self.released = self.local;
+         word(page, self.place.room).swap(0, WAKE) != 0
+     }

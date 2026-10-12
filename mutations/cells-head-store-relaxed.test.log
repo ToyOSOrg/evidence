@@ -1,0 +1,36 @@
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.46s
+     Running tests/loom.rs (target/debug/deps/loom-c854ee62a195d8a3)
+
+running 6 tests
+test a_producer_that_looked_again_is_rung_for_room_it_missed ... FAILED
+test a_published_byte_is_read_as_written ... FAILED
+test a_published_entry_is_read_whole ... ok
+test a_consumer_that_looked_again_is_rung_for_bytes_it_missed ... ok
+test a_hostile_producer_yields_entries_or_a_violation ... ok
+test a_hostile_consumer_yields_room_or_a_violation ... ok
+
+failures:
+
+---- a_producer_that_looked_again_is_rung_for_room_it_missed stdout ----
+
+thread 'a_producer_that_looked_again_is_rung_for_room_it_missed' (300210665) panicked at <home>/.cargo/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/rt/location.rs:115:9:
+Causality violation: Concurrent read and write accesses to `UnsafeCell`.
+
+
+---- a_published_byte_is_read_as_written stdout ----
+
+thread 'a_published_byte_is_read_as_written' (300210666) panicked at <home>/.cargo/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/rt/location.rs:115:9:
+Causality violation: Concurrent read and write accesses to `UnsafeCell`.
+
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    a_producer_that_looked_again_is_rung_for_room_it_missed
+    a_published_byte_is_read_as_written
+
+test result: FAILED. 4 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+
+error: test failed, to rerun pass `-p toyos-transport --test loom`

@@ -1,0 +1,44 @@
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.30s
+     Running tests/loom.rs (target/debug/deps/loom-1fa43d1fe7776b42)
+
+running 6 tests
+test a_published_entry_is_read_whole ... FAILED
+test a_published_byte_is_read_as_written ... FAILED
+test a_consumer_that_looked_again_is_rung_for_bytes_it_missed ... FAILED
+test a_producer_that_looked_again_is_rung_for_room_it_missed ... ok
+test a_hostile_producer_yields_entries_or_a_violation ... ok
+test a_hostile_consumer_yields_room_or_a_violation ... ok
+
+failures:
+
+---- a_published_entry_is_read_whole stdout ----
+
+thread 'a_published_entry_is_read_whole' (300278904) panicked at lib/blockring/transport/tests/loom.rs:79:9:
+assertion `left == right` failed: an entry was read before its words
+  left: [[0, 0], [0, 0]]
+ right: [[100, 3], [101, 10]]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- a_published_byte_is_read_as_written stdout ----
+
+thread 'a_published_byte_is_read_as_written' (300278903) panicked at lib/blockring/transport/tests/loom.rs:227:9:
+assertion `left == right` failed: a byte was read before it was written
+  left: [90, 90]
+ right: [90, 165]
+
+---- a_consumer_that_looked_again_is_rung_for_bytes_it_missed stdout ----
+
+thread 'a_consumer_that_looked_again_is_rung_for_bytes_it_missed' (300278899) panicked at lib/blockring/transport/tests/loom.rs:245:9:
+assertion `left == right` failed
+  left: 0
+ right: 90
+
+
+failures:
+    a_consumer_that_looked_again_is_rung_for_bytes_it_missed
+    a_published_byte_is_read_as_written
+    a_published_entry_is_read_whole
+
+test result: FAILED. 3 passed; 3 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+error: test failed, to rerun pass `-p toyos-transport --test loom`
