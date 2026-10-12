@@ -1,0 +1,18 @@
+diff --git a/kernel/src/shootdown.rs b/kernel/src/shootdown.rs
+index f6b770137..b15d537ed 100644
+--- a/kernel/src/shootdown.rs
++++ b/kernel/src/shootdown.rs
+@@ -90,11 +90,11 @@ impl Shootdown {
+         let owed = self.requested.load(OWED);
+         let wide = self.wide.load(Ordering::Acquire);
+         let reach = if wide > self.widened[cpu].load(Ordering::Acquire) { Reach::Wide } else { Reach::Narrow };
+-        flush(reach);
++        // MUTATION, never lands: the wide answer recorded before its flush.
+         if reach == Reach::Wide {
+-            // After the flush: a serve nested inside this one, reading this record first, answers wide itself.
+             self.widened[cpu].fetch_max(wide, Ordering::Release);
+         }
++        flush(reach);
+         // A max, not a store: a serve nested inside this one may already have published a later generation.
+         self.flushed[cpu].fetch_max(owed, Ordering::Release);
+     }

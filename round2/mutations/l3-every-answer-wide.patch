@@ -1,0 +1,14 @@
+diff --git a/kernel/src/shootdown.rs b/kernel/src/shootdown.rs
+index f6b770137..7491ddb4b 100644
+--- a/kernel/src/shootdown.rs
++++ b/kernel/src/shootdown.rs
+@@ -89,7 +89,8 @@ impl Shootdown {
+     pub fn serve(&self, cpu: usize, flush: impl FnOnce(Reach)) {
+         let owed = self.requested.load(OWED);
+         let wide = self.wide.load(Ordering::Acquire);
+-        let reach = if wide > self.widened[cpu].load(Ordering::Acquire) { Reach::Wide } else { Reach::Narrow };
++        // MUTATION, never lands: every answer wide, a user-half one's included.
++        let reach = Reach::Wide;
+         flush(reach);
+         if reach == Reach::Wide {
+             // After the flush: a serve nested inside this one, reading this record first, answers wide itself.

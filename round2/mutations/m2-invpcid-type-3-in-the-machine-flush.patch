@@ -1,0 +1,15 @@
+diff --git a/kernel/src/arch/x86_64/paging.rs b/kernel/src/arch/x86_64/paging.rs
+index ce37c92fe..14bfe07a4 100644
+--- a/kernel/src/arch/x86_64/paging.rs
++++ b/kernel/src/arch/x86_64/paging.rs
+@@ -279,7 +279,9 @@ pub fn pcid_active() -> Option<PcidActive> {
+ /// kernel-half change owes.
+ pub fn flush_tlb_all() {
+     if let Some(have) = pcid_active() {
+-        crate::arch::cpu::invpcid(have, Invpcid::AllIncludingGlobal, 0, 0);
++        // MUTATION, never lands: type 3, every entry in every PCID, global pages excepted.
++        let _ = Invpcid::AllIncludingGlobal;
++        crate::arch::cpu::invpcid(have, Invpcid::AllButGlobal, 0, 0);
+     } else {
+         crate::arch::control_regs::flush_global();
+     }

@@ -1,0 +1,87 @@
+# PR #873 round 2, global kernel pages on x86-64. Build head 7ea05913bcc8ffb3ac323b6208f749eb36f23de0 (wt/toyos-pge, pushed).
+# Every image below was staged with `cargo test --test toyos-build -- --metal --metal-readback <dir> [--metal-host '<user>@<amd-bench>'] <rows>`
+# from a committed, clean tree, exit 2 each (Verdict::Staged); nothing touched a machine. Each <dir>/request.txt is
+# the harness's own; this file orders them. The staging script and its output: stage.sh, stage.out beside this file's directory.
+M=<scratchpad>/pge-r2/metal
+#
+# Trees (all clean; keep them until this run is judged):
+#   BASE  <dev>/toyos-pge-base   detached d4c2f8ebe = main 177e72a9e + the scout's two commits (unchanged since round 1)
+#   SCOUT <dev>/toyos-pge-scout  wt/toyos-pge-scout a74fc05bd = head 7ea05913b + the same two commits ported (pushed; never lands)
+#   HEAD  <dev>/toyos-pge        wt/toyos-pge 7ea05913b
+#   MUT   <dev>/toyos-pge-mut    detached 7ea05913b; each mutation was a local commit there, reset after staging:
+#           m2 a0054f95c, m3 72b9e5448, m4 b7a825275; patches in $M/../mut/
+#
+# The AMD invocations carry the harness's placeholder `--host <user>@<amd-bench>`: substitute the bench, and quote
+# the word, since an unquoted `<` is a shell redirection.
+
+######## T14 — one session, in this order (11 boots) ########
+
+Measurement rows, reported and not gated; base and head back to back.
+ 1. BASE scout-tlb-base     sha256 4d079f6d49f82f006edcd2243d02be8aa4ef3f91b0fdbac994b236fab42ea1bf
+    cargo run -p toyos-metal -- --image $M/base-t14/scout-tlb-base/image.img --readback $M/base-t14/scout-tlb-base --fat32-check
+ 2. HEAD scout-tlb-base     sha256 b9d486dd3d2145cc302965e51e2fd624ee79724cd7d12ce9b678181f1bc5b0e8
+    cargo run -p toyos-metal -- --image $M/scout-t14/scout-tlb-base/image.img --readback $M/scout-t14/scout-tlb-base --fat32-check
+ 3. BASE latencycase (tlb_shootdown_cost)   sha256 ccffef19d53f395c520d253d433aeab3f04687627e4f24e3d865be8b58090c6a
+    cargo run -p toyos-metal -- --image $M/base-t14/latencycase/image.img --readback $M/base-t14/latencycase --fat32-check
+ 4. HEAD latencycase (tlb_shootdown_cost)   sha256 b8a13d726cb5ab4d32dacf2b92e4b5944436d9fca45eeb9f493132e382fa7846
+    cargo run -p toyos-metal -- --image $M/scout-t14/latencycase/image.img --readback $M/scout-t14/latencycase --fat32-check
+Correctness rows.
+ 5. HEAD shared-debug (the three global-leaf rows)   sha256 ff11512ed1311d2649b1f18211361e2b77495d461417b6e9d3230b98396b3821
+    cargo run -p toyos-metal -- --image $M/head-t14/shared-debug/image.img --readback $M/head-t14/shared-debug --fat32-check
+ 6. HEAD testcases (control_regs)                     sha256 21ee5bcedf74e44b75b77406fb82947f20c976519bb7aacc1d5c79f03ea38328
+    cargo run -p toyos-metal -- --image $M/head-t14/testcases/image.img --readback $M/head-t14/testcases --fat32-check
+ 7. M2 shared-debug         sha256 ed66d24df6bbdbcde607ffa4ae3dd3ec9c69db88a8ded93445a47113f8954291
+    cargo run -p toyos-metal -- --image $M/m2-t14/shared-debug/image.img --readback $M/m2-t14/shared-debug --fat32-check
+ 8. M3 shared-debug         sha256 7d2c628e8ffcca8671cd341fb671cdd32273cc27b096a56b9b09dc84396f96b5
+    cargo run -p toyos-metal -- --image $M/m3-t14/shared-debug/image.img --readback $M/m3-t14/shared-debug --fat32-check
+ 9. M4 shared-debug         sha256 d1bc9e84901556b65827b75905e457a5135df14159158e6ef7702d73d48b3d30
+    cargo run -p toyos-metal -- --image $M/m4-t14/shared-debug/image.img --readback $M/m4-t14/shared-debug --fat32-check
+
+Judge (exit 0 green, 1 red), each from the tree named, once its directory's readbacks are all present (a directory
+missing a boot makes the harness stage instead, rewriting that image):
+   BASE : cargo test --test toyos-build -- --metal --metal-readback $M/base-t14 scout_tlb_base tlb_shootdown_cost
+   SCOUT: cargo test --test toyos-build -- --metal --metal-readback $M/scout-t14 scout_tlb_base tlb_shootdown_cost
+   HEAD : cargo test --test toyos-build -- --metal --metal-readback $M/head-t14 a_global_kernel_leafs_discharge_drops_it a_kernel_half_shootdown_drops_a_global_kernel_translation a_user_half_shootdown_keeps_a_global_kernel_translation control_regs
+   HEAD : cargo test --test toyos-build -- --metal --metal-readback $M/m2-t14 a_global_kernel_leafs_discharge_drops_it a_kernel_half_shootdown_drops_a_global_kernel_translation a_user_half_shootdown_keeps_a_global_kernel_translation
+   HEAD : cargo test --test toyos-build -- --metal --metal-readback $M/m3-t14 a_global_kernel_leafs_discharge_drops_it a_kernel_half_shootdown_drops_a_global_kernel_translation a_user_half_shootdown_keeps_a_global_kernel_translation
+   HEAD : cargo test --test toyos-build -- --metal --metal-readback $M/m4-t14 a_global_kernel_leafs_discharge_drops_it a_kernel_half_shootdown_drops_a_global_kernel_translation a_user_half_shootdown_keeps_a_global_kernel_translation
+
+######## AMD bench (Ryzen 7 4800U) — one session, in this order (4 boots now) ########
+
+ 1. BASE scout-tlb-base     sha256 2d3c2bcfd155090d5bc628e9d73c9ee1a8a98857cf60a8376ded8fd29623eaa8
+    cargo run -p toyos-metal -- --image $M/base-amd/scout-tlb-base/image.img --readback $M/base-amd/scout-tlb-base --fat32-check --host '<user>@<amd-bench>'
+ 2. HEAD scout-tlb-base     sha256 34307ee2d83c9254fbf27a8eefb08325328683eae2b6201d02a8aa91a094a2d6
+    cargo run -p toyos-metal -- --image $M/scout-amd/scout-tlb-base/image.img --readback $M/scout-amd/scout-tlb-base --fat32-check --host '<user>@<amd-bench>'
+ 3. BASE latencycase (tlb_shootdown_cost)   sha256 f9c586787bef18784af5b969048138445665955c27e277a554188fff66fc5826
+    cargo run -p toyos-metal -- --image $M/base-amd/latencycase/image.img --readback $M/base-amd/latencycase --fat32-check --host '<user>@<amd-bench>'
+ 4. HEAD latencycase (tlb_shootdown_cost)   sha256 171a7347920bf7d7cbddbe47f5c2e0951daf9804af2807b76f65e09d7a812e39
+    cargo run -p toyos-metal -- --image $M/scout-amd/latencycase/image.img --readback $M/scout-amd/latencycase --fat32-check --host '<user>@<amd-bench>'
+
+Judge, each from the tree named:
+   BASE : cargo test --test toyos-build -- --metal --metal-readback $M/base-amd scout_tlb_base tlb_shootdown_cost
+   SCOUT: cargo test --test toyos-build -- --metal --metal-readback $M/scout-amd scout_tlb_base tlb_shootdown_cost
+
+The AMD bench's shared-debug arms — head (the three rows, and control_regs on testcases), m1, m3 and m4 — are NOT
+staged: every shared-debug boot there panics in main's `iommu-firmware-left` ring (`amdvi/mod.rs`) until #884 lands.
+They are to be staged then, from wt/toyos-pge merged with origin/main at that time, by
+$M/../stage-amd-after-884.sh (each `--metal-host '<user>@<amd-bench>'`, into $M/../metal-amd/), and run in one session.
+Expected there: as for the T14 below, with m1 in place of m2 (the AMD bench has no PCID, so m2 never runs there).
+
+######## What each verdict should be ########
+
+HEAD, both benches: all three global-leaf rows GREEN; control_regs GREEN, every CPU's cr4 carrying bit 7 (0x80) and,
+   on the T14, bit 17 (PCIDE): the T14 (06-8C-01) is on no INVLPG-erratum row, so it keeps PCID.
+M1 (non-PCID machine flush back to a CR3 reload), AMD:  a_kernel_half_shootdown_... RED, the job exiting 101 with
+   "the shootdown's flush left the old frame's global translation"; the other two GREEN.
+M2 (INVPCID type 2 -> 3 in flush_tlb_all), T14:         a_kernel_half_shootdown_... RED, same message; the other two GREEN.
+M3 (Owed::Address global arm removed), both:            a_global_kernel_leafs_discharge_drops_it RED, "the write's
+   discharge left the old frame's global translation"; the other two GREEN.
+M4 (the user-half answer is flush_tlb_all again), both:  a_user_half_shootdown_keeps_a_global_kernel_translation RED,
+   "the user-half shootdown dropped a global kernel translation"; the other two GREEN.
+Any row RED with "the control: with nothing invalidated the second read did not see the first frame" is neither: that
+   CPU held no translation to go stale, and that boot's mutation evidence is void. Report it as such.
+A mutation that stays GREEN where RED is expected is a finding for me, with the boot's kernel log.
+
+Reported, not gated (both benches): scout_tlb_base's round trip per k, base against head, with its PMU walk counters;
+`tlb: bench` (tlb_shootdown_cost) p50/p99, base against head. Round 1's head made every shootdown's flush global;
+this head makes a user-half one non-global again, which is what `tlb: bench` issues (Origin::Bench, Half::User).

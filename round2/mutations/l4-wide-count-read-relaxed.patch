@@ -1,0 +1,14 @@
+diff --git a/kernel/src/shootdown.rs b/kernel/src/shootdown.rs
+index f6b770137..d243edb53 100644
+--- a/kernel/src/shootdown.rs
++++ b/kernel/src/shootdown.rs
+@@ -88,7 +88,8 @@ impl Shootdown {
+     /// A target's whole side of the protocol: `flush` is told how far its answer must reach.
+     pub fn serve(&self, cpu: usize, flush: impl FnOnce(Reach)) {
+         let owed = self.requested.load(OWED);
+-        let wide = self.wide.load(Ordering::Acquire);
++        // MUTATION, never lands: the wide count read Relaxed.
++        let wide = self.wide.load(Ordering::Relaxed);
+         let reach = if wide > self.widened[cpu].load(Ordering::Acquire) { Reach::Wide } else { Reach::Narrow };
+         flush(reach);
+         if reach == Reach::Wide {

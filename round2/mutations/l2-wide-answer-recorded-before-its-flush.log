@@ -1,0 +1,31 @@
+   Compiling kernel-loom v0.1.0 (<dev>/toyos-pge-mut/kernel/loom)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.39s
+     Running tests/tlb_shootdown.rs (target/debug/deps/tlb_shootdown-e81ad23158713781)
+
+running 8 tests
+test a_nested_serve_is_not_undone_by_the_one_it_interrupted ... ok
+test an_initiator_answers_while_it_waits ... ok
+test only_a_kernel_half_shootdown_asks_a_wide_answer ... ok
+test an_acknowledged_flush_postdates_the_page_table_write ... ok
+test an_acknowledged_kernel_half_shootdown_dropped_the_global_translation ... ok
+test a_serve_nested_in_an_unfinished_wide_one_answers_wide ... FAILED
+test one_serve_answering_a_user_half_and_a_kernel_half_shootdown_answers_wide ... ok
+test one_serve_answers_two_concurrent_shootdowns ... ok
+
+failures:
+
+---- a_serve_nested_in_an_unfinished_wide_one_answers_wide stdout ----
+
+thread 'a_serve_nested_in_an_unfinished_wide_one_answers_wide' (3216462) panicked at kernel/loom/tests/tlb_shootdown.rs:384:13:
+assertion `left == right` failed: a nested serve published the kernel-half shootdown while the wide answer it nested in had not yet dropped the global translation
+  left: 1
+ right: 0
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    a_serve_nested_in_an_unfinished_wide_one_answers_wide
+
+test result: FAILED. 7 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.82s
+
+error: test failed, to rerun pass `-p kernel-loom --test tlb_shootdown`

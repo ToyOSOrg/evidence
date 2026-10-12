@@ -1,0 +1,22 @@
+diff --git a/kernel/src/shootdown.rs b/kernel/src/shootdown.rs
+index f6b770137..d6a4ee2f5 100644
+--- a/kernel/src/shootdown.rs
++++ b/kernel/src/shootdown.rs
+@@ -76,13 +76,13 @@ impl Shootdown {
+ 
+     /// Names the generation every other CPU now owes a flush for, of `reach`.
+     pub fn issue(&self, reach: Reach) -> Generation {
++        // AcqRel, not Release: the acquire half stops a later load being hoisted above this fetch_add.
++        let generation = Generation(self.requested.fetch_add(1, Ordering::AcqRel) + 1);
++        // MUTATION, never lands: the wide count raised after the generation exists.
+         if reach == Reach::Wide {
+-            // Before the generation exists, and Release: a serve that owes the generation reads this
+-            // count, and an answer that reads the count follows the write it was raised for.
+             self.wide.fetch_add(1, Ordering::Release);
+         }
+-        // AcqRel, not Release: the acquire half stops a later load being hoisted above this fetch_add.
+-        Generation(self.requested.fetch_add(1, Ordering::AcqRel) + 1)
++        generation
+     }
+ 
+     /// A target's whole side of the protocol: `flush` is told how far its answer must reach.

@@ -1,0 +1,14 @@
+diff --git a/kernel/cpuvuln/src/invlpg.rs b/kernel/cpuvuln/src/invlpg.rs
+index 9c970249e..e1e9fdf07 100644
+--- a/kernel/cpuvuln/src/invlpg.rs
++++ b/kernel/cpuvuln/src/invlpg.rs
+@@ -40,7 +40,8 @@ pub fn invlpg_misses_global(facts: &InvlpgFacts) -> bool {
+     );
+     let guest = facts.cpuid_1_ecx & CPUID_1_ECX_HYPERVISOR != 0;
+     table::invlpg_fixed_at(&Ident::new(facts.vendor, facts.signature))
+-        .is_some_and(|fixed| !guest && (facts.microcode.expect("asserted above") as i32) < fixed)
++        // MUTATION, never lands: the revision compared unsigned, as Linux does.
++        .is_some_and(|fixed| !guest && facts.microcode.expect("asserted above") < fixed as u32)
+ }
+ 
+ #[cfg(test)]

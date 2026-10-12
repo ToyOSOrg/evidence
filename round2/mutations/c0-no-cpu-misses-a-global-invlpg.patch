@@ -1,0 +1,17 @@
+diff --git a/kernel/cpuvuln/src/invlpg.rs b/kernel/cpuvuln/src/invlpg.rs
+index 9c970249e..4a70c5d67 100644
+--- a/kernel/cpuvuln/src/invlpg.rs
++++ b/kernel/cpuvuln/src/invlpg.rs
+@@ -38,9 +38,9 @@ pub fn invlpg_misses_global(facts: &InvlpgFacts) -> bool {
+         facts.vendor == Vendor::Intel,
+         "the microcode revision is read exactly where the vendor is Intel",
+     );
+-    let guest = facts.cpuid_1_ecx & CPUID_1_ECX_HYPERVISOR != 0;
+-    table::invlpg_fixed_at(&Ident::new(facts.vendor, facts.signature))
+-        .is_some_and(|fixed| !guest && (facts.microcode.expect("asserted above") as i32) < fixed)
++    // MUTATION, never lands: the verdict reverted, every CPU keeps PCID.
++    let _ = (table::invlpg_fixed_at, CPUID_1_ECX_HYPERVISOR, Ident::new);
++    false
+ }
+ 
+ #[cfg(test)]
