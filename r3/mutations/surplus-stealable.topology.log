@@ -1,0 +1,44 @@
+    Blocking waiting for file lock on package cache
+   Compiling kernel v0.1.0 (<home>/Dev/jan/toyos-busywake/kernel)
+   Compiling kernel-sim v0.1.0 (<home>/Dev/jan/toyos-busywake/kernel/sim)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.79s
+     Running tests/topology.rs (target/debug/deps/topology-82d22d27baa556ec)
+
+running 6 tests
+test a_benchs_shape_is_what_its_scout_read ... ok
+test a_cpu_that_is_rung_and_declines_to_probe_is_caught ... FAILED
+test a_push_that_waits_for_more_than_a_probe_takes_is_caught ... ok
+test the_push_keeps_an_idle_cpu_beside_work_inside_its_bound ... FAILED
+test an_idle_cpu_whose_ccx_looks_busy_is_reached ... FAILED
+test every_scenario_holds_at_every_shape ... ok
+
+failures:
+
+---- a_cpu_that_is_rung_and_declines_to_probe_is_caught stdout ----
+
+thread 'a_cpu_that_is_rung_and_declines_to_probe_is_caught' (9955581) panicked at kernel/sim/tests/topology.rs:268:13:
+flat: lopsided_placement: FAILED after 244 steps
+  I15: cpu1 has been idle for 5 rounds while cpu0 holds 1 queued fair task(s) (bound 4 rounds)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- the_push_keeps_an_idle_cpu_beside_work_inside_its_bound stdout ----
+
+thread 'the_push_keeps_an_idle_cpu_beside_work_inside_its_bound' (9955585) panicked at kernel/sim/tests/topology.rs:184:13:
+t14: lopsided_placement: FAILED after 2317 steps
+  I15: cpu6 has been idle for 11 rounds while cpu0 holds 1 queued fair task(s) (bound 10 rounds)
+
+---- an_idle_cpu_whose_ccx_looks_busy_is_reached stdout ----
+
+thread 'an_idle_cpu_whose_ccx_looks_busy_is_reached' (9955583) panicked at kernel/sim/tests/topology.rs:200:9:
+group_imbalance: FAILED after 15766 steps
+  I15: cpu8 has been idle for 19 rounds while cpu0 holds 1 queued fair task(s) (bound 18 rounds)
+
+
+failures:
+    a_cpu_that_is_rung_and_declines_to_probe_is_caught
+    an_idle_cpu_whose_ccx_looks_busy_is_reached
+    the_push_keeps_an_idle_cpu_beside_work_inside_its_bound
+
+test result: FAILED. 3 passed; 3 failed; 0 ignored; 0 measured; 0 filtered out; finished in 19.78s
+
+error: test failed, to rerun pass `-p kernel-sim --test topology`

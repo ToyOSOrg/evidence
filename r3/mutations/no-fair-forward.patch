@@ -1,0 +1,13 @@
+diff --git a/kernel/pure/sched/cpu.rs b/kernel/pure/sched/cpu.rs
+index 498674178..4c528d916 100644
+--- a/kernel/pure/sched/cpu.rs
++++ b/kernel/pure/sched/cpu.rs
+@@ -984,7 +984,7 @@ impl<X: SchedPayload> CpuSched<X> {
+                     .expect("a running task's share is runnable")
+             });
+         let behind_rt = task.is_rt() && self.running.as_ref().is_some_and(|r| r.is_rt());
+-        if behind_fair.is_some() || behind_rt {
++        if behind_rt {
+             if let Some(dst) = self.idle_sibling(env) {
+                 self.hand_off(task, dst, env, now);
+                 return;

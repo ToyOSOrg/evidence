@@ -1,0 +1,24 @@
+   Compiling kernel v0.1.0 (<home>/Dev/jan/toyos-busywake/kernel)
+   Compiling kernel-sim v0.1.0 (<home>/Dev/jan/toyos-busywake/kernel/sim)
+    Finished `test` profile [optimized + debuginfo] target(s) in 2.90s
+     Running tests/policy.rs (target/debug/deps/policy-741a1ed750f9c366)
+
+running 1 test
+test a_bounded_re_arm_reaches_every_cpu_the_pull_path_left_asleep ... FAILED
+
+failures:
+
+---- a_bounded_re_arm_reaches_every_cpu_the_pull_path_left_asleep stdout ----
+re-arm ×1 cpus=2 threads=8: every-cpu 20/20 (pull 8/20), gap=24000000 ns (pull 480000000 ns, bound 13000000 ns), drained 7/7, working_at Some(1000000)..Some(91000000) ns, 53 idle wakes over the sweep, worst run 8.16/s
+
+thread 'a_bounded_re_arm_reaches_every_cpu_the_pull_path_left_asleep' (10020842) panicked at kernel/sim/tests/policy.rs:1070:13:
+a CPU sat halted beside a published surplus with no probe outstanding for 24000000 ns, against a derived 13000000 ns — one re-arm period at 10000000 ns plus three 1000000 ns chunks of the model's own granularity. Past this the timer is not what is waking the CPU.
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    a_bounded_re_arm_reaches_every_cpu_the_pull_path_left_asleep
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 14 filtered out; finished in 0.03s
+
+error: test failed, to rerun pass `-p kernel-sim --test policy`

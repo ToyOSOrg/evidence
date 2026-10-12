@@ -1,0 +1,56 @@
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+   Compiling kernel v0.1.0 (<home>/Dev/jan/toyos-busywake/kernel)
+   Compiling kernel-sim v0.1.0 (<home>/Dev/jan/toyos-busywake/kernel/sim)
+    Finished `test` profile [optimized + debuginfo] target(s) in 5.97s
+     Running tests/policy.rs (target/debug/deps/policy-741a1ed750f9c366)
+
+running 15 tests
+test the_balance_path_drains_the_cpu_an_adversary_loaded ... FAILED
+test a_wake_to_a_busy_cpu_beside_an_idle_one_runs_within_two_hops ... ok
+test a_wake_owed_the_cpu_waits_out_the_protected_run_and_no_more ... ok
+test a_push_on_surplus_reaches_every_cpu_the_pull_path_left_asleep ... FAILED
+test a_stopped_cpu_stops_taking_work ... ok
+test a_sibling_that_naps_does_not_preempt_the_one_that_spins ... ok
+test a_bounded_re_arm_reaches_every_cpu_the_pull_path_left_asleep ... FAILED
+test per_thread_shares_lose_the_floor ... ok
+test the_share_deficit_is_an_offset_and_not_a_drift ... ok
+test a_wakeup_storm_drains_without_serializing ... ok
+test an_interactive_wake_waits_out_at_most_the_band_it_is_queued_behind ... ok
+test a_process_cannot_buy_cpu_by_forking ... ok
+test a_runnable_task_waits_at_most_one_dispatch_per_rival ... ok
+test the_two_cures_are_priced_against_the_pull_path ... ok
+test without_the_balance_path_a_lopsided_machine_stays_lopsided ... ok
+
+failures:
+
+---- the_balance_path_drains_the_cpu_an_adversary_loaded stdout ----
+
+thread 'the_balance_path_drains_the_cpu_an_adversary_loaded' (9952103) panicked at kernel/sim/tests/policy.rs:142:9:
+lopsided_placement: FAILED after 633 steps
+  I15: cpu1 has been idle for 5 rounds while cpu0 holds 1 queued fair task(s) (bound 4 rounds)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- a_push_on_surplus_reaches_every_cpu_the_pull_path_left_asleep stdout ----
+
+thread 'a_push_on_surplus_reaches_every_cpu_the_pull_path_left_asleep' (9952094) panicked at kernel/sim/tests/policy.rs:142:9:
+lopsided_placement: FAILED after 633 steps
+  I15: cpu1 has been idle for 5 rounds while cpu0 holds 1 queued fair task(s) (bound 4 rounds)
+
+---- a_bounded_re_arm_reaches_every_cpu_the_pull_path_left_asleep stdout ----
+re-arm ×1 cpus=2 threads=8: every-cpu 20/20 (pull 8/20), gap=10000000 ns (pull 480000000 ns, bound 13000000 ns), drained 6/7, working_at Some(1000000)..Some(91000000) ns, 52 idle wakes over the sweep, worst run 6.12/s
+
+thread 'a_bounded_re_arm_reaches_every_cpu_the_pull_path_left_asleep' (9952092) panicked at kernel/sim/tests/policy.rs:1081:13:
+assertion `left == right` failed: the best of 20 schedules moved 6 tasks and the surplus floor leaves 7 stealable — the re-arm changes when a probe is posted and nothing about what answering one hands over
+  left: 6
+ right: 7
+
+
+failures:
+    a_bounded_re_arm_reaches_every_cpu_the_pull_path_left_asleep
+    a_push_on_surplus_reaches_every_cpu_the_pull_path_left_asleep
+    the_balance_path_drains_the_cpu_an_adversary_loaded
+
+test result: FAILED. 12 passed; 3 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.46s
+
+error: test failed, to rerun pass `-p kernel-sim --test policy`

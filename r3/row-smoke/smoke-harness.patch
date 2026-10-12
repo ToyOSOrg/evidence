@@ -1,0 +1,46 @@
+--- a/tests/toyos.rs
++++ b/tests/toyos.rs
+@@ -446,6 +446,7 @@
+     // the T14 boots from a stick, so no disk diskserver drives holds a
+     // partition the loader named.
+     "block_grants_reach_their_partitions",
++    "wake_onto_busy_smoke",
+     // The supervisor reading the slot table through a block session and
+     // minting `update` the idle slot's partitions, which `update` writes and
+     // marks through diskserver: the supervisor, the launcher and diskserver
+@@ -3938,6 +3939,7 @@
+         "nvme_disk_keeps_log_and_home" => nvme_disk_keeps_log_and_home(test_config),
+         "hosted_clang_hello" => common::hostedclang::hosted_clang_hello(),
+         "block_grants_reach_their_partitions" => block_grants_reach_their_partitions(),
++        "wake_onto_busy_smoke" => wake_onto_busy_smoke(test_config),
+         "update_writes_the_idle_slot_through_the_block_service" => update_writes_the_idle_slot_through_the_block_service(),
+         "usbd_drives_the_spare" => usbd_drives_the_spare(test_config),
+         "usb_keyboard_rollover" => usb_keyboard_rollover(test_config),
+@@ -4358,6 +4360,27 @@
+ /// that disk, and what one boot wrote to `/home` and said into `/log` the next
+ /// boot reads back: a file under a name of this run's, line for line, and a
+ /// line of this run's in a log file the first boot listed.
++/// Scratch, never committed: `wake_onto_busy` stages on a guest and ends in a
++/// measurement rather than a refusal; its number means nothing here.
++fn wake_onto_busy_smoke(test_config: &Path) -> Result<(), String> {
++    let rust = compile::repo_root().join("tests/guest/rust-tests");
++    let job = "wake_onto_busy";
++    let bin = qemu::build_toyos_bin(qemu::SUITE_ARCH, &rust, job);
++    let options = BootOptions { smp: 4, ..Default::default() };
++    let mut qemu = QemuInstance::boot_with_options(test_config, &[], &[(job.to_string(), bin)], options);
++    let result = qemu.run_test(&format!("test_rs_{job}"), Duration::from_secs(300));
++    for line in result.serial.lines().filter(|l| l.contains("wake_onto_busy")) {
++        eprintln!("  {line}");
++    }
++    if let Some(why) = &result.error {
++        return Err(format!("{why}\n{}", result.serial));
++    }
++    match result.exit_code {
++        Some(code) if code >= 0 => Ok(()),
++        code => Err(format!("the job ended {code:?}:\n{}", result.serial)),
++    }
++}
++
+ fn nvme_disk_keeps_log_and_home(test_config: &Path) -> Result<(), String> {
+     let options = BootOptions { profile: qemu::Profile::HeadlessNoUsb, qmp: true, ..Default::default() };
+     if let Some(usb) = qemu::profile_argv(&options).iter().find(|arg| arg.contains("usb") || arg.contains("xhci")) {

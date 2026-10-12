@@ -1,0 +1,13 @@
+diff --git a/kernel/pure/sched/cpu.rs b/kernel/pure/sched/cpu.rs
+index 498674178..c94ebfd2b 100644
+--- a/kernel/pure/sched/cpu.rs
++++ b/kernel/pure/sched/cpu.rs
+@@ -1717,7 +1717,7 @@ impl<H: Hw, P: PreemptGuard> SchedPass<'_, '_, H, P, Disposed> {
+             // taking two tasks in turn would otherwise publish none at every
+             // pass, and nothing would come for the one it queues.
+             let handle = self.env.cpus.get(self.cpu.id);
+-            let surplus = self.cpu.rq.fair_len() as u32;
++            let surplus = self.stealable() as u32;
+             handle.publish_load((self.cpu.rq.len() + self.cpu.dying.len()) as u32);
+             handle.publish_surplus(surplus);
+             // The stamp goes with them: it is what says they are about now.

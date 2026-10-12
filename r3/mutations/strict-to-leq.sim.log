@@ -1,0 +1,24 @@
+   Compiling kernel v0.1.0 (<home>/Dev/jan/toyos-busywake/kernel)
+   Compiling kernel-sim v0.1.0 (<home>/Dev/jan/toyos-busywake/kernel/sim)
+    Finished `test` profile [optimized + debuginfo] target(s) in 2.63s
+     Running tests/policy.rs (target/debug/deps/policy-741a1ed750f9c366)
+
+running 1 test
+test a_sibling_that_naps_does_not_preempt_the_one_that_spins ... FAILED
+
+failures:
+
+---- a_sibling_that_naps_does_not_preempt_the_one_that_spins stdout ----
+sleep-spin siblings: spinner done at 190000000 ns, bound 130000000 ns
+
+thread 'a_sibling_that_naps_does_not_preempt_the_one_that_spins' (10027146) panicked at kernel/sim/tests/policy.rs:576:5:
+the spinner took 190000000 ns for 100000000 ns of work against 130000000 ns — its napping sibling is taking the CPU off it between quanta, which a tied key does not earn
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    a_sibling_that_naps_does_not_preempt_the_one_that_spins
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 14 filtered out; finished in 0.02s
+
+error: test failed, to rerun pass `-p kernel-sim --test policy`

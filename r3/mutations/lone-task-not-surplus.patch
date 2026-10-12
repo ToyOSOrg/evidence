@@ -1,0 +1,13 @@
+diff --git a/kernel/pure/sched/cpu.rs b/kernel/pure/sched/cpu.rs
+index 498674178..46aa0886e 100644
+--- a/kernel/pure/sched/cpu.rs
++++ b/kernel/pure/sched/cpu.rs
+@@ -1968,7 +1968,7 @@ impl<H: Hw, P: PreemptGuard> SchedPass<'_, '_, H, P, Disposed> {
+             self.cpu.running.as_ref().is_none_or(|running| running.key() != loaded)
+                 && self.cpu.rq.holds_fair(loaded)
+         });
+-        self.cpu.rq.fair_len() - usize::from(loaded_queued)
++        self.cpu.rq.fair_len().saturating_sub(1)
+     }
+ 
+     fn apply_timer(&mut self) -> TimerApplied {

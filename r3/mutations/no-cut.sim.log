@@ -1,0 +1,25 @@
+    Blocking waiting for file lock on package cache
+   Compiling kernel v0.1.0 (<home>/Dev/jan/toyos-busywake/kernel)
+   Compiling kernel-sim v0.1.0 (<home>/Dev/jan/toyos-busywake/kernel/sim)
+    Finished `test` profile [optimized + debuginfo] target(s) in 2.08s
+     Running tests/policy.rs (target/debug/deps/policy-741a1ed750f9c366)
+
+running 1 test
+test a_wake_owed_the_cpu_waits_out_the_protected_run_and_no_more ... FAILED
+
+failures:
+
+---- a_wake_owed_the_cpu_waits_out_the_protected_run_and_no_more stdout ----
+owed wake: [n=700 max=10000000 2nd=8000000 mean=360000] worst-run-2nd=7000000 ns bound=3200000 ns
+
+thread 'a_wake_owed_the_cpu_waits_out_the_protected_run_and_no_more' (10039405) panicked at kernel/sim/tests/policy.rs:544:5:
+a second wake in one run waited 7000000 ns against 3200000 ns — the protected run and one hop. Past this a wake owed the CPU is waiting for the running task's quantum.
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    a_wake_owed_the_cpu_waits_out_the_protected_run_and_no_more
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 14 filtered out; finished in 0.01s
+
+error: test failed, to rerun pass `-p kernel-sim --test policy`

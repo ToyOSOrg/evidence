@@ -1,0 +1,13 @@
+diff --git a/kernel/pure/sched/cpu.rs b/kernel/pure/sched/cpu.rs
+index 498674178..972c31aa0 100644
+--- a/kernel/pure/sched/cpu.rs
++++ b/kernel/pure/sched/cpu.rs
+@@ -998,7 +998,7 @@ impl<X: SchedPayload> CpuSched<X> {
+         }
+         let queued = self.enqueue(task, env);
+         if behind_fair.is_some_and(|held| queued < held) {
+-            let protected = self.dispatched_at.after(PROTECTED_RUN_NS);
++            let protected = Nanos(self.quantum_end.0.saturating_sub(QUANTUM_NS)).after(PROTECTED_RUN_NS);
+             self.quantum_end = self.quantum_end.min(now.max(protected));
+         }
+     }
