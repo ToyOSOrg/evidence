@@ -1,0 +1,83 @@
+# E8: the paths this body cites. ToyOS head 8e3623e5b06444e73a31ee366829ca4a856721cf.
+$ cat tools/e8.py
+# E8: every tree path the body cites exists at origin/main, and which of them moved since the branch base.
+# argv: <repository> <base> <tip>
+import subprocess, sys
+repo, base, tip = sys.argv[1:4]
+PATHS = """CLAUDE.md .claude/agents/implementer.md .claude/agents/reviewer.md build/build.rs build/keystore.rs build/lib.rs
+build/qemu.rs build/ssh/tests/fuzz.rs build/sysroot.rs build/toolchain.rs build/userlandhost.rs images/system.toml
+issues/a-claim-spends-device-addresses-its-slot-never-gets-back.md
+issues/a-controller-whose-msix-table-is-in-bar-0-cannot-be-driven-from-userland.md
+issues/a-metal-row-names-no-hardware-and-a-bench-without-it-reds.md issues/an-amd-vi-machine-isolates-no-device.md
+issues/every-program-sees-only-the-files-it-was-given.md
+issues/process-memory-is-2-mib-pages-and-that-caps-the-process-count.md
+issues/qemu-passes-compatibility-format-interrupts.md
+issues/the-forks-pin-is-a-file-and-a-worktree-checks-no-fork-out.md issues/the-lan-is-not-yet-production-grade.md
+issues/there-is-no-wifi.md issues/toyos-has-its-own-network-stack.md kernel/src/arch/aarch64/irqchip.rs
+kernel/src/arch/x86_64/idt/user_dev.rs kernel/src/arch/x86_64/vtd/interrupt.rs kernel/src/arch/x86_64/vtd/fault.rs
+kernel/src/pcidev/mod.rs lib/acpiserver-api lib/blockring lib/blockring/transport system/netstack/ip/src/lib.rs
+system/netstack/ip/src/route.rs system/netstack/node/src/lib.rs system/netstack/shard/src/lib.rs
+system/netstack/src/main.rs system/netstack/src/card.rs system/supervisor/src/main.rs system/acpiserver/src/main.rs
+tests/common/qemu.rs""".split()
+def git(*a):
+    return subprocess.run(['git', '-C', repo, *a], capture_output=True, text=True)
+print('$ git rev-parse', tip, base); print(git('rev-parse', tip, base).stdout.strip())
+missing = 0
+for p in PATHS:
+    ok = git('cat-file', '-e', f'{tip}:{p}').returncode == 0
+    print(f'{"present" if ok else "MISSING"} at {tip}: {p}')
+    missing += not ok
+d = git('diff', '--stat', base, tip, '--', *PATHS)
+print(f'$ git diff --stat {base} {tip} -- <the paths above>'); print(d.stdout.rstrip()); print(f'diff exit={d.returncode} missing={missing}')
+sys.exit(1 if missing or d.returncode else 0)
+
+$ python3 -I tools/e8.py <worktree> 177e72a9e 528b9a6c2
+$ git rev-parse 528b9a6c2 177e72a9e735be1fd389668bb39f7cbd96615062
+528b9a6c2040d3d6ebdec679a04bb4f7bc907eeb
+177e72a9e735be1fd389668bb39f7cbd96615062
+present at 528b9a6c2: CLAUDE.md
+present at 528b9a6c2: .claude/agents/implementer.md
+present at 528b9a6c2: .claude/agents/reviewer.md
+present at 528b9a6c2: build/build.rs
+present at 528b9a6c2: build/keystore.rs
+present at 528b9a6c2: build/lib.rs
+present at 528b9a6c2: build/qemu.rs
+present at 528b9a6c2: build/ssh/tests/fuzz.rs
+present at 528b9a6c2: build/sysroot.rs
+present at 528b9a6c2: build/toolchain.rs
+present at 528b9a6c2: build/userlandhost.rs
+present at 528b9a6c2: images/system.toml
+present at 528b9a6c2: issues/a-claim-spends-device-addresses-its-slot-never-gets-back.md
+present at 528b9a6c2: issues/a-controller-whose-msix-table-is-in-bar-0-cannot-be-driven-from-userland.md
+present at 528b9a6c2: issues/a-metal-row-names-no-hardware-and-a-bench-without-it-reds.md
+present at 528b9a6c2: issues/an-amd-vi-machine-isolates-no-device.md
+present at 528b9a6c2: issues/every-program-sees-only-the-files-it-was-given.md
+present at 528b9a6c2: issues/process-memory-is-2-mib-pages-and-that-caps-the-process-count.md
+present at 528b9a6c2: issues/qemu-passes-compatibility-format-interrupts.md
+present at 528b9a6c2: issues/the-forks-pin-is-a-file-and-a-worktree-checks-no-fork-out.md
+present at 528b9a6c2: issues/the-lan-is-not-yet-production-grade.md
+present at 528b9a6c2: issues/there-is-no-wifi.md
+present at 528b9a6c2: issues/toyos-has-its-own-network-stack.md
+present at 528b9a6c2: kernel/src/arch/aarch64/irqchip.rs
+present at 528b9a6c2: kernel/src/arch/x86_64/idt/user_dev.rs
+present at 528b9a6c2: kernel/src/arch/x86_64/vtd/interrupt.rs
+present at 528b9a6c2: kernel/src/arch/x86_64/vtd/fault.rs
+present at 528b9a6c2: kernel/src/pcidev/mod.rs
+present at 528b9a6c2: lib/acpiserver-api
+present at 528b9a6c2: lib/blockring
+present at 528b9a6c2: lib/blockring/transport
+present at 528b9a6c2: system/netstack/ip/src/lib.rs
+present at 528b9a6c2: system/netstack/ip/src/route.rs
+present at 528b9a6c2: system/netstack/node/src/lib.rs
+present at 528b9a6c2: system/netstack/shard/src/lib.rs
+present at 528b9a6c2: system/netstack/src/main.rs
+present at 528b9a6c2: system/netstack/src/card.rs
+present at 528b9a6c2: system/supervisor/src/main.rs
+present at 528b9a6c2: system/acpiserver/src/main.rs
+present at 528b9a6c2: tests/common/qemu.rs
+$ git diff --stat 177e72a9e735be1fd389668bb39f7cbd96615062 528b9a6c2 -- <the paths above>
+ .claude/agents/implementer.md | 13 +++++++++----
+ .claude/agents/reviewer.md    |  4 ++--
+ 2 files changed, 11 insertions(+), 6 deletions(-)
+diff exit=0 missing=0
+EXIT=0
