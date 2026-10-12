@@ -1,0 +1,57 @@
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+   Compiling toyos-build v0.1.0 (/Users/jan/Dev/jan/toyos-sysentry)
+    Finished `test` profile [optimized + debuginfo] target(s) in 2.21s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-608bd856a6e56707)
+
+13:15:22 running 1 tests, 12 wide
+
+13:15:22   RUN   vector_state_survives_a_switch
+13:15:22   BUILD x86_64 vector_state of tests/guest/rust-tests, for vector_state_survives_a_switch
+13:15:27   BUILT x86_64 vector_state of tests/guest/rust-tests, for vector_state_survives_a_switch  (5s)
+13:15:27   BUILD x86_64 kernel, loader, ROOT of tests/images/testcases.toml, for vector_state_survives_a_switch
+13:15:38 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+13:15:38   BUILT x86_64 kernel, loader, ROOT of tests/images/testcases.toml, for vector_state_survives_a_switch  (11s)
+13:16:13 FAIL vector_state_survives_a_switch: kernel panic: PANIC: panicked at kernel/src/arch/x86_64/hw.rs:142:13: — the guest went quiet because every CPU is halted, not because it was still working. The panic is the finding and the guard never got to be one.
+--- what the kernel said as it died ---
+[19.837 cpu1 kernel alert] PANIC: panicked at kernel/src/arch/x86_64/hw.rs:142:13:
+slot-probe test_rs_vector_state pid=10: saves=374 same=185 same_depth=4544..5184 changed_lines(line:saves): 0:180 1:180 2:180 3:180 4:180 5:180 6:180 8:185 9:180 10:180 11:180 12:180 17:1 18:1 19:1 20:1 21:1 22:3 23:3 24:5 25:18 26:139 27:34 28:20 29:146 30:34 32:1 33:131 34:161 35:27 38:3 39:124 40:147 41:157 42:28 43:6 44:126 45:163 46:158 47:154 48:97 49:43 50:160 51:73 52:108 53:167 54:138 55:160 56:185 57:165 58:104 59:112 60:49 61:48 62:52 63:7 | depth-census(num:calls:shallowest..deepest): 6:1:1768..1768 14:1:1432..1432 16:15000:12426..12426 40:5:1712..1840 41:5:1680..5488 50:1:1264..1264 51:1:1264..1264 62:1:1264..1264 63:6:1616..1744 73:1:1264..1264 91:1:1616..1616 106:1:1552..1552 | area=832 || slot-probe total: saves=893 same=649 same_depth=4544..5824 changed_lines(line:saves): 0:631 1:615 2:615 3:615 4:615 5:615 6:615 7:1 8:649 9:613 10:613 11:613 12:613 13:1 14:1 15:17 16:17 17:6 18:2 19:3 20:2 21:2 22:4 23:4  …[261 bytes elided]
+[19.837 cpu1 kernel]   Backtrace:
+[19.838 cpu1 kernel]     0xffff80007ad93dec  core::panicking::panic_fmt+0x2c
+[19.838 cpu1 kernel]     0xffff80007ad0cdaa  kernel::arch::x86_64::hw::slot_probe::report+0x40a
+[19.838 cpu1 kernel]     0xffff80007acfec5a  kernel::process::leave+0xa2a
+[19.838 cpu1 kernel]     0xffff80007acfdcba  kernel::process::exit+0xfa
+[19.838 cpu1 kernel]     0xffff80007ad56cb9  kernel::syscall::proc::sys_exit+0x9
+[19.839 cpu1 kernel]     0xffff80007ad2cb18  kernel::syscall::dispatch::syscall_dispatch::{closure#1}+0x27c8
+[19.839 cpu1 kernel]     0xffff80007ad2cc85  kernel::syscall::dispatch::syscall_dispatch+0x85
+[19.879 cpu1 kernel]     0xffff80007acad440  kernel::arch::x86_64::syscall::syscall_handler+0x60
+[19.879 cpu1 kernel]     0xffff80007acad15c  kernel::arch::x86_64::syscall::syscall_entry+0x54
+[19.879 cpu1 kernel]   Contexts: cpu1 crashed at sp=0xffff800006ded400, asking about ctx 0xffff800000246f30
+[19.879 cpu1 kernel]   cpu0 is on ctx 0xffff800000230b70 pid=6 tid=0 stack_top=0xffff800006ca5000 saved_sp=0xffff800006ca3980
+[19.879 cpu1 kernel]   cpu1 is on ctx 0xffff800000246f30 pid=10 tid=0 stack_top=0xffff800006dee000 saved_sp=0xffff800006decb40
+[19.904 cpu1 kernel]   Running: pid=10 tid=Some(Tid(0))
+[19.904 cpu1 kernel]   [Process: PROCESS_TABLE locked, skipping]
+[19.904 cpu1 kernel]   Syscall: num=72 user_rip=0x100000544aa user_rsp=0xffffffff80
+[19.904 cpu1 kernel]   User backtrace:
+[19.905 cpu1 kernel]     0x100000544aa  /system/bin/test_rs_vector_state+0x544aa id=c6515c37fbb7ad8cb4972a6a7fc790b5ee0a5d34
+[19.912 cpu1 kernel alert] panic: rebooting in 60 s, timed by the calibrated clock
+the job said:
+acpiserver: embedded controller none: no PNP0C09 device is present
+acpiserver: no battery: 0 of 0 control-method batteries present, 0 AC adapter(s), with no embedded controller attached; the Global Lock taken 0 times on the way and given back 0 times, the firmware found holding it by 0 of the takes
+slot-probe test_rs_vector_state pid=10: saves=374 same=185 same_depth=4544..5184 changed_lines(line:saves): 0:180 1:180 2:180 3:180 4:180 5:180 6:180 8:185 9:180 10:180 11:180 12:180 17:1 18:1 19:1 20:1 21:1 22:3 23:3 24:5 25:18 26:139 27:34 28:20 29:146 30:34 32:1 33:131 34:161 35:27 38:3 39:124 40:147 41:157 42:28 43:6 44:126 45:163 46:158 47:154 48:97 49:43 50:160 51:73 52:108 53:167 54:138 55:160 56:185 57:165 58:104 59:112 60:49 61:48 62:52 63:7 | depth-census(num:calls:shallowest..deepest): 6:1:1768..1768 14:1:1432..1432 16:15000:12426..12426 40:5:1712..1840 41:5:1680..5488 50:1:1264..1264 51:1:1264..1264 62:1:1264..1264 63:6:1616..1744 73:1:1264..1264 91:1:1616..1616 106:1:1552..1552 | area=832 || slot-probe total: saves=893 same=649 same_depth=4544..5824 changed_lines(line:saves): 0:631 1:615 2:615 3:615 4:615 5:615 6:615 7:1 8:649 9:613 10:613 11:613 12:613 13:1 14:1 15:17 16:17 17:6 18:2 19:3 20:2 21:2 22:4 23:4  …[261 bytes elided]
+
+13:16:13   FAIL  vector_state_survives_a_switch  (35s)
+13:16:13   --- 1 guests, 0 of them not the shipping kernel, 1 kernel build(s): [""]
+
+13:16:13 host: fastest boot 9172 ms against the reference 1424 ms — liveness ceilings paid at 6.44x
+13:16:13 host: 14 core(s); a guest wider than that waits vcpus/cores longer again
+13:16:13 failures:
+13:16:13     vector_state_survives_a_switch: kernel panic: PANIC: panicked at kernel/src/arch/x86_64/hw.rs:142:13: — the guest went quiet because every CPU is halted, not because it was still working. The panic is the finding and the guard never got to be one.
+
+13:16:13 test result: FAILED. 0 passed, 1 failed, 0 invalidated, 1 total (51.3s; workers: 16s building, 35s testing)
+13:16:13 [toyos] this red run's serial logs are kept at /Users/jan/Dev/jan/toyos-sysentry/target/red-run-serial/toyos-tmp-23824-0
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `/Users/jan/Dev/jan/toyos-sysentry/target/debug/deps/toyos_build-608bd856a6e56707 vector_state_survives_a_switch` (exit status: 1)
