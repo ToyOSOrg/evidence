@@ -1,0 +1,17 @@
+== head c85fbc77fe812b2b30c0218c0ef3e649e7c04d2d, base 177e72a9e735be1fd389668bb39f7cbd96615062
+== QEMU tier
+green QEMU lent_device_memory_refused EXIT=0
+negative-control QEMU lent_device_memory_refused EXIT=1
+m1-sdk-takes-device-memory QEMU lent_device_memory_refused EXIT=1
+m4-kernel-says-every-region-is-ram QEMU lent_device_memory_refused EXIT=2
+== host tier
+m1-sdk-takes-device-memory HOST cargo test -p toyos --lib shm:: EXIT=101
+m2-sdk-takes-a-longer-region HOST cargo test -p toyos --lib shm:: EXIT=101
+== metal tier, staged only
+green METAL STAGE (boot:testcases boot:shared-debug) EXIT=2 at c85fbc77fe812b2b30c0218c0ef3e649e7c04d2d
+negative-control METAL STAGE (lent_window_refused) EXIT=2 at 69af6843b415231915fdefcf581b84a9e45089c5
+map-before-judge METAL STAGE (lent_window_refused) EXIT=101 at 889d1d1c1878337491714c89547e3a851ac337b6
+fatal: Unable to create '/Users/jan/Dev/jan/toyos/.git/worktrees/toyos-netring-s1/index.lock': No space left on device
+head after restore: 889d1d1c1878337491714c89547e3a851ac337b6
+porcelain after restore:
+(end)

@@ -1,0 +1,70 @@
+   Compiling toyos-abi v0.16.0 (/Users/jan/Dev/jan/toyos-netring-s1/sdk/abi)
+   Compiling toyos-manifest v0.1.0 (/Users/jan/Dev/jan/toyos-netring-s1/lib/manifest)
+   Compiling toyos-logstream v0.1.0 (/Users/jan/Dev/jan/toyos-netring-s1/lib/logstream)
+   Compiling toyos-symbols v0.1.0 (/Users/jan/Dev/jan/toyos-netring-s1/lib/symbols)
+   Compiling toyos-bootmap v0.1.0 (/Users/jan/Dev/jan/toyos-netring-s1/lib/bootmap)
+   Compiling toyos-desktop v0.1.0 (/Users/jan/Dev/jan/toyos-netring-s1/system/compositor/desktop)
+   Compiling kernel v0.1.0 (/Users/jan/Dev/jan/toyos-netring-s1/kernel)
+   Compiling toyos-acpi v0.1.0 (/Users/jan/Dev/jan/toyos-netring-s1/lib/acpi)
+   Compiling toyos-swap v0.1.0 (/Users/jan/Dev/jan/toyos-netring-s1/lib/swap)
+   Compiling toyos-build v0.1.0 (/Users/jan/Dev/jan/toyos-netring-s1)
+   Compiling toyos-userbound v0.1.0 (/Users/jan/Dev/jan/toyos-netring-s1/lib/userbound)
+   Compiling toyos-metal v0.1.0 (/Users/jan/Dev/jan/toyos-netring-s1/tests/metal)
+    Finished `test` profile [optimized + debuginfo] target(s) in 19.24s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-9af9c0c40d17ccab)
+
+08:29:58 running 1 tests, 12 wide
+
+08:29:58   RUN   lent_device_memory_refused
+08:29:58   BUILD x86_64 lent_device_memory_refused of tests/guest/rust-tests, for lent_device_memory_refused
+08:30:02 external deps changed: cleaning /Users/jan/Dev/jan/toyos-netring-s1/tests/guest/rust-tests/target/aarch64-unknown-toyos
+08:30:02 external deps changed: cleaning /Users/jan/Dev/jan/toyos-netring-s1/tests/guest/rust-tests/target/x86_64-unknown-toyos
+08:30:19   BUILT x86_64 lent_device_memory_refused of tests/guest/rust-tests, for lent_device_memory_refused  (21s)
+08:30:19   BUILD x86_64 kernel, loader, ROOT of tests/images/testcases.toml, for lent_device_memory_refused
+08:30:22 external deps changed: cleaning /Users/jan/Dev/jan/toyos-netring-s1/target/aarch64-unknown-toyos
+08:30:22 external deps changed: cleaning /Users/jan/Dev/jan/toyos-netring-s1/target/x86_64-unknown-toyos
+08:31:10 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+08:31:10   BUILT x86_64 kernel, loader, ROOT of tests/images/testcases.toml, for lent_device_memory_refused  (51s)
+08:31:27 FAIL lent_device_memory_refused: the job ended Some(101):
+lent_device_memory_refused: a hello lending a device's BAR answered Ok(3)
+
+thread 'main' (1) panicked at src/bin/lent_device_memory_refused.rs:32:5:
+assertion `left == right` failed: lent_device_memory_refused: the BAR was not let go unanswered
+  left: Ok(3)
+ right: Err(Gone)
+stack backtrace:
+   0:      0x1000005c450 - _Unwind_Backtrace
+   1:      0x10000046a33 - <<std[c7b8ee1dd57e0759]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[73b405bef30eeff1]::fmt::Display>::fmt
+   2:      0x10000060297 - core[73b405bef30eeff1]::fmt::write
+   3:      0x1000004a22b - <std[c7b8ee1dd57e0759]::sys::stdio::toyos::Stderr as core[73b405bef30eeff1]::io::write::Write>::write_fmt
+   4:      0x1000002d8a3 - std[c7b8ee1dd57e0759]::panicking::default_hook::{closure#0}
+   5:      0x10000041b2e - std[c7b8ee1dd57e0759]::panicking::default_hook
+   6:      0x10000041ce9 - std[c7b8ee1dd57e0759]::panicking::panic_with_hook
+   7:      0x1000002d95d - std[c7b8ee1dd57e0759]::panicking::panic_handler::{closure#0}
+   8:      0x10000026059 - std[c7b8ee1dd57e0759]::sys::backtrace::__rust_end_short_backtrace::<std[c7b8ee1dd57e0759]::panicking::panic_handler::{closure#0}, !>
+   9:      0x1000002e0c8 - __rustc[d0c72ce299f394e5]::rust_begin_unwind
+  10:      0x100000609bb - core[73b405bef30eeff1]::panicking::panic_fmt
+  11:      0x1000006092f - core[73b405bef30eeff1]::panicking::assert_failed_inner
+  12:      0x100000192d0 - core[73b405bef30eeff1]::panicking::assert_failed::<core[73b405bef30eeff1]::result::Result<u64, toyos_abi[88655c9f3bbde6fc]::syscall::SyscallError>, core[73b405bef30eeff1]::result::Result<u64, toyos_abi[88655c9f3bbde6fc]::syscall::SyscallError>>
+  13:      0x10000019b8a - lent_device_memory_refused[5e8a39fc16befa66]::main
+  14:      0x100000191e6 - std[c7b8ee1dd57e0759]::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  15:      0x10000019190 - std[c7b8ee1dd57e0759]::rt::lang_start::<()>::{closure#0}
+  16:      0x10000041576 - std[c7b8ee1dd57e0759]::rt::lang_start_internal
+  17:      0x10000019cc1 - main
+  18:      0x10000045593 - std[c7b8ee1dd57e0759]::sys::pal::toyos::start_rust
+  19:      0x1000001b02a - _start
+
+08:31:27   FAIL  lent_device_memory_refused  (18s)
+08:31:27   --- 1 guests, 0 of them not the shipping kernel, 1 kernel build(s): [""]
+
+08:31:27 host: fastest boot 17061 ms against the reference 1424 ms — liveness ceilings paid at 8.00x
+08:31:27 host: 14 core(s); a guest wider than that waits vcpus/cores longer again
+08:31:27 failures:
+08:31:27     lent_device_memory_refused: the job ended Some(101):
+
+08:31:27 test result: FAILED. 0 passed, 1 failed, 0 invalidated, 1 total (89.3s; workers: 72s building, 18s testing)
+08:31:27 [toyos] this red run's serial logs are kept at /Users/jan/Dev/jan/toyos-netring-s1/target/red-run-serial/toyos-tmp-4345-0
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `/Users/jan/Dev/jan/toyos-netring-s1/target/debug/deps/toyos_build-9af9c0c40d17ccab lent_device_memory_refused` (exit status: 1)

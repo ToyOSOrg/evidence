@@ -1,0 +1,14 @@
+diff --git a/sdk/toyos/src/shm.rs b/sdk/toyos/src/shm.rs
+--- a/sdk/toyos/src/shm.rs
++++ b/sdk/toyos/src/shm.rs
+@@ -58,8 +58,9 @@
+     /// as [`Self::create`] makes it. The handle is consumed either way.
+     pub fn lent(handle: RawHandle, bytes: usize) -> Result<Self, Lent> {
+         let handle = OwnedHandle(handle);
++        let ptr = map(&handle).map_err(Lent::Kernel)?;
+         judge(&syscall::fstat(handle.raw()).map_err(Lent::Kernel)?, bytes)?;
+-        Ok(Self { ptr: map(&handle).map_err(Lent::Kernel)?, handle, size: bytes })
++        Ok(Self { ptr, handle, size: bytes })
+     }
+ 
+     /// A second handle to the same region, for sending to a peer.

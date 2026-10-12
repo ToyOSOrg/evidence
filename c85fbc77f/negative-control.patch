@@ -1,0 +1,797 @@
+diff --git a/kernel/src/object/mod.rs b/kernel/src/object/mod.rs
+index bb532bc8f..d377a1408 100644
+--- a/kernel/src/object/mod.rs
++++ b/kernel/src/object/mod.rs
+@@ -213,14 +213,12 @@ macro_rules! kobject {
+                 pub(super) static $variant: AtomicU64 = AtomicU64::new(0);
+             )+
+ 
+-            /// Live objects of one kind — a summed total would hide one
+-            /// kind's leak in another's churn.
++            /// `(type name, live count)` per kind, in declaration order — a
++            /// summed total would hide one kind's leak in another's churn.
+             #[cfg(feature = "test-actuators")]
+-            pub fn live(kind: toyos_abi::handle::ObjectKind) -> u64 {
++            pub fn live() -> impl Iterator<Item = (&'static str, u64)> {
+                 use core::sync::atomic::Ordering;
+-                match kind {
+-                    $(toyos_abi::handle::ObjectKind::$variant => $variant.load(Ordering::Relaxed),)+
+-                }
++                [$((stringify!($variant), $variant.load(Ordering::Relaxed)),)+].into_iter()
+             }
+         }
+     };
+@@ -242,6 +240,7 @@ kobject! {
+     deferred Connection => service::ConnectionEnd,
+     deferred Device => device::DeviceClaim,
+     deferred Acceptor => port::Acceptor,
++    // Kind name is the ABI's; `CENSUS_KIND` asserts the two lists agree.
+     deferred Inbox => inbox::InboxObject,
+     // The flush that makes releasing it safe waits for every CPU, so it runs from the queue, never inline.
+     deferred SharedMem => shm::SharedMemObject,
+diff --git a/kernel/src/object/ops.rs b/kernel/src/object/ops.rs
+index 6981fe0e4..959490458 100644
+--- a/kernel/src/object/ops.rs
++++ b/kernel/src/object/ops.rs
+@@ -670,8 +670,7 @@ pub fn fstat(object: &KObjectRef) -> Stat {
+         KObjectRef::Console(_) => plain(FileType::Serial),
+         KObjectRef::Acceptor(_) => plain(FileType::Pipe),
+         KObjectRef::SharedMem(m) => Stat {
+-            // The verdict `pcidev::dma_map` lends a device by: a receiver judges a peer's region on it before mapping.
+-            file_type: if m.ram().is_some() { FileType::SharedMemory } else { FileType::DeviceMemory } as u64,
++            file_type: FileType::SharedMemory as u64,
+             size: m.size(),
+             mtime: 0,
+             volume: 0,
+diff --git a/kernel/src/object/shm.rs b/kernel/src/object/shm.rs
+index 0f58e6781..9d84684c4 100644
+--- a/kernel/src/object/shm.rs
++++ b/kernel/src/object/shm.rs
+@@ -20,9 +20,6 @@ use crate::{DirectMap, UserAddr};
+ 
+ use super::{Held, KObjectVariant, ObjectCore, ZeroHandles};
+ 
+-// The ABI's word for what `create` rounds to, which a receiver checks a lent region's length against.
+-const _: () = assert!(toyos_abi::syscall::SHM_PAGE as u64 == PAGE_2M);
+-
+ /// Physical pages a region keeps alive; behind an `Arc` since one page set
+ /// can back several objects.
+ // Unread by design: the vector's job is only to stay alive.
+diff --git a/kernel/src/syscall/dispatch.rs b/kernel/src/syscall/dispatch.rs
+index dc119ec77..e61b604b5 100644
+--- a/kernel/src/syscall/dispatch.rs
++++ b/kernel/src/syscall/dispatch.rs
+@@ -608,10 +608,20 @@ pub(crate) fn syscall_dispatch(num: u64, a1: u64, a2: u64, a3: u64, a4: u64) ->
+             // The two leaks this object model accepts — a stranded Arc, the cross-pair
+             // connection cycle — are visible in no other way than this census.
+             // Per kind, not total: a total would hide one kind's leak behind another's churn.
+-            DA::CENSUS_KIND => match u32::try_from(a2).ok().and_then(toyos_abi::handle::ObjectKind::from_word) {
+-                Some(kind) => crate::object::census::live(kind),
+-                None => SyscallError::InvalidArgument.to_u64(),
+-            },
++            // Names are checked against OBJECT_KINDS rather than order assumed: this is
++            // the one place the two declarations meet.
++            DA::CENSUS_KIND => {
++                assert!(
++                    crate::object::census::live()
++                        .map(|(kind, _)| kind)
++                        .eq(toyos_abi::syscall::OBJECT_KINDS.iter().copied()),
++                    "kobject! and toyos_abi::syscall::OBJECT_KINDS declare different objects",
++                );
++                match crate::object::census::live().nth(a2 as usize) {
++                    Some((_, live)) => live,
++                    None => SyscallError::InvalidArgument.to_u64(),
++                }
++            }
+             // Armed, not #[cfg]'d, so it doesn't ship in every kernel this suite boots:
+             // the real bound is unreachable (no guest makes 65,536 threads).
+             DA::LOWER_SYSINFO_BOUND => {
+diff --git a/sdk/abi/src/handle.rs b/sdk/abi/src/handle.rs
+index 019f5ecd1..ec93f5127 100644
+--- a/sdk/abi/src/handle.rs
++++ b/sdk/abi/src/handle.rs
+@@ -57,58 +57,6 @@ impl RawHandle {
+ /// any table issues.
+ pub const HANDLE_INVALID: RawHandle = RawHandle(u32::MAX);
+ 
+-/// Every kind of kernel object a handle can name, as the word
+-/// [`CENSUS_KIND`](crate::syscall::debug_action::CENSUS_KIND) takes.
+-#[repr(u32)]
+-#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+-pub enum ObjectKind {
+-    PipeRead = 0,
+-    PipeWrite = 1,
+-    Connection = 2,
+-    Device = 3,
+-    Acceptor = 4,
+-    Inbox = 5,
+-    SharedMem = 6,
+-    Connector = 7,
+-    Namespace = 8,
+-    File = 9,
+-    Console = 10,
+-    SysCap = 11,
+-    Process = 12,
+-}
+-
+-impl ObjectKind {
+-    pub const ALL: [ObjectKind; 13] = [
+-        Self::PipeRead,
+-        Self::PipeWrite,
+-        Self::Connection,
+-        Self::Device,
+-        Self::Acceptor,
+-        Self::Inbox,
+-        Self::SharedMem,
+-        Self::Connector,
+-        Self::Namespace,
+-        Self::File,
+-        Self::Console,
+-        Self::SysCap,
+-        Self::Process,
+-    ];
+-
+-    pub const fn from_word(word: u32) -> Option<Self> {
+-        if (word as usize) < Self::ALL.len() { Some(Self::ALL[word as usize]) } else { None }
+-    }
+-}
+-
+-// `from_word` indexes `ALL` by the word: a row out of order would count a
+-// kind's neighbour.
+-const _: () = {
+-    let mut i = 0;
+-    while i < ObjectKind::ALL.len() {
+-        assert!(ObjectKind::ALL[i] as usize == i, "ObjectKind::ALL is out of word order");
+-        i += 1;
+-    }
+-};
+-
+ /// What the holder of a handle may do with the object behind it.
+ ///
+ /// Rights only ever shrink: a duplicate may ask for a subset and nothing
+diff --git a/sdk/abi/src/syscall.rs b/sdk/abi/src/syscall.rs
+index bc77b9c0f..906e12a9d 100644
+--- a/sdk/abi/src/syscall.rs
++++ b/sdk/abi/src/syscall.rs
+@@ -179,16 +179,13 @@ pub const SYS_NAMESPACE_OPEN: u64 = 102;
+ pub const SYS_HANDLE_SEND: u64 = 103;
+ /// Take the oldest batch of handles the peer sent. See [`handle_recv`].
+ pub const SYS_HANDLE_RECV: u64 = 104;
+-/// Make a shared-memory region, sized up to whole [`SHM_PAGE`]s.
++/// Make a shared-memory region, sized up to whole 2 MiB pages.
+ /// See [`shm_create`].
+ pub const SYS_SHM_CREATE: u64 = 105;
+ /// Map a region into the caller. Idempotent: a second call answers the first
+ /// call's address. See [`shm_map`].
+ pub const SYS_SHM_MAP: u64 = 106;
+ 
+-/// What [`SYS_SHM_CREATE`] rounds a length up to a whole number of.
+-pub const SHM_PAGE: usize = 2 << 20;
+-
+ /// Wait for the process a handle names and take its exit code, gated by
+ /// [`Rights::WAIT`]. See [`process_wait`].
+ ///
+@@ -557,17 +554,13 @@ pub enum FileType {
+     // 9 was `Nic`, the type a claim on the kernel's own NIC driver reported.
+     // A claim on a PCI function reports `Unknown`: what it is, is the driver's
+     // to know, and this kernel does not know it.
+-    /// A shared-memory region of memory the kernel allocated to it and maps
+-    /// write-back, as [`shm_create`] makes; `size` is its length. A program's
+-    /// stdout and stderr are one when they are its log ring (`toyos::log`).
++    /// A shared-memory region; `size` is its length. A program's stdout and
++    /// stderr are one when they are its log ring (`toyos::log`).
+     SharedMemory = 10,
+     /// A directory, which only [`stat`] answers.
+     Directory = 11,
+     /// A symbolic link, which only [`stat`] answers; `size` is its target's length.
+     Symlink = 12,
+-    /// Any other shared-memory region, such as a device's registers; `size`
+-    /// is its length. A peer's buffer is never one.
+-    DeviceMemory = 13,
+ }
+ 
+ impl FileType {
+@@ -585,7 +578,6 @@ impl FileType {
+             10 => Some(Self::SharedMemory),
+             11 => Some(Self::Directory),
+             12 => Some(Self::Symlink),
+-            13 => Some(Self::DeviceMemory),
+             _ => None,
+         }
+     }
+@@ -823,7 +815,7 @@ pub mod debug_action {
+     pub const TLB_ACK_DELAY_ARM: u64 = 12;
+     pub const TLB_ACK_DELAY_DISARM: u64 = 13;
+     /// How many kernel objects of one kind are alive right now. The argument is
+-    /// an [`ObjectKind`](crate::handle::ObjectKind) word.
++    /// an [`OBJECT_KINDS`](super::OBJECT_KINDS) index.
+     ///
+     /// **Per kind and not a total**: an object of one kind that is never
+     /// released is invisible behind ordinary churn in another.
+@@ -894,6 +886,31 @@ pub mod debug_action {
+     pub const RING0_FIRE_OTHER_SPAN: u64 = 2;
+ }
+ 
++/// Every kind of kernel object, in the order the kernel's own `kobject!`
++/// declares them — so an index into this is the index
++/// [`debug_action::CENSUS_KIND`] takes.
++///
++/// In the ABI rather than in the kernel alone, because a census nobody can read
++/// per kind is a total. The kernel checks this list against its own declaration
++/// order when the action is called, so a row added to `kobject!` without a row
++/// here is a named refusal rather than an index that quietly names its
++/// neighbour.
++pub const OBJECT_KINDS: &[&str] = &[
++    "PipeRead",
++    "PipeWrite",
++    "Connection",
++    "Device",
++    "Acceptor",
++    "Inbox",
++    "SharedMem",
++    "Connector",
++    "Namespace",
++    "File",
++    "Console",
++    "SysCap",
++    "Process",
++];
++
+ /// Create a pipe. Returns the read and write ends.
+ ///
+ /// **Fallible, because `sys_pipe` is.** It answers `ResourceExhausted` on three
+diff --git a/sdk/toyos/src/audio.rs b/sdk/toyos/src/audio.rs
+index 614652b02..a33be4eaa 100644
+--- a/sdk/toyos/src/audio.rs
++++ b/sdk/toyos/src/audio.rs
+@@ -182,8 +182,6 @@ pub enum AudioError {
+     /// pipe with it. Handles cross before the frame that names them, so a
+     /// short batch is a protocol violation and never something to wait for.
+     MissingHandles,
+-    /// The slot ring soundserver sent is refused ([`SharedMemory::lent`]).
+-    Lent(crate::shm::Lent),
+     Ipc(IpcError),
+     Protocol(u32),
+ }
+@@ -217,7 +215,8 @@ impl AudioStream {
+ 
+         let slot_count = resp.slot_count as u32;
+         let shm_size = AudioSlotHeader::SIZE + slot_count as usize * resp.client_period_bytes as usize;
+-        let shm = SharedMemory::lent(batch[STREAM_OPENED_SHM], shm_size).map_err(AudioError::Lent)?;
++        let shm = SharedMemory::adopt(batch[STREAM_OPENED_SHM], shm_size)
++            .map_err(|e| AudioError::Ipc(IpcError::Syscall(e)))?;
+         let slot_writer = AudioSlotWriter::new(shm, resp.client_period_bytes, slot_count);
+ 
+         Ok(Self {
+diff --git a/sdk/toyos/src/census.rs b/sdk/toyos/src/census.rs
+index 8ee21c257..ccf42c877 100644
+--- a/sdk/toyos/src/census.rs
++++ b/sdk/toyos/src/census.rs
+@@ -8,25 +8,30 @@
+ use core::fmt;
+ 
+ use toyos_abi::syscall::debug_action::CENSUS_KIND;
+-use toyos_abi::handle::ObjectKind;
+-use toyos_abi::syscall;
++use toyos_abi::syscall::{self, OBJECT_KINDS};
+ 
+ /// How many objects of every kind are alive right now.
+ #[derive(Clone, Copy, PartialEq, Eq)]
+-pub struct Census([u64; ObjectKind::ALL.len()]);
++pub struct Census([u64; OBJECT_KINDS.len()]);
+ 
+ impl Census {
+     pub fn now() -> Self {
+-        let mut counts = [0u64; ObjectKind::ALL.len()];
+-        for (slot, kind) in counts.iter_mut().zip(ObjectKind::ALL) {
+-            *slot = syscall::debug_with(CENSUS_KIND, kind as u64);
++        let mut counts = [0u64; OBJECT_KINDS.len()];
++        for (i, slot) in counts.iter_mut().enumerate() {
++            *slot = syscall::debug_with(CENSUS_KIND, i as u64);
+         }
+         Self(counts)
+     }
+ 
+-    /// Live objects of one kind.
+-    pub fn kind(&self, kind: ObjectKind) -> u64 {
+-        self.0[kind as usize]
++    /// Live objects of one kind. The name is an [`OBJECT_KINDS`] entry and a
++    /// name that is not one is a caller with a typo, so it panics rather than
++    /// answering zero — which would read as "nothing of that kind leaked".
++    pub fn kind(&self, name: &str) -> u64 {
++        let i = OBJECT_KINDS
++            .iter()
++            .position(|k| *k == name)
++            .unwrap_or_else(|| panic!("no kernel object kind is called {name:?}"));
++        self.0[i]
+     }
+ 
+     pub fn total(&self) -> u64 {
+@@ -37,24 +42,24 @@ impl Census {
+     pub fn grown_since(
+         &self,
+         before: &Census,
+-    ) -> impl Iterator<Item = (ObjectKind, u64, u64)> + '_ {
++    ) -> impl Iterator<Item = (&'static str, u64, u64)> + '_ {
+         let earlier = before.0;
+-        ObjectKind::ALL
++        OBJECT_KINDS
+             .iter()
+             .enumerate()
+             .filter(move |(i, _)| self.0[*i] > earlier[*i])
+-            .map(move |(i, kind)| (*kind, earlier[i], self.0[i]))
++            .map(move |(i, name)| (*name, earlier[i], self.0[i]))
+     }
+ }
+ 
+ impl fmt::Display for Census {
+     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+         let mut first = true;
+-        for (kind, live) in ObjectKind::ALL.iter().zip(self.0.iter()).filter(|(_, n)| **n > 0) {
++        for (name, live) in OBJECT_KINDS.iter().zip(self.0.iter()).filter(|(_, n)| **n > 0) {
+             if !first {
+                 write!(f, ", ")?;
+             }
+-            write!(f, "{kind:?} {live}")?;
++            write!(f, "{name} {live}")?;
+             first = false;
+         }
+         if first {
+diff --git a/sdk/toyos/src/ipc.rs b/sdk/toyos/src/ipc.rs
+index 01832e098..f59b01bc3 100644
+--- a/sdk/toyos/src/ipc.rs
++++ b/sdk/toyos/src/ipc.rs
+@@ -249,16 +249,7 @@ impl Connection {
+     /// wait for. Every protocol here sends a fixed number per message type, so
+     /// this is the shape every caller wants.
+     pub fn recv_handles_exact<const N: usize>(&self) -> Option<[RawHandle; N]> {
+-        const { assert!(N <= syscall::MAX_TRANSFER_HANDLES) };
+-        let mut batch = [toyos_abi::HANDLE_INVALID; syscall::MAX_TRANSFER_HANDLES];
+-        let n = self.recv_handles(&mut batch).ok()?;
+-        if n != N {
+-            for h in &batch[..n] {
+-                syscall::close(*h);
+-            }
+-            return None;
+-        }
+-        Some(core::array::from_fn(|i| batch[i]))
++        recv_handles_exact(self.0.raw())
+     }
+ 
+     pub fn recv_bytes(&self, header: &IpcHeader, buf: &mut [u8]) -> Result<usize, IpcError> {
+@@ -334,6 +325,26 @@ fn move_batch<H: AsHandle>(
+     Ok(())
+ }
+ 
++/// The `N` handles the frame just read off `handle` says travel with it.
++///
++/// See [`Connection::recv_handles_exact`]. This is the spelling for a server
++/// that buffers frames and dispatches them by handle rather than holding the
++/// `Connection` — the compositor reads every client this way.
++pub fn recv_handles_exact<const N: usize>(handle: RawHandle) -> Option<[RawHandle; N]> {
++    const { assert!(N <= syscall::MAX_TRANSFER_HANDLES) };
++    let mut batch = [toyos_abi::HANDLE_INVALID; syscall::MAX_TRANSFER_HANDLES];
++    let n = syscall::handle_recv(handle, &mut batch).ok()?;
++    if n != N {
++        for h in &batch[..n] {
++            syscall::close(*h);
++        }
++        return None;
++    }
++    let mut out = [toyos_abi::HANDLE_INVALID; N];
++    out.copy_from_slice(&batch[..N]);
++    Some(out)
++}
++
+ /// [`signal`] without blocking. A bare header always fits in one write.
+ pub fn try_signal(handle: RawHandle, msg_type: u32) -> Result<(), TrySendError> {
+     write_whole(handle, &IpcHeader { msg_type, len: 0 }.to_wire())
+diff --git a/sdk/toyos/src/shm.rs b/sdk/toyos/src/shm.rs
+index c408db6fb..ea52f91c0 100644
+--- a/sdk/toyos/src/shm.rs
++++ b/sdk/toyos/src/shm.rs
+@@ -8,19 +8,10 @@
+ //!
+ //! The mapping goes away with the last handle, so dropping this is all the
+ //! cleanup there is.
+-//!
+-//! **A region a peer lends is taken only through [`SharedMemory::lent`]**,
+-//! which believes the kernel's answer about it and not the peer's: a handle
+-//! the kernel's [`fstat`](syscall::fstat) says is not memory it allocated to a
+-//! region — another kind of object, or a device's registers — or is not the
+-//! length the protocol says, is refused before it is mapped, since mapping a
+-//! handle that names no region ends this process. [`SharedMemory::adopt`] is
+-//! for a region the kernel itself handed this process.
+ 
+-use core::fmt;
+ use core::sync::atomic::AtomicU8;
+ 
+-use toyos_abi::syscall::{self, FileType, Stat, SyscallError, SHM_PAGE};
++use toyos_abi::syscall::{self, SyscallError};
+ 
+ use crate::{AsHandle, OwnedHandle, RawHandle};
+ 
+@@ -43,23 +34,17 @@ impl SharedMemory {
+         Self::adopt(syscall::shm_create(size)?, size)
+     }
+ 
+-    /// Map a region the kernel itself handed this process — a device's
+-    /// window, a DMA grant — and view its first `size` bytes.
++    /// Map a region a peer sent, or one a device description named.
+     ///
+-    /// Never for a region a peer sent, which is [`Self::lent`]'s.
++    /// `size` is the caller's own belief about the region and is not checked
++    /// against it — a peer that says 4 MiB and sends 2 is a peer, and every
++    /// reader of this memory is already writing bounds against the size it
++    /// negotiated.
+     pub fn adopt(handle: RawHandle, size: usize) -> Result<Self, SyscallError> {
+         let handle = OwnedHandle(handle);
+-        Ok(Self { ptr: map(&handle)?, handle, size })
+-    }
+-
+-    /// Map a region a peer lent, whose protocol says it is `bytes` long, and
+-    /// view those bytes; refused, and never mapped, unless the kernel answers
+-    /// it is memory it allocated, `bytes` rounded up to whole [`SHM_PAGE`]s,
+-    /// as [`Self::create`] makes it. The handle is consumed either way.
+-    pub fn lent(handle: RawHandle, bytes: usize) -> Result<Self, Lent> {
+-        let handle = OwnedHandle(handle);
+-        judge(&syscall::fstat(handle.raw()).map_err(Lent::Kernel)?, bytes)?;
+-        Ok(Self { ptr: map(&handle).map_err(Lent::Kernel)?, handle, size: bytes })
++        let ptr = unsafe { syscall::shm_map(handle.raw()) }?;
++        assert!(!ptr.is_null(), "shm_map answered null");
++        Ok(Self { handle, ptr, size })
+     }
+ 
+     /// A second handle to the same region, for sending to a peer.
+@@ -98,94 +83,8 @@ impl SharedMemory {
+     }
+ }
+ 
+-fn map(handle: &OwnedHandle) -> Result<*mut u8, SyscallError> {
+-    // SAFETY: the mapping lives as long as the handle, which the caller keeps beside it.
+-    let ptr = unsafe { syscall::shm_map(handle.raw()) }?;
+-    assert!(!ptr.is_null(), "shm_map answered null");
+-    Ok(ptr)
+-}
+-
+-/// Why a lent region was refused.
+-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+-pub enum Lent {
+-    /// The kernel would not describe or map it.
+-    Kernel(SyscallError),
+-    /// It is not memory the kernel allocated to a region: another kind of
+-    /// object, or a device's registers, which a reader would read and write
+-    /// as a device.
+-    NotRam,
+-    /// It is not the length the protocol says: `is` bytes, where `bytes`
+-    /// rounded up to whole pages was owed.
+-    Length { is: usize, bytes: usize },
+-}
+-
+-impl fmt::Display for Lent {
+-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+-        match self {
+-            Self::Kernel(e) => write!(f, "the kernel would not describe or map it ({e:?})"),
+-            Self::NotRam => write!(f, "it is not memory the kernel allocated"),
+-            Self::Length { is, bytes } => write!(f, "it is {is} bytes, not {bytes} in whole pages"),
+-        }
+-    }
+-}
+-
+-/// The kernel's answer about a lent region, held to the protocol's length.
+-fn judge(stat: &Stat, bytes: usize) -> Result<(), Lent> {
+-    if stat.file_type != FileType::SharedMemory {
+-        return Err(Lent::NotRam);
+-    }
+-    if Some(stat.size as usize) != bytes.checked_next_multiple_of(SHM_PAGE) {
+-        return Err(Lent::Length { is: stat.size as usize, bytes });
+-    }
+-    Ok(())
+-}
+-
+ impl AsHandle for SharedMemory {
+     fn as_handle(&self) -> RawHandle {
+         self.handle.raw()
+     }
+ }
+-
+-#[cfg(test)]
+-mod tests {
+-    use super::*;
+-
+-    fn answer(len: usize, file_type: FileType) -> Stat {
+-        Stat { file_type, size: len as u64, ..Stat::default() }
+-    }
+-
+-    #[test]
+-    fn a_region_the_kernel_made_for_the_length_is_taken() {
+-        assert_eq!(judge(&answer(SHM_PAGE, FileType::SharedMemory), SHM_PAGE), Ok(()));
+-        assert_eq!(judge(&answer(2 * SHM_PAGE, FileType::SharedMemory), SHM_PAGE + 1), Ok(()));
+-    }
+-
+-    #[test]
+-    fn a_region_that_is_not_ram_is_refused_whatever_its_length() {
+-        assert_eq!(judge(&answer(SHM_PAGE, FileType::DeviceMemory), SHM_PAGE), Err(Lent::NotRam));
+-    }
+-
+-    #[test]
+-    fn a_region_longer_than_the_protocol_says_is_refused() {
+-        assert_eq!(
+-            judge(&answer(2 * SHM_PAGE, FileType::SharedMemory), SHM_PAGE),
+-            Err(Lent::Length { is: 2 * SHM_PAGE, bytes: SHM_PAGE })
+-        );
+-    }
+-
+-    #[test]
+-    fn a_region_shorter_than_the_protocol_says_is_refused() {
+-        assert_eq!(
+-            judge(&answer(SHM_PAGE, FileType::SharedMemory), SHM_PAGE + 1),
+-            Err(Lent::Length { is: SHM_PAGE, bytes: SHM_PAGE + 1 })
+-        );
+-    }
+-
+-    #[test]
+-    fn a_length_whose_rounding_overflows_is_refused() {
+-        assert_eq!(
+-            judge(&answer(SHM_PAGE, FileType::SharedMemory), usize::MAX),
+-            Err(Lent::Length { is: SHM_PAGE, bytes: usize::MAX })
+-        );
+-    }
+-}
+diff --git a/sdk/window/src/lib.rs b/sdk/window/src/lib.rs
+index 8447d8bc7..2365c69d3 100644
+--- a/sdk/window/src/lib.rs
++++ b/sdk/window/src/lib.rs
+@@ -14,7 +14,7 @@ use toyos::poller::{Poller, READABLE};
+ use toyos::endow::{self, EndowError};
+ use toyos::surface;
+ use toyos::Connection;
+-use toyos::shm::{Lent, SharedMemory};
++use toyos::shm::SharedMemory;
+ /// Re-exported because [`KeyPress`] is made of them and a client that holds
+ /// its own translator — `console`, a test that stands in for a surface —
+ /// should not have to name a second crate to do what this one does.
+@@ -127,10 +127,9 @@ pub enum CreateError {
+     NotEndowed,
+     /// The compositor exited: its port is closed for good.
+     CompositorGone,
+-    /// The kernel refused a call of the exchange: the connection or a frame.
++    /// The kernel refused a call of the exchange: the connection, a frame, or
++    /// the map of the region the compositor sent.
+     Kernel(SyscallError),
+-    /// The region the compositor sent is refused ([`SharedMemory::lent`]).
+-    Lent(Lent),
+     /// The exchange broke off: the compositor closed the connection, having
+     /// exited or refused (its log says which), or sent a frame this client
+     /// cannot read.
+@@ -158,7 +157,6 @@ impl std::fmt::Display for CreateError {
+             Self::Kernel(e) => {
+                 write!(f, "the kernel refused the exchange with the compositor ({e:?})")
+             }
+-            Self::Lent(why) => write!(f, "the compositor's region is refused: {why}"),
+             Self::BrokenOff => write!(f, "the compositor broke off the exchange"),
+             Self::NoHandle => write!(f, "the compositor's answer arrived without its handle"),
+             Self::AtCapacity => write!(f, "the compositor is at its window limit"),
+@@ -466,7 +464,7 @@ fn copy(bytes: &[u8]) -> Result<(), CreateError> {
+         return Err(CreateError::Protocol(header.msg_type));
+     }
+     let [region] = conn.recv_handles_exact::<1>().ok_or(CreateError::NoHandle)?;
+-    let mut region = SharedMemory::lent(region, bytes.len()).map_err(CreateError::Lent)?;
++    let mut region = SharedMemory::adopt(region, bytes.len()).map_err(CreateError::Kernel)?;
+     region.as_mut_slice().copy_from_slice(bytes);
+     Ok(conn.signal(MSG_COPY_COMMIT)?)
+ }
+@@ -552,7 +550,7 @@ impl Window {
+         // window and sent nothing with it is not serving this client, whatever
+         // else it is doing.
+         let [buffer] = conn.recv_handles_exact::<1>().ok_or(CreateError::NoHandle)?;
+-        let shm = SharedMemory::lent(buffer, buf_size).map_err(CreateError::Lent)?;
++        let shm = SharedMemory::adopt(buffer, buf_size).map_err(CreateError::Kernel)?;
+ 
+         let poller = Poller::new(1);
+         Ok(Self {
+@@ -655,7 +653,7 @@ impl Window {
+                 let Some([buffer]) = self.conn.recv_handles_exact::<1>() else {
+                     return Event::Close;
+                 };
+-                let Ok(shm) = SharedMemory::lent(buffer, buf_size) else {
++                let Ok(shm) = SharedMemory::adopt(buffer, buf_size) else {
+                     return Event::Close;
+                 };
+                 self.shm = shm;
+@@ -678,7 +676,7 @@ impl Window {
+                 let Some([buffer]) = self.conn.recv_handles_exact::<1>() else {
+                     return Event::ClipboardPaste(Vec::new());
+                 };
+-                let Ok(shm) = SharedMemory::lent(buffer, info.len as usize) else {
++                let Ok(shm) = SharedMemory::adopt(buffer, info.len as usize) else {
+                     return Event::ClipboardPaste(Vec::new());
+                 };
+                 Event::ClipboardPaste(shm.as_slice().to_vec())
+diff --git a/system/diskserver/src/main.rs b/system/diskserver/src/main.rs
+index 4978fc349..31e78b536 100644
+--- a/system/diskserver/src/main.rs
++++ b/system/diskserver/src/main.rs
+@@ -66,7 +66,7 @@ use toyos_blockring::entry::{Completion, Op};
+ use toyos_blockring::layout::{ServerRings, DEPTH};
+ use toyos_blockring::server::{ServerSession, Taken};
+ use toyos_blockring::wire::{self, Grant, Opened, Refusal};
+-use toyos_blockring::{BLOCK_BYTES, PORT};
++use toyos_blockring::{BLOCK_BYTES, PORT, SESSION_BYTES};
+ 
+ /// How long a command may go unanswered before the controller is reset to
+ /// take it back. Policy: NVMe defines no per-command bound, and a flush of a
+@@ -353,15 +353,23 @@ impl Service {
+     /// What an open answers: a session to admit, or its refusal. `region` is
+     /// the client's and is consumed either way.
+     fn open(&mut self, guid: [u8; 16], region: toyos::RawHandle, grant: Option<Grant>) -> Result<Opening, Refusal> {
+-        // A region the kernel did not allocate, or longer than a session, which would spend the claim's bound on the kernel's side for every other client, is refused whole.
+-        let region = Region::lent(region).map_err(|_| Refusal::Malformed)?;
++        let region = Region::adopt(region).map_err(|_| Refusal::Malformed)?;
+         let (first, blocks) = self.place(guid, grant)?;
+         let writes = grant.expect("placed through a grant").writes;
+         match self.ctrl.up().claim().dma_map(region.handle()) {
+-            Ok(mapping) => {
++            Ok(mapping) if mapping.bytes == SESSION_BYTES as u64 => {
+                 let (rings, opened) = Opened::over(region.words(), blocks, guid);
+                 Ok(Opening { region, rings, opened, device_addr: mapping.device_addr, first, writes })
+             }
++            // A region longer than a session would spend the claim's bound on
++            // the kernel's side for every other client: refused whole.
++            Ok(mapping) => {
++                if let Err(why) = self.ctrl.up().claim().dma_unmap(mapping.device_addr) {
++                    panic!("diskserver: the kernel would not take an oversized region back: {why:?}");
++                }
++                self.holds.release(first);
++                Err(Refusal::Malformed)
++            }
+             Err(why) => {
+                 self.holds.release(first);
+                 Err(match why {
+diff --git a/system/diskserver/src/region.rs b/system/diskserver/src/region.rs
+index 5f4c62fa5..581bd5051 100644
+--- a/system/diskserver/src/region.rs
++++ b/system/diskserver/src/region.rs
+@@ -7,7 +7,7 @@
+ 
+ use core::sync::atomic::AtomicU32;
+ 
+-use toyos::shm::{Lent, SharedMemory};
++use toyos::shm::SharedMemory;
+ use toyos_abi::syscall::SyscallError;
+ use toyos_blockring::layout::{RING_WORDS, SESSION_BYTES};
+ use toyos_blockring::Run;
+@@ -24,10 +24,10 @@ impl Region {
+         Ok(Self { memory: SharedMemory::create(SESSION_BYTES)? })
+     }
+ 
+-    /// A region a client sent, refused unless it is memory the kernel
+-    /// allocated and exactly a session long.
+-    pub fn lent(handle: toyos::RawHandle) -> Result<Self, Lent> {
+-        Ok(Self { memory: SharedMemory::lent(handle, SESSION_BYTES)? })
++    /// A region a client sent. Shared memory comes in whole 2 MiB pages and
++    /// never less, so every region a peer can send is at least a session long.
++    pub fn adopt(handle: toyos::RawHandle) -> Result<Self, SyscallError> {
++        Ok(Self { memory: SharedMemory::adopt(handle, SESSION_BYTES)? })
+     }
+ 
+     /// The ring words, as the rings take them.
+diff --git a/system/fileserver/src/main.rs b/system/fileserver/src/main.rs
+index e3dcaf148..f70094980 100644
+--- a/system/fileserver/src/main.rs
++++ b/system/fileserver/src/main.rs
+@@ -56,7 +56,7 @@ use toyos::fs::*;
+ use toyos::ipc::{self, Connection, RxStep, TrySendError};
+ use toyos::poller::{Poller, READABLE};
+ use toyos::port::Acceptor;
+-use toyos::shm::{Lent, SharedMemory};
++use toyos::shm::SharedMemory;
+ use toyos::volatile::Window;
+ use toyos::Pipe;
+ use toyos_abi::syscall::{SyscallError, DEV_PREFIX, MAX_BADGE, SERVE_PREFIX};
+@@ -592,11 +592,9 @@ impl Server {
+             let Some([lent]) = client.conn.recv_handles_exact::<1>() else {
+                 return Answer::Drop("its hello carried no window");
+             };
+-            match SharedMemory::lent(lent, WINDOW_BYTES) {
++            match SharedMemory::adopt(lent, WINDOW_BYTES) {
+                 Ok(window) => client.window = Some(window),
+-                Err(Lent::Kernel(_)) => return Answer::Drop("its window would not map"),
+-                Err(Lent::NotRam) => return Answer::Drop("its window is not memory the kernel allocated"),
+-                Err(Lent::Length { .. }) => return Answer::Drop("its window is not WINDOW_BYTES long"),
++                Err(_) => return Answer::Drop("its window would not map"),
+             }
+             let granted = if client.writes { RIGHT_WRITE } else { 0 };
+             // The volume is this start's pid, which the kernel never issues
+diff --git a/system/logkeeper/src/origin.rs b/system/logkeeper/src/origin.rs
+index 0ae1e96fd..90ab18e59 100644
+--- a/system/logkeeper/src/origin.rs
++++ b/system/logkeeper/src/origin.rs
+@@ -164,8 +164,8 @@ pub struct Origin {
+ impl Origin {
+     /// Map a ring the supervisor sent, under the name and pid it sent with it.
+     pub fn open(tag: Tag<'_>, pid: u32, ring: toyos::RawHandle, alive: Pipe) -> Result<Self, String> {
+-        let region = SharedMemory::lent(ring, RING_BYTES)
+-            .map_err(|why| format!("{}'s ring is refused: {why}", tag.as_str()))?;
++        let region = SharedMemory::adopt(ring, RING_BYTES)
++            .map_err(|e| format!("{}'s ring will not map: {e:?}", tag.as_str()))?;
+         let base = core::ptr::NonNull::new(region.as_ptr()).ok_or("a mapped ring at null")?;
+         // SAFETY: `region` maps `RING_BYTES` and lives as long as this origin,
+         // which is as long as the view is used.
+diff --git a/tests/guest/rust-tests/src/bin/abuse_shared_grant.rs b/tests/guest/rust-tests/src/bin/abuse_shared_grant.rs
+index 0456d92f6..917821876 100644
+--- a/tests/guest/rust-tests/src/bin/abuse_shared_grant.rs
++++ b/tests/guest/rust-tests/src/bin/abuse_shared_grant.rs
+@@ -148,7 +148,7 @@ fn invited() {
+     // The frame first, then the handle it was sent ahead of.
+     conn.recv_header().expect("the owner's announcement");
+     let [handle] = conn.recv_handles_exact::<1>().expect("the region the owner sent");
+-    let region = SharedMemory::lent(handle, REGION).expect("take the region");
++    let region = SharedMemory::adopt(handle, REGION).expect("adopt the region");
+     println!("read {}", String::from_utf8_lossy(&region.as_slice()[..SECRET.len()]));
+     std::io::stdout().flush().expect("invited: flush the report");
+ }
+diff --git a/tests/guest/rust-tests/src/bin/handle_lifetime.rs b/tests/guest/rust-tests/src/bin/handle_lifetime.rs
+index a87580dfa..3a672863e 100644
+--- a/tests/guest/rust-tests/src/bin/handle_lifetime.rs
++++ b/tests/guest/rust-tests/src/bin/handle_lifetime.rs
+@@ -28,7 +28,6 @@ use std::process::{Child, ChildStdout, Command, Stdio};
+ 
+ use toyos::census::Census;
+ use toyos::{namespace, port, AsHandle};
+-use toyos_abi::handle::ObjectKind;
+ use toyos_abi::inbox::RingLayout;
+ use toyos_abi::syscall::{self, OpenFlags, SeekFrom, SyscallError, SERVE_PREFIX};
+ 
+@@ -229,7 +228,7 @@ fn kill_releases_ring() {
+     // Non-vacuity: an instrument that cannot see eight rings arrive cannot see
+     // them leave either, and the reclaim assertion would pass on a kernel that
+     // frees nothing.
+-    let taken = held.kind(ObjectKind::Inbox).saturating_sub(before.kind(ObjectKind::Inbox));
++    let taken = held.kind("Inbox").saturating_sub(before.kind("Inbox"));
+     assert!(
+         taken >= HOLDER_RINGS as u64,
+         "the holder made {HOLDER_RINGS} rings and the live Inbox count moved {taken}: \
+diff --git a/tests/guest/rust-tests/src/bin/mutual_kill.rs b/tests/guest/rust-tests/src/bin/mutual_kill.rs
+index 4a8d52477..60f609206 100644
+--- a/tests/guest/rust-tests/src/bin/mutual_kill.rs
++++ b/tests/guest/rust-tests/src/bin/mutual_kill.rs
+@@ -121,7 +121,7 @@ fn killer() -> ! {
+     let header = conn.recv_header().expect("the arming frame");
+     assert_eq!(header.msg_type, ARM, "an unexpected frame");
+     let [word_handle, victim] = conn.recv_handles_exact::<2>().expect("the word and the victim");
+-    let go = SharedMemory::lent(word_handle, WORD_BYTES).expect("map the word");
++    let go = SharedMemory::adopt(word_handle, WORD_BYTES).expect("map the word");
+     // SAFETY: the parent sent one handle to the victim, which nothing else here owns.
+     let victim = unsafe { Process::from_raw(victim) };
+ 
+diff --git a/tests/guest/rust-tests/src/bin/shm_release_reclaims.rs b/tests/guest/rust-tests/src/bin/shm_release_reclaims.rs
+index 11fd6b3b3..b5b37bedd 100644
+--- a/tests/guest/rust-tests/src/bin/shm_release_reclaims.rs
++++ b/tests/guest/rust-tests/src/bin/shm_release_reclaims.rs
+@@ -19,7 +19,6 @@ use std::process::{Command, Stdio};
+ use toyos::census::Census;
+ use toyos::shm::SharedMemory;
+ use toyos::{namespace, port};
+-use toyos_abi::handle::ObjectKind;
+ use toyos_abi::syscall::SVC_LABEL;
+ 
+ #[path = "../census_wait.rs"]
+@@ -57,7 +56,7 @@ fn main() {
+     // Non-vacuity: if the instrument could not see sixteen regions arrive, it
+     // cannot see them come back either, and the reclaim assertion below would
+     // pass on a kernel that frees nothing.
+-    let taken = held.kind(ObjectKind::SharedMem).saturating_sub(start.kind(ObjectKind::SharedMem));
++    let taken = held.kind("SharedMem").saturating_sub(start.kind("SharedMem"));
+     assert!(
+         taken >= ROUNDS as u64,
+         "{ROUNDS} regions were allocated and the live SharedMem count moved {taken}: \
+@@ -94,7 +93,7 @@ fn main() {
+     out.read_line(&mut line).expect("donor release line");
+     assert_eq!(line.trim(), "released", "the donor did not report letting go");
+ 
+-    let region = SharedMemory::lent(sent, REGION)
++    let region = SharedMemory::adopt(sent, REGION)
+         .expect("a region this process holds a handle to was reclaimed under it");
+     assert_eq!(
+         &region.as_slice()[..PAYLOAD.len()],

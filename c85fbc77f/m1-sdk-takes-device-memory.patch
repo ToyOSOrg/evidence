@@ -1,0 +1,12 @@
+diff --git a/sdk/toyos/src/shm.rs b/sdk/toyos/src/shm.rs
+--- a/sdk/toyos/src/shm.rs
++++ b/sdk/toyos/src/shm.rs
+@@ -131,7 +131,7 @@
+ 
+ /// The kernel's answer about a lent region, held to the protocol's length.
+ fn judge(stat: &Stat, bytes: usize) -> Result<(), Lent> {
+-    if stat.file_type != FileType::SharedMemory {
++    if stat.file_type != FileType::SharedMemory && stat.file_type != FileType::DeviceMemory {
+         return Err(Lent::NotRam);
+     }
+     if Some(stat.size as usize) != bytes.checked_next_multiple_of(SHM_PAGE) {

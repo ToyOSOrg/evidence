@@ -1,0 +1,12 @@
+diff --git a/sdk/toyos/src/shm.rs b/sdk/toyos/src/shm.rs
+--- a/sdk/toyos/src/shm.rs
++++ b/sdk/toyos/src/shm.rs
+@@ -134,7 +134,7 @@
+     if stat.file_type != FileType::SharedMemory {
+         return Err(Lent::NotRam);
+     }
+-    if Some(stat.size as usize) != bytes.checked_next_multiple_of(SHM_PAGE) {
++    if bytes.checked_next_multiple_of(SHM_PAGE).is_none_or(|owed| (stat.size as usize) < owed) {
+         return Err(Lent::Length { is: stat.size as usize, bytes });
+     }
+     Ok(())
