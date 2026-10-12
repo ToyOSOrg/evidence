@@ -1,0 +1,205 @@
+== head: ecd6d1cc5f1c1f4f1a16c73b62d78f29dec59fb6
+
+== 1. proctest: every tracked mention (git grep -n -w proctest)
+Cargo.lock:3045:name = "proctest"
+Cargo.toml:127:    "tests/guest/proctest",
+images/system.toml:44:proctest = {}
+images/system.toml:103:starts = ["toybox", "shell", "terminal", "doom", "snake", "calc", "editor", "paint", "files", "host", "inspect", "pkg", "proctest", "sshserver", "swap", "toyfetch", "update", "grants", "/apps"]
+images/system.toml:163:starts = ["toybox", "shell", "terminal", "doom", "snake", "calc", "editor", "paint", "files", "host", "inspect", "pkg", "proctest", "sshserver", "swap", "toyfetch", "update", "grants", "/apps"]
+images/system.toml:202:starts = ["toybox", "shell", "terminal", "doom", "snake", "calc", "editor", "paint", "files", "host", "inspect", "pkg", "proctest", "sshserver", "swap", "toyfetch", "update", "/apps"]
+issues/apps-that-build-or-run-on-toyos-alone.md:20:| `proctest` | `std::os::toyos::io::set_stdin_raw`, and it spawns `/system/bin/echo` and itself by their ToyOS paths |
+issues/the-shipped-image-carries-two-test-programs.md:12:- `proctest = {}`: `tests/guest/proctest/README.md` calls it a test harness, and
+issues/the-shipped-image-carries-two-test-programs.md:13:  nothing in the tree runs `/system/bin/proctest` but `proctest` itself.
+issues/the-shipped-image-carries-two-test-programs.md:19:Found by `git grep -n -w -e proctest` and
+issues/the-tree-says-who-uses-each-thing.md:140:          guest/ (proctest kernelprobe metalprobe test-runner rust-tests/) images/ (one .toml per boot case)
+tests/guest/proctest/Cargo.toml:2:name = "proctest"
+tests/guest/proctest/README.md:1:# proctest
+tests/guest/proctest/src/main.rs:86:    let mut child = Command::new("/system/bin/proctest")
+tests/guest/proctest/src/main.rs:91:        .expect("failed to spawn proctest echo");
+tests/guest/proctest/src/main.rs:106:    let mut child = Command::new("/system/bin/proctest")
+tests/guest/proctest/src/main.rs:111:        .expect("failed to spawn proctest repl");
+tests/guest/rust-tests/src/bin/launch_authority.rs:9://! - `proctest`, which the row does not list, and `swap` and `update`, which
+tests/guest/rust-tests/src/bin/launch_authority.rs:51:    for program in ["/system/bin/proctest", "/system/bin/swap", "/system/bin/update"] {
+tests/images/proctreecase.toml:11:# job is refused outside a login session, and not `proctest`, which it is
+tests/images/proctreecase.toml:66:[programs.proctest]
+tests/toyos.rs:127:    // Needs a launcher whose row lists `swap` and `update` and not `proctest`,
+tests/toyos.rs:4986:/// own reason: `proctest` as unlisted, `swap` and `update` as outside a login
+tests/toyos.rs:4994:        ("test-runner", "proctest", Refusal::NotListed),
+
+== 2. the net applet: its module, dispatch, symlink and issue
+images/system.toml:217:"bin/net" = "/system/bin/toybox"
+issues/toybox-net-cannot-reach-netstack.md:9:`/bin/net` (`system/toybox/src/net.rs`) fetches a URL with
+system/toybox/src/main.rs:11:mod net;
+-- commands! dispatch:
+system/toybox/src/main.rs:33:commands!(cat, cp, echo, free, grep, hexdump, locale, ls, mkdir, mv, net, ps, pwd, reboot, rm, screen, shutdown, spin, stats, tone);
+
+== 3. the spin applet: every mention of its name or path
+Cargo.lock:1949: "spin",
+Cargo.lock:3828:name = "spin"
+images/system.toml:224:"bin/spin" = "/system/bin/toybox"
+issues/the-shipped-image-carries-two-test-programs.md:14:- `"bin/spin" = "/system/bin/toybox"`: `system/toybox/src/spin.rs` loops
+system/toybox/src/main.rs:18:mod spin;
+tests/guest/rust-tests/src/bin/counters_metal.rs:232:    for (phase, read) in [("idle0", &idle0), ("idle1", &idle1), ("spin", &spin)] {
+tests/toyos.rs:5705:    let (spin, at2) = phase("spin")?;
+tests/toyos.rs:5724:    for (name, read) in [("idle0", idle0), ("idle1", idle1), ("spin", spin)] {
+tests/toyos.rs:5848:    eprintln!("  [counters] the spin's read, a whole round, took its reader {} ns", clock["spin"].1);
+
+== 4. each RUST_SKIP binary and the files that drive it (literal test_rs_<name>, or its machine test's JOB)
+cyclictest: tests/images/latencycase.toml tests/toyos.rs 
+wake_storm_cost: tests/toyos.rs 
+syscall_cost: tests/toyos.rs 
+spawn_cost: tests/toyos.rs 
+tlb_shootdown_waits: tests/toyos.rs 
+ring_park_herd: tests/toyos.rs 
+idle_span: tests/toyos.rs 
+ccheck: tests/toyos.rs 
+disk_backtrace_child: tests/guest/rust-tests/src/bin/disk_backtrace.rs 
+fault_gate_child: tests/common/faults.rs tests/guest/rust-tests/src/bin/fault_gates.rs 
+isa_grant: tests/common/isa.rs tests/guest/rust-tests/src/bin/isa_grant.rs tests/toyos.rs 
+isa_lines: tests/common/isa.rs tests/guest/rust-tests/src/bin/isa_lines.rs tests/toyos.rs 
+pci_reclaim: tests/common/claims.rs 
+counters_metal: tests/guest/rust-tests/src/bin/counters_metal.rs tests/toyos.rs 
+trace_flood: tests/toyos.rs 
+panic_halts_first: tests/images/virtpaniccase.toml tests/toyos.rs 
+process_tree: tests/guest/rust-tests/src/bin/process_tree.rs tests/toyos.rs 
+launch_toctou: tests/guest/rust-tests/src/bin/launch_toctou.rs tests/toyos.rs 
+launch_authority: tests/guest/rust-tests/src/bin/launch_authority.rs tests/toyos.rs 
+port_badge: tests/toyos.rs 
+app_view: tests/guest/rust-tests/src/bin/app_view.rs tests/toyos.rs 
+consent: tests/guest/rust-tests/src/bin/consent.rs tests/toyos.rs 
+fs_share: tests/toyos.rs 
+netstack_socket_churn: tests/toyos.rs 
+netstack_streams: (no literal) tests/toyos.rs:3508:    const JOB: &str = "netstack_streams"; tests/toyos.rs:3910:        "netstack_streams" => netstack_streams(qemu::Profile::Headless), tests/toyos.rs:3911:        "netstack_streams_e1000e" => netstack_streams(qemu::Profile::HeadlessE1000e), 
+nodelay_accepted: tests/toyos.rs 
+https_get: (no literal) tests/toyos.rs:3829:    const JOB: &str = "https_get"; 
+ring_kat: tests/toyos.rs 
+stream_ends_std: tests/toyos.rs 
+readdir_bound: tests/toyos.rs 
+mkdir_cap: build/bootlog.rs tests/metal/src/image.rs tests/toyos.rs 
+hda_client_stall: tests/common/audio.rs tests/toyos.rs 
+audio_tone: tests/common/audio.rs tests/toyos.rs 
+audio_idle_suspend: tests/common/audio.rs tests/toyos.rs 
+null_sink_client_exits: build/bootlog.rs tests/common/audio.rs tests/toyos.rs 
+soundserver_log_stall: tests/images/logstallcase.toml tests/toyos.rs 
+acpi_release: tests/toyos.rs 
+acpi_hold: tests/toyos.rs 
+acpi_mediated: tests/guest/rust-tests/src/bin/acpi_mediated.rs tests/images/acpicase.toml tests/toyos.rs 
+stop_short: tests/common/power.rs 
+bar_map_again: tests/toyos.rs 
+lent_device_memory_refused: tests/toyos.rs 
+hosted_clang_hello: (no literal) tests/common/hostedclang.rs:22:const JOB: &str = "hosted_clang_hello"; tests/toyos.rs:3930:        "hosted_clang_hello" => common::hostedclang::hosted_clang_hello(), 
+partition_grant: tests/toyos.rs 
+update_idle_slot: tests/toyos.rs 
+usbd_spare: tests/toyos.rs 
+
+== 5. every rust-tests binary not on RUST_SKIP runs on the shared boot (discover_rust_tests); count of binaries:
+     143
+
+== 6. each test image and the files that boot it
+acpicase: build/build.rs tests/common/power.rs tests/guest/rust-tests/src/bin/acpi_mediated.rs tests/metal/src/image.rs tests/toyos.rs 
+blockgrantcase: build/build.rs tests/toyos.rs 
+consentcase: build/build.rs tests/guest/rust-tests/src/bin/consent.rs tests/toyos.rs 
+hostedclangcase: build/build.rs tests/common/hostedclang.rs tests/toyos.rs 
+jobcase: build/build.rs build/flags.rs tests/checks.rs tests/checks/metal.rs tests/metal/src/image.rs tests/toyos.rs 
+latencycase: build/build.rs tests/metal/src/image.rs tests/toyos.rs 
+logstallcase: build/build.rs tests/common/audio.rs tests/guest/rust-tests/src/bin/soundserver_log_stall.rs tests/toyos.rs 
+metalcase: build/build.rs tests/metal/src/image.rs tests/toyos.rs 
+metaldevicecase: build/build.rs tests/common/devices.rs tests/common/mod.rs 
+netcase: build/build.rs build/flags.rs tests/common/iommu.rs tests/toyos.rs 
+panelcase: build/build.rs tests/toyos.rs 
+proctreecase: build/build.rs tests/toyos.rs 
+slotscase: build/build.rs tests/guest/rust-tests/src/bin/update_idle_slot.rs tests/toyos.rs 
+testcases: build/build.rs tests/checks/audio.rs tests/checks/metal.rs tests/common/compile.rs tests/common/qemu.rs tests/guest/rust-tests/src/bin/audio_idle_suspend.rs tests/guest/rust-tests/src/bin/bar_map_again.rs tests/guest/rust-tests/src/bin/endowment_denied.rs tests/guest/rust-tests/src/bin/lent_device_memory_refused.rs tests/guest/rust-tests/src/bin/spawn_cost.rs tests/guest/rust-tests/src/roster.rs tests/metal/src/image.rs tests/toyos.rs 
+virtjobcase: build/build.rs tests/toyos.rs 
+virtpaniccase: build/build.rs tests/toyos.rs 
+virtrebootcase: build/build.rs tests/toyos.rs 
+virtsmpcase: build/build.rs tests/toyos.rs 
+
+== 7. multi-call probes: each applet and who names it
+kernelprobe preempt: tests/images/virtjobcase.toml tests/toyos.rs 
+kernelprobe fp_isolation: tests/images/virtjobcase.toml tests/toyos.rs 
+kernelprobe first_entry: tests/images/virtjobcase.toml tests/toyos.rs 
+kernelprobe unmap_touch: tests/images/virtjobcase.toml tests/images/virtsmpcase.toml tests/toyos.rs 
+kernelprobe debug_refused: tests/images/virtjobcase.toml tests/toyos.rs 
+metalprobe fbcheck: tests/common/devices.rs tests/images/metaldevicecase.toml 
+metalprobe fbfill: tests/common/devices.rs tests/images/metaldevicecase.toml 
+metalprobe fbread: tests/common/devices.rs tests/images/metaldevicecase.toml 
+metalprobe usbwrite: tests/common/devices.rs tests/images/metaldevicecase.toml 
+metalprobe usbread: tests/common/devices.rs tests/images/metaldevicecase.toml 
+
+== 8. guest C cases (the harness compiles tests/guest/c) and who names each
+addr_order.c: tests/toyos.rs:3753:    let c_bins: Vec<(String, Vec<u8>)> = ["addr_order", "nodelay_kept", "sendto_unbound", "stream_ends"] tests/toyos.rs:3767:        ("test_c_addr_order", holding.to_string(), &[]), 
+hello.c: build/release.rs:621:`lib/rustlib/{HOST}/bin/clang` is the clang of the LLVM this `rustc` is built with, from ToyOSOrg/llvm-project, which knows `x86_64-unknown-toyos`. Its C sysroot — the ToyOS C library's headers and its `staticlib` — is `lib/rustlib/x86_64-unknown-toyos/c`, so `clang --target=x86_64-unknown-toyos --sysroot=toyos-toolchain/{HOST}/stage2/lib/rustlib/x86_64-unknown-toyos/c hello.c` builds a ToyOS program, linked by the `ld.lld` beside clang. tests/common/hostedclang.rs:8://! links `hello.c` there, runs it, and compares each product with what the tests/common/hostedclang.rs:27:/// What `hello.c` prints. tests/common/hostedclang.rs:30:/// The host's half: its clang and LLD on `hello.c`, the guest's on the same tests/common/hostedclang.rs:39:    let (object, linked) = (scratch.join("hello.o"), scratch.join("hello")); tests/common/hostedclang.rs:41:    cc.args(c.args()).args(["-c", "hello.c", "-o"]).arg(&object).current_dir(&sources); tests/common/hostedclang.rs:62:    stage("src/hello.c", &sources.join("hello.c")); tests/common/hostedclang.rs:63:    for (name, product) in [("hello.o", &object), ("hello", &linked)] { tests/guest/proctest/src/main.rs:60:        .args(&["hello", "world"]) tests/guest/rust-tests/src/bin/hosted_clang_hello.rs:6://! sysroot at `sysroot`, the program at `src/hello.c`, and what the host's tests/guest/rust-tests/src/bin/hosted_clang_hello.rs:22:    let (object, linked) = (out.join("hello.o"), out.join("hello")); tests/guest/rust-tests/src/bin/hosted_clang_hello.rs:29:        .args(["-c", "hello.c", "-o"]) 
+nodelay_kept.c: tests/toyos.rs:3753:    let c_bins: Vec<(String, Vec<u8>)> = ["addr_order", "nodelay_kept", "sendto_unbound", "stream_ends"] tests/toyos.rs:3769:            "test_c_nodelay_kept", 
+sendto_unbound.c: tests/toyos.rs:3753:    let c_bins: Vec<(String, Vec<u8>)> = ["addr_order", "nodelay_kept", "sendto_unbound", "stream_ends"] tests/toyos.rs:3776:        ("test_c_sendto_unbound", answering.to_string(), &[]), 
+stream_ends.c: tests/guest/rust-tests/src/stream_ends.rs:6://! and `tests/guest/c/stream_ends.c` dials it with the same bytes. Every end it tests/toyos.rs:3753:    let c_bins: Vec<(String, Vec<u8>)> = ["addr_order", "nodelay_kept", "sendto_unbound", "stream_ends"] tests/toyos.rs:3785:        ("test_c_stream_ends", ending.to_string(), &[]), 
+
+== 9. rust-tests fixtures and shared modules
+tls-cranelift: tests/guest/rust-tests/src/bin/std_tls_cranelift.rs 
+tls-dlopen-lib: tests/guest/rust-tests/src/bin/std_tls_dlopen.rs tests/guest/rust-tests/src/bin/std_unwind_so.rs 
+tls-multi-crate: tests/guest/rust-tests/src/bin/std_tls_multi_crate.rs 
+tls-lib (as libtls_lib.so): build/build.rs tests/corpus/tinycc/204_dl_iterate_phdr.c tests/corpus/tinycc/204_dl_iterate_phdr.expect tests/corpus/tinycc/207_libc_names.c tests/corpus/tinycc/207_libc_names.expect tests/guest/rust-tests/src/bin/std_tls_multi_crate.rs 
+mod census_wait: tests/guest/rust-tests/src/bin/handle_lifetime.rs tests/guest/rust-tests/src/bin/shm_release_reclaims.rs 
+mod isa_row: tests/guest/rust-tests/src/bin/isa_grant.rs tests/guest/rust-tests/src/bin/isa_lines.rs 
+mod lent_hello: tests/guest/rust-tests/src/bin/lent_device_memory_refused.rs tests/guest/rust-tests/src/bin/lent_window_refused.rs 
+mod roster: tests/guest/rust-tests/src/bin/futex_wake_counts.rs tests/guest/rust-tests/src/bin/inbox_cancel_wakes.rs tests/guest/rust-tests/src/bin/munmap_reissues_read_window.rs tests/guest/rust-tests/src/bin/munmap_reissues_second_read_window.rs tests/guest/rust-tests/src/bin/pipe_other_end_gone.rs tests/guest/rust-tests/src/bin/process_lifecycle.rs tests/guest/rust-tests/src/bin/ring_park_herd.rs 
+mod served_log: tests/guest/rust-tests/src/bin/acpi_hold.rs tests/guest/rust-tests/src/bin/counters_metal.rs 
+mod stream_ends: tests/guest/rust-tests/src/bin/stream_ends_std.rs tests/toyos.rs 
+mod tone: tests/guest/rust-tests/src/bin/audio_tone.rs tests/guest/rust-tests/src/bin/soundserver_log_stall.rs 
+
+== 10. toybox applets: which tests or build code name each
+cat: build/image.rs build/ssh/tests/replay.rs tests/guest/rust-tests/src/bin/endowment_denied.rs tests/guest/rust-tests/src/bin/process_tree.rs tests/guest/rust-tests/src/bin/std_process.rs 
+cp: tests/guest/rust-tests/src/bin/endowment_denied.rs tests/guest/rust-tests/src/bin/toybox_file_tools.rs 
+echo: build/bootlog.rs build/image.rs tests/guest/proctest/src/main.rs tests/guest/rust-tests/src/bin/abuse_elf_loader.rs tests/guest/rust-tests/src/bin/abuse_elf_segments.rs tests/guest/rust-tests/src/bin/abuse_handle_table.rs tests/guest/rust-tests/src/bin/abuse_page_straddle.rs tests/guest/rust-tests/src/bin/abuse_pipe_map.rs tests/guest/rust-tests/src/bin/abuse_spawn_argv.rs tests/guest/rust-tests/src/bin/blocking_read_stress.rs tests/guest/rust-tests/src/bin/debug_trap.rs tests/guest/rust-tests/src/bin/endowment_denied.rs tests/guest/rust-tests/src/bin/fault_gates.rs tests/guest/rust-tests/src/bin/fs_share.rs tests/guest/rust-tests/src/bin/lseek_past_eof.rs tests/guest/rust-tests/src/bin/mkdir_cap.rs tests/guest/rust-tests/src/bin/mmap_prot.rs tests/guest/rust-tests/src/bin/readdir_bound.rs tests/guest/rust-tests/src/bin/spawn_cost.rs tests/guest/rust-tests/src/bin/std_fs.rs tests/guest/rust-tests/src/bin/std_process.rs tests/metal/src/image.rs 
+free: tests/guest/rust-tests/src/bin/endowment_denied.rs tests/toyos.rs 
+grep: build/assets.rs tests/guest/rust-tests/src/bin/endowment_denied.rs 
+hexdump: tests/guest/rust-tests/src/bin/endowment_denied.rs tests/guest/rust-tests/src/bin/toybox_file_tools.rs 
+locale: 
+ls: build/build.rs build/image.rs tests/guest/rust-tests/src/bin/endowment_denied.rs 
+mkdir: tests/guest/rust-tests/src/bin/app_view.rs tests/guest/rust-tests/src/bin/endowment_denied.rs 
+mv: tests/guest/rust-tests/src/bin/endowment_denied.rs tests/guest/rust-tests/src/bin/toybox_file_tools.rs 
+net: 
+ps: tests/guest/rust-tests/src/bin/endowment_denied.rs tests/guest/rust-tests/src/bin/launch_authority.rs 
+pwd: tests/checks.rs tests/guest/rust-tests/src/bin/endowment_denied.rs tests/toyos.rs 
+reboot: tests/common/devices.rs tests/guest/rust-tests/src/bin/endowment_denied.rs tests/metal/src/image.rs tests/metal/src/lib.rs 
+rm: build/cicache.rs tests/guest/rust-tests/src/bin/endowment_denied.rs 
+screen: 
+shutdown: tests/guest/rust-tests/src/bin/endowment_denied.rs 
+spin: tests/guest/rust-tests/src/bin/counters_metal.rs tests/toyos.rs 
+stats: tests/guest/rust-tests/src/bin/launch_authority.rs 
+tone: tests/checks/metal.rs tests/guest/rust-tests/src/bin/endowment_denied.rs tests/guest/rust-tests/src/bin/null_sink_client_exits.rs 
+
+== 11. every workspace binary under system/ and apps/, and the manifests that carry it
+acpiserver: images/console.toml images/system.toml tests/images/acpicase.toml tests/images/testcases.toml 
+compositor: images/system.toml tests/images/consentcase.toml tests/images/metalcase.toml tests/images/panelcase.toml 
+console: images/console.toml 
+diskserver: images/console.toml images/system.toml tests/images/acpicase.toml tests/images/blockgrantcase.toml tests/images/consentcase.toml tests/images/jobcase.toml tests/images/latencycase.toml tests/images/logstallcase.toml tests/images/metalcase.toml tests/images/metaldevicecase.toml tests/images/netcase.toml tests/images/proctreecase.toml tests/images/slotscase.toml tests/images/testcases.toml 
+filepicker: images/system.toml tests/images/consentcase.toml 
+fileserver: images/console.toml images/diag.toml images/system.toml tests/images/acpicase.toml tests/images/consentcase.toml tests/images/jobcase.toml tests/images/latencycase.toml tests/images/logstallcase.toml tests/images/metalcase.toml tests/images/metaldevicecase.toml tests/images/netcase.toml tests/images/proctreecase.toml tests/images/slotscase.toml tests/images/testcases.toml 
+grants: images/system.toml tests/images/consentcase.toml tests/images/proctreecase.toml 
+host: images/system.toml 
+inspect: images/system.toml 
+logkeeper: images/console.toml images/diag.toml images/system.toml tests/images/acpicase.toml tests/images/blockgrantcase.toml tests/images/consentcase.toml tests/images/hostedclangcase.toml tests/images/jobcase.toml tests/images/latencycase.toml tests/images/logstallcase.toml tests/images/metalcase.toml tests/images/metaldevicecase.toml tests/images/netcase.toml tests/images/panelcase.toml tests/images/proctreecase.toml tests/images/slotscase.toml tests/images/testcases.toml tests/images/virtjobcase.toml tests/images/virtpaniccase.toml tests/images/virtrebootcase.toml tests/images/virtsmpcase.toml 
+netstack: images/system.toml tests/images/metalcase.toml tests/images/netcase.toml 
+pkg: images/system.toml 
+shell: images/console.toml images/system.toml tests/images/consentcase.toml tests/images/proctreecase.toml 
+soundserver: images/system.toml tests/images/logstallcase.toml tests/images/metalcase.toml tests/images/metaldevicecase.toml tests/images/netcase.toml tests/images/testcases.toml 
+sshserver: images/system.toml tests/images/metalcase.toml 
+supervisor: 
+swap: images/system.toml tests/images/proctreecase.toml 
+symbolize: images/system.toml tests/images/testcases.toml 
+terminal: images/system.toml 
+toybox: images/console.toml images/diag.toml images/system.toml tests/images/acpicase.toml tests/images/jobcase.toml tests/images/latencycase.toml tests/images/logstallcase.toml tests/images/metaldevicecase.toml tests/images/proctreecase.toml tests/images/testcases.toml tests/images/virtrebootcase.toml tests/images/virtsmpcase.toml 
+trace: images/system.toml 
+update: images/system.toml tests/images/proctreecase.toml tests/images/slotscase.toml 
+usbd: tests/images/testcases.toml 
+calc: images/system.toml 
+doom: images/system.toml 
+editor: images/system.toml 
+files: images/system.toml 
+paint: images/system.toml 
+snake: images/system.toml 
+toyfetch: images/system.toml tests/images/testcases.toml 
+
+== 12. fork clones and cargo checkouts name none of the three
+grep exit=1 (1: no match)
