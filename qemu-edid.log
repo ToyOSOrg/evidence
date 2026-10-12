@@ -1,0 +1,56 @@
+# QEMU 11.1.1's EDID generator: qemu-edid calls qemu_edid_generate (hw/display/edid-generate.c),
+# the function virtio-gpu answers VIRTIO_GPU_CMD_GET_EDID with (hw/display/virtio-gpu-base.c).
+$ qemu-system-x86_64 --version
+QEMU emulator version 11.1.1
+Copyright (c) 2003-2026 Fabrice Bellard and the QEMU Project developers
+EXIT=0
+$ qemu-system-x86_64 -display help
+Available display backend types:
+none
+curses
+cocoa
+dbus
+
+Some display backends support suboptions, which can be set with
+   -display backend,option=value,option=value...
+For a short list of the suboptions for each display, see the top-level -help output; more detail is in the documentation.
+EXIT=0
+
+$ qemu-edid  -o default.bin
+EXIT=0
+size 256 bytes
+bytes 0x14..0x16 (video input, width cm, height cm):
+00000014: a520 14                                  . .
+bytes 0x36..0x47 (first 18-byte descriptor):
+00000036: ea29 00c0 5120 1c30 4026 4440 45cb 1000  .)..Q .0@&D@E...
+00000046: 0018                                     ..
+
+$ qemu-edid -x 2560 -y 1600 -d 254 -o dpi254-2560x1600.bin
+EXIT=0
+size 256 bytes
+bytes 0x14..0x16 (video input, width cm, height cm):
+00000014: a519 10                                  ...
+bytes 0x36..0x47 (first 18-byte descriptor):
+00000036: aba7 0080 a340 3860 804c 8880 00a0 1000  .....@8`.L......
+00000046: 0018                                     ..
+
+$ qemu-edid -x 3456 -y 2234 -d 254 -o dpi254-3456x2234.bin
+EXIT=0
+size 384 bytes
+bytes 0x14..0x16 (video input, width cm, height cm):
+00000014: a522 16                                  .".
+bytes 0x36..0x47 (first 18-byte descriptor):
+00000036: 0000 00f7 000a 0040 8200 2820 0000 0000  .......@..( ....
+00000046: 0000                                     ..
+bytes 0x100..0x11f (third block):
+00000100: 7013 1703 0003 0014 fb3b 0188 7f0d b804  p........;......
+00000110: 5f03 6600 b908 4d00 0a00 0a00 cb00 0000  _.f...M.........
+
+$ qemu-edid -x 1920 -y 1080 -d 157 -o dpi157-1920x1080.bin
+EXIT=0
+size 256 bytes
+bytes 0x14..0x16 (video input, width cm, height cm):
+00000014: a51f 11                                  ...
+bytes 0x36..0x47 (first 18-byte descriptor):
+00000036: d254 80a0 7238 2540 e039 5540 36ae 1000  .T..r8%@.9U@6...
+00000046: 0018                                     ..

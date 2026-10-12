@@ -1,0 +1,47 @@
+What PR #895's design reads, pinned. Every path below is a file at the stated revision.
+
+QEMU, tag v11.1.1, commit c3d48b7 (the installed qemu-system-x86_64 reports 11.1.1):
+  ui/cocoa.m 498-516        resizeWindow: without zoom-to-fit the window is the guest size / backingScaleFactor
+  ui/cocoa.m 524-568        updateUIInfoLocked: width/height = frame x backingScaleFactor; width_mm/height_mm =
+                            frame / screen frame x CGDisplayScreenSize; qemu_console_set_ui_info(..., TRUE)
+  ui/cocoa.m 1264-1268      windowDidResize -> updateUIInfo
+  ui/cocoa.m 1167, 2000     initial view 640x480 points; zoom-to-fit makes the window resizable
+  ui/console.c 709-728      set_ui_info: unchanged info ignored; otherwise a timer, 1000 ms when delayed
+  ui/gtk.c 747-792          GTK reports the allocation divided by its own scale, and no mm
+  ui/vnc.c 2621-2646        a VNC SetDesktopSize becomes ui_info, undelayed, with no mm
+  qapi/ui.json 1327-1332    GTK zoom-to-fit defaults on for a device that can tell the guest (virtio-gpu)
+  qapi/ui.json 1444-1446    cocoa zoom-to-fit defaults off
+  hw/display/virtio-gpu-base.c 42-55    GET_DISPLAY_INFO answers req_state (enabled outputs only)
+  hw/display/virtio-gpu-base.c 57-80    GET_EDID: qemu_edid_generate from req_state's size, mm, refresh
+  hw/display/virtio-gpu-base.c 95-125   ui_info -> req_state; events_read |= EVENT_DISPLAY; virtio_notify_config
+  hw/display/virtio-gpu-base.c 200-201  req_state[0] starts at xres x yres
+  hw/display/virtio-gpu.c 1822-1824     max_hostmem 256 MiB for 2D resources
+  hw/display/edid-generate.c 330-338, 385-420, 470-505   100 dpi when no mm; large screen (>=4096 or clock
+                            >= 65536) gets no detailed timing in the base block, only a DisplayID extension
+
+edk2, commit 05b96e3 (master when read):
+  OvmfPkg/QemuVideoDxe/Initialize.c 289-380   reads the bochs EDID for the mode; line 380:
+                            "TODO: register edid as gEfiEdidDiscoveredProtocolGuid ?"
+  MdePkg/Include/Protocol/EdidActive.h        EFI_EDID_ACTIVE_PROTOCOL on the active video output child handle
+
+Virtio 1.2 cs01 (docs.oasis-open.org/virtio/virtio/v1.2/cs01/virtio-v1.2-cs01.html,
+  sha256 f815cc41a492dba1a3e930ffa4df88b716fb1839056c6a9723ed194fd80ad4cb):
+  5.7.4 / 5.7.4.1 events_read, events_clear; 5.7.4.2 EVENT_DISPLAY; 5.7.5 initial scanout from
+  GET_DISPLAY_INFO and GET_EDID; 5.7.6.1, 5.7.6.3 pageflip by SET_SCANOUT; 5.7.6.8 display info is the
+  preferred size, which in a VM follows the host window; 4.1.4.5 ISR bit 1; 4.1.5.1.2 config_msix_vector.
+
+Wayland:
+  wayland 93c04ad3 protocol/wayland.xml: wl_output.scale (since 2), wl_surface.preferred_buffer_scale (since 6)
+  wayland-protocols 35d9638c staging/fractional-scale/fractional-scale-v1.xml: scale = n/120, buffer =
+    surface size x scale with viewporter, "rounded halfway away from zero"
+
+Mutter 65fc6baa:
+  src/backends/meta-monitor.c 33-36 (MAX_DENOMINATOR 4, scales 1..4, MINIMUM_LOGICAL_AREA 600x600),
+  2421-2503 (the comment and calculate_scale: 135 dpi under 20 inches, 110 at or above), 2592-2628 (for_each_scale)
+  src/backends/meta-monitor-manager.c 1662-1675 (aspect ratio written as size: 1600x900 ... 16x10)
+
+winit fork, ToyOSOrg/winit toyos-0.30.13 at f58e1f3b (the commit Cargo.lock consumes):
+  src/platform_impl/toyos/window.rs 31-34 (inner_size to_physical(1.0)), 86-89 (scale_factor 1.0)
+  src/platform_impl/linux/wayland/window/state.rs 211-215 (a new Wayland window starts at scale 1,
+    its requested size taken as logical); src/platform_impl/linux/wayland/mod.rs 81-85 (f64::round)
+  src/event.rs 367-385 (ScaleFactorChanged with InnerSizeWriter)

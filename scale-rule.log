@@ -1,0 +1,12 @@
+# Mutter calculate_scale (meta-monitor.c @ 65fc6baa, lines 2421-2503) over quarter steps 1..4 with its
+# 600x600 logical floor; the right column adds its "divides the screen" filter (for_each_scale), which
+# the design drops. Inputs are mode and image size in mm; t14-like is an assumed 14-inch 16:9 size, not a reading.
+$ awk -f scale-rule.awk <<rows
+qemu-default-1280x800@100dpi       diag=15.09in dpi=100.1 target=135 perfect=0.741 -> 1 | mutter-divisible: 1
+qemu-display-none-1280x720@100dpi  diag=14.66in dpi=100.1 target=135 perfect=0.742 -> 1 | mutter-divisible: 1
+t14-like-1920x1080-309x174mm       diag=13.96in dpi=157.8 target=135 perfect=1.169 -> 1.25 | mutter-divisible: 1.25
+qemu-edid-2560x1600@254dpi         diag=11.89in dpi=254.0 target=135 perfect=1.881 -> 2 | mutter-divisible: 2
+cocoa-small-1280x720@254dpi        diag=5.78in dpi=254.0 target=135 perfect=1.881 -> 1.5 | mutter-divisible: 1.25
+cocoa-full-3456x2234@cm34x22       diag=15.94in dpi=258.1 target=135 perfect=1.912 -> 2 | mutter-divisible: 2
+27in-4k-597x336mm                  diag=26.97in dpi=163.4 target=110 perfect=1.485 -> 1.5 | mutter-divisible: 1.5
+EXIT=0
