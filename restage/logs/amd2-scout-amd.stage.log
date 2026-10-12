@@ -1,0 +1,28 @@
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.26s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-9af9c0c40d17ccab)
+09:20:18   BUILD x86_64 binaries of tests/guest/rust-tests
+09:20:24   BUILT x86_64 binaries of tests/guest/rust-tests  (6s)
+09:20:24 [toyos] Compiling 138 C tests, and attempting 24 declared ones...
+09:20:33 [metal] 2 registration(s) and 0 shared member(s) over 2 boot(s)
+09:20:33   BUILD x86_64 kernel boot-actuators,test-actuators, loader, ROOT of <scratchpad>/pge/metal/amd2/scout-amd/latencycase/system-a15445fc625dd9c8.toml
+09:20:39 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+09:20:39   BUILT x86_64 kernel boot-actuators,test-actuators, loader, ROOT of <scratchpad>/pge/metal/amd2/scout-amd/latencycase/system-a15445fc625dd9c8.toml  (5s)
+09:20:39 [metal] latencycase: 2 job(s) under a list bound of 60000 ms, armed with ["tlb-shootdown-bench"] and a boot deadline of 120000 ms — <scratchpad>/pge/metal/amd2/scout-amd/latencycase/image.img
+09:20:39   BUILD x86_64 kernel scout-pmc, ROOT of <scratchpad>/pge/metal/amd2/scout-amd/scout-tlb-base/system-56d29e7831a26766.toml
+09:20:44 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+09:20:44   BUILT x86_64 kernel scout-pmc, ROOT of <scratchpad>/pge/metal/amd2/scout-amd/scout-tlb-base/system-56d29e7831a26766.toml  (5s)
+09:20:44 [metal] scout-tlb-base: 1 job(s) under a list bound of 60000 ms, armed with [] and a boot deadline of 120000 ms — <scratchpad>/pge/metal/amd2/scout-amd/scout-tlb-base/image.img
+# One boot per image. Each invocation is `cargo <words>` from this worktree.
+
+latencycase
+  image: <scratchpad>/pge/metal/amd2/scout-amd/latencycase/image.img
+  cargo run -p toyos-metal -- --image <scratchpad>/pge/metal/amd2/scout-amd/latencycase/image.img --readback <scratchpad>/pge/metal/amd2/scout-amd/latencycase --fat32-check --host <user>@<amd-bench>
+
+scout-tlb-base
+  image: <scratchpad>/pge/metal/amd2/scout-amd/scout-tlb-base/image.img
+  cargo run -p toyos-metal -- --image <scratchpad>/pge/metal/amd2/scout-amd/scout-tlb-base/image.img --readback <scratchpad>/pge/metal/amd2/scout-amd/scout-tlb-base --fat32-check --host <user>@<amd-bench>
+09:20:44 [metal] staged 2 image(s); <scratchpad>/pge/metal/amd2/scout-amd/request.txt lists them. The machine was not touched, so this run establishes nothing about it.
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `<path> --metal --metal-readback <scratchpad>/pge/metal/amd2/scout-amd --metal-host '<user>@<amd-bench>' scout_tlb_base tlb_shootdown_cost` (exit status: 2)

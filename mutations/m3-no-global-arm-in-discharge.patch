@@ -1,0 +1,12 @@
+diff --git a/kernel/src/arch/x86_64/paging.rs b/kernel/src/arch/x86_64/paging.rs
+--- a/kernel/src/arch/x86_64/paging.rs
++++ b/kernel/src/arch/x86_64/paging.rs
+@@ -210,8 +210,6 @@
+     fn discharge(self, target: Cr3) {
+         match self {
+             Self::Nothing => {}
+-            // `INVLPG` drops the page's global translation in every PCID.
+-            Self::Address { va, prior } if prior & PAGE_GLOBAL != 0 => crate::arch::cpu::invlpg(va),
+             Self::Address { va, .. } => {
+                 if let Some(have) = pcid_active() {
+                     crate::arch::cpu::invpcid(have, Invpcid::Address, target.pcid(), va);

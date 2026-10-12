@@ -1,0 +1,93 @@
+# PR #873, global kernel pages on x86-64. Build head 363e0e84186184cce7bf7422ecb59f0029173d02 (wt/toyos-pge, pushed).
+# Every image below was staged with `cargo test --test toyos-build -- --metal --metal-readback <dir> [--metal-host '<user>@<amd-bench>'] <rows>`
+# from a committed tree, exit 2 each (Verdict::Staged); nothing touched a machine. Each <dir>/request.txt is the harness's own; this file orders them.
+# Every command below reads $M; set it first:
+M=<scratchpad>/pge/metal
+#
+# Trees (all clean, all to be kept until this run is judged):
+#   BASE  <path>   detached d4c2f8ebe = main 177e72a9e + the scout's two commits (wt/toyos-scout-tlb, unchanged)
+#   SCOUT <path>  wt/toyos-pge-scout 9b30f5e28 = head 363e0e841 + the same two commits ported (pushed; never lands)
+#   HEAD  <path>        wt/toyos-pge 363e0e841
+#   MUT   <path>    detached 363e0e841; each mutation was a local commit there, reset after staging:
+#           m1 f659b0d2a, m2 d83980e00, m3 a1e2cf5db (T14 image) and 7583f1f97 (AMD image), patches in $M/../mut/
+#
+# The AMD invocations carry the placeholder `--host <user>@<amd-bench>`: substitute the bench, and quote the word,
+# since an unquoted `<` is a shell redirection.
+
+######## T14 — one session, in this order (8 boots) ########
+
+1. BASE scout-tlb-base     sha256 faf3f97b8eeb64744e699b45152be131728967f930e02398893731e851c6cab5
+   cargo run -p toyos-metal -- --image $M/base-t14/scout-tlb-base/image.img --readback $M/base-t14/scout-tlb-base --fat32-check
+2. HEAD scout-tlb-base     sha256 0ade28ace369d374622087fe99b45d4bab85c4f1d13232dcf6fbd931b65632bf
+   cargo run -p toyos-metal -- --image $M/scout-t14/scout-tlb-base/image.img --readback $M/scout-t14/scout-tlb-base --fat32-check
+3. BASE scout-tlb-nopcid   sha256 5347be875273dc9882a1cbc3c86170256a4e9ec9617bb2260d31f57982534ed2
+   cargo run -p toyos-metal -- --image $M/base-t14/scout-tlb-nopcid/image.img --readback $M/base-t14/scout-tlb-nopcid --fat32-check
+4. HEAD scout-tlb-nopcid   sha256 4e5585731899027891d9b94d53a5195493500ee46e918cc24eeb92009c19949c
+   cargo run -p toyos-metal -- --image $M/scout-t14/scout-tlb-nopcid/image.img --readback $M/scout-t14/scout-tlb-nopcid --fat32-check
+5. HEAD shared-debug (both new rows)   sha256 45c20357ab90885313b44bcfde59581a3a4d5f8a3ba2a353af369b2f342b82dd
+   cargo run -p toyos-metal -- --image $M/head-t14/shared-debug/image.img --readback $M/head-t14/shared-debug --fat32-check
+6. HEAD testcases (control_regs)       sha256 c474ff609e236bdff2de020f9161841c9f2655433afbb1d244219a67ccdcd604
+   cargo run -p toyos-metal -- --image $M/head-t14/testcases/image.img --readback $M/head-t14/testcases --fat32-check
+7. M2 shared-debug         sha256 66763177ee9ad4d7060b6c48b63447b0a268bff963bb3aa6f6d67c866687f2a1
+   cargo run -p toyos-metal -- --image $M/m2-t14/shared-debug/image.img --readback $M/m2-t14/shared-debug --fat32-check
+8. M3 shared-debug         sha256 a5ef1ba4fe64eb892402f63c0df259c32dbc66059bbecd1c4236d8797e93764a
+   cargo run -p toyos-metal -- --image $M/m3-t14/shared-debug/image.img --readback $M/m3-t14/shared-debug --fat32-check
+
+Judge (exit 0 green, 1 red), each from the tree named:
+   BASE : cargo test --test toyos-build -- --metal --metal-readback $M/base-t14 scout_tlb_base scout_tlb_nopcid
+   SCOUT: cargo test --test toyos-build -- --metal --metal-readback $M/scout-t14 scout_tlb_base scout_tlb_nopcid
+   HEAD : cargo test --test toyos-build -- --metal --metal-readback $M/head-t14 a_global_kernel_leafs_discharge_drops_it the_machine_flush_drops_a_global_kernel_translation control_regs
+   HEAD : cargo test --test toyos-build -- --metal --metal-readback $M/m2-t14 a_global_kernel_leafs_discharge_drops_it the_machine_flush_drops_a_global_kernel_translation
+   HEAD : cargo test --test toyos-build -- --metal --metal-readback $M/m3-t14 a_global_kernel_leafs_discharge_drops_it the_machine_flush_drops_a_global_kernel_translation
+
+######## AMD bench (Ryzen 7 4800U) — one session, in this order (7 boots, 8 with the optional one) ########
+
+1. BASE scout-tlb-base     sha256 d099ef5c949430c52fc683b2d1922dbe88c8ad269355e9c853aaf44623c19c30
+   cargo run -p toyos-metal -- --image $M/base-amd/scout-tlb-base/image.img --readback $M/base-amd/scout-tlb-base --fat32-check --host '<user>@<amd-bench>'
+2. HEAD scout-tlb-base     sha256 8229b5800fca440f059da310db1fd70e3a380d87d5ac0acdd48fcf25a00ed098
+   cargo run -p toyos-metal -- --image $M/scout-amd/scout-tlb-base/image.img --readback $M/scout-amd/scout-tlb-base --fat32-check --host '<user>@<amd-bench>'
+3. BASE latencycase (tlb_shootdown_cost)   sha256 7a29ea44452292488109113eece0bd3518e4c727da338869650eed10d96818eb
+   cargo run -p toyos-metal -- --image $M/base-amd/latencycase/image.img --readback $M/base-amd/latencycase --fat32-check --host '<user>@<amd-bench>'
+4. HEAD latencycase (tlb_shootdown_cost)   sha256 83fabd3408e8f863c7450a339f1f03f620401290890e43910651fe46f1767f80
+   cargo run -p toyos-metal -- --image $M/scout-amd/latencycase/image.img --readback $M/scout-amd/latencycase --fat32-check --host '<user>@<amd-bench>'
+5. HEAD shared-debug (both new rows)   sha256 5fea3b90d6ec063b17fea349d8f85ab034af30ed10349059818c5f75bf5de1ac
+   cargo run -p toyos-metal -- --image $M/head-amd/shared-debug/image.img --readback $M/head-amd/shared-debug --fat32-check --host '<user>@<amd-bench>'
+6. M1 shared-debug         sha256 5f4ff9eb06f7706cd1a766aa039c32e68308024e5ad7be016d64c1c05b73d9d4
+   cargo run -p toyos-metal -- --image $M/m1-amd/shared-debug/image.img --readback $M/m1-amd/shared-debug --fat32-check --host '<user>@<amd-bench>'
+7. M3 shared-debug         sha256 d53a77b7a3950c403ffd03a77dc91d6f0241d42c42fab26ceb9a78a3bda1873b
+   cargo run -p toyos-metal -- --image $M/m3-amd/shared-debug/image.img --readback $M/m3-amd/shared-debug --fat32-check --host '<user>@<amd-bench>'
+8. (optional) HEAD testcases (control_regs)   sha256 75c9ad98bc1613a10c4877ba3f186094004a7e17e731c70966f894f17ebb15bd
+   cargo run -p toyos-metal -- --image $M/head-amd/testcases/image.img --readback $M/head-amd/testcases --fat32-check --host '<user>@<amd-bench>'
+   That boot also runs the testcases jobs the AMD bench is known to red (issues/a-metal-row-names-no-hardware-and-a-bench-without-it-reds.md);
+   only the control_regs row is judged.
+
+Judge, each from the tree named (a readback dir missing a boot makes the run build instead: judge only what ran):
+   BASE : cargo test --test toyos-build -- --metal --metal-readback $M/base-amd scout_tlb_base tlb_shootdown_cost
+   SCOUT: cargo test --test toyos-build -- --metal --metal-readback $M/scout-amd scout_tlb_base tlb_shootdown_cost
+   HEAD : cargo test --test toyos-build -- --metal --metal-readback $M/head-amd a_global_kernel_leafs_discharge_drops_it the_machine_flush_drops_a_global_kernel_translation [control_regs]
+   HEAD : cargo test --test toyos-build -- --metal --metal-readback $M/m1-amd a_global_kernel_leafs_discharge_drops_it the_machine_flush_drops_a_global_kernel_translation
+   HEAD : cargo test --test toyos-build -- --metal --metal-readback $M/m3-amd a_global_kernel_leafs_discharge_drops_it the_machine_flush_drops_a_global_kernel_translation
+   (Without the optional boot 8, drop control_regs from the head-amd line and the testcases boot is not judged.)
+
+######## What each verdict should be ########
+
+HEAD, both benches: both new rows GREEN. control_regs GREEN on the T14, every CPU's cr4 carrying bit 7 (0x80).
+M1 (non-PCID flush back to a CR3 reload), AMD:   the_machine_flush_... RED, the job exiting 101 with
+   "the shootdown's flush left the old frame's global translation"; a_global_kernel_leafs_... GREEN.
+M2 (INVPCID type 2 -> 3 in flush_tlb_all), T14:  the_machine_flush_... RED, same message; a_global_kernel_leafs_... GREEN.
+M3 (Owed::Address global arm removed), both:     a_global_kernel_leafs_... RED, "the write's discharge left the old
+   frame's global translation"; the_machine_flush_... GREEN.
+Either row RED with "the control: with nothing invalidated the second read did not see the first frame" is neither:
+   that CPU held no translation to go stale, and that bench's mutation evidence is void. Report it as such.
+A mutation that stays GREEN where RED is expected is a finding for me, with the boot's kernel log.
+
+######## The kill condition (design, PR #873 body), from the scout readbacks ########
+
+Each scout_tlb boot prints, per k in {0,1,4,16,64}:
+  "scout_tlb: k=K pages rt_cycles min=.. p50=.. max=.. over 21x500 | parent cpus {..} child cpus {..} ... | parent pmc/rt [4] | child pmc/rt [4]"
+and "scout_tlb: tsc N MHz"; each kernel log carries "scout-cpuid: cpuN ... pge=1 cr4=0x..." (head: cr4 with 0x80 set).
+It lands only if both hold:
+  1. AMD, k=4: HEAD p50 <= 0.98 x BASE p50, and the two min..max ranges are disjoint.
+  2. T14, scout_tlb_base, k = 1, 4, 16, 64: no HEAD p50 above BASE's with disjoint ranges.
+Killed otherwise. Reported, not gated: AMD full walks per round trip at k=0 (pmc, both arms); T14 itlb walks per round
+trip (parent and child); T14 nopcid arm's gain; AMD `tlb: bench` p50/p99 (latencycase), base against head.

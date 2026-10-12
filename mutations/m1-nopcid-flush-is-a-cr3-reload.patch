@@ -1,0 +1,13 @@
+diff --git a/kernel/src/arch/x86_64/paging.rs b/kernel/src/arch/x86_64/paging.rs
+--- a/kernel/src/arch/x86_64/paging.rs
++++ b/kernel/src/arch/x86_64/paging.rs
+@@ -278,7 +278,8 @@
+     if let Some(have) = pcid_active() {
+         crate::arch::cpu::invpcid(have, Invpcid::AllIncludingGlobal, 0, 0);
+     } else {
+-        crate::arch::control_regs::flush_global();
++        // SAFETY: MUTATION, never lands: the CR3 reload this kernel flushed with before.
++        unsafe { crate::arch::cpu::write_cr3(crate::arch::cpu::read_cr3()) };
+     }
+ }
+ 

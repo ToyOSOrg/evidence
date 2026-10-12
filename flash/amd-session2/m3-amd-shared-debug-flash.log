@@ -1,0 +1,216 @@
+13ba7c5b83ad0028fc8074d1bd2ef015d8e9dd5c55da03dae21a1055f8b661ae  <scratchpad>/pge/metal/amd2/m3-amd/shared-debug/image.img
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.17s
+     Running `target/debug/toyos-metal --image <scratchpad>/pge/metal/amd2/m3-amd/shared-debug/image.img --readback <scratchpad>/pge/metal/amd2/m3-amd/shared-debug --fat32-check --host '<user>@<host>'`
+image <scratchpad>/pge/metal/amd2/m3-amd/shared-debug/image.img: 134217728 bytes, ESP p1 at 2048+69632, log p3 at 73728+69632
+image <scratchpad>/pge/metal/amd2/m3-amd/shared-debug/image.img: armed with ["pci-cap-selftest", "revoked-backing-selftest", "leak-rollback-selftest", "lapic-spurious-selftest", "unclaimed-vector-selftest", "xhci-xecp-selftest", "xhci-descriptor-selftest", "sysret-ss-probe", "test-input-merge", "sched-operation-nesting", "iommu-firmware-left", "boot-deadline=120000"], so it is waited 420 s to come back
+machine <vendor> <model>, BIOS <bios>
+disk /dev/sda: 240328704 sectors, USB SanDisk 3.2Gen1, removable — the stick <path> names
+  run: sudo -n '/usr/sbin/wipefs' '--all' '/dev/sda'
+  run: sudo -n '/usr/bin/dd' 'of=/dev/sda' 'bs=4M' 'conv=fsync'
+  run: sudo -n '/usr/bin/efibootmgr' '--delete-bootnum' '--bootnum' '0002'
+  run: sudo -n '/usr/bin/efibootmgr' '--create-only' '--disk' '/dev/sda' '--part' '1' '--label' 'ToyOS' '--loader' '\EFI\BOOT\BOOTX64.EFI'
+  run: sudo -n '/usr/bin/efibootmgr' '--bootnext' '0002'
+  run: sudo -n '/usr/sbin/reboot'
+the machine answered ssh again after 98 s
+the boot stick enumerated 0 s after the machine answered
+  run: sudo -n '/usr/bin/mount' '-o' 'ro' '/dev/sda3' '<path>
+  run: sudo -n '/usr/bin/umount' '<path>
+[--.--- cpu0 loader] ToyOS Bootloader 1.0
+[--.--- cpu0 loader] Loader clock: this CPU states no counter rate, so no line carries the time it was said
+[--.--- cpu0 loader] Boot attempts: this image has had the machine 0 time(s) without reporting; now 1
+[--.--- cpu0 loader] Anti-rollback floor: ToyOSImageFloor-I20f90ec2c8c67b5e (image scope) holds 0
+[--.--- cpu0 loader] Firmware watchdog: 60 s, until ExitBootServices disables it
+[--.--- cpu0 loader] RSDP address: 0xcdffe014
+[--.--- cpu0 loader] Boot partition: LBA 2048+69632 signature [10, a8, 01, 68, ad, 52, 73, 48, 89, 96, e8, f5, 5e, 82, 98, 1b]
+[--.--- cpu0 loader] Log partition: signature [8c, a0, 76, 94, 3b, d9, 0b, 49, 93, 77, 1b, fc, 73, b6, 46, 7c]
+[--.--- cpu0 loader] Slots: the table marks A (sequence 1); slot A present, slot B absent; the floor is 0
+[--.--- cpu0 loader] Slot A: signed header bc89546b9877b2f4b443565819ab17f3f2dc2aafc71e670ae8c8c3cd08b75ec5 verifies under this loader's key, version 1791796930
+[--.--- cpu0 loader] ROOT: read into memory at 0xb344a000+0x1700000 from LBA 212992+47104, 1048576 bytes a request (optimal granularity: not reported), in 1573313688 counter ticks
+[--.--- cpu0 loader] Slot A: ROOT hashed in 20589120 counter ticks
+[--.--- cpu0 loader] Slot A: kernel, cmdline and ROOT are the bytes the signed header names
+[--.--- cpu0 loader] Boot attempts: slot A's image is written down as the one this pass boots
+[--.--- cpu0 loader] Kernel: 2807128 bytes
+[--.--- cpu0 loader] Boot parameter: "root=92e2df1f0b87e85f42e3ed333bb2ac53,pci-cap-selftest,revoked-backing-selftest,leak-rollback-selftest,lapic-spurious-selftest,unclaimed-vector-selftest,xhci-xecp-selftest,xhci-descriptor-selftest,sysret-ss-probe,test-input-merge,sched-operation-nesting,iommu-firmware-left,boot-deadline=120000,boot-slot=A,blackbox=0x8000000"
+[--.--- cpu0 loader] Loading kernel elf...
+[--.--- cpu0 loader] Kernel stack size: 8388608
+[--.--- cpu0 loader] Kernel memory size: 14024704
+[--.--- cpu0 loader] Kernel memory located at: 0xb2600000
+[--.--- cpu0 loader] Loading segment: Segment { image: ImageRange { start: 0, len: 573268 }, filesz: 573268, file_offset: 0, flags: SegmentFlags(4) }
+[--.--- cpu0 loader] Loading segment: Segment { image: ImageRange { start: 577376, len: 1410797 }, filesz: 1410797, file_offset: 573280, flags: SegmentFlags(5) }
+[--.--- cpu0 loader] Loading segment: Segment { image: ImageRange { start: 1992272, len: 84400 }, filesz: 82112, file_offset: 1984080, flags: SegmentFlags(6) }
+[--.--- cpu0 loader] Loading segment: Segment { image: ImageRange { start: 2078480, len: 3555512 }, filesz: 27560, file_offset: 2066192, flags: SegmentFlags(6) }
+[--.--- cpu0 loader] Applied 4050 relocations
+[--.--- cpu0 loader] GOP: mode 1920x1080 stride=1920 format=1 fb=0xfc90000000 size=8294400
+[--.--- cpu0 loader] Wall clock: firmware's GetTime reads 2026-10-12 06:15:20 UTC at counter 11328280164
+[--.--- cpu0 loader] Black box: 0x8000000 armed at 2026-10-12-061520 for [8c, a0, 76, 94, 3b, d9, 0b, 49, 93, 77, 1b, fc, 73, b6, 46, 7c], and the kernel is told so on its parameter line
+[--.--- cpu0 loader] Boot chain: BootNext=0002, so this loader gets the machine back
+[--.--- cpu0 loader] Starting kernel...
+[--.--- cpu0 loader] GCD: 0xd0700000+0x27900000 mmio cap=0xc000000000022000 attr=0x0 free
+[--.--- cpu0 loader] GCD: 0xfc000000+0x1c00000 mmio cap=0xc000000000022000 attr=0x0 free
+[--.--- cpu0 loader] GCD: 0xff000000+0xeab000 mmio cap=0xc300000000022001 attr=0x8000000000000001 free
+[--.--- cpu0 loader] GCD: 0x450200000+0xf83fe00000 mmio cap=0xc000000000022000 attr=0x0 free
+[--.--- cpu0 loader] GCD: 0xfca0200000+0xfe00000 mmio cap=0xc000000000022000 attr=0x0 free
+[--.--- cpu0 loader] GCD: 70 descriptor(s); 5 free mmio range(s) of 0x200000 bytes or more handed to the kernel, 0 past its room
+[--.--- cpu0 loader] Scanout: 0xfc90000000+0x800000 mapped as the scanout in 2 MiB pages at identity and at PHYS_OFFSET, in 6 page directories under 2 second-level tables
+[--.--- cpu0 loader] Loader image: 0x140000000+0x4d000, mapped at identity as 0x140000000+0x200000
+[--.--- cpu0 loader] Boot map: root 0xb6719000, 0x100000000 bytes at identity and at PHYS_OFFSET
+[--.--- cpu0 loader] Kernel image: 0xb2600000+0xd60000 is inside the 0x100000000-byte boot map
+[--.--- cpu0 loader] Parameter buffer: 0xb672ad98+0x145 is inside the 0x100000000-byte boot map
+[--.--- cpu0 loader] Seed: 32 bytes from EFI_RNG_PROTOCOL for the kernel's generator
+[--.--- cpu0 loader] Kernel arguments: 0xb88ec198+0x538 is inside the 0x100000000-byte boot map
+[--.--- cpu0 loader] Loader counter: 8226484056 at entry, 11938695624 at the handoff
+[--.--- cpu0 loader] Loader log: the kernel handoff begins, so this file ends here
+[--.--- cpu0 loader] --- the pass after the reset, reading what the boot above left
+[--.--- cpu0 loader] ToyOS Bootloader 1.0
+[--.--- cpu0 loader] Loader clock: this CPU states no counter rate, so no line carries the time it was said
+[--.--- cpu0 loader] Boot attempts: this image has had the machine 1 time(s) without reporting; now 0
+[--.--- cpu0 loader] Slot A: its image bc89546b9877b2f4b443565819ab17f3f2dc2aafc71e670ae8c8c3cd08b75ec5 died on its last boot, so no pass boots it again until an update replaces it
+[--.--- cpu0 loader] Anti-rollback floor: ToyOSImageFloor-I20f90ec2c8c67b5e (image scope) holds 0
+[--.--- cpu0 loader] Black box: the record below is from the boot armed at 2026-10-12-061520
+[--.--- cpu0 loader] Previous boot's panic: 12672 bytes off 0x8000000
+[--.--- cpu0 loader] | PANIC (apic 0): panicked at kernel/src/arch/x86_64/amdvi/mod.rs:325:9: 
+[--.--- cpu0 loader] | irq: cpu0 timer=0 kick=0 xhci=0 userdev=0 i8042=0 dmafault=0 hda=0 tlb=0 nmi=0 spurious=0 unclaimed=0
+[--.--- cpu0 loader] | tlb: shootdowns=0 wait=0us max=0us dlopen=0 pcid=0 mmio=0 unmap=0 pipe=0 staged=0 bench=0 stop=0
+[--.--- cpu0 loader] | irq: unclaimed vectors no-isr=0
+[--.--- cpu0 loader] | panel: paints=4 px=4828544 us=4141 max_us=2854
+[--.--- cpu0 loader] | usb-recovery: the log ring holds no transport break
+[--.--- cpu0 loader] | amdvi: the unit's requesters overflow the actuator's 256-entry ring
+[--.--- cpu0 loader] | usb-quiesce: no barrier was taken, so this reset is not the shutdown's
+[--.--- cpu0 loader] | usb-quiesce: no Bulk-Only command was open, so this reset cuts none
+[--.--- cpu0 loader] | usb-quiesce: 0/0 disk cache(s) flushed, 0 with no cache to flush, 0/0 connected port(s) reset, 0/0 controller(s) halted, 0 reset, 0/0 port(s) unpowered
+[--.--- cpu0 loader] Black box: that record's log ring is in loader.log, not on a console the firmware scrolls: 129 record(s)
+[--.--- cpu0 loader]| [--.--- cpu0 kernel] panic console: armed 1920x1080 stride=1920 format=1 at 0xfc90000000, write-combining
+[--.--- cpu0 loader]| [--.--- cpu0 kernel] black box: 0x8000000 is this boot's, 16344 bytes for the next boot's loader
+[--.--- cpu0 loader]| [--.--- cpu0 kernel] serial: 16550 loopback read 0xff (absent or wrong port)
+[--.--- cpu0 loader]| [--.--- cpu0 kernel] actuators: root=92e2df1f0b87e85f42e3ed333bb2ac53,pci-cap-selftest,revoked-backing-selftest,leak-rollback-selftest,lapic-spurious-selftest,unclaimed-vector-selftest,xhci-xecp-selftest,xhci-descriptor-selftest,sysret-ss-probe,test-input-merge,sched-operation-nesting,iommu-firmware-left,boot-deadline=120000,boot-slot=A,blackbox=0x8000000
+[--.--- cpu0 loader]| [--.--- cpu0 kernel] PAT: IA32_PAT=0x0007040100070406, entry 4 = WC
+[--.--- cpu0 loader]| [--.--- cpu0 kernel] boot: memory map 0xb672b018+0x528, kernel 0xb2600000+0xd60000, stack image+0x560000+0x800000
+[--.--- cpu0 loader]| [--.--- cpu0 kernel] boot: kernel elf 0xb4b4a018+0x2ad558, rsdp 0xcdffe014, boot pml4 0xb6719000
+[--.--- cpu0 loader]| [--.--- cpu0 kernel] boot: gop 0xfc90000000+0x7e9000 1920x1080 stride 1920 format 1
+[--.--- cpu0 loader]| [--.--- cpu0 kernel] boot: boot partition present=1 lba 2048 +69632 blocks guid [10, a8, 01, 68, ad, 52, 73, 48, 89, 96, e8, f5, 5e, 82, 98, 1b]
+[--.--- cpu0 loader]| [--.--- cpu0 kernel] boot: log partition guid [8c, a0, 76, 94, 3b, d9, 0b, 49, 93, 77, 1b, fc, 73, b6, 46, 7c]
+[--.--- cpu0 loader]| [--.--- cpu0 kernel] boot: cmdline 0xb672ad98+325
+[--.--- cpu0 loader]| [--.--- cpu0 kernel] boot: root=92e2df1f0b87e85f42e3ed333bb2ac53
+[--.--- cpu0 loader]| [--.--- cpu0 kernel] boot: slot A, the one the slot table marks
+[--.--- cpu0 loader]| [--.--- cpu0 kernel] random: the loader's seed is mixed into the generator's key
+[--.--- cpu0 loader]| [--.--- cpu0 kernel] random: RDSEED is mixed into the generator's key
+[--.--- cpu0 loader]| [--.--- cpu0 kernel] random: RDRAND is mixed into the generator's key
+[--.--- cpu0 loader]| [--.--- cpu0 kernel] random: the generator is keyed from 3 source(s), and every random byte is its ChaCha20
+[--.--- cpu0 loader]| [--.--- cpu0 kernel] pmm: the firmware map calls 16505958400 bytes usable in 35 entries; managed=16435380224 withheld=39845888 unaligned=30732288, and the three sum to it; frames=7837 reserved_frames=19 base=0x200000 span=8312
+[--.--- cpu0 loader]| [--.--- cpu0 kernel] paging: the direct map covers 0x0..0x40f400000
+[--.--- cpu0 loader]| [--.--- cpu0 kernel] mmio: 0xfc90000000+0x7e9000 PAT WriteCombining (MTRR UC)
+[--.--- cpu0 loader]| [--.--- cpu0 kernel] ACPI: APIC at 0xcdfeb000 len=312 rev=3 oem="<vendor>" checksummed
+[--.--- cpu0 loader]| [--.--- cpu0 kernel] ACPI: FACP at 0xcdfed000 len=268 rev=5 oem="<vendor>" checksummed
+[--.--- cpu0 loader]| [--.--- cpu0 kernel] ACPI: HPET at 0xcdfec000 len=56 rev=1 oem="<vendor>" checksummed
+[--.--- cpu0 loader]| [--.--- cpu0 kernel] ACPI: MCFG at 0xcdfea000 len=60 rev=1 oem="<vendor>" checksummed
+[--.--- cpu0 loader]| [--.--- cpu0 kernel] ACPI: DMAR not read: Absent
+[--.--- cpu0 loader]| [--.--- cpu0 kernel] ACPI: IVRS at 0xcdff4000 len=420 rev=2 oem="<vendor>" checksummed
+[--.--- cpu0 loader]| [--.--- cpu0 kernel] ACPI: 5 of 6 tables checksummed under the RSDP at 0xcdffe014
+[--.--- cpu0 loader]| [--.--- cpu0 kernel] ACPI: MADT cpus=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+[--.--- cpu0 loader]| [--.--- cpu0 kernel] ACPI: reset register SystemIO 0xb0 <- 0xfb, which is SMI_CMD too
+[--.--- cpu0 loader]| [--.--- cpu0 kernel] control_regs: cpu0 cr0=0x80010033 cr4=0x00300ee8 efer=0x0d01 smep smap umip nx
+[--.--- cpu0 loader]| [--.--- cpu0 kernel] idt: 256 vectors, 35 declared, 221 unclaimed, table at 0xffff8000b295e020 limit 0xfff
+[--.--- cpu0 loader]| [--.--- cpu0 kernel] control_regs: no performance request is declared: no HWP (CPUID.6:EAX[7])
+[--.--- cpu0 loader]| [--.--- cpu0 kernel] fpu: cpu0 xsave=1 osxsave=0 xcr0=0x0 cpuid.d.0=(0x207,576,896) cpuid.d.1.eax=0xf
+[--.--- cpu0 loader]| [--.--- cpu0 kernel] percpu: BSP cpu_id=0 lapic_id=0
+[--.--- cpu0 loader]| [--.--- cpu0 kernel] control_regs: cpu0 apic_base=0xfee00900 Xapic
+[--.--- cpu0 loader]| [--.--- cpu0 kernel] mmio: 0xfee00000+0x1000 PAT Uncacheable (MTRR UC)
+[--.--- cpu0 loader]| [--.--- cpu0 kernel] LAPIC: Xapic enabled (ID 0)
+[--.--- cpu0 loader]| [--.--- cpu0 kernel] mmio: 0xfec00000+0x20 PAT Uncacheable (MTRR UC)
+[--.--- cpu0 loader]| [--.--- cpu0 kernel] ioapic: id=33 at 0xfec00000 ver=0x21 gsi 0..23 masked 24/24
+[--.--- cpu0 loader]| [--.--- cpu0 kernel] mmio: 0xfec01000+0x20 PAT Uncacheable (MTRR UC)
+[--.--- cpu0 loader]| [--.--- cpu0 kernel] ioapic: id=34 at 0xfec01000 ver=0x21 gsi 24..55 masked 32/32
+[--.--- cpu0 loader]| [--.--- cpu0 kernel] ioapic: iso bus:irq->gsi [0:0->2 edge/high, 0:9->9 level/low]
+[--.--- cpu0 loader]| [--.--- cpu0 kernel] counters: cpu0 reads smi=false aperf=true mperf=true hwp_request=false hwp_request_pkg=false energy_perf_bias=false
+[--.--- cpu0 loader]| [--.--- cpu0 kernel] symbols: loaded 6412 kernel symbols
+[--.--- cpu0 loader]| [--.--- cpu0 kernel] ACPI: HPET at 0xfed00000
+[--.--- cpu0 loader]| [--.--- cpu0 kernel] mmio: 0xfed00000+0x1000 PAT Uncacheable (MTRR UC)
+[--.--- cpu0 loader]| [--.--- cpu0 kernel] clock: HPET at 0xfed00000 enabled, period=69841278fs, counter reads 0, calibrating over 715909 ticks
+[--.--- cpu0 loader]| [ 6.754 cpu0 kernel] TSC: 1796MHz (period=556628fs, calibrated over 50ms)
+[--.--- cpu0 loader]| [ 6.754 cpu0 kernel] clock: TSC measured 1796531974Hz against the HPET; CPUID leaves 15H and 16H stating no frequency, so nothing independent confirms it
+[--.--- cpu0 loader]| [ 6.754 cpu0 kernel] ACPI: the FADT names no RTC century register
+[--.--- cpu0 loader]| [ 6.754 cpu0 kernel] clock: the RTC reads 2026-10-12 06:15:21 UTC
+[--.--- cpu0 loader]| [ 6.764 cpu0 kernel] LAPIC timer: 998072 ticks/10ms, so 99807200Hz
+[--.--- cpu0 loader]| [ 6.764 cpu0 kernel] boot deadline: 120000 ms, after which this kernel seals a WEDGED record and writes the reset register itself
+[--.--- cpu0 loader]| [ 6.764 cpu0 kernel] hard lockup: 60000 ms, but CPUID states no architectural performance counter on this machine, so nothing samples a cpu that stops taking interrupts
+[--.--- cpu0 loader]| [ 6.764 cpu0 kernel] Boot: CPU ready (60ms)
+[--.--- cpu0 loader]| [ 6.767 cpu0 kernel] ACPI: RSDP at 0xcdffe014
+[--.--- cpu0 loader]| [ 6.767 cpu0 kernel] ACPI: MCFG found at 0xcdfea000
+[--.--- cpu0 loader]| [ 6.767 cpu0 kernel] ACPI: ECAM window: segment 0 buses 0x00..=0x3f, bus 0 at 0xf8000000
+[--.--- cpu0 loader]| [ 6.767 cpu0 kernel] PCI: Enumerating devices...
+[--.--- cpu0 loader]| [ 6.767 cpu0 kernel] mmio: 0xf8000000+0x4000000 PAT Uncacheable (MTRR UC)
+[--.--- cpu0 loader]| [ 6.767 cpu0 kernel]   PCI 00:00.0 [0600] vendor=1022 device=1630 prog_if=00 bars=[]
+[--.--- cpu0 loader]| [ 6.767 cpu0 kernel]   PCI 00:00.2 [0806] vendor=1022 device=1631 prog_if=00 bars=[]
+[--.--- cpu0 loader]| [ 6.767 cpu0 kernel]   PCI 00:01.0 [0600] vendor=1022 device=1632 prog_if=00 bars=[]
+[--.--- cpu0 loader]| [ 6.767 cpu0 kernel]   PCI 00:02.0 [0600] vendor=1022 device=1632 prog_if=00 bars=[]
+[--.--- cpu0 loader]| [ 6.767 cpu0 kernel]   PCI 00:02.2 [0604] vendor=1022 device=1634 prog_if=00 bars=[]
+[--.--- cpu0 loader]| [ 6.767 cpu0 kernel]   PCI 00:02.3 [0604] vendor=1022 device=1634 prog_if=00 bars=[]
+[--.--- cpu0 loader]| [ 6.767 cpu0 kernel]   PCI 00:08.0 [0600] vendor=1022 device=1632 prog_if=00 bars=[]
+[--.--- cpu0 loader]| [ 6.767 cpu0 kernel]   PCI 00:08.1 [0604] vendor=1022 device=1635 prog_if=00 bars=[]
+[--.--- cpu0 loader]| [ 6.767 cpu0 kernel]   PCI 00:14.0 [0c05] vendor=1022 device=790b prog_if=00 bars=[]
+[--.--- cpu0 loader]| [ 6.767 cpu0 kernel]   PCI 00:14.3 [0601] vendor=1022 device=790e prog_if=00 bars=[]
+[--.--- cpu0 loader]| [ 6.767 cpu0 kernel]   PCI 00:18.0 [0600] vendor=1022 device=1448 prog_if=00 bars=[]
+[--.--- cpu0 loader]| [ 6.767 cpu0 kernel]   PCI 00:18.1 [0600] vendor=1022 device=1449 prog_if=00 bars=[]
+[--.--- cpu0 loader]| [ 6.767 cpu0 kernel]   PCI 00:18.2 [0600] vendor=1022 device=144a prog_if=00 bars=[]
+[--.--- cpu0 loader]| [ 6.767 cpu0 kernel]   PCI 00:18.3 [0600] vendor=1022 device=144b prog_if=00 bars=[]
+[--.--- cpu0 loader]| [ 6.767 cpu0 kernel]   PCI 00:18.4 [0600] vendor=1022 device=144c prog_if=00 bars=[]
+[--.--- cpu0 loader]| [ 6.767 cpu0 kernel]   PCI 00:18.5 [0600] vendor=1022 device=144d prog_if=00 bars=[]
+[--.--- cpu0 loader]| [ 6.767 cpu0 kernel]   PCI 00:18.6 [0600] vendor=1022 device=144e prog_if=00 bars=[]
+[--.--- cpu0 loader]| [ 6.767 cpu0 kernel]   PCI 00:18.7 [0600] vendor=1022 device=144f prog_if=00 bars=[]
+[--.--- cpu0 loader]| [ 6.768 cpu0 kernel]   PCI 01:00.0 [0280] vendor=8086 device=2723 prog_if=00 bars=[bar0=0xd0600000]
+[--.--- cpu0 loader]| [ 6.768 cpu0 kernel]   PCI 02:00.0 [0108] vendor=144d device=a808 prog_if=02 bars=[bar0=0xd0500000]
+[--.--- cpu0 loader]| [ 6.768 cpu0 kernel]   PCI 03:00.0 [0300] vendor=1002 device=1636 prog_if=00 bars=[bar0=0xfc90000000 bar2=0xfca0000000 bar4=none(it is an I/O BAR at port 0x1000, not memory) bar5=0xd0400000]
+[--.--- cpu0 loader]| [ 6.768 cpu0 kernel]   PCI 03:00.1 [0403] vendor=1002 device=1637 prog_if=00 bars=[bar0=0xd04c8000]
+[--.--- cpu0 loader]| [ 6.768 cpu0 kernel]   PCI 03:00.2 [1080] vendor=1022 device=15df prog_if=00 bars=[bar2=0xd0300000 bar5=0xd04ce000]
+[--.--- cpu0 loader]| [ 6.768 cpu0 kernel]   PCI 03:00.3 [0c03] vendor=1022 device=1639 prog_if=30 bars=[bar0=0xd0000000]
+[--.--- cpu0 loader]| [ 6.768 cpu0 kernel]   PCI 03:00.4 [0c03] vendor=1022 device=1639 prog_if=30 bars=[bar0=0xd0100000]
+[--.--- cpu0 loader]| [ 6.768 cpu0 kernel]   PCI 03:00.5 [0480] vendor=1022 device=15e2 prog_if=00 bars=[bar0=0xd0480000]
+[--.--- cpu0 loader]| [ 6.768 cpu0 kernel]   PCI 03:00.6 [0403] vendor=1022 device=15e3 prog_if=00 bars=[bar0=0xd04c0000]
+[--.--- cpu0 loader]| [ 6.768 cpu0 kernel]   PCI 03:00.7 [1180] vendor=1022 device=15e4 prog_if=00 bars=[bar2=0xd0200000 bar5=0xd04cc000]
+[--.--- cpu0 loader]| [ 6.770 cpu0 kernel] PCI: Enumeration complete, 28 functions.
+[--.--- cpu0 loader]| [ 6.770 cpu0 kernel] pcidev: PCI 00:02.2 forwards 0xd0600000..0xd0700000 to its secondary bus
+[--.--- cpu0 loader]| [ 6.770 cpu0 kernel] pcidev: PCI 00:02.3 forwards 0xd0500000..0xd0600000 to its secondary bus
+[--.--- cpu0 loader]| [ 6.770 cpu0 kernel] pcidev: PCI 00:08.1 forwards 0xd0000000..0xd0500000 to its secondary bus
+[--.--- cpu0 loader]| [ 6.770 cpu0 kernel] pcidev: PCI 00:08.1 forwards 0xfc90000000..0xfca0200000 to its secondary bus
+[--.--- cpu0 loader]| [ 6.770 cpu0 kernel] pcidev: firmware declared root bridge memory: mem 0xd0000000..0xd0700000, mem 0xfc90000000..0xfca0200000, mem 0xd0700000..0xf8000000, mem 0xfc000000..0xfdc00000, mem 0xff000000..0xffeab000, mem 0x450200000..0xfc90000000, mem 0xfca0200000..0xfcb0000000
+[--.--- cpu0 loader]| [ 6.770 cpu0 kernel] pcidev: 28 functions; 4 run(s) of 2 MiB or more below 0xfec00000 and 2 from 0x100000000
+[--.--- cpu0 loader]| [ 6.770 cpu0 kernel] pcidev:   0xcf000000..0xd0000000 (16 MiB)
+[--.--- cpu0 loader]| [ 6.770 cpu0 kernel] pcidev:   0xd0700000..0xf8000000 (633 MiB)
+[--.--- cpu0 loader]| [ 6.770 cpu0 kernel] pcidev:   0xfc000000..0xfde00000 (30 MiB)
+[--.--- cpu0 loader]| [ 6.770 cpu0 kernel] pcidev:   0xfdf00000..0xfec00000 (13 MiB)
+[--.--- cpu0 loader]| [ 6.770 cpu0 kernel] pcidev:   0x430000000..0xfc90000000 (1017344 MiB)
+[--.--- cpu0 loader]| [ 6.770 cpu0 kernel] pcidev:   0xfca0200000..0xffffffffffffffff (17592185009661 MiB)
+[--.--- cpu0 loader]| [ 6.771 cpu0 kernel] virtio: pci cap split 13/13
+[--.--- cpu0 loader]| [ 6.771 cpu0 kernel] virtio: pci cap selftest 15/15
+[--.--- cpu0 loader]| [ 6.771 cpu0 kernel] iommu: IVRS rev=2 ivinfo=0x00203041 efr_images=y preboot_dma_protection=n pa=48 va=64
+[--.--- cpu0 loader]| [ 6.771 cpu0 kernel] iommu: IVRS IVHD 0x10 at +48 describes 00:00.2 again, which is read at its higher type
+[--.--- cpu0 loader]| [ 6.771 cpu0 kernel] iommu: IVRS IVHD 0x11 at +120 describes 00:00.2 again, which is read at its higher type
+[--.--- cpu0 loader]| [ 6.771 cpu0 kernel] iommu: amdvi unit0 @0xfdf00000 seg=0 dev=00:00.2 ivhd=0x40 flags=0xb0 cap=0x40 info=0x0000 attributes=0x00040200 efr_image=0x206d73ef22254ade efr2_image=0x0000000000000000
+[--.--- cpu0 loader]| [ 6.771 cpu0 kernel] iommu: amdvi unit0 serves 00:01.0..=ff:1f.6 data=0x00
+[--.--- cpu0 loader]| [ 6.771 cpu0 kernel] iommu: amdvi unit0 serves ff:00.0..=ff:1f.7 as 00:14.5 data=0x00
+[--.--- cpu0 loader]| [ 6.771 cpu0 kernel] iommu: amdvi unit0 serves special variety=2 handle=0 as 00:14.0 data=0x00
+[--.--- cpu0 loader]| [ 6.771 cpu0 kernel] iommu: amdvi unit0 serves special variety=1 handle=33 as 00:14.0 data=0xd7
+[--.--- cpu0 loader]| [ 6.771 cpu0 kernel] iommu: amdvi unit0 serves special variety=1 handle=34 as 00:00.1 data=0x00
+[--.--- cpu0 loader]| [ 6.771 cpu0 kernel] iommu: amdvi unit0 serves acpi "AMDI0020" cid="" uid="\\_SB.FUR0" as 00:14.5 data=0x40
+[--.--- cpu0 loader]| [ 6.771 cpu0 kernel] iommu: amdvi unit0 serves acpi "AMDI0020" cid="" uid="\\_SB.FUR1" as 00:14.5 data=0x40
+[--.--- cpu0 loader]| [ 6.771 cpu0 kernel] iommu: amdvi unit0 serves acpi "AMDI0020" cid="" uid="\\_SB.FUR2" as 00:14.5 data=0x40
+[--.--- cpu0 loader]| [ 6.771 cpu0 kernel] iommu: amdvi unit0 serves acpi "AMDI0020" cid="" uid="\\_SB.FUR3" as 00:14.5 data=0x40
+[--.--- cpu0 loader]| [ 6.771 cpu0 kernel] mmio: 0xfdf00000+0x4000 PAT Uncacheable (MTRR UC)
+[--.--- cpu0 loader]| [ 6.772 cpu0 kernel alert] PANIC: panicked at kernel/src/arch/x86_64/amdvi/mod.rs:325:9:
+[--.--- cpu0 loader]| [ 6.772 cpu0 kernel]   Backtrace:
+[--.--- cpu0 loader]| [ 6.772 cpu0 kernel]     0xffff8000b27e294c  core::panicking::panic_fmt+0x2c
+[--.--- cpu0 loader]| [ 6.772 cpu0 kernel]     0xffff8000b279a3aa  kernel::arch::x86_64::amdvi::leave_on::<toyos_acpi::Mapped<kernel::drivers::acpi::DirectMemory>>::{closure#1}+0x14a
+[--.--- cpu0 loader]| [ 6.772 cpu0 kernel]     0xffff8000b2799e9d  kernel::arch::x86_64::amdvi::leave_on::<toyos_acpi::Mapped<kernel::drivers::acpi::DirectMemory>>+0x50d
+[--.--- cpu0 loader]| [ 6.772 cpu0 kernel]     0xffff8000b26ca1b8  kernel::arch::x86_64::amdvi::init+0xaa8
+[--.--- cpu0 loader]| [ 6.772 cpu0 kernel]     0xffff8000b268efda  kernel::iommu::init+0x1a
+[--.--- cpu0 loader]| [ 6.772 cpu0 kernel]     0xffff8000b2692c98  kernel::kernel_main+0xf68
+[--.--- cpu0 loader]| [ 6.772 cpu0 kernel]     0xffff8000b26ae521  _start+0x21
+[--.--- cpu0 loader]| [ 6.772 cpu0 kernel]   Contexts: cpu0 crashed at sp=0xffff8000b335f0a0, asking about ctx 0x0
+[--.--- cpu0 loader]| [ 6.772 cpu0 kernel]   cpu0 is on ctx 0x0 (never switched, or not a context)
+[--.--- cpu0 loader]| [ 6.772 cpu0 kernel alert] panic: rebooting in 60 s, timed by the calibrated clock
+[--.--- cpu0 loader] Loader log: the last boot is accounted for, so this pass resets the machine
+  run: sudo -n '/usr/bin/dd' 'if=/dev/sda3' 'bs=4M'  (69632 sectors)
+toyos-fat32-check: the log partition's 35651584 bytes check out
+phases: preamble 1.5 s, wipe 0.6 s, flash 15.0 s (dd 13.5 s), entry 3.2 s, down 11.0 s, read_log 2.0 s, raw_log 24.8 s
+readback written to <scratchpad>/pge/metal/amd2/m3-amd/shared-debug
+10:17:26 toyos-metal: the log partition came back and the log carries no `Boot: complete (Nms)` record
