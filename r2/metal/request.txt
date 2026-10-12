@@ -1,0 +1,87 @@
+# PR #874's second metal judgement: busy-CPU wakes, base and head, both benches, one session.
+#
+# Trees (both pushed; neither lands):
+#   base  wt/toyos-busywake-judge-base at 4cbf3c381 = main 177e72a9e + the wake_onto_busy row as PR #874's
+#         head d5165c28a has it + the scout; worktree /Users/jan/Dev/jan/toyos-busywake-judge-base
+#   head  wt/toyos-busywake-judge-head at b84bd8157 = PR #874's kernel/ at d5165c28a + the same row + the same
+#         scout; worktree /Users/jan/Dev/jan/toyos-busywake-judge-head
+# The two trees' kernel/ differ by exactly PR #874's kernel diff (21 files, +863 -368); outside kernel/ and
+# issues/ they differ only in acpi_mediated.rs and futex_wake_counts.rs. Every `cargo` line below runs from the
+# worktree its section names.
+#
+# Rows (both are --metal rows of tests/toyos.rs on both trees):
+#   scout_wake      one boot, kernel feature scout-wake, test_rs_scout_wake, phases (n = CPUs):
+#                     0: 0 spinners   1: n-1   2: n   3: 2n          (spinners in the pair's own process)
+#                     4: n            5: 2n                          (spinners in a second process)
+#                     6, 7, 8: STAGED, no spinners: the pair alone on CPUs 1 and 2 (or 5 and 6 where the
+#                              staging thread holds 1 or 2), 2 s each
+#                     9:  STAGED: one spinner of the pair's process on every CPU (the staging thread is the
+#                         spinner on its own), the pair split on the same two CPUs, 4 s
+#                     10: STAGED: the same spinners, the pair together on the first of the two, 4 s
+#                   prints "scout-wake: phase=P target=same|sleeping|busy n=N p50<=.. p90<=.. p99<=.. p999<=.. max=..",
+#                   "scout-wake: phase=P moved=M" (switch-ins of the pair's process on a CPU other than the last),
+#                   and "scout-wake: phase=P ... rounds=R in T ms" (staged phases: "staged waker=.. partner=..
+#                   coordinator=.."; a phase that could not be staged prints "phase=P not staged: <why>").
+#   wake_onto_busy  rides the shipping kernel's `testcases` boot: the partner staged on a CPU other than the
+#                   waker's and APIC id 0, a spinner of its program staged on the partner's CPU, other CPUs
+#                   idle; round trip timed in userland; exit code = p99 in us, -5 = not staged; the row reds
+#                   at >= 1000 us.
+#
+# Kill conditions, stated before any metal number. K1 and K4 are the accepted design's; K2 and K3 are
+# restated on staged phases as PR #874's body proposes (the orchestrator accepts or rejects that).
+# "base" below is this session's base run.
+#   K1 (purpose)    head phase 1 target=busy p99 <= 100 us and rounds >= 25,000 in ~5,000 ms, both benches.
+#   K2 (quiet path) staged phases 6-8 with moved=0: head's median rounds within 5 % of base's median, and
+#                   head's median target=sleeping p99 at most one bucket above base's, each bench. The natural
+#                   phase 0 is read beside it, not judged.
+#   K3 (no idle CPU, per arrangement) staged phases 9 and 10 with moved=0: head's rounds within 5 % of base's
+#                   and the woken class's p99 (phase 9: busy; phase 10: same) at most one bucket above base's,
+#                   each bench. The natural phases 2 and 3 are read beside them, not judged.
+#                   Expected by derivation: phase 9 about 10 ms a round, phase 10 about 20 ms, at both trees.
+#   K4 (cross-process) head phases 4 and 5 target=busy p99 <= 1.1 ms, both benches.
+#   Row             wake_onto_busy: head green (p99 < 1000 us); base red with a measured p99 >= 1000 us, not a
+#                   refusal; both benches.
+
+## T14 - base: one boot per image, in any order (worktree toyos-busywake-judge-base)
+
+scout-wake
+  image: /Users/jan/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r2/metal/t14-base/scout-wake/image.img
+  sha256: 06b2b18777af818424a21de739dc8238d3b38236836e4d08269f1a8895a32536
+  cargo run -p toyos-metal -- --image /Users/jan/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r2/metal/t14-base/scout-wake/image.img --readback /Users/jan/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r2/metal/t14-base/scout-wake --fat32-check
+
+testcases
+  image: /Users/jan/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r2/metal/t14-base/testcases/image.img
+  sha256: 7e79e43c6c484786333f51e90dfdfb0fea1e677b810f85587e84a52d3a5c89c4
+  cargo run -p toyos-metal -- --image /Users/jan/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r2/metal/t14-base/testcases/image.img --readback /Users/jan/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r2/metal/t14-base/testcases --fat32-check
+
+judge (prints every scout line; base's wake_onto_busy is expected red, so this exits non-zero by design):
+  cargo test --test toyos-build -- --metal --metal-readback /Users/jan/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r2/metal/t14-base scout_wake wake_onto_busy
+
+## T14 - head: one boot per image, in any order (worktree toyos-busywake-judge-head)
+
+scout-wake
+  image: /Users/jan/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r2/metal/t14-head/scout-wake/image.img
+  sha256: f151b26fbeab9341c1ec852e2e527438a2e5e529663669deae8b26778748b977
+  cargo run -p toyos-metal -- --image /Users/jan/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r2/metal/t14-head/scout-wake/image.img --readback /Users/jan/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r2/metal/t14-head/scout-wake --fat32-check
+
+testcases
+  image: /Users/jan/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r2/metal/t14-head/testcases/image.img
+  sha256: 1ef5220c79a09b1a309187a2858042b1c05e4adf3f06a7f9eca78d2e2141371f
+  cargo run -p toyos-metal -- --image /Users/jan/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r2/metal/t14-head/testcases/image.img --readback /Users/jan/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r2/metal/t14-head/testcases --fat32-check
+
+judge (exit 0 is both rows green: the scout ran clean and wake_onto_busy's p99 is under 1 ms):
+  cargo test --test toyos-build -- --metal --metal-readback /Users/jan/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r2/metal/t14-head scout_wake wake_onto_busy
+
+## AMD bench: builds the same images, flashes, drives and judges in one run per tree
+  (from toyos-busywake-judge-base)  cargo test --test toyos-build -- --metal --metal-host <user>@<amd-bench> scout_wake wake_onto_busy
+  (from toyos-busywake-judge-head)  cargo test --test toyos-build -- --metal --metal-host <user>@<amd-bench> scout_wake wake_onto_busy
+  readbacks land in each worktree's target/metal/{scout-wake,testcases}/
+
+## What to read
+# For each bench and tree: every "phase=P" line of phases 0-10 (the staged phases' "staged ..." or "not staged"
+# line and their "moved=" line first), and "wake_onto_busy: R rounds ... p99=Xus" with the row's verdict.
+# Judge K1, K2 (staged), K3 (staged), K4 and the row as stated above; read the natural phases 0, 2 and 3 beside
+# them against the first judgement (ToyOSOrg/evidence pr-874 at cfb4aa7c, metal/judgement/).
+# The boot's job list has 60 s (toyos_tco::JOB_BOUND_MS). The scout's phases ran 43 s on a 4-vCPU QEMU guest under TCG
+# (judge/*-smoke.log); its natural phases ran 28.4 s on the T14 at the first judgement, and the staged ones add 14 s
+# of spans and their staging, so about 43 s there is an estimate.
