@@ -1,0 +1,177 @@
+   Compiling kernel v0.1.0 (/Users/jan/Dev/jan/toyos-sched-s0/kernel)
+   Compiling kernel-sim v0.1.0 (/Users/jan/Dev/jan/toyos-sched-s0/kernel/sim)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.76s
+     Running unittests src/lib.rs (target/debug/deps/kernel_sim-52229dc3f8b6b908)
+
+running 17 tests
+test choice::tests::bytes_are_the_decisions ... ok
+test choice::tests::bytes_full_range_reachable ... ok
+test choice::tests::bytes_wide_draw_uses_two_bytes ... ok
+test choice::tests::pct_never_starves_a_lone_step ... ok
+test latency::tests::a_losing_maximum_becomes_the_runner_up ... ok
+test choice::tests::pct_prefers_the_highest_priority_actor_and_is_stable ... ok
+test choice::tests::seeded_is_deterministic ... ok
+test choice::tests::seeds_differ ... ok
+test choice::tests::replay_reproduces_a_recording ... ok
+test latency::tests::causes_are_kept_apart ... ok
+test latency::tests::merging_is_exactly_the_union ... ok
+test latency::tests::an_empty_distribution_measures_nothing ... ok
+test latency::tests::one_sample_has_no_runner_up ... ok
+test latency::tests::the_runner_up_is_the_second_largest_sample ... ok
+test choice::tests::zero_options_is_a_bug - should panic ... ok
+test topology::tests::the_permutation_moves_siblings_apart ... ok
+test topology::tests::a_tree_listed_under_a_permutation_keeps_its_counts_per_level ... ok
+
+test result: ok. 17 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (target/debug/deps/kernel_sim-710e77cd589aceac)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/deadline_claim_race.rs (target/debug/deps/deadline_claim_race-2a57cde49c2bc4db)
+
+running 1 test
+test a_claim_between_the_drain_and_the_fire_leaves_the_timer_armed_for_what_is_parked ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/policy.rs (target/debug/deps/policy-741a1ed750f9c366)
+
+running 12 tests
+test a_stopped_cpu_stops_taking_work ... ok
+test per_thread_shares_lose_the_floor ... ok
+test the_share_deficit_is_an_offset_and_not_a_drift ... ok
+test a_wakeup_storm_drains_without_serializing ... ok
+test the_balance_path_drains_the_cpu_an_adversary_loaded ... FAILED
+test an_interactive_wake_waits_out_at_most_the_band_it_is_queued_behind ... ok
+test a_process_cannot_buy_cpu_by_forking ... ok
+test the_two_cures_are_priced_against_the_pull_path ... ok
+test a_runnable_task_waits_at_most_one_dispatch_per_rival ... ok
+test without_the_balance_path_a_lopsided_machine_stays_lopsided ... ok
+test a_push_on_surplus_reaches_every_cpu_the_pull_path_left_asleep ... FAILED
+test a_bounded_re_arm_reaches_every_cpu_the_pull_path_left_asleep ... FAILED
+
+failures:
+
+---- the_balance_path_drains_the_cpu_an_adversary_loaded stdout ----
+lopsided cpus=2 threads=8: 20/20 seeds reached every cpu, 20/20 reached a second, widest=2, best seed moved 6 of a 6 floor
+lopsided cpus=4 threads=16: 20/20 seeds reached every cpu, 20/20 reached a second, widest=4, best seed moved 14 of a 14 floor
+lopsided cpus=4 threads=64: 20/20 seeds reached every cpu, 20/20 reached a second, widest=4, best seed moved 62 of a 62 floor
+
+thread 'the_balance_path_drains_the_cpu_an_adversary_loaded' (301287243) panicked at kernel/sim/tests/policy.rs:146:9:
+lopsided_placement: FAILED after 230 steps
+  I15: cpu5 has been idle for 11 rounds while cpu0 holds 60 queued fair task(s) (bound 10 rounds)
+  I15: cpu6 has been idle for 11 rounds while cpu0 holds 60 queued fair task(s) (bound 10 rounds)
+  I15: cpu7 has been idle for 11 rounds while cpu0 holds 60 queued fair task(s) (bound 10 rounds)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- a_push_on_surplus_reaches_every_cpu_the_pull_path_left_asleep stdout ----
+push ≥2 cpus=2 threads=8: every-cpu 20/20 (pull 9/20), gap=1000000 ns (pull 480000000 ns, bound 14200000 ns), drained 6/6, working_at Some(10000000)..Some(95000000) ns, 11 idle wakes over the sweep, worst run 2.08/s
+push ≥2 cpus=4 threads=16: every-cpu 20/20 (pull 2/20), gap=22000000 ns (pull 960000000 ns, bound 38200000 ns), drained 14/14, working_at Some(13000000)..Some(897000000) ns, 36 idle wakes over the sweep, worst run 3.12/s
+push ≥2 cpus=4 threads=64: every-cpu 20/20 (pull 2/20), gap=22000000 ns (pull 3840000000 ns, bound 38200000 ns), drained 62/62, working_at Some(13000000)..Some(3777000000) ns, 36 idle wakes over the sweep, worst run 0.78/s
+
+thread 'a_push_on_surplus_reaches_every_cpu_the_pull_path_left_asleep' (301287237) panicked at kernel/sim/tests/policy.rs:146:9:
+lopsided_placement: FAILED after 230 steps
+  I15: cpu5 has been idle for 11 rounds while cpu0 holds 60 queued fair task(s) (bound 10 rounds)
+  I15: cpu6 has been idle for 11 rounds while cpu0 holds 60 queued fair task(s) (bound 10 rounds)
+  I15: cpu7 has been idle for 11 rounds while cpu0 holds 60 queued fair task(s) (bound 10 rounds)
+
+---- a_bounded_re_arm_reaches_every_cpu_the_pull_path_left_asleep stdout ----
+re-arm ×1 cpus=2 threads=8: every-cpu 20/20 (pull 9/20), gap=10000000 ns (pull 480000000 ns, bound 13000000 ns), drained 6/6, working_at Some(10000000)..Some(94000000) ns, 55 idle wakes over the sweep, worst run 8.16/s
+re-arm ×4 cpus=2 threads=8: every-cpu 20/20 (pull 9/20), gap=10000000 ns (pull 480000000 ns, bound 13000000 ns), drained 6/6, working_at Some(10000000)..Some(94000000) ns, 176 idle wakes over the sweep, worst run 19.23/s
+re-arm ×1 cpus=4 threads=16: every-cpu 20/20 (pull 2/20), gap=10000000 ns (pull 960000000 ns, bound 13000000 ns), drained 14/14, working_at Some(16000000)..Some(834000000) ns, 125 idle wakes over the sweep, worst run 8.25/s
+re-arm ×4 cpus=4 threads=16: every-cpu 20/20 (pull 2/20), gap=10000000 ns (pull 960000000 ns, bound 13000000 ns), drained 14/14, working_at Some(16000000)..Some(834000000) ns, 374 idle wakes over the sweep, worst run 21.00/s
+re-arm ×1 cpus=4 threads=64: every-cpu 20/20 (pull 2/20), gap=10000000 ns (pull 3840000000 ns, bound 13000000 ns), drained 62/62, working_at Some(16000000)..Some(3714000000) ns, 165 idle wakes over the sweep, worst run 3.38/s
+re-arm ×4 cpus=4 threads=64: every-cpu 20/20 (pull 2/20), gap=10000000 ns (pull 3840000000 ns, bound 13000000 ns), drained 62/62, working_at Some(16000000)..Some(3714000000) ns, 406 idle wakes over the sweep, worst run 6.44/s
+re-arm ×1 cpus=8 threads=64: every-cpu 0/20 (pull 0/20), gap=3765000000 ns (pull 3840000000 ns, bound 13000000 ns), drained 62/62, working_at None..None ns, 232 idle wakes over the sweep, worst run 4.42/s
+
+thread 'a_bounded_re_arm_reaches_every_cpu_the_pull_path_left_asleep' (301287235) panicked at kernel/sim/tests/policy.rs:1007:13:
+assertion `left == right` failed: with a re-arm every 10000000 ns, 20 of 20 schedules left a CPU of 8 asleep on a machine whose whole workload sits on cpu0. cpu0 publishes its surplus at clock 0 — before any CPU can have halted, since no execution step is enabled until it has taken its first pass — so every halt is inside the first re-arm's window and every CPU must be probed.
+  left: 0
+ right: 20
+
+
+failures:
+    a_bounded_re_arm_reaches_every_cpu_the_pull_path_left_asleep
+    a_push_on_surplus_reaches_every_cpu_the_pull_path_left_asleep
+    the_balance_path_drains_the_cpu_an_adversary_loaded
+
+test result: FAILED. 9 passed; 3 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.87s
+
+error: test failed, to rerun pass `-p kernel-sim --test policy`
+     Running tests/scenarios.rs (target/debug/deps/scenarios-9f58b5ca8c6cbd7e)
+
+running 25 tests
+test corpus_traces_still_do_what_they_were_committed_for ... ok
+test a_pass_that_overruns_its_budget_is_recorded ... ok
+test old_commit_before_pass_is_caught ... ok
+test a_run_replays_exactly ... ok
+test blind_spot_needed_the_step_split ... ok
+test a_pass_inside_the_registration_window_is_caught ... ok
+test shrinking_keeps_the_failure_and_loses_the_noise ... ok
+test a_retire_inside_the_registration_window_is_honoured_by_the_core ... ok
+test old_steal_port_is_caught ... ok
+test rt_starving_the_corpse_is_caught ... ok
+test the_new_protocol_survives_the_schedule_that_breaks_the_old_one ... ok
+test double_charging_a_share_is_caught ... ok
+test per_thread_fair_shares_are_caught ... ok
+test the_park_sees_claims_that_landed_after_its_commit ... ok
+test the_audio_pipeline_holds_on_one_cpu ... ok
+test a_retire_completes_inside_its_derived_bound ... ok
+test old_migrate_keeping_the_corpse_is_caught ... ok
+test old_park_keeping_the_lend_is_caught ... ok
+test the_unwind_gate_lasts_one_chunk_and_not_one_unwind ... ok
+test identity_ordering_within_a_share_is_caught ... ok
+test the_fairness_storm_is_measured_and_holds ... ok
+test invariant_i13_is_measured_and_holds ... ok
+test an_identity_tiebreak_changes_the_schedule_and_not_the_sibling_split ... ok
+test every_scenario_survives_raw_fuzz_bytes ... ok
+test every_scenario_survives_a_seed_sweep ... ok
+
+test result: ok. 25 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.92s
+
+     Running tests/topology.rs (target/debug/deps/topology-82d22d27baa556ec)
+
+running 5 tests
+test a_benchs_shape_is_what_its_scout_read ... ok
+test the_push_keeps_an_idle_cpu_beside_work_inside_its_bound ... FAILED
+test a_push_that_waits_for_more_than_a_probe_takes_is_caught ... ok
+test an_idle_cpu_whose_ccx_looks_busy_is_reached ... FAILED
+test every_scenario_holds_at_every_shape ... ok
+
+failures:
+
+---- the_push_keeps_an_idle_cpu_beside_work_inside_its_bound stdout ----
+
+thread 'the_push_keeps_an_idle_cpu_beside_work_inside_its_bound' (301287485) panicked at kernel/sim/tests/topology.rs:183:13:
+t14: lopsided_placement: FAILED after 230 steps
+  I15: cpu5 has been idle for 11 rounds while cpu0 holds 12 queued fair task(s) (bound 10 rounds)
+  I15: cpu6 has been idle for 11 rounds while cpu0 holds 12 queued fair task(s) (bound 10 rounds)
+  I15: cpu7 has been idle for 11 rounds while cpu0 holds 12 queued fair task(s) (bound 10 rounds)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- an_idle_cpu_whose_ccx_looks_busy_is_reached stdout ----
+
+thread 'an_idle_cpu_whose_ccx_looks_busy_is_reached' (301287483) panicked at kernel/sim/tests/topology.rs:205:9:
+group_imbalance: FAILED after 1278 steps
+  I15: cpu8 has been idle for 19 rounds while cpu0 holds 2 queued fair task(s) (bound 18 rounds)
+
+
+failures:
+    an_idle_cpu_whose_ccx_looks_busy_is_reached
+    the_push_keeps_an_idle_cpu_beside_work_inside_its_bound
+
+test result: FAILED. 3 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 6.23s
+
+error: test failed, to rerun pass `-p kernel-sim --test topology`
+   Doc-tests kernel_sim
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: 2 targets failed:
+    `-p kernel-sim --test policy`
+    `-p kernel-sim --test topology`
