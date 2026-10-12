@@ -1,0 +1,11 @@
+--- a/src/main.rs	2026-10-12 20:16:54
++++ b/src/main.rs	2026-10-12 20:16:54
+@@ -116,7 +116,7 @@
+ /// cannot run panics, naming the missing feature.
+ fn build_interpolator(kind: Interp, p: &SincInterpolationParameters, ratio: f64) -> Box<dyn SincInterpolator<f32>> {
+     let len = 8 * (((p.sinc_len as f32) / 8.0).ceil() as usize);
+-    let cutoff = if ratio >= 1.0 { p.f_cutoff } else { p.f_cutoff * ratio as f32 };
++    let cutoff = p.f_cutoff;
+     match kind {
+         #[cfg(target_arch = "x86_64")]
+         Interp::Sse => Box::new(
