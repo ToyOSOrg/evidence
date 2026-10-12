@@ -1,0 +1,65 @@
+# E9: the paths #876's body cites, for ToyOS head 8e3623e5b06444e73a31ee366829ca4a856721cf (the design branch), read at origin/main.
+$ git rev-parse origin/main 528b9a6c2
+867ec23ed26272835068f157c7fbe4c1b18e0608
+528b9a6c2040d3d6ebdec679a04bb4f7bc907eeb
+$ for p in <the paths below>; do git cat-file -e 867ec23ed:$p && echo "present $p" || echo "MISSING $p"; done
+present CLAUDE.md
+present .claude/agents/implementer.md
+present .claude/agents/reviewer.md
+present build/qemu.rs
+present build/ssh/tests/fuzz.rs
+present build/userlandhost.rs
+present images/system.toml
+present issues/a-claim-spends-device-addresses-its-slot-never-gets-back.md
+present issues/a-controller-whose-msix-table-is-in-bar-0-cannot-be-driven-from-userland.md
+present issues/a-metal-row-names-no-hardware-and-a-bench-without-it-reds.md
+present issues/an-amd-vi-machine-isolates-no-device.md
+present issues/every-program-sees-only-the-files-it-was-given.md
+present issues/process-memory-is-2-mib-pages-and-that-caps-the-process-count.md
+present issues/qemu-passes-compatibility-format-interrupts.md
+present issues/the-lan-is-not-yet-production-grade.md
+present issues/there-is-no-wifi.md
+present issues/toyos-has-its-own-network-stack.md
+present kernel/src/arch/aarch64/irqchip.rs
+present kernel/src/arch/x86_64/idt/user_dev.rs
+present kernel/src/arch/x86_64/vtd/interrupt.rs
+present kernel/src/arch/x86_64/vtd/fault.rs
+present kernel/src/pcidev/mod.rs
+present lib/acpiserver-api
+present lib/blockring
+present lib/blockring/transport
+present system/acpiserver/src/main.rs
+present system/netstack/ip/src/lib.rs
+present system/netstack/ip/src/route.rs
+present system/netstack/node/src/lib.rs
+present system/netstack/shard/src/lib.rs
+present system/netstack/src/main.rs
+present system/netstack/src/card.rs
+present system/supervisor/src/main.rs
+present tests/common/qemu.rs
+missing=0
+# paths the body names as not yet existing:
+absent lib/crypto
+absent system/ax2xx
+$ git diff --stat 528b9a6c2 867ec23ed -- <the paths above>
+ lib/blockring/src/model.rs            |   3 +
+ lib/blockring/transport/Cargo.toml    |  24 +-
+ lib/blockring/transport/src/lib.rs    |  30 +-
+ lib/blockring/transport/src/queue.rs  |  21 +-
+ lib/blockring/transport/src/stream.rs | 563 ++++++++++++++++++++++++++++++++++
+ lib/blockring/transport/tests/loom.rs | 139 ++++++++-
+ 6 files changed, 748 insertions(+), 32 deletions(-)
+diff exit=0
+$ git grep -n toyos-transport 867ec23ed -- lib/blockring/Cargo.toml
+867ec23ed:lib/blockring/Cargo.toml:3:# page's layout, where its two `toyos-transport` rings are, the words a request
+867ec23ed:lib/blockring/Cargo.toml:12:# publication is `toyos-transport`'s, and checked under loom there.
+867ec23ed:lib/blockring/Cargo.toml:43:toyos-transport = { path = "transport" }
+grep exit=0
+$ gh pr view 863 --repo ToyOSOrg/ToyOS --json state,mergedAt
+{"mergedAt":null,"state":"OPEN"}
+gh exit=0
+# the demo (E3): refs on origin holding its first commit, a8e1c9673a2e, counted by name against the live remote, names not printed
+$ git for-each-ref --contains a8e1c9673a2e --format=%(refname:lstrip=3) refs/remotes/origin | sort > demo; git ls-remote --heads origin | <names> | sort > live; comm -12 demo live | wc -l
+ls-remote exit=0
+13
+EXIT=0
