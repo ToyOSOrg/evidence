@@ -1,0 +1,13 @@
+diff --git a/system/acpiserver/src/devices.rs b/system/acpiserver/src/devices.rs
+index 66d3fc70e..d0d73b865 100644
+--- a/system/acpiserver/src/devices.rs
++++ b/system/acpiserver/src/devices.rs
+@@ -150,7 +150,7 @@ pub fn attach<K: Kernel>(aml: &mut Aml<'_, K>, mut ec: Ec, names: &Names, census
+     let unattached: Option<String> = match names.paths.contains(&glk).then(|| aml.interpreter.evaluate(&mut aml.host, &glk, &[])) {
+         None | Some(Ok(Value::Integer(0))) => None,
+         Some(Ok(Value::Integer(1))) => {
+-            ec.glk = true;
++            ec.glk = false;
+             None
+         }
+         Some(Ok(Value::Integer(_))) => Some("its _GLK is neither 0 nor 1".into()),

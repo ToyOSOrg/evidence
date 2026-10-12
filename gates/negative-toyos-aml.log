@@ -1,0 +1,189 @@
+   Compiling toyos-aml v0.1.0 (<worktree>/system/acpiserver/aml)
+error[E0432]: unresolved imports `toyos_aml::RuntimeLoad`, `toyos_aml::Transfer`
+ --> system/acpiserver/aml/tests/common/mod.rs:9:68
+  |
+9 | use toyos_aml::{Access, Address, Denied, Error, Host, Interpreter, RuntimeLoad, Transfer, Value};
+  |                                                                    ^^^^^^^^^^^  ^^^^^^^^ no `Transfer` in the root
+  |                                                                    |
+  |                                                                    no `RuntimeLoad` in the root
+  |
+  = help: consider importing this variant instead:
+          crate::Event::Transfer
+
+error[E0407]: method `table` is not a member of trait `Host`
+   --> system/acpiserver/aml/tests/common/mod.rs:447:5
+    |
+447 | /     fn table(&mut self, at: u64, len: usize) -> Result<Vec<u8>, Denied> {
+448 | |         self.log.push(Event::Table(at, len));
+449 | |         if self.reclaim.iter().any(|&(start, end)| at < end && start < at + len as u64) {
+450 | |             return Err(Denied("a definition block in memory Table 15.6 calls neither reserved nor NVS".into()));
+451 | |         }
+452 | |         Ok(self.peek(Address::Memory(at), len))
+453 | |     }
+    | |_____^ not a member of trait `Host`
+
+error[E0407]: method `loaded` is not a member of trait `Host`
+   --> system/acpiserver/aml/tests/common/mod.rs:455:5
+    |
+455 | /     fn loaded(&mut self, load: &RuntimeLoad<'_>) {
+456 | |         let id = load.header.map(|h| h[16..24].try_into().expect("a header's OEM Table ID"));
+457 | |         self.log.push(Event::Loaded(load.by.into(), id, load.refused.cloned()));
+458 | |     }
+    | |_____^ not a member of trait `Host`
+
+error[E0407]: method `transfer` is not a member of trait `Host`
+   --> system/acpiserver/aml/tests/common/mod.rs:460:5
+    |
+460 | /     fn transfer(&mut self, at: &Transfer<'_>, write: Option<&[u8]>) -> Result<Vec<u8>, Denied> {
+461 | |         self.log.push(Event::Transfer {
+462 | |             space: at.space,
+463 | |             region: at.region,
+...   |
+477 | |         })
+478 | |     }
+    | |_____^ not a member of trait `Host`
+
+error[E0407]: method `find_table` is not a member of trait `Host`
+   --> system/acpiserver/aml/tests/common/mod.rs:482:5
+    |
+482 | /     fn find_table(&mut self, signature: &[u8], oem_id: &[u8], oem_table_id: &[u8]) -> Result<Option<(u64, usize)>, Denied> {
+483 | |         self.log.push(Event::FindTable(signature.to_vec(), oem_id.to_vec(), oem_table_id.to_vec()));
+484 | |         let same = |field: &[u8], id: &[u8]| field.starts_with(id) && field[id.len()..].iter().all(|&b| b == 0 || b == b' ');
+485 | |         for &at in &self.listed {
+...   |
+494 | |         Ok(None)
+495 | |     }
+    | |_____^ not a member of trait `Host`
+
+error[E0407]: method `table` is not a member of trait `Host`
+   --> system/acpiserver/aml/tests/common/mod.rs:584:5
+    |
+584 | /     fn table(&mut self, _: u64, len: usize) -> Result<Vec<u8>, Denied> {
+585 | |         Ok(vec![0; len])
+586 | |     }
+    | |_____^ not a member of trait `Host`
+
+error[E0407]: method `loaded` is not a member of trait `Host`
+   --> system/acpiserver/aml/tests/common/mod.rs:587:5
+    |
+587 |     fn loaded(&mut self, _: &RuntimeLoad<'_>) {}
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ not a member of trait `Host`
+
+error[E0407]: method `transfer` is not a member of trait `Host`
+   --> system/acpiserver/aml/tests/common/mod.rs:588:5
+    |
+588 | /     fn transfer(&mut self, _: &Transfer<'_>, _: Option<&[u8]>) -> Result<Vec<u8>, Denied> {
+589 | |         Ok(vec![0])
+590 | |     }
+    | |_____^ not a member of trait `Host`
+
+error[E0407]: method `find_table` is not a member of trait `Host`
+   --> system/acpiserver/aml/tests/common/mod.rs:591:5
+    |
+591 | /     fn find_table(&mut self, _: &[u8], _: &[u8], _: &[u8]) -> Result<Option<(u64, usize)>, Denied> {
+592 | |         Ok(None)
+593 | |     }
+    | |_____^ not a member of trait `Host`
+
+error[E0425]: cannot find value `MAX_RUNNING` in crate `toyos_aml`
+  --> system/acpiserver/aml/tests/heap.rs:63:35
+   |
+63 | const RUNNING: isize = toyos_aml::MAX_RUNNING as isize;
+   |                                   ^^^^^^^^^^^ not found in `toyos_aml`
+
+error[E0599]: no variant, associated function, or constant named `SystemCmos` found for enum `toyos_aml::Address` in the current scope
+   --> system/acpiserver/aml/tests/common/mod.rs:358:18
+    |
+358 |         Address::SystemCmos(x) => (5, u64::from(x)),
+    |                  ^^^^^^^^^^ variant, associated function, or constant not found in `toyos_aml::Address`
+
+error[E0599]: no variant named `PciBarTarget` found for enum `toyos_aml::Address`
+   --> system/acpiserver/aml/tests/common/mod.rs:359:18
+    |
+359 |         Address::PciBarTarget { segment, bus, device, function, bar, offset } => {
+    |                  ^^^^^^^^^^^^ variant not found in `toyos_aml::Address`
+
+error[E0599]: no variant named `Pcc` found for enum `toyos_aml::Address`
+   --> system/acpiserver/aml/tests/common/mod.rs:362:18
+    |
+362 |         Address::Pcc { subspace, offset } => (0x0A, (u64::from(subspace) << 32) | u64::from(offset)),
+    |                  ^^^ variant not found in `toyos_aml::Address`
+
+error[E0599]: no variant named `Oem` found for enum `toyos_aml::Address`
+   --> system/acpiserver/aml/tests/common/mod.rs:363:18
+    |
+363 |         Address::Oem { space, offset } => (space, offset),
+    |                  ^^^ variant not found in `toyos_aml::Address`
+
+error[E0599]: no variant, associated function, or constant named `SystemCmos` found for enum `toyos_aml::Address` in the current scope
+   --> system/acpiserver/aml/tests/spaces.rs:131:62
+    |
+131 |     assert_eq!((m.accesses(), v), (vec![Event::Read(Address::SystemCmos(0x40), Access::Byte)], Ok(Value::Integer(0))));
+    |                                                              ^^^^^^^^^^ variant, associated function, or constant not found in `toyos_aml::Address`
+
+error[E0599]: no variant named `PciBarTarget` found for enum `toyos_aml::Address`
+   --> system/acpiserver/aml/tests/spaces.rs:145:23
+    |
+145 |     let at = Address::PciBarTarget { segment: 0, bus: 0, device: 2, function: 0, bar: 0x10, offset: 0x20 };
+    |                       ^^^^^^^^^^^^ variant not found in `toyos_aml::Address`
+
+error[E0599]: no variant named `Pcc` found for enum `toyos_aml::Address`
+   --> system/acpiserver/aml/tests/spaces.rs:153:71
+    |
+153 |     assert_eq!(m.accesses(), [4, 5].map(|offset| Event::Read(Address::Pcc { subspace: 2, offset }, Access::Byte)));
+    |                                                                       ^^^ variant not found in `toyos_aml::Address`
+
+error[E0599]: no variant named `Oem` found for enum `toyos_aml::Address`
+   --> system/acpiserver/aml/tests/spaces.rs:157:52
+    |
+157 |     assert_eq!(m.accesses(), [Event::Read(Address::Oem { space: 0x80, offset: 0x1000 }, Access::DWord)]);
+    |                                                    ^^^ variant not found in `toyos_aml::Address`
+
+error[E0599]: no method named `defined` found for struct `Interpreter` in the current scope
+   --> system/acpiserver/aml/tests/load.rs:211:20
+    |
+211 |     let before = i.defined();
+    |                    ^^^^^^^ method not found in `Interpreter`
+
+error[E0609]: no field `serial` on type `toyos_aml::Entry`
+   --> system/acpiserver/aml/tests/load.rs:217:33
+    |
+217 |             serials.push((entry.serial >= before, entry.kind));
+    |                                 ^^^^^^ unknown field
+    |
+    = note: available fields are: `depth`, `name`, `kind`
+
+error[E0599]: no variant, associated function, or constant named `Unnamed` found for enum `Value` in the current scope
+   --> system/acpiserver/aml/tests/spaces.rs:196:61
+    |
+196 |     assert_eq!(i.evaluate(&mut m, "\\ELEM", &[]), Ok(Value::Unnamed(Box::new(Value::Integer(7)))));
+    |                                                             ^^^^^^^ variant, associated function, or constant not found in `Value`
+
+error[E0599]: no variant, associated function, or constant named `Unnamed` found for enum `Value` in the current scope
+   --> system/acpiserver/aml/tests/spaces.rs:198:25
+    |
+198 |     let passed = Value::Unnamed(Box::new(Value::Integer(7)));
+    |                         ^^^^^^^ variant, associated function, or constant not found in `Value`
+
+Some errors have detailed explanations: E0407, E0432, E0599.
+For more information about an error, try `rustc --explain E0407`.
+error: could not compile `toyos-aml` (test "spaces") due to 19 previous errors
+warning: build failed, waiting for other jobs to finish...
+Some errors have detailed explanations: E0407, E0432, E0599, E0609.
+error: could not compile `toyos-aml` (test "load") due to 15 previous errors
+error[E0559]: variant `Kind::OperationRegion` has no field named `space`
+   --> system/acpiserver/aml/tests/walk.rs:177:58
+    |
+177 |     assert_eq!(at("\\REG0"), (1, Kind::OperationRegion { space: 0 }));
+    |                                                          ^^^^^ `Kind::OperationRegion` does not have this field
+    |
+    = note: all struct fields are already assigned
+
+Some errors have detailed explanations: E0407, E0425, E0432, E0599.
+error: could not compile `toyos-aml` (test "heap") due to 14 previous errors
+Some errors have detailed explanations: E0407, E0432, E0559, E0599.
+error: could not compile `toyos-aml` (test "regions") due to 13 previous errors
+error: could not compile `toyos-aml` (test "walk") due to 14 previous errors
+error: could not compile `toyos-aml` (test "namespace") due to 13 previous errors
+error: could not compile `toyos-aml` (test "evaluate") due to 13 previous errors
+error: could not compile `toyos-aml` (test "hostile") due to 13 previous errors

@@ -1,0 +1,69 @@
+   Compiling toyos-acpi v0.1.0 (<worktree>/lib/acpi)
+error[E0432]: unresolved imports `toyos_acpi::ecdt`, `toyos_acpi::Ec`, `toyos_acpi::EcRefused`, `toyos_acpi::EcRegister`, `toyos_acpi::ECDT_NEEDED`
+ --> lib/acpi/tests/ecdt.rs:7:18
+  |
+7 | use toyos_acpi::{ecdt, Ec, EcRefused, EcRegister, Table, ECDT_NEEDED};
+  |                  ^^^^  ^^  ^^^^^^^^^  ^^^^^^^^^^         ^^^^^^^^^^^ no `ECDT_NEEDED` in the root
+  |                  |     |   |          |
+  |                  |     |   |          no `EcRegister` in the root
+  |                  |     |   no `EcRefused` in the root
+  |                  |     no `Ec` in the root
+  |                  no `ecdt` in the root
+  |
+help: a similar name exists in the module
+  |
+7 - use toyos_acpi::{ecdt, Ec, EcRefused, EcRegister, Table, ECDT_NEEDED};
+7 + use toyos_acpi::{ecdt, Ec, FacsRefused, EcRegister, Table, ECDT_NEEDED};
+  |
+help: a similar name exists in the module
+  |
+7 - use toyos_acpi::{ecdt, Ec, EcRefused, EcRegister, Table, ECDT_NEEDED};
+7 + use toyos_acpi::{ecdt, Ec, EcRefused, EcRegister, Table, GTDT_NEEDED};
+  |
+
+error[E0432]: unresolved import `toyos_acpi::find_by_id`
+  --> lib/acpi/tests/corpus.rs:15:56
+   |
+15 |     definition_blocks, dsdt_address, ecam_allocations, find_by_id, find_table, fixed_hardware, hpet_base, iapc_boot_arch, isa_line,
+   |                                                        ^^^^^^^^^^ no `find_by_id` in the root
+
+error[E0277]: the size for values of type `[u8]` cannot be known at compilation time
+  --> lib/acpi/tests/ecdt.rs:39:10
+   |
+39 |     for (control, data, refused) in [
+   |          ^^^^^^^ doesn't have a size known at compile-time
+   |
+   = help: the trait `Sized` is not implemented for `[u8]`
+   = note: all local variables must have a statically known size
+
+error[E0277]: the size for values of type `[u8]` cannot be known at compilation time
+  --> lib/acpi/tests/ecdt.rs:39:37
+   |
+39 |       for (control, data, refused) in [
+   |  _____________________________________^
+40 | |         (gas(0, 8, 0, 0xfe00_0000), io.clone(), EcRefused::NotSystemIo { register: EcRegister::Command, space: 0 }),
+41 | |         (io.clone(), gas(1, 16, 0, 0x62), EcRefused::Width { register: EcRegister::Data, bit_width: 16, bit_offset: 0 }),
+42 | |         (gas(1, 8, 1, 0x66), io.clone(), EcRefused::Width { register: EcRegister::Command, bit_width: 8, bit_offset: 1 }),
+43 | |         (gas(1, 8, 0, 0), io.clone(), EcRefused::Address { register: EcRegister::Command, address: 0 }),
+44 | |         (io.clone(), gas(1, 8, 0, 0x1_0000), EcRefused::Address { register: EcRegister::Data, address: 0x1_0000 }),
+45 | |     ] {
+   | |_____^ doesn't have a size known at compile-time
+   |
+   = help: the trait `Sized` is not implemented for `[u8]`
+   = note: only the last element of a tuple may have a dynamically sized type
+
+error[E0277]: the size for values of type `[u8]` cannot be known at compilation time
+  --> lib/acpi/tests/ecdt.rs:39:19
+   |
+39 |     for (control, data, refused) in [
+   |                   ^^^^ doesn't have a size known at compile-time
+   |
+   = help: the trait `Sized` is not implemented for `[u8]`
+   = note: all local variables must have a statically known size
+
+Some errors have detailed explanations: E0277, E0432.
+For more information about an error, try `rustc --explain E0277`.
+error: could not compile `toyos-acpi` (test "ecdt") due to 4 previous errors
+warning: build failed, waiting for other jobs to finish...
+For more information about this error, try `rustc --explain E0432`.
+error: could not compile `toyos-acpi` (test "corpus") due to 1 previous error

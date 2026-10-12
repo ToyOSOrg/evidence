@@ -1,0 +1,13 @@
+diff --git a/system/acpiserver/src/osc.rs b/system/acpiserver/src/osc.rs
+index b81936421..65150f664 100644
+--- a/system/acpiserver/src/osc.rs
++++ b/system/acpiserver/src/osc.rs
+@@ -139,7 +139,7 @@ pub fn negotiate<K: Kernel>(aml: &mut Aml<'_, K>, path: &str, claim: &Claim) ->
+     if query & (FAILURE | UNRECOGNIZED_UUID) != 0 {
+         return Ok(Answered { query, offered, commit: None });
+     }
+-    let [commit, granted] = evaluate(aml, path, &claim.uuid, 0, offered)?;
++    let [commit, granted] = evaluate(aml, path, &claim.uuid, 0, claim.capabilities)?;
+     Ok(Answered { query, offered, commit: Some((commit, granted & offered)) })
+ }
+ 

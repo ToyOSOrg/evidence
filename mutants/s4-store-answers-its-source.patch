@@ -1,0 +1,14 @@
+diff --git a/system/acpiserver/aml/src/exec.rs b/system/acpiserver/aml/src/exec.rs
+index 2c2a722bd..f9711d367 100644
+--- a/system/acpiserver/aml/src/exec.rs
++++ b/system/acpiserver/aml/src/exec.rs
+@@ -1572,7 +1572,8 @@ impl<'a> Machine<'a> {
+         if let Target::Node(id) = t
+             && let Object::Field(x) = self.node_object(id)?
+         {
+-            return Ok(self.write_field_answering(&x, v.clone())?.unwrap_or(v));
++            self.write_field_answering(&x, v.clone())?;
++            return Ok(v);
+         }
+         self.store(f, t, v.clone())?;
+         Ok(v)

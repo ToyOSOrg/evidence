@@ -1,0 +1,49 @@
+   Compiling toyos-aml v0.1.0 (<worktree>/system/acpiserver/aml)
+    Finished `test` profile [optimized + debuginfo] target(s) in 2.15s
+     Running tests/regions.rs (target/debug/deps/regions-5b41387f69d5f39a)
+
+running 20 tests
+test an_access_past_its_region_is_refused ... ok
+test a_buffer_field_over_a_conversion_and_a_conversion_into_one ... ok
+test a_field_store_writes_its_source_as_it_was_when_firmware_changes_it ... ok
+test a_bank_field_selects_its_bank_first ... ok
+test a_pci_config_region_addresses_its_devices_function ... ok
+test a_field_wider_than_an_integer_is_a_buffer ... ok
+test an_address_out_of_its_form_is_refused ... ok
+test a_host_refusal_and_a_reserved_space_are_refused_by_name ... ok
+test an_index_field_writes_its_offset_then_reaches_the_data ... ok
+test a_pci_config_region_below_bridges_is_on_the_nearest_ones_secondary_bus ... ok
+test copy_object_into_a_field_writes_an_integer_or_buffer_alone ... ok
+test buffer_fields_read_and_write_their_buffer ... ok
+test an_access_type_sets_the_unit_and_anyacc_takes_the_narrowest_natural_one ... ok
+test a_host_bridge_without_a_bbn_is_found_by_its_hid_or_cid_on_bus_0 ... FAILED
+test a_pci_config_region_below_more_bridges_than_buses_is_refused ... ok
+test a_field_is_read_shifted_and_masked_from_its_units ... ok
+test the_update_rule_completes_a_unit_the_field_covers_in_part ... ok
+test system_io_and_the_embedded_controller_are_addressed_by_offset ... ok
+test a_lock_field_holds_the_global_lock_across_its_access ... ok
+test qemus_interrupt_link_reads_its_routing_register_below_a_bridge_named_by_its_hid ... FAILED
+
+failures:
+
+---- a_host_bridge_without_a_bbn_is_found_by_its_hid_or_cid_on_bus_0 stdout ----
+
+thread 'a_host_bridge_without_a_bbn_is_found_by_its_hid_or_cid_on_bus_0' (2246726) panicked at system/acpiserver/aml/tests/regions.rs:231:9:
+assertion `left == right` failed
+  left: Err(Rule("a PCI_Config region below no host bridge, which names a _BBN or is PNP0A03 or PNP0A08 by its _HID or _CID"))
+ right: Ok(Integer(139))
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- qemus_interrupt_link_reads_its_routing_register_below_a_bridge_named_by_its_hid stdout ----
+
+thread 'qemus_interrupt_link_reads_its_routing_register_below_a_bridge_named_by_its_hid' (2246752) panicked at system/acpiserver/aml/tests/regions.rs:259:5:
+Err(Rule("a PCI_Config region below no host bridge, which names a _BBN or is PNP0A03 or PNP0A08 by its _HID or _CID"))
+
+
+failures:
+    a_host_bridge_without_a_bbn_is_found_by_its_hid_or_cid_on_bus_0
+    qemus_interrupt_link_reads_its_routing_register_below_a_bridge_named_by_its_hid
+
+test result: FAILED. 18 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+error: test failed, to rerun pass `-p toyos-aml --test regions`

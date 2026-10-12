@@ -1,0 +1,13 @@
+diff --git a/system/acpiserver/src/sci.rs b/system/acpiserver/src/sci.rs
+index 204e03a58..7424b48cb 100644
+--- a/system/acpiserver/src/sci.rs
++++ b/system/acpiserver/src/sci.rs
+@@ -168,8 +168,6 @@ pub fn await_sleep(fixed: &mut impl Fixed, until: Instant, served: &Served) -> L
+     loop {
+         let status = fixed.status();
+         if served.power_button && status.pm1 & enabled.pm1 & PWRBTN != 0 {
+-            fixed.pm1_clear(PWRBTN);
+-            latched.presses += 1;
+         }
+         let ec = served.ec_gpe.filter(|&n| {
+             let (byte, bit) = (usize::from(n / 8), n % 8);

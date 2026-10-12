@@ -1,0 +1,12 @@
+diff --git a/system/acpiserver/src/init.rs b/system/acpiserver/src/init.rs
+index a4ee7cc7b..c008161c8 100644
+--- a/system/acpiserver/src/init.rs
++++ b/system/acpiserver/src/init.rs
+@@ -148,6 +148,7 @@ fn evaluate<K: Kernel>(aml: &mut Aml<'_, K>, census: &mut Census, method: &str,
+ /// announced, `\_SB._INI`, then the walk.
+ pub fn initialise<K: Kernel>(aml: &mut Aml<'_, K>, names: &Names, census: &mut Census) {
+     announce_config(aml, names, 0, census);
++    announce(aml, names, EMBEDDED_CONTROL, 0, census);
+     if names.paths.contains("\\_SB_._INI") {
+         census.sb_ini = Some(evaluate(aml, census, "\\_SB._INI", "\\_SB_._INI", &[]).is_some());
+     }

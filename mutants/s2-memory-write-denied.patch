@@ -1,0 +1,13 @@
+diff --git a/system/acpiserver/src/host.rs b/system/acpiserver/src/host.rs
+index d48d71089..d4d3f3cd9 100644
+--- a/system/acpiserver/src/host.rs
++++ b/system/acpiserver/src/host.rs
+@@ -530,7 +530,7 @@ impl<K: Kernel> Host for Firmware<'_, K> {
+                 }
+                 return self.written_through(Space::SystemIo, u64::from(port), width, value, at);
+             }
+-            Address::Memory(address) => return self.written_through(Space::SystemMemory, address, width, value, at),
++            Address::Memory(_) => "a write to SystemMemory".into(),
+             Address::PciConfig { .. } => "a write to PCI_Config: this server writes no configuration space for AML".into(),
+             Address::EmbeddedControl(address) => {
+                 let byte = u8::try_from(value).expect("a byte access writes a byte");

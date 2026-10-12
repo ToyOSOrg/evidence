@@ -1,0 +1,13 @@
+diff --git a/lib/userbound/src/firmware.rs b/lib/userbound/src/firmware.rs
+index 35a1a7b86..9ba768ab2 100644
+--- a/lib/userbound/src/firmware.rs
++++ b/lib/userbound/src/firmware.rs
+@@ -225,7 +225,7 @@ impl<D: IntoIterator<Item = (u64, u64)>> Memory<'_, D> {
+         match ty {
+             Some(EFI_ACPI_RECLAIM | EFI_RUNTIME_DATA) if write => return No(Refused::TableWrite),
+             Some(EFI_RESERVED | EFI_ACPI_NVS | EFI_ACPI_RECLAIM | EFI_RUNTIME_DATA) => {}
+-            None | Some(EFI_MMIO) if !write => {}
++            None if !write => {}
+             Some(_) | None => return No(Refused::MemoryType),
+         }
+         if last >= self.mapped_end {

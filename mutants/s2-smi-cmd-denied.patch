@@ -1,0 +1,13 @@
+diff --git a/system/acpiserver/src/host.rs b/system/acpiserver/src/host.rs
+index d48d71089..74e55f7b8 100644
+--- a/system/acpiserver/src/host.rs
++++ b/system/acpiserver/src/host.rs
+@@ -521,7 +521,7 @@ impl<K: Kernel> Host for Firmware<'_, K> {
+ 
+     fn write(&mut self, at: Address, width: toyos_aml::Access, value: u64) -> Result<(), Denied> {
+         let what = match at {
+-            Address::Io(port) if !FORWARDED.contains(&(port, width)) && (Some(port), width) != (self.smi_cmd, toyos_aml::Access::Byte) => {
++            Address::Io(port) if !FORWARDED.contains(&(port, width)) => {
+                 UNFORWARDED.into()
+             }
+             Address::Io(port) => {
