@@ -1,0 +1,184 @@
+$ qemu-system-x86_64 --version
+QEMU emulator version 11.1.1
+Copyright (c) 2003-2026 Fabrice Bellard and the QEMU Project developers
+EXIT=0
+
+$ qemu-system-x86_64 -chardev help
+Available chardev backend types: 
+  ringbuf
+  mux
+  pipe
+  qemu-vdagent
+  hub
+  null
+  msmouse
+  socket
+  vc
+  dbus
+  memory
+  udp
+  file
+  wctablet
+  serial
+  stdio
+  testdev
+  pty
+EXIT=0
+
+$ qemu-system-x86_64 -display help
+Available display backend types:
+none
+curses
+cocoa
+dbus
+
+Some display backends support suboptions, which can be set with
+   -display backend,option=value,option=value...
+For a short list of the suboptions for each display, see the top-level -help output; more detail is in the documentation.
+EXIT=0
+
+$ printf 'info pci\ninfo virtio-status /machine/peripheral/virtio-serial0/virtio-backend\nquit\n' | qemu-system-x86_64 -nodefaults -machine q35 -display none -S -monitor stdio -serial none -chardev null,id=cs0 -device virtio-serial-pci-non-transitional,id=virtio-serial0,max_ports=1 -device virtconsole,chardev=cs0,id=console0 -chardev qemu-vdagent,id=vdagent0,clipboard=on,mouse=off -device virtio-serial-pci-non-transitional,id=vdagent-serial,max_ports=2 -device virtserialport,bus=vdagent-serial.0,nr=1,chardev=vdagent0,name=com.redhat.spice.0 | (strip the monitor's line-editing escapes)
+QEMU 11.1.1 monitor - type 'help' for more information
+(qemu)
+  Bus  0, device   0, function 0:
+    Host bridge: PCI device 8086:29c0
+      PCI subsystem 1af4:1100
+      id ""
+  Bus  0, device   1, function 0:
+    Class 1920: PCI device 1af4:1043
+      PCI subsystem 1af4:1100
+      IRQ 0, pin A
+      BAR1: 32 bit memory (not mapped)
+      BAR4: 64 bit prefetchable memory (not mapped)
+      id "virtio-serial0"
+  Bus  0, device   2, function 0:
+    Class 1920: PCI device 1af4:1043
+      PCI subsystem 1af4:1100
+      IRQ 0, pin A
+      BAR1: 32 bit memory (not mapped)
+      BAR4: 64 bit prefetchable memory (not mapped)
+      id "vdagent-serial"
+  Bus  0, device  31, function 0:
+    ISA bridge: PCI device 8086:2918
+      PCI subsystem 1af4:1100
+      id ""
+  Bus  0, device  31, function 2:
+    SATA controller: PCI device 8086:2922
+      PCI subsystem 1af4:1100
+      IRQ 0, pin A
+      BAR4: I/O (not mapped)
+      BAR5: 32 bit memory (not mapped)
+      id ""
+  Bus  0, device  31, function 3:
+    SMBus: PCI device 8086:2930
+      PCI subsystem 1af4:1100
+      IRQ 0, pin A
+      BAR4: I/O (not mapped)
+      id ""
+(qemu)
+/machine/peripheral/virtio-serial0/virtio-backend:
+  device_name:             virtio-serial 
+  device_id:               3
+  vhost_started:           false
+  bus_name:                virtio-serial0.0
+  broken:                  false
+  disabled:                false
+  disable_legacy_check:    false
+  started:                 false
+  use_started:             true
+  start_on_kick:           false
+  use_guest_notifier_mask: true
+  vm_running:              false
+  num_vqs:                 4
+  queue_sel:               0
+  isr:                     0
+  endianness:              little
+  status:
+
+  Guest features:
+
+  Host features:
+	VIRTIO_RING_F_EVENT_IDX: Used & avail. event fields enabled,
+	VIRTIO_RING_F_INDIRECT_DESC: Indirect descriptors supported,
+	VIRTIO_F_RING_RESET: Driver can reset a queue individually,
+	VIRTIO_F_VERSION_1: Device compliant for v1 spec (legacy),
+	VIRTIO_F_ANY_LAYOUT: Device accepts arbitrary desc. layouts,
+	VIRTIO_F_NOTIFY_ON_EMPTY: Notify when device runs out of avail. descs. on VQ
+	VIRTIO_CONSOLE_F_EMERG_WRITE: Emergency write supported
+  unknown-features(0x00000000000000000000000040000000)
+  Backend features:
+EXIT=139
+
+$ printf 'info pci\ninfo virtio-status /machine/peripheral/vdagent-serial/virtio-backend\nquit\n' | qemu-system-x86_64 -nodefaults -machine q35 -display none -S -monitor stdio -serial none -chardev null,id=cs0 -device virtio-serial-pci-non-transitional,id=virtio-serial0,max_ports=1 -device virtconsole,chardev=cs0,id=console0 -chardev qemu-vdagent,id=vdagent0,clipboard=on,mouse=off -device virtio-serial-pci-non-transitional,id=vdagent-serial,max_ports=2 -device virtserialport,bus=vdagent-serial.0,nr=1,chardev=vdagent0,name=com.redhat.spice.0 | (strip the monitor's line-editing escapes)
+QEMU 11.1.1 monitor - type 'help' for more information
+(qemu)
+  Bus  0, device   0, function 0:
+    Host bridge: PCI device 8086:29c0
+      PCI subsystem 1af4:1100
+      id ""
+  Bus  0, device   1, function 0:
+    Class 1920: PCI device 1af4:1043
+      PCI subsystem 1af4:1100
+      IRQ 0, pin A
+      BAR1: 32 bit memory (not mapped)
+      BAR4: 64 bit prefetchable memory (not mapped)
+      id "virtio-serial0"
+  Bus  0, device   2, function 0:
+    Class 1920: PCI device 1af4:1043
+      PCI subsystem 1af4:1100
+      IRQ 0, pin A
+      BAR1: 32 bit memory (not mapped)
+      BAR4: 64 bit prefetchable memory (not mapped)
+      id "vdagent-serial"
+  Bus  0, device  31, function 0:
+    ISA bridge: PCI device 8086:2918
+      PCI subsystem 1af4:1100
+      id ""
+  Bus  0, device  31, function 2:
+    SATA controller: PCI device 8086:2922
+      PCI subsystem 1af4:1100
+      IRQ 0, pin A
+      BAR4: I/O (not mapped)
+      BAR5: 32 bit memory (not mapped)
+      id ""
+  Bus  0, device  31, function 3:
+    SMBus: PCI device 8086:2930
+      PCI subsystem 1af4:1100
+      IRQ 0, pin A
+      BAR4: I/O (not mapped)
+      id ""
+(qemu)
+/machine/peripheral/vdagent-serial/virtio-backend:
+  device_name:             virtio-serial 
+  device_id:               3
+  vhost_started:           false
+  bus_name:                vdagent-serial.0
+  broken:                  false
+  disabled:                false
+  disable_legacy_check:    false
+  started:                 false
+  use_started:             true
+  start_on_kick:           false
+  use_guest_notifier_mask: true
+  vm_running:              false
+  num_vqs:                 6
+  queue_sel:               0
+  isr:                     0
+  endianness:              little
+  status:
+
+  Guest features:
+
+  Host features:
+	VIRTIO_RING_F_EVENT_IDX: Used & avail. event fields enabled,
+	VIRTIO_RING_F_INDIRECT_DESC: Indirect descriptors supported,
+	VIRTIO_F_RING_RESET: Driver can reset a queue individually,
+	VIRTIO_F_VERSION_1: Device compliant for v1 spec (legacy),
+	VIRTIO_F_ANY_LAYOUT: Device accepts arbitrary desc. layouts,
+	VIRTIO_F_NOTIFY_ON_EMPTY: Notify when device runs out of avail. descs. on VQ
+	VIRTIO_CONSOLE_F_EMERG_WRITE: Emergency write supported,
+	VIRTIO_CONSOLE_F_MULTIPORT: Multiple ports for device supported
+  unknown-features(0x00000000000000000000000040000000)
+  Backend features:
+EXIT=139
+
