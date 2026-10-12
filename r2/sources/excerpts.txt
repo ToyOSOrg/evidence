@@ -1,0 +1,223 @@
+== AMD PPR for Family 17h Model 60h A1, 55922 rev 3.06 (pdf sha256 b48d3cb4c4f22e2ed308f9e0d2bfd5dcca814afcc8ce582066263b93679996c5): MSR0000_008B
+== 55922.txt, lines 4209-4215
+
+MSR0000_008B [Patch Level] (Core::X86::Msr::PATCH_LEVEL)
+Read,Error-on-write,V olatile. Reset: 0000_0000_0000_0000h. 
+_lthree[1:0]_core[3:0]; MSR0000_008B
+Bits Description
+63:32 Reserved. 
+31:0 PatchLevel. Read,Error-on-write,V olatile. Reset: 0000_0000h. This returns an identification number for the 
+microcode patch that has been loaded. If no patch has been loaded, this returns 0.
+
+== 55922 §1.4.4.5.3 MSR Access Method: a per-core MSR has no thread parameter
+== 55922.txt, lines 786-795
+
+1.4.4.5.3 MSR Access Method
+The MSR parameters {lthree,core,thread} are implied by the identity of the core on which the RDMSR/WRMSR is being 
+executed, and therefore are not represented in the physical mnemonic.
+MSRs that are:
+• per-thread have the {lthree,core,thread} parameters.
+• per-core do not have the thread parameter.
+• per-L3 do not have the {core,thread} parameters.
+• common to all L3's do not have the {lthree,core,thread} parameters.
+1.4.4.5.3.1 MSR Per-Thread Example
+An MSR that is per-thread has all three {lthree,core,thread} parameters and all instances have the same physical 
+
+== 55922: CPUID Fn0000_0001_ECX bit 31 reserved
+== 55922.txt, lines 2465-2470
+
+CPUID_Fn00000001_ECX [Feature Identifiers] (Core::X86::Cpuid::FeatureIdEcx)
+Read-only. 
+These values can be over-written by Core::X86::Msr::CPUID_Features.
+_lthree[1:0]_core[3:0]_thread[1:0]; CPUID_Fn00000001_ECX
+Bits Description
+31 Reserved. 
+
+== Intel SDM Vol. 3A 325384-093US §12.11.7, §12.11.7.1, §12.11.7.2 Example 12-10
+== vol3a.txt, lines 20189-20252
+
+12.11.7 Update Signature and Verification
+The P6 family and later processors provide capabilities to verify the authenticity of a particular update and to iden-
+tify the current update revision. This section describes the model-specific extensions of processors that support 
+this feature. The update verification method below assumes that the BIOS will only verify an update that is more 
+recent than the revision currently loaded in the processor.
+CPUID returns a value in a model specific register in addition to its usual register return values. The semantics of 
+CPUID cause it to deposit an update ID value in the 64-bit model-specific register at address 08BH 
+(IA32_BIOS_SIGN_ID). If no update is present in the processor, the value in the MSR remains unmodified. The 
+BIOS must pre-load a zero into the MSR before executing CPUID. If a read of the MSR at 8BH still returns zero after 
+executing CPUID, this indicates that no update is present.
+The update ID value returned in the EDX register after RDMSR executes indicates the revision of the update loaded 
+in the processor. This value, in combination with the CPUID value returned in the EAX register, uniquely identifies a 
+particular update. The signature ID can be directly compared with the update revision field in a microcode update 
+header for verification of a correct load. No consecutive updates released for a given stepping of a processor may 
+share the same signature. The processor signature returned by CPUID differentiates updates for different step-
+pings.
+12.11.7.1  Determining the Signature
+An update that is successfully loaded into the processor provides a signature that matches the update revision of 
+the currently functioning revision. This signature is available any time after the actual update has been loaded. 
+Requesting the signature does not have a negative impact upon a loaded update.  
+The procedure for determining this signature shown in Example 12-9.
+Example 12-9.  Assembly Code to Retrieve the Update Revision
+MOV ECX, 08BH ;IA32_BIOS_SIGN_ID
+XOR EAX, EAX ;clear EAX
+XOR EDX, EDX ;clear EDX
+WRMSR ;Load 0 to MSR at 8BH
+MOV EAX, 1
+cpuid
+MOV ECX, 08BH ;IA32_BIOS_SIGN_ID
+rdmsr ;Read Model Specific Register
+If there is an update active in the processor, its revision is returned in the EDX register after the RDMSR instruction 
+executes.
+IA32_BIOS_SIGN_ID Microcode Update Signature Register 
+MSR Address: 08BH Accessed as a Qword
+Default Value: XXXX XXXX XXXX XXXXh
+Access: Read/Write
+The IA32_BIOS_SIGN_ID register is used to report the microcode update signature when CPUID executes. The 
+signature is returned in the upper DWORD (Table 12-12).
+=====PAGE 409=====
+Vol. 3A 12-37
+PROCESSOR MANAGEMENT AND INITIALIZATION
+12.11.7.2  Authenti cating the Update
+An update may be authenticated by the BIOS using the signature primitive, described above, and the algorithm in 
+Example 12-10.
+Example 12-10.  Pseudo Code to Authenticate the Update
+Z ← Obtain Update Revision from the Update Header to be authenticated;
+X ← Obtain Current Update Signature from MSR 8BH;
+If (Z > X)
+{
+Load Update that is to be authenticated;
+Y ← Obtain New Signature from MSR 8BH;
+If (Z = Y)
+Success
+Else
+Fail
+}
+Else
+Fail
+Example 12-10 requires that the BIOS only authenticate updates that contain a numerically larger revision than 
+the currently loaded revision, where Current Signature (X) < New Update Revision (Z). A processor with no loaded 
+update is considered to have a revision equal to zero.
+This authentication procedure relies upon the decoding provided by the processor to verify an update from a poten-
+tially hostile source.  As an example, this mechanism in conjunction with other safeguards provides security for 
+dynamically incorporating field updates into the BIOS.
+
+== SDM §12.11.6.1 Hard Resets in Update Loading
+== vol3a.txt, lines 20148-20153
+
+12.11.6.1  Hard Resets in Update Loading
+The effects of a loaded update are cleared from the processor upon a hard reset. Therefore, each time a hard reset 
+is asserted during the BIOS POST, the update must be reloaded on all processors that observed the reset. The 
+effects of a loaded update are, however, maintained across a processor INIT. There are no side effects caused by 
+loading an update into a processor multiple times.
+12.11.6.2  Update in a Multiprocessor System
+
+== Intel 500 Series Chipset Family On-Package PCH Datasheet Vol. 1, 631119-007 (pdf sha256 6738b1f9190932411945df83951a64e11c1b0bdd9f3ca33f921df291972ef924): Reset Behavior, Table 73
+== 631119-007.txt, lines 8259-8316
+
+Reset Behavior
+When a reset is triggered, the PCH will send a warning message to the processor to
+allow the processor to attempt to complete any outstanding memory cycles and put
+memory into a safe state before the platform is reset. When the processor is ready, it
+will send an acknowledge message to the PCH. Once the message is received the PCH
+asserts PLTRST#.
+The PCH does not require an acknowledge message from the processor to trigger
+PLTRST#. A global reset will occur after four seconds if an acknowledge from the
+processor is not received.
+When the PCH causes a reset by asserting PLTRST#, its output signals will go to their
+reset states.
+A reset in which the host platform is reset and PLTRST# is asserted is called a Host
+Reset or Host Partition Reset. Depending on the trigger a host reset may also result in
+power cycling, refer to the below table for details. If a host reset is triggered and the
+PCH times out before receiving an acknowledge message from the processor a Global
+Reset with power-cycle will occur.
+A reset in which the host and Intel
+®
+ CSME partitions of the platform are reset is called
+a Global Reset. During a Global Reset, all PCH functionality is reset except RTC Power
+Well backed information and Suspend well status, configuration, and functional logic
+for controlling and reporting the reset. Intel
+®
+ CSME and Host power back up after the
+power-cycle period.
+Straight to S5 is another reset type where all power wells that are controlled by the
+SLP_S3#, SLP_S4#, and SLP_A# pins, as well as SLP_S5# and SLP_LAN# (if pins are
+not configured as GPIOs), are turned off. All PCH functionality is reset except RTC
+Power Well backed information and Suspend well status, configuration, and functional
+logic for controlling and reporting the reset. The host stays there until a valid wake
+event occurs.
+The following table shows the various reset triggers.
+Table 73. Causes of Host and Global Resets
+Trigger
+Host Reset
+Without Power
+Cycle1
+Host Reset With
+Power Cycle2
+Global Reset
+With Power
+Cycle3
+Straight to S56
+(Host Stays
+There)
+Write of 0Eh to CF9h (RST_CNT Register)
+when CF9h when Global Reset Bit=0b No Yes No4
+Write of 06h to CF9h (RST_CNT Register)
+when CF9h when Global Reset Bit=0b Yes No No4
+Write of 06h or 0Eh to CF9h (RST_CNT
+Register) when CF9h when Global Reset
+Bit=1b
+No No Yes
+SYS_RESET# Asserted and CF9h
+(RST_CNT Register) Bit 3 = 0 Yes No No4
+SYS_RESET# Asserted and CF9h
+(RST_CNT Register) Bit 3 = 1 No Yes No4
+SMBus Slave Message received for Reset
+
+== 500 Series PCH Datasheet Vol. 2, 631120-002 (pdf sha256 ea56d3cc61b1dbc481bdc3c13887134a0f641a6681fc276666cb903236ed30e9): §26.1.4 RST_CNT, Offset CF9h
+== 631120-002.txt, lines 54436-54457
+
+3 0h
+RW
+Full Reset (FULL_RST): When this bit is set to 1 and bit 1 is set to 1 (indicating 
+Hard Reset, not Soft Reset), and the RST_CPU bit (bit 2) is written from 0 to 1, the 
+PCH will do a full reset, including driving SLP_S3#, SLP_S4# and SLP_S5# active 
+(low) for at least 3 (and no more than 5) seconds. When this bit is set, it also causes 
+the full power cycle (SLP_S3/4/5# assertion) in response to SYSRESET#, PWROK#, 
+and Watchdog timer reset sources.
+2 0h
+RW
+Reset CPU (RST_CPU): This bit will cause either a hard or soft reset to the CPU 
+depending on the state of the SYS_RST bit (bit 1 in this same register). The software 
+will cause the reset by setting bit 2 from a 0 to a 1.
+1 0h
+RW
+System Reset (SYS_RST): The bit determines the type of reset caused via 
+RST_CPU (bit 2 of this register). If SYS_RST is 0 when RST_CPU goes from 0 to 1, 
+then the PCH will force INIT# active for 16 PCI clocks. If SYS_RST is 1 when 
+RST_CPU goes from 0 to 1, then the PCH will force PCI reset active for about 1 ms, 
+however the SLP_S3#, SLP_S4# and SLP_S5# signals assertion is dependent on the 
+value of the FULL_RST (bit3 of this register).
+0 0h
+
+== 631120-002 §4.3.4 ETR3: CF9GR
+== 631120-002.txt, lines 4796-4813
+
+Access Field Name (ID): Description
+31 0h
+RW/V/L
+CF9h Lockdown (CF9LOCK): When set, this bit will lock the CF9h Global Reset bit 
+and this register. This register is reset by a CF9h reset.
+30:21 0h
+RO Reserved.
+20 0h
+RW/L
+CF9h Global Reset (CF9GR):  
+1 = a CF9h write of 6h or Eh will cause a Global Reset of both the Host and the Intel 
+(R) ME partitions. 
+0 = a CF9h write of 6h or Eh will only reset the Host partition. 
+It is recommended that BIOS should set this bit early on in the boot sequence, and 
+then clear it and set the CF9LOCK bit prior to loading the OS in both an Intel CSME 
+Enabled and a Intel CSME Disabled system. 
+This register is locked by the CF9 Lockdown (CF9LOCK) bit. This register is not reset 
+by a CF9h reset.
+

@@ -1,0 +1,57 @@
+# PR #886's metal request: the `microcode` row's arms at ToyOS e2b398cb6
+# (wt/toyos-microcode, origin/main 5096551ca merged), staged with
+# --metal-readback by stage.sh beside this file; no machine was touched.
+# Each boot is the toyos-metal command below, from /Users/jan/Dev/jan/toyos-microcode.
+# AMD arms carry the placeholder '<user>@<amd-bench>': put the bench's account
+# there. The mutation arms' trees are local commits in that worktree, never
+# pushed, each its patch beside this file applied to e2b398cb6.
+#
+# This head reports a CPU that does not take its update as a `refused` line
+# and boots on; no arm here should hold a panel. After a boot, judge it from
+# the tree named with
+#   cargo test --test toyos-build -- --metal --metal-readback <dir> microcode
+# where <dir> is the arm's directory below.
+# Order: t14-reseal first, the rerun that tells the panic hold from a fault
+# at the trigger.
+
+t14-reseal   (T14, tree b7a7b062a)
+  image: /Users/jan/.claude/jobs/2280e09e/tmp/scratchpad/agents/886-r2/metal/t14-reseal/metalcase-reseal/image.img
+  sha256 c6d44fe8bf1fc657f967aff9ddaa36e1342aa58c198b681c0222991827bb3405
+  cargo run -p toyos-metal -- --image /Users/jan/.claude/jobs/2280e09e/tmp/scratchpad/agents/886-r2/metal/t14-reseal/metalcase-reseal/image.img --readback /Users/jan/.claude/jobs/2280e09e/tmp/scratchpad/agents/886-r2/metal/t14-reseal/metalcase-reseal --fat32-check
+  expect: RED on a boot that COMPLETES and resets, not a hang. The row reds on 'cpu0 refused the update it was handed and runs 0xbe': cpu0's line reads 'found 0xbe refused 0xbf running 0xbe', the seven APs 'current 0xbe'. A boot that stops with no record instead is a fault at the trigger before the IDT, now told apart from the panic hold, which this head no longer takes.
+
+t14-head   (T14, tree e2b398cb6)
+  image: /Users/jan/.claude/jobs/2280e09e/tmp/scratchpad/agents/886-r2/metal/t14-head/metalcase/image.img
+  sha256 463199a7749fde459e9841d570088941333dd0b0bd82c2e927e965bdb7b84dc1
+  cargo run -p toyos-metal -- --image /Users/jan/.claude/jobs/2280e09e/tmp/scratchpad/agents/886-r2/metal/t14-head/metalcase/image.img --readback /Users/jan/.claude/jobs/2280e09e/tmp/scratchpad/agents/886-r2/metal/t14-head/metalcase --fat32-check
+  expect: GREEN. Eight lines, each 'Intel signature 0x806c1 platform 7 found 0xbe current 0xbe running 0xbe' (or 'loaded 0xbe' over a lower found): every CPU runs the 0xbe Intel's 06-8c-01 holds.
+
+t14-reverted   (T14, tree 1e92b3edc)
+  image: /Users/jan/.claude/jobs/2280e09e/tmp/scratchpad/agents/886-r2/metal/t14-reverted/metalcase/image.img
+  sha256 f1932a3a1590c52ce9825f30ebb95ce3fc0188e40c0d7799e6d63839a7e1f15e
+  cargo run -p toyos-metal -- --image /Users/jan/.claude/jobs/2280e09e/tmp/scratchpad/agents/886-r2/metal/t14-reverted/metalcase/image.img --readback /Users/jan/.claude/jobs/2280e09e/tmp/scratchpad/agents/886-r2/metal/t14-reverted/metalcase --fat32-check
+  expect: RED: the whole change reverted onto 5096551ca (m3); the row finds no microcode line.
+
+amd-trigger-removed   (AMD bench, tree 5b029c0a8)
+  image: /Users/jan/.claude/jobs/2280e09e/tmp/scratchpad/agents/886-r2/metal/amd-trigger-removed/metalcase/image.img
+  sha256 7e259fc85a8c6ad8a694cc6df50c82d017d5f41cf405a5b8bd3e39830ad6fbb3
+  cargo run -p toyos-metal -- --image /Users/jan/.claude/jobs/2280e09e/tmp/scratchpad/agents/886-r2/metal/amd-trigger-removed/metalcase/image.img --readback /Users/jan/.claude/jobs/2280e09e/tmp/scratchpad/agents/886-r2/metal/amd-trigger-removed/metalcase --fat32-check --host <user>@<amd-bench>
+  expect: RED on a boot that COMPLETES and resets, not a hang. Every line reads 'found <firmware> refused 0x860010d running <firmware>' (the last hung run read 0x8600106), all sixteen agree, and the row reds on 'cpu0 refused the update it was handed'.
+
+amd-head   (AMD bench, tree e2b398cb6)
+  image: /Users/jan/.claude/jobs/2280e09e/tmp/scratchpad/agents/886-r2/metal/amd-head/metalcase/image.img
+  sha256 26e7c7507934ac17812d995c5852976422454659b513c5ed61d28e278843f021
+  cargo run -p toyos-metal -- --image /Users/jan/.claude/jobs/2280e09e/tmp/scratchpad/agents/886-r2/metal/amd-head/metalcase/image.img --readback /Users/jan/.claude/jobs/2280e09e/tmp/scratchpad/agents/886-r2/metal/amd-head/metalcase --fat32-check --host <user>@<amd-bench>
+  expect: GREEN. Sixteen lines of signature 0x860f01, each 'loaded 0x860010d running 0x860010d'; report which 'found' each CPU reads (cpu0 is expected to find the firmware's revision; the PPR has one patch level per core, so the second thread of a core to load finds 0x860010d).
+
+amd-reverted   (AMD bench, tree 406b5863d)
+  image: /Users/jan/.claude/jobs/2280e09e/tmp/scratchpad/agents/886-r2/metal/amd-reverted/metalcase/image.img
+  sha256 0971f3eec969f0854ea6fd57af579aafecb38881fc152c68e64e1eec210e7293
+  cargo run -p toyos-metal -- --image /Users/jan/.claude/jobs/2280e09e/tmp/scratchpad/agents/886-r2/metal/amd-reverted/metalcase/image.img --readback /Users/jan/.claude/jobs/2280e09e/tmp/scratchpad/agents/886-r2/metal/amd-reverted/metalcase --fat32-check --host <user>@<amd-bench>
+  expect: RED: the whole change reverted onto 5096551ca (m3); the row finds no microcode line.
+
+amd-no-invlpg   (AMD bench, tree 0cb620cae)
+  image: /Users/jan/.claude/jobs/2280e09e/tmp/scratchpad/agents/886-r2/metal/amd-no-invlpg/metalcase/image.img
+  sha256 764d67a866f956fcf2bb7acc051542e53607b15dc03a2ddc09e1b318e7f70fbd
+  cargo run -p toyos-metal -- --image /Users/jan/.claude/jobs/2280e09e/tmp/scratchpad/agents/886-r2/metal/amd-no-invlpg/metalcase/image.img --readback /Users/jan/.claude/jobs/2280e09e/tmp/scratchpad/agents/886-r2/metal/amd-no-invlpg/metalcase --fat32-check --host <user>@<amd-bench>
+  expect: GREEN on the row; REPORTED, never gated: its 'boot:' phase lines beside amd-head's, family 0x17's INVLPG removed (m4).

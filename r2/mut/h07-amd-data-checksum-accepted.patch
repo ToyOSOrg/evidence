@@ -1,0 +1,13 @@
+diff --git a/kernel/microcode/src/amd.rs b/kernel/microcode/src/amd.rs
+index 8a12be00a..354dcb9c3 100644
+--- a/kernel/microcode/src/amd.rs
++++ b/kernel/microcode/src/amd.rs
+@@ -150,7 +150,7 @@ fn section(bytes: &[u8]) -> Result<(Patch<'_>, &[u8]), Refusal> {
+     if north != 0 || south != 0 {
+         return Err(Refusal::Chipset { north, south });
+     }
+-    if checksum != 0 {
++    if checksum != checksum {
+         return Err(Refusal::DataChecksum(checksum));
+     }
+     Ok((Patch { revision: Revision(id), bytes }, rest))
