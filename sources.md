@@ -912,6 +912,220 @@ static void check_preempt_curr_fair(struct rq *rq, struct task_struct *p)
 }
 ```
 
+### 63304558ba5d, EEVDF's curb on wakeup preemption, `RUN_TO_PARITY` (`a-wake-to-a-busy-cpu-…`)
+
+SHA-256 of the patch `9d76759c2fb670c7cdd3d906c66d3c79138e6066e1c403087b0967e2ed04efcb`.
+
+Header and message (lines 1-41 of the patch):
+
+```text
+From 63304558ba5dcaaff9e052ee43cfdcc7f9c29e85 Mon Sep 17 00:00:00 2001
+From: Peter Zijlstra <peterz@infradead.org>
+Date: Wed, 16 Aug 2023 15:40:59 +0200
+Subject: sched/eevdf: Curb wakeup-preemption
+
+Mike and others noticed that EEVDF does like to over-schedule quite a
+bit -- which does hurt performance of a number of benchmarks /
+workloads.
+
+In particular, what seems to cause over-scheduling is that when lag is
+of the same order (or larger) than the request / slice then placement
+will not only cause the task to be placed left of current, but also
+with a smaller deadline than current, which causes immediate
+preemption.
+
+[ notably, lag bounds are relative to HZ ]
+
+Mike suggested we stick to picking 'current' for as long as it's
+eligible to run, giving it uninterrupted runtime until it reaches
+parity with the pack.
+
+Augment Mike's suggestion by only allowing it to exhaust it's initial
+request.
+
+One random data point:
+
+echo NO_RUN_TO_PARITY > /debug/sched/features
+perf stat -a -e context-switches --repeat 10 -- perf bench sched messaging -g 20 -t -l 5000
+
+	3,723,554        context-switches      ( +-  0.56% )
+	9.5136 +- 0.0394 seconds time elapsed  ( +-  0.41% )
+
+echo RUN_TO_PARITY > /debug/sched/features
+perf stat -a -e context-switches --repeat 10 -- perf bench sched messaging -g 20 -t -l 5000
+
+	2,556,535        context-switches      ( +-  0.51% )
+	9.2427 +- 0.0302 seconds time elapsed  ( +-  0.33% )
+
+Suggested-by: Mike Galbraith <umgwanakikbuti@gmail.com>
+Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
+Link: https://lkml.kernel.org/r/20230816134059.GC982867@hirez.programming.kicks-ass.net
+```
+
+The hunks: `pick_eevdf` keeps `curr`, and the feature, on by default (lines 47-88 of the patch):
+
+```text
+diff --git a/kernel/sched/fair.c b/kernel/sched/fair.c
+index f496cef90ce771..0b7445cd5af98b 100644
+--- a/kernel/sched/fair.c
++++ b/kernel/sched/fair.c
+@@ -873,6 +873,13 @@ static struct sched_entity *pick_eevdf(struct cfs_rq *cfs_rq)
+ 	if (curr && (!curr->on_rq || !entity_eligible(cfs_rq, curr)))
+ 		curr = NULL;
+ 
++	/*
++	 * Once selected, run a task until it either becomes non-eligible or
++	 * until it gets a new slice. See the HACK in set_next_entity().
++	 */
++	if (sched_feat(RUN_TO_PARITY) && curr && curr->vlag == curr->deadline)
++		return curr;
++
+ 	while (node) {
+ 		struct sched_entity *se = __node_2_se(node);
+ 
+@@ -5167,6 +5174,11 @@ set_next_entity(struct cfs_rq *cfs_rq, struct sched_entity *se)
+ 		update_stats_wait_end_fair(cfs_rq, se);
+ 		__dequeue_entity(cfs_rq, se);
+ 		update_load_avg(cfs_rq, se, UPDATE_TG);
++		/*
++		 * HACK, stash a copy of deadline at the point of pick in vlag,
++		 * which isn't used until dequeue.
++		 */
++		se->vlag = se->deadline;
+ 	}
+ 
+ 	update_stats_curr_start(cfs_rq, se);
+diff --git a/kernel/sched/features.h b/kernel/sched/features.h
+index 61bcbf5e46a450..f770168230ae4a 100644
+--- a/kernel/sched/features.h
++++ b/kernel/sched/features.h
+@@ -6,6 +6,7 @@
+  */
+ SCHED_FEAT(PLACE_LAG, true)
+ SCHED_FEAT(PLACE_DEADLINE_INITIAL, true)
++SCHED_FEAT(RUN_TO_PARITY, true)
+ 
+ /*
+  * Prefer to schedule the task we woke last (assuming it failed
+```
+
+`kernel/sched/features.h` at `v6.5`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/kernel/sched/features.h?h=v6.5`, SHA-256 `b89cf04277f8064b7fb9314dd105341474d88711524a6cf4208bb69250f3e3bf`: `RUN_TO_PARITY` matches 0 of its lines.
+
+`kernel/sched/features.h` at `v6.6`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/kernel/sched/features.h?h=v6.6`, SHA-256 `cbd722fd1adba7a49148ab954f74e3fc5de42241b85c9cd63d356965939cca21`, the release that first carries it (lines 7-9):
+
+```c
+SCHED_FEAT(PLACE_LAG, true)
+SCHED_FEAT(PLACE_DEADLINE_INITIAL, true)
+SCHED_FEAT(RUN_TO_PARITY, true)
+```
+
+`kernel/sched/features.h` at `v7.2`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/kernel/sched/features.h?h=v7.2`, SHA-256 `6ea97b9773bc3662a11028155479a8b609b94070e2e602dd918db9269bfe5c49`, the feature today, on by default (lines 16-25):
+
+```c
+/*
+ * Inhibit (wakeup) preemption until the current task has either matched the
+ * 0-lag point or until is has exhausted it's slice.
+ */
+SCHED_FEAT(RUN_TO_PARITY, true)
+/*
+ * Allow wakeup of tasks with a shorter slice to cancel RUN_TO_PARITY for
+ * current.
+ */
+SCHED_FEAT(PREEMPT_SHORT, true)
+```
+
+`kernel/sched/fair.c` at `v7.2`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/kernel/sched/fair.c?h=v7.2`, SHA-256 `830ae44741cd322df8de5ae75be8fe2c5469fa6e9e1365fbc4233481e6f1fff0`, the base slice, 0.7 ms before CPU-count scaling (lines 74-80):
+
+```c
+/*
+ * Minimal preemption granularity for CPU-bound tasks:
+ *
+ * (default: 0.70 msec * (1 + ilog(ncpus)), units: nanoseconds)
+ */
+unsigned int sysctl_sched_base_slice			= 700000ULL;
+static unsigned int normalized_sysctl_sched_base_slice	= 700000ULL;
+```
+
+`kernel/sched/fair.c` at `v7.2`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/kernel/sched/fair.c?h=v7.2`, SHA-256 `830ae44741cd322df8de5ae75be8fe2c5469fa6e9e1365fbc4233481e6f1fff0`, the protected slice (lines 1076-1115):
+
+```c
+/*
+ * Set the vruntime up to which an entity can run before looking
+ * for another entity to pick.
+ * In case of run to parity, we use the shortest slice of the enqueued
+ * entities to set the protected period.
+ * When run to parity is disabled, we give a minimum quantum to the running
+ * entity to ensure progress.
+ */
+static inline void set_protect_slice(struct cfs_rq *cfs_rq, struct sched_entity *se)
+{
+	u64 slice = normalized_sysctl_sched_base_slice;
+	u64 vprot = se->deadline;
+
+	if (sched_feat(RUN_TO_PARITY))
+		slice = cfs_rq_min_slice(cfs_rq);
+
+	slice = min(slice, se->slice);
+	if (slice != se->slice)
+		vprot = min_vruntime(vprot, se->vruntime + calc_delta_fair(slice, se));
+
+	se->vprot = vprot;
+}
+
+static inline void update_protect_slice(struct cfs_rq *cfs_rq, struct sched_entity *se)
+{
+	u64 slice = cfs_rq_min_slice(cfs_rq);
+
+	se->vprot = min_vruntime(se->vprot, se->vruntime + calc_delta_fair(slice, se));
+}
+
+static inline bool protect_slice(struct sched_entity *se)
+{
+	return vruntime_cmp(se->vruntime, "<", se->vprot);
+}
+
+static inline void cancel_protect_slice(struct sched_entity *se)
+{
+	if (protect_slice(se))
+		se->vprot = se->vruntime;
+}
+```
+
+`kernel/sched/fair.c` at `v7.2`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/kernel/sched/fair.c?h=v7.2`, SHA-256 `830ae44741cd322df8de5ae75be8fe2c5469fa6e9e1365fbc4233481e6f1fff0`, `pick_eevdf` keeps a protected `curr` (lines 1160-1164):
+
+```c
+	if (curr && (!curr->on_rq || !entity_eligible(cfs_rq, curr)))
+		curr = NULL;
+
+	if (curr && protect && protect_slice(curr))
+		return curr;
+```
+
+`kernel/sched/fair.c` at `v7.2`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/kernel/sched/fair.c?h=v7.2`, SHA-256 `830ae44741cd322df8de5ae75be8fe2c5469fa6e9e1365fbc4233481e6f1fff0`, `wakeup_preempt_fair` preempts only for what that pick returns (lines 9886-9905):
+
+```c
+pick:
+	nse = pick_next_entity(rq, cfs_rq, preempt_action != PREEMPT_WAKEUP_SHORT);
+	/* If @p has become the most eligible task, force preemption */
+	if (nse == pse)
+		goto preempt;
+
+	/*
+	 * Because p is enqueued, nse being null can only mean that we
+	 * dequeued a delayed task. If there are still entities queued in
+	 * cfs, check if the next one will be p.
+	 */
+	if (!nse && cfs_rq->nr_queued)
+		goto pick;
+
+	if (sched_feat(RUN_TO_PARITY))
+		update_protect_slice(cfs_rq, se);
+
+	return;
+
+preempt:
+```
+
 ### aebef63cf7ff, MWAIT as AMD's default idle state from family 17h (`idle-is-hlt-…`)
 
 SHA-256 of the patch `aba8056f09218ff84aeb677e431962d72eb1445aebb33879b5d23c2708ab3b66`.
@@ -1084,6 +1298,199 @@ static __init bool prefer_mwait_c1_over_halt(void)
 }
 ```
 
+### c9a4b55431e5, MONITOR loses wakes on Lunar Lake, so the IPI stays (`idle-is-hlt-…`)
+
+SHA-256 of the patch `94f4b720e3b4cf45965ec4a3bec69055b416451e072b4c897e5936c7af5972b4`.
+
+Header and message (lines 1-23 of the patch):
+
+```text
+From c9a4b55431e5220347881e148725bed69c84e037 Mon Sep 17 00:00:00 2001
+From: Len Brown <len.brown@intel.com>
+Date: Tue, 12 Nov 2024 21:07:00 -0500
+Subject: x86/cpu: Add Lunar Lake to list of CPUs with a broken MONITOR
+ implementation
+
+Under some conditions, MONITOR wakeups on Lunar Lake processors
+can be lost, resulting in significant user-visible delays.
+
+Add Lunar Lake to X86_BUG_MONITOR so that wake_up_idle_cpu()
+always sends an IPI, avoiding this potential delay.
+
+Reported originally here:
+
+	https://bugzilla.kernel.org/show_bug.cgi?id=219364
+
+[ dhansen: tweak subject ]
+
+Signed-off-by: Len Brown <len.brown@intel.com>
+Signed-off-by: Dave Hansen <dave.hansen@linux.intel.com>
+Reviewed-by: Rafael J. Wysocki <rafael.j.wysocki@intel.com>
+Cc:stable@vger.kernel.org
+Link: https://lore.kernel.org/all/a4aa8842a3c3bfdb7fe9807710eef159cbf0e705.1731463305.git.len.brown%40intel.com
+```
+
+The hunk (lines 28-42 of the patch):
+
+```text
+diff --git a/arch/x86/kernel/cpu/intel.c b/arch/x86/kernel/cpu/intel.c
+index d1de300af17374..8ded9f859a3a96 100644
+--- a/arch/x86/kernel/cpu/intel.c
++++ b/arch/x86/kernel/cpu/intel.c
+@@ -555,7 +555,9 @@ static void init_intel(struct cpuinfo_x86 *c)
+ 	     c->x86_vfm == INTEL_WESTMERE_EX))
+ 		set_cpu_bug(c, X86_BUG_CLFLUSH_MONITOR);
+ 
+-	if (boot_cpu_has(X86_FEATURE_MWAIT) && c->x86_vfm == INTEL_ATOM_GOLDMONT)
++	if (boot_cpu_has(X86_FEATURE_MWAIT) &&
++	    (c->x86_vfm == INTEL_ATOM_GOLDMONT ||
++	     c->x86_vfm == INTEL_LUNARLAKE_M))
+ 		set_cpu_bug(c, X86_BUG_MONITOR);
+ 
+ #ifdef CONFIG_X86_64
+```
+
+`arch/x86/kernel/cpu/intel.c` at `v6.12`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/arch/x86/kernel/cpu/intel.c?h=v6.12`, SHA-256 `74c5ab60349488aa31d260dbec8acbdd8fd38d7f1b00ecc071fa04e994deee16`, Goldmont alone before it (lines 589-590):
+
+```c
+	if (boot_cpu_has(X86_FEATURE_MWAIT) && c->x86_vfm == INTEL_ATOM_GOLDMONT)
+		set_cpu_bug(c, X86_BUG_MONITOR);
+```
+
+`arch/x86/kernel/cpu/intel.c` at `v6.13`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/arch/x86/kernel/cpu/intel.c?h=v6.13`, SHA-256 `9c647e23e004e176baa229dcad37535a19bf07e56d2c5d5b6f2ca014a262f44b`, the release that first carries it (lines 558-561):
+
+```c
+	if (boot_cpu_has(X86_FEATURE_MWAIT) &&
+	    (c->x86_vfm == INTEL_ATOM_GOLDMONT ||
+	     c->x86_vfm == INTEL_LUNARLAKE_M))
+		set_cpu_bug(c, X86_BUG_MONITOR);
+```
+
+`arch/x86/kernel/cpu/intel.c` at `v7.2`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/arch/x86/kernel/cpu/intel.c?h=v7.2`, SHA-256 `e718ec56f420a2ee68de3bf0b9c1474362e737c5d33ce0e41f74d905f4a5fb88`, the bug today (lines 560-563):
+
+```c
+	if (boot_cpu_has(X86_FEATURE_MWAIT) &&
+	    (c->x86_vfm == INTEL_ATOM_GOLDMONT ||
+	     c->x86_vfm == INTEL_LUNARLAKE_M))
+		set_cpu_bug(c, X86_BUG_MONITOR);
+```
+
+`arch/x86/include/asm/intel-family.h` at `v7.2`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/arch/x86/include/asm/intel-family.h?h=v7.2`, SHA-256 `894e851bf5fdc55c5dbf5a6270fb1b095c74798d4100db440b328a20f53fd184`, Lunar Lake's model (lines 152-152):
+
+```c
+#define INTEL_LUNARLAKE_M		IFM(6, 0xBD) /* Lion Cove / Skymont */
+```
+
+`arch/x86/include/asm/intel-family.h` at `v7.2`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/arch/x86/include/asm/intel-family.h?h=v7.2`, SHA-256 `894e851bf5fdc55c5dbf5a6270fb1b095c74798d4100db440b328a20f53fd184`, Goldmont's model (lines 179-179):
+
+```c
+#define INTEL_ATOM_GOLDMONT		IFM(6, 0x5C) /* Apollo Lake */
+```
+
+`arch/x86/include/asm/mwait.h` at `v7.2`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/arch/x86/include/asm/mwait.h?h=v7.2`, SHA-256 `aad26ca72fafddc2e07e452dfb9604c66adae0f1616816a8499d015574d8a63f`, MWAIT idle sets no polling flag on such a CPU (lines 99-135):
+
+```c
+/*
+ * This uses new MONITOR/MWAIT instructions on P4 processors with PNI,
+ * which can obviate IPI to trigger checking of need_resched.
+ * We execute MONITOR against need_resched and enter optimized wait state
+ * through MWAIT. Whenever someone changes need_resched, we would be woken
+ * up from MWAIT (without an IPI).
+ *
+ * New with Core Duo processors, MWAIT can take some hints based on CPU
+ * capability.
+ */
+static __always_inline void mwait_idle_with_hints(u32 eax, u32 ecx)
+{
+	if (need_resched())
+		return;
+
+	x86_idle_clear_cpu_buffers();
+
+	if (static_cpu_has_bug(X86_BUG_MONITOR) || !current_set_polling_and_test()) {
+		const void *addr = &current_thread_info()->flags;
+
+		alternative_input("", "clflush (%[addr])", X86_BUG_CLFLUSH_MONITOR, [addr] "a" (addr));
+		__monitor(addr, 0, 0);
+
+		if (need_resched())
+			goto out;
+
+		if (ecx & 1) {
+			__mwait(eax, ecx);
+		} else {
+			__sti_mwait(eax, ecx);
+			raw_local_irq_disable();
+		}
+	}
+
+out:
+	current_clr_polling();
+}
+```
+
+`kernel/sched/core.c` at `v7.2`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/kernel/sched/core.c?h=v7.2`, SHA-256 `957f657af1a2327c75dac495548eaa7bd1571a12a756c7f704e6f3195b156988`, a wake sends the IPI unless the polling flag is set (lines 1046-1055):
+
+```c
+#ifdef TIF_POLLING_NRFLAG
+/*
+ * Atomically set TIF_NEED_RESCHED and test for TIF_POLLING_NRFLAG,
+ * this avoids any races wrt polling state changes and thereby avoids
+ * spurious IPIs.
+ */
+static inline bool set_nr_and_not_polling(struct thread_info *ti, int tif)
+{
+	return !(fetch_or(&ti->flags, 1 << tif) & _TIF_POLLING_NRFLAG);
+}
+```
+
+`kernel/sched/core.c` at `v7.2`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/kernel/sched/core.c?h=v7.2`, SHA-256 `957f657af1a2327c75dac495548eaa7bd1571a12a756c7f704e6f3195b156988`, `wake_up_idle_cpu` (lines 1324-1357):
+
+```c
+static void wake_up_idle_cpu(int cpu)
+{
+	struct rq *rq = cpu_rq(cpu);
+
+	if (cpu == smp_processor_id())
+		return;
+
+	/*
+	 * Set TIF_NEED_RESCHED and send an IPI if in the non-polling
+	 * part of the idle loop. This forces an exit from the idle loop
+	 * and a round trip to schedule(). Now this could be optimized
+	 * because a simple new idle loop iteration is enough to
+	 * re-evaluate the next tick. Provided some re-ordering of tick
+	 * nohz functions that would need to follow TIF_NR_POLLING
+	 * clearing:
+	 *
+	 * - On most architectures, a simple fetch_or on ti::flags with a
+	 *   "0" value would be enough to know if an IPI needs to be sent.
+	 *
+	 * - x86 needs to perform a last need_resched() check between
+	 *   monitor and mwait which doesn't take timers into account.
+	 *   There a dedicated TIF_TIMER flag would be required to
+	 *   fetch_or here and be checked along with TIF_NEED_RESCHED
+	 *   before mwait().
+	 *
+	 * However, remote timer enqueue is not such a frequent event
+	 * and testing of the above solutions didn't appear to report
+	 * much benefits.
+	 */
+	if (set_nr_and_not_polling(task_thread_info(rq->idle), TIF_NEED_RESCHED))
+		smp_send_reschedule(cpu);
+	else
+		trace_sched_wake_idle_without_ipi(cpu);
+}
+```
+
+`arch/x86/kernel/process.c` at `v7.2`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/arch/x86/kernel/process.c?h=v7.2`, SHA-256 `f1792e208d5c0a01d0752154c66745d310728dc7beaf1567c37cd0bebd5cb61c`, `prefer_mwait_c1_over_halt` takes `hlt` on such a CPU (lines 890-892):
+
+```c
+	/* Monitor has a bug or APIC stops in C1E. Fallback to HALT */
+	if (boot_cpu_has_bug(X86_BUG_MONITOR) || boot_cpu_has_bug(X86_BUG_AMD_APIC_C1E))
+		return false;
+```
+
 ## Linux v7.2, a CPU's hot data on lines of its own (`per-cpu-scheduler-…`)
 
 `kernel/sched/core.c` at `v7.2`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/kernel/sched/core.c?h=v7.2`, SHA-256 `957f657af1a2327c75dac495548eaa7bd1571a12a756c7f704e6f3195b156988`, the run queues (lines 131-131):
@@ -1168,4 +1575,402 @@ static __always_inline void __preempt_count_sub(int val)
 	raw_cpu_add_4(__preempt_count, -val);
 }
 ```
+
+## Linux v7.2, the drives whose APST failed (`diskserver-drives-nvme-apst`)
+
+`drivers/nvme/host/nvme.h` at `v7.2`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/drivers/nvme/host/nvme.h?h=v7.2`, SHA-256 `2b38e70d68395306c49646011630874f679f49e7ae83f8bd55e94b5fa33d0a91`, the two quirks (lines 83-91):
+
+```c
+	/*
+	 * APST should not be used.
+	 */
+	NVME_QUIRK_NO_APST			= (1 << 4),
+
+	/*
+	 * The deepest sleep state should not be used.
+	 */
+	NVME_QUIRK_NO_DEEPEST_PS		= (1 << 5),
+```
+
+`drivers/nvme/host/core.c` at `v7.2`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/drivers/nvme/host/core.c?h=v7.2`, SHA-256 `a946234dc13cb09d7c608f1a27b934adf53bfc02a93a48788132cf0e5a0122c7`, no transition to the deepest state on a `NO_DEEPEST_PS` drive (lines 2966-2972):
+
+```c
+		/*
+		 * Don't allow transitions to the deepest state if it's quirked
+		 * off.
+		 */
+		if (state == ctrl->npss &&
+		    (ctrl->quirks & NVME_QUIRK_NO_DEEPEST_PS))
+			continue;
+```
+
+`drivers/nvme/host/core.c` at `v7.2`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/drivers/nvme/host/core.c?h=v7.2`, SHA-256 `a946234dc13cb09d7c608f1a27b934adf53bfc02a93a48788132cf0e5a0122c7`, `core_quirks`, by vendor, model and firmware (lines 3048-3108):
+
+```c
+struct nvme_core_quirk_entry {
+	/*
+	 * NVMe model and firmware strings are padded with spaces.  For
+	 * simplicity, strings in the quirk table are padded with NULLs
+	 * instead.
+	 */
+	u16 vid;
+	const char *mn;
+	const char *fr;
+	unsigned long quirks;
+};
+
+static const struct nvme_core_quirk_entry core_quirks[] = {
+	{
+		/*
+		 * This Toshiba device seems to die using any APST states.  See:
+		 * https://bugs.launchpad.net/ubuntu/+source/linux/+bug/1678184/comments/11
+		 */
+		.vid = 0x1179,
+		.mn = "THNSF5256GPUK TOSHIBA",
+		.quirks = NVME_QUIRK_NO_APST,
+	},
+	{
+		/*
+		 * This LiteON CL1-3D*-Q11 firmware version has a race
+		 * condition associated with actions related to suspend to idle
+		 * LiteON has resolved the problem in future firmware
+		 */
+		.vid = 0x14a4,
+		.fr = "22301111",
+		.quirks = NVME_QUIRK_SIMPLE_SUSPEND,
+	},
+	{
+		/*
+		 * This Kioxia CD6-V Series / HPE PE8030 device times out and
+		 * aborts I/O during any load, but more easily reproducible
+		 * with discards (fstrim).
+		 *
+		 * The device is left in a state where it is also not possible
+		 * to use "nvme set-feature" to disable APST, but booting with
+		 * nvme_core.default_ps_max_latency_us=0 works.
+		 */
+		.vid = 0x1e0f,
+		.mn = "KCD6XVUL6T40",
+		.quirks = NVME_QUIRK_NO_APST,
+	},
+	{
+		/*
+		 * The external Samsung X5 SSD fails initialization without a
+		 * delay before checking if it is ready and has a whole set of
+		 * other problems.  To make this even more interesting, it
+		 * shares the PCI ID with internal Samsung 970 Evo Plus that
+		 * does not need or want these quirks.
+		 */
+		.vid = 0x144d,
+		.mn = "Samsung Portable SSD X5",
+		.quirks = NVME_QUIRK_DELAY_BEFORE_CHK_RDY |
+			  NVME_QUIRK_NO_DEEPEST_PS |
+			  NVME_QUIRK_IGNORE_DEV_SUBNQN,
+	}
+};
+```
+
+`drivers/nvme/host/core.c` at `v7.2`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/drivers/nvme/host/core.c?h=v7.2`, SHA-256 `a946234dc13cb09d7c608f1a27b934adf53bfc02a93a48788132cf0e5a0122c7`, no APST on a `NO_APST` drive (lines 3686-3698):
+
+```c
+	ctrl->npss = id->npss;
+	ctrl->apsta = id->apsta;
+	prev_apst_enabled = ctrl->apst_enabled;
+	if (ctrl->quirks & NVME_QUIRK_NO_APST) {
+		if (force_apst && id->apsta) {
+			dev_warn(ctrl->device, "forcibly allowing APST due to nvme_core.force_apst -- use at your own risk\n");
+			ctrl->apst_enabled = true;
+		} else {
+			ctrl->apst_enabled = false;
+		}
+	} else {
+		ctrl->apst_enabled = id->apsta;
+	}
+```
+
+`drivers/nvme/host/pci.c` at `v7.2`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/drivers/nvme/host/pci.c?h=v7.2`, SHA-256 `f01e258f3e9bcc2d8bee918bda9296c6a7bff36ea21a6ddb740e266c6277b12d`, `check_vendor_combination_bug`, by drive and machine (lines 3584-3657):
+
+```c
+static unsigned long check_vendor_combination_bug(struct pci_dev *pdev)
+{
+	if (pdev->vendor == 0x144d && pdev->device == 0xa802) {
+		/*
+		 * Several Samsung devices seem to drop off the PCIe bus
+		 * randomly when APST is on and uses the deepest sleep state.
+		 * This has been observed on a Samsung "SM951 NVMe SAMSUNG
+		 * 256GB", a "PM951 NVMe SAMSUNG 512GB", and a "Samsung SSD
+		 * 950 PRO 256GB", but it seems to be restricted to two Dell
+		 * laptops.
+		 */
+		if (dmi_match(DMI_SYS_VENDOR, "Dell Inc.") &&
+		    (dmi_match(DMI_PRODUCT_NAME, "XPS 15 9550") ||
+		     dmi_match(DMI_PRODUCT_NAME, "Precision 5510")))
+			return NVME_QUIRK_NO_DEEPEST_PS;
+	} else if (pdev->vendor == 0x144d && pdev->device == 0xa804) {
+		/*
+		 * Samsung SSD 960 EVO drops off the PCIe bus after system
+		 * suspend on a Ryzen board, ASUS PRIME B350M-A, as well as
+		 * within few minutes after bootup on a Coffee Lake board -
+		 * ASUS PRIME Z370-A
+		 */
+		if (dmi_match(DMI_BOARD_VENDOR, "ASUSTeK COMPUTER INC.") &&
+		    (dmi_match(DMI_BOARD_NAME, "PRIME B350M-A") ||
+		     dmi_match(DMI_BOARD_NAME, "PRIME Z370-A")))
+			return NVME_QUIRK_NO_APST;
+	} else if ((pdev->vendor == 0x144d && (pdev->device == 0xa801 ||
+		    pdev->device == 0xa808 || pdev->device == 0xa809)) ||
+		   (pdev->vendor == 0x1e0f && pdev->device == 0x0001)) {
+		/*
+		 * Forcing to use host managed nvme power settings for
+		 * lowest idle power with quick resume latency on
+		 * Samsung and Toshiba SSDs based on suspend behavior
+		 * on Coffee Lake board for LENOVO C640
+		 */
+		if ((dmi_match(DMI_BOARD_VENDOR, "LENOVO")) &&
+		     dmi_match(DMI_BOARD_NAME, "LNVNB161216"))
+			return NVME_QUIRK_SIMPLE_SUSPEND;
+	} else if (pdev->vendor == 0x2646 && (pdev->device == 0x2263 ||
+		   pdev->device == 0x500f)) {
+		/*
+		 * Exclude some Kingston NV1 and A2000 devices from
+		 * NVME_QUIRK_SIMPLE_SUSPEND. Do a full suspend to save a
+		 * lot of energy with s2idle sleep on some TUXEDO platforms.
+		 */
+		if (dmi_match(DMI_BOARD_NAME, "NS5X_NS7XAU") ||
+		    dmi_match(DMI_BOARD_NAME, "NS5x_7xAU") ||
+		    dmi_match(DMI_BOARD_NAME, "NS5x_7xPU") ||
+		    dmi_match(DMI_BOARD_NAME, "PH4PRX1_PH6PRX1"))
+			return NVME_QUIRK_FORCE_NO_SIMPLE_SUSPEND;
+	} else if (pdev->vendor == 0x144d && pdev->device == 0xa80d) {
+		/*
+		 * Exclude Samsung 990 Evo from NVME_QUIRK_SIMPLE_SUSPEND
+		 * because of high power consumption (> 2 Watt) in s2idle
+		 * sleep. Only some boards with Intel CPU are affected.
+		 * (Note for testing: Samsung 990 Evo Plus has same PCI ID)
+		 */
+		if (dmi_match(DMI_BOARD_NAME, "DN50Z-140HC-YD") ||
+		    dmi_match(DMI_BOARD_NAME, "GMxPXxx") ||
+		    dmi_match(DMI_BOARD_NAME, "GXxMRXx") ||
+		    dmi_match(DMI_BOARD_NAME, "NS5X_NS7XAU") ||
+		    dmi_match(DMI_BOARD_NAME, "PH4PG31") ||
+		    dmi_match(DMI_BOARD_NAME, "PH4PRX1_PH6PRX1") ||
+		    dmi_match(DMI_BOARD_NAME, "PH6PG01_PH6PG71"))
+			return NVME_QUIRK_FORCE_NO_SIMPLE_SUSPEND;
+	}
+
+	/*
+	 * NVMe SSD drops off the PCIe bus after system idle
+	 * for 10 hours on a Lenovo N60z board.
+	 */
+	if (dmi_match(DMI_BOARD_NAME, "LXKT-ZXEG-N6"))
+		return NVME_QUIRK_NO_APST;
+
+```
+
+`drivers/nvme/host/pci.c` at `v7.2`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/drivers/nvme/host/pci.c?h=v7.2`, SHA-256 `f01e258f3e9bcc2d8bee918bda9296c6a7bff36ea21a6ddb740e266c6277b12d`, applied at probe (lines 3699-3699):
+
+```c
+	quirks |= check_vendor_combination_bug(pdev);
+```
+
+`drivers/nvme/host/pci.c` at `v7.2`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/drivers/nvme/host/pci.c?h=v7.2`, SHA-256 `f01e258f3e9bcc2d8bee918bda9296c6a7bff36ea21a6ddb740e266c6277b12d`, `nvme_id_table`, by PCI ID (lines 4097-4290):
+
+```c
+static const struct pci_device_id nvme_id_table[] = {
+	{ PCI_VDEVICE(INTEL, 0x0953),	/* Intel 750/P3500/P3600/P3700 */
+		.driver_data = NVME_QUIRK_STRIPE_SIZE |
+				NVME_QUIRK_DEALLOCATE_ZEROES, },
+	{ PCI_VDEVICE(INTEL, 0x0a53),	/* Intel P3520 */
+		.driver_data = NVME_QUIRK_STRIPE_SIZE |
+				NVME_QUIRK_DEALLOCATE_ZEROES, },
+	{ PCI_VDEVICE(INTEL, 0x0a54),	/* Intel P4500/P4600 */
+		.driver_data = NVME_QUIRK_STRIPE_SIZE |
+				NVME_QUIRK_IGNORE_DEV_SUBNQN |
+				NVME_QUIRK_BOGUS_NID, },
+	{ PCI_VDEVICE(INTEL, 0x0a55),	/* Dell Express Flash P4600 */
+		.driver_data = NVME_QUIRK_STRIPE_SIZE, },
+	{ PCI_VDEVICE(INTEL, 0xf1a5),	/* Intel 600P/P3100 */
+		.driver_data = NVME_QUIRK_NO_DEEPEST_PS |
+				NVME_QUIRK_MEDIUM_PRIO_SQ |
+				NVME_QUIRK_NO_TEMP_THRESH_CHANGE |
+				NVME_QUIRK_DISABLE_WRITE_ZEROES, },
+	{ PCI_VDEVICE(INTEL, 0xf1a6),	/* Intel 760p/Pro 7600p */
+		.driver_data = NVME_QUIRK_IGNORE_DEV_SUBNQN, },
+	{ PCI_VDEVICE(INTEL, 0x5845),	/* Qemu emulated controller */
+		.driver_data = NVME_QUIRK_IDENTIFY_CNS |
+				NVME_QUIRK_DISABLE_WRITE_ZEROES |
+				NVME_QUIRK_BOGUS_NID, },
+	{ PCI_VDEVICE(REDHAT, 0x0010),	/* Qemu emulated controller */
+		.driver_data = NVME_QUIRK_BOGUS_NID, },
+	{ PCI_DEVICE(0x1217, 0x8760), /* O2 Micro 64GB Steam Deck */
+		.driver_data = NVME_QUIRK_DMAPOOL_ALIGN_512, },
+	{ PCI_DEVICE(0x126f, 0x1001),	/* Silicon Motion generic */
+		.driver_data = NVME_QUIRK_NO_DEEPEST_PS |
+				NVME_QUIRK_IGNORE_DEV_SUBNQN, },
+	{ PCI_DEVICE(0x126f, 0x2262),	/* Silicon Motion generic */
+		.driver_data = NVME_QUIRK_NO_DEEPEST_PS |
+				NVME_QUIRK_BOGUS_NID, },
+	{ PCI_DEVICE(0x126f, 0x2263),	/* Silicon Motion unidentified */
+		.driver_data = NVME_QUIRK_NO_NS_DESC_LIST |
+				NVME_QUIRK_BOGUS_NID, },
+	{ PCI_DEVICE(0x1bb1, 0x0100),   /* Seagate Nytro Flash Storage */
+		.driver_data = NVME_QUIRK_DELAY_BEFORE_CHK_RDY |
+				NVME_QUIRK_NO_NS_DESC_LIST, },
+	{ PCI_DEVICE(0x1c58, 0x0003),	/* HGST adapter */
+		.driver_data = NVME_QUIRK_DELAY_BEFORE_CHK_RDY, },
+	{ PCI_DEVICE(0x1c58, 0x0023),	/* WDC SN200 adapter */
+		.driver_data = NVME_QUIRK_DELAY_BEFORE_CHK_RDY, },
+	{ PCI_DEVICE(0x1c5f, 0x0540),	/* Memblaze Pblaze4 adapter */
+		.driver_data = NVME_QUIRK_DELAY_BEFORE_CHK_RDY, },
+	{ PCI_DEVICE(0x1c5f, 0x0555),	/* Memblaze Pblaze5 adapter */
+		.driver_data = NVME_QUIRK_NO_NS_DESC_LIST, },
+	{ PCI_DEVICE(0x144d, 0xa821),   /* Samsung PM1725 */
+		.driver_data = NVME_QUIRK_DELAY_BEFORE_CHK_RDY, },
+	{ PCI_DEVICE(0x144d, 0xa822),   /* Samsung PM1725a */
+		.driver_data = NVME_QUIRK_DELAY_BEFORE_CHK_RDY |
+				NVME_QUIRK_DISABLE_WRITE_ZEROES|
+				NVME_QUIRK_IGNORE_DEV_SUBNQN, },
+	{ PCI_DEVICE(0x15b7, 0x5008),   /* Sandisk SN530 */
+		.driver_data = NVME_QUIRK_BROKEN_MSI },
+	{ PCI_DEVICE(0x15b7, 0x5009),   /* Sandisk SN550 */
+		.driver_data = NVME_QUIRK_BROKEN_MSI |
+				NVME_QUIRK_NO_DEEPEST_PS },
+	{ PCI_DEVICE(0x1987, 0x5012),	/* Phison E12 */
+		.driver_data = NVME_QUIRK_BOGUS_NID, },
+	{ PCI_DEVICE(0x1987, 0x5016),	/* Phison E16 */
+		.driver_data = NVME_QUIRK_IGNORE_DEV_SUBNQN |
+				NVME_QUIRK_BOGUS_NID, },
+	{ PCI_DEVICE(0x1987, 0x5019),  /* phison E19 */
+		.driver_data = NVME_QUIRK_DISABLE_WRITE_ZEROES, },
+	{ PCI_DEVICE(0x1987, 0x5021),   /* Phison E21 */
+		.driver_data = NVME_QUIRK_DISABLE_WRITE_ZEROES, },
+	{ PCI_DEVICE(0x1b4b, 0x1092),	/* Lexar 256 GB SSD */
+		.driver_data = NVME_QUIRK_NO_NS_DESC_LIST |
+				NVME_QUIRK_IGNORE_DEV_SUBNQN, },
+	{ PCI_DEVICE(0x1cc1, 0x33f8),   /* ADATA IM2P33F8ABR1 1 TB */
+		.driver_data = NVME_QUIRK_BOGUS_NID, },
+	{ PCI_DEVICE(0x10ec, 0x5762),   /* ADATA SX6000LNP */
+		.driver_data = NVME_QUIRK_IGNORE_DEV_SUBNQN |
+				NVME_QUIRK_BOGUS_NID, },
+	{ PCI_DEVICE(0x10ec, 0x5763),  /* ADATA SX6000PNP */
+		.driver_data = NVME_QUIRK_BOGUS_NID, },
+	{ PCI_DEVICE(0x1cc1, 0x8201),   /* ADATA SX8200PNP 512GB */
+		.driver_data = NVME_QUIRK_NO_DEEPEST_PS |
+				NVME_QUIRK_IGNORE_DEV_SUBNQN, },
+	 { PCI_DEVICE(0x1344, 0x5407), /* Micron Technology Inc NVMe SSD */
+		.driver_data = NVME_QUIRK_IGNORE_DEV_SUBNQN },
+	 { PCI_DEVICE(0x1344, 0x6001),   /* Micron Nitro NVMe */
+		 .driver_data = NVME_QUIRK_BOGUS_NID, },
+	{ PCI_DEVICE(0x1c5c, 0x1504),   /* SK Hynix PC400 */
+		.driver_data = NVME_QUIRK_DISABLE_WRITE_ZEROES, },
+	{ PCI_DEVICE(0x1c5c, 0x174a),   /* SK Hynix P31 SSD */
+		.driver_data = NVME_QUIRK_BOGUS_NID, },
+	{ PCI_DEVICE(0x1c5c, 0x1D59),   /* SK Hynix BC901 */
+		.driver_data = NVME_QUIRK_DISABLE_WRITE_ZEROES, },
+	{ PCI_DEVICE(0x15b7, 0x2001),   /*  Sandisk Skyhawk */
+		.driver_data = NVME_QUIRK_DISABLE_WRITE_ZEROES, },
+	{ PCI_DEVICE(0x1d97, 0x2263),   /* SPCC */
+		.driver_data = NVME_QUIRK_DISABLE_WRITE_ZEROES, },
+	{ PCI_DEVICE(0x144d, 0xa80b),   /* Samsung PM9B1 256G and 512G */
+		.driver_data = NVME_QUIRK_DISABLE_WRITE_ZEROES |
+				NVME_QUIRK_BOGUS_NID, },
+	{ PCI_DEVICE(0x144d, 0xa809),   /* Samsung MZALQ256HBJD 256G */
+		.driver_data = NVME_QUIRK_DISABLE_WRITE_ZEROES, },
+	{ PCI_DEVICE(0x144d, 0xa802),   /* Samsung SM953 */
+		.driver_data = NVME_QUIRK_BOGUS_NID, },
+	{ PCI_DEVICE(0x1cc4, 0x6303),   /* UMIS RPJTJ512MGE1QDY 512G */
+		.driver_data = NVME_QUIRK_DISABLE_WRITE_ZEROES, },
+	{ PCI_DEVICE(0x1cc4, 0x6302),   /* UMIS RPJTJ256MGE1QDY 256G */
+		.driver_data = NVME_QUIRK_DISABLE_WRITE_ZEROES, },
+	{ PCI_DEVICE(0x2646, 0x2262),   /* KINGSTON SKC2000 NVMe SSD */
+		.driver_data = NVME_QUIRK_NO_DEEPEST_PS, },
+	{ PCI_DEVICE(0x2646, 0x2263),   /* KINGSTON A2000 NVMe SSD  */
+		.driver_data = NVME_QUIRK_NO_DEEPEST_PS, },
+	{ PCI_DEVICE(0x2646, 0x5013),   /* Kingston KC3000, Kingston FURY Renegade */
+		.driver_data = NVME_QUIRK_NO_SECONDARY_TEMP_THRESH, },
+	{ PCI_DEVICE(0x2646, 0x5018),   /* KINGSTON OM8SFP4xxxxP OS21012 NVMe SSD */
+		.driver_data = NVME_QUIRK_DISABLE_WRITE_ZEROES, },
+	{ PCI_DEVICE(0x2646, 0x5016),   /* KINGSTON OM3PGP4xxxxP OS21011 NVMe SSD */
+		.driver_data = NVME_QUIRK_DISABLE_WRITE_ZEROES, },
+	{ PCI_DEVICE(0x2646, 0x501A),   /* KINGSTON OM8PGP4xxxxP OS21005 NVMe SSD */
+		.driver_data = NVME_QUIRK_DISABLE_WRITE_ZEROES, },
+	{ PCI_DEVICE(0x2646, 0x501B),   /* KINGSTON OM8PGP4xxxxQ OS21005 NVMe SSD */
+		.driver_data = NVME_QUIRK_DISABLE_WRITE_ZEROES, },
+	{ PCI_DEVICE(0x2646, 0x501E),   /* KINGSTON OM3PGP4xxxxQ OS21011 NVMe SSD */
+		.driver_data = NVME_QUIRK_DISABLE_WRITE_ZEROES, },
+	{ PCI_DEVICE(0x2646, 0x502F),   /* KINGSTON OM3SGP4xxxxK NVMe SSD */
+		.driver_data = NVME_QUIRK_DISABLE_WRITE_ZEROES, },
+	{ PCI_DEVICE(0x1f40, 0x1202),   /* Netac Technologies Co. NV3000 NVMe SSD */
+		.driver_data = NVME_QUIRK_BOGUS_NID, },
+	{ PCI_DEVICE(0x1f40, 0x5236),   /* Netac Technologies Co. NV7000 NVMe SSD */
+		.driver_data = NVME_QUIRK_BOGUS_NID, },
+	{ PCI_DEVICE(0x1e4B, 0x1001),   /* MAXIO MAP1001 */
+		.driver_data = NVME_QUIRK_BOGUS_NID, },
+	{ PCI_DEVICE(0x1e4B, 0x1002),   /* MAXIO MAP1002 */
+		.driver_data = NVME_QUIRK_BOGUS_NID, },
+	{ PCI_DEVICE(0x1e4B, 0x1202),   /* MAXIO MAP1202 */
+		.driver_data = NVME_QUIRK_BOGUS_NID, },
+	{ PCI_DEVICE(0x1e4B, 0x1602),   /* MAXIO MAP1602 */
+		.driver_data = NVME_QUIRK_BOGUS_NID, },
+	{ PCI_DEVICE(0x1cc1, 0x5350),   /* ADATA XPG GAMMIX S50 */
+		.driver_data = NVME_QUIRK_BOGUS_NID, },
+	{ PCI_DEVICE(0x1dbe, 0x5216),   /* Acer/INNOGRIT FA100/5216 NVMe SSD */
+		.driver_data = NVME_QUIRK_BOGUS_NID, },
+	{ PCI_DEVICE(0x1dbe, 0x5236),   /* ADATA XPG GAMMIX S70 */
+		.driver_data = NVME_QUIRK_BOGUS_NID, },
+	{ PCI_DEVICE(0x1e49, 0x0021),   /* ZHITAI TiPro5000 NVMe SSD */
+		.driver_data = NVME_QUIRK_NO_DEEPEST_PS, },
+	{ PCI_DEVICE(0x1e49, 0x0041),   /* ZHITAI TiPro7000 NVMe SSD */
+		.driver_data = NVME_QUIRK_NO_DEEPEST_PS, },
+	{ PCI_DEVICE(0x1fa0, 0x2283),   /* Wodposit WPBSNM8-256GTP */
+		.driver_data = NVME_QUIRK_NO_SECONDARY_TEMP_THRESH, },
+	{ PCI_DEVICE(0x025e, 0xf1ac),   /* SOLIDIGM  P44 pro SSDPFKKW020X7  */
+		.driver_data = NVME_QUIRK_NO_DEEPEST_PS, },
+	{ PCI_DEVICE(0xc0a9, 0x540a),   /* Crucial P2 */
+		.driver_data = NVME_QUIRK_BOGUS_NID, },
+	{ PCI_DEVICE(0x1d97, 0x2263), /* Lexar NM610 */
+		.driver_data = NVME_QUIRK_BOGUS_NID, },
+	{ PCI_DEVICE(0x1d97, 0x1d97), /* Lexar NM620 */
+		.driver_data = NVME_QUIRK_BOGUS_NID, },
+	{ PCI_DEVICE(0x1d97, 0x2269), /* Lexar NM760 */
+		.driver_data = NVME_QUIRK_BOGUS_NID |
+				NVME_QUIRK_IGNORE_DEV_SUBNQN, },
+	{ PCI_DEVICE(0x10ec, 0x5763), /* TEAMGROUP T-FORCE CARDEA ZERO Z330 SSD */
+		.driver_data = NVME_QUIRK_BOGUS_NID, },
+	{ PCI_DEVICE(0x1e4b, 0x1602), /* HS-SSD-FUTURE 2048G  */
+		.driver_data = NVME_QUIRK_BOGUS_NID, },
+	{ PCI_DEVICE(0x10ec, 0x5765), /* TEAMGROUP MP33 2TB SSD */
+		.driver_data = NVME_QUIRK_BOGUS_NID, },
+	{ PCI_DEVICE(PCI_VENDOR_ID_AMAZON, 0x0061),
+		.driver_data = NVME_QUIRK_DMA_ADDRESS_BITS_48, },
+	{ PCI_DEVICE(PCI_VENDOR_ID_AMAZON, 0x0065),
+		.driver_data = NVME_QUIRK_DMA_ADDRESS_BITS_48, },
+	{ PCI_DEVICE(PCI_VENDOR_ID_AMAZON, 0x8061),
+		.driver_data = NVME_QUIRK_DMA_ADDRESS_BITS_48, },
+	{ PCI_DEVICE(PCI_VENDOR_ID_AMAZON, 0xcd00),
+		.driver_data = NVME_QUIRK_DMA_ADDRESS_BITS_48, },
+	{ PCI_DEVICE(PCI_VENDOR_ID_AMAZON, 0xcd01),
+		.driver_data = NVME_QUIRK_DMA_ADDRESS_BITS_48, },
+	{ PCI_DEVICE(PCI_VENDOR_ID_AMAZON, 0xcd02),
+		.driver_data = NVME_QUIRK_DMA_ADDRESS_BITS_48, },
+	{ PCI_DEVICE(PCI_VENDOR_ID_APPLE, 0x2001),
+		/*
+		 * Fix for the Apple controller found in the MacBook8,1 and
+		 * some MacBook7,1 to avoid controller resets and data loss.
+		 */
+		.driver_data = NVME_QUIRK_SINGLE_VECTOR |
+				NVME_QUIRK_QDEPTH_ONE },
+	{ PCI_DEVICE(PCI_VENDOR_ID_APPLE, 0x2003) },
+	{ PCI_DEVICE(PCI_VENDOR_ID_APPLE, 0x2005),
+		.driver_data = NVME_QUIRK_SINGLE_VECTOR |
+				NVME_QUIRK_128_BYTES_SQES |
+				NVME_QUIRK_SHARED_TAGS |
+				NVME_QUIRK_SKIP_CID_GEN |
+				NVME_QUIRK_IDENTIFY_CNS },
+	{ PCI_DEVICE_CLASS(PCI_CLASS_STORAGE_EXPRESS, 0xffffff) },
+	{ 0, }
+};
+```
+
+No reading in ToyOS's tree names the T14's drive by PCI ID, model or firmware: `issues/features-no-proving-machine-is-known-to-offer.md` has its `id-ctrl` unread, and `issues/no-program-measures-toyos-against-linux-on-one-machine.md` reads its NVMe identity.
 
