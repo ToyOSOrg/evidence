@@ -1,0 +1,27 @@
+diff --git a/kernel/sim/tests/topology.rs b/kernel/sim/tests/topology.rs
+index c2888ce2c..deb9e8741 100644
+--- a/kernel/sim/tests/topology.rs
++++ b/kernel/sim/tests/topology.rs
+@@ -269,3 +269,22 @@ fn a_cpu_that_is_rung_and_declines_to_probe_is_caught() {
+         }
+     }
+ }
++
++/// The review's case: the shipped push on two flat CPUs, three threads on cpu0,
++/// over the gate's seeds; red when any schedule fails.
++#[test]
++fn review_case_flat2() {
++    let scenario = lopsided(Shape::flat(2), 3);
++    let mut red = 0;
++    for (seed, outcome) in sweep(&scenario, WC_SEEDS).into_iter().enumerate() {
++        println!(
++            "seed {seed}: passed={} wc_rounds={} violations={:?}",
++            outcome.passed(),
++            outcome.wc_rounds,
++            outcome.violations,
++        );
++        red += usize::from(!outcome.passed());
++    }
++    println!("red in {red} of {WC_SEEDS}");
++    assert_eq!(red, 0, "red in {red} of {WC_SEEDS} schedules");
++}

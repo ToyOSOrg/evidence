@@ -1,0 +1,23 @@
+--- a/kernel/sim/tests/topology.rs
++++ b/kernel/sim/tests/topology.rs
+@@ -241,3 +241,20 @@
+         }
+     }
+ }
++
++/// The review's case: the shipped push on two flat CPUs, three threads on cpu0.
++#[test]
++fn review_case_flat2() {
++    let scenario = lopsided(Shape::flat(2), 3);
++    let mut red = 0;
++    for (seed, outcome) in sweep(&scenario, WC_SEEDS).into_iter().enumerate() {
++        println!(
++            "seed {seed}: passed={} wc_rounds={} violations={:?}",
++            outcome.passed(),
++            outcome.wc_rounds,
++            outcome.violations,
++        );
++        red += usize::from(!outcome.passed());
++    }
++    println!("red in {red} of {WC_SEEDS}");
++}

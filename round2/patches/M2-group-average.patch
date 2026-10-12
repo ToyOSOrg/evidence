@@ -1,0 +1,22 @@
+diff --git a/kernel/pure/sched/cpu.rs b/kernel/pure/sched/cpu.rs
+index bbfe8020e..8d44426d7 100644
+--- a/kernel/pure/sched/cpu.rs
++++ b/kernel/pure/sched/cpu.rs
+@@ -2080,9 +2080,17 @@ impl<H: Hw, P: PreemptGuard> SchedPass<'_, '_, H, P, Disposed> {
+     /// drains is never freed, so one probe spent on a stopped CPU costs this one
+     /// the pull half for the rest of the machine's life.
+     fn best_victim(&self) -> Option<CpuId> {
++        // MUTATION M2: Wasted Cores' group imbalance — a victim in the other half of
++        // the machine is probed only if its half's average surplus exceeds this half's.
++        let n = self.env.cpus.len();
++        let half = |cpu: CpuId| cpu.0 as usize * 2 / n;
++        let load = |h: usize| -> u32 {
++            (0..n).filter(|&c| c * 2 / n == h).map(|c| self.env.cpus.get(CpuId(c as u32)).surplus()).sum()
++        };
+         let (victim, surplus) = (0..self.env.cpus.len())
+             .map(|i| CpuId(i as u32))
+             .filter(|&cpu| cpu != self.cpu.id && self.env.cpus.get(cpu).answering(self.now))
++            .filter(|&cpu| half(cpu) == half(self.cpu.id) || load(half(cpu)) > load(half(self.cpu.id)))
+             .map(|cpu| (cpu, self.env.cpus.get(cpu).surplus()))
+             .max_by_key(|&(_, surplus)| surplus)?;
+         (surplus >= PUSH_THRESHOLD).then_some(victim)

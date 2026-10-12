@@ -1,0 +1,13 @@
+diff --git a/kernel/pure/sched/cpu.rs b/kernel/pure/sched/cpu.rs
+index bbfe8020e..cc7a88ace 100644
+--- a/kernel/pure/sched/cpu.rs
++++ b/kernel/pure/sched/cpu.rs
+@@ -2083,6 +2083,8 @@ impl<H: Hw, P: PreemptGuard> SchedPass<'_, '_, H, P, Disposed> {
+         let (victim, surplus) = (0..self.env.cpus.len())
+             .map(|i| CpuId(i as u32))
+             .filter(|&cpu| cpu != self.cpu.id && self.env.cpus.get(cpu).answering(self.now))
++            // MUTATION M1: a locality rule — steal only inside one's own group of four ids.
++            .filter(|&cpu| cpu.0 / 4 == self.cpu.id.0 / 4)
+             .map(|cpu| (cpu, self.env.cpus.get(cpu).surplus()))
+             .max_by_key(|&(_, surplus)| surplus)?;
+         (surplus >= PUSH_THRESHOLD).then_some(victim)

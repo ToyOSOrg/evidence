@@ -1,0 +1,12 @@
+--- a/kernel/sim/src/vm.rs
++++ b/kernel/sim/src/vm.rs
+@@ -1093,7 +1093,8 @@
+         }
+         let (halted, pending) = self.hw.with(|s| (s.halted.clone(), s.pending_ipi.clone()));
+         for cpu in 0..self.scenario.cpus() {
+-            let owes = (!halted[cpu] || pending[cpu] > 0) && !self.is_stopped(cpu);
++            // MUTATION M4: a CPU an IPI is on its way to holds no round open
++            let owes = (!halted[cpu] || (pending[cpu] > 0 && false)) && !self.is_stopped(cpu);
+             self.round_owed[cpu] = owes;
+             self.round_owed_count += usize::from(owes);
+         }

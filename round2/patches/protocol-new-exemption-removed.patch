@@ -1,0 +1,13 @@
+--- a/kernel/sim/src/vm.rs
++++ b/kernel/sim/src/vm.rs
+@@ -1028,9 +1028,7 @@
+             // Under the old protocol an idle CPU's idle loop is its steal, which
+             // the explorer schedules as `OldSteal` whenever it likes: that
+             // freedom is the defect `old_steal_port` reproduces.
+-            let idle = self.scenario.protocol == Protocol::New
+-                && !halted[cpu]
+-                && self.cpus[cpu].running().is_none();
++            let idle = !halted[cpu] && self.cpus[cpu].running().is_none();
+             let owed = resched[cpu] || idle;
+             match (owed, self.resched_at[cpu]) {
+                 (true, None) => self.resched_at[cpu] = Some(self.clock),

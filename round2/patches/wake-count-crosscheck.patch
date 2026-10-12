@@ -1,0 +1,22 @@
+--- a/kernel/sim/src/vm.rs
++++ b/kernel/sim/src/vm.rs
+@@ -1132,6 +1132,19 @@
+                 .chain(parked_in_step)
+                 .filter(|&task| self.cpus[home].parked_task(task).is_none())
+                 .collect();
++            // CROSS-CHECK: the trace's own count of the same wakes — a deadline's
++            // TimerFire, or a Wake of a task that was parked when the step began
++            // or parked in it — must equal the parked-set count.
++            let candidates: BTreeSet<TaskKey> = self.step_trace.iter().filter_map(|e| match e.kind {
++                TraceKind::ParkCommit { task, .. } => Some(task),
++                _ => None,
++            }).chain(woken.iter().copied()).collect();
++            let traced = self.step_trace.iter().filter(|e| match e.kind {
++                TraceKind::TimerFire => true,
++                TraceKind::Wake { task, .. } => candidates.contains(&task),
++                _ => false,
++            }).count();
++            assert_eq!(traced, woken.len(), "trace and parked set disagree: {:?}", self.step_trace);
+             for task in woken {
+                 let placed = match self.shared[&task].state() {
+                     TaskState::Ready(cpu) | TaskState::Running(cpu) | TaskState::InTransit(cpu) => {
