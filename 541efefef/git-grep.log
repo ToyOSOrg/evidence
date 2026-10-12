@@ -1,0 +1,224 @@
+head 541efefef2c7c71d6a1373238d54842d422dbba9, base ab655a1154b3aa27634f2ab1f3230dbf7744bf91
+Each name is grepped at the head, outside issues/, where it must find nothing (git grep exits 1), and at the base, where it must find the name (exit 0): the base arm shows the pattern is not vacuous.
+
+== git grep -n -w -F -e 'FrameStats' 541efefef2c7c71d6a1373238d54842d422dbba9 -- . ':!issues/'
+EXIT=1
+
+== git grep -n -w -F -e 'FrameStats' ab655a115 -- . ':!issues/'
+ab655a115:system/compositor/src/session.rs:36:use crate::stats::{FrameStats, FrameTotals};
+ab655a115:system/compositor/src/session.rs:151:    stats: FrameStats,
+ab655a115:system/compositor/src/session.rs:306:            stats: FrameStats::default(),
+ab655a115:system/compositor/src/session.rs:1369:            self.stats = FrameStats::default();
+ab655a115:system/compositor/src/stats.rs:19:pub struct FrameStats {
+ab655a115:system/compositor/src/stats.rs:30:impl FrameStats {
+ab655a115:system/compositor/src/stats.rs:77:/// counters [`FrameStats::record`] fills.
+ab655a115:system/compositor/src/stats.rs:88:    pub fn fold(&mut self, window: &FrameStats) {
+ab655a115:system/compositor/src/stats.rs:94:    pub fn plus(self, window: &FrameStats) -> Self {
+EXIT=0
+
+== git grep -n -w -F -e 'STATS_INTERVAL' 541efefef2c7c71d6a1373238d54842d422dbba9 -- . ':!issues/'
+EXIT=1
+
+== git grep -n -w -F -e 'STATS_INTERVAL' ab655a115 -- . ':!issues/'
+ab655a115:system/compositor/src/main.rs:32:pub const STATS_INTERVAL: Duration = Duration::from_secs(2);
+ab655a115:system/compositor/src/session.rs:39:    FLAG_HARDWARE_CURSOR, FRAME_INTERVAL, MAX_WINDOW_SLOTS, PROMPT_POLL_HANDLES, STATS_INTERVAL,
+ab655a115:system/compositor/src/session.rs:312:            next_stats_report: now + STATS_INTERVAL,
+ab655a115:system/compositor/src/session.rs:1372:            self.next_stats_report = composited_at + STATS_INTERVAL;
+EXIT=0
+
+== git grep -n -w -F -e 'damage_px_max' 541efefef2c7c71d6a1373238d54842d422dbba9 -- . ':!issues/'
+EXIT=1
+
+== git grep -n -w -F -e 'damage_px_max' ab655a115 -- . ':!issues/'
+ab655a115:system/compositor/src/stats.rs:8:/// instrument is the panel. `damage_px_max` is the one to read first: it is the
+ab655a115:system/compositor/src/stats.rs:24:    damage_px_max: u64,
+ab655a115:system/compositor/src/stats.rs:46:        self.damage_px_max = self.damage_px_max.max(damage_px);
+ab655a115:system/compositor/src/stats.rs:56:            "compositor: frames={} rects={} damage_px={} damage_px_max={} \
+ab655a115:system/compositor/src/stats.rs:62:            self.damage_px_max,
+EXIT=0
+
+== git grep -n -w -F -e 'composite_us_min' 541efefef2c7c71d6a1373238d54842d422dbba9 -- . ':!issues/'
+EXIT=1
+
+== git grep -n -w -F -e 'composite_us_min' ab655a115 -- . ':!issues/'
+ab655a115:system/compositor/src/stats.rs:57:             composite_us_min={} composite_us_max={} composite_us_total={} \
+EXIT=0
+
+== git grep -n -w -F -e 'composite_us_max' 541efefef2c7c71d6a1373238d54842d422dbba9 -- . ':!issues/'
+EXIT=1
+
+== git grep -n -w -F -e 'composite_us_max' ab655a115 -- . ':!issues/'
+ab655a115:system/compositor/src/stats.rs:57:             composite_us_min={} composite_us_max={} composite_us_total={} \
+EXIT=0
+
+== git grep -n -w -F -e 'composite_us_total' 541efefef2c7c71d6a1373238d54842d422dbba9 -- . ':!issues/'
+EXIT=1
+
+== git grep -n -w -F -e 'composite_us_total' ab655a115 -- . ':!issues/'
+ab655a115:system/compositor/src/stats.rs:57:             composite_us_min={} composite_us_max={} composite_us_total={} \
+EXIT=0
+
+== git grep -n -w -F -e 'composite_ns_min' 541efefef2c7c71d6a1373238d54842d422dbba9 -- . ':!issues/'
+EXIT=1
+
+== git grep -n -w -F -e 'composite_ns_min' ab655a115 -- . ':!issues/'
+ab655a115:system/compositor/src/stats.rs:25:    composite_ns_min: u64,
+ab655a115:system/compositor/src/stats.rs:37:        self.composite_ns_min = if self.frames == 0 {
+ab655a115:system/compositor/src/stats.rs:40:            self.composite_ns_min.min(composite_ns)
+ab655a115:system/compositor/src/stats.rs:63:            self.composite_ns_min / 1_000,
+EXIT=0
+
+== git grep -n -w -F -e 'composite_ns_max' 541efefef2c7c71d6a1373238d54842d422dbba9 -- . ':!issues/'
+EXIT=1
+
+== git grep -n -w -F -e 'composite_ns_max' ab655a115 -- . ':!issues/'
+ab655a115:system/compositor/src/stats.rs:26:    composite_ns_max: u64,
+ab655a115:system/compositor/src/stats.rs:42:        self.composite_ns_max = self.composite_ns_max.max(composite_ns);
+ab655a115:system/compositor/src/stats.rs:64:            self.composite_ns_max / 1_000,
+EXIT=0
+
+== git grep -n -w -F -e 'composite_ns_total' 541efefef2c7c71d6a1373238d54842d422dbba9 -- . ':!issues/'
+EXIT=1
+
+== git grep -n -w -F -e 'composite_ns_total' ab655a115 -- . ':!issues/'
+ab655a115:system/compositor/src/stats.rs:27:    composite_ns_total: u64,
+ab655a115:system/compositor/src/stats.rs:43:        self.composite_ns_total += composite_ns;
+ab655a115:system/compositor/src/stats.rs:65:            self.composite_ns_total / 1_000,
+ab655a115:system/compositor/src/stats.rs:99:            composite_ns: self.composite_ns + window.composite_ns_total,
+EXIT=0
+
+== git grep -n -w -F -e 'scanout_wr_bytes' 541efefef2c7c71d6a1373238d54842d422dbba9 -- . ':!issues/'
+EXIT=1
+
+== git grep -n -w -F -e 'scanout_wr_bytes' ab655a115 -- . ':!issues/'
+ab655a115:system/compositor/src/stats.rs:58:             scanout_wr_bytes={} scanout_blits={} back_rd_bytes={} cursor={} windows={}",
+EXIT=0
+
+== git grep -n -w -F -e 'scanout_blits' 541efefef2c7c71d6a1373238d54842d422dbba9 -- . ':!issues/'
+EXIT=1
+
+== git grep -n -w -F -e 'scanout_blits' ab655a115 -- . ':!issues/'
+ab655a115:system/compositor/src/stats.rs:58:             scanout_wr_bytes={} scanout_blits={} back_rd_bytes={} cursor={} windows={}",
+EXIT=0
+
+== git grep -n -w -F -e 'back_rd_bytes' 541efefef2c7c71d6a1373238d54842d422dbba9 -- . ':!issues/'
+EXIT=1
+
+== git grep -n -w -F -e 'back_rd_bytes' ab655a115 -- . ':!issues/'
+ab655a115:system/compositor/src/stats.rs:16:/// and hands out no pointer. `back_rd_bytes` is where the reads went instead —
+ab655a115:system/compositor/src/stats.rs:58:             scanout_wr_bytes={} scanout_blits={} back_rd_bytes={} cursor={} windows={}",
+EXIT=0
+
+== git grep -n -w -F -e 'cursor_draws' 541efefef2c7c71d6a1373238d54842d422dbba9 -- . ':!issues/'
+EXIT=1
+
+== git grep -n -w -F -e 'cursor_draws' ab655a115 -- . ':!issues/'
+ab655a115:system/compositor/src/session.rs:1324:                self.stats.cursor_draws += 1;
+ab655a115:system/compositor/src/stats.rs:21:    pub cursor_draws: u32,
+ab655a115:system/compositor/src/stats.rs:69:            self.cursor_draws,
+EXIT=0
+
+== git grep -n -w -F -e 'next_stats_report' 541efefef2c7c71d6a1373238d54842d422dbba9 -- . ':!issues/'
+EXIT=1
+
+== git grep -n -w -F -e 'next_stats_report' ab655a115 -- . ':!issues/'
+ab655a115:system/compositor/src/session.rs:158:    next_stats_report: Instant,
+ab655a115:system/compositor/src/session.rs:312:            next_stats_report: now + STATS_INTERVAL,
+ab655a115:system/compositor/src/session.rs:1360:        if composited_at >= self.next_stats_report {
+ab655a115:system/compositor/src/session.rs:1372:            self.next_stats_report = composited_at + STATS_INTERVAL;
+EXIT=0
+
+== git grep -n -w -F -e 'reported_traffic' 541efefef2c7c71d6a1373238d54842d422dbba9 -- . ':!issues/'
+EXIT=1
+
+== git grep -n -w -F -e 'reported_traffic' ab655a115 -- . ':!issues/'
+ab655a115:system/compositor/src/session.rs:159:    reported_traffic: (u64, u64),
+ab655a115:system/compositor/src/session.rs:268:            reported_traffic: screen.traffic(),
+ab655a115:system/compositor/src/session.rs:1174:        self.reported_traffic = self.screen.traffic();
+ab655a115:system/compositor/src/session.rs:1364:                (traffic.0 - self.reported_traffic.0, traffic.1 - self.reported_traffic.1),
+ab655a115:system/compositor/src/session.rs:1370:            self.reported_traffic = traffic;
+EXIT=0
+
+== git grep -n -w -F -e 'reported_composed' 541efefef2c7c71d6a1373238d54842d422dbba9 -- . ':!issues/'
+EXIT=1
+
+== git grep -n -w -F -e 'reported_composed' ab655a115 -- . ':!issues/'
+ab655a115:system/compositor/src/session.rs:160:    reported_composed: window::Traffic,
+ab655a115:system/compositor/src/session.rs:269:            reported_composed: back.surface.traffic(),
+ab655a115:system/compositor/src/session.rs:1175:        self.reported_composed = self.back.surface.traffic();
+ab655a115:system/compositor/src/session.rs:1365:                composed.since(self.reported_composed),
+ab655a115:system/compositor/src/session.rs:1371:            self.reported_composed = composed;
+EXIT=0
+
+== git grep -n -w -F -e 'Traffic' 541efefef2c7c71d6a1373238d54842d422dbba9 -- . ':!issues/'
+EXIT=1
+
+== git grep -n -w -F -e 'Traffic' ab655a115 -- . ':!issues/'
+ab655a115:sdk/window/src/framebuffer.rs:156:pub struct Traffic {
+ab655a115:sdk/window/src/framebuffer.rs:178:impl Traffic {
+ab655a115:sdk/window/src/framebuffer.rs:224:    pub fn traffic(&self) -> Traffic {
+ab655a115:sdk/window/src/framebuffer.rs:225:        Traffic {
+ab655a115:sdk/window/src/lib.rs:5:pub use framebuffer::{Color, Framebuffer, Screen, Traffic};
+ab655a115:system/compositor/src/session.rs:160:    reported_composed: window::Traffic,
+ab655a115:system/compositor/src/stats.rs:1:use window::Traffic;
+ab655a115:system/compositor/src/stats.rs:54:    pub fn report(&self, moved: (u64, u64), composed: Traffic, windows: usize) {
+EXIT=0
+
+== git grep -n -w -F -e 'pixel_reads' 541efefef2c7c71d6a1373238d54842d422dbba9 -- . ':!issues/'
+EXIT=1
+
+== git grep -n -w -F -e 'pixel_reads' ab655a115 -- . ':!issues/'
+ab655a115:sdk/window/src/framebuffer.rs:173:    pub pixel_reads: u64,
+ab655a115:sdk/window/src/framebuffer.rs:186:            pixel_reads: self.pixel_reads - earlier.pixel_reads,
+ab655a115:sdk/window/src/framebuffer.rs:201:    pixel_reads: Cell<u64>,
+ab655a115:sdk/window/src/framebuffer.rs:219:            pixel_reads: Cell::new(0),
+ab655a115:sdk/window/src/framebuffer.rs:228:            pixel_reads: self.pixel_reads.get(),
+ab655a115:sdk/window/src/framebuffer.rs:264:            self.pixel_reads.set(self.pixel_reads.get() + 1);
+EXIT=0
+
+== git grep -n -w -F -e 'bulk_reads' 541efefef2c7c71d6a1373238d54842d422dbba9 -- . ':!issues/'
+EXIT=1
+
+== git grep -n -w -F -e 'bulk_reads' ab655a115 -- . ':!issues/'
+ab655a115:sdk/window/src/framebuffer.rs:175:    pub bulk_reads: u64,
+ab655a115:sdk/window/src/framebuffer.rs:187:            bulk_reads: self.bulk_reads - earlier.bulk_reads,
+ab655a115:sdk/window/src/framebuffer.rs:202:    bulk_reads: Cell<u64>,
+ab655a115:sdk/window/src/framebuffer.rs:220:            bulk_reads: Cell::new(0),
+ab655a115:sdk/window/src/framebuffer.rs:229:            bulk_reads: self.bulk_reads.get(),
+ab655a115:sdk/window/src/framebuffer.rs:335:        self.bulk_reads
+ab655a115:sdk/window/src/framebuffer.rs:336:            .set(self.bulk_reads.get() + doubling_copies + (rows - 1) as u64);
+EXIT=0
+
+== git grep -n -w -F -e 'doubling_copies' 541efefef2c7c71d6a1373238d54842d422dbba9 -- . ':!issues/'
+EXIT=1
+
+== git grep -n -w -F -e 'doubling_copies' ab655a115 -- . ':!issues/'
+ab655a115:sdk/window/src/framebuffer.rs:317:        let doubling_copies = unsafe {
+ab655a115:sdk/window/src/framebuffer.rs:336:            .set(self.bulk_reads.get() + doubling_copies + (rows - 1) as u64);
+EXIT=0
+
+== git grep -n -F -e 'compositor: frames=' 541efefef2c7c71d6a1373238d54842d422dbba9 -- . ':!issues/'
+EXIT=1
+
+== git grep -n -F -e 'compositor: frames=' ab655a115 -- . ':!issues/'
+ab655a115:system/compositor/src/stats.rs:56:            "compositor: frames={} rects={} damage_px={} damage_px_max={} \
+ab655a115:tests/checks/qemu.rs:110:    let halted = format!("[ 0.400 cpu0 kernel] compositor: frames=120\n{KERNEL}\n");
+ab655a115:tests/checks/qemu.rs:118:    let program_died = format!("[ 0.400 cpu0 kernel] compositor: frames=120\n{USER}\n");
+EXIT=0
+
+== git grep -n -F -e 'stdout().lock().write_all(&buf[..n])' 541efefef2c7c71d6a1373238d54842d422dbba9 -- . ':!issues/'
+EXIT=1
+
+== git grep -n -F -e 'stdout().lock().write_all(&buf[..n])' ab655a115 -- . ':!issues/'
+ab655a115:system/console/src/main.rs:260:                    std::io::stdout().lock().write_all(&buf[..n]).ok();
+ab655a115:system/console/src/main.rs:272:                std::io::stdout().lock().write_all(&buf[..n]).ok();
+ab655a115:system/terminal/src/main.rs:104:                    std::io::stdout().lock().write_all(&buf[..n]).ok();
+ab655a115:system/terminal/src/main.rs:110:            std::io::stdout().lock().write_all(&buf[..n]).ok();
+ab655a115:system/terminal/src/main.rs:119:                std::io::stdout().lock().write_all(&buf[..n]).ok();
+EXIT=0
+
+== the same names under issues/ at the head: root CLAUDE.md (Prose) lets a pull request edit no issue but the one it takes up or one a rule names, so only t14-desktop-froze-at-64s.md is edited
+541efefef2c7c71d6a1373238d54842d422dbba9:issues/desktop-window-child-freeze.md:18:compositor's `compositor: frames=…` stats line, which had been arriving every
+541efefef2c7c71d6a1373238d54842d422dbba9:issues/t14-desktop-froze-at-64s.md:40:  against a resting 4–6, with `composite_us_min` at 208 µs against a resting
+541efefef2c7c71d6a1373238d54842d422dbba9:issues/tearing-is-what-gop-cannot-give-back.md:67:own `damage_px_max` while a client is driven and refuses a frame over 2% of the
+EXIT=0
