@@ -1,0 +1,186 @@
+# One boot per image. Each invocation is `cargo <words>` from this worktree.
+
+download
+  image: <scratchpad>/scout-tcp/metal/download/image.img
+  cargo run -p toyos-metal -- --image <scratchpad>/scout-tcp/metal/download/image.img --readback <scratchpad>/scout-tcp/metal/download --fat32-check
+# ---------------------------------------------------------------------------
+# THE CONNECTION-SETUP SCOUT (owner-approved investigation; plan:
+# <scratchpad>/tcp-setup/report.md). Measurement only,
+# never lands. No pull request.
+#
+# Branch   wt/toyos-scout-tcp at d26de3a19 (pushed), worktree
+#          <scratchpad>/toyos-scout-tcp. It is #861's head 443fb5d10
+#          + wt/toyos-lan-dmetal4 b9e2d36b0 (round 4's instrument, merge
+#          2c2bb03dc: the two conflicts were the deleted pacing's) + d26de3a19.
+# Gates    (scratch logs under .../scratchpad/scout-tcp/; every one at the
+#          tree committed as d26de3a19)
+#          host  `cargo run -- --ci host` EXIT=0, 73 steps green (host2.log)
+#          image `cargo run -- --build-only` EXIT=0 (build2.log)
+#          guest `cargo test --test toyos-build` EXIT=0, 62 of 62, netperf_qemu
+#                among them, which now requires every stamp kind and the LAN
+#                control's fifth connect (suite.log; a first run at 09:01 died
+#                of the full disk and is void: suite-diskfull-void.log)
+#          linux `cargo check --release --locked --offline --target
+#                x86_64-unknown-linux-gnu` of the Ubuntu project with this
+#                branch's sources EXIT=0, no warning (linuxcheck3.log). A
+#                type-check only: ring's C was compiled against stub headers
+#                (no Linux sysroot here), so the first real build is yours.
+# Image    .../scout-tcp/metal/download/image.img, 135266304 bytes,
+#          sha256 b81bc93c9c59c13cde9a51a78f3b605cbe142ee0082e62bd5f353f786c4ce318
+#          (copy: .../scout-tcp/metal/scout-tcp.img.keep, same hash). Staged by,
+#          and rebuildable from d26de3a19 with:
+#          cargo test --test toyos-build -- --metal --metal-readback \
+#            <scratchpad>/scout-tcp/metal internet_download
+#          (exit 2 = staged, as designed).
+# Row      internet_download (arm `download`, tests/images/downloadcase.toml).
+#
+# ORDER, one session, one machine, one cable:
+#   T1   one boot of the image: the `cargo run -p toyos-metal ...` invocation
+#        above, from this worktree. Then judge it, from this worktree:
+#          cargo test --test toyos-build -- --metal --metal-readback \
+#            <scratchpad>/scout-tcp/metal \
+#            internet_download > judge-1.log 2>&1
+#        (the readback in metal/download makes the same command judge). The
+#        judge prints `[download]`, `[stamp]`, `[tcp]`, `[prof]` lines, the
+#        per-MB table and then the scout's `setup:` rows.
+#   U1-U6  then Ubuntu (below), alternating the default family and IPv4 only.
+#
+# THE UBUNTU ARM (yours, same session, after T1):
+#   Project: <scratchpad>/orch/netperf3/ubuntu/proj/
+#   Cargo.toml and Cargo.lock unchanged. Copy these five files from
+#   <scratchpad>/toyos-scout-tcp/tests/guest/rust-tests/src/ into src/:
+#     netperf_linux.rs  netperf.rs  netperf_table.rs  https_client.rs  setup_table.rs
+#   (setup_table.rs is new; the other four replace the copies there.) Build:
+#     cargo build --release          # target/release/netperf-linux
+#   Run, as root (MSRs, as round 3):
+#     sudo modprobe msr
+#     resolvectl statistics > ubuntu-resolved-before.txt 2>&1   # context only: cache hits/misses, no address
+#     sudo ./target/release/netperf-linux    > ubuntu-setup-1-any.txt 2>&1; echo EXIT=$?
+#     sudo ./target/release/netperf-linux v4 > ubuntu-setup-2-v4.txt  2>&1; echo EXIT=$?
+#     sudo ./target/release/netperf-linux    > ubuntu-setup-3-any.txt 2>&1; echo EXIT=$?
+#     sudo ./target/release/netperf-linux v4 > ubuntu-setup-4-v4.txt  2>&1; echo EXIT=$?
+#     sudo ./target/release/netperf-linux    > ubuntu-setup-5-any.txt 2>&1; echo EXIT=$?
+#     sudo ./target/release/netperf-linux v4 > ubuntu-setup-6-v4.txt  2>&1; echo EXIT=$?
+#     resolvectl statistics > ubuntu-resolved-after.txt 2>&1
+#     ./target/release/netperf-linux table ubuntu-setup-*.txt > ubuntu-setup-table.txt; echo EXIT=$?
+#   Each run: the idle window, suite and benches as before, then three
+#   downloads, each said as `setup run=<n> os=linux asked=<any|v4> ...` with
+#   the connection's TCP_INFO read as TcpConnector returns it. `v4` is ureq's
+#   IpFamily::Ipv4Only (the lookup still asks both families; only the connect
+#   is IPv4). `table` renders the U rows of all six runs, by family asked.
+#
+# WHAT EACH SIDE SAYS (every stamp nanoseconds; ToyOS's all on the clock
+# page's nanos_since_boot, the claim's interrupt record's clock too):
+#   job    setup run=<n> os=toyos j0..j5= done= addrs=<count> addr=<first|same|new>
+#          family=v4   J0 call, J1/J2 either side of ureq's own DefaultResolver,
+#          J3 the connector chain entered (TcpConnector next), J4 Mark(tcp),
+#          J5 Mark(tls); addr compares the lookup's first address with the
+#          previous fetch's, never saying it.
+#          lan control i=<1..5> port=1 c0= c1= outcome=<refused|connected|timedout|error:..>
+#          five connects, 50 ms apart, to port 1 of the lease's router (read
+#          off netstack's lease line, never said), each bounded at 1 s.
+#          phase name=<probes|suite|lan_idle|lan_control|run<k>> from= to=
+#   netstack  stamp lookup|connect|setopt|data:
+#          n1 the wait that accepted the client's IPC connection returned,
+#          n2 its request read whole, n3 query/SYN (data: the ClientHello's
+#          last segment) handed to the card (TDT written), n4 the first
+#          message of the claim record the reply's pass took, n5 the reply
+#          handed to the node, n6 the answer about to be written; irqs (the
+#          record's count), idx (the reply's place in its batch), prev (when
+#          the pass before found the ring empty), lookup: sent,
+#          queries_between, first_query, replies=<k>/<m>, clean; connect:
+#          syns, reply=<synack|rst|none>, outcome; data: segs, bytes, ack_len.
+#          n4 counts as the reply's own interrupt only where irqs>=1, idx=0
+#          and n4>=prev; elsewhere wire and wake are `-` and left out.
+#
+# ROWS (ms; the judge's `setup:` block, one per fetch, then n/min/med/max):
+#   ToyOS per fetch (netstack lines paired by n1 inside the fetch's stamps):
+#     tcp = J4-J0;  tls_phase = J5-J4;  ureq = (J1-J0)+(J3-J2)
+#     lookup = J2-J1;  lookup_wire = n4-n3 of its lookup;  lookup_local =
+#       lookup - lookup_wire, split client->accepted (n1-J1), accepted->read,
+#       read->query, wake (n5-n4), reply->answer (n6-n5), answer->client (J2-n6)
+#     connect = n6c-J3;  syn_wire = n4c-n3c;  connect_local = connect -
+#       syn_wire, split the same way (client->accepted is J3->n1c: the two
+#       pipes made, the IPC connect, netstack's wake)
+#     nodelay = n6s-n6c (the set_nodelay request, from the connect's answer
+#       to its own; the two client wakes it spans cancel), split
+#       answer->accepted, accepted->read, read->answer
+#     tail = J4-n6s (the client's wake from set_nodelay, the transport's
+#       buffers, the chain's return)
+#     data_rtt = n4-n3 of the first data exchange; its ack_len says whether
+#       the acking segment was a pure ACK (0) or carried the ServerHello
+#     wake = n5-n4 of each reply; same_addr: syn_wire grouped by addr
+#     tcp = ureq + lookup + connect + nodelay + tail, exactly.
+#   ToyOS LAN control: lan_connect = c1-c0, lan_syn_wire = n4-n3, wake.
+#   ToyOS by phase: every stamped reply's wire and wake (probes, suite,
+#     lan_idle's ten lookups, lan_control, runs incl. the download-time
+#     lookups), and every own-interrupt wake: count over 50 us.
+#   Ubuntu (by asked family): U1 resolve = J2-J1, U2 connect = J4-J3
+#     (TcpConnector: connect + set_nodelay), U3 tcp = J4-J0, U4 tcpi_rtt
+#     (the handshake's RTT sample), U5 tls_phase = J5-J4, ureq; peer family.
+#
+# TRIPWIRES (any one missed voids what rests on it, and it comes back to me):
+#  E1 PASS internet_download; six `whole` lines bytes=170439044
+#     sha256=1a9ee8ca...7e7f; six `setup run=` lines. A `cut` line leaves the
+#     rows of the fetches that came.
+#  E2 each fetch's block has a lookup (clean=1, queries_between=1), a connect
+#     (reply=synack, syns=1), a nodelay and a data_rtt, none `-`; no negative
+#     row in a fetch block (a negative one is a pairing or clock fault).
+#  E3 five `lan control` lines with outcome refused (reply=rst) or connected
+#     (reply=synack). timedout = the router drops port 1: the LAN rows are
+#     void and the NIC/wake condition is unanswered, never dead.
+#  E4 Ubuntu: every setup line carries tcpi_rtt_us (no tcpi=none), peer_index=0.
+#
+# KILL CONDITIONS (the plan's, written before the run; each mapped to its row;
+# where the plan names no statistic, the median over the fetches is used, and
+# "every" means every fetch):
+#  S1 lookup. Dead if U1 (median, all 18 Ubuntu fetches) >= ToyOS lookup
+#     (median) - 1 ms, or ToyOS lookup < 2 ms. Alive if lookup_wire >= 5 ms
+#     and U1 < 1 ms; its size = lookup - U1.
+#  S2 SYN. Dead if syn_wire <= U4 (asked=v4) + 0.5 ms; alive if
+#     syn_wire >= U4 (asked=v4) + 1 ms. Then (a) SYN-only if syn_wire -
+#     data_rtt >= 1 ms, data_rtt read only from exchanges with ack_len=0
+#     (a pure ACK); (b) path if U4 (asked=v4) >= U4 (asked=any) + 1 ms;
+#     per-address warm-up if syn_wire addr=new >= syn_wire addr=same + 1 ms.
+#  S3 local IPC. Dead if `local sum (lookup+connect+nodelay)` < 0.5 ms (the
+#     per-fetch figure's median).
+#  S4 set_nodelay. Dead if nodelay < 0.1 ms; alive if >= 0.3 ms.
+#  NIC/throttle/wake dead if every own-interrupt wake of the fetch rows and
+#     the LAN control is < 50 us and every lan_syn_wire < 1 ms.
+#  rustls/pipe/data path stays dead while |tls_phase - U5| <= 1 ms (medians).
+#  Lookup rounded to ms: dead if lookup_local < 0.5 ms in every fetch.
+#  Prediction (the plan's): lookup ~7.0, lookup_wire ~6.5, connect ~15.7,
+#  syn_wire ~14.7, connect_local ~1.0, nodelay ~0.2-0.4; Ubuntu resolve < 1,
+#  connect ~12.5-13.
+#
+# WHERE THIS DEVIATES FROM THE PLAN, and why:
+#  - Round 4's instrument is dmetal4 as D ran it, merged onto 443fb5d10; the
+#    download no longer sends netstack the stretch word (443fb5d10 has no
+#    stretch: each word would be an unknown request and a log line right
+#    before each fetch). Runs are labelled run=1..6 only.
+#  - n6 is stamped as the answer is about to be written, not after: the write
+#    can hand the processor to the client it wakes, and in QEMU a stamp taken
+#    after gave a negative tail.
+#  - n4 is the record netstack's own Claim adapter takes in begin_pass (the
+#    same record; the driver crate is untouched), with idx and prev added so a
+#    reply's n4 is kept only where it is its own: QEMU showed a busy pass's
+#    first message predating the reply.
+#  - nodelay is n6s-n6c and connect is n6c-J3: no stamp exists where the
+#    client's connect returns inside TcpConnector, so its wake falls into
+#    nodelay, and set_nodelay's own wake into tail.
+#  - The QEMU check's image gives its job the `log` port, so its LAN control
+#    runs too (against QEMU's gateway).
+#  - Round 4's wire::prof::age takes its slot by a match instead of indexing,
+#    the clippy finding that stopped clippy before netstack's crates (the
+#    clock scout's one red host step); behaviour unchanged.
+#  - Ubuntu gains `table` and the resolvectl statistics (context, in no
+#    condition). Ubuntu runs no LAN control: the plan names none.
+#  Unsure: whether the router answers port 1 at all (E3); n4 assumes the
+#  I219's 131 us throttle has expired when a setup reply lands (the reply
+#  comes ms after the last interrupt). In QEMU, virtio interrupts on every
+#  finished transmit, so QEMU's wire values can go negative; the I219 masks
+#  its transmit cause except while waiting for a full ring.
+#
+# Return whole: judge-1.log, metal/download/{kernel.log,boot.txt,verdict.txt}
+# and the flash log; the six ubuntu-setup-*.txt, ubuntu-setup-table.txt, and
+# the two resolvectl files. The scout's reading is mine to do.
