@@ -1,0 +1,269 @@
+ToyOS microcode design round: the measurements its body cites.
+Taken 2026-10-12 against ToyOS origin/main 867ec23ed; every download sent
+User-Agent "toyos-build (https://github.com/ToyOSOrg/ToyOS)". Local paths are cut to file names.
+
+== 1. Upstream tags ==
+$ git ls-remote --tags https://github.com/intel/Intel-Linux-Processor-Microcode-Data-Files 'microcode-2026*'
+b24397c3611f5b0a7ccb3071df99ba596721d82b	refs/tags/microcode-20260210
+439ddde999b07b28877a60e874f753e72ec2cd59	refs/tags/microcode-20260210-rev1
+250941fb670645d7d91f761cc63656ad3a1ec367	refs/tags/microcode-20260227
+98f8d817ca3d560c48ae988bd805d1b53b48a631	refs/tags/microcode-20260512
+4b73c1f1ec867af894826718ce90d641924a4267	refs/tags/microcode-20260811
+927e65c8d5a6e4ec05cc74b1778283ab2284d0c1	refs/tags/microcode-20260812
+bdc92abe5c499c3fd7988b76a128d05c9120a520	refs/tags/microcode-20260925
+$ git ls-remote --tags https://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git  (the last six, and the two used)
+20260410
+20260519
+20260622
+20260810
+20260910
+20260916
+8bb35b3bb662d7572810f254c7f8672570409e10	refs/tags/20260810
+2135b2f7714a3a514c989b9728f51f36144cab6f	refs/tags/20260810^{}
+247f5c7b8205a287bf4c48659454fb769928f2f0	refs/tags/20260916
+ab23307cfe7f9366c819025ca3e4778299bc2db2	refs/tags/20260916^{}
+$ git ls-remote --tags https://github.com/torvalds/linux  (v7.2, the newest release tag)
+237a1c39e8dfd3e1c6f1f023eea37a48ec04cc63	refs/tags/v7.2
+8d3ae59288f1e7d58d76558a6ee96d533bc5019f	refs/tags/v7.2^{}
+$ git ls-remote https://github.com/xen-project/xen refs/heads/master
+2c40f10b9cc1864b2991612f44d2410e37d57ebe	refs/heads/master
+$ git ls-remote https://github.com/AMDESE/amd_ucode_info HEAD
+48c2920d48d685e8d9e5aa84a90eba63f2e6105a	HEAD
+
+== 2. Bytes ==
+$ shasum -a 256 (linux-firmware plain/ at each tag; Intel raw at microcode-20260925; ToyOS's committed copy)
+966e4b796ec689c618868d08f8a37f347b0e7bfce4ae9df793e08471d363b7d0  linux-firmware@20260810 microcode_amd_fam17h.bin
+966e4b796ec689c618868d08f8a37f347b0e7bfce4ae9df793e08471d363b7d0  linux-firmware@20260916 microcode_amd_fam17h.bin
+2103bd999f77522c5ab5fd35df0579ed00e2a6b885f6f8ebd444e97ffa482991  linux-firmware@20260810 LICENSE.amd-ucode
+2103bd999f77522c5ab5fd35df0579ed00e2a6b885f6f8ebd444e97ffa482991  linux-firmware@20260916 LICENSE.amd-ucode
+c614d6db8056c5c67a9189b225124127d56990a190305bcb3927d50e132de7dd  linux-firmware@20260810 microcode_amd_fam19h.bin
+c614d6db8056c5c67a9189b225124127d56990a190305bcb3927d50e132de7dd  linux-firmware@20260916 microcode_amd_fam19h.bin
+605aecca9583a3710efb482b4940fe3dd1f96b1cea19818e766f298d8ba06a5d  linux-firmware@20260810 microcode_amd_fam1ah.bin
+605aecca9583a3710efb482b4940fe3dd1f96b1cea19818e766f298d8ba06a5d  linux-firmware@20260916 microcode_amd_fam1ah.bin
+efe83e312b90f7fe4b8f75260087edf03e048d2f4f80caef2ef631c842714bb3  intel@microcode-20260925 06-8c-01
+efe83e312b90f7fe4b8f75260087edf03e048d2f4f80caef2ef631c842714bb3  toyos@867ec23ed kernel/microcode/intel-ucode/06-8c-01
+   22596 linux-firmware@20260916 microcode_amd_fam17h.bin
+$ curl .../linux-firmware.git/log/amd-ucode/microcode_amd_fam17h.bin?h=20260916  (newest entries)
+ 2024-11-21 linux-firmware: Update AMD cpu microcode John Allen 1 -0 / +0 
+ 2024-07-10 linux-firmware: Update AMD cpu microcode John Allen 1 -0 / +0 
+$ grep -A16 'RawFile: amd-ucode/microcode_amd.bin' WHENCE   (tag 20260916)
+Driver: microcode_amd - AMD CPU Microcode Update Driver for Linux
+
+RawFile: amd-ucode/microcode_amd.bin
+Version: 2013-07-10
+RawFile: amd-ucode/microcode_amd_fam15h.bin
+Version: 2018-05-24
+RawFile: amd-ucode/microcode_amd_fam16h.bin
+Version: 2014-10-28
+RawFile: amd-ucode/microcode_amd_fam17h.bin
+Version: 2024-11-21
+RawFile: amd-ucode/microcode_amd_fam19h.bin
+Version: 2025-10-27
+RawFile: amd-ucode/microcode_amd_fam1ah.bin
+Version: 2026-04-16
+File: amd-ucode/README
+
+License: Redistributable. See LICENSE.amd-ucode for details
+$ sed -n '/fam17h.bin:/,/^$/p' amd-ucode/README   (tag 20260916)
+Microcode patches in microcode_amd_fam17h.bin:
+  Family=0x17 Model=0x71 Stepping=0x00: Patch=0x08701034 Length=3200 bytes
+  Family=0x17 Model=0x01 Stepping=0x02: Patch=0x0800126f Length=3200 bytes
+  Family=0x17 Model=0x31 Stepping=0x00: Patch=0x0830107c Length=3200 bytes
+  Family=0x17 Model=0x60 Stepping=0x01: Patch=0x0860010d Length=3200 bytes
+  Family=0x17 Model=0x08 Stepping=0x02: Patch=0x0800820d Length=3200 bytes
+  Family=0x17 Model=0xa0 Stepping=0x00: Patch=0x08a0000a Length=3200 bytes
+  Family=0x17 Model=0x68 Stepping=0x01: Patch=0x08608108 Length=3200 bytes
+
+
+== 3. AMD's own container parser on the fam17h container ==
+$ python3 -I amd_ucode_info.py -v microcode_amd_fam17h.bin   (AMDESE/amd_ucode_info@48c2920d)
+Microcode patches in microcode_amd_fam17h.bin:
+  Family=0x17 Model=0x71 Stepping=0x00: Patch=0x08701034 Length=3200 bytes Start=148 bytes Date=2024-02-23 Equiv_id=0x8710
+  Family=0x17 Model=0x01 Stepping=0x02: Patch=0x0800126f Length=3200 bytes Start=3356 bytes Date=2023-12-19 Equiv_id=0x8012
+  Family=0x17 Model=0x31 Stepping=0x00: Patch=0x0830107c Length=3200 bytes Start=6564 bytes Date=2023-12-18 Equiv_id=0x8310
+  Family=0x17 Model=0x60 Stepping=0x01: Patch=0x0860010d Length=3200 bytes Start=9772 bytes Date=2024-02-23 Equiv_id=0x8601
+  Family=0x17 Model=0x08 Stepping=0x02: Patch=0x0800820d Length=3200 bytes Start=12980 bytes Date=2019-04-16 Equiv_id=0x8082
+  Family=0x17 Model=0xa0 Stepping=0x00: Patch=0x08a0000a Length=3200 bytes Start=16188 bytes Date=2024-03-04 Equiv_id=0x8a00
+  Family=0x17 Model=0x68 Stepping=0x01: Patch=0x08608108 Length=3200 bytes Start=19396 bytes Date=2024-02-23 Equiv_id=0x8681
+
+== 4. Every patch's SHA-256, over the bytes AMD's parser names, against Linux v7.2 amd_shas.c and Xen master amd-patch-digests.c ==
+$ dd if=microcode_amd_fam17h.bin bs=1 skip=<Start> count=3200 | shasum -a 256   (then each record's row for that patch ID)
+patch 0x08701034 start 148: c31409a89c3f8d839b4ca5b7648b915d856a39261e1441a875eaa6f9c9d1ea2b linux-v7.2 same xen same
+patch 0x0800126f start 3356: 2b5af29cddd27fecec960957b096298b2e2691f049334218dd4b655ad4153d33 linux-v7.2 same xen same
+patch 0x0830107c start 6564: 2164defb9f689647705ce28f18526aaca4d22ee0de6866c3eb1ed33fbc511d38 linux-v7.2 same xen same
+patch 0x0860010d start 9772: 86b61583bc3b9ce0b3ef1d99843515f77c2ac642db73075c7dc302b543065ef8 linux-v7.2 same xen same
+patch 0x0800820d start 12980: 689883cd220ddd59732c5b371f840e679643830c4644ab7c7b659e57b5904b0e linux-v7.2 same xen same
+patch 0x08a0000a start 16188: 73312622d4f9ee3c0706e7b9add872443331aa7dc3670edb47b5aabcf5bbd920 linux-v7.2 same xen same
+patch 0x08608108 start 19396: 14fe578649c868e211a3cb6eff6ed538fe891ae067bfc4cc1b9f84772b9faabd linux-v7.2 same xen same
+$ sed -n 80,86p arch/x86/kernel/cpu/microcode/amd_shas.c   (v7.2)
+ { 0x860010d, {
+		0x86,0xb6,0x15,0x83,0xbc,0x3b,0x9c,0xe0,
+		0xb3,0xef,0x1d,0x99,0x84,0x35,0x15,0xf7,
+		0x7c,0x2a,0xc6,0x42,0xdb,0x73,0x07,0x5c,
+		0x7d,0xc3,0x02,0xb5,0x43,0x06,0x5e,0xf8,
+	}
+ },
+
+== 5. The sources read, by digest ==
+4b8bc1e355b2d650958c2468d1bc24cea3a5770c5e32f1a47760f4fd532eb0ec  linux@v7.2 amd.c
+98af9ffb8a6e39e9dc37c86028a88853a75b74f229bcb1dabf84b72f6700a156  linux@v7.2 amd_shas.c
+65a19fd15a81e3ce719041a795b5aab35112804910cd259b24a97d82716cf692  linux@v7.2 intel.c
+c31115445fd010b76250a3279af78a9bb21c6d0c8759151991ffb0459fad7795  linux@v7.2 core.c
+4d2ceefb13948fe8c692841a8a678a5edb08e92146a817779d3c8cf8faf5469d  linux@v7.2 init.c
+9a50f905936e092fbfd9c6135c9d15d75bb9610d8922473bfa7003e6a4050dd7  linux@v7.2 head64.c
+a1f797228fd69240a3fae13e69a400bf1fd331f1608a850a0a2cd5e9be14d9fc  linux@v7.2 smpboot.c
+f274c198d213548e70aa1852b0a5d00f079fc40fbc3cb2743406986f074c5d75  linux@v7.2 microcode.h
+6ba33f3d1919b44452c118ea3318d2520ef4777bb8ca62d63d93eaeed542a572  xen@2c40f10b amd.c
+41f93ae1611623ff01eb02b9361d0efb0b8fbc001abd2c1e8d6713c66246fea9  xen@2c40f10b amd-patch-digests.c
+77919be320f35da2782771ef2cb65a868cf68e62c8f8279f2ca61199cb70d1f8  Intel SDM Vol. 3A 325384-093US (cdrdv2.intel.com getContent/671447)
+2282ca1bcefe79e5f2ecec84e2fab5f3b3637c45167e0cc5b3b58199366c5dc8  APM Vol. 2 r3.45, kib.kiev.ua x86docs mirror 24593_APM_v2-r3.45.pdf
+
+== 6. Does AMD's APM document the patch loader? ==
+$ (text of 24593 r3.45) | grep -n -i 'microcode\|patch level\|patch loader\|C001_0020\|0000_008B'
+21553:LWPCB that are made by microcode during the normal operation of LWP ignore the DS segment 
+22539:• Internal ROMs, such as the microcode ROM and floating-point constant ROM.
+(two hits, neither about loading a patch: the APM does not document MSR C001_0020 or MSR 8B's patch level)
+$ curl https://www.amd.com/content/dam/amd/en/documents/processor-tech-docs/programmer-references/55922-A1-PUB.zip  (55922: a guess at the number of the PPR for Family 17h Model 60h; 24593.pdf too)
+curl: (92) HTTP/2 stream 1 was not closed cleanly: INTERNAL_ERROR (err 2)   -- over HTTP/1.1 the request stalled and was stopped
+
+== 7. QEMU can stage a CPU signature and a revision under TCG ==
+$ qemu-system-x86_64 --version; qemu-system-x86_64 -device max-x86_64-cpu,help | grep ...
+QEMU emulator version 11.1.1
+  family=<int>
+  hypervisor=<bool>
+  invpcid=<bool>
+  model=<int>
+  pcid=<bool>
+  stepping=<int>
+  ucode-rev=<uint64>     -  (default: 0)
+  vendor=<string>
+
+== 8. Intel's microcode update guidance, the sentences the design rests on ==
+$ curl https://www.intel.com/content/www/us/en/developer/articles/technical/software-security-guidance/best-practices/microcode-update-guidance.html | (tags stripped) | grep
+860:The operating system (OS) should check if it has a more recent microcode update (higher update revision) than the version applied by the BIOS. If it does, the OS should load that microcode update shortly after BIOS hands off control to the OS. This microcode update load point is called the early OS microcode update. This can be done by an early boot software layer such as a Unified Extensible Firmware Interface (UEFI) driver, a bootloader, the operating system, or any other software layer provided by the operating system (like early startup scripts). The early OS microcode update should be done on each core as early as possible in the OS boot sequence, before any CPUID feature flags or other enumeration values are cached by the OS software. It is also required to be loaded before any user-space applications or virtual machines are launched. This is necessary so that the update is loaded before the affected microcode is ever used, enabling any relevant mitigations for potential vulnerabilities as early as possible.
+874:Loading an update on one logical processor also loads the same update on all other logical processors in the same core (all of the sibling hyperthreads). For some processors, loading an update on one logical processor may also load the same update on logical processors on other physical cores. This may differ based on different configurations.
+875:If software attempts to load an update with the same update revision as what is currently loaded, the CPU may or may not reload the update. Software can check the revision of the currently loaded update by executing the CPUID instruction and reading IA32_BIOS_SIGN_ID (MSR 8BH) to avoid reloading the same update unnecessarily.
+
+== 9. Why family 0x17 invalidates the patch's translation (lore.kernel.org, thread ZyulbYuvrkshfsd2@antipodes) ==
+We found it in Xen in 2019, and were instructed by AMD to insert a TLB
+flush immediately after patchloading.
+Looking at Linux, there's no such workaround.
+It turns out that a side effect of patchloading on some CPUs leaves the
+mapping of the blob in the TLB (at whatever granularity) as fully UC. 
+When this happens to be a 2M/1G superpage, it causes whole lot of perf
+problems in unrelated areas.
+> +	if (x86_family(bsp_cpuid_1_eax) == 0x17)
+> +		invlpg((u64)(long)&mc->hdr.data_code);
+Ok, so it's Fam17h specific.  That's good to know.  Any formal statement
+on the matter from AMD ?
+However, these blobs are 3200 bytes long and come with a good chance of
+crossing a page boundary.   If you're invlpg'ing, you need to issue a
+second one for the final byte of the image too.
+~Andrew
+
+== 10. Linux's commits behind the AMD rules (gh api repos/torvalds/linux/commits/<sha>) ==
+c809b0d0e52d01c30066367b2952c4c4186b1047
+x86/microcode/AMD: Flush patch buffer mapping after application
+
+Due to specific requirements while applying microcode patches on Zen1
+and 2, the patch buffer mapping needs to be flushed from the TLB after
+application. Do so.
+
+If not, unnecessary and unnatural delays happen in the boot process.
+
+Reported-by: Thomas De Schampheleire <address masked>
+Signed-off-by: Borislav Petkov (AMD) <address masked>
+Tested-by: Thomas De Schampheleire <address masked>
+Cc: <address masked> # f1d84b59cbb9 ("x86/mm: Carve out INVLPG inline asm for use by others")
+Link: https://lore.kernel.org/r/ZyulbYuvrkshfsd2@antipodes
+94838d230a6c835ced1bad06b8759e0a5f19c1d3
+x86/microcode/AMD: Use the family,model,stepping encoded in the patch ID
+
+On Zen and newer, the family, model and stepping is part of the
+microcode patch ID so that the equivalence table the driver has been
+using, is not needed anymore.
+
+So switch the driver to use that from now on.
+
+The equivalence table in the microcode blob should still remain in case
+there's need to pass some additional information to the kernel loader.
+
+Signed-off-by: Borislav Petkov (AMD) <address masked>
+Link: https://lore.kernel.org/r/20240725112037.GBZqI1BbUk1KMlOJ_D@fat_crate.local
+e7ad18d1169c62e6c78c01ff693fd362d9d65278
+x86/microcode/AMD: Apply the patch early on every logical thread
+
+Currently, the patch application logic checks whether the revision
+needs to be applied on each logical CPU (SMT thread). Therefore, on SMT
+designs where the microcode engine is shared between the two threads,
+the application happens only on one of them as that is enough to update
+the shared microcode engine.
+
+However, there are microcode patches which do per-thread modification,
+see Link tag below.
+
+Therefore, drop the revision check and try applying on each thread. This
+is what the BIOS does too so this method is very much tested.
+
+Btw, change only the early paths. On the late loading paths, there's no
+point in doing per-thread modification because if is it some case like
+in the bugzilla below - removing a CPUID flag - the kernel cannot go and
+un-use features it has detected are there early. For that, one should
+use early loading anyway.
+
+  [ bp: Fixes does not contain the oldest commit which did check for
+    equality but that is good enough. ]
+
+Fixes: 8801b3fcb574 ("x86/microcode/AMD: Rework container parsing")
+Reported-by:  Ștefan Talpalaru <address masked>
+Signed-off-by: Borislav Petkov <address masked>
+Tested-by:  Ștefan Talpalaru <address masked>
+Cc: <address masked>
+Link: https://bugzilla.kernel.org/show_bug.cgi?id=216211
+
+== 11. AMD's parser at debug verbosity: every fam17h patch's checksum/min-rev word and chipset ids are zero ==
+$ python3 -I amd_ucode_info.py -vv microcode_amd_fam17h.bin | grep -v 'equiv entry'
+Microcode patches in microcode_amd_fam17h.bin:
+  Family=0x17 Model=0x71 Stepping=0x00: Patch=0x08701034 Length=3200 bytes Start=148 bytes Date=2024-02-23 Equiv_id=0x8710
+   [data_code=0x02232024, mc_patch_data_id=0x8004, mc_patch_data_len=0x00, init_flag=0x00, mc_patch_data_checksum=0x00000000]
+   [nb_dev_id=0x00000000, sb_dev_id=0x00000000, nb_rev_id=0x00, sb_rev_id=0x00, bios_api_rev=0x00, reserved=[0x00, 0x00, 0x00]]
+   [match_reg=[0x6b2ffc43, 0x57d654ea, 0x99f5b697, 0x3e51a0af, 0xdd840edc, 0x38757d94, 0xb351a8ec, 0x3b9a589c]]
+  Family=0x17 Model=0x01 Stepping=0x02: Patch=0x0800126f Length=3200 bytes Start=3356 bytes Date=2023-12-19 Equiv_id=0x8012
+   [data_code=0x12192023, mc_patch_data_id=0x8004, mc_patch_data_len=0x00, init_flag=0x00, mc_patch_data_checksum=0x00000000]
+   [nb_dev_id=0x00000000, sb_dev_id=0x00000000, nb_rev_id=0x00, sb_rev_id=0x00, bios_api_rev=0x00, reserved=[0x00, 0x00, 0x00]]
+   [match_reg=[0xbcf8c37b, 0x5103e036, 0xbcc22472, 0x711dd230, 0xf302abc7, 0x6b714d2d, 0xac72abdd, 0x47708f56]]
+  Family=0x17 Model=0x31 Stepping=0x00: Patch=0x0830107c Length=3200 bytes Start=6564 bytes Date=2023-12-18 Equiv_id=0x8310
+   [data_code=0x12182023, mc_patch_data_id=0x8004, mc_patch_data_len=0x00, init_flag=0x00, mc_patch_data_checksum=0x00000000]
+   [nb_dev_id=0x00000000, sb_dev_id=0x00000000, nb_rev_id=0x00, sb_rev_id=0x00, bios_api_rev=0x00, reserved=[0x00, 0x00, 0x00]]
+   [match_reg=[0xaf03db7a, 0x93bd224b, 0xa85bcb0b, 0x7c8d6def, 0xfcd1a208, 0x70ba3f08, 0xacd3ee5c, 0xa4199122]]
+  Family=0x17 Model=0x60 Stepping=0x01: Patch=0x0860010d Length=3200 bytes Start=9772 bytes Date=2024-02-23 Equiv_id=0x8601
+   [data_code=0x02232024, mc_patch_data_id=0x8004, mc_patch_data_len=0x00, init_flag=0x00, mc_patch_data_checksum=0x00000000]
+   [nb_dev_id=0x00000000, sb_dev_id=0x00000000, nb_rev_id=0x00, sb_rev_id=0x00, bios_api_rev=0x00, reserved=[0x00, 0x00, 0x00]]
+   [match_reg=[0xcf34fa3a, 0xbe711ca4, 0x65d98136, 0xf21ee9ec, 0x88d0bc2d, 0x74700429, 0xb92b445a, 0xeba85dae]]
+  Family=0x17 Model=0x08 Stepping=0x02: Patch=0x0800820d Length=3200 bytes Start=12980 bytes Date=2019-04-16 Equiv_id=0x8082
+   [data_code=0x04162019, mc_patch_data_id=0x8004, mc_patch_data_len=0x00, init_flag=0x00, mc_patch_data_checksum=0x00000000]
+   [nb_dev_id=0x00000000, sb_dev_id=0x00000000, nb_rev_id=0x00, sb_rev_id=0x00, bios_api_rev=0x00, reserved=[0x00, 0x00, 0x00]]
+   [match_reg=[0x7607585b, 0xe0e7971e, 0x6f2e1515, 0xb5d7e5cc, 0x23b99290, 0xeddeaed6, 0x07da027f, 0x8b49414e]]
+  Family=0x17 Model=0xa0 Stepping=0x00: Patch=0x08a0000a Length=3200 bytes Start=16188 bytes Date=2024-03-04 Equiv_id=0x8a00
+   [data_code=0x03042024, mc_patch_data_id=0x8004, mc_patch_data_len=0x00, init_flag=0x00, mc_patch_data_checksum=0x00000000]
+   [nb_dev_id=0x00000000, sb_dev_id=0x00000000, nb_rev_id=0x00, sb_rev_id=0x00, bios_api_rev=0x00, reserved=[0x00, 0x00, 0x00]]
+   [match_reg=[0x2a233550, 0xb9c8f9aa, 0x7bac4762, 0x94740280, 0x51485619, 0x5784bdb0, 0xb5645028, 0xf30edfd9]]
+  Family=0x17 Model=0x68 Stepping=0x01: Patch=0x08608108 Length=3200 bytes Start=19396 bytes Date=2024-02-23 Equiv_id=0x8681
+   [data_code=0x02232024, mc_patch_data_id=0x8004, mc_patch_data_len=0x00, init_flag=0x00, mc_patch_data_checksum=0x00000000]
+   [nb_dev_id=0x00000000, sb_dev_id=0x00000000, nb_rev_id=0x00, sb_rev_id=0x00, bios_api_rev=0x00, reserved=[0x00, 0x00, 0x00]]
+   [match_reg=[0xf2f6ca6b, 0x960394af, 0xaa095ca1, 0x910ea701, 0xdc373756, 0x617332c0, 0x0d4c3c16, 0x1958ccc0]]
+
+== 12. The TCG guest CPU the suite boots sets CPUID.01H:ECX[31] ==
+$ (qmp_capabilities; qom-get /machine/unattached/device[0] hypervisor, vendor, family, model, stepping, ucode-rev; quit) |
+  qemu-system-x86_64 -nodefaults -accel tcg -machine q35 -cpu qemu64,+rdrand,+smap,+fsgsbase,+x2apic,+smep -S -display none -qmp stdio
+(-S: the CPU never runs; the -cpu string is build/arch.rs's TCG one)
+{"QMP": {"version": {"qemu": {"micro": 1, "minor": 1, "major": 11}, "package": ""}, "capabilities": ["oob"]}}
+{"return": {}}
+{"return": true}
+{"return": "AuthenticAMD"}
+{"return": 15}
+{"return": 107}
+{"return": 1}
+{"return": 16777317}
+{"return": {}}
+(16777317 = 0x01000065)
