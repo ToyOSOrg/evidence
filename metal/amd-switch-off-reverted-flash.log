@@ -1,0 +1,106 @@
+64b3b411ade89c9b363e12a687449fc6a384157071392b678b487e5192c6c54f  <scratchpad>
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.21s
+     Running `target/debug/toyos-metal --image <scratchpad> --readback <scratchpad> --fat32-check --host '<user>@<amd-bench>'`
+image <scratchpad> 121634816 bytes, ESP p1 at 2048+69632, log p3 at 73728+69632
+image <scratchpad> armed with ["pci-cap-selftest", "revoked-backing-selftest", "leak-rollback-selftest", "lapic-spurious-selftest", "unclaimed-vector-selftest", "xhci-xecp-selftest", "xhci-descriptor-selftest", "sysret-ss-probe", "test-input-merge", "sched-operation-nesting", "iommu-firmware-left", "boot-deadline=120000"], so it is waited 420 s to come back
+machine <vendor> <model>, BIOS <bios>
+disk /dev/sda: 240328704 sectors, USB SanDisk 3.2Gen1, removable — the stick <home> names
+  run: sudo -n '/usr/sbin/wipefs' '--all' '/dev/sda'
+  run: sudo -n '/usr/bin/dd' 'of=/dev/sda' 'bs=4M' 'conv=fsync'
+  run: sudo -n '/usr/bin/efibootmgr' '--delete-bootnum' '--bootnum' '0002'
+  run: sudo -n '/usr/bin/efibootmgr' '--create-only' '--disk' '/dev/sda' '--part' '1' '--label' 'ToyOS' '--loader' '\EFI\BOOT\BOOTX64.EFI'
+  run: sudo -n '/usr/bin/efibootmgr' '--bootnext' '0002'
+  run: sudo -n '/usr/sbin/reboot'
+the machine answered ssh again after 51 s
+the boot stick enumerated 0 s after the machine answered
+  run: sudo -n '/usr/bin/mount' '-o' 'ro' '/dev/sda3' '<path>
+  run: sudo -n '/usr/bin/umount' '<path>
+[--.--- cpu0 loader] ToyOS Bootloader 1.0
+[--.--- cpu0 loader] Loader clock: this CPU states no counter rate, so no line carries the time it was said
+[--.--- cpu0 loader] Boot attempts: this image has had the machine 0 time(s) without reporting; now 1
+[--.--- cpu0 loader] Anti-rollback floor: ToyOSImageFloor-Iafa6787ce683cefc (image scope) holds 0
+[--.--- cpu0 loader] Firmware watchdog: 60 s, until ExitBootServices disables it
+[--.--- cpu0 loader] RSDP address: 0xcdffe014
+[--.--- cpu0 loader] Boot partition: LBA 2048+69632 signature [33, d9, 76, ea, cb, 7c, f5, 42, 94, 46, 0a, 83, 84, 87, 37, 4a]
+[--.--- cpu0 loader] Log partition: signature [4e, 7c, 55, c5, 4c, 85, 93, 44, 96, d0, 0c, 8e, b1, 50, 04, 5d]
+[--.--- cpu0 loader] Slots: the table marks A (sequence 1); slot A present, slot B absent; the floor is 0
+[--.--- cpu0 loader] Slot A: signed header 63bbca51299aab8201cc5c3645ffedce8bb34e96007fd5c4dc8981800b950413 verifies under this loader's key, version 1791813231
+[--.--- cpu0 loader] ROOT: read into memory at 0xb404d000+0xb00000 from LBA 212992+22528, 1048576 bytes a request (optimal granularity: not reported), in 758496654 counter ticks
+[--.--- cpu0 loader] Slot A: ROOT hashed in 9777366 counter ticks
+[--.--- cpu0 loader] Slot A: kernel, cmdline and ROOT are the bytes the signed header names
+[--.--- cpu0 loader] Boot attempts: slot A's image is written down as the one this pass boots
+[--.--- cpu0 loader] Kernel: 2795184 bytes
+[--.--- cpu0 loader] Boot parameter: "root=7aabfb6838fe484a4def3e7e9407e1f8,pci-cap-selftest,revoked-backing-selftest,leak-rollback-selftest,lapic-spurious-selftest,unclaimed-vector-selftest,xhci-xecp-selftest,xhci-descriptor-selftest,sysret-ss-probe,test-input-merge,sched-operation-nesting,iommu-firmware-left,boot-deadline=120000,boot-slot=A,blackbox=0x8000000"
+[--.--- cpu0 loader] Loading kernel elf...
+[--.--- cpu0 loader] Kernel stack size: 8388608
+[--.--- cpu0 loader] Kernel memory size: 14012416
+[--.--- cpu0 loader] Kernel memory located at: 0xb3200000
+[--.--- cpu0 loader] Loading segment: Segment { image: ImageRange { start: 0, len: 571052 }, filesz: 571052, file_offset: 0, flags: SegmentFlags(4) }
+[--.--- cpu0 loader] Loading segment: Segment { image: ImageRange { start: 575152, len: 1403837 }, filesz: 1403837, file_offset: 571056, flags: SegmentFlags(5) }
+[--.--- cpu0 loader] Loading segment: Segment { image: ImageRange { start: 1983088, len: 81296 }, filesz: 81224, file_offset: 1974896, flags: SegmentFlags(6) }
+[--.--- cpu0 loader] Loading segment: Segment { image: ImageRange { start: 2068408, len: 3553296 }, filesz: 27568, file_offset: 2056120, flags: SegmentFlags(6) }
+[--.--- cpu0 loader] Applied 4024 relocations
+[--.--- cpu0 loader] GOP: mode 1920x1080 stride=1920 format=1 fb=0xfc90000000 size=8294400
+[--.--- cpu0 loader] Wall clock: firmware's GetTime reads 2026-10-12 10:06:26 UTC at counter 10677225582
+[--.--- cpu0 loader] Black box: 0x8000000 armed at 2026-10-12-100626 for [4e, 7c, 55, c5, 4c, 85, 93, 44, 96, d0, 0c, 8e, b1, 50, 04, 5d], and the kernel is told so on its parameter line
+[--.--- cpu0 loader] Boot chain: BootNext=0002, so this loader gets the machine back
+[--.--- cpu0 loader] Starting kernel...
+[--.--- cpu0 loader] GCD: 0xd0700000+0x27900000 mmio cap=0xc000000000022000 attr=0x0 free
+[--.--- cpu0 loader] GCD: 0xfc000000+0x1c00000 mmio cap=0xc000000000022000 attr=0x0 free
+[--.--- cpu0 loader] GCD: 0xff000000+0xeab000 mmio cap=0xc300000000022001 attr=0x8000000000000001 free
+[--.--- cpu0 loader] GCD: 0x450200000+0xf83fe00000 mmio cap=0xc000000000022000 attr=0x0 free
+[--.--- cpu0 loader] GCD: 0xfca0200000+0xfe00000 mmio cap=0xc000000000022000 attr=0x0 free
+[--.--- cpu0 loader] GCD: 70 descriptor(s); 5 free mmio range(s) of 0x200000 bytes or more handed to the kernel, 0 past its room
+[--.--- cpu0 loader] Scanout: 0xfc90000000+0x800000 mapped as the scanout in 2 MiB pages at identity and at PHYS_OFFSET, in 6 page directories under 2 second-level tables
+[--.--- cpu0 loader] Loader image: 0x140000000+0x4d000, mapped at identity as 0x140000000+0x200000
+[--.--- cpu0 loader] Boot map: root 0xb6719000, 0x100000000 bytes at identity and at PHYS_OFFSET
+[--.--- cpu0 loader] Kernel image: 0xb3200000+0xd5d000 is inside the 0x100000000-byte boot map
+[--.--- cpu0 loader] Parameter buffer: 0xb672ad98+0x145 is inside the 0x100000000-byte boot map
+[--.--- cpu0 loader] Seed: 32 bytes from EFI_RNG_PROTOCOL for the kernel's generator
+[--.--- cpu0 loader] Kernel arguments: 0xb88ec198+0x538 is inside the 0x100000000-byte boot map
+[--.--- cpu0 loader] Loader counter: 8256477996 at entry, 12075934320 at the handoff
+[--.--- cpu0 loader] Loader log: the kernel handoff begins, so this file ends here
+[--.--- cpu0 loader] --- the pass after the reset, reading what the boot above left
+[--.--- cpu0 loader] ToyOS Bootloader 1.0
+[--.--- cpu0 loader] Loader clock: this CPU states no counter rate, so no line carries the time it was said
+[--.--- cpu0 loader] Boot attempts: this image has had the machine 1 time(s) without reporting; now 0
+[--.--- cpu0 loader] Anti-rollback floor: ToyOSImageFloor-Iafa6787ce683cefc (image scope) holds 0
+[--.--- cpu0 loader] Slot A: signed header 63bbca51299aab8201cc5c3645ffedce8bb34e96007fd5c4dc8981800b950413 verifies under this loader's key, version 1791813231
+[--.--- cpu0 loader] Anti-rollback floor: 1791813231, raised from 0 by the boot that proved it
+[--.--- cpu0 loader] Black box: the record below is from the boot armed at 2026-10-12-100626
+[--.--- cpu0 loader] Black box: the last boot read DONE, so it handed the machine back on purpose and this chain ends here
+[--.--- cpu0 loader] | log: this boot's newest records follow, newest first
+[--.--- cpu0 loader] | log-tail: [20.919 cpu0 kernel] Rebooting.
+[--.--- cpu0 loader] | log-tail: [20.919 cpu0 kernel] stop: 19 of 19 userland thread(s) stopped across 8 cpu(s) in 0 ms of a 2010 ms budget over 2 sweep(s), 0 of 0 userland block operation(s) still open
+[--.--- cpu0 loader] | log-tail: [20.919 cpu0 kernel] panel: paints=9 px=8010496 us=9188 max_us=3084
+[--.--- cpu0 loader] | log-tail: [20.919 cpu0 kernel] irq: unclaimed vectors 0x30 no-isr=0
+[--.--- cpu0 loader] | log-tail: [20.919 cpu0 kernel] tlb: shootdowns=33 wait=689us max=194us dlopen=0 pcid=0 mmio=0 unmap=33 pipe=0 staged=0 bench=0 stop=0
+[--.--- cpu0 loader] | log-tail: [20.919 cpu0 kernel] irq: cpu7 timer=0 kick=8 xhci=0 userdev=0 i8042=0 dmafault=0 hda=0 tlb=31 nmi=0 spurious=0 unclaimed=0
+[--.--- cpu0 loader] | log-tail: [20.919 cpu0 kernel] irq: cpu6 timer=0 kick=6 xhci=0 userdev=0 i8042=0 dmafault=0 hda=0 tlb=32 nmi=0 spurious=0 unclaimed=0
+[--.--- cpu0 loader] | log-tail: [20.919 cpu1 kernel] console: klogd let the wire go to the stop
+[--.--- cpu0 loader] | log-tail: [20.919 cpu0 kernel] irq: cpu5 timer=0 kick=20 xhci=0 userdev=0 i8042=0 dmafault=0 hda=0 tlb=31 nmi=0 spurious=0 unclaimed=0
+[--.--- cpu0 loader] | log-tail: [20.919 cpu0 kernel] irq: cpu4 timer=0 kick=4 xhci=0 userdev=0 i8042=0 dmafault=0 hda=0 tlb=33 nmi=0 spurious=0 unclaimed=0
+[--.--- cpu0 loader] | log-tail: [20.919 cpu0 kernel] irq: cpu3 timer=0 kick=15 xhci=0 userdev=0 i8042=0 dmafault=0 hda=0 tlb=32 nmi=0 spurious=0 unclaimed=0
+[--.--- cpu0 loader] | log-tail: [20.919 cpu0 kernel] irq: cpu2 timer=0 kick=22 xhci=0 userdev=0 i8042=0 dmafault=0 hda=0 tlb=17 nmi=0 spurious=0 unclaimed=0
+[--.--- cpu0 loader] | log-tail: [20.919 cpu0 kernel] irq: cpu1 timer=1 kick=16 xhci=0 userdev=0 i8042=0 dmafault=0 hda=0 tlb=30 nmi=0 spurious=0 unclaimed=0
+[--.--- cpu0 loader] | log-tail: [20.919 cpu0 kernel] irq: cpu0 timer=4 kick=10 xhci=0 userdev=0 i8042=0 dmafault=0 hda=0 tlb=24 nmi=0 spurious=1 unclaimed=1
+[--.--- cpu0 loader] | usb-recovery: the log ring holds no transport break
+[--.--- cpu0 loader] | usb-quiesce: the controller lock was held from before the log volume's last durable byte, so no transfer was in flight
+[--.--- cpu0 loader] | usb-quiesce: no Bulk-Only command was open, so this reset cuts none
+[--.--- cpu0 loader] | usb-quiesce: xHCI 03:00.3 2/2 connected port(s) reset
+[--.--- cpu0 loader] | usb-quiesce: xHCI 03:00.3 halted=true USBSTS=0x00000015
+[--.--- cpu0 loader] | usb-quiesce: xHCI 03:00.3 reset=true ready=true
+[--.--- cpu0 loader] | usb-quiesce: xHCI 03:00.3 6/6 port(s) unpowered
+[--.--- cpu0 loader] | usb-quiesce: xHCI 03:00.3 bus mastering off
+[--.--- cpu0 loader] | usb-quiesce: xHCI 03:00.4 1/1 connected port(s) reset
+[--.--- cpu0 loader] | usb-quiesce: xHCI 03:00.4 halted=true USBSTS=0x00000015
+[--.--- cpu0 loader] | usb-quiesce: xHCI 03:00.4 reset=true ready=true
+[--.--- cpu0 loader] | usb-quiesce: xHCI 03:00.4 6/6 port(s) unpowered
+[--.--- cpu0 loader] | usb-quiesce: xHCI 03:00.4 bus mastering off
+[--.--- cpu0 loader] | usb-quiesce: 0/0 disk cache(s) flushed, 0 with no cache to flush, 3/3 connected port(s) reset, 2/2 controller(s) halted, 2 reset, 12/12 port(s) unpowered
+[--.--- cpu0 loader] Loader log: the last boot is accounted for, so this pass resets the machine
+  run: sudo -n '/usr/bin/dd' 'if=/dev/sda3' 'bs=4M'  (69632 sectors)
+toyos-fat32-check: the log partition's 35651584 bytes check out
+phases: preamble 1.7 s, wipe 0.7 s, flash 15.4 s (dd 12.8 s), entry 3.5 s, down 11.0 s, read_log 1.7 s, raw_log 6.3 s
+readback written to <scratchpad>
+14:07:27 toyos-metal: the log partition came back and the log carries no `Boot: complete (Nms)` record
