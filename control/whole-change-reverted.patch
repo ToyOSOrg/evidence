@@ -1,0 +1,1832 @@
+diff --git a/Cargo.lock b/Cargo.lock
+index 53f8161a3..8e7c4dc16 100644
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@ -1675,15 +1675,6 @@ dependencies = [
+  "cc",
+ ]
+ 
+-[[package]]
+-name = "iced-x86"
+-version = "1.21.0"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "7c447cff8c7f384a7d4f741cfcff32f75f3ad02b406432e8d6c878d56b1edf6b"
+-dependencies = [
+- "lazy_static",
+-]
+-
+ [[package]]
+ name = "id-arena"
+ version = "2.3.0"
+@@ -4277,7 +4268,6 @@ dependencies = [
+  "fontdue",
+  "getrandom 0.3.4",
+  "gpt",
+- "iced-x86",
+  "kernel",
+  "libc",
+  "libm",
+diff --git a/Cargo.toml b/Cargo.toml
+index 2a017c151..8e5f0d324 100644
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -191,13 +191,6 @@ toyos-abi = { path = "sdk/abi" }
+ # segments, and its symbol table where the kernel's own backtrace finds it.
+ toyos-elf = { path = "lib/elf" }
+ toyos-symbols = { path = "lib/symbols" }
+-# What `build::fpgate` decodes the linked x86-64 kernel with, to refuse an
+-# instruction that touches the user FP or vector state outside `arch::fpu`:
+-# rustc refuses no instruction written as `asm!` text, so only the image says.
+-# A general, widely used x86 decoder in Rust alone, with the CPUID feature and
+-# register-use tables the refusal needs; the only other decoder at hand,
+-# `llvm-objdump`, is a C++ tool where a Rust one does the job.
+-iced-x86 = { version = "1.21", default-features = false, features = ["std", "decoder", "instr_info"] }
+ toyos-fat32 = { path = "lib/fat32" }
+ # The two readers `image::certify` judges every published image with. They are
+ # dependencies of the build rather than of its tests because a flash target is
+diff --git a/build/build.rs b/build/build.rs
+index 0f70c1ab0..c0c00a193 100644
+--- a/build/build.rs
++++ b/build/build.rs
+@@ -508,37 +508,56 @@ fn stage_artifact(root: &Path, built: &Path, stem: &str, key: u64) -> PathBuf {
+ /// with them off.
+ const OVERFLOW_CHECK_MARKER: &[u8] = b"attempt to add with overflow";
+ 
+-/// Refuse to build an AArch64 kernel whose target has FP/SIMD.
++/// Refuse to build a kernel whose target has hardware float.
+ ///
+-/// A thread's FP/SIMD state stays in the registers across every entry from
+-/// EL0 and is saved only at a switch (`kernel/src/arch/aarch64/fpu.rs`), which
+-/// is sound only because kernel code cannot disturb it. That rests on the
+-/// target spec, `aarch64_unknown_none_softfloat.rs`'s `-fp-armv8,-neon`, and an
+-/// edit turning it off would corrupt every thread without changing a byte of
+-/// `kernel/`. x86-64's kernel is judged by its instructions instead
+-/// (`crate::fpgate`).
++/// The kernel's entry saves the user machine state at the ring transition and
++/// nowhere else, which is sound only because kernel code cannot disturb it:
++/// the FP/SIMD registers may be left dirty for a whole kernel excursion because
++/// nothing in the kernel reads or writes them. That rests on the target spec —
++/// `RustcAbi::Softfloat` and `+soft-float` in
++/// `rust/compiler/rustc_target/src/spec/targets/x86_64_unknown_none.rs`, and
++/// `aarch64_unknown_none_softfloat.rs`'s `-fp-armv8,-neon` — and an edit
++/// turning it off would make every bracket in the kernel insufficient without
++/// changing a byte of `kernel/`.
+ ///
+-/// Asked of the compiler rather than of the manifest, and once per process: it
+-/// is a property of the toolchain rather than of any one image.
+-fn assert_aarch64_kernel_is_softfloat(env: &GuestEnv) {
+-    static CHECKED: std::sync::OnceLock<()> = std::sync::OnceLock::new();
+-    CHECKED.get_or_init(|| {
+-        let out = Command::new("rustc")
+-            .args(["--print", "cfg", "--target", Arch::Aarch64.kernel()])
+-            .env("RUSTUP_TOOLCHAIN", env.sysroot.dir())
+-            .env_remove("RUSTFLAGS")
+-            .env_remove("RUSTC")
+-            .output()
+-            .expect("rustc --print cfg failed to launch");
+-        assert!(out.status.success(), "rustc --print cfg failed for the kernel target");
+-        let cfg = String::from_utf8_lossy(&out.stdout);
+-        let has = |feature: &str| cfg.lines().any(|l| l == format!(r#"target_feature="{feature}""#));
+-        assert!(
++/// Asked of the compiler rather than of the manifest, and once per process and
++/// architecture: it is a property of the toolchain rather than of any one image.
++fn assert_kernel_is_softfloat(env: &GuestEnv, arch: Arch) {
++    static CHECKED: std::sync::Mutex<BTreeSet<Arch>> = std::sync::Mutex::new(BTreeSet::new());
++    let mut checked = CHECKED.lock().expect("a softfloat check panicked");
++    if checked.contains(&arch) {
++        return;
++    }
++    let out = Command::new("rustc")
++        .args(["--print", "cfg", "--target", arch.kernel()])
++        .env("RUSTUP_TOOLCHAIN", env.sysroot.dir())
++        .env_remove("RUSTFLAGS")
++        .env_remove("RUSTC")
++        .output()
++        .expect("rustc --print cfg failed to launch");
++    assert!(out.status.success(), "rustc --print cfg failed for the kernel target");
++    let cfg = String::from_utf8_lossy(&out.stdout);
++    let has = |feature: &str| cfg.lines().any(|l| l == format!(r#"target_feature="{feature}""#));
++    match arch {
++        Arch::X86_64 => {
++            assert!(
++                has("x87"),
++                "the kernel target no longer reports x87, so `arch::fpu`'s legacy region is \
++                 not the state this machine has:\n{cfg}"
++            );
++            assert!(
++                !has("sse"),
++                "the kernel target has hardware float, so kernel code may now clobber the user \
++                 machine state between the entry's save and its restore:\n{cfg}"
++            );
++        }
++        Arch::Aarch64 => assert!(
+             !has("neon") && !has("fp-armv8"),
+-            "the kernel target has FP/SIMD, so kernel code may now clobber a thread's FP/SIMD \
+-             state while it is in the kernel:\n{cfg}"
+-        );
+-    });
++            "the kernel target has FP/SIMD, so kernel code may now clobber the user machine \
++             state between the entry's save and its restore:\n{cfg}"
++        ),
++    }
++    checked.insert(arch);
+ }
+ 
+ /// Whether `haystack` contains `needle` as a contiguous subslice.
+@@ -1675,16 +1694,14 @@ fn stage_and_certify_kernel(root: &Path, features: &str, env: &GuestEnv, arch: A
+     match arch {
+         Arch::X86_64 => {
+             assert_entry_window_matches_features(features, &bytes);
+-            if let Err(refused) = crate::fpgate::judge(&bytes) {
+-                panic!("{refused}");
+-            }
+         }
+         // Taking an exception to EL1 sets `PSTATE.SP`, so its handler's first
+         // instruction already runs on `SP_EL1`: no instruction runs at EL1 on a
+         // user's stack, and there is no window to judge.
+-        Arch::Aarch64 => assert_aarch64_kernel_is_softfloat(env),
++        Arch::Aarch64 => {}
+     }
+     assert_sched_check_matches_features(features, &bytes);
++    assert_kernel_is_softfloat(env, arch);
+     bytes
+ }
+ 
+diff --git a/build/fpgate.rs b/build/fpgate.rs
+deleted file mode 100644
+index 9d916b8a9..000000000
+--- a/build/fpgate.rs
++++ /dev/null
+@@ -1,444 +0,0 @@
+-//! The x86-64 kernel executes no instruction that touches a thread's user FP
+-//! or vector state but where `arch::fpu` and `arch::entry` save, restore and
+-//! first load it. That state stays in the registers across every entry
+-//! (`kernel/src/arch/x86_64/fpu.rs`), so one stray instruction anywhere else
+-//! corrupts a thread silently; rustc refuses an `xmm` operand on the
+-//! soft-float target but not an instruction written as `asm!` text, and the
+-//! target's `x87` is the compiler's to use. So this reads the linked image.
+-//!
+-//! Every executable section is decoded linearly from its start, in the mode
+-//! [`MODES`] says, and a byte that does not decode or an instruction that runs
+-//! over a symbol's first byte is refused: the sweep checks that no data sits
+-//! in the code rather than assuming it. An instruction touches the state when
+-//! it is one of the [`UNMARKED`], when `iced-x86` names x87, MMX, 3DNow!, any
+-//! SSE, AVX, AVX-512, AMX, FMA, F16C, XOP or an extension on their registers
+-//! among its CPUID features, or when it uses an x87, MMX, XMM, YMM, ZMM,
+-//! opmask or tile register, explicitly or implicitly; the fences, whose
+-//! features say SSE and which touch no state, are the exception
+-//! ([`STATE_FREE`]). Of those instructions only the [`ALLOWED`] mnemonics
+-//! pass, and only in a function of an [`OWNERS`] module.
+-
+-use iced_x86::{CpuidFeature, Decoder, DecoderOptions, Instruction, InstructionInfoFactory, Mnemonic, Register};
+-use toyos_elf::section::SectionHeader;
+-use toyos_elf::{FileHeader, Layout, Machine, SectionTable, SymTab};
+-
+-/// `SHT_PROGBITS` and `SHF_EXECINSTR` (System V gABI, "Sections").
+-const SHT_PROGBITS: u32 = 1;
+-const SHF_EXECINSTR: u64 = 0x4;
+-/// `STT_NOTYPE`: what an `asm` label is, the AP trampoline's among them.
+-const STT_NOTYPE: u8 = 0;
+-
+-/// Where the code changes mode: the AP trampoline
+-/// (`kernel/src/arch/x86_64/smp.rs`) starts in real mode, enters protected
+-/// mode at its second label and long mode at its third. Everything before the
+-/// first label is 64-bit.
+-const MODES: [(&str, u32); 3] = [("_trampoline_start", 16), ("_ap_pm32", 32), ("_ap_lm64", 64)];
+-
+-/// Instructions that touch the state with neither a feature nor a register
+-/// that says so: the save family, which moves it whole, and `WAIT`, which reads
+-/// the x87 status word and raises a thread's pending x87 exception.
+-const UNMARKED: [Mnemonic; 17] = [
+-    Mnemonic::Fxsave,
+-    Mnemonic::Fxsave64,
+-    Mnemonic::Fxrstor,
+-    Mnemonic::Fxrstor64,
+-    Mnemonic::Xsave,
+-    Mnemonic::Xsave64,
+-    Mnemonic::Xsavec,
+-    Mnemonic::Xsavec64,
+-    Mnemonic::Xsaveopt,
+-    Mnemonic::Xsaveopt64,
+-    Mnemonic::Xsaves,
+-    Mnemonic::Xsaves64,
+-    Mnemonic::Xrstor,
+-    Mnemonic::Xrstor64,
+-    Mnemonic::Xrstors,
+-    Mnemonic::Xrstors64,
+-    Mnemonic::Wait,
+-];
+-
+-/// What the owners use: the three save forms, their two restores, and
+-/// `fpu::init`'s `FXSAVE64` check of the declared state.
+-const ALLOWED: [Mnemonic; 6] = [
+-    Mnemonic::Xsaves64,
+-    Mnemonic::Xsavec64,
+-    Mnemonic::Xsaveopt64,
+-    Mnemonic::Xrstors64,
+-    Mnemonic::Xrstor64,
+-    Mnemonic::Fxsave64,
+-];
+-
+-/// Instructions whose CPUID features say SSE or SSE2 and which read and
+-/// write no register state: the fences the kernel orders memory with.
+-const STATE_FREE: [Mnemonic; 3] = [Mnemonic::Lfence, Mnemonic::Mfence, Mnemonic::Sfence];
+-
+-/// The modules whose functions may run an [`ALLOWED`] instruction, as their
+-/// demangled paths begin.
+-const OWNERS: [&str; 2] = ["kernel::arch::x86_64::fpu::", "kernel::arch::x86_64::entry::"];
+-
+-/// How many refused instructions a refusal names before it counts the rest.
+-const NAMED: usize = 16;
+-
+-/// Refuse a kernel image that touches the user FP or vector state outside its
+-/// owners, naming each instruction by function, offset and mnemonic.
+-pub fn judge(kernel: &[u8]) -> Result<(), String> {
+-    let header = FileHeader::parse(kernel).map_err(|e| format!("the kernel is no ELF image: {e:?}"))?;
+-    if header.machine != Machine::X86_64 {
+-        return Err(format!("the kernel is for {:?}, and this reads x86-64", header.machine));
+-    }
+-    let table = toyos_symbols::file_range(kernel, header.shoff, toyos_symbols::shdr_table_len(&header))
+-        .ok_or("the kernel's section headers lie outside it")?;
+-    let sections: Vec<SectionHeader> = SectionTable::new(table)
+-        .iter()
+-        .filter(|s| s.kind == SHT_PROGBITS && s.flags & SHF_EXECINSTR != 0)
+-        .collect();
+-    if sections.is_empty() {
+-        return Err("the kernel has no executable section".into());
+-    }
+-    let functions = Functions::of(kernel, &header, &sections)?;
+-    let mut refused = Vec::new();
+-    let mut boundaries: Vec<(u64, u32)> = Vec::new();
+-    for (label, bitness) in MODES {
+-        let at = functions.start_of(label).ok_or_else(|| format!("the kernel names no `{label}`"))?;
+-        boundaries.push((at, bitness));
+-    }
+-    for section in &sections {
+-        let bytes = toyos_symbols::file_range(kernel, section.offset, section.size)
+-            .ok_or("an executable section lies outside the kernel")?;
+-        let end = section.addr + section.size;
+-        let mut cuts: Vec<(u64, u32)> = vec![(section.addr, 64)];
+-        cuts.extend(boundaries.iter().copied().filter(|&(at, _)| at > section.addr && at < end));
+-        cuts.push((end, 64));
+-        for run in cuts.windows(2) {
+-            let ((from, bitness), (to, _)) = (run[0], run[1]);
+-            let code = &bytes[(from - section.addr) as usize..(to - section.addr) as usize];
+-            refused.extend(sweep(code, from, bitness, &functions));
+-        }
+-    }
+-    if refused.is_empty() {
+-        return Ok(());
+-    }
+-    let named: Vec<&str> = refused.iter().take(NAMED).map(String::as_str).collect();
+-    Err(format!(
+-        "the kernel touches the user FP or vector state outside `arch::fpu` and `arch::entry`, \
+-         which a thread keeps in its registers across every entry: {} instruction(s), the first \
+-         {}:\n  {}\nThe kernel is soft-float and saves that state only at a switch; an instruction \
+-         anywhere else corrupts a thread's registers with no fault.",
+-        refused.len(),
+-        named.len(),
+-        named.join("\n  "),
+-    ))
+-}
+-
+-/// Every function's and label's first byte, sorted, with its raw name.
+-struct Functions<'a> {
+-    starts: Vec<(u64, &'a str)>,
+-}
+-
+-impl<'a> Functions<'a> {
+-    fn of(kernel: &'a [u8], header: &FileHeader, sections: &[SectionHeader]) -> Result<Self, String> {
+-        let (syms, strs) = toyos_symbols::locate(kernel).ok_or("the kernel has no readable `.symtab`")?;
+-        let table = SymTab::new(syms, strs);
+-        let extent = Layout::parse(kernel, header.machine).map_err(|e| format!("{e}"))?.extent();
+-        let in_code = |at: u64| sections.iter().any(|s| at >= s.addr && at < s.addr + s.size);
+-        let mut starts: Vec<(u64, &str)> = table
+-            .defined()
+-            .filter(|(_, sym)| matches!(sym.kind(), toyos_elf::sym::STT_FUNC | STT_NOTYPE))
+-            .filter_map(|(i, sym)| Some((extent.min() + sym.address(extent)?.get(), table.name(i))))
+-            .filter(|&(at, name)| in_code(at) && !name.is_empty())
+-            .collect();
+-        starts.sort_unstable();
+-        Ok(Self { starts })
+-    }
+-
+-    fn start_of(&self, name: &str) -> Option<u64> {
+-        self.starts.iter().find(|&&(_, n)| n == name).map(|&(at, _)| at)
+-    }
+-
+-    /// The function `at` lies in, demangled, and how far into it.
+-    fn name(&self, at: u64) -> (String, u64) {
+-        match self.starts.partition_point(|&(start, _)| start <= at) {
+-            0 => ("(before every function)".into(), at),
+-            i => {
+-                let (start, raw) = self.starts[i - 1];
+-                (toyos_symbols::demangled(raw).to_string(), at - start)
+-            }
+-        }
+-    }
+-}
+-
+-/// Every refusal in `code`, which runs at `at` in `bitness`-bit mode.
+-fn sweep(code: &[u8], at: u64, bitness: u32, functions: &Functions) -> Vec<String> {
+-    let mut decoder = Decoder::with_ip(bitness, code, at, DecoderOptions::NONE);
+-    let mut factory = InstructionInfoFactory::new();
+-    let mut instr = Instruction::default();
+-    let mut next = functions.starts.partition_point(|&(start, _)| start <= at);
+-    let mut refused = Vec::new();
+-    while decoder.can_decode() {
+-        decoder.decode_out(&mut instr);
+-        let (from, to) = (instr.ip(), instr.next_ip());
+-        let say = |why: &str| {
+-            let (function, within) = functions.name(from);
+-            let bytes = &code[(from - at) as usize..(to.min(at + code.len() as u64) - at) as usize];
+-            format!("{function}+{within:#x} ({from:#x}): {why} {bytes:02x?}")
+-        };
+-        while next < functions.starts.len() && functions.starts[next].0 <= from {
+-            next += 1;
+-        }
+-        if next < functions.starts.len() && functions.starts[next].0 < to {
+-            refused.push(say(&format!("runs over `{}`'s first byte", functions.starts[next].1)));
+-        }
+-        if instr.is_invalid() {
+-            refused.push(say("does not decode"));
+-            continue;
+-        }
+-        if !touches_state(&instr, &mut factory) {
+-            continue;
+-        }
+-        let owned = || OWNERS.iter().any(|owner| functions.name(from).0.starts_with(owner));
+-        if !(ALLOWED.contains(&instr.mnemonic()) && owned()) {
+-            refused.push(say(&format!("{:?}", instr.mnemonic())));
+-        }
+-    }
+-    refused
+-}
+-
+-/// Whether `instr` reads or writes any of the user FP or vector state.
+-fn touches_state(instr: &Instruction, factory: &mut InstructionInfoFactory) -> bool {
+-    let mnemonic = instr.mnemonic();
+-    if STATE_FREE.contains(&mnemonic) {
+-        return false;
+-    }
+-    UNMARKED.contains(&mnemonic)
+-        || instr.cpuid_features().iter().any(|&feature| vector_feature(feature))
+-        || factory.info(instr).used_registers().iter().any(|used| vector_register(used.register()))
+-}
+-
+-fn vector_feature(feature: CpuidFeature) -> bool {
+-    use CpuidFeature::*;
+-    matches!(
+-        feature,
+-        FPU | FPU287
+-            | FPU287XL_ONLY
+-            | FPU387
+-            | FPU387SL_ONLY
+-            | CYRIX_FPU
+-            | MMX
+-            | D3NOW
+-            | D3NOWEXT
+-            | CYRIX_D3NOW
+-            | SSE
+-            | SSE2
+-            | SSE3
+-            | SSSE3
+-            | SSE4_1
+-            | SSE4_2
+-            | SSE4A
+-            | AVX
+-            | AVX2
+-            | AVX_VNNI
+-            | AVX_IFMA
+-            | AVX_NE_CONVERT
+-            | AVX_VNNI_INT8
+-            | AVX512F
+-            | AVX512VL
+-            | AVX512BW
+-            | AVX512CD
+-            | AVX512DQ
+-            | AVX512ER
+-            | AVX512PF
+-            | AVX512_4FMAPS
+-            | AVX512_4VNNIW
+-            | AVX512_BF16
+-            | AVX512_BITALG
+-            | AVX512_FP16
+-            | AVX512_IFMA
+-            | AVX512_VBMI
+-            | AVX512_VBMI2
+-            | AVX512_VNNI
+-            | AVX512_VP2INTERSECT
+-            | AVX512_VPOPCNTDQ
+-            | FMA
+-            | FMA4
+-            | F16C
+-            | XOP
+-            | AVX_VNNI_INT16
+-            | KNC
+-            | AMX_TILE
+-            | AMX_INT8
+-            | AMX_BF16
+-            | AMX_FP16
+-            | AMX_COMPLEX
+-            | CYRIX_EMMI
+-            | AES
+-            | VAES
+-            | PCLMULQDQ
+-            | VPCLMULQDQ
+-            | GFNI
+-            | SHA
+-            | SHA512
+-            | SM3
+-            | SM4
+-            | KL
+-            | AESKLE
+-            | WIDE_KL
+-    )
+-}
+-
+-fn vector_register(register: Register) -> bool {
+-    register.is_st()
+-        || register.is_mm()
+-        || register.is_xmm()
+-        || register.is_ymm()
+-        || register.is_zmm()
+-        || register.is_k()
+-        || register.is_tmm()
+-}
+-
+-#[cfg(test)]
+-mod tests {
+-    use super::*;
+-
+-    const ELSEWHERE: &str = "kernel::arch::x86_64::hw::halt";
+-    const FPU_SAVE: &str = "kernel::arch::x86_64::fpu::save";
+-    const AT: u64 = 0x1000;
+-
+-    fn one(name: &'static str) -> Functions<'static> {
+-        Functions { starts: vec![(AT, name)] }
+-    }
+-
+-    /// The one instruction `bytes` decodes to, so a case cannot test an
+-    /// encoding it does not name.
+-    fn decoded(bytes: &[u8]) -> Mnemonic {
+-        let mut decoder = Decoder::with_ip(64, bytes, AT, DecoderOptions::NONE);
+-        let instr = decoder.decode();
+-        assert_eq!(instr.len(), bytes.len(), "{bytes:02x?} is more than one instruction");
+-        instr.mnemonic()
+-    }
+-
+-    fn refusals(bytes: &[u8], function: &'static str) -> Vec<String> {
+-        sweep(bytes, AT, 64, &one(function))
+-    }
+-
+-    /// One encoding per class the gate names, each touching the state another
+-    /// way: by an explicit register, by an implicit one, or by a control or
+-    /// status word no operand names.
+-    const STATE: &[(&[u8], Mnemonic)] = &[
+-        (&[0xdd, 0x00], Mnemonic::Fld),
+-        (&[0xdb, 0xe3], Mnemonic::Fninit),
+-        (&[0xd9, 0x28], Mnemonic::Fldcw),
+-        (&[0x9b], Mnemonic::Wait),
+-        (&[0x0f, 0xfc, 0xc1], Mnemonic::Paddb),
+-        (&[0x0f, 0x77], Mnemonic::Emms),
+-        (&[0x0f, 0x0f, 0xc1, 0x9e], Mnemonic::Pfadd),
+-        (&[0x0f, 0x28, 0xc1], Mnemonic::Movaps),
+-        (&[0x0f, 0xae, 0x10], Mnemonic::Ldmxcsr),
+-        (&[0x66, 0x0f, 0xfe, 0xc1], Mnemonic::Paddd),
+-        (&[0x66, 0x0f, 0x38, 0x00, 0xc1], Mnemonic::Pshufb),
+-        (&[0x66, 0x0f, 0x38, 0xdc, 0xc1], Mnemonic::Aesenc),
+-        (&[0xc5, 0xf5, 0xfe, 0xc2], Mnemonic::Vpaddd),
+-        (&[0xc5, 0xf8, 0x77], Mnemonic::Vzeroupper),
+-        (&[0xc5, 0xf8, 0xae, 0x10], Mnemonic::Vldmxcsr),
+-        (&[0x62, 0xf1, 0x75, 0x48, 0xfe, 0xc2], Mnemonic::Vpaddd),
+-        (&[0xc5, 0xf8, 0x92, 0xc8], Mnemonic::Kmovw),
+-        (&[0xc4, 0xe2, 0x71, 0x98, 0xc2], Mnemonic::Vfmadd132ps),
+-        (&[0xc4, 0xe2, 0x79, 0x13, 0xc1], Mnemonic::Vcvtph2ps),
+-        (&[0x8f, 0xe8, 0x70, 0xa2, 0xc2, 0x30], Mnemonic::Vpcmov),
+-        (&[0xc4, 0xe2, 0x78, 0x49, 0xc0], Mnemonic::Tilerelease),
+-    ];
+-
+-    #[test]
+-    fn every_class_of_state_instruction_is_refused_outside_the_owners() {
+-        let passed: Vec<Mnemonic> = STATE
+-            .iter()
+-            .filter(|&&(bytes, mnemonic)| {
+-                assert_eq!(decoded(bytes), mnemonic, "{bytes:02x?}");
+-                refusals(bytes, ELSEWHERE).is_empty()
+-            })
+-            .map(|&(_, mnemonic)| mnemonic)
+-            .collect();
+-        assert!(passed.is_empty(), "passed outside the owners: {passed:?}");
+-    }
+-
+-    #[test]
+-    fn a_state_instruction_is_refused_inside_an_owner_too() {
+-        let passed: Vec<Mnemonic> = STATE
+-            .iter()
+-            .filter(|&&(bytes, _)| refusals(bytes, FPU_SAVE).is_empty())
+-            .map(|&(_, mnemonic)| mnemonic)
+-            .collect();
+-        assert!(passed.is_empty(), "passed inside `fpu`: {passed:?}");
+-    }
+-
+-    /// The six the owners use, each on `[rax]`.
+-    const SAVES: &[(&[u8], Mnemonic)] = &[
+-        (&[0x48, 0x0f, 0xc7, 0x28], Mnemonic::Xsaves64),
+-        (&[0x48, 0x0f, 0xc7, 0x20], Mnemonic::Xsavec64),
+-        (&[0x48, 0x0f, 0xae, 0x30], Mnemonic::Xsaveopt64),
+-        (&[0x48, 0x0f, 0xc7, 0x18], Mnemonic::Xrstors64),
+-        (&[0x48, 0x0f, 0xae, 0x28], Mnemonic::Xrstor64),
+-        (&[0x48, 0x0f, 0xae, 0x00], Mnemonic::Fxsave64),
+-    ];
+-
+-    #[test]
+-    fn the_saves_the_owners_use_pass_inside_them() {
+-        for owner in ["kernel::arch::x86_64::fpu::save", "kernel::arch::x86_64::entry::thread_start"] {
+-            for &(bytes, mnemonic) in SAVES {
+-                assert_eq!(decoded(bytes), mnemonic, "{bytes:02x?}");
+-                assert_eq!(refusals(bytes, owner), Vec::<String>::new(), "{mnemonic:?} in {owner}");
+-            }
+-        }
+-    }
+-
+-    #[test]
+-    fn the_saves_the_owners_use_are_refused_anywhere_else() {
+-        let passed: Vec<Mnemonic> = SAVES
+-            .iter()
+-            .filter(|&&(bytes, _)| refusals(bytes, ELSEWHERE).is_empty())
+-            .map(|&(_, mnemonic)| mnemonic)
+-            .collect();
+-        assert!(passed.is_empty(), "passed outside the owners: {passed:?}");
+-    }
+-
+-    #[test]
+-    fn a_save_the_owners_do_not_use_is_refused_inside_them() {
+-        let unused: &[(&[u8], Mnemonic)] = &[
+-            (&[0x48, 0x0f, 0xae, 0x20], Mnemonic::Xsave64),
+-            (&[0x48, 0x0f, 0xae, 0x08], Mnemonic::Fxrstor64),
+-            (&[0x0f, 0xc7, 0x28], Mnemonic::Xsaves),
+-        ];
+-        for &(bytes, mnemonic) in unused {
+-            assert_eq!(decoded(bytes), mnemonic, "{bytes:02x?}");
+-            assert_eq!(refusals(bytes, FPU_SAVE).len(), 1, "{mnemonic:?}");
+-        }
+-    }
+-
+-    #[test]
+-    fn the_fences_and_xcr0_pass_anywhere() {
+-        let free: &[(&[u8], Mnemonic)] = &[
+-            (&[0x0f, 0xae, 0xe8], Mnemonic::Lfence),
+-            (&[0x0f, 0xae, 0xf0], Mnemonic::Mfence),
+-            (&[0x0f, 0xae, 0xf8], Mnemonic::Sfence),
+-            (&[0x0f, 0x01, 0xd0], Mnemonic::Xgetbv),
+-            (&[0x0f, 0x01, 0xd1], Mnemonic::Xsetbv),
+-        ];
+-        for &(bytes, mnemonic) in free {
+-            assert_eq!(decoded(bytes), mnemonic, "{bytes:02x?}");
+-            assert_eq!(refusals(bytes, ELSEWHERE), Vec::<String>::new(), "{mnemonic:?}");
+-        }
+-    }
+-
+-    #[test]
+-    fn a_byte_that_does_not_decode_is_refused() {
+-        // `push es`, which long mode has no encoding for.
+-        assert_eq!(refusals(&[0x06], ELSEWHERE).len(), 1);
+-    }
+-
+-    #[test]
+-    fn an_instruction_over_a_functions_first_byte_is_refused() {
+-        // `mov eax, imm32`, five bytes, with a function starting at its third.
+-        let functions = Functions { starts: vec![(AT, ELSEWHERE), (AT + 2, "kernel::later")] };
+-        let refused = sweep(&[0xb8, 0x90, 0x90, 0x90, 0x90], AT, 64, &functions);
+-        assert_eq!(refused.len(), 1, "{refused:?}");
+-    }
+-}
+diff --git a/build/lib.rs b/build/lib.rs
+index 421c86e0d..ae08721bc 100644
+--- a/build/lib.rs
++++ b/build/lib.rs
+@@ -16,7 +16,6 @@ pub mod disk;
+ pub mod fatformat;
+ pub mod firmware;
+ pub mod flash;
+-pub mod fpgate;
+ #[cfg(test)]
+ pub mod gitfixture;
+ pub mod gptwrite;
+diff --git a/issues/every-syscall-takes-the-process-table-lock-twice-to-count-itself.md b/issues/every-syscall-takes-the-process-table-lock-twice-to-count-itself.md
+deleted file mode 100644
+index 5cf9ff1bb..000000000
+--- a/issues/every-syscall-takes-the-process-table-lock-twice-to-count-itself.md
++++ /dev/null
+@@ -1,28 +0,0 @@
+----
+-status: open
+-kind: defect
+-opened: 2026-10-12
+----
+-
+-# Every syscall takes the process table lock twice to count itself
+-
+-`syscall_dispatch` (`kernel/src/syscall/dispatch.rs`) calls
+-`process::with_current_data` before the call, to bump `syscall_total` and
+-`syscall_counts`, and again after it, to add `syscall_total_ns`. Each one takes
+-`PROCESS_TABLE`'s lock, clones the thread's `Arc`, takes that thread's
+-`Lock<ThreadData>` and drops the `Arc` (`current_data` and `with_current_data`
+-in `kernel/src/process.rs`). That is twelve locked read-modify-writes on every
+-syscall, `SYS_GETPID` included: per call, two ticket acquisitions and their two
+-releases, and the `Arc`'s increment and decrement. It also takes the one
+-machine-wide table lock, which every thread of every process contends for, to
+-update a counter that belongs to one thread.
+-
+-Counted from the code. Priced at the per-prefix cost the Ring 3 controls of PR
+-#866's scout measured, 15 TSC cycles on the T14 and 5–6 on the AMD bench
+-(https://github.com/ToyOSOrg/ToyOS/pull/866#issuecomment-6119438569), the twelve
+-come to about 180 and 66 cycles. That is an estimate, not a measurement of
+-these sites.
+-
+-**Exit**: a syscall that returns to its own thread takes no machine-wide lock and
+-no `Arc` reference to count itself, and `syscall_cost` is read on both benches
+-before and after.
+diff --git a/issues/nothing-reads-the-aarch64-kernels-instructions-for-fp-simd-use.md b/issues/nothing-reads-the-aarch64-kernels-instructions-for-fp-simd-use.md
+deleted file mode 100644
+index 85f4498f8..000000000
+--- a/issues/nothing-reads-the-aarch64-kernels-instructions-for-fp-simd-use.md
++++ /dev/null
+@@ -1,23 +0,0 @@
+----
+-status: open
+-kind: tooling
+-opened: 2026-10-12
+----
+-
+-# Nothing reads the AArch64 kernel's instructions for FP/SIMD use
+-
+-A thread's FP/SIMD state stays in the registers across every entry from EL0
+-and is saved only at a switch (`kernel/src/arch/aarch64/fpu.rs`). A kernel
+-instruction outside `arch::aarch64::switch` that writes a `v` register, `FPCR`
+-or `FPSR` therefore corrupts a thread with no fault.
+-
+-The only check is `assert_aarch64_kernel_is_softfloat` in `build/build.rs`. It
+-reads the target's `cfg` (`-fp-armv8,-neon`), which refuses FP/SIMD the compiler
+-generates but nothing written as `asm!` text, and `context_switch` turns on
+-`.arch_extension fp` and `simd` for its own block. The x86-64 kernel is judged
+-by its decoded instructions (`build/fpgate.rs`). The AArch64 kernel is not.
+-
+-**Exit**: the build decodes the AArch64 kernel image and refuses it when an
+-instruction outside `arch::aarch64::switch` reads or writes FP/SIMD state. The
+-gate has a host test for each refused class, and a build with one such
+-instruction planted goes red.
+diff --git a/kernel/Cargo.toml b/kernel/Cargo.toml
+index 03c0089de..7b0d5e278 100644
+--- a/kernel/Cargo.toml
++++ b/kernel/Cargo.toml
+@@ -435,8 +435,8 @@ df-witness-mutate = ["df-witness"]
+ # carrying this inherits a set direction flag from whatever it interrupted
+ # exactly as every kernel before 2026-08-21 did.
+ #
+-# It replaces the *behaviour* and not a verdict: everything else about the entry — the pushes,
+-# the preempt count, the exit-to-user check — is the shipped one, and
++# It replaces the *behaviour* and not a verdict: everything else about the entry — the pushes, the FP
++# bracket, the preempt count, the exit-to-user check — is the shipped one, and
+ # what is absent is one instruction. A control that flipped an assertion would
+ # make its own gate vacuous.
+ #
+diff --git a/kernel/src/arch/aarch64/fpu.rs b/kernel/src/arch/aarch64/fpu.rs
+index 0fbfbb08b..94a674d4b 100644
+--- a/kernel/src/arch/aarch64/fpu.rs
++++ b/kernel/src/arch/aarch64/fpu.rs
+@@ -7,9 +7,3 @@
+ 
+ /// The state's bytes in a switch frame: 32 128-bit registers, then `FPCR` and `FPSR`.
+ pub const STATE_BYTES: usize = 32 * 16 + 16;
+-
+-/// The bytes a task's kernel stack carries above its top: none, since the
+-/// state travels in the switch frame.
+-pub fn area_bytes() -> usize {
+-    0
+-}
+diff --git a/kernel/src/arch/x86_64/control_regs.rs b/kernel/src/arch/x86_64/control_regs.rs
+index b8421b16a..f581dae38 100644
+--- a/kernel/src/arch/x86_64/control_regs.rs
++++ b/kernel/src/arch/x86_64/control_regs.rs
+@@ -235,7 +235,7 @@ fn hwp_declared(cpu_id: u32) -> Option<toyos_cpuvuln::Hwp> {
+ /// Puts this CPU's `CR4`, `EFER`, `XCR0` and `IA32_XSS` into the declaration,
+ /// checks them against it, and declares the save form and the area they imply. Must run
+ /// after [`init_cr0`], before `arch::syscall::init`, which needs `SCE` set,
+-/// and before the first task starts, which loads and saves by `XCR0`.
++/// and before the first Ring 3 entry stub can run, which saves by `XCR0`.
+ pub fn init(cpu_id: u32) {
+     let declared = declaration(cpu_id);
+     let (xcr0, form) = xsave_declaration(cpu_id);
+diff --git a/kernel/src/arch/x86_64/entry.rs b/kernel/src/arch/x86_64/entry.rs
+index 58cd18d7a..000418fd9 100644
+--- a/kernel/src/arch/x86_64/entry.rs
++++ b/kernel/src/arch/x86_64/entry.rs
+@@ -1,14 +1,62 @@
+-//! What every gate a Ring 3 thread can arrive through opens with, and how a
+-//! task first runs.
++//! The one bracket every transition out of Ring 3 uses.
+ //!
+-//! No gate saves the user machine state: the kernel touches none of it, so it
+-//! stays in the registers across every entry, and `arch::fpu` moves it only
+-//! where a switch takes a thread off its CPU. A task's trampoline loads the
+-//! declared state before anything that can switch, so every save of a task's
+-//! area follows a restore on that CPU (`arch::fpu`'s invariant).
+-
+-/// `naked_asm!` for a gate a Ring 3 thread can arrive through: prepends
+-/// `cld`. The body must end with a trailing comma.
++//! A transition out of Ring 3 that can reach another task must save and
++//! restore the whole user machine state, as the last act before returning to
++//! Ring 3, after any point the task could have switched. [`save_user_state`]
++//! parks it in [`fpu::AREA_BYTES`](super::fpu::AREA_BYTES) on this kernel
++//! stack, leaving `rsp` 64-byte aligned on the slot that holds the `rsp` it
++//! found; [`restore_user_state`] restores both. Each clobbers `rax`, `rdx` and
++//! the flags, and the save leaves `r11` the `rsp` it found. Both branch on
++//! [`fpu::FORM`](super::fpu::FORM): `XSAVES` with `XRSTORS`, `XSAVEC` with
++//! `XRSTOR`, or `XSAVEOPT` with `XRSTOR`.
++//!
++//! **The modified optimisation's invariant.** `XSAVEOPT` and `XSAVES` skip a
++//! component unmodified since the last `XRSTOR` or `XRSTORS` from the same
++//! address, so between the restore that returns a thread to Ring 3 and that
++//! thread's next save on the same CPU nothing may write the area. The area lies just below the frame, where a
++//! handler's own frames go, and an arrival whose frame is as deep saves at
++//! the same address; so every arrival from Ring 3 on the thread's kernel
++//! stack saves after its own pushes and before anything else writes below
++//! them, whether or not its handler can reach another task. Every
++//! restore is followed only by pops and `iretq`/`sysretq` with `IF` clear,
++//! and the IST stacks that save (`#DF`, `#MC`) never return to Ring 3. A save
++//! and restore nested in Ring 0 is undone by the outer restore before Ring 3
++//! runs.
++
++/// A gate that brackets the user machine state on a Ring 3 arrival: its
++/// handler can reach another task, or runs on the interrupted thread's kernel
++/// stack, which the modified optimisation's invariant lets nothing write
++/// before the save.
++#[derive(Clone, Copy)]
++pub struct Ring3Entry(unsafe extern "sysv64" fn());
++
++/// A gate that saves nothing: it never returns, or takes its frame on an IST
++/// stack, so it writes no kernel stack a Ring 3 thread returns to.
++#[derive(Clone, Copy)]
++pub struct Ring0Entry(unsafe extern "sysv64" fn());
++
++impl Ring3Entry {
++    pub const fn new(handler: unsafe extern "sysv64" fn()) -> Self {
++        Self(handler)
++    }
++
++    pub fn addr(self) -> u64 {
++        self.0 as *const () as u64
++    }
++}
++
++impl Ring0Entry {
++    pub const fn declare(handler: unsafe extern "sysv64" fn()) -> Self {
++        Self(handler)
++    }
++
++    pub fn addr(self) -> u64 {
++        self.0 as *const () as u64
++    }
++}
++
++/// `naked_asm!` for a [`Ring3Entry`]: supplies the save area's size and form,
++/// and prepends `cld`. The body must end with a trailing comma.
+ #[cfg(not(feature = "entry-df-unclean"))]
+ macro_rules! ring3_naked_asm {
+     ($($body:tt)*) => {
+@@ -18,6 +66,8 @@ macro_rules! ring3_naked_asm {
+             // interrupts a copy with `DF` set.
+             "cld",
+             $($body)*
++            fp_area = sym $crate::arch::fpu::AREA_BYTES,
++            fp_form = sym $crate::arch::fpu::FORM,
+         )
+     };
+ }
+@@ -29,13 +79,15 @@ macro_rules! ring3_naked_asm {
+     ($($body:tt)*) => {
+         core::arch::naked_asm!(
+             $($body)*
++            fp_area = sym $crate::arch::fpu::AREA_BYTES,
++            fp_form = sym $crate::arch::fpu::FORM,
+         )
+     };
+ }
+ 
+-/// `naked_asm!` for a task's trampoline: supplies the form and the declared
+-/// state's two images from `fpu`.
+-macro_rules! trampoline_asm {
++/// `naked_asm!` for a trampoline into Ring 3 for the first time: supplies
++/// the form and the declared state's two images from `fpu`.
++macro_rules! ring3_trampoline_asm {
+     ($($body:tt)*) => {
+         core::arch::naked_asm!(
+             $($body)*
+@@ -48,11 +100,11 @@ macro_rules! trampoline_asm {
+ 
+ // The numbers `FORM` is compared against are `kernel::xsave::Form`'s
+ // discriminants, which `fpu` asserts: 1 `XSAVES`, 2 `XSAVEC`, 3 `XSAVEOPT`;
+-// any other is `ud2`.
++// any other is `ud2`. The local labels are 7x, which no stub uses for its own.
+ 
+-/// The declared state: every component `XCR0` enables, so no upper half of a
+-/// register is left from the CPU's last tenant. Clobbers `rax`, `rdx` and
+-/// the flags.
++/// The state a task that has never been in Ring 3 starts from: every
++/// component `XCR0` enables, so no upper half of a register is left from the
++/// CPU's last tenant. Clobbers `rax`, `rdx` and the flags.
+ macro_rules! initial_user_state {
+     () => {
+         concat!(
+@@ -78,18 +130,89 @@ macro_rules! initial_user_state {
+     };
+ }
+ 
+-pub(crate) use ring3_naked_asm;
++/// Park the user machine state on this kernel stack, leaving `rsp` aligned
++/// for the System V `call` that follows.
++macro_rules! save_user_state {
++    () => {
++        concat!(
++            "mov r11, rsp\n",
++            "sub rsp, qword ptr [rip + {fp_area}]\n",
++            "and rsp, -64\n",
++            "sub rsp, 64\n",
++            "mov [rsp], r11\n",
++            // The whole header, for every form: a stack holds whatever was
++            // last there. `XSAVEOPT` writes only `XCR0`'s bits of
++            // `XSTATE_BV`, and `XSAVEC` and `XSAVES` write no byte past
++            // `XCOMP_BV`; the standard restore is `#GP` on a stray
++            // `XSTATE_BV` bit or nonzero bytes 8 to 23, the compacted one on
++            // nonzero bytes 16 to 63 (SDM Vol. 1 §13.8.1, §13.8.2, §13.12).
++            "mov qword ptr [rsp + 64 + 512], 0\n",
++            "mov qword ptr [rsp + 64 + 520], 0\n",
++            "mov qword ptr [rsp + 64 + 528], 0\n",
++            "mov qword ptr [rsp + 64 + 536], 0\n",
++            "mov qword ptr [rsp + 64 + 544], 0\n",
++            "mov qword ptr [rsp + 64 + 552], 0\n",
++            "mov qword ptr [rsp + 64 + 560], 0\n",
++            "mov qword ptr [rsp + 64 + 568], 0\n",
++            "mov eax, -1\n",
++            "mov edx, -1\n",
++            "cmp byte ptr [rip + {fp_form}], 1\n",
++            "je 74f\n",
++            "cmp byte ptr [rip + {fp_form}], 2\n",
++            "je 75f\n",
++            "cmp byte ptr [rip + {fp_form}], 3\n",
++            "je 79f\n",
++            "ud2\n",
++            "74:\n",
++            "xsaves64 [rsp + 64]\n",
++            "jmp 76f\n",
++            "75:\n",
++            "xsavec64 [rsp + 64]\n",
++            "jmp 76f\n",
++            "79:\n",
++            "xsaveopt64 [rsp + 64]\n",
++            "76:\n",
++        )
++    };
++}
++
++/// Put it back, and `rsp` with it.
++macro_rules! restore_user_state {
++    () => {
++        concat!(
++            "mov eax, -1\n",
++            "mov edx, -1\n",
++            "cmp byte ptr [rip + {fp_form}], 1\n",
++            "je 77f\n",
++            "cmp byte ptr [rip + {fp_form}], 2\n",
++            "je 79f\n",
++            "cmp byte ptr [rip + {fp_form}], 3\n",
++            "je 79f\n",
++            "ud2\n",
++            "77:\n",
++            "xrstors64 [rsp + 64]\n",
++            "jmp 78f\n",
++            "79:\n",
++            "xrstor64 [rsp + 64]\n",
++            "78:\n",
++            "mov rsp, [rsp]\n",
++        )
++    };
++}
++
++pub(crate) use {restore_user_state, ring3_naked_asm, save_user_state};
+ 
+ /// Entry point for new processes, reached through `context_switch`'s `ret`. r12 = entry point, r13 = user stack pointer.
++// State loads after `unlock`, not before: earlier, registers hold the previous tenant's kernel context.
+ #[unsafe(naked)]
+ pub(crate) extern "C" fn process_start() {
+-    trampoline_asm!(
+-        initial_user_state!(),
++    ring3_trampoline_asm!(
+         "push r12",
+         "push r13",
+         "call {unlock}",
+         "pop r13",
+         "pop r12",
++        initial_user_state!(),
+         "push {user_ss}",
+         "push r13",         // RSP: user stack
+         "push 0x202",       // RFLAGS: IF=1
+@@ -105,8 +228,7 @@ pub(crate) extern "C" fn process_start() {
+ /// Entry point for new threads. r14 carries the argument, which lands in rdi.
+ #[unsafe(naked)]
+ pub(crate) extern "C" fn thread_start() {
+-    trampoline_asm!(
+-        initial_user_state!(),
++    ring3_trampoline_asm!(
+         "push r12",
+         "push r13",
+         "push r14",
+@@ -114,6 +236,7 @@ pub(crate) extern "C" fn thread_start() {
+         "pop r14",
+         "pop r13",
+         "pop r12",
++        initial_user_state!(),
+         "mov rdi, r14",
+         "sub r13, 8",       // ABI: RSP must be 16n+8 at function entry
+         "push {user_ss}",
+@@ -128,14 +251,11 @@ pub(crate) extern "C" fn thread_start() {
+     );
+ }
+ 
+-/// Entry point for a kernel thread: r12 = body, r14 = argument. Never reaches
+-/// Ring 3, but its switches save and restore the user machine state as every
+-/// task's do.
++/// Entry point for a kernel thread: r12 = body, r14 = argument. Never reaches Ring 3.
+ // The `sti` is load-bearing: `alloc_kernel_stack` leaves `IF` clear, and `trampoline_entry` requires it clear on entry.
+ #[unsafe(naked)]
+ pub(crate) extern "C" fn kernel_start() {
+-    trampoline_asm!(
+-        initial_user_state!(),
++    core::arch::naked_asm!(
+         "call {unlock}",
+         "sti",
+         "mov rdi, r14",
+diff --git a/kernel/src/arch/x86_64/fpu.rs b/kernel/src/arch/x86_64/fpu.rs
+index e767f783f..fe881c489 100644
+--- a/kernel/src/arch/x86_64/fpu.rs
++++ b/kernel/src/arch/x86_64/fpu.rs
+@@ -1,29 +1,10 @@
+-//! A thread's user machine state: every component `XCR0` enables
+-//! (`control_regs`, `kernel::xsave`).
++//! What a transition out of Ring 3 must save and restore in full; a task
++//! that has never run in Ring 3 starts from the declared state below.
+ //!
+-//! It stays in the registers for as long as its thread runs, across every
+-//! entry from Ring 3, because the kernel executes no instruction that touches
+-//! it but [`save`], [`restore`] and the trampolines' load of the declared state
+-//! (`build/fpgate.rs` refuses an image that does). A switch [`save`]s the
+-//! outgoing task's registers by the machine's [`FORM`] into the [`area_bytes`]
+-//! above its kernel stack's top, the same switch [`restore`]s them when it
+-//! returns into that task, and a task that has never run starts from the
+-//! declared state below. The area is compacted under `XSAVES` and `XSAVEC`,
+-//! standard under `XSAVEOPT`; its header starts zero, as `OwnedAlloc` zeroes
+-//! the stack, and is written by nothing but the saves after it.
+-//!
+-//! **The modified optimisation's invariant.** `XSAVEOPT` and `XSAVES` skip a
+-//! component unmodified since the last `XRSTOR` or `XRSTORS` a CPU ran from the
+-//! same address (SDM Vol. 1 §13.6), so nothing may write a task's area from
+-//! its restore on a CPU to its next save there. Its saves are its area's only
+-//! writer: no frame reaches above the stack's top, and every way a task starts
+-//! or resumes on a CPU restores before anything that can switch.
+-//!
+-//! **Ordering.** A save's stores are ordinary write-back stores, which SDM
+-//! Vol. 3A §11.2.2 orders before every later store of the same CPU; its
+-//! exceptions are the non-temporal moves and string operations alone. So the
+-//! area is written before the pass that hands the task to another CPU, with
+-//! no fence.
++//! The user machine state is every component `XCR0` enables
++//! (`control_regs`, `kernel::xsave`): `arch::entry` saves and restores it by
++//! the machine's [`FORM`] into [`AREA_BYTES`] parked on the thread's kernel
++//! stack, compacted under `XSAVES` and `XSAVEC`, standard under `XSAVEOPT`.
+ 
+ use core::sync::atomic::{AtomicU64, AtomicU8, Ordering};
+ 
+@@ -160,13 +141,15 @@ pub static INITIAL_COMPACTED: XsaveImage<{ COMPACTED_BASE as usize }> =
+     initial_image(1 << 63 | XSTATE_BV_INITIAL);
+ 
+ /// The machine's save form, as [`Form`]'s discriminant; zero until the BSP's
+-/// [`declare_area`]. Read by the trampolines (`arch::entry`), which branch on
+-/// it.
++/// [`declare_area`]. Read by every entry stub and trampoline
++/// (`arch::entry`), which branch on it.
+ pub static FORM: AtomicU8 = AtomicU8::new(0);
+ 
+ /// The bytes one save writes on every CPU of this machine, by the declared
+-/// form for the declared `XCR0`. Zero until the BSP's [`declare_area`].
+-static AREA_BYTES: AtomicU64 = AtomicU64::new(0);
++/// form for the declared `XCR0`. Zero until the BSP's [`declare_area`]; read
++/// by every entry stub (`arch::entry::save_user_state`), which reserves this
++/// much and the line below it.
++pub static AREA_BYTES: AtomicU64 = AtomicU64::new(0);
+ 
+ /// The machine's save form. Panics before the BSP's [`declare_area`].
+ pub fn form() -> Form {
+@@ -178,87 +161,9 @@ pub fn form() -> Form {
+     }
+ }
+ 
+-/// The bytes every task's kernel stack carries above its top for its user
+-/// machine state. Panics before the BSP's [`declare_area`].
+-pub fn area_bytes() -> usize {
+-    match AREA_BYTES.load(Ordering::Acquire) {
+-        0 => panic!("fpu: a task's area was sized before the BSP declared it"),
+-        bytes => bytes as usize,
+-    }
+-}
+-
+-/// Saves this CPU's user machine state into the area at `area`.
+-///
+-/// Not inlined: `build/fpgate.rs` allows the save family only in this
+-/// module's own symbols.
+-/// # Safety
+-/// `area` is the area above the kernel stack top of the task running on this
+-/// CPU, which is switching away from it.
+-#[inline(never)]
+-pub unsafe fn save(area: u64) {
+-    // SAFETY: the caller's area is `AREA_BYTES` long and 64-byte aligned (a
+-    // stack top is a page boundary), its header zero or as the last save by
+-    // this form left it; `XSAVES` runs only under the form that found it.
+-    unsafe {
+-        match form() {
+-            Form::Xsaves => core::arch::asm!(
+-                "xsaves64 [{}]",
+-                in(reg) area,
+-                in("eax") u32::MAX,
+-                in("edx") u32::MAX,
+-                options(nostack),
+-            ),
+-            Form::Xsavec => core::arch::asm!(
+-                "xsavec64 [{}]",
+-                in(reg) area,
+-                in("eax") u32::MAX,
+-                in("edx") u32::MAX,
+-                options(nostack),
+-            ),
+-            Form::Xsaveopt => core::arch::asm!(
+-                "xsaveopt64 [{}]",
+-                in(reg) area,
+-                in("eax") u32::MAX,
+-                in("edx") u32::MAX,
+-                options(nostack),
+-            ),
+-        }
+-    }
+-}
+-
+-/// Loads this CPU's user machine state from the area at `area`.
+-///
+-/// Not inlined, for [`save`]'s reason.
+-/// # Safety
+-/// `area` is the area [`save`] last wrote for the task now resuming on this
+-/// CPU, the one whose switch called that save.
+-#[inline(never)]
+-pub unsafe fn restore(area: u64) {
+-    // SAFETY: the area holds what this form's save wrote, so its header names
+-    // only components `XCR0` enables; `XRSTORS` runs only under `XSAVES`.
+-    unsafe {
+-        match form() {
+-            Form::Xsaves => core::arch::asm!(
+-                "xrstors64 [{}]",
+-                in(reg) area,
+-                in("eax") u32::MAX,
+-                in("edx") u32::MAX,
+-                options(nostack, readonly),
+-            ),
+-            Form::Xsavec | Form::Xsaveopt => core::arch::asm!(
+-                "xrstor64 [{}]",
+-                in(reg) area,
+-                in("eax") u32::MAX,
+-                in("edx") u32::MAX,
+-                options(nostack, readonly),
+-            ),
+-        }
+-    }
+-}
+-
+ /// Declares the save form and the area this CPU's `XCR0` implies under it,
+ /// and checks both against the machine's. Runs once `XCR0` and `IA32_XSS`
+-/// hold the declaration, and before the first task starts.
++/// hold the declaration, and before any entry stub that saves can run.
+ pub fn declare_area(cpu_id: u32, xcr0: u64, form: Form) {
+     let area = if form.compacted() {
+         let component = |i| {
+@@ -290,8 +195,7 @@ pub fn declare_area(cpu_id: u32, xcr0: u64, form: Form) {
+ }
+ 
+ /// Puts this CPU into the declared state and asserts it matches. Call once
+-/// per CPU after [`declare_area`]. Not inlined, for [`save`]'s reason.
+-#[inline(never)]
++/// per CPU after [`declare_area`].
+ pub fn init(cpu_id: u32) {
+     load_initial();
+     self_check(cpu_id);
+@@ -404,5 +308,5 @@ const _: () = {
+ // The header the trampolines' restore reads lies inside each image.
+ const _: () = assert!(OFF_XSTATE_BV + 64 <= COMPACTED_BASE as usize);
+ const _: () = assert!(COMPACTED_BASE as usize <= IMAGE_BYTES);
+-// `arch::entry`'s trampolines compare `FORM` against these.
++// `arch::entry`'s stubs compare `FORM` against these.
+ const _: () = assert!(Form::Xsaves as u8 == 1 && Form::Xsavec as u8 == 2 && Form::Xsaveopt as u8 == 3);
+diff --git a/kernel/src/arch/x86_64/hw.rs b/kernel/src/arch/x86_64/hw.rs
+index 30cdca531..5e17d59f3 100644
+--- a/kernel/src/arch/x86_64/hw.rs
++++ b/kernel/src/arch/x86_64/hw.rs
+@@ -288,12 +288,8 @@ impl Hw for KernelHw {
+         // moves `IF`; the resumed context's own guard puts back what it had.
+         #[cfg(feature = "mask-windows")]
+         let _masked = crate::arch::IrqGuard::close();
+-        // SAFETY: `save`/`restore` are live Box-backed contexts from `SchedPass::finish`, freed only by a later pass; `incoming.thread_pointer` is this kernel's own canonical value for the thread being installed; `area` is the outgoing task's own, saved as it leaves this CPU and restored when it returns into this frame.
++        // SAFETY: `save`/`restore` are live Box-backed contexts from `SchedPass::finish`, freed only by a later pass; `incoming.thread_pointer` is this kernel's own canonical value for the thread being installed.
+         unsafe {
+-            // A task's user state area lies above its stack's top (`fpu`); the
+-            // idle context has none. The task resumes in this frame, so the
+-            // restore below reads the area its own save wrote.
+-            let area = (*save).id.map(|_| (*save).kernel_stack_top);
+             (*save).thread_pointer = cpu::read_fs_base();
+             (*save).preempt = crate::preempt::count();
+             let incoming: &KernelCtx = &*restore;
+@@ -330,15 +326,7 @@ impl Hw for KernelHw {
+                 ds = in(reg) percpu::KERNEL_DS as u64,
+                 options(nomem, nostack, preserves_flags),
+             );
+-            if let Some(area) = area {
+-                super::fpu::save(area);
+-            }
+             context_switch(&raw mut (*save).sp, rsp);
+-            // The preempt count is still raised: nothing switches this task
+-            // out before its state is back.
+-            if let Some(area) = area {
+-                super::fpu::restore(area);
+-            }
+         }
+     }
+ 
+diff --git a/kernel/src/arch/x86_64/idt/device_irq.rs b/kernel/src/arch/x86_64/idt/device_irq.rs
+index 6ab3bd567..79d641089 100644
+--- a/kernel/src/arch/x86_64/idt/device_irq.rs
++++ b/kernel/src/arch/x86_64/idt/device_irq.rs
+@@ -1,5 +1,6 @@
+ //! Shared device interrupt entry: saves scratch GPRs, brackets the handler
+-//! with the percpu preempt count, and on Ring 3 return runs the
++//! with the percpu preempt count, and from Ring 3 parks the user machine
++//! state on this kernel stack before the handler and restores it after the
+ //! deferred-preempt epilogue.
+ //!
+ //! IF stays 0 through the entry (interrupt gate; handlers never sti), satisfying
+@@ -23,9 +24,15 @@ macro_rules! device_irq_entry {
+                 "push r10",
+                 "push r11",
+                 "push rbp",
+-                "add dword ptr gs:[{preempt_count}], 1",
+-                // Ring 0 entry has unknown rsp alignment; align via the rbp save.
++                "lock add dword ptr gs:[{preempt_count}], 1",
+                 "mov rbp, rsp",
++                "test dword ptr [rbp + 88], 3", // CS = 10 GPRs + RIP above
++                "jz 2f",
++                // Before the handler's frames, which land where the last
++                // restore read: the modified optimisation's invariant (`arch::entry`).
++                $crate::arch::entry::save_user_state!(),
++                "2:",
++                // Ring 0 entry has unknown rsp alignment; the save left it aligned.
+                 "and rsp, -16",
+                 #[cfg(feature = "mask-windows")]
+                 "call {windows_entered}",
+@@ -34,10 +41,11 @@ macro_rules! device_irq_entry {
+                 "mov rdi, [rbp + 88]",
+                 #[cfg(feature = "mask-windows")]
+                 "call {windows_leaving}",
+-                "sub dword ptr gs:[{preempt_count}], 1",
+-                "test dword ptr [rbp + 88], 3", // CS = 10 GPRs + RIP above
++                "lock sub dword ptr gs:[{preempt_count}], 1",
++                "test dword ptr [rbp + 88], 3",
+                 "jz 1f",
+                 "call {exit_to_user}",
++                $crate::arch::entry::restore_user_state!(),
+                 "1:",
+                 "mov rsp, rbp",
+                 "pop rbp",
+diff --git a/kernel/src/arch/x86_64/idt/mod.rs b/kernel/src/arch/x86_64/idt/mod.rs
+index f78b053f6..8e09d9061 100644
+--- a/kernel/src/arch/x86_64/idt/mod.rs
++++ b/kernel/src/arch/x86_64/idt/mod.rs
+@@ -18,7 +18,9 @@ pub(crate) use user_dev::{claim_vector, slot_interrupt};
+ use core::arch::naked_asm;
+ 
+ use super::cpu;
+-use super::entry::ring3_naked_asm;
++use super::entry::{
++    restore_user_state, ring3_naked_asm, save_user_state, Ring0Entry, Ring3Entry,
++};
+ use super::cpu::{outb, io_wait};
+ use super::pio::{Port, PIC_PRIMARY, PIC_SECONDARY};
+ use super::percpu;
+@@ -94,9 +96,18 @@ impl IdtEntry {
+         reserved: 0,
+     };
+ 
+-    /// An interrupt gate onto `entry`.
+-    fn at(entry: unsafe extern "sysv64" fn()) -> Self {
+-        let handler = entry as *const () as u64;
++    /// A gate that brackets the user machine state on a Ring 3 arrival.
++    fn ring3(entry: Ring3Entry) -> Self {
++        Self::at(entry.addr())
++    }
++
++    /// A gate that writes no kernel stack a Ring 3 thread returns to.
++    fn ring0(entry: Ring0Entry) -> Self {
++        Self::at(entry.addr())
++    }
++
++    /// Private, so no slot can be filled by a pointer nobody classified.
++    fn at(handler: u64) -> Self {
+         Self {
+             offset_low: handler as u16,
+             selector: 0x08, // kernel CS
+@@ -188,7 +199,7 @@ macro_rules! exception_stub {
+ macro_rules! idt_vectors {
+     (
+         dispatched { $($ex:ident = $exnum:literal, $stub:ident, $err:ident $(, ist $ist:literal)?;)* }
+-        direct { $($direct:ident = $dnum:literal, $entry:path $(, ist $dist:literal)?;)* }
++        direct { $($ring:tt $direct:ident = $dnum:literal, $entry:path $(, ist $dist:literal)?;)* }
+     ) => {
+         /// IDT vector assignments — CPU exceptions and hardware interrupts.
+         #[repr(usize)]
+@@ -218,15 +229,27 @@ macro_rules! idt_vectors {
+ 
+         fn install_gates(idt: &mut Idt) {
+             $(
+-                idt.entries[Vector::$ex as usize] = IdtEntry::at($stub)$(.with_ist($ist))?;
++                idt.entries[Vector::$ex as usize] =
++                    IdtEntry::ring3(Ring3Entry::new($stub))$(.with_ist($ist))?;
+             )*
+             $(
+-                idt.entries[Vector::$direct as usize] = IdtEntry::at($entry)$(.with_ist($dist))?;
++                idt.entries[Vector::$direct as usize] =
++                    direct_gate!($ring, $entry)$(.with_ist($dist))?;
+             )*
+         }
+     };
+ }
+ 
++/// The two answers a `direct` row may give.
++macro_rules! direct_gate {
++    (ring3, $entry:path) => {
++        IdtEntry::ring3(Ring3Entry::new($entry))
++    };
++    (ring0, $entry:path) => {
++        IdtEntry::ring0(Ring0Entry::declare($entry))
++    };
++}
++
+ // Every non-reserved vector needs a gate: a missing one escalates to #DF.
+ idt_vectors! {
+     dispatched {
+@@ -251,27 +274,27 @@ idt_vectors! {
+         ControlProtection  = 0x15, stub_cp, error_code;
+     }
+     direct {
+-        // ist 2: SYSCALL's brief CPL0-on-user-stack window would fault SMAP without it.
+-        Nmi          = 0x02, nmi::nmi_entry, ist 2;
+-        Timer        = 0x20, timer::timer_entry;
+-        Xhci         = 0x21, xhci::xhci_entry;
+-        I8042        = 0x24, i8042::i8042_entry;
+-        DmaFault     = 0x25, dma_fault::dma_fault_entry;
+-        Hda          = 0x26, hda::hda_entry;
++        // ring0: on its own stack, so no thread's. ist 2: SYSCALL's brief CPL0-on-user-stack window would fault SMAP without it.
++        ring0 Nmi          = 0x02, nmi::nmi_entry, ist 2;
++        ring3 Timer        = 0x20, timer::timer_entry;
++        ring3 Xhci         = 0x21, xhci::xhci_entry;
++        ring3 I8042        = 0x24, i8042::i8042_entry;
++        ring3 DmaFault     = 0x25, dma_fault::dma_fault_entry;
++        ring3 Hda          = 0x26, hda::hda_entry;
+         // One per `pcidev` claim slot: the vector is how the kernel knows
+         // which claim a message belongs to.
+-        UserDev0     = 0x28, user_dev::user_dev0_entry;
+-        UserDev1     = 0x29, user_dev::user_dev1_entry;
+-        UserDev2     = 0x2A, user_dev::user_dev2_entry;
+-        UserDev3     = 0x2B, user_dev::user_dev3_entry;
+-        Isa0         = 0x2C, isa::isa0_entry;
+-        Isa1         = 0x2D, isa::isa1_entry;
+-        Kick         = 0xFC, kick::kick_entry;
+-        // Never returns: `cli; hlt` forever.
+-        HaltAll      = 0xFD, stub_halt_all;
+-        TlbFlush     = 0xFE, tlb::tlb_flush_entry;
++        ring3 UserDev0     = 0x28, user_dev::user_dev0_entry;
++        ring3 UserDev1     = 0x29, user_dev::user_dev1_entry;
++        ring3 UserDev2     = 0x2A, user_dev::user_dev2_entry;
++        ring3 UserDev3     = 0x2B, user_dev::user_dev3_entry;
++        ring3 Isa0         = 0x2C, isa::isa0_entry;
++        ring3 Isa1         = 0x2D, isa::isa1_entry;
++        ring3 Kick         = 0xFC, kick::kick_entry;
++        // Ring 0 because it never returns: `cli; hlt` forever.
++        ring0 HaltAll      = 0xFD, stub_halt_all;
++        ring3 TlbFlush     = 0xFE, tlb::tlb_flush_entry;
+         // Named via the SVR, not Intel's vector list.
+-        Spurious     = 0xFF, spurious::spurious_entry;
++        ring3 Spurious     = 0xFF, spurious::spurious_entry;
+     }
+ }
+ 
+@@ -310,8 +333,8 @@ extern "sysv64" fn stub_halt_all() {
+     naked_asm!("cli", "2: hlt", "jmp 2b");
+ }
+ 
+-/// Every exception vector's second half: the [`TrapFrame`], 22 words below a
+-/// 16-byte-aligned stack, so `rsp` is aligned for the calls.
++/// Every exception vector's second half; the bracket exists because `trap_dispatch` can return through another task, which would otherwise leak that task's registers to Ring 3.
++/// `rdi` (the frame pointer) is captured before the state-save macro moves `rsp`.
+ #[unsafe(naked)]
+ extern "sysv64" fn common_entry() {
+     ring3_naked_asm!(
+@@ -319,16 +342,19 @@ extern "sysv64" fn common_entry() {
+         "push r11", "push r10", "push r9",  "push r8",
+         "push rbp", "push rdi", "push rsi", "push rdx",
+         "push rcx", "push rbx", "push rax",
+-        "add dword ptr gs:[{preempt_count}], 1",
++        "lock add dword ptr gs:[{preempt_count}], 1",
+         "mov rdi, rsp",
++        save_user_state!(),
+         "call {dispatch}",
+-        "sub dword ptr gs:[{preempt_count}], 1",
++        "lock sub dword ptr gs:[{preempt_count}], 1",
+         // Exit-to-user epilogue runs before the GPR pops: the call clobbers scratch regs that must not leak into user state.
+-        "test dword ptr [rsp + 144], 3",
++        "mov r11, [rsp]",
++        "test dword ptr [r11 + 144], 3",
+         "jz 9f",
+         "cli",
+         "call {exit_to_user}",
+         "9:",
++        restore_user_state!(),
+         "pop rax",  "pop rbx",  "pop rcx",  "pop rdx",
+         "pop rsi",  "pop rdi",  "pop rbp",
+         "pop r8",   "pop r9",   "pop r10",  "pop r11",
+@@ -460,7 +486,7 @@ pub fn init() {
+     let mut unclaimed = 0u32;
+     for entry in IDT.lock().entries.iter_mut() {
+         if entry.type_attr == 0 {
+-            *entry = IdtEntry::at(unclaimed::unclaimed_entry);
++            *entry = IdtEntry::ring3(Ring3Entry::new(unclaimed::unclaimed_entry));
+             unclaimed += 1;
+         }
+     }
+diff --git a/kernel/src/arch/x86_64/idt/spurious.rs b/kernel/src/arch/x86_64/idt/spurious.rs
+index 06190a061..896e35e8c 100644
+--- a/kernel/src/arch/x86_64/idt/spurious.rs
++++ b/kernel/src/arch/x86_64/idt/spurious.rs
+@@ -9,6 +9,7 @@
+ use core::arch::naked_asm;
+ 
+ use crate::arch::apic;
++use crate::arch::entry::{restore_user_state, save_user_state};
+ 
+ /// The vector `apic::enable` writes into the SVR; pub because the IDT
+ /// gate row hardcodes `0xFF` on its own and must be kept in sync by hand.
+@@ -32,8 +33,18 @@ pub(super) extern "sysv64" fn spurious_entry() {
+         "push r11",
+         "push rbp",
+         "mov rbp, rsp",
++        "test dword ptr [rbp + 88], 3",
++        "jz 2f",
++        // `took` reaches no task, but its frames land where the last restore
++        // read: the modified optimisation's invariant (`arch::entry`).
++        save_user_state!(),
++        "2:",
+         "and rsp, -16",
+         "call {took}",
++        "test dword ptr [rbp + 88], 3",
++        "jz 1f",
++        restore_user_state!(),
++        "1:",
+         "mov rsp, rbp",
+         "pop rbp",
+         "pop r11",
+@@ -47,6 +58,8 @@ pub(super) extern "sysv64" fn spurious_entry() {
+         "pop rax",
+         "iretq",
+         took = sym took,
++        fp_area = sym crate::arch::fpu::AREA_BYTES,
++        fp_form = sym crate::arch::fpu::FORM,
+     );
+ }
+ 
+diff --git a/kernel/src/arch/x86_64/idt/timer.rs b/kernel/src/arch/x86_64/idt/timer.rs
+index 89f72eab2..c59e85a36 100644
+--- a/kernel/src/arch/x86_64/idt/timer.rs
++++ b/kernel/src/arch/x86_64/idt/timer.rs
+@@ -1,6 +1,6 @@
+ use kernel::sched::hw::{CpuId, Machine, TraceEvent, TraceKind};
+ 
+-use crate::arch::entry::ring3_naked_asm;
++use crate::arch::entry::{restore_user_state, ring3_naked_asm, save_user_state};
+ use crate::hw::HW;
+ 
+ // A Ring 0 fire re-arms one quantum on, or leaves a stopped timer stopped, and never writes `last_armed_ticks`: what the scheduler planned is re-armed by its next pass, and a syscall that outlasts a quantum takes one expiry per quantum.
+@@ -12,33 +12,37 @@ pub(super) extern "sysv64" fn timer_entry() {
+         "test dword ptr [rsp + 8], 3",
+         "jz 2f",
+ 
+-        // Fifteen words on the CPU's five, below a 16-byte-aligned top:
+-        // `rsp` is aligned for the calls.
++        "push 0", // dummy error code for stack layout consistency
+         "push r15", "push r14", "push r13", "push r12",
+         "push r11", "push r10", "push r9",  "push r8",
+         "push rbp", "push rdi", "push rsi", "push rdx",
+         "push rcx", "push rbx", "push rax",
+ 
++        save_user_state!(),
++
+         // Re-arm before the handler runs so the timer survives even if the handler path panics before scheduler::do_preempt → arm_one_shot.
+         "call {rearm_last}",
+ 
+         "call {handler}",
+ 
+-        // IF is 0 here (interrupt gate, no sti), the epilogue's entry contract.
++        // IF is 0 here (interrupt gate, no sti), the epilogue's entry contract; user state stays parked on this kernel stack across it, as `device_irq` also parks it.
+         "call {exit_to_user}",
+ 
++        restore_user_state!(),
++
+         "pop rax",  "pop rbx",  "pop rcx",  "pop rdx",
+         "pop rsi",  "pop rdi",  "pop rbp",
+         "pop r8",   "pop r9",   "pop r10",  "pop r11",
+         "pop r12",  "pop r13",  "pop r14",  "pop r15",
++        "add rsp, 8", // pop dummy error code
+         "iretq",
+ 
+         "2:",
+         // This `add` inlines what `timer_handler` does for Ring 3; flags are dead after the `test` above, so none are saved.
+         "add qword ptr gs:[{irq_timer}], 1",
+         // The caller-saved set, then the stack realigned for a `sysv64` call —
+-        // no target touches an `xmm`, since the kernel touches no user
+-        // vector state (`build/fpgate.rs`'s check).
++        // no target touches an `xmm`, since the kernel's own target has no
++        // hardware float (`build/build.rs`'s check).
+         "push rax", "push rcx", "push rdx",
+         "push rsi", "push rdi", "push r8", "push r9", "push r10", "push r11",
+         "push rbp",
+diff --git a/kernel/src/arch/x86_64/idt/tlb.rs b/kernel/src/arch/x86_64/idt/tlb.rs
+index 76586ad54..46ce88ce7 100644
+--- a/kernel/src/arch/x86_64/idt/tlb.rs
++++ b/kernel/src/arch/x86_64/idt/tlb.rs
+@@ -1,4 +1,4 @@
+-use crate::arch::entry::ring3_naked_asm;
++use crate::arch::entry::{restore_user_state, ring3_naked_asm, save_user_state};
+ 
+ /// IDT entry point for the TLB-shootdown IPI vector.
+ #[unsafe(naked)]
+@@ -15,8 +15,14 @@ pub(super) extern "sysv64" fn tlb_flush_entry() {
+         "push r10",
+         "push r11",
+         "push rbp",
+-        "add dword ptr gs:[{preempt_count}], 1",
++        "lock add dword ptr gs:[{preempt_count}], 1",
+         "mov rbp, rsp",
++        "test dword ptr [rbp + 88], 3",
++        "jz 2f",
++        // Before `flush`'s frames, which land where the last restore read:
++        // the modified optimisation's invariant (`arch::entry`).
++        save_user_state!(),
++        "2:",
+         "and rsp, -16",
+         #[cfg(feature = "mask-windows")]
+         "call {windows_entered}",
+@@ -25,12 +31,13 @@ pub(super) extern "sysv64" fn tlb_flush_entry() {
+         "mov rdi, [rbp + 88]",
+         #[cfg(feature = "mask-windows")]
+         "call {windows_leaving}",
+-        "sub dword ptr gs:[{preempt_count}], 1",
++        "lock sub dword ptr gs:[{preempt_count}], 1",
+         // Only this branch can context-switch.
+         "test dword ptr [rbp + 88], 3",
+         "jz 1f",
+         "cli",
+         "call {exit_to_user}",
++        restore_user_state!(),
+         "1:",
+         "mov rsp, rbp",
+         "pop rbp",
+diff --git a/kernel/src/arch/x86_64/idt/unclaimed.rs b/kernel/src/arch/x86_64/idt/unclaimed.rs
+index c371a8f34..1b089154b 100644
+--- a/kernel/src/arch/x86_64/idt/unclaimed.rs
++++ b/kernel/src/arch/x86_64/idt/unclaimed.rs
+@@ -12,6 +12,7 @@ use core::arch::naked_asm;
+ use core::sync::atomic::{AtomicU64, Ordering};
+ 
+ use crate::arch::apic;
++use crate::arch::entry::{restore_user_state, save_user_state};
+ 
+ /// One bit per vector taken through this gate; [`log_vectors`] reads it back.
+ static TAKEN: [AtomicU64; 4] = [const { AtomicU64::new(0) }; 4];
+@@ -34,8 +35,18 @@ pub(super) extern "sysv64" fn unclaimed_entry() {
+         "push r11",
+         "push rbp",
+         "mov rbp, rsp",
++        "test dword ptr [rbp + 88], 3",
++        "jz 2f",
++        // `took` reaches no task, but its frames land where the last restore
++        // read: the modified optimisation's invariant (`arch::entry`).
++        save_user_state!(),
++        "2:",
+         "and rsp, -16",
+         "call {took}",
++        "test dword ptr [rbp + 88], 3",
++        "jz 1f",
++        restore_user_state!(),
++        "1:",
+         "mov rsp, rbp",
+         "pop rbp",
+         "pop r11",
+@@ -50,6 +61,8 @@ pub(super) extern "sysv64" fn unclaimed_entry() {
+         // #VC/#SX (0x1D/0x1E) iretq into their unpopped error code — unreachable without SEV-ES.
+         "iretq",
+         took = sym took,
++        fp_area = sym crate::arch::fpu::AREA_BYTES,
++        fp_form = sym crate::arch::fpu::FORM,
+     );
+ }
+ 
+diff --git a/kernel/src/arch/x86_64/percpu.rs b/kernel/src/arch/x86_64/percpu.rs
+index 879b2a258..63623d1a8 100644
+--- a/kernel/src/arch/x86_64/percpu.rs
++++ b/kernel/src/arch/x86_64/percpu.rs
+@@ -98,8 +98,7 @@ pub struct PerCpu {
+     pub syscall_rbp: u64,
+     /// The task whose syscall this CPU is inside: packed pid:tid, or [`NO_SYSCALL`].
+     syscall_task: u64,
+-    /// Written by this CPU alone, through `gs:`, each write one instruction,
+-    /// which no interrupt or NMI splits (SDM Vol. 3A §7.6): no `lock`.
++    /// `lock add/sub`: IRQ entry/exit and kernel code both mutate it on this CPU.
+     pub preempt_count: AtomicU32,
+     pub need_resched: AtomicU8,
+     _pad_after_need_resched: [u8; 3],
+@@ -297,22 +296,21 @@ pub(crate) mod gs {
+         }
+     }
+ 
+-    /// One increment of a per-CPU `u32`, in one instruction, which an
+-    /// interrupt on this CPU cannot split; no `lock`, since no other CPU writes it.
++    /// One `lock`-prefixed increment of a per-CPU `u32`; required since an IRQ can split a plain `add`'s load/store on this CPU.
+     #[inline]
+-    pub fn inc_u32<const OFF: u32>() {
+-        // SAFETY: `write_u32`'s argument; no `preserves_flags` — `add` writes OF/SF/ZF/AF/CF/PF.
++    pub fn lock_inc_u32<const OFF: u32>() {
++        // SAFETY: `write_u32`'s argument; no `preserves_flags` — `lock add` writes OF/SF/ZF/AF/CF/PF.
+         unsafe {
+-            asm!("add dword ptr gs:[{off}], 1", off = const OFF, options(nostack));
++            asm!("lock add dword ptr gs:[{off}], 1", off = const OFF, options(nostack));
+         }
+     }
+ 
+-    /// One decrement of a per-CPU `u32`. See [`inc_u32`].
++    /// One `lock`-prefixed decrement of a per-CPU `u32`. See [`lock_inc_u32`].
+     #[inline]
+-    pub fn dec_u32<const OFF: u32>() {
+-        // SAFETY: `inc_u32`'s argument exactly.
++    pub fn lock_dec_u32<const OFF: u32>() {
++        // SAFETY: `lock_inc_u32`'s argument exactly.
+         unsafe {
+-            asm!("sub dword ptr gs:[{off}], 1", off = const OFF, options(nostack));
++            asm!("lock sub dword ptr gs:[{off}], 1", off = const OFF, options(nostack));
+         }
+     }
+ }
+@@ -511,6 +509,10 @@ pub fn init_bsp(lapic_id: u32) {
+ 
+     // SAFETY: the write that makes `gs:` valid on the BSP; `ptr`'s `&mut` ended at `load_gdt` above, so this hands the CPU its only reference.
+     unsafe { cpu::wrmsr(MSR_GS_BASE, ptr as u64) };
++    // INVARIANT: the control registers precede the IDT. Every entry stub saves
++    // by `XCR0` into the area `control_regs::init` declares, and every `XSAVE` form
++    // without `CR4.OSXSAVE` is `#UD`, so a fault taken between the two would
++    // fault again inside its own handler.
+     super::control_regs::init(0);
+     // Then the IDT, before the first step that can fault. Until `lidt` runs the
+     // loaded table is the one firmware left across `ExitBootServices`, whose
+@@ -788,7 +790,7 @@ pub fn set_preempt_count(value: u32) {
+ /// One increment, atomic against an interrupt on this CPU.
+ #[inline]
+ pub fn preempt_count_up() {
+-    gs::inc_u32::<OFF_PREEMPT_COUNT>();
++    gs::lock_inc_u32::<OFF_PREEMPT_COUNT>();
+     #[cfg(feature = "mask-windows")]
+     crate::windows::preempt_raised();
+ }
+@@ -798,7 +800,7 @@ pub fn preempt_count_up() {
+ pub fn preempt_count_down() {
+     #[cfg(feature = "mask-windows")]
+     crate::windows::preempt_lowering();
+-    gs::dec_u32::<OFF_PREEMPT_COUNT>();
++    gs::lock_dec_u32::<OFF_PREEMPT_COUNT>();
+ }
+ 
+ /// Whether this CPU owes a reschedule.
+diff --git a/kernel/src/arch/x86_64/smp.rs b/kernel/src/arch/x86_64/smp.rs
+index d10dc7ce7..bbc9eb3d3 100644
+--- a/kernel/src/arch/x86_64/smp.rs
++++ b/kernel/src/arch/x86_64/smp.rs
+@@ -397,6 +397,12 @@ global_asm!(
+     "wrmsr",
+ 
+     // Load kernel IDT (safe now — percpu/GS is set up).
++    // The BSP's order is the opposite and deliberate: `init_bsp` applies the
++    // control registers before it loads this table, because an entry stub saves
++    // by `XCR0` and every `XSAVE` form is `#UD` without `CR4.OSXSAVE`. This CR4 holds
++    // `PAE` alone until `init_ap` reaches `control_regs::init`, so a fault
++    // before that point faults again in its own handler —
++    // `issues/an-ap-loads-the-idt-before-its-control-registers.md`.
+     "mov edi, 0x8F00",
+     "lidt [rdi + 0x28]",       // TrampolineData.kernel_idt
+ 
+diff --git a/kernel/src/arch/x86_64/syscall.rs b/kernel/src/arch/x86_64/syscall.rs
+index 9f73a0403..68587af74 100644
+--- a/kernel/src/arch/x86_64/syscall.rs
++++ b/kernel/src/arch/x86_64/syscall.rs
+@@ -3,7 +3,7 @@
+ //! `STAR` names the selectors, `LSTAR` is the one address `syscall` can reach, and `FMASK` masks the `RFLAGS` bits a Ring 3 thread may not hand the kernel; [`crate::syscall::dispatch`] is the first code that interprets the syscall number.
+ 
+ use crate::arch::cpu;
+-use crate::arch::entry::ring3_naked_asm;
++use crate::arch::entry::{restore_user_state, ring3_naked_asm, save_user_state, Ring3Entry};
+ use crate::arch::percpu;
+ 
+ use crate::syscall::dispatch::syscall_dispatch;
+@@ -20,7 +20,7 @@ pub fn init() {
+     // All three `wrmsr` writes stay in one `unsafe` block because they are one declaration: a CPU holding only some of them has its `SYSCALL` gate aimed by something this file did not decide, and no point between the writes is a state the machine may be left in.
+     unsafe {
+         cpu::wrmsr(MSR_STAR, star);
+-        cpu::wrmsr(MSR_LSTAR, syscall_entry as *const () as u64);
++        cpu::wrmsr(MSR_LSTAR, Ring3Entry::new(syscall_entry).addr());
+         // `SYSCALL` clears exactly the bits named here; every bit left out carries a Ring 3 thread's flag into Ring 0.
+         // The pre-mask `RFLAGS` survives in `r11` and `sysretq` restores it to the thread regardless — `FMASK` only decides what the kernel itself runs with.
+         const TF: u64 = 1 << 8;
+@@ -29,7 +29,7 @@ pub fn init() {
+         const AC: u64 = 1 << 18;
+         // TF must stay masked: an unmasked single-step trap taken between entry and the stack switch takes `#DB` on the user stack, which SMAP refuses and which escalates to a double fault.
+         // `debug_trap`'s `tf-syscall` arm is the check that catches `TF` being left unmasked.
+-        // `IF` stays masked until `syscall_handler` opens it, past the stack switch; `RFLAGS.AC` clear is what makes SMAP bind at all.
++        // `IF` stays masked until `syscall_handler` opens it, past the stack switch and the user-state save; `RFLAGS.AC` clear is what makes SMAP bind at all.
+         // `DF` is cleared to match `arch::entry::ring3_naked_asm`'s `cld`.
+         // `entry-df-unclean` takes out only `DF`, never another bit — a control that removed two bits would be measuring two things.
+         let df = if cfg!(feature = "entry-df-unclean") { 0 } else { DF };
+@@ -57,21 +57,31 @@ extern "sysv64" fn syscall_entry() {
+         "push r8",
+         "push r9",
+         "push r10",
+-        // Nine words below a 16-byte-aligned top: the pad aligns `rsp` for
+-        // both calls, and parks the return value across `exit_to_user`.
+-        "sub rsp, 8",
+ 
+-        "add dword ptr gs:[{preempt_count}], 1",
++        save_user_state!(),
++        // The save took `rdx` for its mask; the handler's third argument is
++        // the pushed copy, above `r10`, `r9` and `r8` at the `rsp` the save
++        // left in `r11`.
++        "mov rdx, [r11 + 24]",
++
++        "lock add dword ptr gs:[{preempt_count}], 1",
+ 
+         "call {handler}",
+ 
+-        "sub dword ptr gs:[{preempt_count}], 1",
++        "lock sub dword ptr gs:[{preempt_count}], 1",
+         // The helper called before `pop rsp`/`sysretq` (`exit_to_user`) preserves `IF=0` across its return.
+         // Runs before GPR restore: the sysv64 call would otherwise clobber rcx/r11 (sysretq's RIP/RFLAGS) and the restored args.
++        // The 16 bytes both park the syscall return value and keep `rsp` aligned for the `call`.
++        "sub rsp, 16",
+         "mov [rsp], rax",
+         "call {exit_to_user}",
+-        "mov rax, [rsp]",
+-        "add rsp, 8",
++        // Across the restore, which takes `rax` for its mask, in `r11`, which
++        // the pops below give `RFLAGS` next.
++        "mov r11, [rsp]",
++        "add rsp, 16",
++
++        restore_user_state!(),
++        "mov rax, r11",
+ 
+         "pop r10",
+         "pop r9",
+diff --git a/kernel/src/loader/mod.rs b/kernel/src/loader/mod.rs
+index 134c8dbad..6e714580c 100644
+--- a/kernel/src/loader/mod.rs
++++ b/kernel/src/loader/mod.rs
+@@ -21,8 +21,6 @@ mod tls;
+ 
+ pub use start::{build_child_handles, PendingHandles, SLOT_PAIR_LEN};
+ pub(crate) use start::{alloc_kernel_stack, Start};
+-#[cfg(feature = "heap-tripwire")]
+-pub(crate) use start::kernel_stack_layout;
+ pub use tls::{TlsBlock, DTV_INITIAL_CAPACITY, VARIANT as TLS_VARIANT};
+ 
+ use alloc::string::String;
+diff --git a/kernel/src/loader/start.rs b/kernel/src/loader/start.rs
+index afc110c20..4d67e159b 100644
+--- a/kernel/src/loader/start.rs
++++ b/kernel/src/loader/start.rs
+@@ -33,14 +33,6 @@ pub(crate) enum Start {
+     Kernel { body: extern "C" fn(u64) -> !, arg: u64 },
+ }
+ 
+-/// What a task's kernel stack is allocated as: the stack, and above its top
+-/// the area its user machine state is kept in while it is switched out
+-/// (`arch::fpu`).
+-pub(crate) fn kernel_stack_layout() -> core::alloc::Layout {
+-    core::alloc::Layout::from_size_align(KERNEL_STACK_SIZE + crate::arch::fpu::area_bytes(), 4096)
+-        .expect("a kernel stack's layout")
+-}
+-
+ /// Allocate a kernel stack and lay out the frame `context_switch` will restore.
+ pub(crate) fn alloc_kernel_stack(start: Start) -> Option<(OwnedAlloc, u64)> {
+     use crate::arch::entry::{kernel_start, process_start, thread_start};
+@@ -49,8 +41,7 @@ pub(crate) fn alloc_kernel_stack(start: Start) -> Option<(OwnedAlloc, u64)> {
+         Start::Thread { entry, sp, arg } => (thread_start, entry.addr(), sp, arg),
+         Start::Kernel { body, arg } => (kernel_start, body as usize as u64, 0, arg),
+     };
+-    let layout = kernel_stack_layout();
+-    let alloc = OwnedAlloc::new(layout.size(), layout.align())?;
++    let alloc = OwnedAlloc::new(KERNEL_STACK_SIZE, 4096)?;
+     scheduler::write_stack_canary(&alloc);
+     let top = alloc.ptr() as u64 + KERNEL_STACK_SIZE as u64;
+     // SAFETY: `alloc` is fresh and exclusively owned, and `top` is its end.
+diff --git a/kernel/src/sched/driver.rs b/kernel/src/sched/driver.rs
+index 63d92a518..d30da31f6 100644
+--- a/kernel/src/sched/driver.rs
++++ b/kernel/src/sched/driver.rs
+@@ -43,7 +43,7 @@ pub fn preempt_off<R>(f: impl FnOnce(&PreemptOff) -> R) -> R {
+     result
+ }
+ 
+-/// The same proof, bought with `cli`.
++/// The same proof, bought with `cli`: `log::emit` must pay neither of [`preempt_off`]'s locked read-modify-writes.
+ pub struct IrqOff(());
+ 
+ // SAFETY: `do_preempt` needs `IF` set or a voluntary pass; `irq_off` masks `IF` and calls nothing that yields one.
+@@ -786,6 +786,14 @@ const STACK_FILL: u8 = 0xA5;
+ #[cfg(feature = "heap-tripwire")]
+ const STACK_FILL_WORD: u64 = u64::from_ne_bytes([STACK_FILL; 8]);
+ 
++/// The layout `alloc_kernel_stack` asks for, named once so the tripwire reads
++/// back the bands that request was given.
++#[cfg(feature = "heap-tripwire")]
++fn stack_layout() -> core::alloc::Layout {
++    core::alloc::Layout::from_size_align(KERNEL_STACK_SIZE, 4096)
++        .expect("the kernel stack layout")
++}
++
+ /// Rungs of the depth ladder, in bytes above the bottom of the stack, descending so the depths they report
+ /// ascend. Touched is monotone up the stack, so the first still-filled rung ends the walk. Read rather than
+ /// walked: nine bounded reads stand in for an exact `partition_point`.
+@@ -872,8 +880,8 @@ fn check_stack_ownership(payload: &KernelPayload) {
+ fn stack_depth(payload: &KernelPayload) {
+     let bottom = payload.kernel_stack.ptr();
+     // SAFETY: the running task's own stack, allocated with exactly
+-    // `kernel_stack_layout()`; running on this CPU, so nothing is freeing it.
+-    unsafe { crate::mm::check_heap_bands(bottom, crate::loader::kernel_stack_layout(), "kernel stack") };
++    // `stack_layout()`; running on this CPU, so nothing is freeing it.
++    unsafe { crate::mm::check_heap_bands(bottom, stack_layout(), "kernel stack") };
+     let mut used = 0;
+     for rung in DEPTH_RUNGS {
+         // SAFETY: `rung < KERNEL_STACK_SIZE`, so this reads a word of that
+diff --git a/tests/guest/rust-tests/src/bin/syscall_cost.rs b/tests/guest/rust-tests/src/bin/syscall_cost.rs
+index 3eb3503c4..87f8c45c7 100644
+--- a/tests/guest/rust-tests/src/bin/syscall_cost.rs
++++ b/tests/guest/rust-tests/src/bin/syscall_cost.rs
+@@ -1,5 +1,12 @@
+ //! What a transition out of Ring 3 costs, in cycles.
+ //!
++//! The syscall entry, which is the busiest of the five places `arch::entry`'s
++//! bracket sits. The exception entry pays the same two instructions, and there
++//! is no cheap way to measure it here: the only demand-paged memory a userland
++//! program can reach is its own file-backed pages — `sys_mmap` allocates and
++//! maps its whole region up front — so a workload of N faults costs N × 2 MiB
++//! of test image.
++//!
+ //! **No threshold, and the host reads the numbers instead.** A bound measured
+ //! under TCG is meaningless and one measured on metal drifts. The number
+ //! is for a same-session A/B against another build of this tree; what the host
+diff --git a/tests/toyos.rs b/tests/toyos.rs
+index 96fedd1e6..382d54a9d 100644
+--- a/tests/toyos.rs
++++ b/tests/toyos.rs
+@@ -463,9 +463,10 @@ const MACHINE_TESTS: &[&str] = &[
+     // kernel did not make.
+     "toyfetch_reports",
+     // Every vector register a thread holds, across switches to threads holding
+-    // others, against a scheduler, which no host build has. The shared boot's
+-    // run is the benches'; this is TCG's, whose XSAVE is QEMU's own reading of
+-    // the SDM, and the KVM runner's CPU.
++    // others: the bracket's `XSAVEOPT` and `XRSTOR` against a scheduler, which
++    // no host build has. The shared boot's run is the benches'; this is TCG's,
++    // whose XSAVE is QEMU's own reading of the SDM, and the KVM runner's CPU,
++    // and the one machine a mutation of the bracket can be run on unattended.
+     "vector_state_survives_a_switch",
+ ];
+ 

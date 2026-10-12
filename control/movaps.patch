@@ -1,0 +1,12 @@
+diff --git a/kernel/src/arch/x86_64/hw.rs b/kernel/src/arch/x86_64/hw.rs
+--- a/kernel/src/arch/x86_64/hw.rs
++++ b/kernel/src/arch/x86_64/hw.rs
+@@ -17,6 +17,8 @@ pub fn halt() {
+     if !cpu::interrupts_enabled() {
+         crate::windows::irqs_unmasking();
+     }
++    // SAFETY: the gate's control, never lands: moves a thread's XMM1 into its XMM0.
++    unsafe { asm!("movaps xmm0, xmm1", options(nomem, nostack, preserves_flags)); }
+     // SAFETY: enables interrupts and waits for one; touches no memory.
+     unsafe { asm!("sti; hlt", options(nomem, nostack)); }
+ }

@@ -1,0 +1,17 @@
+$ git rev-parse HEAD
+5151e194a33e0fd24d10f65225b5705c0e25d234
+$ git status --porcelain --ignore-submodules=none   (before the first gate; empty)
+$ git status --porcelain --ignore-submodules=none   (after the last gate; empty)
+$ cat gates.sh
+#!/bin/sh
+# The gates at the head 5151e194a, one after another, each with its own exit.
+R=/private/tmp/claude-502/-Users-jan-Dev-jan-toyos/80e90c3a-7449-46b8-84cc-b59e9dd31ae9/scratchpad/sysentry/resume/r2
+cd /Users/jan/Dev/jan/toyos-sysentry || exit 3
+git rev-parse HEAD > "$R/head.txt"
+git status --porcelain --ignore-submodules=none > "$R/status-before.txt"
+cargo run -- --build-only > "$R/build-only-x86_64.log" 2>&1; echo "EXIT=$?" >> "$R/build-only-x86_64.log"
+cargo run -- --build-only --arch aarch64 > "$R/build-only-aarch64.log" 2>&1; echo "EXIT=$?" >> "$R/build-only-aarch64.log"
+cargo run -- --ci host > "$R/host.log" 2>&1; echo "EXIT=$?" >> "$R/host.log"
+{ uptime; cargo test; echo "EXIT=$?"; uptime; } > "$R/guest.log" 2>&1
+git status --porcelain --ignore-submodules=none > "$R/status-after.txt"
+echo done > "$R/done"
