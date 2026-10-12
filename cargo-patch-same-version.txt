@@ -1,0 +1,105 @@
+# PR 892, the second half of the --locked measurement: the fork carries the version the app's Cargo.lock pins, as ToyOS's forks carry upstream's (winit 0.30.13 on branch toyos-0.30.13, Cargo.lock:5476-5478).
+# ToyOS head 226e393d6 (main ab655a115). <scratch> as in cargo-patch-locked-profile.txt. Script: builder-probe-same-version.sh.
+
+$ cargo --version
+cargo 1.98.1 (797e8a9bc 2026-08-05)
+EXIT=0
+
+## The fork: branch toyos holds itoa 1.0.11, the version the app's lock pins, commit A
+$ cat <scratch>/itoa-fork/Cargo.toml
+[package]
+name = "itoa"
+version = "1.0.11"
+edition = "2021"
+EXIT=0
+A=9c85e9cb5202a21bc86989c3120224ac957dc58d
+
+## The app, as in the first probe: its Cargo.lock pins crates.io itoa 1.0.11 and ryu 1.0.10 (commit C1)
+$ (in <scratch>/app) cargo generate-lockfile
+    Updating crates.io index
+     Locking 2 packages to latest compatible versions
+EXIT=0
+$ (in <scratch>/app) cargo update -p itoa --precise 1.0.11
+    Updating crates.io index
+ Downgrading itoa v1.0.18 -> v1.0.11
+EXIT=0
+$ (in <scratch>/app) cargo update -p ryu --precise 1.0.10
+    Updating crates.io index
+ Downgrading ryu v1.0.23 -> v1.0.10
+note: pass `--verbose` to see 1 unchanged dependencies behind latest
+EXIT=0
+C1=974d770dbf2953a9bdbd3eeb0f0bf73e8779181a
+
+## 4a. cargo install C1 --locked, itoa patched to the fork at rev A
+$ cargo install --git file://<scratch>/app --rev 974d770dbf2953a9bdbd3eeb0f0bf73e8779181a --root <scratch>/r4a --locked --config patch.crates-io.itoa.git="file://<scratch>/itoa-fork" --config patch.crates-io.itoa.rev="9c85e9cb5202a21bc86989c3120224ac957dc58d"
+    Updating git repository `file://<scratch>/app`
+  Installing probeapp v0.1.0 (file://<scratch>/app?rev=974d770dbf2953a9bdbd3eeb0f0bf73e8779181a#974d770d)
+    Updating git repository `file://<scratch>/itoa-fork`
+    Updating crates.io index
+    Updating git repository `file://<scratch>/itoa-fork`
+ Downloading crates ...
+  Downloaded ryu v1.0.10
+   Compiling itoa v1.0.11 (file://<scratch>/itoa-fork?rev=9c85e9cb5202a21bc86989c3120224ac957dc58d#9c85e9cb)
+   Compiling ryu v1.0.10
+   Compiling probeapp v0.1.0 (<scratch>/cargo-home/git/checkouts/app-1e00da76757700cd/974d770)
+    Finished `release` profile [optimized] target(s) in 0.89s
+  Installing <scratch>/r4a/bin/probeapp
+   Installed package `probeapp v0.1.0 (file://<scratch>/app?rev=974d770dbf2953a9bdbd3eeb0f0bf73e8779181a#974d770d)` (executable `probeapp`)
+warning: be sure to add `<scratch>/r4a/bin` to your PATH to be able to run the installed binaries
+EXIT=0
+$ <scratch>/r4a/bin/probeapp
+itoa: the fork's commit A
+ryu: 1.5
+EXIT=0
+
+## 4b. cargo build --locked in a checkout of C1, the same patch
+$ git clone -q file://<scratch>/app <scratch>/checkout
+EXIT=0
+$ (in <scratch>/checkout) git checkout -q 974d770dbf2953a9bdbd3eeb0f0bf73e8779181a
+EXIT=0
+$ (in <scratch>/checkout) cargo build --locked --config patch.crates-io.itoa.git="file://<scratch>/itoa-fork" --config patch.crates-io.itoa.rev="9c85e9cb5202a21bc86989c3120224ac957dc58d"
+    Updating git repository `file://<scratch>/itoa-fork`
+error: cannot update the lock file <scratch>/checkout/Cargo.lock because --locked was passed to prevent this
+help: to generate the lock file without accessing the network, remove the --locked flag and use --offline instead.
+EXIT=101
+
+## 4c. cargo build without --locked, the same patch: what it does to the app's Cargo.lock
+$ (in <scratch>/checkout) cargo build --config patch.crates-io.itoa.git="file://<scratch>/itoa-fork" --config patch.crates-io.itoa.rev="9c85e9cb5202a21bc86989c3120224ac957dc58d"
+    Updating git repository `file://<scratch>/itoa-fork`
+     Locking 1 package to latest compatible version
+      Adding itoa v1.0.11 (file://<scratch>/itoa-fork?rev=9c85e9cb5202a21bc86989c3120224ac957dc58d#9c85e9cb)
+   Compiling ryu v1.0.10
+   Compiling itoa v1.0.11 (file://<scratch>/itoa-fork?rev=9c85e9cb5202a21bc86989c3120224ac957dc58d#9c85e9cb)
+   Compiling probeapp v0.1.0 (<scratch>/checkout)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.32s
+EXIT=0
+$ (in <scratch>/checkout) git diff Cargo.lock
+diff --git a/Cargo.lock b/Cargo.lock
+index cb7b531..0b1cadd 100644
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@ -5,8 +5,7 @@ version = 4
+ [[package]]
+ name = "itoa"
+ version = "1.0.11"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "49f1f14873335454500d59611f1cf4a4b0f786f9ac11f4312a78e4cf2566695b"
++source = "git+file://<scratch>/itoa-fork?rev=9c85e9cb5202a21bc86989c3120224ac957dc58d#9c85e9cb5202a21bc86989c3120224ac957dc58d"
+ 
+ [[package]]
+ name = "probeapp"
+EXIT=0
+$ (in <scratch>/checkout) ./target/debug/probeapp
+itoa: the fork's commit A
+ryu: 1.5
+EXIT=0
+
+## 4d. the lock 4c wrote, the same patch, --locked
+$ (in <scratch>/checkout) cargo build --locked --config patch.crates-io.itoa.git="file://<scratch>/itoa-fork" --config patch.crates-io.itoa.rev="9c85e9cb5202a21bc86989c3120224ac957dc58d"
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.00s
+EXIT=0
+$ (in <scratch>/checkout) ./target/debug/probeapp
+itoa: the fork's commit A
+ryu: 1.5
+EXIT=0
+SCRIPT_EXIT=0
