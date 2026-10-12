@@ -1,0 +1,10 @@
+--- a/kernel/src/hw.rs
++++ b/kernel/src/hw.rs
+@@ -41,7 +41,6 @@
+         let me = percpu::cpu_id();
+         if target.0 == me {
+             DIAG_SELF[me as usize].fetch_add(1, Relaxed);
+-            crate::preempt::set_need_resched();
+         } else {
+             DIAG_IPI[me as usize].fetch_add(1, Relaxed);
+             irqchip::kick_cpu(target.0);

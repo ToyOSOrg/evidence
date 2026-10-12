@@ -1,0 +1,137 @@
+diff --git a/kernel/pure/sched/mailbox.rs b/kernel/pure/sched/mailbox.rs
+index 492b40d2d..fc828f3c2 100644
+--- a/kernel/pure/sched/mailbox.rs
++++ b/kernel/pure/sched/mailbox.rs
+@@ -435,6 +435,9 @@ pub enum Kick {
+     Elide,
+ }
+ 
++pub static DIAG_SLEEP_SEND: core::sync::atomic::AtomicU64 = core::sync::atomic::AtomicU64::new(0);
++pub static DIAG_BUSY_SEND: core::sync::atomic::AtomicU64 = core::sync::atomic::AtomicU64::new(0);
++pub static DIAG_ELIDE: core::sync::atomic::AtomicU64 = core::sync::atomic::AtomicU64::new(0);
+ const KICK_PENDING: u32 = 1 << 0;
+ const SLEEPING: u32 = 1 << 1;
+ 
+@@ -485,8 +488,14 @@ impl Doorbell {
+             // sent waits out its quantum while an idle CPU could have run it.
+             Urgency::Normal => {
+                 if prev & KICK_PENDING == 0 {
++                    if prev & SLEEPING != 0 {
++                        DIAG_SLEEP_SEND.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
++                    } else {
++                        DIAG_BUSY_SEND.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
++                    }
+                     Kick::Send
+                 } else {
++                    DIAG_ELIDE.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
+                     Kick::Elide
+                 }
+             }
+diff --git a/kernel/src/hw.rs b/kernel/src/hw.rs
+index 00e28fd15..4a1f2e3e0 100644
+--- a/kernel/src/hw.rs
++++ b/kernel/src/hw.rs
+@@ -22,6 +22,9 @@ pub static HW: KernelHw = KernelHw;
+ 
+ pub struct KernelHw;
+ 
++pub static DIAG_IPI: [AtomicU64; 8] = [const { AtomicU64::new(0) }; 8];
++pub static DIAG_SELF: [AtomicU64; 8] = [const { AtomicU64::new(0) }; 8];
++
+ /// The scheduler clock, in raw nanoseconds.
+ pub fn now_ns() -> u64 {
+     HW.now().0
+@@ -35,9 +38,12 @@ pub(crate) const MIN_ONE_SHOT: Floor =
+ 
+ impl Kicker for KernelHw {
+     fn kick(&self, target: CpuId) {
+-        if target.0 == percpu::cpu_id() {
++        let me = percpu::cpu_id();
++        if target.0 == me {
++            DIAG_SELF[me as usize].fetch_add(1, Relaxed);
+             crate::preempt::set_need_resched();
+         } else {
++            DIAG_IPI[me as usize].fetch_add(1, Relaxed);
+             irqchip::kick_cpu(target.0);
+         }
+     }
+diff --git a/kernel/src/watch.rs b/kernel/src/watch.rs
+index 8c49ecfaf..6188e290a 100644
+--- a/kernel/src/watch.rs
++++ b/kernel/src/watch.rs
+@@ -97,10 +97,24 @@ impl Watch {
+     /// Wake at most `limit` threads waiting with `token`, and answer how many
+     /// were parked; one that was not is told anyway and spends nothing.
+     pub fn post_n(&self, token: u64, limit: usize) -> usize {
+-        preempt_off(|p| {
++        use core::sync::atomic::Ordering::Relaxed;
++        use kernel::sched::mailbox::{DIAG_BUSY_SEND, DIAG_ELIDE, DIAG_SLEEP_SEND};
++        let (n, cpu, cycles, sleep, busy, elide, ipis, selfk) = preempt_off(|p| {
++            let me = crate::arch::percpu::cpu_id() as usize;
+             let env = Poster { cpus: cpus(), kicker: &HW, preempt: p };
+-            self.0.post_n(token, limit, WakeCause::new(WakeReason::Woken), &env)
+-        })
++            let (s0, b0, e0) = (DIAG_SLEEP_SEND.load(Relaxed), DIAG_BUSY_SEND.load(Relaxed), DIAG_ELIDE.load(Relaxed));
++            let (i0, k0) = (crate::hw::DIAG_IPI[me].load(Relaxed), crate::hw::DIAG_SELF[me].load(Relaxed));
++            let t0 = crate::arch::cpu::rdtsc();
++            let n = self.0.post_n(token, limit, WakeCause::new(WakeReason::Woken), &env);
++            let t1 = crate::arch::cpu::rdtsc();
++            (n, me, t1 - t0,
++             DIAG_SLEEP_SEND.load(Relaxed) - s0, DIAG_BUSY_SEND.load(Relaxed) - b0, DIAG_ELIDE.load(Relaxed) - e0,
++             crate::hw::DIAG_IPI[me].load(Relaxed) - i0, crate::hw::DIAG_SELF[me].load(Relaxed) - k0)
++        });
++        if n >= 2 {
++            crate::log!("storm-diag: cpu{cpu} woke {n} in {cycles} cycles; walker ipis {ipis} self {selfk}; machine-wide sleeping-edge {sleep} busy-edge {busy} elided {elide}");
++        }
++        n
+     }
+ 
+     /// End every wait whose token lies in `[from, from + len)`, taken out
+diff --git a/tests/toyos.rs b/tests/toyos.rs
+index 6e0aa0695..0441a7f62 100644
+--- a/tests/toyos.rs
++++ b/tests/toyos.rs
+@@ -445,6 +445,7 @@ const MACHINE_TESTS: &[&str] = &[
+     // the T14 boots from a stick, so no disk diskserver drives holds a
+     // partition the loader named.
+     "block_grants_reach_their_partitions",
++    "wake_storm_smoke",
+     // The supervisor reading the slot table through a block session and
+     // minting `update` the idle slot's partitions, which `update` writes and
+     // marks through diskserver: the supervisor, the launcher and diskserver
+@@ -3935,6 +3936,7 @@ fn run_machine_test(name: &str, test_config: &Path) -> Result<(), String> {
+         "nvme_disk_keeps_log_and_home" => nvme_disk_keeps_log_and_home(test_config),
+         "hosted_clang_hello" => common::hostedclang::hosted_clang_hello(),
+         "block_grants_reach_their_partitions" => block_grants_reach_their_partitions(),
++        "wake_storm_smoke" => wake_storm_smoke(test_config),
+         "update_writes_the_idle_slot_through_the_block_service" => update_writes_the_idle_slot_through_the_block_service(),
+         "usbd_drives_the_spare" => usbd_drives_the_spare(test_config),
+         "usb_keyboard_rollover" => usb_keyboard_rollover(test_config),
+@@ -4356,6 +4358,27 @@ fn toyfetch_reports(test_config: &Path) -> Result<(), String> {
+ /// that disk, and what one boot wrote to `/home` and said into `/log` the next
+ /// boot reads back: a file under a name of this run's, line for line, and a
+ /// line of this run's in a log file the first boot listed.
++/// Scratch, never committed: `wake_storm_cost` on an eight-CPU guest, for the
++/// kernel's storm-diag counts; its cycle numbers mean nothing here.
++fn wake_storm_smoke(test_config: &Path) -> Result<(), String> {
++    let rust = compile::repo_root().join("tests/guest/rust-tests");
++    let job = "wake_storm_cost";
++    let bin = qemu::build_toyos_bin(qemu::SUITE_ARCH, &rust, job);
++    let options = BootOptions { smp: 8, ..Default::default() };
++    let mut qemu = QemuInstance::boot_with_options(test_config, &[], &[(job.to_string(), bin)], options);
++    let result = qemu.run_test(&format!("test_rs_{job}"), Duration::from_secs(300));
++    for line in result.serial.lines().filter(|l| l.contains("wake_storm_cost") || l.contains("storm-diag")) {
++        eprintln!("  {line}");
++    }
++    if let Some(why) = &result.error {
++        return Err(format!("{why}"));
++    }
++    match result.exit_code {
++        Some(code) if code >= 0 => Ok(()),
++        code => Err(format!("the job ended {code:?}")),
++    }
++}
++
+ fn nvme_disk_keeps_log_and_home(test_config: &Path) -> Result<(), String> {
+     let options = BootOptions { profile: qemu::Profile::HeadlessNoUsb, qmp: true, ..Default::default() };
+     if let Some(usb) = qemu::profile_argv(&options).iter().find(|arg| arg.contains("usb") || arg.contains("xhci")) {

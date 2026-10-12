@@ -1,0 +1,48 @@
+diff --git a/tests/toyos.rs b/tests/toyos.rs
+index 6e0aa0695..0441a7f62 100644
+--- a/tests/toyos.rs
++++ b/tests/toyos.rs
+@@ -445,6 +445,7 @@ const MACHINE_TESTS: &[&str] = &[
+     // the T14 boots from a stick, so no disk diskserver drives holds a
+     // partition the loader named.
+     "block_grants_reach_their_partitions",
++    "wake_storm_smoke",
+     // The supervisor reading the slot table through a block session and
+     // minting `update` the idle slot's partitions, which `update` writes and
+     // marks through diskserver: the supervisor, the launcher and diskserver
+@@ -3935,6 +3936,7 @@ fn run_machine_test(name: &str, test_config: &Path) -> Result<(), String> {
+         "nvme_disk_keeps_log_and_home" => nvme_disk_keeps_log_and_home(test_config),
+         "hosted_clang_hello" => common::hostedclang::hosted_clang_hello(),
+         "block_grants_reach_their_partitions" => block_grants_reach_their_partitions(),
++        "wake_storm_smoke" => wake_storm_smoke(test_config),
+         "update_writes_the_idle_slot_through_the_block_service" => update_writes_the_idle_slot_through_the_block_service(),
+         "usbd_drives_the_spare" => usbd_drives_the_spare(test_config),
+         "usb_keyboard_rollover" => usb_keyboard_rollover(test_config),
+@@ -4356,6 +4358,27 @@ fn toyfetch_reports(test_config: &Path) -> Result<(), String> {
+ /// that disk, and what one boot wrote to `/home` and said into `/log` the next
+ /// boot reads back: a file under a name of this run's, line for line, and a
+ /// line of this run's in a log file the first boot listed.
++/// Scratch, never committed: `wake_storm_cost` on an eight-CPU guest, for the
++/// kernel's storm-diag counts; its cycle numbers mean nothing here.
++fn wake_storm_smoke(test_config: &Path) -> Result<(), String> {
++    let rust = compile::repo_root().join("tests/guest/rust-tests");
++    let job = "wake_storm_cost";
++    let bin = qemu::build_toyos_bin(qemu::SUITE_ARCH, &rust, job);
++    let options = BootOptions { smp: 8, ..Default::default() };
++    let mut qemu = QemuInstance::boot_with_options(test_config, &[], &[(job.to_string(), bin)], options);
++    let result = qemu.run_test(&format!("test_rs_{job}"), Duration::from_secs(300));
++    for line in result.serial.lines().filter(|l| l.contains("wake_storm_cost") || l.contains("storm-diag")) {
++        eprintln!("  {line}");
++    }
++    if let Some(why) = &result.error {
++        return Err(format!("{why}"));
++    }
++    match result.exit_code {
++        Some(code) if code >= 0 => Ok(()),
++        code => Err(format!("the job ended {code:?}")),
++    }
++}
++
+ fn nvme_disk_keeps_log_and_home(test_config: &Path) -> Result<(), String> {
+     let options = BootOptions { profile: qemu::Profile::HeadlessNoUsb, qmp: true, ..Default::default() };
+     if let Some(usb) = qemu::profile_argv(&options).iter().find(|arg| arg.contains("usb") || arg.contains("xhci")) {

@@ -1,0 +1,232 @@
+   Compiling kernel v0.1.0 (<home>/Dev/jan/toyos-busywake/kernel)
+warning: unused import: `Urgency`
+  --> kernel/pure/sched/park.rs:36:59
+   |
+36 | use crate::sched::mailbox::{Kick, PreemptGuard, SchedMsg, Urgency};
+   |                                                           ^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: `kernel` (lib test) generated 1 warning (run `cargo fix --lib -p kernel --tests` to apply 1 suggestion)
+    Finished `test` profile [optimized + debuginfo] target(s) in 2.76s
+     Running unittests pure/lib.rs (<home>/Dev/jan/toyos-busywake/target/debug/deps/kernel-fa45b686f8e87f8e)
+
+running 109 tests
+test sched::cpu::tests::a_live_fair_task_loses_the_cpu_to_a_ready_rt_task ... ok
+test sched::cpu::tests::a_killed_rt_thread_unwinds_in_the_normal_band ... ok
+test sched::cpu::tests::a_dying_task_resumes_when_the_rt_band_empties ... ok
+test sched::cpu::tests::a_killed_task_that_expires_its_quantum_yields_to_a_ready_rt_task ... ok
+test sched::cpu::tests::a_burst_of_wakes_forwards_one_per_idle_sibling ... ok
+test sched::cpu::tests::a_lone_queued_task_is_published_and_given_to_a_probe ... ok
+test sched::cpu::tests::a_dying_task_is_picked_before_the_fair_queue ... ok
+test sched::cpu::tests::a_cpu_does_not_hand_over_the_context_it_is_still_standing_on ... ok
+test sched::cpu::tests::a_corpse_is_not_starved_for_ever_by_a_spinning_rt_task ... ok
+test sched::cpu::tests::a_killed_task_loses_the_cpu_before_its_quantum_expires ... ok
+test sched::cpu::tests::a_killed_task_does_not_starve_a_ready_rt_task ... ok
+test sched::cpu::tests::a_killed_task_that_yields_goes_back_to_the_dying_list ... ok
+test sched::cpu::tests::a_killed_task_that_expires_its_quantum_goes_back_to_the_dying_list ... ok
+test sched::cpu::tests::a_dying_task_that_exits_is_released_by_its_own_death ... ok
+test sched::cpu::tests::a_probe_for_the_task_the_cpu_stands_on_is_answered_a_pass_later ... ok
+test sched::cpu::tests::a_retire_moves_a_ready_task_to_the_dying_list ... ok
+test sched::cpu::tests::a_retire_of_the_running_task_asks_for_a_safe_point ... ok
+test sched::cpu::tests::a_retire_that_loses_the_claim_leaves_the_wake_in_flight ... ok
+test sched::cpu::tests::a_retire_wakes_a_parked_task_so_it_can_unwind ... ok
+test sched::cpu::tests::a_running_task_refuses_the_parked_mark ... ok
+test sched::cpu::tests::a_second_owed_wake_does_not_cut_inside_the_protected_run ... ok
+test sched::cpu::tests::a_spawned_task_is_adopted_and_dispatched ... ok
+test sched::cpu::tests::a_steal_probe_goes_to_surplus_and_not_to_a_cpu_full_of_corpses ... ok
+test sched::cpu::tests::a_stopped_task_is_never_picked_again ... ok
+test sched::cpu::tests::a_stopped_task_is_not_published_as_load ... ok
+test sched::cpu::tests::a_wake_for_a_stopped_task_lands_in_the_band_and_not_the_run_queue ... ok
+test sched::cpu::tests::a_wake_that_ties_the_running_tasks_key_cuts_nothing ... ok
+test sched::cpu::tests::a_wake_to_a_busy_cpu_is_handed_to_an_idle_sibling ... ok
+test sched::cpu::tests::a_wake_with_a_lower_key_cuts_the_running_quantum_to_the_protected_run ... ok
+test sched::cpu::tests::an_adopt_of_a_killed_task_dispatches_it_on_arrival ... ok
+test sched::cpu::tests::an_aged_grant_is_not_undone_by_a_pass_inside_its_chunk ... ok
+test sched::cpu::tests::an_unwind_under_saturated_rt_is_stretched_by_the_age_ratio ... ok
+test sched::cpu::tests::placement_believes_a_cpu_that_answers_and_no_other ... ok
+test sched::cpu::tests::stopping_outranks_killing ... ok
+test sched::cpu::tests::the_balance_path_keeps_a_killed_task_rather_than_migrating_it ... ok
+test sched::cpu::tests::the_dying_list_is_served_oldest_first ... ok
+test sched::cpu::tests::the_pick_dispatches_a_killed_task_so_it_can_unwind ... ok
+test sched::fair::tests::charge_accumulates_and_saturates ... ok
+test sched::fair::tests::charge_nonrunnable_is_a_bug ... ok
+test sched::fair::tests::frontier_is_monotonic ... ok
+test sched::fair::tests::lag_clamps_in_both_directions ... ok
+test sched::fair::tests::leave_stores_lag_and_wake_rederives_vruntime ... ok
+test sched::fair::tests::leave_when_nonrunnable_is_a_noop ... ok
+test sched::fair::tests::new_process_starts_at_frontier_with_zero_lag ... ok
+test sched::fair::tests::nonrunnable_vruntime_tracks_the_live_frontier ... ok
+test sched::fair::tests::refcount_tracks_runnable_threads ... ok
+test sched::mailbox::tests::a_node_carries_one_message_at_a_time ... ok
+test sched::mailbox::tests::doorbell_kick_policy ... ok
+test sched::mailbox::tests::fifo_across_nodes_and_recycling ... ok
+test sched::mailbox::tests::releasing_an_unposted_claim_frees_the_node ... ok
+test sched::mailbox::tests::sleep_needs_an_empty_mailbox_and_a_quiet_doorbell ... ok
+test sched::park::tests::a_boosted_notify_always_kicks ... ok
+test sched::mailbox::tests::dropping_a_queued_node_is_loud - should panic ... ok
+test sched::park::tests::a_boosted_wake_posted_on_its_own_cpu_still_kicks ... ok
+test sched::park::tests::a_kill_beats_a_pre_park_claim_to_the_commit ... ok
+test sched::park::tests::a_kill_that_lands_before_the_commit_refuses_the_park ... ok
+test sched::park::tests::a_notify_before_phase_one_refuses_it ... ok
+test sched::park::tests::a_notify_before_the_commit_refuses_the_park_and_sends_nothing ... ok
+test sched::park::tests::an_uncancellable_ticket_parks_a_killed_task ... ok
+test sched::park::tests::cancel_reports_a_claim_it_lost ... ok
+test sched::park::tests::one_wake_node_serves_the_whole_lifecycle ... ok
+test sched::park::tests::park_then_notify_delivers_exactly_one_message ... ok
+test sched::retire::tests::a_wake_and_a_retire_ride_distinct_nodes ... ok
+test sched::retire::tests::retire_goes_to_the_home_cpu_and_always_kicks ... ok
+test sched::retire::tests::retiring_a_dead_task_posts_nothing ... ok
+test sched::retire::tests::the_chase_reuses_the_same_node ... ok
+test sched::retire::tests::the_kill_bit_is_set_before_the_kick_and_before_the_chase_kick ... ok
+test sched::task::tests::a_dead_task_takes_no_post ... ok
+test sched::task::tests::a_post_before_the_commit_refuses_it ... ok
+test sched::task::tests::a_post_claims_a_waiter_it_finds_parked_or_committing ... ok
+test sched::task::tests::a_second_retirer_is_refused ... ok
+test sched::task::tests::a_stale_generation_cannot_park_the_task ... ok
+test sched::task::tests::a_wake_between_registration_and_commit_refuses_the_park ... ok
+test sched::task::tests::cancel_reports_a_claim_it_lost ... ok
+test sched::task::tests::claims_on_anything_but_a_waiter_are_lost ... ok
+test sched::task::tests::park_then_wake_is_the_ordinary_path ... ok
+test sched::task::tests::registration_forgets_a_post_or_revoke_to_an_earlier_wait ... ok
+test sched::task::tests::sticky_bits_survive_transitions ... ok
+test sched::task::tests::stopping_outranks_killing_at_a_safe_point ... ok
+test sched::task::tests::wait_membership_is_single_watch ... ok
+test sched::task::tests::word_roundtrips_every_state ... ok
+test sched::watch::tests::a_bounded_post_skips_a_waiter_that_was_not_parked ... ok
+test sched::watch::tests::a_post_between_registration_and_park_is_not_lost ... ok
+test sched::watch::tests::a_post_in_place_fires_and_drops_nothing ... ok
+test sched::watch::tests::a_post_wakes_every_parked_thread_and_fires_every_ring ... ok
+test sched::watch::tests::a_registration_sweeps_the_entries_that_can_no_longer_fire ... ok
+test sched::watch::tests::a_revoke_takes_the_registration_out_before_it_wakes ... ok
+test sched::watch::tests::a_revoked_waiter_cannot_park_again ... ok
+test sched::watch::tests::a_sweep_drops_what_it_took_out_with_the_list_lock_let_go ... ok
+test sched::watch::tests::a_waiter_revoked_before_it_parks_cannot_park ... ok
+test sched::watch::tests::a_waiter_revoked_while_it_commits_cannot_park ... ok
+test sched::watch::tests::cancel_and_drop_answer_every_live_poll_as_gone ... ok
+test sched::watch_list::a_list_outgrowing_the_buffer_sized_for_it_is_not_moved_into_it ... ok
+test sched::watch_list::a_post_of_one_entry_past_its_stack_fires_each_once_and_frees_none_under_the_lock ... ok
+test sched::watch_list::a_re_arm_after_a_post_of_few_entries_is_one_section ... ok
+test sched::watch_list::nothing_allocates_or_frees_under_the_list_lock_and_a_post_in_place_frees_nothing ... ok
+test sched::windows::tests::a_pass_ends_the_preemption_off_window_and_starts_the_next ... ok
+test sched::windows::tests::a_start_counts_from_how_the_cpu_stands ... ok
+test sched::windows::tests::a_whole_set_opens_or_closes_only_across_zero ... ok
+test sched::windows::tests::an_interrupts_off_window_is_mask_to_unmask_and_the_longest_is_taken_once ... ok
+test sched::windows::tests::an_untracked_cpu_records_and_refuses_nothing ... ok
+test sched::windows::tests::every_transition_nothing_reported_before_is_named ... ok
+test sched::windows::tests::only_a_crossing_of_zero_opens_or_closes_a_preemption_off_window ... ok
+test sched::windows::tests::the_idle_halt_inside_a_pass_is_no_window ... ok
+
+thread 'sched::park::tests::an_ordinary_wake_posted_on_its_own_cpu_rings_nothing' (16369321) panicked at kernel/pure/sched/park.rs:362:9:
+assertion failed: !handles.get(C0).doorbell().kick_pending()
+
+thread 'sched::park::tests::an_ordinary_wake_posted_on_its_own_cpu_rings_nothing' (16369321) panicked at kernel/pure/sched/mailbox.rs:178:9:
+mailbox node dropped with a message in flight
+stack backtrace:
+   0:        0x100e17954 - std[5d97c59e5e5fafcc]::backtrace_rs::backtrace::libunwind::trace
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/../../backtrace/src/backtrace/libunwind.rs:117:9
+   1:        0x100e17954 - std[5d97c59e5e5fafcc]::backtrace_rs::backtrace::trace_unsynchronized::<std[5d97c59e5e5fafcc]::sys::backtrace::_print_fmt::{closure#1}>
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/../../backtrace/src/backtrace/mod.rs:66:14
+   2:        0x100e17954 - std[5d97c59e5e5fafcc]::sys::backtrace::_print_fmt
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/sys/backtrace.rs:74:9
+   3:        0x100e17954 - <<std[5d97c59e5e5fafcc]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[663bb9e1522ba5ef]::fmt::Display>::fmt
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/sys/backtrace.rs:44:26
+   4:        0x100e2864c - <core[663bb9e1522ba5ef]::fmt::rt::Argument>::fmt
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/fmt/rt.rs:152:76
+   5:        0x100e2864c - core[663bb9e1522ba5ef]::fmt::write
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/fmt/mod.rs:1687:22
+   6:        0x100e1afe0 - std[5d97c59e5e5fafcc]::io::default_write_fmt::<alloc[cc4db322bb1ac55d]::vec::Vec<u8>>
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/io/mod.rs:626:11
+   7:        0x100e1afe0 - <alloc[cc4db322bb1ac55d]::vec::Vec<u8> as std[5d97c59e5e5fafcc]::io::Write>::write_fmt
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/io/mod.rs:1730:13
+   8:        0x100dfeda4 - <std[5d97c59e5e5fafcc]::sys::backtrace::BacktraceLock>::print
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/sys/backtrace.rs:47:25
+   9:        0x100dfeda4 - std[5d97c59e5e5fafcc]::panicking::default_hook::{closure#0}
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/panicking.rs:292:27
+  10:        0x100e113c0 - std[5d97c59e5e5fafcc]::panicking::default_hook
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/panicking.rs:316:9
+  11:        0x100dc5b84 - <alloc[cc4db322bb1ac55d]::boxed::Box<dyn for<'a, 'b> core[663bb9e1522ba5ef]::ops::function::Fn<(&'a std[5d97c59e5e5fafcc]::panic::PanicHookInfo<'b>,), Output = ()> + core[663bb9e1522ba5ef]::marker::Sync + core[663bb9e1522ba5ef]::marker::Send> as core[663bb9e1522ba5ef]::ops::function::Fn<(&std[5d97c59e5e5fafcc]::panic::PanicHookInfo,)>>::call
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/alloc/src/boxed.rs:2333:9
+  12:        0x100dc5b84 - test[4aa3eea2f4983582]::test_main_inner::<test[4aa3eea2f4983582]::test_main_static::{closure#0}>::{closure#0}
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/test/src/lib.rs:155:21
+  13:        0x100e11778 - <alloc[cc4db322bb1ac55d]::boxed::Box<dyn for<'a, 'b> core[663bb9e1522ba5ef]::ops::function::Fn<(&'a std[5d97c59e5e5fafcc]::panic::PanicHookInfo<'b>,), Output = ()> + core[663bb9e1522ba5ef]::marker::Sync + core[663bb9e1522ba5ef]::marker::Send> as core[663bb9e1522ba5ef]::ops::function::Fn<(&std[5d97c59e5e5fafcc]::panic::PanicHookInfo,)>>::call
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/alloc/src/boxed.rs:2333:9
+  14:        0x100e11778 - std[5d97c59e5e5fafcc]::panicking::panic_with_hook
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/panicking.rs:823:13
+  15:        0x100dfee58 - std[5d97c59e5e5fafcc]::panicking::panic_handler::{closure#0}
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/panicking.rs:681:13
+  16:        0x100df6450 - std[5d97c59e5e5fafcc]::sys::backtrace::__rust_end_short_backtrace::<std[5d97c59e5e5fafcc]::panicking::panic_handler::{closure#0}, !>
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/sys/backtrace.rs:182:18
+  17:        0x100dff364 - __rustc[100742bb89c490cb]::rust_begin_unwind
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/panicking.rs:679:5
+  18:        0x100e36a20 - core[663bb9e1522ba5ef]::panicking::panic_fmt
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/panicking.rs:80:14
+  19:        0x100d9e12c - <kernel[7e7ee56c826b8b43]::sched::mailbox::MailboxNode<kernel[7e7ee56c826b8b43]::sched::park::tests::Msg> as core[663bb9e1522ba5ef]::ops::drop::Drop>::drop
+                               at <home>/Dev/jan/toyos-busywake/kernel/pure/sched/mailbox.rs:178:9
+  20:        0x100d9e12c - core[663bb9e1522ba5ef]::ptr::drop_glue::<kernel[7e7ee56c826b8b43]::sched::mailbox::MailboxNode<kernel[7e7ee56c826b8b43]::sched::park::tests::Msg>>
+                               at <home>/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/core/src/ptr/mod.rs:823:1
+  21:        0x100d9e12c - core[663bb9e1522ba5ef]::ptr::drop_glue::<kernel[7e7ee56c826b8b43]::sched::task::TaskShared<kernel[7e7ee56c826b8b43]::sched::park::tests::Msg>>
+                               at <home>/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/core/src/ptr/mod.rs:823:1
+  22:        0x100d9e12c - core[663bb9e1522ba5ef]::ptr::drop_in_place::<kernel[7e7ee56c826b8b43]::sched::task::TaskShared<kernel[7e7ee56c826b8b43]::sched::park::tests::Msg>>
+                               at <home>/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/core/src/ptr/mod.rs:818:14
+  23:        0x100d9e12c - <alloc[cc4db322bb1ac55d]::sync::Arc<kernel[7e7ee56c826b8b43]::sched::task::TaskShared<kernel[7e7ee56c826b8b43]::sched::park::tests::Msg>>>::drop_slow
+                               at <home>/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/alloc/src/sync.rs:2143:18
+  24:        0x100d54c58 - <alloc[cc4db322bb1ac55d]::sync::Arc<kernel[7e7ee56c826b8b43]::sched::task::TaskShared<kernel[7e7ee56c826b8b43]::sched::park::tests::Msg>> as core[663bb9e1522ba5ef]::ops::drop::Drop>::drop
+                               at <home>/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/alloc/src/sync.rs:2877:18
+  25:        0x100d54c58 - core[663bb9e1522ba5ef]::ptr::drop_glue::<alloc[cc4db322bb1ac55d]::sync::Arc<kernel[7e7ee56c826b8b43]::sched::task::TaskShared<kernel[7e7ee56c826b8b43]::sched::park::tests::Msg>>>
+                               at <home>/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/core/src/ptr/mod.rs:823:1
+  26:        0x100d54c58 - kernel[7e7ee56c826b8b43]::sched::park::tests::an_ordinary_wake_posted_on_its_own_cpu_rings_nothing
+                               at <home>/Dev/jan/toyos-busywake/kernel/pure/sched/park.rs:365:5
+  27:        0x100d8ad74 - kernel[7e7ee56c826b8b43]::sched::park::tests::an_ordinary_wake_posted_on_its_own_cpu_rings_nothing::{closure#0}
+                               at <home>/Dev/jan/toyos-busywake/kernel/pure/sched/park.rs:355:62
+  28:        0x100d8ad74 - <kernel[7e7ee56c826b8b43]::sched::park::tests::an_ordinary_wake_posted_on_its_own_cpu_rings_nothing::{closure#0} as core[663bb9e1522ba5ef]::ops::function::FnOnce<()>>::call_once
+                               at <home>/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/core/src/ops/function.rs:250:5
+  29:        0x100dbae30 - <fn() -> core[663bb9e1522ba5ef]::result::Result<(), alloc[cc4db322bb1ac55d]::string::String> as core[663bb9e1522ba5ef]::ops::function::FnOnce<()>>::call_once
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/ops/function.rs:250:5
+  30:        0x100dbae30 - test[4aa3eea2f4983582]::__rust_begin_short_backtrace::<core[663bb9e1522ba5ef]::result::Result<(), alloc[cc4db322bb1ac55d]::string::String>, fn() -> core[663bb9e1522ba5ef]::result::Result<(), alloc[cc4db322bb1ac55d]::string::String>>
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/test/src/lib.rs:724:18
+  31:        0x100dc6164 - test[4aa3eea2f4983582]::run_test_in_process::{closure#0}
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/test/src/lib.rs:747:74
+  32:        0x100dc6164 - <core[663bb9e1522ba5ef]::panic::unwind_safe::AssertUnwindSafe<test[4aa3eea2f4983582]::run_test_in_process::{closure#0}> as core[663bb9e1522ba5ef]::ops::function::FnOnce<()>>::call_once
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/panic/unwind_safe.rs:275:9
+  33:        0x100dc6164 - std[5d97c59e5e5fafcc]::panicking::catch_unwind::do_call::<core[663bb9e1522ba5ef]::panic::unwind_safe::AssertUnwindSafe<test[4aa3eea2f4983582]::run_test_in_process::{closure#0}>, core[663bb9e1522ba5ef]::result::Result<(), alloc[cc4db322bb1ac55d]::string::String>>
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/panicking.rs:576:43
+  34:        0x100dc6164 - std[5d97c59e5e5fafcc]::panicking::catch_unwind::<core[663bb9e1522ba5ef]::result::Result<(), alloc[cc4db322bb1ac55d]::string::String>, core[663bb9e1522ba5ef]::panic::unwind_safe::AssertUnwindSafe<test[4aa3eea2f4983582]::run_test_in_process::{closure#0}>>
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/panicking.rs:544:19
+  35:        0x100dc6164 - std[5d97c59e5e5fafcc]::panic::catch_unwind::<core[663bb9e1522ba5ef]::panic::unwind_safe::AssertUnwindSafe<test[4aa3eea2f4983582]::run_test_in_process::{closure#0}>, core[663bb9e1522ba5ef]::result::Result<(), alloc[cc4db322bb1ac55d]::string::String>>
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/panic.rs:359:14
+  36:        0x100dc6164 - test[4aa3eea2f4983582]::run_test_in_process
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/test/src/lib.rs:747:27
+  37:        0x100dc6164 - test[4aa3eea2f4983582]::run_test::{closure#0}
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/test/src/lib.rs:668:43
+  38:        0x100dc1044 - test[4aa3eea2f4983582]::run_test::{closure#1}
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/test/src/lib.rs:698:41
+  39:        0x100dc1044 - std[5d97c59e5e5fafcc]::sys::backtrace::__rust_begin_short_backtrace::<test[4aa3eea2f4983582]::run_test::{closure#1}, ()>
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/sys/backtrace.rs:166:18
+  40:        0x100dc862c - std[5d97c59e5e5fafcc]::thread::lifecycle::spawn_unchecked::<test[4aa3eea2f4983582]::run_test::{closure#1}, ()>::{closure#1}::{closure#0}
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/thread/lifecycle.rs:70:13
+  41:        0x100dc862c - <core[663bb9e1522ba5ef]::panic::unwind_safe::AssertUnwindSafe<std[5d97c59e5e5fafcc]::thread::lifecycle::spawn_unchecked<test[4aa3eea2f4983582]::run_test::{closure#1}, ()>::{closure#1}::{closure#0}> as core[663bb9e1522ba5ef]::ops::function::FnOnce<()>>::call_once
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/panic/unwind_safe.rs:275:9
+  42:        0x100dc862c - std[5d97c59e5e5fafcc]::panicking::catch_unwind::do_call::<core[663bb9e1522ba5ef]::panic::unwind_safe::AssertUnwindSafe<std[5d97c59e5e5fafcc]::thread::lifecycle::spawn_unchecked<test[4aa3eea2f4983582]::run_test::{closure#1}, ()>::{closure#1}::{closure#0}>, ()>
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/panicking.rs:576:43
+  43:        0x100dc862c - std[5d97c59e5e5fafcc]::panicking::catch_unwind::<(), core[663bb9e1522ba5ef]::panic::unwind_safe::AssertUnwindSafe<std[5d97c59e5e5fafcc]::thread::lifecycle::spawn_unchecked<test[4aa3eea2f4983582]::run_test::{closure#1}, ()>::{closure#1}::{closure#0}>>
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/panicking.rs:544:19
+  44:        0x100dc862c - std[5d97c59e5e5fafcc]::panic::catch_unwind::<core[663bb9e1522ba5ef]::panic::unwind_safe::AssertUnwindSafe<std[5d97c59e5e5fafcc]::thread::lifecycle::spawn_unchecked<test[4aa3eea2f4983582]::run_test::{closure#1}, ()>::{closure#1}::{closure#0}>, ()>
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/panic.rs:359:14
+  45:        0x100dc862c - std[5d97c59e5e5fafcc]::thread::lifecycle::spawn_unchecked::<test[4aa3eea2f4983582]::run_test::{closure#1}, ()>::{closure#1}
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/thread/lifecycle.rs:68:26
+  46:        0x100dc862c - <std[5d97c59e5e5fafcc]::thread::lifecycle::spawn_unchecked<test[4aa3eea2f4983582]::run_test::{closure#1}, ()>::{closure#1} as core[663bb9e1522ba5ef]::ops::function::FnOnce<()>>::call_once::{shim:vtable#0}
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/ops/function.rs:250:5
+  47:        0x100e172a8 - <alloc[cc4db322bb1ac55d]::boxed::Box<dyn core[663bb9e1522ba5ef]::ops::function::FnOnce<(), Output = ()> + core[663bb9e1522ba5ef]::marker::Send> as core[663bb9e1522ba5ef]::ops::function::FnOnce<()>>::call_once
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/alloc/src/boxed.rs:2319:9
+  48:        0x100e172a8 - <std[5d97c59e5e5fafcc]::sys::thread::unix::Thread>::new::thread_start
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/sys/thread/unix.rs:123:17
+  49:        0x19ec4dd00 - __pthread_exit
+
+thread 'sched::park::tests::an_ordinary_wake_posted_on_its_own_cpu_rings_nothing' (16369321) panicked at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/panicking.rs:233:5:
+panic in a destructor during cleanup
+thread caused non-unwinding panic. aborting.
+error: test failed, to rerun pass `-p kernel --lib`
+
+Caused by:
+  process didn't exit successfully: `<home>/Dev/jan/toyos-busywake/target/debug/deps/kernel-fa45b686f8e87f8e sched` (signal: 6, SIGABRT: process abort signal)

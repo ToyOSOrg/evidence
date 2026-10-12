@@ -1,0 +1,34 @@
+# PR #874 round 3 head (a5e247249) on the AMD bench, whole suite: the judge's own verdict lines for every red, and one line of the boot that names each red's cause.
+# Excerpted from the orchestrator's run log; machine and host names are left out.
+
+20:14:15 [metal] 287 passed, 14 failed, 20 boot(s)
+
+## The judge's FAIL lines
+20:14:13   FAIL hda_tone: "soundserver: hda path configured in" never reached the testcases's log:
+20:14:13   FAIL hda_client_stall: test_rs_hda_client_stall exited 101 on the T14; its own lines are in the boot's log under the name of whoever ran it
+20:14:13   FAIL loader_watchdog_arms: "armed for 9600ms, and the kernel takes it over" never reached the testcases-watchdog's loader.log:
+20:14:13   FAIL counters: "control_regs: cpu0 pm_enable=1 " never reached the testcases's kernel log:
+20:14:13   FAIL acpi_server_events: test_rs_acpi_hold exited 101 on the T14; its own lines are in the boot's log under the name of whoever ran it
+20:14:14   FAIL acpi_tables_loaded: the server's tables are [
+20:14:14   FAIL battery_read: test_rs_acpi_hold exited 101 on the T14; its own lines are in the boot's log under the name of whoever ran it
+20:14:14   FAIL acpi_server_death: "acpi: ACPI mode: ACPI_ENABLE 0xf0 written to SMI_CMD 0xb2 " never reached the acpicase's kernel log:
+20:14:14   FAIL smp_roster_and_tsc_trail: the machine was given 8 CPUs, its MADT named 16 and 8 came up
+20:14:14   FAIL hard_lockup_ends_a_deaf_cpu: "by each cpu's own performance counter" never reached the hardlockup's kernel log:
+20:14:14   FAIL claim_reuses_its_remapping_entry: test_rs_pci_reclaim exited 1 on the T14; its own lines are in the boot's log under the name of whoever ran it
+20:14:14   FAIL domain_ends_below_the_host_bridges: no domain was made on this boot:
+20:14:14   FAIL claim_refused_without_remapping: "leave INTR_REMAP clear, so firmware says this platform does not remap" never reached the iommu-no-remap's kernel log:
+20:14:14   FAIL usbd_drives_the_type_c_controller: test_rs_usbd_spare exited 101 on the T14; its own lines are in the boot's log under the name of whoever ran it
+
+## The cause each names, one line of the boot
+[7.797 cpu0 kernel] hda: 2 controllers answer on this machine and choosing between them means walking their codec graphs, which is the driver's — refused by name, no HDA audio
+[---------- -------- --.--- cpu0 kernel] control_regs: no performance request is declared: no HWP (CPUID.6:EAX[7])
+[--.--- cpu0 loader] watchdog: no function on bus 0 carries a TCO block this loader knows. This boot is unwatched until the kernel arms its own
+[6.688 cpu0 kernel] watchdog: no PCI function here carries a TCO block this kernel knows — not armed
+[7.985 acpiserver] acpiserver: table 1 of 17 (DSDT) refused: denied by this server: a SystemMemory read the kernel refused MemoryType, in memory of type 11
+[67.314 test-runner error pid=16263] the log did not show the ACPI server's count of its controller's queries within 12.044s
+[7.849 cpu1 kernel tid=3] acpi: ACPI mode: ACPI_ENABLE 0xa0 written to SMI_CMD 0xb0 on cpu0, asked from cpu1; the write held cpu0 1113884ns, its SMI count unread before the write and unread after; SCI_EN set 1433ns after
+20:14:14   FAIL smp_roster_and_tsc_trail: the machine was given 8 CPUs, its MADT named 16 and 8 came up
+[6.545 cpu0 kernel] hard lockup: 60000 ms, but CPUID states no architectural performance counter on this machine, so nothing samples a cpu that stops taking interrupts
+[7.973 test-runner pid=10] pci_reclaim: claim 1 of 8086:15fc was refused: NotFound
+[6.635 cpu0 kernel] iommu: no domain of its own for a device: no unit on this machine translates
+[7.977 test-runner error pid=10] usbd_spare: neither spare controller is on this machine

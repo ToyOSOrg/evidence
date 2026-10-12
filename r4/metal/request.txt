@@ -1,0 +1,131 @@
+# PR #874 round 4: the whole suite at the head, and wake_storm_cost's control. Both benches, the same
+# images. Nothing here has touched a machine; staging exited 2, its "established nothing" exit.
+#
+# Trees (both committed and pushed; the control never lands):
+#   head     wt/toyos-busywake at 4118fbbeb794c52fb146d9f4916bb97b319cb06f; worktree <home>/Dev/jan/toyos-busywake
+#   control  wt/toyos-busywake-judge-control at 15d0885593a853a07c2e1c56efe0e6d62350a7dc = the head's kernel
+#            (fa3a31a06) with park::deliver ringing and kicking an ordinary wake posted on its own CPU, as
+#            round 3's head did; worktree <home>/Dev/jan/toyos-busywake-judge-base
+#
+# Rows, both benches:
+#   head     every row (20 boots). On the T14 all green. On the AMD bench all green but the 14 rows red at
+#            round 3's head, each a cause the bench's hardware or firmware names (PR body, "AMD bench reds").
+#   control  the testcases boot, judged on wake_storm_cost.
+#
+# Lines, stated before any number:
+#   STORM    head: wake_storm_cost green on both benches, and its 64-waiter reading on the T14 inside the
+#            50 boots without the self kick (52,910-74,328 cycles); control: the T14's 64-waiter reading
+#            above 74,328, as the three boots with the kick read (132,867-153,899). The control's ratio
+#            row crossed in one of those three, so a green control ratio refutes nothing by itself.
+#   ROW      head: wake_onto_busy green (p99 < 1000 us) on both benches; the kick to other CPUs is kept.
+#   REPORTED wake_storm_cost per-waiter ns at head and control, both benches.
+
+## head: one boot per image (worktree as above)
+
+acpicase
+  image: <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/874-r4/metal/head/acpicase/image.img
+  sha256: 1520e5aec26cecd15880b844ce5938003300f8d5b9469c44d69b612c59657d3e
+  cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/874-r4/metal/head/acpicase/image.img --readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/874-r4/metal/head/acpicase --fat32-check
+
+deadlinewedge
+  image: <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/874-r4/metal/head/deadlinewedge/image.img
+  sha256: fcaa37f1cbf7d76ec6c71440d03266a26c7a3447dbf1f33d4d2c5883683ff69c
+  cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/874-r4/metal/head/deadlinewedge/image.img --readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/874-r4/metal/head/deadlinewedge --fat32-check
+
+foreignrecord
+  image: <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/874-r4/metal/head/foreignrecord/image.img
+  sha256: ae5d513c5df8768aac20796767387e4833c7e04a29f65428fe8e49ceeb3ba912
+  cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/874-r4/metal/head/foreignrecord/image.img --readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/874-r4/metal/head/foreignrecord --fat32-check
+
+hardlockup
+  image: <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/874-r4/metal/head/hardlockup/image.img
+  sha256: a21e9d4f54683e8e1b48c5206685384de408af3ae5a5a14b1910d3d21af47284
+  cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/874-r4/metal/head/hardlockup/image.img --readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/874-r4/metal/head/hardlockup --fat32-check
+
+iommu-no-remap
+  image: <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/874-r4/metal/head/iommu-no-remap/image.img
+  sha256: 43cff62e276e4926d7131894b223d71118e99207e33998d5dbf8a9f310ce7d5f
+  cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/874-r4/metal/head/iommu-no-remap/image.img --readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/874-r4/metal/head/iommu-no-remap --fat32-check
+
+isa-withheld
+  image: <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/874-r4/metal/head/isa-withheld/image.img
+  sha256: 072c3cb140e950ee7cb4eb9275ac955e3e3b28b793ceb516d7e030b0c3d51da5
+  cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/874-r4/metal/head/isa-withheld/image.img --readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/874-r4/metal/head/isa-withheld --fat32-check
+
+latencycase
+  image: <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/874-r4/metal/head/latencycase/image.img
+  sha256: b0fe8398b1e52f4c0dc20311cd8461ec2a9d6abad250206b62028d06a1e775c4
+  cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/874-r4/metal/head/latencycase/image.img --readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/874-r4/metal/head/latencycase --fat32-check
+
+logstallcase
+  image: <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/874-r4/metal/head/logstallcase/image.img
+  sha256: 76c1b3109fcc5046a88562160c267bbaa3d86961ff5cb99b0a1d47d49f531941
+  cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/874-r4/metal/head/logstallcase/image.img --readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/874-r4/metal/head/logstallcase --fat32-check
+
+metalcase
+  image: <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/874-r4/metal/head/metalcase/image.img
+  sha256: d85e846010eca18166fe4bb5900ce764da48b5962796302670e8b80e644ce354
+  cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/874-r4/metal/head/metalcase/image.img --readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/874-r4/metal/head/metalcase --fat32-check
+
+metaldevicecase
+  image: <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/874-r4/metal/head/metaldevicecase/image.img
+  sha256: ba2295e7c8c9cdfad578c8eca6888edea08695ac2f2ea1b23afbaee7cbcd994b
+  cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/874-r4/metal/head/metaldevicecase/image.img --readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/874-r4/metal/head/metaldevicecase --fat32-check
+
+proctreecase
+  image: <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/874-r4/metal/head/proctreecase/image.img
+  sha256: 9d28cba386c16a346a7a709dc0e3a54f5e3439a58fbead140d429ea06c2be5a7
+  cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/874-r4/metal/head/proctreecase/image.img --readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/874-r4/metal/head/proctreecase --fat32-check
+
+shared-debug
+  image: <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/874-r4/metal/head/shared-debug/image.img
+  sha256: 81e111944e3d92d0158f83d34d861767d8e3e5a3100ccd9ad13cc8e69e9c2c73
+  cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/874-r4/metal/head/shared-debug/image.img --readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/874-r4/metal/head/shared-debug --fat32-check
+
+testcases
+  image: <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/874-r4/metal/head/testcases/image.img
+  sha256: 477c4ced1f393aa8a793adc2d655ae5d9f67bd3829ffa80f8867592ff6d3ac03
+  cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/874-r4/metal/head/testcases/image.img --readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/874-r4/metal/head/testcases --fat32-check
+
+testcases-mkdir
+  image: <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/874-r4/metal/head/testcases-mkdir/image.img
+  sha256: 2ef94a465ab9b55a6a519cf49839df1d4473ddb7bb38dcd00864075f73963d4b
+  cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/874-r4/metal/head/testcases-mkdir/image.img --readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/874-r4/metal/head/testcases-mkdir --fat32-check
+
+testcases-readdir
+  image: <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/874-r4/metal/head/testcases-readdir/image.img
+  sha256: 87ddbd2edab6892d1fff98ea29419c99d2108befd3306fec1a09bb32ed8bc8a2
+  cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/874-r4/metal/head/testcases-readdir/image.img --readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/874-r4/metal/head/testcases-readdir --fat32-check
+
+testcases-watchdog
+  image: <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/874-r4/metal/head/testcases-watchdog/image.img
+  sha256: 61ae60245c4f8f0756d82f2667d8ce5ac43764dfbbce65530e0e22c5a7ff30b2
+  cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/874-r4/metal/head/testcases-watchdog/image.img --readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/874-r4/metal/head/testcases-watchdog --fat32-check
+
+testcases-xhci-leave
+  image: <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/874-r4/metal/head/testcases-xhci-leave/image.img
+  sha256: 92b0ff80f37130a886ea01b18ee41e6eafb360bd1ed175ab0b6a12959f9c10ca
+  cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/874-r4/metal/head/testcases-xhci-leave/image.img --readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/874-r4/metal/head/testcases-xhci-leave --fat32-check
+
+usbbreak
+  image: <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/874-r4/metal/head/usbbreak/image.img
+  sha256: ed4a0af31835083db8b451a7aa69b5efece08cf029dc9f55a377dfe03b6c9760
+  cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/874-r4/metal/head/usbbreak/image.img --readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/874-r4/metal/head/usbbreak --fat32-check
+
+usbload
+  image: <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/874-r4/metal/head/usbload/image.img
+  sha256: b60337ab4d4e77e0d34df0a02b9021ec58a515f1530714bf7f0bb97f33cf0b19
+  cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/874-r4/metal/head/usbload/image.img --readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/874-r4/metal/head/usbload --fat32-check
+
+windowscase
+  image: <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/874-r4/metal/head/windowscase/image.img
+  sha256: 2d1d8687e69a5512edb7bcf871a7a91031e72c96651b2d71dc2183f7aeca9127
+  cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/874-r4/metal/head/windowscase/image.img --readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/874-r4/metal/head/windowscase --fat32-check
+
+## control: one boot per image (worktree as above)
+
+testcases
+  image: <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/874-r4/metal/control/testcases/image.img
+  sha256: 5cfacbf0a526a451ddc58f2859678cf5d42523090ec53408fcbff455f5be97e1
+  cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/874-r4/metal/control/testcases/image.img --readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/874-r4/metal/control/testcases --fat32-check
+

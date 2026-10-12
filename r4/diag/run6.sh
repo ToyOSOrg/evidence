@@ -1,0 +1,13 @@
+#!/bin/sh
+# Scratch: storm-diag5 at the merged head, then with the busy-target kick
+# reverted; tree restored.
+S=<home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/874-r4/diag
+cd <home>/Dev/jan/toyos-busywake || exit 2
+cargo test --test toyos-build -- wake_storm_smoke --nocapture > $S/d5-head.log 2>&1
+echo "head EXIT=$?"
+git apply $S/busy-target-unkicked-diag.patch || exit 4
+cargo test --test toyos-build -- wake_storm_smoke --nocapture > $S/d5-reverted.log 2>&1
+echo "reverted EXIT=$?"
+git apply -R $S/busy-target-unkicked-diag.patch
+git diff --stat
+echo DONE
