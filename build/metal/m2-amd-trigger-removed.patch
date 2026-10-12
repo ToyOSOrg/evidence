@@ -1,0 +1,21 @@
+diff --git a/kernel/src/arch/x86_64/microcode.rs b/kernel/src/arch/x86_64/microcode.rs
+index 786761a80..0840f38c8 100644
+--- a/kernel/src/arch/x86_64/microcode.rs
++++ b/kernel/src/arch/x86_64/microcode.rs
+@@ -39,8 +39,6 @@ const PLATFORM_ID: u32 = 0x17;
+ const INTEL_TRIGGER: u32 = 0x79;
+ /// `IA32_BIOS_SIGN_ID`, AMD's `MSR_AMD64_PATCH_LEVEL`.
+ const SIGN_ID: u32 = 0x8b;
+-/// `MSR_AMD64_PATCH_LOADER`.
+-const AMD_TRIGGER: u32 = 0xc001_0020;
+ 
+ /// The revision every CPU runs, as the first to read one published it.
+ static MACHINE: AtomicU64 = AtomicU64::new(UNPUBLISHED);
+@@ -156,7 +154,6 @@ fn load_amd(cpu_id: u32, signature: Signature, found: Revision) -> Outcome {
+             let bytes = patch.bytes().as_ptr_range();
+             // SAFETY: a validated patch inside the kernel image, so its
+             // address is canonical and present (Linux `amd.c:700-705`).
+-            unsafe { trigger(AMD_TRIGGER, bytes.start) };
+             if patch.leaves_its_mapping_uncached() {
+                 cpu::invlpg(bytes.start as u64);
+                 cpu::invlpg(bytes.end as u64 - 1);

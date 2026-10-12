@@ -1,0 +1,14 @@
+diff --git a/kernel/microcode/src/amd.rs b/kernel/microcode/src/amd.rs
+index 75050583f..b3ef7718d 100644
+--- a/kernel/microcode/src/amd.rs
++++ b/kernel/microcode/src/amd.rs
+@@ -151,9 +151,6 @@ fn section(bytes: &[u8]) -> Result<(Patch<'_>, &[u8]), Refusal> {
+     let (header, rest) =
+         bytes.split_first_chunk::<SECTION>().ok_or(Refusal::Truncated { need: SECTION, have })?;
+     let [kind, size] = dwords(header);
+-    if kind != PATCH {
+-        return Err(Refusal::SectionType(kind));
+-    }
+     let need = SECTION.saturating_add(size as usize);
+     let (bytes, rest) = rest.split_at_checked(size as usize).ok_or(Refusal::Truncated { need, have })?;
+     let (patch, _) = bytes.split_first_chunk::<PATCH_HEADER>().ok_or(Refusal::Short(size))?;

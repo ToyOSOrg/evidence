@@ -1,0 +1,13 @@
+diff --git a/kernel/microcode/src/amd.rs b/kernel/microcode/src/amd.rs
+index 75050583f..629920fa4 100644
+--- a/kernel/microcode/src/amd.rs
++++ b/kernel/microcode/src/amd.rs
+@@ -133,7 +133,7 @@ pub fn select<'a>(
+         // `rest` is a suffix of `container`.
+         let at = have.wrapping_sub(rest.len());
+         let (patch, after) = section(rest).map_err(|why| Refused { at, why })?;
+-        if named(patch.revision.0) == signature.0 && newest.is_none_or(|n| patch.revision > n.revision) {
++        if named(patch.revision.0) | 0xf == signature.0 | 0xf && newest.is_none_or(|n| patch.revision > n.revision) {
+             newest = Some(patch);
+         }
+         rest = after;

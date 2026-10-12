@@ -1,0 +1,14 @@
+diff --git a/kernel/microcode/src/amd.rs b/kernel/microcode/src/amd.rs
+index 75050583f..e9d077379 100644
+--- a/kernel/microcode/src/amd.rs
++++ b/kernel/microcode/src/amd.rs
+@@ -158,9 +158,6 @@ fn section(bytes: &[u8]) -> Result<(Patch<'_>, &[u8]), Refusal> {
+     let (bytes, rest) = rest.split_at_checked(size as usize).ok_or(Refusal::Truncated { need, have })?;
+     let (patch, _) = bytes.split_first_chunk::<PATCH_HEADER>().ok_or(Refusal::Short(size))?;
+     let [_, id, _, minimum, north, south, ..]: [u32; 16] = dwords(patch);
+-    if north != 0 || south != 0 {
+-        return Err(Refusal::Chipset { north, south });
+-    }
+     if minimum != 0 {
+         return Err(Refusal::MinimumRevision(minimum));
+     }

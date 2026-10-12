@@ -1,0 +1,14 @@
+diff --git a/kernel/microcode/src/amd.rs b/kernel/microcode/src/amd.rs
+index 75050583f..65cbf1d2d 100644
+--- a/kernel/microcode/src/amd.rs
++++ b/kernel/microcode/src/amd.rs
+@@ -121,9 +121,6 @@ pub fn select<'a>(
+     if magic != MAGIC {
+         return Err(at_header(Refusal::Magic(magic)));
+     }
+-    if table != EQUIVALENCE_TABLE {
+-        return Err(at_header(Refusal::TableType(table)));
+-    }
+     let need = HEADER.saturating_add(len as usize);
+     let (_, mut rest) =
+         rest.split_at_checked(len as usize).ok_or(at_header(Refusal::Truncated { need, have }))?;

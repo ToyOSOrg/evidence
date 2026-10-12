@@ -1,0 +1,14 @@
+diff --git a/kernel/microcode/src/amd.rs b/kernel/microcode/src/amd.rs
+index 75050583f..423e64fd5 100644
+--- a/kernel/microcode/src/amd.rs
++++ b/kernel/microcode/src/amd.rs
+@@ -118,9 +118,6 @@ pub fn select<'a>(
+         .split_first_chunk::<HEADER>()
+         .ok_or(at_header(Refusal::Truncated { need: HEADER, have }))?;
+     let [magic, table, len] = dwords(header);
+-    if magic != MAGIC {
+-        return Err(at_header(Refusal::Magic(magic)));
+-    }
+     if table != EQUIVALENCE_TABLE {
+         return Err(at_header(Refusal::TableType(table)));
+     }

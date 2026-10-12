@@ -1,0 +1,55 @@
+# PR #886's metal request: the `microcode` row's arms at ToyOS f126fb514
+# (wt/toyos-microcode, origin/main ab655a115 merged), staged with
+# --metal-readback by stage.sh beside this file; no machine was touched.
+# Each boot is `cargo <words>` from /Users/jan/Dev/jan/toyos-microcode at
+# f126fb514. AMD arms carry the placeholder '<user>@<amd-bench>': put the
+# bench's account there. The mutation arms' trees are local commits in that
+# worktree, never pushed, each its patch beside this file applied to f126fb514.
+#
+# After a boot, judge it from the tree named with
+#   cargo test --test toyos-build -- --metal --metal-readback <dir> microcode
+# where <dir> is the arm's directory below; a loop refusal is the boot's own
+# verdict, read off toyos-metal's exit and the readback's loader.log.
+
+t14-head   (tree f126fb514)
+  image: /Users/jan/.claude/jobs/2280e09e/tmp/scratchpad/microcode-build/metal/t14-head/metalcase/image.img
+  sha256 2e07939f2f71f5ebfb0a36fef71b520bc46d04ae0f4912e616644beb511ab7a3
+  cargo run -p toyos-metal -- --image /Users/jan/.claude/jobs/2280e09e/tmp/scratchpad/microcode-build/metal/t14-head/metalcase/image.img --readback /Users/jan/.claude/jobs/2280e09e/tmp/scratchpad/microcode-build/metal/t14-head/metalcase --fat32-check
+  expect: GREEN. The row's judge, from f126fb514: eight lines, each 'Intel signature 0x806c1 platform 7 found 0xbe current 0xbe running 0xbe', held to kernel/cpuvuln/fixtures/t14/cpuinfo.txt.
+
+t14-reseal   (tree ee18d2547)
+  image: /Users/jan/.claude/jobs/2280e09e/tmp/scratchpad/microcode-build/metal/t14-reseal/metalcase-reseal/image.img
+  sha256 64d700f990b8945a6c33d2219cb29c8676adb06abfb58fef71a2ad421d26a587
+  cargo run -p toyos-metal -- --image /Users/jan/.claude/jobs/2280e09e/tmp/scratchpad/microcode-build/metal/t14-reseal/metalcase-reseal/image.img --readback /Users/jan/.claude/jobs/2280e09e/tmp/scratchpad/microcode-build/metal/t14-reseal/metalcase-reseal --fat32-check
+  expect: RED, the read-back's negative control on real Intel. toyos-metal refuses the boot; the pass after the reset carries 'Previous boot's panic:' with 'microcode: cpu0 found 0xbe, was handed Intel's update 0xbf and reads back 0xbe'. A boot stopped with no record instead means the trigger faulted before the IDT (the body's Roast 8).
+
+t14-reverted   (tree b1587dd70)
+  image: /Users/jan/.claude/jobs/2280e09e/tmp/scratchpad/microcode-build/metal/t14-reverted/metalcase/image.img
+  sha256 b62d8f0171d13bf027bcf8f80707b08b2c275aa7621cf1b0a863897b06790e9f
+  cargo run -p toyos-metal -- --image /Users/jan/.claude/jobs/2280e09e/tmp/scratchpad/microcode-build/metal/t14-reverted/metalcase/image.img --readback /Users/jan/.claude/jobs/2280e09e/tmp/scratchpad/microcode-build/metal/t14-reverted/metalcase --fat32-check
+  expect: RED, the whole change reverted (m3): judged from f126fb514, the row finds no microcode line on any CPU.
+
+amd-head   (tree f126fb514)
+  image: /Users/jan/.claude/jobs/2280e09e/tmp/scratchpad/microcode-build/metal/amd-head/metalcase/image.img
+  sha256 e0d084db95c99e3078d23b4074ceeca38f0758c0778088e0016e1ce5e31e568d
+  cargo run -p toyos-metal -- --image /Users/jan/.claude/jobs/2280e09e/tmp/scratchpad/microcode-build/metal/amd-head/metalcase/image.img --readback /Users/jan/.claude/jobs/2280e09e/tmp/scratchpad/microcode-build/metal/amd-head/metalcase --fat32-check --host <user>@<amd-bench>
+  expect: GREEN. The row's judge, from f126fb514: sixteen lines, cpu0 'Amd signature 0x860f01 found 0x8600106 loaded 0x860010d running 0x860010d', every other CPU loaded 0x860010d over 0x8600106 or 0x860010d, held to tests/metal/amd-linux/microcode.txt. Report which found each sibling thread reads.
+
+amd-trigger-removed   (tree 9bea85ad6)
+  image: /Users/jan/.claude/jobs/2280e09e/tmp/scratchpad/microcode-build/metal/amd-trigger-removed/metalcase/image.img
+  sha256 12b41c7d6527598f81d3134619fad904f9ac4d260cac2f538c59701ebef178d3
+  cargo run -p toyos-metal -- --image /Users/jan/.claude/jobs/2280e09e/tmp/scratchpad/microcode-build/metal/amd-trigger-removed/metalcase/image.img --readback /Users/jan/.claude/jobs/2280e09e/tmp/scratchpad/microcode-build/metal/amd-trigger-removed/metalcase --fat32-check --host <user>@<amd-bench>
+  expect: RED, the trigger write removed (m2): toyos-metal refuses the boot; the pass after the reset carries 'Previous boot's panic:' with 'microcode: cpu0 found 0x8600106, was handed Amd's update 0x860010d and reads back 0x8600106'.
+
+amd-reverted   (tree 0e95be685)
+  image: /Users/jan/.claude/jobs/2280e09e/tmp/scratchpad/microcode-build/metal/amd-reverted/metalcase/image.img
+  sha256 03136216e6c21ff5b5fc4af78808f26b6e5ec0f2b428f434c77c23158a16d490
+  cargo run -p toyos-metal -- --image /Users/jan/.claude/jobs/2280e09e/tmp/scratchpad/microcode-build/metal/amd-reverted/metalcase/image.img --readback /Users/jan/.claude/jobs/2280e09e/tmp/scratchpad/microcode-build/metal/amd-reverted/metalcase --fat32-check --host <user>@<amd-bench>
+  expect: RED, the whole change reverted (m3): judged from f126fb514, the row finds no microcode line; Linux's capture says the firmware runs 0x08600106.
+
+amd-no-invlpg   (tree 261d2fe9e)
+  image: /Users/jan/.claude/jobs/2280e09e/tmp/scratchpad/microcode-build/metal/amd-no-invlpg/metalcase/image.img
+  sha256 7da33d1be06b8f92e176546ca407cc0c2c82741e7b563de521208ebbd17d8ef2
+  cargo run -p toyos-metal -- --image /Users/jan/.claude/jobs/2280e09e/tmp/scratchpad/microcode-build/metal/amd-no-invlpg/metalcase/image.img --readback /Users/jan/.claude/jobs/2280e09e/tmp/scratchpad/microcode-build/metal/amd-no-invlpg/metalcase --fat32-check --host <user>@<amd-bench>
+  expect: GREEN on the row, judged from f126fb514; REPORTED, never gated: its 'boot:' phase lines beside amd-head's, family 0x17's INVLPG removed (m4).
+

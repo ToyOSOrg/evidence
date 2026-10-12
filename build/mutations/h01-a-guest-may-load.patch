@@ -1,0 +1,14 @@
+diff --git a/kernel/microcode/src/lib.rs b/kernel/microcode/src/lib.rs
+index 4d42c1b9f..b386e268f 100644
+--- a/kernel/microcode/src/lib.rs
++++ b/kernel/microcode/src/lib.rs
+@@ -158,9 +158,6 @@ impl fmt::Display for Unloaded {
+ /// CPUID.01H:ECX and the revision it reports. A guest loads nothing whatever
+ /// it reports.
+ pub fn may_load(cpuid_1_ecx: u32, found: Revision) -> Result<(), Unloaded> {
+-    if cpuid_1_ecx & 1 << 31 != 0 {
+-        return Err(Unloaded::Hypervisor);
+-    }
+     if found == Revision::DISABLED {
+         return Err(Unloaded::Disabled);
+     }

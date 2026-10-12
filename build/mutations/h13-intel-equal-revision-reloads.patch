@@ -1,0 +1,13 @@
+diff --git a/kernel/microcode/src/intel.rs b/kernel/microcode/src/intel.rs
+index 3c3c0fd98..daf7d1baa 100644
+--- a/kernel/microcode/src/intel.rs
++++ b/kernel/microcode/src/intel.rs
+@@ -147,7 +147,7 @@ pub fn select<'a>(file: &'a [u8], cpu: &Cpu) -> Result<Choice<Update<'a>>, Refus
+     }
+     Ok(match newest {
+         None => Choice::NoMatch,
+-        Some(update) if update.revision > cpu.revision => Choice::Load(update),
++        Some(update) if update.revision >= cpu.revision => Choice::Load(update),
+         Some(update) => Choice::Current(update.revision),
+     })
+ }

@@ -1,0 +1,2401 @@
+diff --git a/Cargo.lock b/Cargo.lock
+index 6a33dfbd6..53f8161a3 100644
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@ -1909,7 +1909,6 @@ dependencies = [
+  "toyos-gpt",
+  "toyos-hda",
+  "toyos-its",
+- "toyos-microcode",
+  "toyos-pci",
+  "toyos-phys",
+  "toyos-ps2",
+@@ -4463,10 +4462,6 @@ dependencies = [
+ [[package]]
+ name = "toyos-microcode"
+ version = "0.1.0"
+-dependencies = [
+- "toyos-cpuvuln",
+- "toyos-sha2",
+-]
+ 
+ [[package]]
+ name = "toyos-mixer"
+diff --git a/NOTICE b/NOTICE
+index 9df726781..d4b445726 100644
+--- a/NOTICE
++++ b/NOTICE
+@@ -124,7 +124,8 @@ Inc." and "Copyright(C) 2005-2014 Simon Howard" over GPL "version 2 ... or any
+ later version" — id's Doom source release by way of Chocolate Doom. The crate
+ declares `GPL-2.0-only`, which is a narrowing a distributor may make.
+ 
+-No GPL code is linked into the kernel, the SDK, or any other program.
++Nothing else in this repository is GPL, and no GPL code is linked into the
++kernel, the SDK, or any other program.
+ 
+ 
+ assets/JetBrainsMono-Regular.ttf — SIL Open Font License 1.1
+@@ -427,56 +428,6 @@ kernel/microcode/intel-ucode/* — Intel microcode, redistributable unmodified
+     sha256 03efb1491c7e899feb2665fa299363e64035e5444c1b8bc1f6ebed30de964e12)
+     SPDX-License-Identifier: LicenseRef-Intel-Microcode
+ 
+-The kernel embeds 06-8c-01 and loads it on the CPU it names; 06-cc-02 is
+-`toyos-microcode`'s test input. The licence permits redistribution in binary
+-form, unmodified, on three conditions: the copyright notice and the
+-disclaimer are reproduced with the distribution, which every x86-64 image does
+-as /system/share/licenses/Intel-microcode-license.txt; Intel's name endorses
+-nothing derived from it; and no reverse engineering, decompilation or
+-disassembly.
+-
+-
+-kernel/microcode/amd-ucode/* — AMD microcode, redistributable unmodified
+-------------------------------------------------------------------------
+-
+-    microcode_amd_fam17h.bin  22,596 bytes, a container of seven patches for
+-              family 0x17 CPUs, 0x0860010d for CPUID 0x00860f01 (Renoir, the
+-              AMD bench's Ryzen 7 4800U) among them
+-      sha256 966e4b796ec689c618868d08f8a37f347b0e7bfce4ae9df793e08471d363b7d0
+-    Upstream: https://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git,
+-    `amd-ucode/` at tag 20260916
+-    (commit ab23307cfe7f9366c819025ca3e4778299bc2db2), byte for byte
+-    Licence text: licenses/AMD-ucode-license.txt (upstream's
+-    `LICENSES/LICENSE.amd-ucode`, sha256
+-    2103bd999f77522c5ab5fd35df0579ed00e2a6b885f6f8ebd444e97ffa482991)
+-    SPDX-License-Identifier: LicenseRef-AMD-ucode
+-
+-The kernel embeds it whole and loads, on a CPU one of its patches names, that
+-patch. The licence grants redistribution free of fees on five terms: the
+-copyright notice and the licence travel with the software, which every x86-64
+-image does as /system/share/licenses/AMD-ucode-license.txt; AMD is not
+-referenced in promoting a product in a way that implies AMD endorses or
+-certified it; no reverse engineering, decompilation or disassembly; the rights
+-to third-party technologies the software may implement are the
+-redistributor's to obtain, AMD conveying none; and U.S. and European export
+-law binds whoever uses it.
+-
+-
+-tests/linux/amd_shas.c — Linux's digests of AMD's microcode patches, GPL-2.0-only
+----------------------------------------------------------------------------------
+-
+-    amd_shas.c  sha256 98af9ffb8a6e39e9dc37c86028a88853a75b74f229bcb1dabf84b72f6700a156
+-    Upstream: https://github.com/torvalds/linux,
+-    `arch/x86/kernel/cpu/microcode/amd_shas.c` at tag v7.2
+-    (commit 8d3ae59288f1e7d58d76558a6ee96d533bc5019f), byte for byte
+-    SPDX-License-Identifier: GPL-2.0-only
+-
+-The SHA-256 of every AMD patch Linux loads on a CPU whose own signature check
+-EntrySign broke: the independent record `toyos-microcode`'s tests hold every
+-patch the kernel embeds to. The file carries no licence line of its own, so
+-the kernel's `COPYING` decides it. Test input only: nothing built from this
+-repository carries it, and no shipped package's directory holds it.
+-
+ 
+ tests/cavp/ — NIST's SHA-2 test vectors, CAVP SHAVS
+ ----------------------------------------------------
+diff --git a/build/build.rs b/build/build.rs
+index 5225845a0..0f70c1ab0 100644
+--- a/build/build.rs
++++ b/build/build.rs
+@@ -766,14 +766,6 @@ pub const TRUST_ROOTS_LICENCE: (&str, &[u8]) = (
+     include_bytes!("../licenses/CDLA-Permissive-2.0-webpki-root-certs.txt"),
+ );
+ 
+-/// Where on ROOT the licence texts of the CPU microcode an x86-64 kernel
+-/// embeds are, and the texts: each maker's licence asks that a redistribution
+-/// carry it.
+-pub const MICROCODE_LICENCES: &[(&str, &[u8])] = &[
+-    ("share/licenses/Intel-microcode-license.txt", include_bytes!("../licenses/Intel-microcode-license.txt")),
+-    ("share/licenses/AMD-ucode-license.txt", include_bytes!("../licenses/AMD-ucode-license.txt")),
+-];
+-
+ /// The Mozilla root program's authorities as `webpki-root-certs` publishes
+ /// them, each certificate a PEM block in the published order.
+ pub fn trust_roots() -> Vec<u8> {
+@@ -808,11 +800,6 @@ fn build_and_assemble(
+ 
+     root_files.push((TRUST_ROOTS.to_string(), trust_roots()));
+     root_files.push((TRUST_ROOTS_LICENCE.0.to_string(), TRUST_ROOTS_LICENCE.1.to_vec()));
+-    let microcode = match arch {
+-        Arch::X86_64 => MICROCODE_LICENCES,
+-        Arch::Aarch64 => &[],
+-    };
+-    root_files.extend(microcode.iter().map(|(path, text)| (path.to_string(), text.to_vec())));
+ 
+     // Extra files (test binaries, shared libs)
+     for (name, data) in extra_files {
+diff --git a/build/licence.rs b/build/licence.rs
+index 6f93a2b4c..cfafd044f 100644
+--- a/build/licence.rs
++++ b/build/licence.rs
+@@ -87,20 +87,13 @@ const FONTS_ONLY: &[&str] = &["OFL-1.1"];
+ /// CDLA-Permissive-2.0 for the Mozilla roots.
+ const DATA_ONLY: &[&str] = &["CDLA-Permissive-2.0"];
+ 
+-/// Allowed for a [`Terms::Firmware`] row, and nowhere else: the owner's
+-/// ruling that vendor firmware a device or CPU verifies by its maker's
+-/// signature may ship, pinned and unmodified (root `CLAUDE.md`).
+-const FIRMWARE_ONLY: &[&str] = &["LicenseRef-Intel-Microcode", "LicenseRef-AMD-ucode"];
+-
+-/// What a licence is judged as: [`FONTS_ONLY`] passes only for a font,
+-/// [`DATA_ONLY`] only for the trust roots and [`FIRMWARE_ONLY`] only for
+-/// vendor firmware.
++/// What a licence is judged as: [`FONTS_ONLY`] passes only for a font and
++/// [`DATA_ONLY`] only for the trust roots.
+ #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+ enum Scope {
+     Code,
+     Font,
+     Data,
+-    Firmware,
+ }
+ 
+ impl Scope {
+@@ -110,7 +103,6 @@ impl Scope {
+                 Scope::Code => false,
+                 Scope::Font => FONTS_ONLY.contains(&id),
+                 Scope::Data => DATA_ONLY.contains(&id),
+-                Scope::Firmware => FIRMWARE_ONLY.contains(&id),
+             }
+     }
+ }
+@@ -127,15 +119,12 @@ pub enum Terms {
+     /// A font's glyphs, or a raster of them, under an SPDX expression: the one
+     /// place [`FONTS_ONLY`] passes.
+     Font(&'static str),
+-    /// Vendor firmware a device or CPU verifies by its maker's signature,
+-    /// under an SPDX expression: the one place [`FIRMWARE_ONLY`] passes.
+-    Firmware(&'static str),
+ }
+ 
+ impl Terms {
+     fn expr(self) -> &'static str {
+         match self {
+-            Terms::Spdx(e) | Terms::Font(e) | Terms::Firmware(e) => e,
++            Terms::Spdx(e) | Terms::Font(e) => e,
+         }
+     }
+ }
+@@ -588,19 +577,13 @@ pub const COMMITTED_FILES: &[(&str, &str, &str, Terms)] = &[
+         "kernel/microcode/intel-ucode/06-8c-01",
+         "efe83e312b90f7fe4b8f75260087edf03e048d2f4f80caef2ef631c842714bb3",
+         "NOTICE",
+-        Terms::Firmware("LicenseRef-Intel-Microcode"),
++        Terms::Spdx("LicenseRef-Intel-Microcode"),
+     ),
+     (
+         "kernel/microcode/intel-ucode/06-cc-02",
+         "4e43bb4d23c3638f8c16967d61e8f6456ae0da2ddd1da82ab579a50715147bb1",
+         "NOTICE",
+-        Terms::Firmware("LicenseRef-Intel-Microcode"),
+-    ),
+-    (
+-        "kernel/microcode/amd-ucode/microcode_amd_fam17h.bin",
+-        "966e4b796ec689c618868d08f8a37f347b0e7bfce4ae9df793e08471d363b7d0",
+-        "NOTICE",
+-        Terms::Firmware("LicenseRef-AMD-ucode"),
++        Terms::Spdx("LicenseRef-Intel-Microcode"),
+     ),
+ ];
+ 
+@@ -1153,7 +1136,6 @@ fn judge_files(ledger: &[Row], tracked: &[String], shipping: &Shipping, report:
+             let scope = match terms {
+                 Terms::Spdx(_) => Scope::Code,
+                 Terms::Font(_) => Scope::Font,
+-                Terms::Firmware(_) => Scope::Firmware,
+             };
+             report.judge(Finding::at(Kind::File, path, terms.expr(), String::new()), scope);
+         }
+@@ -1511,12 +1493,6 @@ mod tests {
+         assert!(verdict_of("CDLA-Permissive-2.0").is_some(), "CDLA passed outside data");
+         assert!(judge_licence("CDLA-Permissive-2.0", Scope::Font).is_some(), "CDLA passed for a font");
+         assert_eq!(judge_licence("CDLA-Permissive-2.0", Scope::Data), None);
+-        for firmware in FIRMWARE_ONLY {
+-            assert!(verdict_of(firmware).is_some(), "{firmware} passed outside firmware");
+-            assert!(judge_licence(firmware, Scope::Font).is_some(), "{firmware} passed for a font");
+-            assert_eq!(judge_licence(firmware, Scope::Firmware), None);
+-        }
+-        assert!(judge_licence("OFL-1.1", Scope::Firmware).is_some(), "OFL passed as firmware");
+         assert_eq!(verdict_of("MPL-2.0"), None);
+     }
+ 
+diff --git a/kernel/Cargo.toml b/kernel/Cargo.toml
+index ef5a3dcd9..03c0089de 100644
+--- a/kernel/Cargo.toml
++++ b/kernel/Cargo.toml
+@@ -490,7 +490,6 @@ toyos-gicv3 = { path = "gicv3" }
+ toyos-gpt = { path = "../lib/gpt" }
+ toyos-hda = { path = "../lib/hda" }
+ toyos-its = { path = "its" }
+-toyos-microcode = { path = "microcode" }
+ toyos-pci = { path = "pci" }
+ toyos-phys = { path = "phys" }
+ toyos-smmu = { path = "smmu" }
+diff --git a/kernel/microcode/Cargo.toml b/kernel/microcode/Cargo.toml
+index b899a4bc4..5a259ff25 100644
+--- a/kernel/microcode/Cargo.toml
++++ b/kernel/microcode/Cargo.toml
+@@ -3,16 +3,8 @@
+ 
+ [package]
+ name = "toyos-microcode"
+-description = "Intel's microcode update files and AMD's containers validated and matched to a CPU as each maker reads them, whether a CPU loads at all, and the files the kernel embeds, pure."
++description = "Intel microcode update files validated and matched to a CPU as the SDM's Microcode Update Facilities define them, pure."
+ version = "0.1.0"
+ edition = "2021"
+ license = "MIT OR Apache-2.0"
+ publish = false
+-
+-[dependencies]
+-toyos-cpuvuln = { path = "../cpuvuln" }
+-
+-[dev-dependencies]
+-# Hashes the embedded container's patches for the test that holds them to
+-# Linux's digests.
+-toyos-sha2 = { path = "../../lib/sha2" }
+diff --git a/kernel/microcode/amd-ucode/microcode_amd_fam17h.bin b/kernel/microcode/amd-ucode/microcode_amd_fam17h.bin
+deleted file mode 100644
+index 4011bdbb51a9f495d5cef8739411362bb6c65cc5..0000000000000000000000000000000000000000
+GIT binary patch
+literal 0
+HcmV?d00001
+
+literal 22596
+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
+
+diff --git a/kernel/microcode/src/amd.rs b/kernel/microcode/src/amd.rs
+deleted file mode 100644
+index 75050583f..000000000
+--- a/kernel/microcode/src/amd.rs
++++ /dev/null
+@@ -1,181 +0,0 @@
+-//! AMD's microcode containers, as AMD's own parser (`amd_ucode_info.py`) and
+-//! Linux v7.2's `amd.c` read them; AMD's APM documents no patch loader.
+-//!
+-//! A container is a 12-byte header — [`MAGIC`], the type of its first
+-//! section (0, the equivalence table) and that section's length — then the
+-//! table, then sections of type 1 laid end to end, each a type, a size and a
+-//! patch of that many bytes: a 64-byte header and its signed body. [`select`]
+-//! validates every section and answers with the patch a CPU loads, or why it
+-//! loads none. One malformed section refuses the whole container. A second
+-//! container behind the first is refused, by its magic standing where a
+-//! section's type does.
+-//!
+-//! **A Zen patch names its CPU in its patch ID** (Linux `94838d230a6c`): a
+-//! patch names the CPU whose CPUID.01H:EAX its family, model and stepping
+-//! decode to, and the equivalence table is skipped, as Linux skips it from
+-//! family 0x17 up.
+-//!
+-//! **Refused as unmodelled**, so that a container embedded later cannot load
+-//! what this loader does not understand: a chipset-specific patch, as Linux
+-//! refuses one; and a nonzero word at offset 12, which from Zen 3 on is the
+-//! lowest revision a patch may be loaded over (Xen's `check_min_rev`).
+-//!
+-//! **A patch at or above the revision the CPU runs loads**, an equal one
+-//! again on every thread, as Linux's early loader does (`amd.c:813-819,996`;
+-//! `e7ad18d1169c`: "there are microcode patches which do per-thread
+-//! modification … This is what the BIOS does too"). Xen refuses an equal
+-//! revision unless forced.
+-//!
+-//! **EntrySign's cutoff rule holds at build time.** Linux offers a CPU at or
+-//! below its cutoff revision only patches at or below that cutoff, and one
+-//! above it only patches above (`amd.c:554-572`). A patch below the running
+-//! revision never loads here, and every patch [`select`] can return out of
+-//! [`crate::AMD`] is held by a host test to its digest in Linux's
+-//! `amd_shas.c`, which records none above its CPU's cutoff: that test is the
+-//! rule's form here, and a container that drops it drops the rule.
+-
+-use crate::{dwords, Choice, Revision, Signature};
+-
+-#[cfg(test)]
+-mod tests;
+-
+-/// A container's first dword (`UCODE_MAGIC`).
+-pub const MAGIC: u32 = 0x0041_4d44;
+-/// Magic, the table's type, the table's length.
+-const HEADER: usize = 12;
+-/// A section's type and size.
+-const SECTION: usize = 8;
+-const EQUIVALENCE_TABLE: u32 = 0;
+-const PATCH: u32 = 1;
+-/// `struct microcode_header_amd`.
+-const PATCH_HEADER: usize = 64;
+-
+-/// One patch out of a container, validated.
+-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+-pub struct Patch<'a> {
+-    revision: Revision,
+-    bytes: &'a [u8],
+-}
+-
+-impl<'a> Patch<'a> {
+-    /// Its patch ID, which is the patch level a CPU reports once it runs it.
+-    pub fn revision(&self) -> Revision {
+-        self.revision
+-    }
+-
+-    /// The patch as its section holds it, header first. MSR C001_0020 is
+-    /// written the linear address of its first byte (Linux `amd.c:700-705`).
+-    pub fn bytes(&self) -> &'a [u8] {
+-        self.bytes
+-    }
+-
+-    /// Whether the CPU that loads it must then drop the translations of its
+-    /// first and last byte: family 0x17's loader leaves the mapping of a
+-    /// patch's bytes in the TLB as uncacheable (Linux `c809b0d0e52d` and
+-    /// `amd.c:707-718`, Xen at AMD's instruction).
+-    pub fn leaves_its_mapping_uncached(&self) -> bool {
+-        family(self.revision.0) == 0x17
+-    }
+-}
+-
+-/// Why a container is refused: the offset of the section that is malformed,
+-/// and how.
+-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+-pub struct Refused {
+-    pub at: usize,
+-    pub why: Refusal,
+-}
+-
+-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+-pub enum Refusal {
+-    /// The bytes end before the container's header, the table, a section's
+-    /// header or its patch does.
+-    Truncated { need: usize, have: usize },
+-    /// The container does not open with [`MAGIC`].
+-    Magic(u32),
+-    /// The first section is not the equivalence table.
+-    TableType(u32),
+-    /// A section after the table is not a patch.
+-    SectionType(u32),
+-    /// The section is shorter than a patch's header.
+-    Short(u32),
+-    /// The patch is for one chipset (`nb_dev_id`, `sb_dev_id`).
+-    Chipset { north: u32, south: u32 },
+-    /// The patch names the lowest revision it may be loaded over.
+-    MinimumRevision(u32),
+-}
+-
+-/// The patch in `container` a CPU with `signature` running `found` loads, or
+-/// why there is none.
+-pub fn select<'a>(
+-    container: &'a [u8],
+-    signature: Signature,
+-    found: Revision,
+-) -> Result<Choice<Patch<'a>>, Refused> {
+-    let have = container.len();
+-    let at_header = |why| Refused { at: 0, why };
+-    let (header, rest) = container
+-        .split_first_chunk::<HEADER>()
+-        .ok_or(at_header(Refusal::Truncated { need: HEADER, have }))?;
+-    let [magic, table, len] = dwords(header);
+-    if magic != MAGIC {
+-        return Err(at_header(Refusal::Magic(magic)));
+-    }
+-    if table != EQUIVALENCE_TABLE {
+-        return Err(at_header(Refusal::TableType(table)));
+-    }
+-    let need = HEADER.saturating_add(len as usize);
+-    let (_, mut rest) =
+-        rest.split_at_checked(len as usize).ok_or(at_header(Refusal::Truncated { need, have }))?;
+-
+-    let mut newest: Option<Patch<'a>> = None;
+-    while !rest.is_empty() {
+-        // `rest` is a suffix of `container`.
+-        let at = have.wrapping_sub(rest.len());
+-        let (patch, after) = section(rest).map_err(|why| Refused { at, why })?;
+-        if named(patch.revision.0) == signature.0 && newest.is_none_or(|n| patch.revision > n.revision) {
+-            newest = Some(patch);
+-        }
+-        rest = after;
+-    }
+-    Ok(match newest {
+-        None => Choice::NoMatch,
+-        Some(patch) if patch.revision >= found => Choice::Load(patch),
+-        Some(patch) => Choice::Current(patch.revision),
+-    })
+-}
+-
+-/// The patch the section `bytes` starts with, and the bytes after it.
+-fn section(bytes: &[u8]) -> Result<(Patch<'_>, &[u8]), Refusal> {
+-    let have = bytes.len();
+-    let (header, rest) =
+-        bytes.split_first_chunk::<SECTION>().ok_or(Refusal::Truncated { need: SECTION, have })?;
+-    let [kind, size] = dwords(header);
+-    if kind != PATCH {
+-        return Err(Refusal::SectionType(kind));
+-    }
+-    let need = SECTION.saturating_add(size as usize);
+-    let (bytes, rest) = rest.split_at_checked(size as usize).ok_or(Refusal::Truncated { need, have })?;
+-    let (patch, _) = bytes.split_first_chunk::<PATCH_HEADER>().ok_or(Refusal::Short(size))?;
+-    let [_, id, _, minimum, north, south, ..]: [u32; 16] = dwords(patch);
+-    if north != 0 || south != 0 {
+-        return Err(Refusal::Chipset { north, south });
+-    }
+-    if minimum != 0 {
+-        return Err(Refusal::MinimumRevision(minimum));
+-    }
+-    Ok((Patch { revision: Revision(id), bytes }, rest))
+-}
+-
+-/// The CPUID.01H:EAX a Zen patch ID names (Linux's `ucode_rev_to_cpuid`): its
+-/// stepping, model, extended model and extended family, over base family 0xf.
+-const fn named(id: u32) -> u32 {
+-    let (stepping, model) = (id >> 8 & 0xf, id >> 12 & 0xf);
+-    let (ext_model, ext_family) = (id >> 20 & 0xf, id >> 24);
+-    stepping | model << 4 | 0xf << 8 | ext_model << 16 | ext_family << 20
+-}
+-
+-/// The family a Zen patch ID names: base family 0xf plus its extended family.
+-const fn family(id: u32) -> u32 {
+-    (id >> 24).wrapping_add(0xf)
+-}
+diff --git a/kernel/microcode/src/amd/tests.rs b/kernel/microcode/src/amd/tests.rs
+deleted file mode 100644
+index f16b4a4d3..000000000
+--- a/kernel/microcode/src/amd/tests.rs
++++ /dev/null
+@@ -1,208 +0,0 @@
+-//! linux-firmware's container as AMD publishes it, and containers built here
+-//! to its layout for every refusal and every arm the real one does not reach.
+-
+-#![allow(
+-    clippy::indexing_slicing,
+-    clippy::arithmetic_side_effects,
+-    clippy::unwrap_used,
+-    clippy::expect_used,
+-    clippy::panic,
+-    reason = "a test fails by panicking"
+-)]
+-
+-extern crate std;
+-
+-use std::vec;
+-use std::vec::Vec;
+-
+-use super::*;
+-
+-/// The AMD bench's Ryzen 7 4800U: family 0x17, model 0x60, stepping 1.
+-const RENOIR: Signature = Signature(0x0086_0f01);
+-
+-/// Its firmware's revision, and the one linux-firmware's container holds for
+-/// it, which Linux loads early on the same machine
+-/// (`tests/metal/amd-linux/microcode.txt`).
+-const FIRMWARE: Revision = Revision(0x0860_0106);
+-const CONTAINER: Revision = Revision(0x0860_010d);
+-
+-/// Where the Renoir patch's section starts in the container, as AMD's
+-/// `amd_ucode_info.py` names it (its patch 8 bytes later, 3200 bytes long).
+-const RENOIR_SECTION: usize = 9764;
+-
+-fn renoir_patch() -> Patch<'static> {
+-    let Ok(Choice::Load(patch)) = select(&crate::AMD.0, RENOIR, FIRMWARE) else {
+-        panic!("the container holds 0x0860010d for the 4800U")
+-    };
+-    patch
+-}
+-
+-fn put(bytes: &mut [u8], at: usize, value: u32) {
+-    bytes[at..at + 4].copy_from_slice(&value.to_le_bytes());
+-}
+-
+-/// A 3200-byte patch: a header naming `id` and nothing else, and a body.
+-fn patch(id: u32) -> Vec<u8> {
+-    let mut patch = vec![0; 3200];
+-    put(&mut patch, 4, id);
+-    for (i, byte) in patch[PATCH_HEADER..].iter_mut().enumerate() {
+-        *byte = i as u8;
+-    }
+-    patch
+-}
+-
+-/// A container: header, a 16-byte equivalence table, then each `(type,
+-/// bytes)` as a section.
+-fn container(sections: &[(u32, &[u8])]) -> Vec<u8> {
+-    let mut out = Vec::new();
+-    for word in [MAGIC, EQUIVALENCE_TABLE, 16] {
+-        out.extend(word.to_le_bytes());
+-    }
+-    out.extend([0; 16]);
+-    for (kind, bytes) in sections {
+-        out.extend(kind.to_le_bytes());
+-        out.extend((bytes.len() as u32).to_le_bytes());
+-        out.extend(*bytes);
+-    }
+-    out
+-}
+-
+-fn refusal(container: &[u8]) -> Refused {
+-    select(container, RENOIR, FIRMWARE).expect_err("a malformed container selects nothing")
+-}
+-
+-#[test]
+-fn the_4800u_at_its_firmwares_revision_loads_the_containers_patch_in_place() {
+-    let patch = renoir_patch();
+-    assert_eq!(patch.revision(), CONTAINER);
+-    let at = RENOIR_SECTION + SECTION;
+-    assert!(patch.bytes() == &crate::AMD.0[at..at + 3200], "the bytes are not the section's patch");
+-}
+-
+-#[test]
+-fn an_equal_revision_loads_again_and_a_newer_one_is_current() {
+-    assert!(matches!(select(&crate::AMD.0, RENOIR, CONTAINER), Ok(Choice::Load(p)) if p.revision() == CONTAINER));
+-    assert_eq!(select(&crate::AMD.0, RENOIR, Revision(0x0860_010e)), Ok(Choice::Current(CONTAINER)));
+-}
+-
+-#[test]
+-fn another_stepping_is_named_by_no_patch() {
+-    assert_eq!(select(&crate::AMD.0, Signature(0x0086_0f00), FIRMWARE), Ok(Choice::NoMatch));
+-}
+-
+-#[test]
+-fn a_family_0x17_patch_drops_its_mapping_and_a_later_familys_does_not() {
+-    assert!(renoir_patch().leaves_its_mapping_uncached());
+-    let milan = patch(0x0a00_1173);
+-    let built = container(&[(PATCH, &milan)]);
+-    let Ok(Choice::Load(patch)) = select(&built, Signature(0x00a0_0f11), Revision(0x0a00_1100)) else {
+-        panic!("0x0a001173 names CPUID 0x00a00f11")
+-    };
+-    assert!(!patch.leaves_its_mapping_uncached());
+-}
+-
+-#[test]
+-fn the_newest_patch_naming_the_cpu_is_chosen_wherever_it_sits() {
+-    let (older, newer) = (patch(0x0860_0106), patch(0x0860_0110));
+-    for order in [[&older[..], &newer[..]], [&newer[..], &older[..]]] {
+-        let built = container(&[(PATCH, order[0]), (PATCH, order[1])]);
+-        let Ok(Choice::Load(patch)) = select(&built, RENOIR, FIRMWARE) else { panic!("0x08600110 names it") };
+-        assert_eq!(patch.revision(), Revision(0x0860_0110));
+-    }
+-}
+-
+-#[test]
+-fn a_container_that_is_not_one_is_refused() {
+-    let good = container(&[(PATCH, &patch(0x0860_010d))]);
+-    let mut magic = good.clone();
+-    put(&mut magic, 0, 0x0041_4d45);
+-    assert_eq!(refusal(&magic), Refused { at: 0, why: Refusal::Magic(0x0041_4d45) });
+-    let mut table = good.clone();
+-    put(&mut table, 4, PATCH);
+-    assert_eq!(refusal(&table), Refused { at: 0, why: Refusal::TableType(PATCH) });
+-    assert_eq!(refusal(&good[..HEADER - 1]).why, Refusal::Truncated { need: HEADER, have: HEADER - 1 });
+-    assert_eq!(refusal(&good[..HEADER + 15]).why, Refusal::Truncated { need: HEADER + 16, have: HEADER + 15 });
+-}
+-
+-#[test]
+-fn a_section_that_is_not_a_patch_is_refused_a_second_containers_magic_among_them() {
+-    let first = HEADER + 16;
+-    for kind in [EQUIVALENCE_TABLE, 2, MAGIC] {
+-        let built = container(&[(PATCH, &patch(0x0860_010d)), (kind, &patch(0x0860_010d))]);
+-        assert_eq!(refusal(&built), Refused { at: first + SECTION + 3200, why: Refusal::SectionType(kind) });
+-    }
+-}
+-
+-#[test]
+-fn a_patch_shorter_than_its_header_or_than_its_section_says_is_refused() {
+-    let short = container(&[(PATCH, &patch(0x0860_010d)[..PATCH_HEADER - 1])]);
+-    assert_eq!(refusal(&short).why, Refusal::Short(PATCH_HEADER as u32 - 1));
+-    let whole = container(&[(PATCH, &patch(0x0860_010d))]);
+-    let cut = &whole[..whole.len() - 1];
+-    assert_eq!(refusal(cut).why, Refusal::Truncated { need: SECTION + 3200, have: SECTION + 3199 });
+-    assert_eq!(refusal(&whole[..whole.len() - 3200 - 1]).why, Refusal::Truncated { need: SECTION, have: SECTION - 1 });
+-}
+-
+-#[test]
+-fn a_chipset_specific_patch_is_refused() {
+-    for (at, north, south) in [(16, 1, 0), (20, 0, 1)] {
+-        let mut chipset = patch(0x0860_010d);
+-        put(&mut chipset, at, 1);
+-        let built = container(&[(PATCH, &chipset)]);
+-        assert_eq!(refusal(&built).why, Refusal::Chipset { north, south });
+-    }
+-}
+-
+-#[test]
+-fn a_patch_naming_a_minimum_revision_is_refused() {
+-    let mut minimum = patch(0x0860_010d);
+-    put(&mut minimum, 12, 0x0860_0100);
+-    assert_eq!(refusal(&container(&[(PATCH, &minimum)])).why, Refusal::MinimumRevision(0x0860_0100));
+-}
+-
+-#[test]
+-fn a_malformed_section_after_the_cpus_own_refuses_the_container() {
+-    let mut chipset = patch(0x0830_107c);
+-    put(&mut chipset, 16, 1);
+-    let built = container(&[(PATCH, &patch(0x0860_010d)), (PATCH, &chipset)]);
+-    let at = HEADER + 16 + SECTION + 3200;
+-    assert_eq!(refusal(&built), Refused { at, why: Refusal::Chipset { north: 1, south: 0 } });
+-}
+-
+-/// Linux v7.2's `amd_shas.c` (`tests/linux/`, outside every shipped package's
+-/// directory; `NOTICE`): each patch ID's SHA-256, by its rows.
+-fn linux_digests() -> std::collections::BTreeMap<u32, [u8; 32]> {
+-    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/linux/amd_shas.c");
+-    let text = std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("{}: {e}", path.display()));
+-    let hex = |word: &str| u32::from_str_radix(word.trim_start_matches("0x"), 16).expect("a hex word");
+-    text.split(" { 0x")
+-        .skip(1)
+-        .map(|row| {
+-            let mut words = row.split(|c: char| !c.is_ascii_alphanumeric()).filter(|w| !w.is_empty());
+-            let id = hex(words.next().expect("the row's patch ID"));
+-            let digest: Vec<u8> = words.take(32).map(|w| hex(w) as u8).collect();
+-            (id, digest.try_into().unwrap_or_else(|d| panic!("patch {id:#x}'s digest is {d:?}")))
+-        })
+-        .collect()
+-}
+-
+-/// Every patch the embedded container holds, and so every patch `select` can
+-/// return out of it, is the patch Linux records: the build-time form of the
+-/// hash Linux checks at run time below EntrySign's cutoff.
+-#[test]
+-fn every_patch_in_the_embedded_container_has_linuxs_digest() {
+-    let linux = linux_digests();
+-    let container = &crate::AMD.0;
+-    let table = u32::from_le_bytes(container[8..HEADER].try_into().unwrap()) as usize;
+-    let mut rest = &container[HEADER + table..];
+-    let mut patches = 0;
+-    while !rest.is_empty() {
+-        let (patch, after) = section(rest).expect("the embedded container is valid");
+-        let id = patch.revision().0;
+-        let want = linux.get(&id).unwrap_or_else(|| panic!("amd_shas.c records no patch {id:#x}"));
+-        assert_eq!(&toyos_sha2::Sha256::digest(patch.bytes()), want, "patch {id:#x}");
+-        patches += 1;
+-        rest = after;
+-    }
+-    assert_eq!(patches, 7, "the container's README names seven patches");
+-}
+diff --git a/kernel/microcode/src/intel.rs b/kernel/microcode/src/intel.rs
+deleted file mode 100644
+index 3c3c0fd98..000000000
+--- a/kernel/microcode/src/intel.rs
++++ /dev/null
+@@ -1,226 +0,0 @@
+-//! Intel's microcode update files, read as the SDM defines them.
+-//!
+-//! A file Intel publishes for one processor signature is updates laid end to
+-//! end, and so is any number of such files laid end to end. [`select`]
+-//! validates every update against SDM Vol. 3A §12.11 (order number
+-//! 325384-093US) — header, checksum and the optional extended signature table
+-//! — and answers with the newest that names a CPU's signature and platform,
+-//! or why it loads none. One malformed update refuses the whole file.
+-//!
+-//! Only an update newer than the revision the CPU runs loads (Example 12-10):
+-//! the CPU "may or may not reload" an equal one, and loading an update on one
+-//! logical processor loads it on every other in its core.
+-
+-use crate::{dwords, Choice, Revision, Signature};
+-
+-#[cfg(test)]
+-mod tests;
+-
+-/// The header's length, and so the offset of the update data (Table 12-7).
+-const HEADER: usize = 48;
+-/// The extended signature table's header: count, checksum, 12 reserved bytes
+-/// (Table 12-9).
+-const EXT_HEADER: usize = 20;
+-/// One extended signature: signature, processor flags, checksum (Table 12-10).
+-const EXT_SIGNATURE: usize = 12;
+-/// Total Size is "always a multiple of 1024" (Table 12-7).
+-const GRANULE: usize = 1024;
+-
+-/// Which bit of an update's processor flags names this CPU's platform
+-/// (§12.11.4).
+-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+-pub struct PlatformId(u8);
+-
+-impl PlatformId {
+-    /// `IA32_PLATFORM_ID` (MSR 17H): bits 52:50 (Table 12-11).
+-    pub const fn from_msr(msr: u64) -> Self {
+-        Self((msr >> 50) as u8 & 7)
+-    }
+-
+-    const fn flag(self) -> u32 {
+-        // `self.0` < 8: the field is private and `from_msr` masks it.
+-        1 << self.0
+-    }
+-}
+-
+-impl core::fmt::Display for PlatformId {
+-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+-        core::fmt::Display::fmt(&self.0, f)
+-    }
+-}
+-
+-/// What one CPU reports, read on that CPU.
+-#[derive(Clone, Copy, Debug)]
+-pub struct Cpu {
+-    pub signature: Signature,
+-    pub platform: PlatformId,
+-    pub revision: Revision,
+-}
+-
+-/// One update out of a file, validated.
+-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+-pub struct Update<'a> {
+-    revision: Revision,
+-    signature: u32,
+-    flags: u32,
+-    data: &'a [u8],
+-    extended: &'a [[u8; EXT_SIGNATURE]],
+-}
+-
+-impl<'a> Update<'a> {
+-    pub fn revision(&self) -> Revision {
+-        self.revision
+-    }
+-
+-    /// The update data. `IA32_BIOS_UPDT_TRIG` is written its linear address,
+-    /// which must be 16-byte aligned and mapped present (§12.11.6).
+-    pub fn data(&self) -> &'a [u8] {
+-        self.data
+-    }
+-
+-    /// The header's signature and flags, then each extended signature's
+-    /// (Examples 12-5 and 12-6).
+-    fn names(&self, cpu: &Cpu) -> bool {
+-        let extended = self.extended.iter().map(|entry| {
+-            let [signature, flags, _] = dwords(entry);
+-            (signature, flags)
+-        });
+-        core::iter::once((self.signature, self.flags))
+-            .chain(extended)
+-            .any(|(signature, flags)| signature == cpu.signature.0 && flags & cpu.platform.flag() != 0)
+-    }
+-}
+-
+-/// Why a file is refused: the offset of the update that is malformed, and how.
+-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+-pub struct Refused {
+-    pub at: usize,
+-    pub why: Refusal,
+-}
+-
+-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+-pub enum Refusal {
+-    /// The bytes end before the header does, or before Total Size says the
+-    /// update does.
+-    Truncated { need: usize, have: usize },
+-    /// Header Version is not 1, the only version §12.11 defines.
+-    HeaderVersion(u32),
+-    /// Loader Revision is not 1, the only loader §12.11.6 describes.
+-    LoaderRevision(u32),
+-    /// Data Size is 0, which Table 12-7 reads as 2000 bytes: the form of
+-    /// updates for CPUs older than any ToyOS runs on.
+-    ZeroDataSize,
+-    /// Data Size is not a multiple of a dword.
+-    DataSize(usize),
+-    /// Total Size is not a multiple of 1024.
+-    TotalSize(usize),
+-    /// Total Size is smaller than the header and data it holds.
+-    TotalBelowData { total: usize, data: usize },
+-    /// The header's and data's dwords sum to this, not to 0 (§12.11.5).
+-    Checksum(u32),
+-    /// The extended signature table is not 20 bytes and 12 for each signature
+-    /// its count names.
+-    ExtendedTableSize { len: usize },
+-    /// The extended signature table's dwords sum to this, not to 0 (§12.11.2).
+-    ExtendedTableChecksum(u32),
+-    /// This extended signature's checksum does not stand in for the header's
+-    /// (Table 12-10).
+-    ExtendedSignatureChecksum { index: usize },
+-}
+-
+-/// The update in `file` to load on `cpu`, or why there is none. A file holds
+-/// at least one update.
+-pub fn select<'a>(file: &'a [u8], cpu: &Cpu) -> Result<Choice<Update<'a>>, Refused> {
+-    let mut newest: Option<Update<'a>> = None;
+-    let mut rest = file;
+-    loop {
+-        // `rest` is a suffix of `file`.
+-        let at = file.len().wrapping_sub(rest.len());
+-        let (update, after) = parse(rest).map_err(|why| Refused { at, why })?;
+-        if update.names(cpu) && newest.is_none_or(|n| update.revision > n.revision) {
+-            newest = Some(update);
+-        }
+-        if after.is_empty() {
+-            break;
+-        }
+-        rest = after;
+-    }
+-    Ok(match newest {
+-        None => Choice::NoMatch,
+-        Some(update) if update.revision > cpu.revision => Choice::Load(update),
+-        Some(update) => Choice::Current(update.revision),
+-    })
+-}
+-
+-/// The update `bytes` starts with, and the bytes after it.
+-fn parse(bytes: &[u8]) -> Result<(Update<'_>, &[u8]), Refusal> {
+-    let have = bytes.len();
+-    let (header, rest) =
+-        bytes.split_first_chunk::<HEADER>().ok_or(Refusal::Truncated { need: HEADER, have })?;
+-    let [version, revision, _, signature, checksum, loader, flags, data, total, ..]: [u32; 12] =
+-        dwords(header);
+-    if version != 1 {
+-        return Err(Refusal::HeaderVersion(version));
+-    }
+-    if loader != 1 {
+-        return Err(Refusal::LoaderRevision(loader));
+-    }
+-    let (data, total) = (data as usize, total as usize);
+-    if data == 0 {
+-        return Err(Refusal::ZeroDataSize);
+-    }
+-    if !data.is_multiple_of(4) {
+-        return Err(Refusal::DataSize(data));
+-    }
+-    if !total.is_multiple_of(GRANULE) {
+-        return Err(Refusal::TotalSize(total));
+-    }
+-    let table = HEADER
+-        .checked_add(data)
+-        .and_then(|signed| total.checked_sub(signed))
+-        .ok_or(Refusal::TotalBelowData { total, data })?;
+-    let truncated = Refusal::Truncated { need: total, have };
+-    let (data, rest) = rest.split_at_checked(data).ok_or(truncated)?;
+-    let (table, rest) = rest.split_at_checked(table).ok_or(truncated)?;
+-
+-    match sum(header).wrapping_add(sum(data)) {
+-        0 => {}
+-        sum => return Err(Refusal::Checksum(sum)),
+-    }
+-    let extended = match table {
+-        [] => &[],
+-        table => extended(table, signature.wrapping_add(checksum).wrapping_add(flags))?,
+-    };
+-    let update = Update { revision: Revision(revision), signature, flags, data, extended };
+-    Ok((update, rest))
+-}
+-
+-/// The entries of an extended signature table whose update's header
+-/// signature, checksum and flags sum to `primary`.
+-fn extended(table: &[u8], primary: u32) -> Result<&[[u8; EXT_SIGNATURE]], Refusal> {
+-    let size = Refusal::ExtendedTableSize { len: table.len() };
+-    let (header, entries) = table.split_first_chunk::<EXT_HEADER>().ok_or(size)?;
+-    let [count, ..]: [u32; 5] = dwords(header);
+-    if (count as usize).checked_mul(EXT_SIGNATURE) != Some(entries.len()) {
+-        return Err(size);
+-    }
+-    match sum(table) {
+-        0 => {}
+-        sum => return Err(Refusal::ExtendedTableChecksum(sum)),
+-    }
+-    let (entries, _) = entries.as_chunks::<EXT_SIGNATURE>();
+-    // An extended signature, flags and checksum replace the header's three in
+-    // the update it stands for, so the two triples sum alike.
+-    for (index, entry) in entries.iter().enumerate() {
+-        let [signature, flags, checksum] = dwords(entry);
+-        if signature.wrapping_add(flags).wrapping_add(checksum) != primary {
+-            return Err(Refusal::ExtendedSignatureChecksum { index });
+-        }
+-    }
+-    Ok(entries)
+-}
+-
+-/// Every dword of `bytes` summed, unsigned, with wrap (§12.11.5).
+-fn sum(bytes: &[u8]) -> u32 {
+-    bytes.as_chunks::<4>().0.iter().fold(0, |sum, &w| sum.wrapping_add(u32::from_le_bytes(w)))
+-}
+diff --git a/kernel/microcode/src/intel/tests.rs b/kernel/microcode/src/intel/tests.rs
+deleted file mode 100644
+index 28dce66da..000000000
+--- a/kernel/microcode/src/intel/tests.rs
++++ /dev/null
+@@ -1,250 +0,0 @@
+-//! Intel's updates as Intel publishes them, and updates built here to the
+-//! SDM's layout for every refusal and every arm the real files do not reach.
+-
+-#![allow(
+-    clippy::indexing_slicing,
+-    clippy::arithmetic_side_effects,
+-    clippy::unwrap_used,
+-    clippy::expect_used,
+-    clippy::panic,
+-    reason = "a test fails by panicking"
+-)]
+-
+-extern crate std;
+-
+-use std::vec;
+-use std::vec::Vec;
+-
+-use super::*;
+-
+-/// `intel-ucode/06-8c-01`, pinned by its digest in `NOTICE`.
+-const T14_FILE: &[u8] = include_bytes!("../../intel-ucode/06-8c-01");
+-
+-/// `intel-ucode/06-cc-02`, pinned by its digest in `NOTICE`: one update,
+-/// revision 0x11c, Data Size 0x2878c, flags 0x94, and an extended signature
+-/// table whose last entry is 0xe0652 with flags 0x94.
+-const CC02_FILE: &[u8] = include_bytes!("../../intel-ucode/06-cc-02");
+-
+-/// The T14's i5-1135G7 at the revision its firmware loads.
+-const T14: Cpu = Cpu {
+-    signature: Signature(0x0008_06c1),
+-    platform: PlatformId(7),
+-    revision: Revision(0xbe),
+-};
+-
+-fn get(bytes: &[u8], at: usize) -> u32 {
+-    u32::from_le_bytes(bytes[at..at + 4].try_into().unwrap())
+-}
+-
+-fn put(bytes: &mut [u8], at: usize, value: u32) {
+-    bytes[at..at + 4].copy_from_slice(&value.to_le_bytes());
+-}
+-
+-/// Rewrite the header's checksum so the header and data sum to 0 again.
+-fn reseal(update: &mut [u8], data: usize) {
+-    put(update, 16, 0);
+-    let sum = sum(&update[..HEADER + data]);
+-    put(update, 16, sum.wrapping_neg());
+-}
+-
+-/// A 2048-byte update to Tables 12-7 to 12-10: `signature` and `flags` in the
+-/// header, `extended` as its extended signature table, every checksum true.
+-fn build(signature: u32, flags: u32, revision: u32, extended: &[(u32, u32)]) -> Vec<u8> {
+-    let table = if extended.is_empty() { 0 } else { EXT_HEADER + EXT_SIGNATURE * extended.len() };
+-    let data = 2048 - HEADER - table;
+-    let mut update = vec![0; 2048];
+-    for (i, word) in update[HEADER..HEADER + data].as_chunks_mut::<4>().0.iter_mut().enumerate() {
+-        *word = (i as u32).wrapping_mul(0x9e37_79b9).to_le_bytes();
+-    }
+-    for (at, value) in [(0, 1), (4, revision), (12, signature), (20, 1), (24, flags)] {
+-        put(&mut update, at, value);
+-    }
+-    put(&mut update, 28, data as u32);
+-    put(&mut update, 32, 2048);
+-    reseal(&mut update, data);
+-    if table != 0 {
+-        let header = get(&update, 12).wrapping_add(get(&update, 16)).wrapping_add(get(&update, 24));
+-        let at = HEADER + data;
+-        put(&mut update, at, extended.len() as u32);
+-        for (i, &(sig, flags)) in extended.iter().enumerate() {
+-            let entry = at + EXT_HEADER + EXT_SIGNATURE * i;
+-            put(&mut update, entry, sig);
+-            put(&mut update, entry + 4, flags);
+-            put(&mut update, entry + 8, header.wrapping_sub(sig).wrapping_sub(flags));
+-        }
+-        let sum = sum(&update[at..]);
+-        put(&mut update, at + 4, sum.wrapping_neg());
+-    }
+-    update
+-}
+-
+-fn refusal(file: &[u8]) -> Refused {
+-    select(file, &T14).expect_err("a malformed file selects nothing")
+-}
+-
+-#[test]
+-fn the_t14_runs_intels_newest_update_for_its_cpu() {
+-    assert_eq!(select(T14_FILE, &T14), Ok(Choice::Current(Revision(0xbe))));
+-}
+-
+-#[test]
+-fn a_t14_below_it_loads_its_data_which_follows_the_header() {
+-    let older = Cpu { revision: Revision(0xbd), ..T14 };
+-    let Ok(Choice::Load(update)) = select(T14_FILE, &older) else { panic!("0xbe is newer than 0xbd") };
+-    assert_eq!(update.revision(), Revision(0xbe));
+-    assert_eq!(update.data(), &T14_FILE[HEADER..]);
+-}
+-
+-#[test]
+-fn another_platform_or_stepping_is_not_named() {
+-    for platform in 0..7 {
+-        assert_eq!(select(T14_FILE, &Cpu { platform: PlatformId(platform), ..T14 }), Ok(Choice::NoMatch));
+-    }
+-    let stepping_2 = Cpu { signature: Signature(0x0008_06c2), ..T14 };
+-    assert_eq!(select(T14_FILE, &stepping_2), Ok(Choice::NoMatch));
+-}
+-
+-#[test]
+-fn an_extended_signature_in_intels_file_names_its_cpu() {
+-    let below = Cpu { signature: Signature(0x000e_0652), platform: PlatformId(7), revision: Revision(0x11b) };
+-    let Ok(Choice::Load(update)) = select(CC02_FILE, &below) else { panic!("0x11c is newer than 0x11b") };
+-    assert_eq!(update.revision(), Revision(0x11c));
+-    assert!(update.data() == &CC02_FILE[HEADER..HEADER + 0x2878c], "the data is not the file's");
+-    let current = Cpu { revision: Revision(0x11c), ..below };
+-    assert_eq!(select(CC02_FILE, &current), Ok(Choice::Current(Revision(0x11c))));
+-    assert_eq!(select(CC02_FILE, &Cpu { platform: PlatformId(0), ..below }), Ok(Choice::NoMatch));
+-}
+-
+-#[test]
+-fn the_msrs_are_read_where_the_sdm_puts_them() {
+-    // `IA32_PLATFORM_ID` as all eight of the T14's CPUs read it.
+-    assert_eq!(PlatformId::from_msr(0x001c_0000_0000_0000), PlatformId(7));
+-    assert_eq!(PlatformId::from_msr(!(7 << 50)), PlatformId(0));
+-}
+-
+-#[test]
+-fn a_flipped_bit_anywhere_in_header_or_data_is_refused() {
+-    let mut file = T14_FILE.to_vec();
+-    for at in (0..HEADER).chain((HEADER..file.len()).step_by(4093)) {
+-        file[at] ^= 1;
+-        assert!(select(&file, &T14).is_err(), "a flip at byte {at} was accepted");
+-        file[at] ^= 1;
+-    }
+-    file[4096] ^= 1;
+-    assert_eq!(refusal(&file), Refused { at: 0, why: Refusal::Checksum(u32::MAX) });
+-}
+-
+-#[test]
+-fn a_file_cut_short_is_refused() {
+-    for file in [T14_FILE, CC02_FILE] {
+-        let len = file.len();
+-        assert_eq!(refusal(&file[..len - 4]).why, Refusal::Truncated { need: len, have: len - 4 });
+-    }
+-    assert_eq!(refusal(&T14_FILE[..HEADER - 1]).why, Refusal::Truncated { need: HEADER, have: HEADER - 1 });
+-}
+-
+-#[test]
+-fn an_empty_file_is_refused() {
+-    assert_eq!(refusal(&[]), Refused { at: 0, why: Refusal::Truncated { need: HEADER, have: 0 } });
+-}
+-
+-#[test]
+-fn a_malformed_update_after_a_good_one_refuses_the_file() {
+-    let mut file = T14_FILE.to_vec();
+-    file.extend_from_slice(&[0; HEADER]);
+-    assert_eq!(refusal(&file), Refused { at: T14_FILE.len(), why: Refusal::HeaderVersion(0) });
+-    for have in 1..HEADER {
+-        let why = Refusal::Truncated { need: HEADER, have };
+-        assert_eq!(refusal(&file[..T14_FILE.len() + have]), Refused { at: T14_FILE.len(), why });
+-    }
+-}
+-
+-#[test]
+-fn a_header_or_loader_version_other_than_1_is_refused() {
+-    for (at, why) in [(0, Refusal::HeaderVersion(2)), (20, Refusal::LoaderRevision(2))] {
+-        let mut update = build(T14.signature.0, 0x80, 0xc0, &[]);
+-        put(&mut update, at, 2);
+-        reseal(&mut update, 2000);
+-        assert_eq!(refusal(&update).why, why);
+-    }
+-}
+-
+-#[test]
+-fn a_size_zero_off_its_granule_or_inside_out_is_refused() {
+-    let cases: [(u32, u32, Refusal); 5] = [
+-        (0, 0, Refusal::ZeroDataSize),
+-        (1998, 2048, Refusal::DataSize(1998)),
+-        (2000, 2047, Refusal::TotalSize(2047)),
+-        (2000, 2560, Refusal::TotalSize(2560)),
+-        (3024, 2048, Refusal::TotalBelowData { total: 2048, data: 3024 }),
+-    ];
+-    for (data, total, why) in cases {
+-        let mut update = build(T14.signature.0, 0x80, 0xc0, &[]);
+-        put(&mut update, 28, data);
+-        put(&mut update, 32, total);
+-        assert_eq!(refusal(&update).why, why);
+-    }
+-}
+-
+-#[test]
+-fn any_multiple_of_1024_is_a_total_size() {
+-    let mut update = build(T14.signature.0, 0x80, 0xc0, &[]);
+-    update.resize(3072, 0);
+-    put(&mut update, 28, 3072 - HEADER as u32);
+-    put(&mut update, 32, 3072);
+-    reseal(&mut update, 3072 - HEADER);
+-    assert!(matches!(select(&update, &T14), Ok(Choice::Load(_))));
+-}
+-
+-#[test]
+-fn an_extended_signature_names_a_cpu_the_header_does_not() {
+-    let other = (0x0008_06c2, 0x01);
+-    let t14 = (T14.signature.0, 0x80);
+-    for extended in [[other, t14], [t14, other]] {
+-        let update = build(0x0009_06a3, 0x80, 0xc0, &extended);
+-        let Ok(Choice::Load(loaded)) = select(&update, &T14) else { panic!("an entry names the T14") };
+-        assert_eq!(loaded.data().len(), 2048 - HEADER - EXT_HEADER - 2 * EXT_SIGNATURE);
+-    }
+-    let wrong_platform = build(0x0009_06a3, 0x80, 0xc0, &[(T14.signature.0, 0x01)]);
+-    assert_eq!(select(&wrong_platform, &T14), Ok(Choice::NoMatch));
+-}
+-
+-#[test]
+-fn a_damaged_extended_table_is_refused() {
+-    let at = 2048 - EXT_HEADER - 2 * EXT_SIGNATURE;
+-    let good = build(0x0009_06a3, 0x80, 0xc0, &[(0x0008_06c2, 0x01), (T14.signature.0, 0x80)]);
+-
+-    let mut entry = good.clone();
+-    let signature = at + EXT_HEADER + EXT_SIGNATURE;
+-    let (sig, sum) = (get(&entry, signature), get(&entry, at + 4));
+-    put(&mut entry, signature, sig + 1);
+-    put(&mut entry, at + 4, sum.wrapping_sub(1));
+-    assert_eq!(refusal(&entry).why, Refusal::ExtendedSignatureChecksum { index: 1 });
+-
+-    let mut table = good.clone();
+-    table[at + 8] ^= 1;
+-    assert_eq!(refusal(&table).why, Refusal::ExtendedTableChecksum(1));
+-
+-    for count in [1, 3] {
+-        let mut wrong = good.clone();
+-        put(&mut wrong, at, count);
+-        let len = EXT_HEADER + 2 * EXT_SIGNATURE;
+-        assert_eq!(refusal(&wrong).why, Refusal::ExtendedTableSize { len }, "count {count}");
+-    }
+-
+-    let mut short = build(T14.signature.0, 0x80, 0xc0, &[]);
+-    put(&mut short, 28, 1984);
+-    short[2032..].fill(0);
+-    reseal(&mut short, 1984);
+-    assert_eq!(refusal(&short).why, Refusal::ExtendedTableSize { len: 16 });
+-}
+-
+-#[test]
+-fn the_newest_update_naming_the_cpu_is_chosen_wherever_it_sits() {
+-    let newer = build(T14.signature.0, 0x80, 0xc0, &[]);
+-    let other = build(T14.signature.0, 0x01, 0xd0, &[]);
+-    for file in [[T14_FILE, &newer[..], &other[..]].concat(), [&other[..], &newer[..], T14_FILE].concat()] {
+-        let Ok(Choice::Load(update)) = select(&file, &T14) else { panic!("0xc0 is newer than 0xbe") };
+-        assert_eq!(update.revision(), Revision(0xc0));
+-    }
+-}
+diff --git a/kernel/microcode/src/lib.rs b/kernel/microcode/src/lib.rs
+index 4d42c1b9f..0f5d09071 100644
+--- a/kernel/microcode/src/lib.rs
++++ b/kernel/microcode/src/lib.rs
+@@ -1,30 +1,18 @@
+-//! CPU microcode as Intel and AMD publish it, matched to one CPU, and the
+-//! files the kernel loads it from, pure.
++//! Intel microcode update files, read as the SDM defines them, pure.
+ //!
+-//! [`intel`] reads Intel's update files as SDM Vol. 3A §12.11 defines them,
+-//! [`amd`] AMD's containers as AMD's own parser and Linux's `amd.c` read them.
+-//! Each validates the whole file, refuses it by name and offset where any
+-//! part is malformed, and answers with the update a CPU loads, or why it loads
+-//! none. Only the documented headers are read: an update's body is its
+-//! maker's signed payload, handed on whole and never interpreted.
++//! A file Intel publishes for one processor signature is updates laid end to
++//! end. [`select`] validates every one against SDM Vol. 3A §12.11 (order
++//! number 325384-093US) — header, checksum and the optional extended signature
++//! table — and answers with the newest that names a CPU's signature and
++//! platform, or why it loads none. One malformed update refuses the whole file.
+ //!
+-//! Before any file is read, [`Maker::of`] says whose interface a CPU's
+-//! revision is read through and [`may_load`] whether it loads at all.
+-//!
+-//! [`INTEL`] and [`AMD`] are the files the kernel embeds, one per CPU ToyOS
+-//! has a bench for, each as its maker publishes it and pinned by its digest
+-//! in `NOTICE`. **On AMD's families 0x17 and 0x19 and part of 0x1a that pin
+-//! is the only check**: at or below a per-CPU cutoff revision the CPU's own
+-//! signature check can be forged (EntrySign; Linux's `cpu_has_entrysign`).
+-//! Linux hashes a patch at run time against `amd_shas.c` because it loads a
+-//! file the kernel did not ship; these are inside the kernel image, so the
+-//! hash moves to build time, where a host test holds every patch
+-//! [`amd::select`] can return out of [`AMD`] to Linux's digest. A microcode
+-//! source outside the kernel image brings the runtime check with it.
++//! Only the documented header, checksums and signature table are read. The
++//! update data is the maker's signed payload: handed on whole, never
++//! interpreted.
+ //!
+ //! Pure: no I/O, no allocation, no `unsafe`. The caller reads the CPU.
+ //!
+-//! A file is untrusted, so nothing here may panic on one.
++//! The file is untrusted, so nothing here may panic on it.
+ 
+ #![no_std]
+ #![forbid(unsafe_code)]
+@@ -40,131 +28,234 @@
+     clippy::unimplemented
+ )]
+ 
+-use core::fmt;
+-
+-use toyos_cpuvuln::Vendor;
+-
+-pub mod amd;
+-pub mod intel;
+-
+ #[cfg(test)]
+ mod tests;
+ 
+-/// A file the kernel loads from, starting 16-byte aligned: Intel's trigger
+-/// takes an update's data only at such an address (SDM §12.11.6), and every
+-/// update behind the first starts a multiple of 1024 bytes in, its data 48
+-/// bytes after that.
+-#[repr(C, align(16))]
+-pub struct Aligned<Bytes: ?Sized>(pub Bytes);
+-
+-/// Intel's updates for the CPUs ToyOS has a bench for, end to end:
+-/// `intel-ucode/06-8c-01`, the T14's i5-1135G7.
+-pub static INTEL: &Aligned<[u8]> = &Aligned(*include_bytes!("../intel-ucode/06-8c-01"));
++/// The header's length, and so the offset of the update data (Table 12-7).
++const HEADER: usize = 48;
++/// The extended signature table's header: count, checksum, 12 reserved bytes
++/// (Table 12-9).
++const EXT_HEADER: usize = 20;
++/// One extended signature: signature, processor flags, checksum (Table 12-10).
++const EXT_SIGNATURE: usize = 12;
++/// Total Size is "always a multiple of 1024" (Table 12-7).
++const GRANULE: usize = 1024;
+ 
+-/// AMD's container for the CPUs ToyOS has a bench for: linux-firmware's
+-/// `amd-ucode/microcode_amd_fam17h.bin`, the AMD bench's Ryzen 7 4800U among
+-/// them.
+-pub static AMD: &Aligned<[u8]> = &Aligned(*include_bytes!("../amd-ucode/microcode_amd_fam17h.bin"));
+-
+-/// CPUID.01H:EAX, which both makers' updates name their CPU by.
++/// CPUID.01H:EAX, compared whole with an update's (§12.11.3).
+ #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+ pub struct Signature(pub u32);
+ 
+-/// A microcode revision: Intel's update revision, AMD's patch level, each the
+-/// dword its maker reports it in `IA32_BIOS_SIGN_ID` (MSR 8BH), compared
+-/// unsigned as Linux compares both.
++/// Which bit of an update's processor flags names this CPU's platform
++/// (§12.11.4).
++#[derive(Clone, Copy, Debug, PartialEq, Eq)]
++pub struct PlatformId(u8);
++
++impl PlatformId {
++    /// `IA32_PLATFORM_ID` (MSR 17H): bits 52:50 (Table 12-11).
++    pub const fn from_msr(msr: u64) -> Self {
++        Self((msr >> 50) as u8 & 7)
++    }
++
++    const fn flag(self) -> u32 {
++        // `self.0` < 8: the field is private and `from_msr` masks it.
++        1 << self.0
++    }
++}
++
++/// An update revision. Signed (Table 12-7): one update is newer than another
++/// only when numerically larger (Example 12-10).
+ #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+-pub struct Revision(pub u32);
++pub struct Revision(pub i32);
+ 
+ impl Revision {
+-    /// What a CPU whose loading is disabled, by a hypervisor or by a firmware
+-    /// toggle, reports (Xen's `rev == ~0`).
+-    pub const DISABLED: Self = Self(u32::MAX);
+-
+-    /// Intel's: MSR 8BH read after writing it 0 and executing CPUID.01H, whose
+-    /// upper dword the revision is (SDM §12.11.7.1).
++    /// `IA32_BIOS_SIGN_ID` (MSR 8BH) read after writing it 0 and executing
++    /// CPUID.01H: the revision is its upper dword (§12.11.7.1).
+     pub const fn from_sign_id(msr: u64) -> Self {
+-        Self((msr >> 32) as u32)
++        Self((msr >> 32) as u32 as i32)
+     }
++}
+ 
+-    /// AMD's: MSR 8BH's lower dword, the patch level (Linux `amd.c:336`).
+-    pub const fn from_patch_level(msr: u64) -> Self {
+-        Self(msr as u32)
+-    }
++/// What one CPU reports, read on that CPU.
++#[derive(Clone, Copy, Debug)]
++pub struct Cpu {
++    pub signature: Signature,
++    pub platform: PlatformId,
++    pub revision: Revision,
++}
++
++/// One update out of a file, validated.
++#[derive(Clone, Copy, Debug, PartialEq, Eq)]
++pub struct Update<'a> {
++    revision: Revision,
++    signature: u32,
++    flags: u32,
++    data: &'a [u8],
++    extended: &'a [[u8; EXT_SIGNATURE]],
+ }
+ 
+-impl fmt::LowerHex for Revision {
+-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+-        fmt::LowerHex::fmt(&self.0, f)
++impl<'a> Update<'a> {
++    pub fn revision(&self) -> Revision {
++        self.revision
++    }
++
++    /// The update data. `IA32_BIOS_UPDT_TRIG` is written its linear address,
++    /// which must be 16-byte aligned and mapped present (§12.11.6).
++    pub fn data(&self) -> &'a [u8] {
++        self.data
++    }
++
++    /// The header's signature and flags, then each extended signature's
++    /// (Examples 12-5 and 12-6).
++    fn names(&self, cpu: &Cpu) -> bool {
++        let extended = self.extended.iter().map(|entry| {
++            let [signature, flags, _] = dwords(entry);
++            (signature, flags)
++        });
++        core::iter::once((self.signature, self.flags))
++            .chain(extended)
++            .any(|(signature, flags)| signature == cpu.signature.0 && flags & cpu.platform.flag() != 0)
+     }
+ }
+ 
+ /// What a valid file holds for one CPU.
+ #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+-pub enum Choice<Update> {
+-    /// The newest update naming the CPU, which it loads.
+-    Load(Update),
+-    /// The newest update naming the CPU is this revision, and the CPU runs
+-    /// one its maker's rule does not load it over.
++pub enum Choice<'a> {
++    /// The newest update naming the CPU, newer than the revision it runs.
++    Load(Update<'a>),
++    /// The newest update naming the CPU is this revision, and the CPU already
++    /// runs it or a newer one.
+     Current(Revision),
+     /// No update in the file names the CPU.
+     NoMatch,
+ }
+ 
+-/// A maker whose files the kernel embeds: whose file a CPU chooses from, and
+-/// whose half of MSR 8BH its revision is.
++/// Why a file is refused: the offset of the update that is malformed, and how.
++#[derive(Clone, Copy, Debug, PartialEq, Eq)]
++pub struct Refused {
++    pub at: usize,
++    pub why: Refusal,
++}
++
+ #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+-pub enum Maker {
+-    Intel,
+-    Amd,
++pub enum Refusal {
++    /// The bytes end before the header does, or before Total Size says the
++    /// update does.
++    Truncated { need: usize, have: usize },
++    /// Header Version is not 1, the only version §12.11 defines.
++    HeaderVersion(u32),
++    /// Loader Revision is not 1, the only loader §12.11.6 describes.
++    LoaderRevision(u32),
++    /// Data Size is 0, which Table 12-7 reads as 2000 bytes: the form of
++    /// updates for CPUs older than any ToyOS runs on.
++    ZeroDataSize,
++    /// Data Size is not a multiple of a dword.
++    DataSize(usize),
++    /// Total Size is not a multiple of 1024.
++    TotalSize(usize),
++    /// Total Size is smaller than the header and data it holds.
++    TotalBelowData { total: usize, data: usize },
++    /// The header's and data's dwords sum to this, not to 0 (§12.11.5).
++    Checksum(u32),
++    /// The extended signature table is not 20 bytes and 12 for each signature
++    /// its count names.
++    ExtendedTableSize { len: usize },
++    /// The extended signature table's dwords sum to this, not to 0 (§12.11.2).
++    ExtendedTableChecksum(u32),
++    /// This extended signature's checksum does not stand in for the header's
++    /// (Table 12-10).
++    ExtendedSignatureChecksum { index: usize },
+ }
+ 
+-impl Maker {
+-    /// The maker a CPU of `vendor` loads from, or why it loads nothing.
+-    pub fn of(vendor: Vendor) -> Result<Self, Unloaded> {
+-        match vendor {
+-            Vendor::Intel => Ok(Self::Intel),
+-            Vendor::Amd => Ok(Self::Amd),
+-            Vendor::Hygon | Vendor::Centaur | Vendor::Zhaoxin | Vendor::Unknown => {
+-                Err(Unloaded::Vendor(vendor))
+-            }
++/// The update in `file` to load on `cpu`, or why there is none. A file holds
++/// at least one update.
++pub fn select<'a>(file: &'a [u8], cpu: &Cpu) -> Result<Choice<'a>, Refused> {
++    let mut newest: Option<Update<'a>> = None;
++    let mut rest = file;
++    loop {
++        // `rest` is a suffix of `file`.
++        let at = file.len().wrapping_sub(rest.len());
++        let (update, after) = parse(rest).map_err(|why| Refused { at, why })?;
++        if update.names(cpu) && newest.is_none_or(|n| update.revision > n.revision) {
++            newest = Some(update);
++        }
++        if after.is_empty() {
++            break;
+         }
++        rest = after;
+     }
++    Ok(match newest {
++        None => Choice::NoMatch,
++        Some(update) if update.revision > cpu.revision => Choice::Load(update),
++        Some(update) => Choice::Current(update.revision),
++    })
+ }
+ 
+-/// Why a CPU loads nothing, said before any file is read.
+-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+-pub enum Unloaded {
+-    /// No embedded file is from this vendor, so nothing of its CPU is read.
+-    Vendor(Vendor),
+-    /// CPUID.01H:ECX[31]: a hypervisor owns this CPU's microcode (Linux
+-    /// `core.c:114-139`).
+-    Hypervisor,
+-    /// The CPU reports [`Revision::DISABLED`].
+-    Disabled,
+-}
++/// The update `bytes` starts with, and the bytes after it.
++fn parse(bytes: &[u8]) -> Result<(Update<'_>, &[u8]), Refusal> {
++    let have = bytes.len();
++    let (header, rest) =
++        bytes.split_first_chunk::<HEADER>().ok_or(Refusal::Truncated { need: HEADER, have })?;
++    let [version, revision, _, signature, checksum, loader, flags, data, total, ..]: [u32; 12] =
++        dwords(header);
++    if version != 1 {
++        return Err(Refusal::HeaderVersion(version));
++    }
++    if loader != 1 {
++        return Err(Refusal::LoaderRevision(loader));
++    }
++    let (data, total) = (data as usize, total as usize);
++    if data == 0 {
++        return Err(Refusal::ZeroDataSize);
++    }
++    if !data.is_multiple_of(4) {
++        return Err(Refusal::DataSize(data));
++    }
++    if !total.is_multiple_of(GRANULE) {
++        return Err(Refusal::TotalSize(total));
++    }
++    let table = HEADER
++        .checked_add(data)
++        .and_then(|signed| total.checked_sub(signed))
++        .ok_or(Refusal::TotalBelowData { total, data })?;
++    let truncated = Refusal::Truncated { need: total, have };
++    let (data, rest) = rest.split_at_checked(data).ok_or(truncated)?;
++    let (table, rest) = rest.split_at_checked(table).ok_or(truncated)?;
+ 
+-impl fmt::Display for Unloaded {
+-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+-        f.write_str(match self {
+-            Self::Vendor(_) => "no embedded file is from this vendor",
+-            Self::Hypervisor => "a hypervisor owns this CPU's microcode",
+-            Self::Disabled => "revision 0xffffffff says loading is disabled",
+-        })
++    match sum(header).wrapping_add(sum(data)) {
++        0 => {}
++        sum => return Err(Refusal::Checksum(sum)),
+     }
++    let extended = match table {
++        [] => &[],
++        table => extended(table, signature.wrapping_add(checksum).wrapping_add(flags))?,
++    };
++    let update = Update { revision: Revision(revision as i32), signature, flags, data, extended };
++    Ok((update, rest))
+ }
+ 
+-/// Whether a CPU whose maker [`Maker::of`] names may load, from its
+-/// CPUID.01H:ECX and the revision it reports. A guest loads nothing whatever
+-/// it reports.
+-pub fn may_load(cpuid_1_ecx: u32, found: Revision) -> Result<(), Unloaded> {
+-    if cpuid_1_ecx & 1 << 31 != 0 {
+-        return Err(Unloaded::Hypervisor);
++/// The entries of an extended signature table whose update's header
++/// signature, checksum and flags sum to `primary`.
++fn extended(table: &[u8], primary: u32) -> Result<&[[u8; EXT_SIGNATURE]], Refusal> {
++    let size = Refusal::ExtendedTableSize { len: table.len() };
++    let (header, entries) = table.split_first_chunk::<EXT_HEADER>().ok_or(size)?;
++    let [count, ..]: [u32; 5] = dwords(header);
++    if (count as usize).checked_mul(EXT_SIGNATURE) != Some(entries.len()) {
++        return Err(size);
+     }
+-    if found == Revision::DISABLED {
+-        return Err(Unloaded::Disabled);
++    match sum(table) {
++        0 => {}
++        sum => return Err(Refusal::ExtendedTableChecksum(sum)),
+     }
+-    Ok(())
++    let (entries, _) = entries.as_chunks::<EXT_SIGNATURE>();
++    // An extended signature, flags and checksum replace the header's three in
++    // the update it stands for, so the two triples sum alike.
++    for (index, entry) in entries.iter().enumerate() {
++        let [signature, flags, checksum] = dwords(entry);
++        if signature.wrapping_add(flags).wrapping_add(checksum) != primary {
++            return Err(Refusal::ExtendedSignatureChecksum { index });
++        }
++    }
++    Ok(entries)
+ }
+ 
+ /// `bytes` as little-endian dwords; a `LEN` that is not `4 * N` does not build.
+@@ -176,3 +267,8 @@ fn dwords<const LEN: usize, const N: usize>(bytes: &[u8; LEN]) -> [u32; N] {
+     }
+     dwords
+ }
++
++/// Every dword of `bytes` summed, unsigned, with wrap (§12.11.5).
++fn sum(bytes: &[u8]) -> u32 {
++    bytes.as_chunks::<4>().0.iter().fold(0, |sum, &w| sum.wrapping_add(u32::from_le_bytes(w)))
++}
+diff --git a/kernel/microcode/src/tests.rs b/kernel/microcode/src/tests.rs
+index 2385edf2c..506f1a501 100644
+--- a/kernel/microcode/src/tests.rs
++++ b/kernel/microcode/src/tests.rs
+@@ -1,43 +1,258 @@
+-//! Whether a CPU loads at all, and the Intel file the kernel embeds.
++//! Intel's updates as Intel publishes them, and updates built here to the
++//! SDM's layout for every refusal and every arm the real files do not reach.
+ 
+-#![allow(clippy::unwrap_used, clippy::panic, reason = "a test fails by panicking")]
++#![allow(
++    clippy::indexing_slicing,
++    clippy::arithmetic_side_effects,
++    clippy::unwrap_used,
++    clippy::expect_used,
++    clippy::panic,
++    reason = "a test fails by panicking"
++)]
++
++extern crate std;
++
++use std::vec;
++use std::vec::Vec;
+ 
+ use super::*;
+ 
++/// `intel-ucode/06-8c-01`, pinned by its digest in `NOTICE`.
++const T14_FILE: &[u8] = include_bytes!("../intel-ucode/06-8c-01");
++
++/// `intel-ucode/06-cc-02`, pinned by its digest in `NOTICE`: one update,
++/// revision 0x11c, Data Size 0x2878c, flags 0x94, and an extended signature
++/// table whose last entry is 0xe0652 with flags 0x94.
++const CC02_FILE: &[u8] = include_bytes!("../intel-ucode/06-cc-02");
++
++/// The T14's i5-1135G7 at the revision its firmware loads.
++const T14: Cpu = Cpu {
++    signature: Signature(0x0008_06c1),
++    platform: PlatformId(7),
++    revision: Revision(0xbe),
++};
++
++fn get(bytes: &[u8], at: usize) -> u32 {
++    u32::from_le_bytes(bytes[at..at + 4].try_into().unwrap())
++}
++
++fn put(bytes: &mut [u8], at: usize, value: u32) {
++    bytes[at..at + 4].copy_from_slice(&value.to_le_bytes());
++}
++
++/// Rewrite the header's checksum so the header and data sum to 0 again.
++fn reseal(update: &mut [u8], data: usize) {
++    put(update, 16, 0);
++    let sum = sum(&update[..HEADER + data]);
++    put(update, 16, sum.wrapping_neg());
++}
++
++/// A 2048-byte update to Tables 12-7 to 12-10: `signature` and `flags` in the
++/// header, `extended` as its extended signature table, every checksum true.
++fn build(signature: u32, flags: u32, revision: u32, extended: &[(u32, u32)]) -> Vec<u8> {
++    let table = if extended.is_empty() { 0 } else { EXT_HEADER + EXT_SIGNATURE * extended.len() };
++    let data = 2048 - HEADER - table;
++    let mut update = vec![0; 2048];
++    for (i, word) in update[HEADER..HEADER + data].as_chunks_mut::<4>().0.iter_mut().enumerate() {
++        *word = (i as u32).wrapping_mul(0x9e37_79b9).to_le_bytes();
++    }
++    for (at, value) in [(0, 1), (4, revision), (12, signature), (20, 1), (24, flags)] {
++        put(&mut update, at, value);
++    }
++    put(&mut update, 28, data as u32);
++    put(&mut update, 32, 2048);
++    reseal(&mut update, data);
++    if table != 0 {
++        let header = get(&update, 12).wrapping_add(get(&update, 16)).wrapping_add(get(&update, 24));
++        let at = HEADER + data;
++        put(&mut update, at, extended.len() as u32);
++        for (i, &(sig, flags)) in extended.iter().enumerate() {
++            let entry = at + EXT_HEADER + EXT_SIGNATURE * i;
++            put(&mut update, entry, sig);
++            put(&mut update, entry + 4, flags);
++            put(&mut update, entry + 8, header.wrapping_sub(sig).wrapping_sub(flags));
++        }
++        let sum = sum(&update[at..]);
++        put(&mut update, at + 4, sum.wrapping_neg());
++    }
++    update
++}
++
++fn refusal(file: &[u8]) -> Refused {
++    select(file, &T14).expect_err("a malformed file selects nothing")
++}
++
+ #[test]
+-fn a_vendor_no_embedded_file_is_from_loads_nothing() {
+-    assert_eq!(Maker::of(Vendor::Intel), Ok(Maker::Intel));
+-    assert_eq!(Maker::of(Vendor::Amd), Ok(Maker::Amd));
+-    for vendor in [Vendor::Hygon, Vendor::Centaur, Vendor::Zhaoxin, Vendor::Unknown] {
+-        assert_eq!(Maker::of(vendor), Err(Unloaded::Vendor(vendor)));
++fn the_t14_runs_intels_newest_update_for_its_cpu() {
++    assert_eq!(select(T14_FILE, &T14), Ok(Choice::Current(Revision(0xbe))));
++}
++
++#[test]
++fn a_t14_below_it_loads_its_data_which_follows_the_header() {
++    let older = Cpu { revision: Revision(0xbd), ..T14 };
++    let Ok(Choice::Load(update)) = select(T14_FILE, &older) else { panic!("0xbe is newer than 0xbd") };
++    assert_eq!(update.revision(), Revision(0xbe));
++    assert_eq!(update.data(), &T14_FILE[HEADER..]);
++}
++
++#[test]
++fn another_platform_or_stepping_is_not_named() {
++    for platform in 0..7 {
++        assert_eq!(select(T14_FILE, &Cpu { platform: PlatformId(platform), ..T14 }), Ok(Choice::NoMatch));
+     }
++    let stepping_2 = Cpu { signature: Signature(0x0008_06c2), ..T14 };
++    assert_eq!(select(T14_FILE, &stepping_2), Ok(Choice::NoMatch));
+ }
+ 
+ #[test]
+-fn a_guest_loads_nothing_whatever_revision_it_reports() {
+-    for found in [Revision(0xbe), Revision::DISABLED] {
+-        assert_eq!(may_load(1 << 31, found), Err(Unloaded::Hypervisor));
++fn an_extended_signature_in_intels_file_names_its_cpu() {
++    let below = Cpu { signature: Signature(0x000e_0652), platform: PlatformId(7), revision: Revision(0x11b) };
++    let Ok(Choice::Load(update)) = select(CC02_FILE, &below) else { panic!("0x11c is newer than 0x11b") };
++    assert_eq!(update.revision(), Revision(0x11c));
++    assert!(update.data() == &CC02_FILE[HEADER..HEADER + 0x2878c], "the data is not the file's");
++    let current = Cpu { revision: Revision(0x11c), ..below };
++    assert_eq!(select(CC02_FILE, &current), Ok(Choice::Current(Revision(0x11c))));
++    assert_eq!(select(CC02_FILE, &Cpu { platform: PlatformId(0), ..below }), Ok(Choice::NoMatch));
++}
++
++#[test]
++fn the_msrs_are_read_where_the_sdm_puts_them() {
++    // `IA32_PLATFORM_ID` as all eight of the T14's CPUs read it.
++    assert_eq!(PlatformId::from_msr(0x001c_0000_0000_0000), PlatformId(7));
++    assert_eq!(PlatformId::from_msr(!(7 << 50)), PlatformId(0));
++    assert_eq!(Revision::from_sign_id(0xbe << 32 | 0xffff_ffff), Revision(0xbe));
++}
++
++#[test]
++fn a_flipped_bit_anywhere_in_header_or_data_is_refused() {
++    let mut file = T14_FILE.to_vec();
++    for at in (0..HEADER).chain((HEADER..file.len()).step_by(4093)) {
++        file[at] ^= 1;
++        assert!(select(&file, &T14).is_err(), "a flip at byte {at} was accepted");
++        file[at] ^= 1;
+     }
++    file[4096] ^= 1;
++    assert_eq!(refusal(&file), Refused { at: 0, why: Refusal::Checksum(u32::MAX) });
+ }
+ 
+-/// Xen's reading of a revision of `~0`: loading is disabled, by a hypervisor
+-/// or a firmware toggle; an Intel CPU handed an update over it would refuse
+-/// it at the read-back.
+ #[test]
+-fn revision_0xffffffff_loads_nothing() {
+-    assert_eq!(may_load(0, Revision::DISABLED), Err(Unloaded::Disabled));
+-    assert_eq!(may_load(0, Revision(0xffff_fffe)), Ok(()));
++fn a_file_cut_short_is_refused() {
++    for file in [T14_FILE, CC02_FILE] {
++        let len = file.len();
++        assert_eq!(refusal(&file[..len - 4]).why, Refusal::Truncated { need: len, have: len - 4 });
++    }
++    assert_eq!(refusal(&T14_FILE[..HEADER - 1]).why, Refusal::Truncated { need: HEADER, have: HEADER - 1 });
+ }
+ 
+-/// The T14's i5-1135G7 below the update its firmware already runs.
+ #[test]
+-fn the_embedded_intel_file_hands_the_t14_its_update_16_byte_aligned() {
+-    let below = intel::Cpu {
+-        signature: Signature(0x0008_06c1),
+-        platform: intel::PlatformId::from_msr(7 << 50),
+-        revision: Revision(0xbd),
+-    };
+-    let Ok(Choice::Load(update)) = intel::select(&INTEL.0, &below) else { panic!("0xbe is newer than 0xbd") };
+-    assert_eq!(update.revision(), Revision(0xbe));
+-    assert_eq!(update.data().as_ptr().align_offset(16), 0, "SDM §12.11.6 takes the data 16-byte aligned");
++fn an_empty_file_is_refused() {
++    assert_eq!(refusal(&[]), Refused { at: 0, why: Refusal::Truncated { need: HEADER, have: 0 } });
++}
++
++#[test]
++fn a_malformed_update_after_a_good_one_refuses_the_file() {
++    let mut file = T14_FILE.to_vec();
++    file.extend_from_slice(&[0; HEADER]);
++    assert_eq!(refusal(&file), Refused { at: T14_FILE.len(), why: Refusal::HeaderVersion(0) });
++    for have in 1..HEADER {
++        let why = Refusal::Truncated { need: HEADER, have };
++        assert_eq!(refusal(&file[..T14_FILE.len() + have]), Refused { at: T14_FILE.len(), why });
++    }
++}
++
++#[test]
++fn a_header_or_loader_version_other_than_1_is_refused() {
++    for (at, why) in [(0, Refusal::HeaderVersion(2)), (20, Refusal::LoaderRevision(2))] {
++        let mut update = build(T14.signature.0, 0x80, 0xc0, &[]);
++        put(&mut update, at, 2);
++        reseal(&mut update, 2000);
++        assert_eq!(refusal(&update).why, why);
++    }
++}
++
++#[test]
++fn a_size_zero_off_its_granule_or_inside_out_is_refused() {
++    let cases: [(u32, u32, Refusal); 5] = [
++        (0, 0, Refusal::ZeroDataSize),
++        (1998, 2048, Refusal::DataSize(1998)),
++        (2000, 2047, Refusal::TotalSize(2047)),
++        (2000, 2560, Refusal::TotalSize(2560)),
++        (3024, 2048, Refusal::TotalBelowData { total: 2048, data: 3024 }),
++    ];
++    for (data, total, why) in cases {
++        let mut update = build(T14.signature.0, 0x80, 0xc0, &[]);
++        put(&mut update, 28, data);
++        put(&mut update, 32, total);
++        assert_eq!(refusal(&update).why, why);
++    }
++}
++
++#[test]
++fn any_multiple_of_1024_is_a_total_size() {
++    let mut update = build(T14.signature.0, 0x80, 0xc0, &[]);
++    update.resize(3072, 0);
++    put(&mut update, 28, 3072 - HEADER as u32);
++    put(&mut update, 32, 3072);
++    reseal(&mut update, 3072 - HEADER);
++    assert!(matches!(select(&update, &T14), Ok(Choice::Load(_))));
++}
++
++#[test]
++fn an_extended_signature_names_a_cpu_the_header_does_not() {
++    let other = (0x0008_06c2, 0x01);
++    let t14 = (T14.signature.0, 0x80);
++    for extended in [[other, t14], [t14, other]] {
++        let update = build(0x0009_06a3, 0x80, 0xc0, &extended);
++        let Ok(Choice::Load(loaded)) = select(&update, &T14) else { panic!("an entry names the T14") };
++        assert_eq!(loaded.data().len(), 2048 - HEADER - EXT_HEADER - 2 * EXT_SIGNATURE);
++    }
++    let wrong_platform = build(0x0009_06a3, 0x80, 0xc0, &[(T14.signature.0, 0x01)]);
++    assert_eq!(select(&wrong_platform, &T14), Ok(Choice::NoMatch));
++}
++
++#[test]
++fn a_damaged_extended_table_is_refused() {
++    let at = 2048 - EXT_HEADER - 2 * EXT_SIGNATURE;
++    let good = build(0x0009_06a3, 0x80, 0xc0, &[(0x0008_06c2, 0x01), (T14.signature.0, 0x80)]);
++
++    let mut entry = good.clone();
++    let signature = at + EXT_HEADER + EXT_SIGNATURE;
++    let (sig, sum) = (get(&entry, signature), get(&entry, at + 4));
++    put(&mut entry, signature, sig + 1);
++    put(&mut entry, at + 4, sum.wrapping_sub(1));
++    assert_eq!(refusal(&entry).why, Refusal::ExtendedSignatureChecksum { index: 1 });
++
++    let mut table = good.clone();
++    table[at + 8] ^= 1;
++    assert_eq!(refusal(&table).why, Refusal::ExtendedTableChecksum(1));
++
++    for count in [1, 3] {
++        let mut wrong = good.clone();
++        put(&mut wrong, at, count);
++        let len = EXT_HEADER + 2 * EXT_SIGNATURE;
++        assert_eq!(refusal(&wrong).why, Refusal::ExtendedTableSize { len }, "count {count}");
++    }
++
++    let mut short = build(T14.signature.0, 0x80, 0xc0, &[]);
++    put(&mut short, 28, 1984);
++    short[2032..].fill(0);
++    reseal(&mut short, 1984);
++    assert_eq!(refusal(&short).why, Refusal::ExtendedTableSize { len: 16 });
++}
++
++#[test]
++fn the_newest_update_naming_the_cpu_is_chosen_wherever_it_sits() {
++    let newer = build(T14.signature.0, 0x80, 0xc0, &[]);
++    let other = build(T14.signature.0, 0x01, 0xd0, &[]);
++    for file in [[T14_FILE, &newer[..], &other[..]].concat(), [&other[..], &newer[..], T14_FILE].concat()] {
++        let Ok(Choice::Load(update)) = select(&file, &T14) else { panic!("0xc0 is newer than 0xbe") };
++        assert_eq!(update.revision(), Revision(0xc0));
++    }
++}
++
++#[test]
++fn a_revision_is_signed() {
++    let negative = build(T14.signature.0, 0x80, 0x8000_0000, &[]);
++    let cpu = Cpu { revision: Revision(0x7fff_ffff), ..T14 };
++    assert_eq!(select(&negative, &cpu), Ok(Choice::Current(Revision(i32::MIN))));
+ }
+diff --git a/kernel/src/actuator.rs b/kernel/src/actuator.rs
+index 2420be035..da6562622 100644
+--- a/kernel/src/actuator.rs
++++ b/kernel/src/actuator.rs
+@@ -140,13 +140,6 @@ actuators! {
+     /// Leave every AP holding the CR0/CR4 that INIT left it.
+     no_ap_control_regs = "no-ap-control-regs";
+ 
+-    /// Hand the BSP the T14's Intel update with its header's revision raised
+-    /// by one and its checksum sealed again: the read-back's negative control
+-    /// on real Intel, whose payload still says the revision it did.
+-    // An Intel file's alone, so AArch64 builds an accessor it never reads.
+-    #[allow(dead_code)]
+-    microcode_reseal = "microcode-reseal";
+-
+     /// Skip the startup for the AP that would be cpu2, so a non-last AP never starts.
+     smp_skip_ap = "smp-skip-ap";
+ 
+diff --git a/kernel/src/arch/x86_64/boot.rs b/kernel/src/arch/x86_64/boot.rs
+index 64c46d76f..6396ec8ce 100644
+--- a/kernel/src/arch/x86_64/boot.rs
++++ b/kernel/src/arch/x86_64/boot.rs
+@@ -4,7 +4,7 @@
+ 
+ use toyos_abi::boot::{KernelArgs, MemoryMapEntry};
+ 
+-use super::{apic, control_regs, idt, ioapic, microcode, pat, percpu};
++use super::{apic, control_regs, idt, ioapic, pat, percpu};
+ use crate::drivers::acpi::{self, MadtInfo};
+ use crate::log;
+ use crate::mm::Region;
+@@ -58,10 +58,6 @@ pub fn after_console(_args: &KernelArgs, _maps: &[MemoryMapEntry]) {
+     // `CD` — which would make every mapping uncacheable whatever the PAT
+     // says — ends here.
+     control_regs::init_cr0(0);
+-    // The first point with every channel a refusal reaches, and before
+-    // anything reads what an update changes: `random::key`'s RDRAND and
+-    // RDSEED, and `control_regs::init`'s CPUID.
+-    microcode::load(0);
+ 
+     // The read-back `pat::init` owes, on a boot that now has three channels to
+     // carry a refusal.
+diff --git a/kernel/src/arch/x86_64/microcode.rs b/kernel/src/arch/x86_64/microcode.rs
+deleted file mode 100644
+index 786761a80..000000000
+--- a/kernel/src/arch/x86_64/microcode.rs
++++ /dev/null
+@@ -1,260 +0,0 @@
+-//! This CPU's microcode, loaded from the files `toyos_microcode` embeds
+-//! before anything reads what an update changes: Intel asks it "on each core
+-//! as early as possible in the OS boot sequence, before any CPUID feature
+-//! flags or other enumeration values are cached". The BSP loads in
+-//! `boot::after_console`, before `random::key` draws on RDRAND and RDSEED and
+-//! before `control_regs::init` reads CPUID; each AP in `smp::ap_entry`, before
+-//! its own. `boot_aps` starts one AP at a time, the serialisation per core SDM
+-//! Vol. 3A §12.11.6.3 asks.
+-//!
+-//! **Both run before this kernel's IDT**, so a fault inside a trigger reports
+-//! nothing: the BSP's vectors into firmware's table, an AP's into the kernel's
+-//! with `CR4.OSFXSR` still clear, a triple fault. Neither maker documents a
+-//! fault for a valid update at a present, canonical address, and every
+-//! failure this loader can see is a panic, which reports before the IDT.
+-//!
+-//! One line per CPU says what it found, what the file holds for it and what
+-//! it runs; a CPU that loads nothing says why. A load is read back (SDM
+-//! Example 12-10; Linux `amd.c:723-729`) and a revision other than the
+-//! update's panics naming both, rather than run behind a log line below the
+-//! revision this image pins. Every CPU that reads a revision runs the one the
+-//! first did, or the boot stops naming it: whatever reads the revision
+-//! assumes one.
+-//!
+-//! INIT keeps an update and a hard reset clears it (§12.11.6.1): a resume
+-//! path, when one exists, loads again.
+-
+-use core::arch::asm;
+-use core::fmt;
+-use core::sync::atomic::{AtomicU64, Ordering};
+-
+-use toyos_microcode::{amd, intel, Choice, Maker, Revision, Signature, Unloaded};
+-
+-use super::cpu;
+-use crate::log;
+-
+-/// `IA32_PLATFORM_ID`.
+-const PLATFORM_ID: u32 = 0x17;
+-/// `IA32_BIOS_UPDT_TRIG`.
+-const INTEL_TRIGGER: u32 = 0x79;
+-/// `IA32_BIOS_SIGN_ID`, AMD's `MSR_AMD64_PATCH_LEVEL`.
+-const SIGN_ID: u32 = 0x8b;
+-/// `MSR_AMD64_PATCH_LOADER`.
+-const AMD_TRIGGER: u32 = 0xc001_0020;
+-
+-/// The revision every CPU runs, as the first to read one published it.
+-static MACHINE: AtomicU64 = AtomicU64::new(UNPUBLISHED);
+-/// Outside a dword, so that [`Revision::DISABLED`] is a revision like another.
+-const UNPUBLISHED: u64 = u64::MAX;
+-
+-/// Loads this CPU's microcode, says so, and holds it to the machine's.
+-pub fn load(cpu_id: u32) {
+-    let vendor = cpu::vendor();
+-    let (eax, _, ecx, _) = cpu::cpuid(1, 0);
+-    let signature = Signature(eax);
+-    let maker = match Maker::of(vendor) {
+-        Ok(maker) => maker,
+-        Err(why) => {
+-            log!("microcode: cpu{cpu_id} {vendor:?} signature {eax:#x} loads nothing: {why}");
+-            return;
+-        }
+-    };
+-    let found = revision(maker);
+-    let (platform, outcome) = match toyos_microcode::may_load(ecx, found) {
+-        Err(why) => (None, Outcome::Unloaded(why)),
+-        Ok(()) => match maker {
+-            Maker::Intel => {
+-                let platform = intel::PlatformId::from_msr(cpu::rdmsr(PLATFORM_ID));
+-                let cpu = intel::Cpu { signature, platform, revision: found };
+-                (Some(platform), load_intel(cpu_id, &cpu))
+-            }
+-            Maker::Amd => (None, load_amd(cpu_id, signature, found)),
+-        },
+-    };
+-    let running = match outcome {
+-        Outcome::Loaded(loaded) => loaded,
+-        Outcome::Unloaded(_) | Outcome::NoMatch | Outcome::Current(_) => found,
+-    };
+-    let platform = Platform(platform);
+-    log!("microcode: cpu{cpu_id} {vendor:?} signature {eax:#x}{platform} found {found:#x} {outcome} running {running:#x}");
+-    agree(cpu_id, running);
+-}
+-
+-/// What one CPU did with the file its maker's is.
+-enum Outcome {
+-    Unloaded(Unloaded),
+-    NoMatch,
+-    /// The newest update naming it, which it runs, or runs one above.
+-    Current(Revision),
+-    /// The update it loaded and read back.
+-    Loaded(Revision),
+-}
+-
+-impl fmt::Display for Outcome {
+-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+-        match self {
+-            Self::Unloaded(why) => write!(f, "loads nothing: {why}"),
+-            Self::NoMatch => f.write_str("loads nothing: no embedded update names it"),
+-            Self::Current(newest) => write!(f, "current {newest:#x}"),
+-            Self::Loaded(loaded) => write!(f, "loaded {loaded:#x}"),
+-        }
+-    }
+-}
+-
+-/// An Intel CPU's platform, where it was read.
+-struct Platform(Option<intel::PlatformId>);
+-
+-impl fmt::Display for Platform {
+-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+-        match self.0 {
+-            Some(platform) => write!(f, " platform {platform}"),
+-            None => Ok(()),
+-        }
+-    }
+-}
+-
+-/// The revision this CPU runs, read as its maker reports it.
+-fn revision(maker: Maker) -> Revision {
+-    match maker {
+-        Maker::Intel => {
+-            // SAFETY: writing `IA32_BIOS_SIGN_ID` 0 is §12.11.7.1's own first
+-            // step, and loads nothing.
+-            unsafe { cpu::wrmsr(SIGN_ID, 0) };
+-            cpu::cpuid(1, 0);
+-            Revision::from_sign_id(cpu::rdmsr(SIGN_ID))
+-        }
+-        Maker::Amd => Revision::from_patch_level(cpu::rdmsr(SIGN_ID)),
+-    }
+-}
+-
+-fn load_intel(cpu_id: u32, cpu: &intel::Cpu) -> Outcome {
+-    let choice = intel::select(reseal::intel_file(cpu_id), cpu).unwrap_or_else(|refused| {
+-        panic!("microcode: the embedded Intel file is refused at byte {}: {:?}", refused.at, refused.why)
+-    });
+-    match choice {
+-        Choice::NoMatch => Outcome::NoMatch,
+-        Choice::Current(newest) => Outcome::Current(newest),
+-        Choice::Load(update) => {
+-            // SAFETY: a validated update's data, which `INTEL`'s alignment and
+-            // every update's 1024-byte granule start 16-byte aligned, inside
+-            // the kernel image and so canonical and present (§12.11.6).
+-            unsafe { trigger(INTEL_TRIGGER, update.data().as_ptr()) };
+-            verified(cpu_id, Maker::Intel, cpu.revision, update.revision());
+-            Outcome::Loaded(update.revision())
+-        }
+-    }
+-}
+-
+-fn load_amd(cpu_id: u32, signature: Signature, found: Revision) -> Outcome {
+-    let choice = amd::select(&toyos_microcode::AMD.0, signature, found).unwrap_or_else(|refused| {
+-        panic!("microcode: the embedded AMD container is refused at byte {}: {:?}", refused.at, refused.why)
+-    });
+-    match choice {
+-        Choice::NoMatch => Outcome::NoMatch,
+-        Choice::Current(newest) => Outcome::Current(newest),
+-        Choice::Load(patch) => {
+-            let bytes = patch.bytes().as_ptr_range();
+-            // SAFETY: a validated patch inside the kernel image, so its
+-            // address is canonical and present (Linux `amd.c:700-705`).
+-            unsafe { trigger(AMD_TRIGGER, bytes.start) };
+-            if patch.leaves_its_mapping_uncached() {
+-                cpu::invlpg(bytes.start as u64);
+-                cpu::invlpg(bytes.end as u64 - 1);
+-            }
+-            verified(cpu_id, Maker::Amd, found, patch.revision());
+-            Outcome::Loaded(patch.revision())
+-        }
+-    }
+-}
+-
+-/// A trigger MSR written the address of the bytes the CPU loads from. Not
+-/// `cpu::wrmsr`, which is `nomem`: the CPU reads memory through this write.
+-///
+-/// # Safety
+-/// `msr` is a maker's trigger on a CPU of that maker, and `at` the start of
+-/// one of that maker's validated updates, placed as its trigger asks.
+-unsafe fn trigger(msr: u32, at: *const u8) {
+-    let at = at as u64;
+-    // SAFETY: the caller's.
+-    unsafe {
+-        asm!("wrmsr", in("ecx") msr, in("eax") at as u32, in("edx") (at >> 32) as u32, options(nostack));
+-    }
+-}
+-
+-/// The revision read back after a load is the update's, or the boot stops.
+-fn verified(cpu_id: u32, maker: Maker, found: Revision, loaded: Revision) {
+-    let read = revision(maker);
+-    assert!(
+-        read == loaded,
+-        "microcode: cpu{cpu_id} found {found:#x}, was handed {maker:?}'s update {loaded:#x} and \
+-         reads back {read:#x}",
+-    );
+-}
+-
+-/// Every CPU that reads a revision runs the first one's.
+-fn agree(cpu_id: u32, running: Revision) {
+-    let mine = u64::from(running.0);
+-    if let Err(machine) = MACHINE.compare_exchange(UNPUBLISHED, mine, Ordering::Relaxed, Ordering::Relaxed) {
+-        assert!(
+-            machine == mine,
+-            "microcode: cpu{cpu_id} runs {running:#x} and the first CPU {machine:#x}: this machine's \
+-             CPUs do not run one revision",
+-        );
+-    }
+-}
+-
+-/// `microcode-reseal`: the BSP is handed the T14's update with its header's
+-/// revision raised by one and its checksum sealed again, while Intel's payload
+-/// still says 0xbe, so the read-back must stop the boot.
+-#[cfg(feature = "boot-actuators")]
+-mod reseal {
+-    use toyos_microcode::Aligned;
+-
+-    const LEN: usize = 112_640;
+-
+-    static RAISED: Aligned<[u8; LEN]> =
+-        Aligned(raised(*include_bytes!("../../../microcode/intel-ucode/06-8c-01")));
+-
+-    /// Table 12-7's header: the revision at 4, the checksum at 16, the data
+-    /// size at 28; the header and data sum to 0 (§12.11.5).
+-    const fn raised(mut file: [u8; LEN]) -> [u8; LEN] {
+-        file = put(file, 4, word(&file, 4) + 1);
+-        file = put(file, 16, 0);
+-        let end = 48 + word(&file, 28) as usize;
+-        let (mut sum, mut at) = (0u32, 0);
+-        while at < end {
+-            sum = sum.wrapping_add(word(&file, at));
+-            at += 4;
+-        }
+-        put(file, 16, sum.wrapping_neg())
+-    }
+-
+-    const fn word(file: &[u8; LEN], at: usize) -> u32 {
+-        u32::from_le_bytes([file[at], file[at + 1], file[at + 2], file[at + 3]])
+-    }
+-
+-    const fn put(mut file: [u8; LEN], at: usize, value: u32) -> [u8; LEN] {
+-        let bytes = value.to_le_bytes();
+-        let mut i = 0;
+-        while i < 4 {
+-            file[at + i] = bytes[i];
+-            i += 1;
+-        }
+-        file
+-    }
+-
+-    pub fn intel_file(cpu_id: u32) -> &'static [u8] {
+-        if crate::actuator::microcode_reseal() && cpu_id == 0 {
+-            &RAISED.0
+-        } else {
+-            &toyos_microcode::INTEL.0
+-        }
+-    }
+-}
+-
+-#[cfg(not(feature = "boot-actuators"))]
+-mod reseal {
+-    pub fn intel_file(_cpu_id: u32) -> &'static [u8] {
+-        &toyos_microcode::INTEL.0
+-    }
+-}
+diff --git a/kernel/src/arch/x86_64/mod.rs b/kernel/src/arch/x86_64/mod.rs
+index f733e9e9f..f7e45b8db 100644
+--- a/kernel/src/arch/x86_64/mod.rs
++++ b/kernel/src/arch/x86_64/mod.rs
+@@ -28,7 +28,6 @@ pub mod i8042;
+ pub mod idt;
+ pub mod iommu_unit;
+ pub mod ioapic;
+-pub mod microcode;
+ pub mod mtrr;
+ pub mod paging;
+ pub mod pat;
+diff --git a/kernel/src/arch/x86_64/smp.rs b/kernel/src/arch/x86_64/smp.rs
+index f13c92c08..d10dc7ce7 100644
+--- a/kernel/src/arch/x86_64/smp.rs
++++ b/kernel/src/arch/x86_64/smp.rs
+@@ -280,8 +280,6 @@ extern "C" fn ap_entry() -> ! {
+ 
+     // Must run before `pat::init`, which restores the CR0 this call sets.
+     crate::arch::control_regs::init_cr0(percpu::cpu_id());
+-    // Before `control_regs::init` reads what an update changes.
+-    crate::arch::microcode::load(percpu::cpu_id());
+ 
+     // Must run before this CPU touches the framebuffer, which needs write-combining mapped first.
+     crate::arch::pat::init();
+diff --git a/licenses/AMD-ucode-license.txt b/licenses/AMD-ucode-license.txt
+deleted file mode 100644
+index d882d266b..000000000
+--- a/licenses/AMD-ucode-license.txt
++++ /dev/null
+@@ -1,64 +0,0 @@
+-Copyright (C) 2010-2025 Advanced Micro Devices, Inc., All rights reserved.
+-
+-Permission is hereby granted by Advanced Micro Devices, Inc. ("AMD"),
+-free of any license fees, to any person obtaining a copy of this
+-microcode in binary form (the "Software") ("You"), to install,
+-reproduce, copy and distribute copies of the Software and to permit
+-persons to whom the Software is provided to do the same, subject to
+-the following terms and conditions.  Your use of any portion of the
+-Software shall constitute Your acceptance of the following terms and
+-conditions. If You do not agree to the following terms and conditions,
+-do not use, retain or redistribute any portion of the Software.
+-
+-If You redistribute this Software, You must reproduce the above
+-copyright notice and this license with the Software.
+-Without specific, prior, written permission from AMD, You may not
+-reference AMD or AMD products in the promotion of any product derived
+-from or incorporating this Software in any manner that implies that
+-AMD endorses or has certified such product derived from or
+-incorporating this Software.
+-
+-You may not reverse engineer, decompile, or disassemble this Software
+-or any portion thereof.
+-
+-THE SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY EXPRESS OR IMPLIED
+-WARRANTY OF ANY KIND, INCLUDING BUT NOT LIMITED TO WARRANTIES OF
+-MERCHANTABILITY, NONINFRINGEMENT, TITLE, FITNESS FOR ANY PARTICULAR
+-PURPOSE, OR WARRANTIES ARISING FROM CONDUCT, COURSE OF DEALING, OR
+-USAGE OF TRADE. IN NO EVENT SHALL AMD OR ITS LICENSORS BE LIABLE FOR
+-ANY DAMAGES WHATSOEVER (INCLUDING, WITHOUT LIMITATION, DAMAGES FOR
+-LOSS OF PROFITS, BUSINESS INTERRUPTION, OR LOSS OF DATA OR
+-INFORMATION) ARISING OUT OF AMD'S NEGLIGENCE, GROSS NEGLIGENCE, THE
+-USE OF OR INABILITY TO USE THE SOFTWARE, EVEN IF AMD HAS BEEN ADVISED
+-OF THE POSSIBILITY OF SUCH DAMAGES. BECAUSE SOME JURISDICTIONS
+-PROHIBIT THE EXCLUSION OR LIMITATION OF LIABILITY FOR CONSEQUENTIAL OR
+-INCIDENTAL DAMAGES OR THE EXCLUSION OF IMPLIED WARRANTIES, THE ABOVE
+-LIMITATION MAY NOT APPLY TO YOU.
+-
+-Without limiting the foregoing, the Software may implement third party
+-technologies for which You must obtain licenses from parties other
+-than AMD. You agree that AMD has not obtained or conveyed to You, and
+-that You shall be responsible for obtaining the rights to use and/or
+-distribute the applicable underlying intellectual property rights
+-related to the third party technologies. These third party
+-technologies are not licensed hereunder.
+-
+-If You use the Software (in whole or in part), You shall adhere to all
+-applicable U.S., European, and other export laws, including but not
+-limited to the U.S. Export Administration Regulations ("EAR"), (15
+-C.F.R. Sections 730 through 774), and E.U. Council Regulation (EC) No
+-1334/2000 of 22 June 2000. Further, pursuant to Section 740.6  of the
+-EAR, You hereby certify that, except pursuant to a license granted by
+-the United States Department of Commerce Bureau of Industry and
+-Security or as otherwise permitted pursuant to a License Exception
+-under the U.S. Export Administration Regulations ("EAR"), You will not
+-(1) export, re-export or release to a national of a country in Country
+-Groups D:1, E:1 or E:2 any restricted technology, software, or source
+-code You receive hereunder, or (2) export to Country Groups D:1, E:1
+-or E:2 the direct product of such technology or software, if such
+-foreign produced direct product is subject to national security
+-controls as identified on the Commerce Control List (currently found
+-in Supplement 1 to Part 774 of EAR). For the most current Country
+-Group listings, or for additional information about the EAR or Your
+-obligations under those regulations, please refer to the U.S. Bureau
+-of Industry and Security?s website at ttp://www.bis.doc.gov/.

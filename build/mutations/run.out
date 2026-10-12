@@ -1,0 +1,37 @@
+head f126fb514fb2a18c12a187be32e07359e23fbcbe
+h01-a-guest-may-load: git apply --check EXIT=0
+h01-a-guest-may-load: cargo test -p toyos-microcode EXIT=101; red: test tests::a_guest_loads_nothing_whatever_revision_it_reports ... FAILED     tests::a_guest_loads_nothing_whatever_revision_it_reports 
+h02-revision-0xffffffff-may-load: git apply --check EXIT=0
+h02-revision-0xffffffff-may-load: cargo test -p toyos-microcode EXIT=101; red: test tests::revision_0xffffffff_loads_nothing ... FAILED 
+h03-hygon-reads-as-amd: git apply --check EXIT=0
+h03-hygon-reads-as-amd: cargo test -p toyos-microcode EXIT=101; red: test tests::a_vendor_no_embedded_file_is_from_loads_nothing ... FAILED     tests::a_vendor_no_embedded_file_is_from_loads_nothing 
+h04-amd-equal-revision-is-current: git apply --check EXIT=0
+h04-amd-equal-revision-is-current: cargo test -p toyos-microcode EXIT=101; red: test amd::tests::an_equal_revision_loads_again_and_a_newer_one_is_current ... FAILED     amd::tests::an_equal_revision_loads_again_and_a_newer_one_is_current 
+h05-amd-match-ignores-stepping: git apply --check EXIT=0
+h05-amd-match-ignores-stepping: cargo test -p toyos-microcode EXIT=101; red: test amd::tests::another_stepping_is_named_by_no_patch ... FAILED     amd::tests::another_stepping_is_named_by_no_patch 
+h06-amd-chipset-patch-accepted: git apply --check EXIT=0
+h06-amd-chipset-patch-accepted: cargo test -p toyos-microcode EXIT=101; red: test amd::tests::a_malformed_section_after_the_cpus_own_refuses_the_container ... FAILED test amd::tests::a_chipset_specific_patch_is_refused ... FAILED     amd::tests::a_chipset_specific_patch_is_refused     amd::tests::a_malformed_section_after_the_cpus_own_refuses_the_container 
+h07-amd-minimum-revision-accepted: git apply --check EXIT=0
+h07-amd-minimum-revision-accepted: cargo test -p toyos-microcode EXIT=101; red: test amd::tests::a_patch_naming_a_minimum_revision_is_refused ... FAILED     amd::tests::a_patch_naming_a_minimum_revision_is_refused 
+h08-amd-any-section-is-a-patch: git apply --check EXIT=0
+h08-amd-any-section-is-a-patch: cargo test -p toyos-microcode EXIT=101; red: test amd::tests::a_section_that_is_not_a_patch_is_refused_a_second_containers_magic_among_them ... FAILED     amd::tests::a_section_that_is_not_a_patch_is_refused_a_second_containers_magic_among_them 
+h09-amd-magic-unread: git apply --check EXIT=0
+h09-amd-magic-unread: cargo test -p toyos-microcode EXIT=101; red: test amd::tests::a_container_that_is_not_one_is_refused ... FAILED     amd::tests::a_container_that_is_not_one_is_refused 
+h10-amd-table-type-unread: git apply --check EXIT=0
+h10-amd-table-type-unread: cargo test -p toyos-microcode EXIT=101; red: test amd::tests::a_container_that_is_not_one_is_refused ... FAILED     amd::tests::a_container_that_is_not_one_is_refused 
+h11-amd-first-match-kept: git apply --check EXIT=0
+h11-amd-first-match-kept: cargo test -p toyos-microcode EXIT=101; red: test amd::tests::the_newest_patch_naming_the_cpu_is_chosen_wherever_it_sits ... FAILED     amd::tests::the_newest_patch_naming_the_cpu_is_chosen_wherever_it_sits 
+h12-amd-every-family-flushes-or-none: git apply --check EXIT=0
+h12-amd-every-family-flushes-or-none: cargo test -p toyos-microcode EXIT=101; red: test amd::tests::a_family_0x17_patch_drops_its_mapping_and_a_later_familys_does_not ... FAILED 
+h13-intel-equal-revision-reloads: git apply --check EXIT=0
+h13-intel-equal-revision-reloads: cargo test -p toyos-microcode EXIT=101; red: test intel::tests::the_t14_runs_intels_newest_update_for_its_cpu ... FAILED test intel::tests::an_extended_signature_in_intels_file_names_its_cpu ... FAILED     intel::tests::an_extended_signature_in_intels_file_names_its_cpu 
+h14-renoir-patch-byte-flipped: git apply --check EXIT=0
+h14-renoir-patch-byte-flipped: cargo test -p toyos-microcode EXIT=101; red: test amd::tests::every_patch_in_the_embedded_container_has_linuxs_digest ... FAILED     amd::tests::every_patch_in_the_embedded_container_has_linuxs_digest 
+h15-firmware-licence-passes-as-code: git apply --check EXIT=0
+h15-firmware-licence-passes-as-code: cargo test --lib licence::tests::a_disallowed_licence_is_refused_by_name EXIT=101; red: test licence::tests::a_disallowed_licence_is_refused_by_name ... FAILED     licence::tests::a_disallowed_licence_is_refused_by_name 
+h16-judge-takes-any-amd-bsp: git apply --check EXIT=0
+h16-judge-takes-any-amd-bsp: cargo test --test toyos-checks microcode_verdict EXIT=101; red: test checks::microcode_verdict ... FAILED     checks::microcode_verdict 
+h17-judge-takes-a-t14-below-linux: git apply --check EXIT=0
+h17-judge-takes-a-t14-below-linux: cargo test --test toyos-checks microcode_verdict EXIT=101; red: test checks::microcode_verdict ... FAILED     checks::microcode_verdict 
+restored to f126fb514fb2a18c12a187be32e07359e23fbcbe; porcelain empty
+EXIT=0
