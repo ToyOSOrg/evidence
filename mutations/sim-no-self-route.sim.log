@@ -1,0 +1,76 @@
+   Compiling kernel v0.1.0 (/Users/jan/Dev/jan/toyos-busywake-mut/kernel)
+   Compiling kernel-sim v0.1.0 (/Users/jan/Dev/jan/toyos-busywake-mut/kernel/sim)
+    Finished `test` profile [optimized + debuginfo] target(s) in 2.61s
+     Running tests/policy.rs (target/debug/deps/policy-741a1ed750f9c366)
+
+running 15 tests
+test a_wake_to_a_busy_cpu_beside_an_idle_one_runs_within_two_hops ... ok
+test a_wake_owed_the_cpu_waits_out_the_protected_run_and_no_more ... ok
+test a_stopped_cpu_stops_taking_work ... ok
+test a_sibling_that_naps_does_not_preempt_the_one_that_spins ... ok
+test per_thread_shares_lose_the_floor ... ok
+test the_share_deficit_is_an_offset_and_not_a_drift ... ok
+test a_wakeup_storm_drains_without_serializing ... ok
+test an_interactive_wake_waits_out_at_most_the_band_it_is_queued_behind ... ok
+test a_process_cannot_buy_cpu_by_forking ... ok
+test a_runnable_task_waits_at_most_one_dispatch_per_rival ... ok
+test the_two_cures_are_priced_against_the_pull_path ... ok
+test without_the_balance_path_a_lopsided_machine_stays_lopsided ... ok
+test the_balance_path_drains_the_cpu_an_adversary_loaded ... ok
+test a_push_on_surplus_reaches_every_cpu_the_pull_path_left_asleep ... ok
+test a_bounded_re_arm_reaches_every_cpu_the_pull_path_left_asleep ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.53s
+
+     Running tests/scenarios.rs (target/debug/deps/scenarios-9f58b5ca8c6cbd7e)
+
+running 25 tests
+test corpus_traces_still_do_what_they_were_committed_for ... FAILED
+test old_commit_before_pass_is_caught ... ok
+test a_pass_that_overruns_its_budget_is_recorded ... ok
+test a_run_replays_exactly ... ok
+test old_steal_port_is_caught ... ok
+test blind_spot_needed_the_step_split ... ok
+test shrinking_keeps_the_failure_and_loses_the_noise ... ok
+test a_retire_inside_the_registration_window_is_honoured_by_the_core ... ok
+test rt_starving_the_corpse_is_caught ... ok
+test double_charging_a_share_is_caught ... ok
+test the_new_protocol_survives_the_schedule_that_breaks_the_old_one ... FAILED
+test a_pass_inside_the_registration_window_is_caught ... ok
+test per_thread_fair_shares_are_caught ... ok
+test the_park_sees_claims_that_landed_after_its_commit ... ok
+test the_audio_pipeline_holds_on_one_cpu ... ok
+test old_migrate_keeping_the_corpse_is_caught ... ok
+test a_retire_completes_inside_its_derived_bound ... ok
+test the_unwind_gate_lasts_one_chunk_and_not_one_unwind ... ok
+test identity_ordering_within_a_share_is_caught ... ok
+test old_park_keeping_the_lend_is_caught ... ok
+test the_fairness_storm_is_measured_and_holds ... ok
+test an_identity_tiebreak_changes_the_schedule_and_not_the_sibling_split ... ok
+test invariant_i13_is_measured_and_holds ... ok
+test every_scenario_survives_raw_fuzz_bytes ... ok
+test every_scenario_survives_a_seed_sweep ... ok
+
+failures:
+
+---- corpus_traces_still_do_what_they_were_committed_for stdout ----
+
+thread 'corpus_traces_still_do_what_they_were_committed_for' (298954321) panicked at kernel/sim/tests/scenarios.rs:569:9:
+assertion `left == right` failed: /Users/jan/Dev/jan/toyos-busywake-mut/kernel/sim/corpus/old_steal_port_i8.trace: expected failure, got old_steal_port: ok (68 steps, 29000000 ns, 16 switches, 9 kicks, I5 spread 0/0 ns, I13 spread 8000000/36000000 ns, I14 retire 16000000/110200000 ns)
+  left: false
+ right: true
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- the_new_protocol_survives_the_schedule_that_breaks_the_old_one stdout ----
+
+thread 'the_new_protocol_survives_the_schedule_that_breaks_the_old_one' (298954383) panicked at kernel/sim/tests/scenarios.rs:534:5:
+the old protocol must fail this schedule; it passed
+
+
+failures:
+    corpus_traces_still_do_what_they_were_committed_for
+    the_new_protocol_survives_the_schedule_that_breaks_the_old_one
+
+test result: FAILED. 23 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.30s
+
+error: test failed, to rerun pass `-p kernel-sim --test scenarios`

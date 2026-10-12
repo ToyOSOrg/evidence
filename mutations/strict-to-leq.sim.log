@@ -1,0 +1,32 @@
+   Compiling libc v0.2.190
+   Compiling getrandom v0.3.4 (https://github.com/ToyOSOrg/getrandom?branch=toyos-0.3-sdk-0.12#67c17e0a)
+   Compiling zerocopy v0.8.47
+   Compiling cfg-if v1.0.4
+   Compiling kernel v0.1.0 (/Users/jan/Dev/jan/toyos-busywake-mut/kernel)
+   Compiling rand_core v0.9.5
+   Compiling ppv-lite86 v0.2.21
+   Compiling rand_chacha v0.9.0
+   Compiling rand v0.9.5
+   Compiling kernel-sim v0.1.0 (/Users/jan/Dev/jan/toyos-busywake-mut/kernel/sim)
+    Finished `test` profile [optimized + debuginfo] target(s) in 18.92s
+     Running tests/policy.rs (target/debug/deps/policy-741a1ed750f9c366)
+
+running 1 test
+test a_sibling_that_naps_does_not_preempt_the_one_that_spins ... FAILED
+
+failures:
+
+---- a_sibling_that_naps_does_not_preempt_the_one_that_spins stdout ----
+sleep-spin siblings: spinner done at 190000000 ns, bound 130000000 ns
+
+thread 'a_sibling_that_naps_does_not_preempt_the_one_that_spins' (298883184) panicked at kernel/sim/tests/policy.rs:576:5:
+the spinner took 190000000 ns for 100000000 ns of work against 130000000 ns — its napping sibling is taking the CPU off it between quanta, which a tied key does not earn
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    a_sibling_that_naps_does_not_preempt_the_one_that_spins
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 14 filtered out; finished in 0.02s
+
+error: test failed, to rerun pass `-p kernel-sim --test policy`

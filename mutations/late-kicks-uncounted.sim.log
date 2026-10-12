@@ -1,0 +1,45 @@
+   Compiling kernel-sim v0.1.0 (/Users/jan/Dev/jan/toyos-busywake-mut/kernel/sim)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.36s
+     Running tests/policy.rs (target/debug/deps/policy-741a1ed750f9c366)
+
+running 1 test
+test the_two_cures_are_priced_against_the_pull_path ... FAILED
+
+failures:
+
+---- the_two_cures_are_priced_against_the_pull_path stdout ----
+cost interactive_mix(2,4) [pull]: idle wakes 0 (0 late kicks) over 20 runs, worst run 0.00/s; woken[n=202 max=13000000 2nd=11000000 mean=391089] bound=48000000 ns
+cost interactive_mix(2,4) [re-arm ×1]: idle wakes 45 (0 late kicks) over 20 runs, worst run 31.58/s; woken[n=202 max=13000000 2nd=11000000 mean=391089] bound=48000000 ns
+cost interactive_mix(2,4) [re-arm ×4]: idle wakes 170 (0 late kicks) over 20 runs, worst run 88.00/s; woken[n=202 max=13000000 2nd=11000000 mean=391089] bound=48000000 ns
+cost interactive_mix(2,4) [push (ships)]: idle wakes 0 (0 late kicks) over 20 runs, worst run 0.00/s; woken[n=202 max=13000000 2nd=11000000 mean=391089] bound=48000000 ns
+cost interactive_mix(2,16) [pull]: idle wakes 0 (0 late kicks) over 20 runs, worst run 0.00/s; woken[n=182 max=76000000 2nd=75000000 mean=4225274] bound=120000000 ns
+cost interactive_mix(2,16) [re-arm ×1]: idle wakes 46 (0 late kicks) over 20 runs, worst run 8.96/s; woken[n=182 max=76000000 2nd=75000000 mean=4225274] bound=120000000 ns
+cost interactive_mix(2,16) [re-arm ×4]: idle wakes 170 (0 late kicks) over 20 runs, worst run 30.14/s; woken[n=182 max=76000000 2nd=75000000 mean=4225274] bound=120000000 ns
+cost interactive_mix(2,16) [push (ships)]: idle wakes 0 (0 late kicks) over 20 runs, worst run 0.00/s; woken[n=182 max=76000000 2nd=75000000 mean=4225274] bound=120000000 ns
+cost interactive_mix(4,16) [pull]: idle wakes 0 (0 late kicks) over 20 runs, worst run 0.00/s; woken[n=186 max=43000000 2nd=33000000 mean=1623655] bound=72000000 ns
+cost interactive_mix(4,16) [re-arm ×1]: idle wakes 96 (0 late kicks) over 20 runs, worst run 20.90/s; woken[n=186 max=43000000 2nd=33000000 mean=1623655] bound=72000000 ns
+cost interactive_mix(4,16) [re-arm ×4]: idle wakes 360 (0 late kicks) over 20 runs, worst run 65.75/s; woken[n=186 max=43000000 2nd=33000000 mean=1623655] bound=72000000 ns
+cost interactive_mix(4,16) [push (ships)]: idle wakes 12 (0 late kicks) over 20 runs, worst run 9.23/s; woken[n=186 max=43000000 2nd=33000000 mean=1623655] bound=72000000 ns
+cost wakeup_storm(4,16) [pull]: idle wakes 0 (0 late kicks) over 20 runs, worst run 0.00/s; woken[n=503 max=19000000 2nd=18750000 mean=4882703] bound=72000000 ns
+cost wakeup_storm(4,16) [re-arm ×1]: idle wakes 216 (0 late kicks) over 20 runs, worst run 90.57/s; woken[n=503 max=19000000 2nd=18750000 mean=4882703] bound=72000000 ns
+cost wakeup_storm(4,16) [re-arm ×4]: idle wakes 868 (0 late kicks) over 20 runs, worst run 295.84/s; woken[n=503 max=19000000 2nd=18750000 mean=4882206] bound=72000000 ns
+cost wakeup_storm(4,16) [push (ships)]: idle wakes 63 (0 late kicks) over 20 runs, worst run 375.00/s; woken[n=469 max=19000000 2nd=18500000 mean=5249466] bound=72000000 ns
+cost wakeup_storm(8,64) [pull]: idle wakes 0 (0 late kicks) over 20 runs, worst run 0.00/s; woken[n=1930 max=59250000 2nd=59000000 mean=17281606] bound=120000000 ns
+cost wakeup_storm(8,64) [re-arm ×1]: idle wakes 520 (0 late kicks) over 20 runs, worst run 146.29/s; woken[n=1936 max=59250000 2nd=59000000 mean=17229855] bound=120000000 ns
+cost wakeup_storm(8,64) [re-arm ×4]: idle wakes 2080 (0 late kicks) over 20 runs, worst run 524.59/s; woken[n=1939 max=59250000 2nd=59000000 mean=17204615] bound=120000000 ns
+cost wakeup_storm(8,64) [push (ships)]: idle wakes 548 (0 late kicks) over 20 runs, worst run 295.95/s; woken[n=1841 max=60750000 2nd=60000000 mean=17943101] bound=120000000 ns
+cost audio_pipeline(4) [pull]: idle wakes 2 (0 late kicks) over 20 runs, worst run 23.81/s; woken[n=81 max=2500000 2nd=2000000 mean=790123] bound=36000000 ns
+
+thread 'the_two_cures_are_priced_against_the_pull_path' (298958877) panicked at kernel/sim/tests/policy.rs:1301:17:
+assertion `left == right` failed: audio_pipeline(4): the shipped balance path woke a halted CPU 2 time(s) for nothing over 20 runs that were not late kicks. Every column beside it is quoted as a cost *over* this one
+  left: 2
+ right: 0
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    the_two_cures_are_priced_against_the_pull_path
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 14 filtered out; finished in 0.98s
+
+error: test failed, to rerun pass `-p kernel-sim --test policy`

@@ -1,0 +1,71 @@
+# PR #874's metal judgement: busy-CPU wakes, base and head, both benches, one session.
+#
+# Trees (both pushed; neither lands):
+#   base  wt/toyos-busywake-judge-base at 5beb7f63a = main 177e72a9e + the wake_onto_busy row + the scout
+#         worktree /Users/jan/Dev/jan/toyos-busywake-judge-base
+#   head  wt/toyos-busywake-judge-head at ad6840652 = PR #874 head 6e323ccf0 + the same scout commit
+#         worktree /Users/jan/Dev/jan/toyos-busywake-judge-head
+# The scout is the wake half of wt/toyos-scout-sys at fbb958b17 ported, plus phases 4 and 5 (K4): the
+# spinners in a second process. Every `cargo` line below runs from the worktree its section names.
+#
+# Rows (both are --metal rows of tests/toyos.rs on both trees):
+#   scout_wake      one boot, kernel feature scout-wake, test_rs_scout_wake, phases (n = CPUs):
+#                     0: 0 spinners   1: n-1   2: n   3: 2n          (spinners in the pair's own process)
+#                     4: n            5: 2n                          (spinners in a second process)
+#                   prints "scout-wake: phase=P target=same|sleeping|busy n=N p50<=.. p90<=.. p99<=.. p999<=.. max=.."
+#                   (kernel clock, post to dispatch, quantiles are bucket upper bounds within 12.5 %)
+#                   and "scout-wake: phase=P spinners=S apart=B cpus=n rounds=R in T ms".
+#   wake_onto_busy  rides the shipping kernel's `testcases` boot: a ping-pong beside n-1 spinners, round trip
+#                   timed in userland; its exit code is the p99 in us; the row reds at >= 1000 us.
+#
+# Kill conditions, stated before any metal number (PR #874's design, K4 added at acceptance).
+# "base" below is this session's base run, not the scout's older numbers.
+#   K1 (purpose)   head phase 1 target=busy p99 <= 100 us and rounds >= 25,000 in ~5,000 ms, on both benches.
+#                  If K1 fails, the design is dropped.
+#   K2 (quiet path) head phase 0 rounds within 5 % of base's on each bench, and target=sleeping p99 no more
+#                  than one bucket above base's. If K2 fails, the busy kick's cost is not paid for.
+#   K3 (no idle CPU) head phases 2 and 3 target=busy p99 no higher than base's bucket and rounds no lower.
+#                  If K3 fails, the design goes back.
+#   K4 (cross-process) head phases 4 and 5 target=busy p99 <= 1.1 ms (PROTECTED_RUN_NS + 100 us).
+#                  If K4 fails, the preemption arm goes back.
+#   Row            wake_onto_busy: head green (p99 < 1000 us) on the T14; base red (the negative control).
+
+## T14 — base: one boot per image, in any order (worktree toyos-busywake-judge-base)
+
+scout-wake
+  image: /private/tmp/claude-502/-Users-jan-Dev-jan-toyos/80e90c3a-7449-46b8-84cc-b59e9dd31ae9/scratchpad/busywake/metal/t14-base/scout-wake/image.img
+  sha256: e3e90b884963245224d70b6da255b32733ec8b6cf9f9d16069da539142cebf5e
+  cargo run -p toyos-metal -- --image /private/tmp/claude-502/-Users-jan-Dev-jan-toyos/80e90c3a-7449-46b8-84cc-b59e9dd31ae9/scratchpad/busywake/metal/t14-base/scout-wake/image.img --readback /private/tmp/claude-502/-Users-jan-Dev-jan-toyos/80e90c3a-7449-46b8-84cc-b59e9dd31ae9/scratchpad/busywake/metal/t14-base/scout-wake --fat32-check
+
+testcases
+  image: /private/tmp/claude-502/-Users-jan-Dev-jan-toyos/80e90c3a-7449-46b8-84cc-b59e9dd31ae9/scratchpad/busywake/metal/t14-base/testcases/image.img
+  sha256: e7ed4f65ecb6236fc5d6eb61515b675190e1f76e9dec2b0e753a7b1f761a453f
+  cargo run -p toyos-metal -- --image /private/tmp/claude-502/-Users-jan-Dev-jan-toyos/80e90c3a-7449-46b8-84cc-b59e9dd31ae9/scratchpad/busywake/metal/t14-base/testcases/image.img --readback /private/tmp/claude-502/-Users-jan-Dev-jan-toyos/80e90c3a-7449-46b8-84cc-b59e9dd31ae9/scratchpad/busywake/metal/t14-base/testcases --fat32-check
+
+judge (prints every scout line; base's wake_onto_busy is expected red, so this exits non-zero by design):
+  cargo test --test toyos-build -- --metal --metal-readback /private/tmp/claude-502/-Users-jan-Dev-jan-toyos/80e90c3a-7449-46b8-84cc-b59e9dd31ae9/scratchpad/busywake/metal/t14-base scout_wake wake_onto_busy
+
+## T14 — head: one boot per image, in any order (worktree toyos-busywake-judge-head)
+
+scout-wake
+  image: /private/tmp/claude-502/-Users-jan-Dev-jan-toyos/80e90c3a-7449-46b8-84cc-b59e9dd31ae9/scratchpad/busywake/metal/t14-head/scout-wake/image.img
+  sha256: 479347fea1a14c274b51169a24e9116cb7e3fd526e4e8191f5302cac9ea23a33
+  cargo run -p toyos-metal -- --image /private/tmp/claude-502/-Users-jan-Dev-jan-toyos/80e90c3a-7449-46b8-84cc-b59e9dd31ae9/scratchpad/busywake/metal/t14-head/scout-wake/image.img --readback /private/tmp/claude-502/-Users-jan-Dev-jan-toyos/80e90c3a-7449-46b8-84cc-b59e9dd31ae9/scratchpad/busywake/metal/t14-head/scout-wake --fat32-check
+
+testcases
+  image: /private/tmp/claude-502/-Users-jan-Dev-jan-toyos/80e90c3a-7449-46b8-84cc-b59e9dd31ae9/scratchpad/busywake/metal/t14-head/testcases/image.img
+  sha256: a7473ae407ca29205955ea88566130f9390537b882022c2cd58a1a242fef0055
+  cargo run -p toyos-metal -- --image /private/tmp/claude-502/-Users-jan-Dev-jan-toyos/80e90c3a-7449-46b8-84cc-b59e9dd31ae9/scratchpad/busywake/metal/t14-head/testcases/image.img --readback /private/tmp/claude-502/-Users-jan-Dev-jan-toyos/80e90c3a-7449-46b8-84cc-b59e9dd31ae9/scratchpad/busywake/metal/t14-head/testcases --fat32-check
+
+judge (exit 0 is both rows green: the scout ran clean and wake_onto_busy's p99 is under 1 ms):
+  cargo test --test toyos-build -- --metal --metal-readback /private/tmp/claude-502/-Users-jan-Dev-jan-toyos/80e90c3a-7449-46b8-84cc-b59e9dd31ae9/scratchpad/busywake/metal/t14-head scout_wake wake_onto_busy
+
+## AMD bench: builds the same images, flashes, drives and judges in one run per tree
+  (from toyos-busywake-judge-base)  cargo test --test toyos-build -- --metal --metal-host <user>@<amd-bench> scout_wake wake_onto_busy
+  (from toyos-busywake-judge-head)  cargo test --test toyos-build -- --metal --metal-host <user>@<amd-bench> scout_wake wake_onto_busy
+  readbacks land in each worktree's target/metal/{scout-wake,testcases}/
+
+## What to read
+# For each bench and tree: the six "phase=P target=busy" p99s, phase 0's target=sleeping p99, and every
+# "phase=P ... rounds=R" line; and "wake_onto_busy: R rounds ... p99=Xus" with the row's verdict.
+# Compare head against base phase by phase as K1-K4 state.

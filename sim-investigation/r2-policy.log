@@ -1,0 +1,111 @@
+   Compiling kernel v0.1.0 (/Users/jan/Dev/jan/toyos-busywake/kernel)
+   Compiling kernel-sim v0.1.0 (/Users/jan/Dev/jan/toyos-busywake/kernel/sim)
+    Finished `test` profile [optimized + debuginfo] target(s) in 4.05s
+     Running tests/policy.rs (target/debug/deps/policy-741a1ed750f9c366)
+
+running 12 tests
+interactive cpus=1 hogs=1: [n=779 max=10000000 2nd=1000000 mean=75738] worst-run-2nd=1000000 ns bound=36000000 ns
+cost interactive_mix(2,4) [pull]: idle wakes 0 over 20 runs, worst run 0.00/s; woken[n=202 max=13000000 2nd=11000000 mean=391089] bound=48000000 ns
+share_gain N=4 work=60000000: T_solo=170000000 ns deficit=50000000 ns share=352permille
+cost interactive_mix(2,4) [re-arm ×1]: idle wakes 45 over 20 runs, worst run 31.58/s; woken[n=202 max=13000000 2nd=11000000 mean=391089] bound=48000000 ns
+re-arm ×1 cpus=2 threads=8: every-cpu 20/20 (pull 8/20), gap=10000000 ns (pull 480000000 ns, bound 13000000 ns), drained 6/6, working_at Some(1000000)..Some(109000000) ns, 52 idle wakes over the sweep, worst run 6.12/s
+cost interactive_mix(2,4) [re-arm ×4]: idle wakes 170 over 20 runs, worst run 88.00/s; woken[n=202 max=13000000 2nd=11000000 mean=391089] bound=48000000 ns
+starvation fairness_storm (4 runnable threads): worst=50000000 ns (5 quanta) bound=60000000 ns over 780 waits
+storm cpus=1 waiters=16: [n=560 max=12250000 2nd=12250000 mean=6000000] migrations=0 bound=204000000 ns
+cost interactive_mix(2,4) [push ≥2 (ships)]: idle wakes 0 over 20 runs, worst run 0.00/s; woken[n=202 max=13000000 2nd=11000000 mean=391089] bound=48000000 ns
+interactive cpus=1 hogs=4: [n=532 max=31000000 2nd=31000000 mean=1276315] worst-run-2nd=1000000 ns bound=72000000 ns
+re-arm ×4 cpus=2 threads=8: every-cpu 20/20 (pull 8/20), gap=10000000 ns (pull 480000000 ns, bound 13000000 ns), drained 6/6, working_at Some(1000000)..Some(109000000) ns, 172 idle wakes over the sweep, worst run 17.31/s
+lopsided-control cpus=2 threads=8: 0 migrations against a 6 floor, 1 of 2 cpus ran
+share_gain N=4 work=120000000: T_solo=290000000 ns deficit=50000000 ns share=413permille
+share_gain N=4 work=240000000: T_solo=530000000 ns deficit=50000000 ns share=452permille
+lopsided cpus=2 threads=8: 20/20 seeds reached every cpu, 20/20 reached a second, widest=2, best seed moved 6 of a 6 floor
+storm cpus=2 waiters=16: [n=529 max=19250000 2nd=18250000 mean=5218336] migrations=11 bound=108000000 ns
+push ≥1 cpus=2 threads=8: every-cpu 20/20 (pull 8/20), gap=1000000 ns (pull 480000000 ns, bound 14200000 ns), drained 6/6, working_at Some(1000000)..Some(109000000) ns, 12 idle wakes over the sweep, worst run 2.08/s
+starvation sibling_storm (4 runnable threads): worst=50000000 ns (5 quanta) bound=60000000 ns over 3660 waits
+interactive cpus=1 hogs=16: [n=360 max=151000000 2nd=151000000 mean=14480555] worst-run-2nd=0 ns bound=216000000 ns
+lopsided-control cpus=4 threads=16: 0 migrations against a 14 floor, 1 of 4 cpus ran
+starvation share_gain (5 runnable threads): worst=70000000 ns (7 quanta) bound=72000000 ns over 680 waits
+stopped_cpu: worst never_ran 1, total 16 over 16 seeds, bound 4 of 24
+test a_stopped_cpu_stops_taking_work ... ok
+
+thread 'a_push_on_surplus_reaches_every_cpu_the_pull_path_left_asleep' (296214595) panicked at kernel/sim/tests/policy.rs:869:9:
+Pull at 4 cpus: the balance path moved 15 of 16 tasks, past the 14 that stand above cpu0's surplus floor — a task is being migrated more than once, which is a thief that became a victim
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test a_push_on_surplus_reaches_every_cpu_the_pull_path_left_asleep ... FAILED
+starvation share_gain (17 runnable threads): worst=200000000 ns (20 quanta) bound=216000000 ns over 2360 waits
+
+thread 'the_balance_path_drains_the_cpu_an_adversary_loaded' (296214601) panicked at kernel/sim/tests/policy.rs:677:13:
+at 4 cpus the balance path moved 15 of 16 tasks, past the 14 that stand above cpu0's surplus floor — a task is being migrated more than once, which is a thief that became a victim
+test the_balance_path_drains_the_cpu_an_adversary_loaded ... FAILED
+per-thread control at 16 rivals: T_solo=1020000000 ns against 290000000 ns shipped and a 336000000 ns bound
+test per_thread_shares_lose_the_floor ... ok
+cost interactive_mix(2,16) [pull]: idle wakes 0 over 20 runs, worst run 0.00/s; woken[n=182 max=76000000 2nd=75000000 mean=4225274] bound=120000000 ns
+storm cpus=4 waiters=16: [n=469 max=19000000 2nd=18500000 mean=5249466] migrations=25 bound=60000000 ns
+share_gain N=16 work=60000000: T_solo=290000000 ns deficit=170000000 ns share=206permille
+
+thread 'a_bounded_re_arm_reaches_every_cpu_the_pull_path_left_asleep' (296214593) panicked at kernel/sim/tests/policy.rs:869:9:
+Pull at 4 cpus: the balance path moved 15 of 16 tasks, past the 14 that stand above cpu0's surplus floor — a task is being migrated more than once, which is a thief that became a victim
+test a_bounded_re_arm_reaches_every_cpu_the_pull_path_left_asleep ... FAILED
+cost interactive_mix(2,16) [re-arm ×1]: idle wakes 46 over 20 runs, worst run 8.96/s; woken[n=182 max=76000000 2nd=75000000 mean=4225274] bound=120000000 ns
+cost interactive_mix(2,16) [re-arm ×4]: idle wakes 170 over 20 runs, worst run 30.14/s; woken[n=182 max=76000000 2nd=75000000 mean=4225274] bound=120000000 ns
+cost interactive_mix(2,16) [push ≥2 (ships)]: idle wakes 0 over 20 runs, worst run 0.00/s; woken[n=182 max=76000000 2nd=75000000 mean=4225274] bound=120000000 ns
+cost interactive_mix(4,16) [pull]: idle wakes 0 over 20 runs, worst run 0.00/s; woken[n=186 max=43000000 2nd=33000000 mean=1623655] bound=72000000 ns
+share_gain N=16 work=120000000: T_solo=410000000 ns deficit=170000000 ns share=292permille
+cost interactive_mix(4,16) [re-arm ×1]: idle wakes 96 over 20 runs, worst run 20.90/s; woken[n=186 max=43000000 2nd=33000000 mean=1623655] bound=72000000 ns
+storm cpus=1 waiters=64: [n=2240 max=39250000 2nd=39250000 mean=19714285] migrations=0 bound=780000000 ns
+cost interactive_mix(4,16) [re-arm ×4]: idle wakes 360 over 20 runs, worst run 65.75/s; woken[n=186 max=43000000 2nd=33000000 mean=1623655] bound=72000000 ns
+cost interactive_mix(4,16) [push ≥2 (ships)]: idle wakes 12 over 20 runs, worst run 9.23/s; woken[n=186 max=43000000 2nd=33000000 mean=1623655] bound=72000000 ns
+cost wakeup_storm(4,16) [pull]: idle wakes 0 over 20 runs, worst run 0.00/s; woken[n=503 max=19000000 2nd=18750000 mean=4882703] bound=72000000 ns
+cost wakeup_storm(4,16) [re-arm ×1]: idle wakes 216 over 20 runs, worst run 90.57/s; woken[n=503 max=19000000 2nd=18750000 mean=4882703] bound=72000000 ns
+storm cpus=4 waiters=64: [n=1710 max=62750000 2nd=62500000 mean=21370467] migrations=73 bound=204000000 ns
+cost wakeup_storm(4,16) [re-arm ×4]: idle wakes 868 over 20 runs, worst run 295.84/s; woken[n=503 max=19000000 2nd=18750000 mean=4882206] bound=72000000 ns
+cost wakeup_storm(4,16) [push ≥2 (ships)]: idle wakes 63 over 20 runs, worst run 375.00/s; woken[n=469 max=19000000 2nd=18500000 mean=5249466] bound=72000000 ns
+share_gain N=16 work=240000000: T_solo=650000000 ns deficit=170000000 ns share=369permille
+test the_share_deficit_is_an_offset_and_not_a_drift ... ok
+cost wakeup_storm(8,64) [pull]: idle wakes 0 over 20 runs, worst run 0.00/s; woken[n=1930 max=59250000 2nd=59000000 mean=17281606] bound=120000000 ns
+storm cpus=8 waiters=64: [n=1841 max=60750000 2nd=60000000 mean=17943101] migrations=96 bound=108000000 ns
+storm drain 16→64 waiters on one cpu: 12250000 ns → 39250000 ns
+test a_wakeup_storm_drains_without_serializing ... ok
+cost wakeup_storm(8,64) [re-arm ×1]: idle wakes 520 over 20 runs, worst run 146.29/s; woken[n=1936 max=59250000 2nd=59000000 mean=17229855] bound=120000000 ns
+interactive cpus=1 hogs=64: [n=180 max=631000000 2nd=631000000 mean=135627777] worst-run-2nd=0 ns bound=792000000 ns
+interactive cpus=2 hogs=4: [n=406 max=13000000 2nd=13000000 mean=423645] worst-run-2nd=0 ns bound=48000000 ns
+lopsided-control cpus=4 threads=64: 0 migrations against a 62 floor, 1 of 4 cpus ran
+cost wakeup_storm(8,64) [re-arm ×4]: idle wakes 2080 over 20 runs, worst run 524.59/s; woken[n=1939 max=59250000 2nd=59000000 mean=17204615] bound=120000000 ns
+
+thread 'an_interactive_wake_waits_out_at_most_the_band_it_is_queued_behind' (296214599) panicked at kernel/sim/tests/policy.rs:146:9:
+interactive_mix: FAILED after 384 steps
+  I5: 218000000 ns of service separates equal shares over one contention window (bound 216000000 ns, recorded allowance 0 ns): sleeper=75250000 hog=293250000
+test an_interactive_wake_waits_out_at_most_the_band_it_is_queued_behind ... FAILED
+share_gain N=1: T_solo=120000000 ns deficit=0 ns (0 quanta) share=500permille (best seed 120000000)
+share_gain N=2: T_solo=150000000 ns deficit=30000000 ns (3 quanta) share=400permille (best seed 150000000)
+share_gain N=4: T_solo=170000000 ns deficit=50000000 ns (5 quanta) share=352permille (best seed 170000000)
+share_gain N=8: T_solo=210000000 ns deficit=90000000 ns (9 quanta) share=285permille (best seed 210000000)
+share_gain N=16: T_solo=290000000 ns deficit=170000000 ns (17 quanta) share=206permille (best seed 290000000)
+share_gain N=32: T_solo=450000000 ns deficit=330000000 ns (33 quanta) share=133permille (best seed 450000000)
+share_gain N=64: T_solo=770000000 ns deficit=650000000 ns (65 quanta) share=77permille (best seed 770000000)
+test a_process_cannot_buy_cpu_by_forking ... ok
+starvation share_gain (65 runnable threads): worst=680000000 ns (68 quanta) bound=792000000 ns over 9080 waits
+test a_runnable_task_waits_at_most_one_dispatch_per_rival ... ok
+cost wakeup_storm(8,64) [push ≥2 (ships)]: idle wakes 548 over 20 runs, worst run 295.95/s; woken[n=1841 max=60750000 2nd=60000000 mean=17943101] bound=120000000 ns
+cost audio_pipeline(4) [pull]: idle wakes 2 over 20 runs, worst run 23.81/s; woken[n=81 max=2500000 2nd=2000000 mean=790123] bound=36000000 ns
+
+thread 'the_two_cures_are_priced_against_the_pull_path' (296214603) panicked at kernel/sim/tests/policy.rs:1292:17:
+assertion `left == right` failed: audio_pipeline(4): the shipped balance path woke a halted CPU 2 time(s) for nothing over 20 runs. Every column beside it is quoted as a cost *over* this one
+  left: 2
+ right: 0
+test the_two_cures_are_priced_against_the_pull_path ... FAILED
+lopsided-control cpus=8 threads=64: 0 migrations against a 62 floor, 1 of 8 cpus ran
+test without_the_balance_path_a_lopsided_machine_stays_lopsided ... ok
+
+failures:
+
+failures:
+    a_bounded_re_arm_reaches_every_cpu_the_pull_path_left_asleep
+    a_push_on_surplus_reaches_every_cpu_the_pull_path_left_asleep
+    an_interactive_wake_waits_out_at_most_the_band_it_is_queued_behind
+    the_balance_path_drains_the_cpu_an_adversary_loaded
+    the_two_cures_are_priced_against_the_pull_path
+
+test result: FAILED. 7 passed; 5 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.26s
+
+error: test failed, to rerun pass `-p kernel-sim --test policy`
