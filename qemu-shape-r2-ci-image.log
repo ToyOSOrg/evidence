@@ -1,0 +1,399 @@
+# CI's pinned guest image (.github/workflows/guest.yml), measured on the development host:
+# its podman VM runs the linux/amd64 image under qemu-user, so the x86-64 QEMU binaries below ran emulated.
+# inside.sh and shape.sh are this log's two scripts, mounted read-only at /work.
+$ podman run --rm --platform linux/amd64 -v <scratch>/ci:/work:ro public.ecr.aws/docker/library/debian@sha256:a2aa46262453eba3f464d8b1c7a8c31db85eb15af180ae34dd400615d7208547 /work/inside.sh
+Trying to pull public.ecr.aws/docker/library/debian@sha256:a2aa46262453eba3f464d8b1c7a8c31db85eb15af180ae34dd400615d7208547...
+Getting image source signatures
+Copying blob sha256:ecfbe17c055a074746222b53d6a4cc623096f30aca0c1aa736abe6bfe5867df7
+Copying config sha256:fc66565d4bfc2bbe508b5b796ab93eb94b8c0a3a906f10f9a2b8ed498afd8825
+Writing manifest to image destination
+$ uname -m
+x86_64
+EXIT=0
+
+$ cat /etc/apt/sources.list.d/debian.sources
+Types: deb
+# http://snapshot.debian.org/archive/debian/20260918T000000Z
+URIs: http://deb.debian.org/debian
+Suites: sid
+Components: main
+Signed-By: /usr/share/keyrings/debian-archive-keyring.pgp
+EXIT=0
+
+$ apt-get update; apt-get install qemu-system-x86 qemu-system-arm  (from http://snapshot.debian.org/archive/debian/20260918T000000Z, as the deps step does)
+EXIT=0
+
+$ dpkg-query -W qemu-system-x86 qemu-system-arm qemu-system-gui qemu-system-modules-spice libspice-server1
+libspice-server1 0.16.0-3 installed
+qemu-system-arm 1:11.1.1+ds-1 installed
+qemu-system-gui 1:11.1.1+ds-1 installed
+qemu-system-modules-spice 1:11.1.1+ds-1 installed
+qemu-system-x86 1:11.1.1+ds-1 installed
+EXIT=0
+
+$ qemu-system-x86_64 --version
+QEMU emulator version 11.1.1 (Debian 1:11.1.1+ds-1)
+Copyright (c) 2003-2026 Fabrice Bellard and the QEMU Project developers
+EXIT=0
+
+$ qemu-system-aarch64 --version
+QEMU emulator version 11.1.1 (Debian 1:11.1.1+ds-1)
+Copyright (c) 2003-2026 Fabrice Bellard and the QEMU Project developers
+EXIT=0
+
+$ qemu-system-x86_64 -chardev help
+Available chardev backend types: 
+  ringbuf
+  serial
+  mux
+  pipe
+  qemu-vdagent
+  pty
+  hub
+  null
+  msmouse
+  socket
+  vc
+  parallel
+  memory
+  udp
+  file
+  wctablet
+  stdio
+  testdev
+EXIT=0
+
+$ qemu-system-aarch64 -machine virt -chardev help
+Available chardev backend types: 
+  stdio
+  vc
+  pipe
+  serial
+  pty
+  testdev
+  null
+  hub
+  ringbuf
+  wctablet
+  qemu-vdagent
+  msmouse
+  socket
+  udp
+  file
+  mux
+  parallel
+  memory
+EXIT=0
+
+$ qemu-system-x86_64 -display help
+Available display backend types:
+none
+gtk
+sdl
+egl-headless
+curses
+spice-app
+dbus
+
+Some display backends support suboptions, which can be set with
+   -display backend,option=value,option=value...
+For a short list of the suboptions for each display, see the top-level -help output; more detail is in the documentation.
+EXIT=0
+
+### round 1's shape, info pci and quit only
+$ printf 'info pci\nquit\n' | qemu-system-x86_64 -nodefaults -machine q35 -display none -S -monitor stdio -serial none -chardev null,id=cs0 -device virtio-serial-pci-non-transitional,id=virtio-serial0,max_ports=1 -device virtconsole,chardev=cs0,id=console0 -chardev qemu-vdagent,id=vdagent0,clipboard=on,mouse=off -device virtio-serial-pci-non-transitional,id=vdagent-serial,max_ports=2 -device virtserialport,bus=vdagent-serial.0,nr=1,chardev=vdagent0,name=com.redhat.spice.0 | (the monitor's line-editing escapes stripped, its echo of each command collapsed)
+QEMU 11.1.1 monitor - type 'help' for more information
+(qemu) info pci
+  Bus  0, device   0, function 0:
+    Host bridge: PCI device 8086:29c0
+      PCI subsystem 1af4:1100
+      id ""
+  Bus  0, device   1, function 0:
+    Class 1920: PCI device 1af4:1043
+      PCI subsystem 1af4:1100
+      IRQ 0, pin A
+      BAR1: 32 bit memory (not mapped)
+      BAR4: 64 bit prefetchable memory (not mapped)
+      id "virtio-serial0"
+  Bus  0, device   2, function 0:
+    Class 1920: PCI device 1af4:1043
+      PCI subsystem 1af4:1100
+      IRQ 0, pin A
+      BAR1: 32 bit memory (not mapped)
+      BAR4: 64 bit prefetchable memory (not mapped)
+      id "vdagent-serial"
+  Bus  0, device  31, function 0:
+    ISA bridge: PCI device 8086:2918
+      PCI subsystem 1af4:1100
+      id ""
+  Bus  0, device  31, function 2:
+    SATA controller: PCI device 8086:2922
+      PCI subsystem 1af4:1100
+      IRQ 0, pin A
+      BAR4: I/O (not mapped)
+      BAR5: 32 bit memory (not mapped)
+      id ""
+  Bus  0, device  31, function 3:
+    SMBus: PCI device 8086:2930
+      PCI subsystem 1af4:1100
+      IRQ 0, pin A
+      BAR4: I/O (not mapped)
+      id ""
+(qemu) quit
+EXIT=0
+
+### x86_64: cargo run's Virtio profile, the agent's function before the console's
+$ printf 'info pci\nquit\n' | qemu-system-x86_64 -nodefaults -cpu qemu64 -machine q35,kernel-irqchip=split -smp cores=4 -m 2G -display none -S -monitor stdio -device intel-iommu,intremap=on,caching-mode=on,aw-bits=48 -device nec-usb-xhci,id=xhci -blockdev driver=null-co,node-name=stick,size=67108864 -device usb-storage,bus=xhci.0,drive=stick,bootindex=0 -blockdev driver=null-co,node-name=nvme0,size=134217728 -device nvme,serial=deadbeef,drive=nvme0,msix-exclusive-bar=on -device usb-kbd,bus=xhci.0 -device usb-tablet,bus=xhci.0 -vga none -device virtio-gpu-pci,xres=1280,yres=720,iommu_platform=on -netdev user,id=net0 -device virtio-net-pci-non-transitional,netdev=net0,iommu_platform=on -audiodev none,id=audio0 -device virtio-sound-pci,audiodev=audio0,streams=1,iommu_platform=on -serial none -chardev qemu-vdagent,id=vdagent0,clipboard=on,mouse=off -device virtio-serial-pci-non-transitional,id=vdagent-serial,max_ports=2,iommu_platform=on -device virtserialport,bus=vdagent-serial.0,nr=1,chardev=vdagent0,name=com.redhat.spice.0 -chardev null,id=cs0 -device virtio-serial-pci-non-transitional,id=virtio-serial0,max_ports=1,iommu_platform=on -device virtconsole,chardev=cs0,id=console0 | (the monitor's line-editing escapes stripped, its echo of each command collapsed)
+QEMU 11.1.1 monitor - type 'help' for more information
+(qemu) info pci
+  Bus  0, device   0, function 0:
+    Host bridge: PCI device 8086:29c0
+      PCI subsystem 1af4:1100
+      id ""
+  Bus  0, device   1, function 0:
+    USB controller: PCI device 1033:0194
+      PCI subsystem 1af4:1100
+      IRQ 0, pin A
+      BAR0: 64 bit memory (not mapped)
+      id "xhci"
+  Bus  0, device   2, function 0:
+    Class 0264: PCI device 1b36:0010
+      PCI subsystem 1af4:1100
+      IRQ 0, pin A
+      BAR0: 64 bit memory (not mapped)
+      BAR4: 32 bit memory (not mapped)
+      id ""
+  Bus  0, device   3, function 0:
+    Display controller: PCI device 1af4:1050
+      PCI subsystem 1af4:1100
+      IRQ 0, pin A
+      BAR1: 32 bit memory (not mapped)
+      BAR4: 64 bit prefetchable memory (not mapped)
+      id ""
+  Bus  0, device   4, function 0:
+    Ethernet controller: PCI device 1af4:1041
+      PCI subsystem 1af4:1100
+      IRQ 0, pin A
+      BAR1: 32 bit memory (not mapped)
+      BAR4: 64 bit prefetchable memory (not mapped)
+      BAR6: 32 bit memory (not mapped)
+      id ""
+  Bus  0, device   5, function 0:
+    Audio controller: PCI device 1af4:1059
+      PCI subsystem 1af4:1100
+      IRQ 0, pin A
+      BAR1: 32 bit memory (not mapped)
+      BAR4: 64 bit prefetchable memory (not mapped)
+      id ""
+  Bus  0, device   6, function 0:
+    Class 1920: PCI device 1af4:1043
+      PCI subsystem 1af4:1100
+      IRQ 0, pin A
+      BAR1: 32 bit memory (not mapped)
+      BAR4: 64 bit prefetchable memory (not mapped)
+      id "vdagent-serial"
+  Bus  0, device   7, function 0:
+    Class 1920: PCI device 1af4:1043
+      PCI subsystem 1af4:1100
+      IRQ 0, pin A
+      BAR1: 32 bit memory (not mapped)
+      BAR4: 64 bit prefetchable memory (not mapped)
+      id "virtio-serial0"
+  Bus  0, device  31, function 0:
+    ISA bridge: PCI device 8086:2918
+      PCI subsystem 1af4:1100
+      id ""
+  Bus  0, device  31, function 2:
+    SATA controller: PCI device 8086:2922
+      PCI subsystem 1af4:1100
+      IRQ 0, pin A
+      BAR4: I/O (not mapped)
+      BAR5: 32 bit memory (not mapped)
+      id ""
+  Bus  0, device  31, function 3:
+    SMBus: PCI device 8086:2930
+      PCI subsystem 1af4:1100
+      IRQ 0, pin A
+      BAR4: I/O (not mapped)
+      id ""
+(qemu) quit
+EXIT=0
+
+### aarch64: cargo run's Virtio profile, the agent's function before the console's
+$ printf 'info pci\nquit\n' | qemu-system-aarch64 -nodefaults -cpu max -machine virt,gic-version=3,iommu=smmuv3 -smp cores=4 -m 2G -display none -S -monitor stdio -device nec-usb-xhci,id=xhci -blockdev driver=null-co,node-name=stick,size=67108864 -device usb-storage,bus=xhci.0,drive=stick,bootindex=0 -blockdev driver=null-co,node-name=nvme0,size=134217728 -device nvme,serial=deadbeef,drive=nvme0,msix-exclusive-bar=on -device usb-kbd,bus=xhci.0 -device usb-tablet,bus=xhci.0 -device virtio-gpu-pci,xres=1280,yres=720,iommu_platform=on -device virtio-rng-pci -netdev user,id=net0 -device virtio-net-pci-non-transitional,netdev=net0,iommu_platform=on -audiodev none,id=audio0 -device virtio-sound-pci,audiodev=audio0,streams=1,iommu_platform=on -serial none -chardev qemu-vdagent,id=vdagent0,clipboard=on,mouse=off -device virtio-serial-pci-non-transitional,id=vdagent-serial,max_ports=2,iommu_platform=on -device virtserialport,bus=vdagent-serial.0,nr=1,chardev=vdagent0,name=com.redhat.spice.0 -chardev null,id=cs0 -device virtio-serial-pci-non-transitional,id=virtio-serial0,max_ports=1,iommu_platform=on -device virtconsole,chardev=cs0,id=console0 | (the monitor's line-editing escapes stripped, its echo of each command collapsed)
+QEMU 11.1.1 monitor - type 'help' for more information
+(qemu) info pci
+  Bus  0, device   0, function 0:
+    Host bridge: PCI device 1b36:0008
+      PCI subsystem 1af4:1100
+      id ""
+  Bus  0, device   1, function 0:
+    USB controller: PCI device 1033:0194
+      PCI subsystem 1af4:1100
+      IRQ 0, pin A
+      BAR0: 64 bit memory (not mapped)
+      id "xhci"
+  Bus  0, device   2, function 0:
+    Class 0264: PCI device 1b36:0010
+      PCI subsystem 1af4:1100
+      IRQ 0, pin A
+      BAR0: 64 bit memory (not mapped)
+      BAR4: 32 bit memory (not mapped)
+      id ""
+  Bus  0, device   3, function 0:
+    Display controller: PCI device 1af4:1050
+      PCI subsystem 1af4:1100
+      IRQ 0, pin A
+      BAR1: 32 bit memory (not mapped)
+      BAR4: 64 bit prefetchable memory (not mapped)
+      id ""
+  Bus  0, device   4, function 0:
+    Class 0255: PCI device 1af4:1005
+      PCI subsystem 1af4:0004
+      IRQ 0, pin A
+      BAR0: I/O (not mapped)
+      BAR1: 32 bit memory (not mapped)
+      BAR4: 64 bit prefetchable memory (not mapped)
+      id ""
+  Bus  0, device   5, function 0:
+    Ethernet controller: PCI device 1af4:1041
+      PCI subsystem 1af4:1100
+      IRQ 0, pin A
+      BAR1: 32 bit memory (not mapped)
+      BAR4: 64 bit prefetchable memory (not mapped)
+      BAR6: 32 bit memory (not mapped)
+      id ""
+  Bus  0, device   6, function 0:
+    Audio controller: PCI device 1af4:1059
+      PCI subsystem 1af4:1100
+      IRQ 0, pin A
+      BAR1: 32 bit memory (not mapped)
+      BAR4: 64 bit prefetchable memory (not mapped)
+      id ""
+  Bus  0, device   7, function 0:
+    Class 1920: PCI device 1af4:1043
+      PCI subsystem 1af4:1100
+      IRQ 0, pin A
+      BAR1: 32 bit memory (not mapped)
+      BAR4: 64 bit prefetchable memory (not mapped)
+      id "vdagent-serial"
+  Bus  0, device   8, function 0:
+    Class 1920: PCI device 1af4:1043
+      PCI subsystem 1af4:1100
+      IRQ 0, pin A
+      BAR1: 32 bit memory (not mapped)
+      BAR4: 64 bit prefetchable memory (not mapped)
+      id "virtio-serial0"
+(qemu) quit
+EXIT=0
+
+PODMAN_EXIT=0
+
+===== inside.sh
+#!/bin/bash
+# Runs inside the pinned guest image (.github/workflows/guest.yml): the deps
+# step's archive selection and its two QEMU packages, then the same questions
+# and the same stopped-machine command lines the dev host was asked.
+set -u
+echo '$ uname -m'; uname -m; echo "EXIT=$?"; echo
+echo '$ cat /etc/apt/sources.list.d/debian.sources'; cat /etc/apt/sources.list.d/debian.sources; echo "EXIT=$?"; echo
+snap=$(sed -n 's|^# \(http://snapshot\.debian\.org/archive/debian/[0-9]*T[0-9]*Z\)$|\1|p' /etc/apt/sources.list.d/debian.sources)
+test -n "$snap" || { echo "no snapshot line"; exit 1; }
+echo "deb $snap sid main" > /etc/apt/sources.list
+rm /etc/apt/sources.list.d/debian.sources
+echo "\$ apt-get update; apt-get install qemu-system-x86 qemu-system-arm  (from $snap, as the deps step does)"
+for attempt in 1 2 3; do
+  apt-get -o Acquire::Check-Valid-Until=false update -qq > /tmp/apt.log 2>&1 \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq qemu-system-x86 qemu-system-arm >> /tmp/apt.log 2>&1 \
+    && break
+  [ "$attempt" = 3 ] && { cat /tmp/apt.log; exit 1; }
+  sleep 20
+done
+echo "EXIT=0"; echo
+echo '$ dpkg-query -W qemu-system-x86 qemu-system-arm qemu-system-gui qemu-system-modules-spice libspice-server1'
+dpkg-query -W -f='${Package} ${Version} ${db:Status-Status}\n' qemu-system-x86 qemu-system-arm qemu-system-gui qemu-system-modules-spice libspice-server1 2>&1; echo "EXIT=$?"; echo
+/work/shape.sh /tmp/shape.log
+cat /tmp/shape.log
+===== shape.sh
+#!/bin/bash
+# Boots nothing: each run is QEMU stopped before its first instruction (-S),
+# asked `info pci` and `quit` on its monitor, and its exit status recorded.
+# Usage: shape.sh <log>
+log="$1"
+: > "$log"
+
+run() { # run <label> <qemu> <args...>
+  local label="$1"; shift
+  {
+    echo "### $label"
+    printf '$ printf '"'"'info pci\\nquit\\n'"'"' |'
+    printf ' %s' "$@"
+    echo " | (the monitor's line-editing escapes stripped, its echo of each command collapsed)"
+  } >> "$log"
+  printf 'info pci\nquit\n' | "$@" 2>&1 | perl -pe 's/\e\[[0-9;?]*[A-Za-z]//g; s/\r//g; s/^\(qemu\) .*?(info pci|quit)$/(qemu) $1/' >> "$log"
+  local st=${PIPESTATUS[1]}
+  echo "EXIT=$st" >> "$log"
+  echo >> "$log"
+}
+
+{ echo '$ qemu-system-x86_64 --version'; qemu-system-x86_64 --version; echo "EXIT=$?"; echo
+  echo '$ qemu-system-aarch64 --version'; qemu-system-aarch64 --version; echo "EXIT=$?"; echo
+  echo '$ qemu-system-x86_64 -chardev help'; qemu-system-x86_64 -chardev help; echo "EXIT=$?"; echo
+  echo '$ qemu-system-aarch64 -machine virt -chardev help'; qemu-system-aarch64 -machine virt -chardev help; echo "EXIT=$?"; echo
+  echo '$ qemu-system-x86_64 -display help'; qemu-system-x86_64 -display help; echo "EXIT=$?"; echo
+} >> "$log" 2>&1
+
+# Round 1's command line, unchanged but for the monitor's commands.
+run "round 1's shape, info pci and quit only" \
+  qemu-system-x86_64 -nodefaults -machine q35 -display none -S -monitor stdio -serial none \
+  -chardev null,id=cs0 \
+  -device virtio-serial-pci-non-transitional,id=virtio-serial0,max_ports=1 \
+  -device virtconsole,chardev=cs0,id=console0 \
+  -chardev qemu-vdagent,id=vdagent0,clipboard=on,mouse=off \
+  -device virtio-serial-pci-non-transitional,id=vdagent-serial,max_ports=2 \
+  -device virtserialport,bus=vdagent-serial.0,nr=1,chardev=vdagent0,name=com.redhat.spice.0
+
+# build/qemu.rs's Virtio profile as the revised design launches it, the
+# agent's function created before the console's; firmware, the image's drives,
+# the host audio backend, -s and QMP left out, nothing else.
+run "x86_64: cargo run's Virtio profile, the agent's function before the console's" \
+  qemu-system-x86_64 -nodefaults -cpu qemu64 -machine q35,kernel-irqchip=split -smp cores=4 -m 2G \
+  -display none -S -monitor stdio \
+  -device intel-iommu,intremap=on,caching-mode=on,aw-bits=48 \
+  -device nec-usb-xhci,id=xhci \
+  -blockdev driver=null-co,node-name=stick,size=67108864 \
+  -device usb-storage,bus=xhci.0,drive=stick,bootindex=0 \
+  -blockdev driver=null-co,node-name=nvme0,size=134217728 \
+  -device nvme,serial=deadbeef,drive=nvme0,msix-exclusive-bar=on \
+  -device usb-kbd,bus=xhci.0 -device usb-tablet,bus=xhci.0 \
+  -vga none -device virtio-gpu-pci,xres=1280,yres=720,iommu_platform=on \
+  -netdev user,id=net0 -device virtio-net-pci-non-transitional,netdev=net0,iommu_platform=on \
+  -audiodev none,id=audio0 -device virtio-sound-pci,audiodev=audio0,streams=1,iommu_platform=on \
+  -serial none \
+  -chardev qemu-vdagent,id=vdagent0,clipboard=on,mouse=off \
+  -device virtio-serial-pci-non-transitional,id=vdagent-serial,max_ports=2,iommu_platform=on \
+  -device virtserialport,bus=vdagent-serial.0,nr=1,chardev=vdagent0,name=com.redhat.spice.0 \
+  -chardev null,id=cs0 \
+  -device virtio-serial-pci-non-transitional,id=virtio-serial0,max_ports=1,iommu_platform=on \
+  -device virtconsole,chardev=cs0,id=console0
+
+run "aarch64: cargo run's Virtio profile, the agent's function before the console's" \
+  qemu-system-aarch64 -nodefaults -cpu max -machine virt,gic-version=3,iommu=smmuv3 -smp cores=4 -m 2G \
+  -display none -S -monitor stdio \
+  -device nec-usb-xhci,id=xhci \
+  -blockdev driver=null-co,node-name=stick,size=67108864 \
+  -device usb-storage,bus=xhci.0,drive=stick,bootindex=0 \
+  -blockdev driver=null-co,node-name=nvme0,size=134217728 \
+  -device nvme,serial=deadbeef,drive=nvme0,msix-exclusive-bar=on \
+  -device usb-kbd,bus=xhci.0 -device usb-tablet,bus=xhci.0 \
+  -device virtio-gpu-pci,xres=1280,yres=720,iommu_platform=on \
+  -device virtio-rng-pci \
+  -netdev user,id=net0 -device virtio-net-pci-non-transitional,netdev=net0,iommu_platform=on \
+  -audiodev none,id=audio0 -device virtio-sound-pci,audiodev=audio0,streams=1,iommu_platform=on \
+  -serial none \
+  -chardev qemu-vdagent,id=vdagent0,clipboard=on,mouse=off \
+  -device virtio-serial-pci-non-transitional,id=vdagent-serial,max_ports=2,iommu_platform=on \
+  -device virtserialport,bus=vdagent-serial.0,nr=1,chardev=vdagent0,name=com.redhat.spice.0 \
+  -chardev null,id=cs0 \
+  -device virtio-serial-pci-non-transitional,id=virtio-serial0,max_ports=1,iommu_platform=on \
+  -device virtconsole,chardev=cs0,id=console0

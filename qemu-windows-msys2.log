@@ -1,0 +1,70 @@
+$ curl -A 'toyos-build (https://github.com/ToyOSOrg/ToyOS)' -O https://repo.msys2.org/mingw/ucrt64/mingw-w64-ucrt-x86_64-qemu-11.1.2-1-any.pkg.tar.zst
+(fetched before this log; its digest:)
+$ shasum -a 256 mingw-w64-ucrt-x86_64-qemu-11.1.2-1-any.pkg.tar.zst
+55f87e3a1448f5cf1cd7d7b9f061846a13b9571eb9b1a1df51eab3d9a9d42429  mingw-w64-ucrt-x86_64-qemu-11.1.2-1-any.pkg.tar.zst
+EXIT=0
+
+$ zstd -d mingw-w64-ucrt-x86_64-qemu-11.1.2-1-any.pkg.tar.zst -o pkg.tar && tar -xf pkg.tar .PKGINFO .BUILDINFO ucrt64/bin/qemu-system-x86_64.exe ucrt64/bin/qemu-system-aarch64.exe
+EXIT=0
+
+$ grep -E '^(pkgname|pkgver|packager) |^depend = .*-(spice|gtk3)$' .PKGINFO
+pkgname = mingw-w64-ucrt-x86_64-qemu
+pkgver = 11.1.2-1
+packager = CI (https://github.com/msys2/msys2-autobuild/actions/runs/36635716535/job/109635727320)
+depend = mingw-w64-ucrt-x86_64-gtk3
+depend = mingw-w64-ucrt-x86_64-spice
+EXIT=0
+
+$ grep -E '^installed = .*-(spice|spice-protocol|gtk3)-[0-9]' .BUILDINFO
+installed = mingw-w64-ucrt-x86_64-gtk3-3.24.52-1-any
+installed = mingw-w64-ucrt-x86_64-spice-0.16.0-4-any
+installed = mingw-w64-ucrt-x86_64-spice-protocol-0.14.5-1-any
+EXIT=0
+
+$ shasum -a 256 ucrt64/bin/qemu-system-x86_64.exe
+a812b50865ffcc7ddd43f9c33e9bb1ed7b3501c1f847ee99ede8d4b4a4a93742  ucrt64/bin/qemu-system-x86_64.exe
+EXIT=0
+
+$ LC_ALL=C grep -a -o -e chardev-qemu-vdagent -e 'buffer full, dropping message' -e clipboard-grab-serial -e 'Failed to set GTK clipboard' -e gtk_clipboard_request_text ucrt64/bin/qemu-system-x86_64.exe | sort | uniq -c
+   1 Failed to set GTK clipboard
+   1 buffer full, dropping message
+   2 chardev-qemu-vdagent
+   1 clipboard-grab-serial
+   2 gtk_clipboard_request_text
+EXIT=0
+
+$ shasum -a 256 ucrt64/bin/qemu-system-aarch64.exe
+aeb3c68c499796d0aa14a46ffed764a6214fa52aa8578efe1270b8aec9d11b3c  ucrt64/bin/qemu-system-aarch64.exe
+EXIT=0
+
+$ LC_ALL=C grep -a -o -e chardev-qemu-vdagent -e 'buffer full, dropping message' -e clipboard-grab-serial -e 'Failed to set GTK clipboard' -e gtk_clipboard_request_text ucrt64/bin/qemu-system-aarch64.exe | sort | uniq -c
+   1 Failed to set GTK clipboard
+   1 buffer full, dropping message
+   2 chardev-qemu-vdagent
+   1 clipboard-grab-serial
+   2 gtk_clipboard_request_text
+EXIT=0
+
+===== msys2.sh
+#!/bin/bash
+# The Windows build QEMU's download page names beside Stefan Weil's installers:
+# MSYS2's UCRT64 package, read as bytes and never run.
+# Usage: msys2.sh <download dir> <extract dir> <log>
+dl="$1"; x="$2"; log="$3"
+pkg=mingw-w64-ucrt-x86_64-qemu-11.1.2-1-any.pkg.tar.zst
+{
+echo "\$ curl -A 'toyos-build (https://github.com/ToyOSOrg/ToyOS)' -O https://repo.msys2.org/mingw/ucrt64/$pkg"
+echo "(fetched before this log; its digest:)"
+echo "\$ shasum -a 256 $pkg"; (cd "$dl" && shasum -a 256 "$pkg"); echo "EXIT=$?"; echo
+echo "\$ zstd -d $pkg -o pkg.tar && tar -xf pkg.tar .PKGINFO .BUILDINFO ucrt64/bin/qemu-system-x86_64.exe ucrt64/bin/qemu-system-aarch64.exe"
+rm -rf "$x" && mkdir -p "$x" && zstd -d -q -f "$dl/$pkg" -o "$x/pkg.tar" && (cd "$x" && tar -xf pkg.tar .PKGINFO .BUILDINFO ucrt64/bin/qemu-system-x86_64.exe ucrt64/bin/qemu-system-aarch64.exe); echo "EXIT=$?"; echo
+echo "\$ grep -E '^(pkgname|pkgver|packager) |^depend = .*-(spice|gtk3)$' .PKGINFO"
+(cd "$x" && grep -E '^(pkgname|pkgver|packager) |^depend = .*-(spice|gtk3)$' .PKGINFO); echo "EXIT=$?"; echo
+echo "\$ grep -E '^installed = .*-(spice|spice-protocol|gtk3)-[0-9]' .BUILDINFO"
+(cd "$x" && grep -E '^installed = .*-(spice|spice-protocol|gtk3)-[0-9]' .BUILDINFO); echo "EXIT=$?"; echo
+for b in qemu-system-x86_64.exe qemu-system-aarch64.exe; do
+  echo "\$ shasum -a 256 ucrt64/bin/$b"; (cd "$x" && shasum -a 256 "ucrt64/bin/$b"); echo "EXIT=$?"; echo
+  echo "\$ LC_ALL=C grep -a -o -e chardev-qemu-vdagent -e 'buffer full, dropping message' -e clipboard-grab-serial -e 'Failed to set GTK clipboard' -e gtk_clipboard_request_text ucrt64/bin/$b | sort | uniq -c"
+  (cd "$x" && LC_ALL=C grep -a -o -e chardev-qemu-vdagent -e 'buffer full, dropping message' -e clipboard-grab-serial -e 'Failed to set GTK clipboard' -e gtk_clipboard_request_text "ucrt64/bin/$b" | sort | uniq -c); echo "EXIT=${PIPESTATUS[0]}"; echo
+done
+} > "$log" 2>&1
