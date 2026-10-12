@@ -1,0 +1,13 @@
+diff --git a/lib/blockring/transport/src/stream.rs b/lib/blockring/transport/src/stream.rs
+index f6c63971b..4f8f2c2ae 100644
+--- a/lib/blockring/transport/src/stream.rs
++++ b/lib/blockring/transport/src/stream.rs
+@@ -113,7 +113,7 @@ impl<const C: u32, const N: usize> Place<C, N> {
+     fn spans(&self, at: u32, len: u32) -> [Span; 2] {
+         let slot = if at >= C { at.wrapping_sub(C) } else { at };
+         let first = len.min(C.wrapping_sub(slot));
+-        let start = self.base.wrapping_add(bytes(slot));
++        let start = bytes(slot);
+         [Span { offset: start, len: bytes(first) }, Span { offset: self.base, len: bytes(len.wrapping_sub(first)) }]
+     }
+ }

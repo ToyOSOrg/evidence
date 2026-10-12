@@ -1,0 +1,13 @@
+diff --git a/lib/blockring/transport/src/stream.rs b/lib/blockring/transport/src/stream.rs
+index f6c63971b..df0da79f4 100644
+--- a/lib/blockring/transport/src/stream.rs
++++ b/lib/blockring/transport/src/stream.rs
+@@ -105,7 +105,7 @@ impl<const C: u32, const N: usize> Place<C, N> {
+     /// at most the ring. A word past the lap names no position, so it is
+     /// farther than any ring.
+     fn reach(claimed: Untrusted<u32>, apart: impl FnOnce(u32) -> u32, broken: Violation) -> Result<u32, Violation> {
+-        clamp(claimed.map(|at| if at < Self::LAP { apart(at) } else { u32::MAX }), C, broken)
++        clamp(claimed.map(apart), C, broken)
+     }
+ 
+     /// The region's bytes `len` on from position `at`, in ring order: the

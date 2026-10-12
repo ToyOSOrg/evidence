@@ -1,0 +1,13 @@
+diff --git a/lib/blockring/transport/src/stream.rs b/lib/blockring/transport/src/stream.rs
+index f6c63971b..7237362cb 100644
+--- a/lib/blockring/transport/src/stream.rs
++++ b/lib/blockring/transport/src/stream.rs
+@@ -151,7 +151,7 @@ impl<const C: u32, const N: usize> Producer<C, N> {
+     /// Where to copy the `len` bytes `at` past the tail; `None` past the room
+     /// last seen.
+     pub fn span(&self, at: u32, len: u32) -> Option<[Span; 2]> {
+-        (at.checked_add(len)? <= self.room).then(|| self.place.spans(Place::<C, N>::forward(self.local, at), len))
++        (at.checked_add(len)? <= C).then(|| self.place.spans(Place::<C, N>::forward(self.local, at), len))
+     }
+ 
+     /// Count `n` more bytes written at the tail; `false`, and nothing counted,

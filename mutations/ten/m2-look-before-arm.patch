@@ -1,0 +1,15 @@
+diff --git a/lib/blockring/transport/src/stream.rs b/lib/blockring/transport/src/stream.rs
+index f6c63971b..81f26e163 100644
+--- a/lib/blockring/transport/src/stream.rs
++++ b/lib/blockring/transport/src/stream.rs
+@@ -246,8 +246,9 @@ impl<const C: u32, const N: usize> Consumer<C, N> {
+     /// Ask to be rung once the producer publishes, then read its tail again:
+     /// what is ready, and 0 is safe to sleep on.
+     pub fn arm<W: Word>(&mut self, page: &[W; N]) -> Result<u32, Violation> {
++        let ready = self.ready(page);
+         word(page, self.place.data).swap(1, ARM);
+-        self.ready(page)
++        ready
+     }
+ }
+ 

@@ -1,0 +1,14 @@
+diff --git a/lib/blockring/transport/src/stream.rs b/lib/blockring/transport/src/stream.rs
+index f6c63971b..7f426258a 100644
+--- a/lib/blockring/transport/src/stream.rs
++++ b/lib/blockring/transport/src/stream.rs
+@@ -174,7 +174,8 @@ impl<const C: u32, const N: usize> Producer<C, N> {
+         }
+         word(page, self.place.tail).store(self.local, PUBLISH);
+         self.published = self.local;
+-        word(page, self.place.data).swap(0, WAKE) != 0
++        word(page, self.place.data).swap(0, WAKE);
++        true
+     }
+ 
+     /// Ask to be rung once the consumer releases, then read its head again:

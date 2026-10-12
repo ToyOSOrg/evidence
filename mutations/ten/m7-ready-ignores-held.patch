@@ -1,0 +1,13 @@
+diff --git a/lib/blockring/transport/src/stream.rs b/lib/blockring/transport/src/stream.rs
+index f6c63971b..0a9192f3c 100644
+--- a/lib/blockring/transport/src/stream.rs
++++ b/lib/blockring/transport/src/stream.rs
+@@ -210,7 +210,7 @@ impl<const C: u32, const N: usize> Consumer<C, N> {
+         let released = self.released;
+         let published =
+             Place::<C, N>::reach(tail, |tail| Place::<C, N>::distance(released, tail), Violation::TailPastDepth)?;
+-        self.ready = published.saturating_sub(Place::<C, N>::distance(self.released, self.local));
++        self.ready = published;
+         Ok(self.ready)
+     }
+ 
