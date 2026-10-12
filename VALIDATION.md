@@ -388,3 +388,13 @@ CTR boundaries, both round counts, the final counter pair, each GHASH batch
 lane/bit and partial batches. Two mutation controls target CTR counters and
 GHASH powers. Native execution, mutation detection, performance and focused AES
 timing are required before this candidate is accepted. No speedup is claimed.
+
+
+## Parent-workspace compatibility
+
+`tools/check_workspace.py` verifies an isolated `lib/crypto` path dependency
+inside a parent workspace, with no Git metadata and a separate target directory.
+Default no_std core and optional rustls provider builds pass using an offline,
+locked workspace resolution. Normal dependency trees exclude ring/aws-lc; all
+NOTICE fixture hashes match. Logs are in `evidence/current/workspace-integration/`.
+ToyOS custom-target and runtime integration are still separate gates.
