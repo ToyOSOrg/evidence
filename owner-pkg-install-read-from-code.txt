@@ -1,0 +1,40 @@
+# The owner's `pkg install <url>` under `cargo run` on main, read against the code at ab655a1159
+
+## His console (the lines the coordinator passed on; QEMU, main)
+[78.073 terminal] pkg: cannot read https://github.com/Japabu/gbae/releases/download/SHA256SUMS: entity not found
+[109.774 terminal] usage: pkg install <archive> [--yes] | pkg remove <name> | pkg list
+
+## pkg takes a filesystem path and reads SHA256SUMS from its parent directory
+$ grep -n ... system/pkg/src/main.rs
+28:const SUMS: &str = "SHA256SUMS";
+34:        ["install", file] => install(Path::new(file), false),
+35:        ["install", file, ASSUME_YES] | [ASSUME_YES, "install", file] => {
+36:            install(Path::new(file), true)
+41:            "usage: pkg install <archive> [{ASSUME_YES}] | pkg remove <name> | pkg list"
+53:fn install(file: &Path, assume_yes: bool) -> Result<(), String> {
+59:    let beside = file.parent().unwrap_or(Path::new("/")).join(SUMS);
+63:    let sums_text = fs::read_to_string(&beside)
+
+## Its row holds nothing: no netstack connector, so it could not fetch if it tried
+$ grep -n -B2 "^pkg = " images/system.toml
+45-# The installer. It holds nothing: it writes under `/apps` because `/apps` is
+46-# writable to it, and a row that gave it more would make that untrue.
+47:pkg = {}
+
+## Path::new("https://github.com/Japabu/gbae/releases/download/v0.2.0-toyos-x86_64.tar.gz").parent().join("SHA256SUMS"), as std computes it on any host
+$ rustc main.rs && ./pathprobe   (the two lines of install() above, on the host)
+fn main() {
+    let p = std::path::Path::new("https://github.com/Japabu/gbae/releases/download/v0.2.0-toyos-x86_64.tar.gz");
+    println!("{}", p.parent().unwrap_or(std::path::Path::new("/")).join("SHA256SUMS").display());
+}
+https://github.com/Japabu/gbae/releases/download/SHA256SUMS
+EXIT=0
+
+## Where the asset is: its tag is a path segment of its own
+$ gh api repos/Japabu/gbae/releases/tags/v0.2.0 --jq ".assets[] | .browser_download_url + \" \" + (.size|tostring)"
+https://github.com/Japabu/gbae/releases/download/v0.2.0/gbae-v0.2.0-linux-x86_64.tar.gz 1723371
+https://github.com/Japabu/gbae/releases/download/v0.2.0/gbae-v0.2.0-macos-universal.tar.gz 1128216
+https://github.com/Japabu/gbae/releases/download/v0.2.0/gbae-v0.2.0-toyos-x86_64.tar.gz 604872
+https://github.com/Japabu/gbae/releases/download/v0.2.0/gbae-v0.2.0-windows-x86_64.zip 474563
+https://github.com/Japabu/gbae/releases/download/v0.2.0/SHA256SUMS 394
+EXIT=0

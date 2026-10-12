@@ -1,0 +1,124 @@
+# Servo nightly 2026-10-11, x86_64-linux-gnu: what a Servo package weighs
+# ToyOS head: ab655a1159 (origin/main when measured). Host tools: gh, curl, shasum, gzip, tar, readelf (binutils).
+
+$ gh release view -R servo/servo-nightly-builds 2026-10-11 --json assets -q ".assets[] | \"\(.name) \(.size)\""
+servo-2026-10-11-src-vendored.tar.gz 377220049
+servo-aarch64-android.aar 39915377
+servo-aarch64-android.aar.sha256 91
+servo-aarch64-android.apk 123910596
+servo-aarch64-android.apk.sha256 91
+servo-aarch64-apple-darwin.dmg 111564106
+servo-aarch64-apple-darwin.dmg.sha256 96
+servo-aarch64-linux-gnu.tar.gz 48249904
+servo-aarch64-linux-gnu.tar.gz.sha256 96
+servo-aarch64-linux-ohos.hap 95866416
+servo-aarch64-linux-ohos.hap.sha256 94
+servo-aarch64-linux-ohos.so 124009768
+servo-aarch64-linux-ohos.so.sha256 93
+servo-x86_64-apple-darwin.dmg 114027314
+servo-x86_64-apple-darwin.dmg.sha256 95
+servo-x86_64-linux-gnu.tar.gz 49366820
+servo-x86_64-linux-gnu.tar.gz.sha256 95
+servo-x86_64-windows-msvc.exe 114345867
+servo-x86_64-windows-msvc.exe.sha256 95
+servo-x86_64-windows-msvc.zip 103245828
+servo-x86_64-windows-msvc.zip.sha256 95
+EXIT=0
+
+$ curl -sSL -A "toyos-build (https://github.com/ToyOSOrg/ToyOS)" -o servo.tar.gz <release>/servo-x86_64-linux-gnu.tar.gz  (downloaded earlier in this session)
+$ shasum -a 256 servo.tar.gz; and the release's own .sha256
+bae6588943720ee3517c10d6faeb7963845ce82facaa18f9fb233b7c3ad4713a  servo.tar.gz
+EXIT=0
+bae6588943720ee3517c10d6faeb7963845ce82facaa18f9fb233b7c3ad4713a  servo-x86_64-linux-gnu.tar.gzEXIT=0
+
+$ gzip -dc servo.tar.gz | wc -c        # the inflated tar, the bytes pkg holds in memory today
+ 138434560
+EXIT=0
+
+$ tar tvzf servo.tar.gz
+drwxr-xr-x  0 root   root        0 Jan  1  1970 servo/resources/
+-rw-r--r--  0 root   root      316 Jan  1  1970 servo/resources/Credits.rtf.mako
+-rw-r--r--  0 root   root     1212 Jan  1  1970 servo/resources/cert-wpt-only
+drwxr-xr-x  0 root   root        0 Jan  1  1970 servo/resources/named_resources/
+-rw-r--r--  0 root   root     7022 Jan  1  1970 servo/resources/named_resources/about-memory.html
+-rw-r--r--  0 root   root      876 Jan  1  1970 servo/resources/named_resources/badcert.html
+-rw-r--r--  0 root   root      223 Jan  1  1970 servo/resources/named_resources/crash.html
+-rw-r--r--  0 root   root    32242 Jan  1  1970 servo/resources/named_resources/debugger.js
+-rw-r--r--  0 root   root     3209 Jan  1  1970 servo/resources/named_resources/directory-listing.html
+-rw-r--r--  0 root   root     2326 Jan  1  1970 servo/resources/named_resources/gatt_blocklist.txt
+-rw-r--r--  0 root   root  1949725 Jan  1  1970 servo/resources/named_resources/hsts_preload.fstmap
+-rw-r--r--  0 root   root     6823 Jan  1  1970 servo/resources/named_resources/json-viewer.html
+-rw-r--r--  0 root   root      135 Jan  1  1970 servo/resources/named_resources/neterror.html
+-rw-r--r--  0 root   root   105868 Jan  1  1970 servo/resources/named_resources/public_domains.txt
+-rw-r--r--  0 root   root      144 Jan  1  1970 servo/resources/named_resources/rippy.png
+-rw-r--r--  0 root   root     1266 Jan  1  1970 servo/resources/org.servo.Servo.desktop
+-rw-r--r--  0 root   root      313 Jan  1  1970 servo/resources/package-prefs.json
+drwxr-xr-x  0 root   root        0 Jan  1  1970 servo/resources/resource_protocol/
+-rw-r--r--  0 root   root      672 Jan  1  1970 servo/resources/resource_protocol/config.css
+-rw-r--r--  0 root   root    11345 Jan  1  1970 servo/resources/resource_protocol/config.html
+-rw-r--r--  0 root   root  1142906 Jan  1  1970 servo/resources/resource_protocol/license.html
+-rw-r--r--  0 root   root     2000 Jan  1  1970 servo/resources/resource_protocol/newtab.css
+-rw-r--r--  0 root   root      719 Jan  1  1970 servo/resources/resource_protocol/newtab.html
+-rw-r--r--  0 root   root     4235 Jan  1  1970 servo/resources/resource_protocol/preferences.html
+-rw-r--r--  0 root   root     4109 Jan  1  1970 servo/resources/resource_protocol/servo-color-negative-no-container.svg
+-rw-r--r--  0 root   root     4109 Jan  1  1970 servo/resources/resource_protocol/servo-color-positive-no-container.svg
+-rw-r--r--  0 root   root    61460 Jan  1  1970 servo/resources/servo.icns
+-rw-r--r--  0 root   root    29332 Jan  1  1970 servo/resources/servo.ico
+-rw-r--r--  0 root   root     2099 Jan  1  1970 servo/resources/servo.svg
+-rw-r--r--  0 root   root    10876 Jan  1  1970 servo/resources/servo_1024.png
+-rw-r--r--  0 root   root     1144 Jan  1  1970 servo/resources/servo_64.png
+-rw-r--r--  0 root   root      170 Jan  1  1970 servo/resources/wpt-prefs.json
+-rwxr-xr-x  0 root   root 135015640 Jan  1  1970 servo/servoshell
+EXIT=0
+
+$ readelf -d servo/servoshell   (NEEDED lines are what the Linux build links dynamically)
+
+Dynamic section at offset 0x6614c18 contains 46 entries:
+  Tag        Type                         Name/Value
+ 0x0000000000000001 (NEEDED)             Shared library: [libudev.so.1]
+ 0x0000000000000001 (NEEDED)             Shared library: [libgstplay-1.0.so.0]
+ 0x0000000000000001 (NEEDED)             Shared library: [libgstvideo-1.0.so.0]
+ 0x0000000000000001 (NEEDED)             Shared library: [libgstbase-1.0.so.0]
+ 0x0000000000000001 (NEEDED)             Shared library: [libgstreamer-1.0.so.0]
+ 0x0000000000000001 (NEEDED)             Shared library: [libgobject-2.0.so.0]
+ 0x0000000000000001 (NEEDED)             Shared library: [libglib-2.0.so.0]
+ 0x0000000000000001 (NEEDED)             Shared library: [libgstwebrtc-1.0.so.0]
+ 0x0000000000000001 (NEEDED)             Shared library: [libgstsdp-1.0.so.0]
+ 0x0000000000000001 (NEEDED)             Shared library: [libgstaudio-1.0.so.0]
+ 0x0000000000000001 (NEEDED)             Shared library: [libgstapp-1.0.so.0]
+ 0x0000000000000001 (NEEDED)             Shared library: [libgstgl-1.0.so.0]
+ 0x0000000000000001 (NEEDED)             Shared library: [libgio-2.0.so.0]
+ 0x0000000000000001 (NEEDED)             Shared library: [libstdc++.so.6]
+ 0x0000000000000001 (NEEDED)             Shared library: [libz.so.1]
+ 0x0000000000000001 (NEEDED)             Shared library: [libfontconfig.so.1]
+ 0x0000000000000001 (NEEDED)             Shared library: [libgcc_s.so.1]
+ 0x0000000000000001 (NEEDED)             Shared library: [libm.so.6]
+ 0x0000000000000001 (NEEDED)             Shared library: [libc.so.6]
+ 0x0000000000000001 (NEEDED)             Shared library: [ld-linux-x86-64.so.2]
+ 0x000000000000001e (FLAGS)              BIND_NOW
+ 0x000000006ffffffb (FLAGS_1)            Flags: NOW PIE
+ 0x0000000000000015 (DEBUG)              0x0
+ 0x0000000000000007 (RELA)               0xc6a8
+ 0x0000000000000008 (RELASZ)             4140432 (bytes)
+ 0x0000000000000009 (RELAENT)            24 (bytes)
+ 0x000000006ffffff9 (RELACOUNT)          170984
+ 0x0000000000000017 (JMPREL)             0x3ff438
+ 0x0000000000000002 (PLTRELSZ)           6576 (bytes)
+ 0x0000000000000003 (PLTGOT)             0x66197e0
+ 0x0000000000000014 (PLTREL)             RELA
+ 0x0000000000000006 (SYMTAB)             0x340
+ 0x000000000000000b (SYMENT)             24 (bytes)
+ 0x0000000000000005 (STRTAB)             0x7258
+ 0x000000000000000a (STRSZ)              21577 (bytes)
+ 0x000000006ffffef5 (GNU_HASH)           0x6df8
+ 0x0000000000000019 (INIT_ARRAY)         0x6375288
+ 0x000000000000001b (INIT_ARRAYSZ)       176 (bytes)
+ 0x000000000000001a (FINI_ARRAY)         0x6375270
+ 0x000000000000001c (FINI_ARRAYSZ)       24 (bytes)
+ 0x000000000000000c (INIT)               0x6372440
+ 0x000000000000000d (FINI)               0x637245c
+ 0x000000006ffffff0 (VERSYM)             0x62b0
+ 0x000000006ffffffe (VERNEED)            0x6aa4
+ 0x000000006fffffff (VERNEEDNUM)         7
+ 0x0000000000000000 (NULL)               0x0
+EXIT=0

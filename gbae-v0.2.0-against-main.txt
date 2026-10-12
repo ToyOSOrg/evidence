@@ -1,0 +1,140 @@
+# Whether the published gbae v0.2.0 archive can run on main: read from code and release metadata, not run.
+# ToyOS head: ab655a1159. gbae head: Japabu/gbae master.
+
+## The SDK gbae v0.2.0 was built against
+$ gh api repos/Japabu/gbae/contents/Cargo.lock --jq .content | base64 -d   (the toyos crates)
+name = "toyos"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+--
+name = "toyos-abi"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+--
+name = "toyos-window"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+EXIT=0
+$ gh api repos/Japabu/gbae/commits/master --jq ".sha + \" \" + .commit.committer.date"
+bfe8dabf88e19c2b1e7f39a24bc6e66d5a692ed8 2026-09-25T23:09:54Z
+EXIT=0
+
+## Its release workflow installs the toolchain this way
+$ gh api repos/Japabu/gbae/contents/.github/actions/toyos-toolchain/action.yml --jq .content | base64 -d
+name: ToyOS toolchain
+description: Installs the ToyOS Rust toolchain release that matches the toyos-abi crate in Cargo.lock as `toyos`, points cargo at its linker and exports the release tag as TOYOS_TOOLCHAIN
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        sdk=$(grep -A1 '^name = "toyos-abi"$' Cargo.lock | sed -n 's/^version = "\(.*\)"/\1/p')
+        tag=$(gh release download --repo ToyOSOrg/ToyOS "toolchain-linux-x86_64-sdk-$sdk" --pattern TOOLCHAIN --output - | sed -n 's/^toolchain //p')
+        echo "toolchain: $tag"
+        mkdir -p "$RUNNER_TEMP/toyos"
+        gh release download --repo ToyOSOrg/ToyOS "$tag" --pattern toyos-toolchain.tar.zst --output - | zstd -dc | tar -C "$RUNNER_TEMP/toyos" -x
+        stage2="$RUNNER_TEMP/toyos/x86_64-unknown-linux-gnu/stage2"
+        rustup toolchain link toyos "$stage2"
+        echo "CARGO_TARGET_X86_64_UNKNOWN_TOYOS_LINKER=$stage2/bin/toyos-ld" >> "$GITHUB_ENV"
+        echo "TOYOS_TOOLCHAIN=$tag" >> "$GITHUB_ENV"
+        rustc +toyos -vV
+EXIT=0
+
+## What the current toolchain release carries (no .tar.zst, and no toyos-ld: #726 deleted it)
+$ gh release view -R ToyOSOrg/ToyOS toolchain-linux-x86_64-ea809de0054b8b64 --json assets -q ".assets[] | \"\(.name) \(.size)\""
+toyos-toolchain.tar.gz 460242927
+EXIT=0
+$ gh release download -R ToyOSOrg/ToyOS toolchain-linux-x86_64-sdk-0.64.0 --pattern TOOLCHAIN --output -
+toolchain toolchain-linux-x86_64-ea809de0054b8b64
+host x86_64-unknown-linux-gnu
+glibc 2.39
+toyos 528b9a6c2040d3d6ebdec679a04bb4f7bc907eeb
+rust c1b88133ec79fc0902d4031d0c58a00b488842b9
+toyos-abi 0.64.0+da088de4164b6b90
+toyos-keymap 0.4.0+26f77937facc9dc7
+toyos-font 0.4.0+aa68ef3fb05f7d9e
+toyos 0.76.0+e93f20a594fc4277
+toyos-window 0.79.0+d0fcb6db37a44ccf
+toyos-osrelease 0.2.0+1926294bf2af2d49
+EXIT=0
+
+## Syscall numbers then and now: main on the day gbae v0.2.0 was released (d4e9f8b09, toyos-abi/src/syscall.rs) against ab655a1159 (sdk/abi/src/syscall.rs)
+$ diff <(git show d4e9f8b09:toyos-abi/src/syscall.rs | grep -E "^pub const SYS_[A-Z_0-9]+: u64 = [0-9]+;" | sort) <(grep -E ... sdk/abi/src/syscall.rs | sort)
+1a2
+> pub const SYS_ACPI: u64 = 128;
+3d3
+< pub const SYS_CLOCK: u64 = 8;
+7a8
+> pub const SYS_COUNTERS: u64 = 124;
+10a12
+> pub const SYS_DEVICE_BAR_MAP: u64 = 117;
+11a14,17
+> pub const SYS_DEVICE_DMA_ALLOC: u64 = 118;
+> pub const SYS_DEVICE_DMA_MAP: u64 = 122;
+> pub const SYS_DEVICE_DMA_UNMAP: u64 = 123;
+> pub const SYS_DEVICE_INVENTORY: u64 = 121;
+45,47d50
+< pub const SYS_NIC_RX_DONE: u64 = 79;
+< pub const SYS_NIC_RX_POLL: u64 = 78;
+< pub const SYS_NIC_TX: u64 = 80;
+48a52,53
+> pub const SYS_PARTITION_READ: u64 = 119;
+> pub const SYS_PARTITION_WRITE: u64 = 120;
+50a56
+> pub const SYS_PORT_BADGE: u64 = 126;
+51a58
+> pub const SYS_PORT_MINT: u64 = 125;
+53d59
+< pub const SYS_PROCESS_OPEN: u64 = 110;
+61a68
+> pub const SYS_REBOOT: u64 = 116;
+72a80
+> pub const SYS_STAT: u64 = 16;
+78a87
+> pub const SYS_TRACE_READ: u64 = 127;
+EXIT=1 (1: they differ)
+
+## What number 8 served then, and what an unassigned number answers now
+$ git show d4e9f8b09:toyos-abi/src/syscall.rs | sed -n 1008,1015p
+    syscall(SYS_RANDOM, buf.as_mut_ptr() as u64, buf.len() as u64, 0, 0);
+}
+
+/// Nanoseconds since boot (monotonic clock).
+pub fn clock_nanos() -> u64 {
+    syscall(SYS_CLOCK, 0, 0, 0, 0)
+}
+
+$ sed -n 560,570p kernel/src/syscall/dispatch.rs
+        }
+        SYS_QUERY_MODULES => {
+            let Some(mut buf) = ctx.user_bytes_mut(UserAddr::new(a1), a2) else { return bad_addr };
+            sys_query_modules(&mut buf)
+        }
+        // Feature-gated, not capability-checked: a shipping kernel has no SYS_DEBUG
+        // arm, so the number falls to the same default InvalidArgument as any unassigned one.
+        #[cfg(feature = "test-actuators")]
+        SYS_DEBUG => match a1 {
+            DA::PANIC => panic!("SYS_DEBUG: kernel panic triggered by userspace"),
+            // A record and not the caller's own line: the panic path drains records, and a
+$ git log --oneline -S"SYS_CLOCK: u64 = 8" origin/main
+88a17feee log: a record ring per program, a clock page, one console writer, and a kernel that waits on nobody
+52eb78e74 ToyOS
+$ sed -n 684,690p kernel/src/syscall/dispatch.rs   (the match's last arm: any unassigned number)
+        // kernel decides each access by what its address is.
+        SYS_ACPI => sys_acpi(&ctx, RawHandle(a1 as u32), a2, a3),
+        SYS_DEVICE_REG_READ => sys_device_reg(RawHandle(a1 as u32), a2, a3, None),
+        SYS_DEVICE_REG_WRITE => sys_device_reg(RawHandle(a1 as u32), a2, a3, Some(a4)),
+        _ => SyscallError::InvalidArgument.to_u64(),
+    } })();
+
+
+## What called it: std's Instant::now in the rust fork d4e9f8b09 pinned (ToyOSOrg/rust 7191181532)
+$ git show 7191181532531e03c69f58c062cafa8dbe62a024:library/std/src/sys/time/toyos.rs | sed -n 11,14p
+impl Instant {
+    pub fn now() -> Instant {
+        Instant(Duration::from_nanos(toyos_abi::syscall::clock_nanos()))
+    }
+EXIT=0

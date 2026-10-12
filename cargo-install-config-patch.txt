@@ -1,0 +1,61 @@
+# Does `cargo install --git <url> --rev <commit>` honour a [patch] given with --config?
+# The package builder rests on it: a package is built from its own pinned commit with the tree's [patch] table applied.
+# ToyOS head: ab655a1159. <scratch> is a scratch directory; <tmp> the host temp directory.
+$ cargo --version
+cargo 1.98.1 (797e8a9bc 2026-08-05)
+
+## The probe: a one-file binary `probeapp` depending on crates.io `itoa = "1"`, committed in a local git repository at <scratch>/app
+$ cat app/Cargo.toml
+[package]
+name = "probeapp"
+version = "0.1.0"
+edition = "2021"
+[dependencies]
+itoa = "1"
+$ cat app/src/main.rs
+fn main() { println!("{}", itoa::Buffer::new().format(7)); }
+$ git -C app rev-parse HEAD
+9c8f538da2673159fee22827c677204fa5bfacd6
+## A replacement itoa 1.0.99 whose lib is `compile_error!`, so building it is the proof the patch applied
+$ cat fake-itoa/Cargo.toml fake-itoa/src/lib.rs
+[package]
+name = "itoa"
+version = "1.0.99"
+edition = "2021"
+compile_error!("the patched itoa was built");
+
+## Arm: with --config patch
+$ cargo install --git file://<scratch>/app --rev 9c8f538da2673159fee22827c677204fa5bfacd6 --root <scratch>/root --config 'patch.crates-io.itoa.path="<scratch>/fake-itoa"'
+    Updating git repository `file://<scratch>/app`
+  Installing probeapp v0.1.0 (file://<scratch>/app?rev=9c8f538da2673159fee22827c677204fa5bfacd6#9c8f538d)
+    Updating crates.io index
+     Locking 1 package to latest compatible version
+   Compiling itoa v1.0.99 (<scratch>/fake-itoa)
+error: the patched itoa was built
+ --> <scratch>/fake-itoa/src/lib.rs:1:1
+  |
+1 | compile_error!("the patched itoa was built");
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: could not compile `itoa` (lib) due to 1 previous error
+error: failed to compile `probeapp v0.1.0 (file://<scratch>/app?rev=9c8f538da2673159fee22827c677204fa5bfacd6#9c8f538d)`, intermediate artifacts can be found at `<tmp>/cargo-install`.
+To reuse those artifacts with a future compilation, set the environment variable `CARGO_BUILD_BUILD_DIR` to that path.
+EXIT=101
+
+## Control: the same install without the patch
+$ cargo install --git file://<scratch>/app --rev 9c8f538da2673159fee22827c677204fa5bfacd6 --root <scratch>/root
+    Updating git repository `file://<scratch>/app`
+  Installing probeapp v0.1.0 (file://<scratch>/app?rev=9c8f538da2673159fee22827c677204fa5bfacd6#9c8f538d)
+    Updating crates.io index
+     Locking 1 package to latest compatible version
+    Blocking waiting for file lock on package cache
+   Compiling itoa v1.0.18
+   Compiling probeapp v0.1.0 (~/.cargo/git/checkouts/app-c3ed48add3bf7f5b/9c8f538)
+    Finished `release` profile [optimized] target(s) in 0.88s
+  Installing <scratch>/root/bin/probeapp
+   Installed package `probeapp v0.1.0 (file://<scratch>/app?rev=9c8f538da2673159fee22827c677204fa5bfacd6#9c8f538d)` (executable `probeapp`)
+warning: be sure to add `<scratch>/root/bin` to your PATH to be able to run the installed binaries
+EXIT=0
+$ <scratch>/root/bin/probeapp
+7
+EXIT=0
