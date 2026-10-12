@@ -415,3 +415,20 @@ an isolated, hash-verified official target sysroot; `vaes-msrv/` records it.
 `vaes-review-followup/` contains the full automated review and dispositions.
 `vaes-packaging/` records successful package verification and documentation.
 None of these closes the remaining independent review or deployment gates.
+
+
+## Native VAES results
+
+`evidence/current/vaes-native/` contains accepted native results, superseding
+pending execution statements above for the tested pins. The test-only review
+follow-up at 4d6cec3 passes 56 tests per host/configuration, 18 actual mutation
+failures on t14 and 14 on amd, with exact source restoration. Native matched
+16 KiB AES seal improves 1.730x/1.818x on t14 and leaves AMD fallback performance
+essentially unchanged. It still trails ring by 1.798x/1.671x on t14. Both full
+benchmark inventories (12,600 rows total) and all focused AES timing samples
+(900,000 per host) validate without filtering. Maximum crypto |t| is 2.098241
+on t14 and 1.179696 on amd, with strongly detected deliberate controls.
+
+The first native test failure is retained with its diagnosis and repair. Review,
+build and timing evidence remain scoped to their precise source/compiler/host;
+none establishes blanket security parity or a qualified ToyOS integration.

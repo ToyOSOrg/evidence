@@ -12,13 +12,14 @@ from collections import defaultdict
 from pathlib import Path
 
 
-def analyze(path, repeats=3):
+def analyze(path, repeats=3, profile='standard'):
     assert repeats >= 1
     groups = defaultdict(list)
     seen = set()
     run = None
     algorithms = ('AES-128-GCM', 'AES-256-GCM', 'ChaCha20-Poly1305')
-    sizes = (0, 1, 15, 16, 17, 64, 1024, 16384)
+    sizes = {'standard': (0, 1, 15, 16, 17, 64, 1024, 16384),
+             'edges': (0, 63, 64, 65, 127, 128, 129, 255, 256, 257, 511, 512, 513, 1024, 16384)}[profile]
     operations = ('seal', 'open', 'reject', 'key-setup')
     for line in path.read_text().splitlines():
         if line.startswith('=== run ') and ', load ' in line:
@@ -73,5 +74,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('path', type=Path)
     parser.add_argument('--runs', type=int, default=3)
+    parser.add_argument('--profile', choices=('standard', 'edges'), default='standard')
     args = parser.parse_args()
-    print(json.dumps(analyze(args.path, args.runs), indent=2))
+    print(json.dumps(analyze(args.path, args.runs, args.profile), indent=2))

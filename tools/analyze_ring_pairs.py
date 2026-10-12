@@ -33,6 +33,15 @@ def analyze_pairs(root, machine, series='sse'):
         }
         commits = {'candidate': '2ca7abfc3687c1f9e35924ed5dbd3127f1c5f81f',
                    'baseline': 'afcc50b20f7d50fe128dc211589d5f52a1233c57'}
+    elif series == 'vaes':
+        runs_by_host = {
+            't14': tuple(zip(range(72, 78), ('candidate', 'baseline', 'baseline', 'candidate', 'candidate', 'baseline'))),
+            'amd': tuple(zip(range(61, 67), ('candidate', 'baseline', 'baseline', 'candidate', 'candidate', 'baseline'))),
+        }
+        commits = {
+            'candidate': '220f97867d9e4427dfb07d291df905dd0927e3b3' if machine == 't14' else '3985c25568194d0ccf4c042bf029a7092b20ff01',
+            'baseline': '82ae7f9d316795ea0ea1c18e912b4587e1ac74cf',
+        }
     else:
         assert series == 'sse'
 
@@ -87,6 +96,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('root', type=Path)
     parser.add_argument('machine', choices=RUNS)
-    parser.add_argument('--series', choices=('sse', 'avx2'), default='sse')
+    parser.add_argument('--series', choices=('sse', 'avx2', 'vaes'), default='sse')
     args = parser.parse_args()
     print(json.dumps(analyze_pairs(args.root, args.machine, args.series), indent=2))

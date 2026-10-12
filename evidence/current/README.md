@@ -309,3 +309,10 @@ and f55746d1a. It contains full tests, controls, source-restoration checks,
 benchmarks, compressed raw timing and automated review D. See its README for
 source attribution and remaining limits. The new `vaes-candidate/` is a later
 source change and requires its own native runs.
+
+
+## Native VAES follow-up
+
+`vaes-native/` records the native eight-block AES/GHASH results and the 56-test
+review follow-up, superseding earlier pending statuses. All raw timing samples
+are retained, and the first test fixture failure remains in `vaes-first-native/`.

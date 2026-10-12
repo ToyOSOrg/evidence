@@ -30,6 +30,16 @@ fn main() {
         .nth(1)
         .map_or(1024, |n| n.parse::<usize>().unwrap());
     assert!((1..=65536).contains(&iterations));
+    let profile = std::env::args().nth(2).unwrap_or_else(|| "standard".into());
+    assert!(std::env::args().len() <= 3);
+    let sizes: &[usize] = match profile.as_str() {
+        "standard" => &[0, 1, 15, 16, 17, 64, 1024, 16384],
+        "edges" => &[
+            0, 63, 64, 65, 127, 128, 129, 255, 256, 257, 511, 512, 513, 1024, 16384,
+        ],
+        _ => panic!("unknown size profile"),
+    };
+    println!("# size-profile={profile}");
     println!(
         "# arch={} os={} ring=0.17.14 dispatch=stock timing=native-host frequency=uncontrolled affinity=uncontrolled",
         std::env::consts::ARCH,
@@ -47,7 +57,7 @@ fn main() {
     .into_iter()
     .enumerate()
     {
-        for size in [0, 1, 15, 16, 17, 64, 1024, 16384] {
+        for &size in sizes {
             let count = iterations.min((16 * 1024 * 1024 / size.max(1)).max(1));
             let mut ciphertext = vec![0x5a; size];
             let (nonce, tag) = sealer(alg, [0; 12]).seal(AAD, &mut ciphertext).unwrap();

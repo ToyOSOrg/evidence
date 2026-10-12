@@ -11,8 +11,8 @@ Correctness tests pass on native ARM64 macOS and both x86 Linux benches.
 ARM AES/GHASH scheduling and hosted x86 AES/GHASH batching have been improved.
 Matched Linux measurements still trail stock ring. Native AVX2 ChaCha tests,
 controls and focused timing pass; its 16 KiB throughput improves about 2x.
-An eight-block VAES/VPCLMUL candidate awaits native validation; AVX-512 remains
-open. Independent arithmetic review and deployment
+Native eight-block VAES/VPCLMUL checks also pass; 16 KiB AES seal improves
+1.73x/1.82x on t14, but remains slower than ring. AVX-512 remains open. Independent arithmetic review and deployment
 qualification remain open. See [VALIDATION.md](VALIDATION.md) for the
 design review, acceptance gaps and exact evidence. Passing vectors does not
 establish that this implementation is safer than ring.
