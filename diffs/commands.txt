@@ -1,0 +1,19 @@
+Every file here was produced by these commands, run from the metal staging directory of PR #873, so every image path is
+relative to it. Each script is read-only on the images it is given. Exit codes: exits.txt.
+
+Same selection staged twice from one clean committed tree in one checkout (a: this round, 09:20-09:22 UTC; b: the image a
+judge rebuilt in place from the same checkout, 08:58-08:59 UTC; p0's a is the T14 staging of 08:10 UTC):
+  python3 -I imgdiff.py base-t14/scout-tlb-base/image.img base-amd/scout-tlb-base/image.img          > p0-base-scout-tlb-base.txt   (d4c2f8ebe)
+  python3 -I imgdiff.py amd2/base-amd/latencycase/image.img base-amd/latencycase/image.img           > p1-base-latencycase.txt      (d4c2f8ebe)
+  python3 -I imgdiff.py amd2/scout-amd/latencycase/image.img scout-amd/latencycase/image.img         > p2-scout-latencycase.txt     (9b30f5e28)
+  python3 -I imgdiff.py amd2/scout-amd/scout-tlb-base/image.img scout-amd/scout-tlb-base/image.img   > p3-scout-scout-tlb-base.txt  (9b30f5e28)
+  python3 -I imgdiff.py amd2/head-amd/shared-debug/image.img head-amd/shared-debug/image.img         > p4-head-shared-debug.txt     (363e0e841)
+  python3 -I imgdiff.py amd2/head-amd/testcases/image.img head-amd/testcases/image.img               > p5-head-testcases.txt        (363e0e841)
+
+One commit, 363e0e841, staged in two checkouts, each with its own target/:
+  python3 -I imgdiff.py amd2/head-amd/shared-debug/image.img head-t14/shared-debug/image.img         > p6-head-two-checkouts.txt
+  python3 -I pehdr.py   amd2/head-amd/shared-debug/image.img head-t14/shared-debug/image.img         > p6-loader-pe.txt
+  python3 -I keyfind.py <image> <checkout of a> <checkout of b>, for each of the two images          > keyfind.txt
+
+keyfind.py derives each checkout's throwaway Ed25519 public key from its target/image-signing-throwaway and prints only
+counts and offsets, never a key.
