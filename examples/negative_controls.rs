@@ -112,6 +112,22 @@ fn main() {
             "chacha::tests::dispatched_streams_preserve_counter_carries_and_batch_tails",
         ),
         (
+            "x86_vaes_counter",
+            "src/arch/x86_64/vaes.rs",
+            "let first = i as u32 * 8 + 2;",
+            "let first = i as u32 * 8 + 3;",
+            "lib",
+            "arch::x86_64::vaes::tests::vector_batches_match_legacy_at_unaligned_boundaries",
+        ),
+        (
+            "x86_vpclmul_power",
+            "src/arch/x86_64/vaes.rs",
+            "let h8 = super::multiply_vectors(h4, h4);",
+            "let h8 = super::multiply_vectors(h4, h3);",
+            "lib",
+            "arch::x86_64::vaes::tests::vector_batches_match_legacy_at_unaligned_boundaries",
+        ),
+        (
             "provider_sequence",
             "src/rustls_provider/cipher.rs",
             "if seq != self.next || seq == u64::MAX",
@@ -169,6 +185,17 @@ fn main() {
         #[cfg(target_arch = "x86_64")]
         if name == "x86_chacha_counter" && !std::is_x86_feature_detected!("avx2") {
             println!("{name}: requires OS-enabled AVX2; skipped");
+            continue;
+        }
+        #[cfg(target_arch = "x86_64")]
+        if matches!(name, "x86_vaes_counter" | "x86_vpclmul_power")
+            && !(std::is_x86_feature_detected!("avx2")
+                && std::is_x86_feature_detected!("vaes")
+                && std::is_x86_feature_detected!("vpclmulqdq")
+                && std::is_x86_feature_detected!("aes")
+                && std::is_x86_feature_detected!("pclmulqdq"))
+        {
+            println!("{name}: requires OS-enabled VAES/VPCLMUL; skipped");
             continue;
         }
         let path = root.join(file);

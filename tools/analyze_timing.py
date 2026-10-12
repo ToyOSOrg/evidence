@@ -16,6 +16,7 @@ from pathlib import Path
 
 
 FOCUSED = ('control_leaky', 'chacha', 'ssh', 'wpa2_hmac')
+AES = ('control_leaky', 'aes128', 'aes256')
 ALL = ('control_leaky', 'sha512', 'hmac', 'hkdf', 'aes128', 'aes256', 'chacha',
        'ssh', 'x25519', 'p256', 'p384', 'ed25519_sign', 'mlkem_decaps',
        'wpa2_pmk', 'wpa2_hmac', 'wpa2_prf')
@@ -101,7 +102,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('path', type=Path)
     parser.add_argument('--count', type=int, default=100000)
-    parser.add_argument('--routines', choices=('focused', 'all'), default='focused')
+    parser.add_argument('--routines', choices=('focused', 'all', 'aes'), default='focused')
     args = parser.parse_args()
     print(json.dumps(analyze(args.path, args.count,
-                             ALL if args.routines == 'all' else FOCUSED), indent=2))
+                             {'all': ALL, 'focused': FOCUSED, 'aes': AES}[args.routines]), indent=2))

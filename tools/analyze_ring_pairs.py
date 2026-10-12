@@ -23,12 +23,24 @@ COMMITS = {'candidate': 'afcc50b20f7d50fe128dc211589d5f52a1233c57',
            'baseline': 'af822f5cce8921bea903fd8acbba5a9fac473f6e'}
 
 
-def analyze_pairs(root, machine):
+def analyze_pairs(root, machine, series='sse'):
+    runs_by_host = RUNS
+    commits = COMMITS
+    if series == 'avx2':
+        runs_by_host = {
+            't14': tuple(zip(range(41, 47), ('candidate', 'baseline', 'baseline', 'candidate', 'candidate', 'baseline'))),
+            'amd': tuple(zip(range(52, 58), ('candidate', 'baseline', 'baseline', 'candidate', 'candidate', 'baseline'))),
+        }
+        commits = {'candidate': '2ca7abfc3687c1f9e35924ed5dbd3127f1c5f81f',
+                   'baseline': 'afcc50b20f7d50fe128dc211589d5f52a1233c57'}
+    else:
+        assert series == 'sse'
+
     groups, runs = {}, []
-    for number, source in RUNS[machine]:
+    for number, source in runs_by_host[machine]:
         folder = root / f'r{number:04}'
         path = folder / 'output.txt'
-        assert COMMITS[source] in (folder / 'environment.txt').read_text()
+        assert commits[source] in (folder / 'environment.txt').read_text()
         assert (folder / 'exit.txt').read_text().strip() == '=== run 1 exit: 0'
         validated = analyze(path, 1)
         clock = []
@@ -64,7 +76,7 @@ def analyze_pairs(root, machine):
                             for name, ns in medians.items()},
                         'baseline_over_candidate': medians['baseline'] / medians['candidate'],
                         'candidate_over_ring': medians['candidate'] / medians['ring']})
-    return {'machine': machine, 'commits': COMMITS, 'run_order': runs,
+    return {'machine': machine, 'commits': commits, 'run_order': runs,
             'samples_validated': sum(run['samples_validated'] for run in runs),
             'outliers_removed': 0, 'stock_ring_dispatch': True,
             'busy_clock_mhz': frequency, 'clock_resolution_seconds': 1,
@@ -75,5 +87,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('root', type=Path)
     parser.add_argument('machine', choices=RUNS)
+    parser.add_argument('--series', choices=('sse', 'avx2'), default='sse')
     args = parser.parse_args()
-    print(json.dumps(analyze_pairs(args.root, args.machine), indent=2))
+    print(json.dumps(analyze_pairs(args.root, args.machine, args.series), indent=2))

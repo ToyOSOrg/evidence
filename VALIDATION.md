@@ -254,8 +254,8 @@ test as evidence it did not provide.
    Deployment compiler assembly review, representative ARM timing and timing
    of future optimization paths remain open.
 3. **Performance goal unmet.** Matched native Linux measurements still trail
-   stock ring on both x86 hosts. AVX2 ChaCha awaits native validation; VAES and
-   AVX-512 paths remain unimplemented.
+   stock ring on both x86 hosts. AVX2 ChaCha has native evidence; VAES/VPCLMUL awaits native
+   validation and AVX-512 remains unimplemented.
    Existing results retain ring's runtime dispatch; they do not establish
    performance parity or a matched no-AVX comparison.
 4. **Runtime portability not fully qualified.** Linux x86-64 tests execute here.
@@ -343,9 +343,14 @@ Two additional controls target omitted YMM-state permission and a wrong batch
 counter stride. Expanded SSH differential tests cover batch boundaries and
 4 KiB records; stream tests cover IETF exhaustion and 64-bit counter carries.
 ARM dispatched/portable tests and Linux/Windows/UEFI cross-compilation pass.
-These do not execute the new AVX2 path. Native correctness, negative controls,
-paired benchmarks and current-source timing remain necessary before accepting
-this candidate. Previous SSE results remain historical evidence for that source.
+Native results at `2ca7abfc3` are now in `evidence/current/avx2-native/`: both
+hosts pass 50 tests, portable regressions and 14 mutation controls. Twelve
+paired runs contain 12,600 validated rows. At 16 KiB, ChaCha seal is 1.998x
+and 2.100x faster than the prior implementation on t14/amd, while still
+2.785x/3.381x slower than ring. Each host has 1.2 million focused timing
+samples, with maximum crypto |t| 1.724479/1.779339 and strongly detected
+synthetic controls. No samples were removed; these observations do not prove
+constant-time behavior. Previous SSE results remain historical evidence.
 
 ## Provider construction follow-up
 
@@ -360,5 +365,26 @@ are in `evidence/current/provider-inplace/`.
 This addresses the specific provider construction copies observed in those
 builds. It does not broaden the owned-storage wiping contract to arbitrary
 registers, spills, caller arguments, by-value core imports or abort behavior.
-The provider-only zero-storage initialization invariant and current native
-behavior remain subject to review and execution gates.
+At `f55746d1a`, both native hosts pass 50 tests, portable regressions and 14
+mutation controls. Automated review D reports no blocker, with the zero-storage
+initialization invariant still enforced by private call ordering rather than
+types. That hardening remains open. Register residue and OS-state test limits
+are documented in the full review; it is not an external audit.
+
+
+## VAES/VPCLMUL candidate
+
+Hosted x86 GCM can process eight blocks using four 256-bit AES states and four
+pairs of polynomial products. GHASH uses H^8 through H, sums unreduced products
+and reduces once per batch; its byte reflection uses a fixed register shuffle.
+Full batches begin at 128 bytes; tails use the existing AES/CLMUL operations.
+CPUID requires both legacy AES/PCLMUL and VAES/VPCLMUL, after the existing AVX2
+OS-state check. UEFI excludes the module and portable builds refuse admission.
+This changes neither the public key API nor GCM's authentication-before-release.
+
+`evidence/current/vaes-candidate/` holds local checks and full release assembly.
+Two new x86 tests cover admission masks, independent host detection, unaligned
+CTR boundaries, both round counts, the final counter pair, each GHASH batch
+lane/bit and partial batches. Two mutation controls target CTR counters and
+GHASH powers. Native execution, mutation detection, performance and focused AES
+timing are required before this candidate is accepted. No speedup is claimed.

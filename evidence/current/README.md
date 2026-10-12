@@ -300,3 +300,12 @@ filtering. Median 16 KiB seal takes 3.383/3.672/30.032 µs for AES-128-GCM,
 AES-256-GCM and ChaCha20-Poly1305, versus ring 2.082/2.145/8.152 µs. These
 are uncontrolled-clock ARM observations, with full per-run variation retained.
 The harness measures primitive APIs, not provider allocation or full TLS.
+
+
+## Native AVX2 and provider follow-up
+
+`avx2-native/` supersedes the pending native status above for sources 2ca7abfc3
+and f55746d1a. It contains full tests, controls, source-restoration checks,
+benchmarks, compressed raw timing and automated review D. See its README for
+source attribution and remaining limits. The new `vaes-candidate/` is a later
+source change and requires its own native runs.

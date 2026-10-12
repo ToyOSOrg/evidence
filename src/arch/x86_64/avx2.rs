@@ -11,7 +11,7 @@ fn state_enabled(ecx: u32, xcr0: u64) -> bool {
     ecx & XSAVE_AVX == XSAVE_AVX && xcr0 & 6 == 6
 }
 
-fn available() -> bool {
+pub(super) fn available() -> bool {
     if cfg!(feature = "portable") {
         return false;
     }

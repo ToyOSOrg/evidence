@@ -1,4 +1,5 @@
-//! Intel SDM AESENC/AESENCLAST use legacy SSE, gated by CPUID.
+//! Intel SDM AES/CLMUL fallback uses legacy SSE, gated by CPUID.
+//! Hosted GCM additionally admits eight-block VAES/VPCLMUL batches.
 //! Hosted ChaCha additionally admits AVX2 through CPUID and OS-enabled XCR0 state.
 //! UEFI preserves every used register inside each assembly block. Ordinary
 //! hosts use Rust intrinsics and the ABI. Unaligned loads admit byte-aligned keys.
@@ -9,6 +10,8 @@ use core::arch::x86_64::*;
 
 #[cfg(not(target_os = "uefi"))]
 mod avx2;
+#[cfg(not(target_os = "uefi"))]
+mod vaes;
 
 pub(super) fn chacha_xor(key: &[u8; 32], counter: u64, nonce: &[u8; 8], data: &mut [u8]) -> usize {
     #[cfg(not(target_os = "uefi"))]
@@ -231,6 +234,11 @@ unsafe fn ctr(keys: &[u8; 240], rounds: usize, nonce: &[u8; 12], data: &mut [u8]
 pub(super) fn aes_ctr(keys: &[u8; 240], rounds: usize, nonce: &[u8; 12], data: &mut [u8]) -> bool {
     #[cfg(not(target_os = "uefi"))]
     {
+        // Extended-state admission is additional to the caller's AES/counter checks.
+        if data.len() >= 128 && vaes::available() {
+            unsafe { vaes::ctr(keys, rounds, nonce, data) }
+            return true;
+        }
         // Dispatch admitted AES; GCM validated the counter bound before mutation.
         unsafe { ctr(keys, rounds, nonce, data) }
         true
@@ -355,6 +363,11 @@ unsafe fn hash_blocks(h: &[u8; 16], state: &mut [u8; 16], blocks: &[[u8; 16]]) {
 pub(super) fn ghash_blocks(h: &[u8; 16], state: &mut [u8; 16], blocks: &[[u8; 16]]) {
     #[cfg(not(target_os = "uefi"))]
     {
+        if blocks.len() >= 8 && vaes::available() {
+            // VAES admission also establishes VPCLMUL and OS-owned YMM state.
+            unsafe { vaes::hash_blocks(h, state, blocks) }
+            return;
+        }
         // Dispatch admitted CLMUL and the ordinary ABI preserves SIMD state.
         unsafe { hash_blocks(h, state, blocks) }
     }

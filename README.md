@@ -9,9 +9,10 @@ ToyOS integration, SSH framing, X.509 and SSHSIG parsing remain separate.
 **Status: experimental and ready for review, not qualified for deployment.**
 Correctness tests pass on native ARM64 macOS and both x86 Linux benches.
 ARM AES/GHASH scheduling and hosted x86 AES/GHASH batching have been improved.
-Matched Linux measurements still trail stock ring. An AVX2 ChaCha candidate
-awaits native validation; VAES and AVX-512 paths remain open. Timing sweeps
-cover the preceding SSE source. Independent arithmetic review and deployment
+Matched Linux measurements still trail stock ring. Native AVX2 ChaCha tests,
+controls and focused timing pass; its 16 KiB throughput improves about 2x.
+An eight-block VAES/VPCLMUL candidate awaits native validation; AVX-512 remains
+open. Independent arithmetic review and deployment
 qualification remain open. See [VALIDATION.md](VALIDATION.md) for the
 design review, acceptance gaps and exact evidence. Passing vectors does not
 establish that this implementation is safer than ring.
@@ -140,9 +141,10 @@ On hosted and UEFI x86-64, CPUID admits AES-NI and PCLMULQDQ.
 The crate supports the UEFI loader and userland. Bare-metal x86 (`target_os=none`)
 and soft-float AArch64 kernel targets are unsupported and fail with an explicit
 compile-time diagnostic. Their SIMD implementations are excluded before codegen.
-AES and GHASH use legacy SSE encodings. Hosted
-x86 uses four parallel AES CTR blocks, AES SubWord and four-block aggregated
-CLMUL GHASH. The UEFI path retains its register-preserving per-block operations. The OS must
+The x86 AES/GHASH fallback uses legacy SSE encodings: four parallel AES CTR
+blocks, AES SubWord and four-block aggregated CLMUL GHASH. Hosted inputs of
+at least 128 bytes may use eight-block 256-bit VAES/VPCLMUL batches, requiring
+AVX2 OS-state admission plus AES, PCLMUL, VAES and VPCLMUL CPUID support. The UEFI path retains its register-preserving per-block operations. The OS must
 permit SIMD, preserve its state and expose a uniform feature set across CPUs on
 which a key can execute. Deploy with a baseline target configuration rather than
 globally enabling AVX through compiler flags.
