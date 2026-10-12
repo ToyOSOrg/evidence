@@ -1,0 +1,101 @@
+$ cat e14.sh
+#!/bin/bash
+# E14: every path #876's body, the Wi-Fi track and the six issues this branch
+# adds cite, checked at the branch's head. A cited path is a backticked token
+# holding a '/' or ending in .md, .rs or .toml, other than a ref or a
+# branch's or a repository's name (origin/, wt/, refs/, codex/, ToyOSOrg/); a
+# brace list is expanded. A path the head lacks is read as a short form: present
+# when exactly one tracked file ends in it. A .log path is the evidence
+# repository's, checked on its pr-876 branch. The paths the body names as not
+# yet existing, and the demo's own path, are listed apart and must be absent.
+# argv: <worktree> <head> <the body file> <evidence clone>
+set -u
+repo=$1 head=$2 body=$3 ev=$4
+absent_by_design='lib/crypto system/ax2xx system/ax2xx/firmware netstack/src/wifi.rs'
+cd "$repo" || exit 2
+echo "\$ git rev-parse $head"; git rev-parse "$head" || exit 2
+files="issues/there-is-no-wifi.md issues/pcidev-moves-a-bar-behind-a-bridge-out-of-the-range-the-bridge-forwards.md issues/netstack-drives-one-card.md issues/no-access-point-answers-to-the-harness.md issues/acpiserver-serves-no-client.md issues/a-platform-with-no-transmit-power-table-joins-no-wifi-network.md issues/the-wifi-demos-commits-still-resolve-on-origin.md"
+{ cat "$body"; for f in $files; do git show "$head:$f"; done; } \
+  | grep -o '`[^` ]*`' | tr -d '`' \
+  | grep -E '/|\.(md|rs|toml)$' | grep -v -E '^https?:|^[.]*$|<|\*|^(origin|wt|refs|codex|ToyOSOrg)/' \
+  | while read -r p; do
+      if [[ $p == *'{'* ]]; then
+        pre=${p%%\{*}; rest=${p#*\{}; list=${rest%%\}*}; post=${rest#*\}}
+        IFS=, read -ra parts <<< "$list"; for x in "${parts[@]}"; do echo "$pre$x$post"; done
+      else echo "$p"; fi
+    done | sed 's#/$##' | sort -u > "$TMPDIR/e14-paths"
+missing=0 present=0 bydesign=0
+while read -r p; do
+  if [[ " $absent_by_design " == *" $p "* ]]; then
+    if git cat-file -e "$head:$p" 2>/dev/null; then echo "PRESENT, named absent: $p"; missing=$((missing+1)); else echo "absent, as named: $p"; bydesign=$((bydesign+1)); fi
+  elif git cat-file -e "$head:$p" 2>/dev/null; then echo "present $p"; present=$((present+1))
+  elif [[ $p == *.log ]] && git -C "$ev" cat-file -e "origin/pr-876:$p" 2>/dev/null; then echo "present on evidence pr-876: $p"; present=$((present+1))
+  else
+    full=$(git ls-tree -r --name-only "$head" | grep -E -- "/${p//./\\.}$")
+    if [ "$(echo "$full" | grep -c .)" -eq 1 ]; then echo "present, short for $full: $p"; present=$((present+1))
+    else echo "MISSING $p ($(echo "$full" | grep -c .) files end in it)"; missing=$((missing+1)); fi
+  fi
+done < "$TMPDIR/e14-paths"
+rm -f "$TMPDIR/e14-paths"
+echo "present=$present absent-as-named=$bydesign missing=$missing"
+[ "$missing" -eq 0 ]
+
+$ bash e14.sh <the wifi worktree> 24b0fbc63 <#876 body as posted with this round> <evidence clone>
+$ git rev-parse 24b0fbc63
+24b0fbc637a6520898266c2661a09ac2c0168041
+present .claude/agents/implementer.md
+present .claude/agents/reviewer.md
+present CLAUDE.md
+present build/qemu.rs
+present build/ssh/tests/fuzz.rs
+present build/userlandhost.rs
+present, short for system/netstack/src/card.rs: card.rs
+present images/system.toml
+present issues
+present issues/README.md
+present issues/a-claim-spends-device-addresses-its-slot-never-gets-back.md
+present issues/a-controller-whose-msix-table-is-in-bar-0-cannot-be-driven-from-userland.md
+present issues/a-metal-row-names-no-hardware-and-a-bench-without-it-reds.md
+present issues/a-platform-with-no-transmit-power-table-joins-no-wifi-network.md
+present issues/acpiserver-serves-no-client.md
+present issues/an-amd-vi-machine-isolates-no-device.md
+present issues/every-program-sees-only-the-files-it-was-given.md
+present issues/first-match-selection-that-remains.md
+present issues/netstack-drives-one-card.md
+present issues/no-access-point-answers-to-the-harness.md
+present issues/no-boot-reaches-the-retry-that-undoes-a-placement-nothing-answered.md
+present issues/nothing-reds-when-the-bar-survey-drops-an-assigned-bar.md
+present issues/pcidev-moves-a-bar-behind-a-bridge-out-of-the-range-the-bridge-forwards.md
+present issues/process-memory-is-2-mib-pages-and-that-caps-the-process-count.md
+present issues/qemu-passes-compatibility-format-interrupts.md
+present issues/the-build-runs-host-tools-outside-rust-and-qemu.md
+present issues/the-lan-is-not-yet-production-grade.md
+present issues/the-wifi-demos-commits-still-resolve-on-origin.md
+present issues/there-is-no-wifi.md
+present issues/toyos-has-its-own-network-stack.md
+present kernel/pci/src/placement.rs
+present kernel/src/arch/aarch64/irqchip.rs
+present kernel/src/arch/x86_64/idt/user_dev.rs
+present kernel/src/arch/x86_64/vtd/interrupt.rs
+present kernel/src/pcidev/mod.rs
+present lib
+present lib/acpiserver-api
+present lib/blockring
+present lib/blockring/transport
+absent, as named: lib/crypto
+absent, as named: netstack/src/wifi.rs
+present, short for .claude/agents/reviewer.md: reviewer.md
+present on evidence pr-876: s1/wifi-s1-a-kernel.log
+present system/acpiserver/src/main.rs
+absent, as named: system/ax2xx/firmware
+present system/netstack/ip/src/lib.rs
+present system/netstack/ip/src/route.rs
+present system/netstack/node/src/lib.rs
+present system/netstack/shard/src/lib.rs
+present system/netstack/src/card.rs
+present system/netstack/src/main.rs
+present system/supervisor/src/main.rs
+present tests/common/qemu.rs
+present, short for kernel/src/arch/x86_64/vtd/fault.rs: vtd/fault.rs
+present=51 absent-as-named=3 missing=0
+EXIT=0
