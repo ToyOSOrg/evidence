@@ -139,6 +139,26 @@ error[E0599]: no variant named `Oem` found for enum `toyos_aml::Address`
 157 |     assert_eq!(m.accesses(), [Event::Read(Address::Oem { space: 0x80, offset: 0x1000 }, Access::DWord)]);
     |                                                    ^^^ variant not found in `toyos_aml::Address`
 
+error[E0599]: no variant, associated function, or constant named `Unnamed` found for enum `Value` in the current scope
+   --> system/acpiserver/aml/tests/spaces.rs:196:61
+    |
+196 |     assert_eq!(i.evaluate(&mut m, "\\ELEM", &[]), Ok(Value::Unnamed(Box::new(Value::Integer(7)))));
+    |                                                             ^^^^^^^ variant, associated function, or constant not found in `Value`
+
+error[E0599]: no variant, associated function, or constant named `Unnamed` found for enum `Value` in the current scope
+   --> system/acpiserver/aml/tests/spaces.rs:198:25
+    |
+198 |     let passed = Value::Unnamed(Box::new(Value::Integer(7)));
+    |                         ^^^^^^^ variant, associated function, or constant not found in `Value`
+
+error[E0559]: variant `Kind::OperationRegion` has no field named `space`
+   --> system/acpiserver/aml/tests/walk.rs:177:58
+    |
+177 |     assert_eq!(at("\\REG0"), (1, Kind::OperationRegion { space: 0 }));
+    |                                                          ^^^^^ `Kind::OperationRegion` does not have this field
+    |
+    = note: all struct fields are already assigned
+
 error[E0599]: no method named `defined` found for struct `Interpreter` in the current scope
    --> system/acpiserver/aml/tests/load.rs:211:20
     |
@@ -153,37 +173,17 @@ error[E0609]: no field `serial` on type `toyos_aml::Entry`
     |
     = note: available fields are: `depth`, `name`, `kind`
 
-error[E0599]: no variant, associated function, or constant named `Unnamed` found for enum `Value` in the current scope
-   --> system/acpiserver/aml/tests/spaces.rs:196:61
-    |
-196 |     assert_eq!(i.evaluate(&mut m, "\\ELEM", &[]), Ok(Value::Unnamed(Box::new(Value::Integer(7)))));
-    |                                                             ^^^^^^^ variant, associated function, or constant not found in `Value`
-
-error[E0599]: no variant, associated function, or constant named `Unnamed` found for enum `Value` in the current scope
-   --> system/acpiserver/aml/tests/spaces.rs:198:25
-    |
-198 |     let passed = Value::Unnamed(Box::new(Value::Integer(7)));
-    |                         ^^^^^^^ variant, associated function, or constant not found in `Value`
-
 Some errors have detailed explanations: E0407, E0432, E0599.
 For more information about an error, try `rustc --explain E0407`.
 error: could not compile `toyos-aml` (test "spaces") due to 19 previous errors
 warning: build failed, waiting for other jobs to finish...
+error: could not compile `toyos-aml` (test "namespace") due to 13 previous errors
+Some errors have detailed explanations: E0407, E0432, E0559, E0599.
+error: could not compile `toyos-aml` (test "walk") due to 14 previous errors
 Some errors have detailed explanations: E0407, E0432, E0599, E0609.
-error: could not compile `toyos-aml` (test "load") due to 15 previous errors
-error[E0559]: variant `Kind::OperationRegion` has no field named `space`
-   --> system/acpiserver/aml/tests/walk.rs:177:58
-    |
-177 |     assert_eq!(at("\\REG0"), (1, Kind::OperationRegion { space: 0 }));
-    |                                                          ^^^^^ `Kind::OperationRegion` does not have this field
-    |
-    = note: all struct fields are already assigned
-
 Some errors have detailed explanations: E0407, E0425, E0432, E0599.
 error: could not compile `toyos-aml` (test "heap") due to 14 previous errors
-Some errors have detailed explanations: E0407, E0432, E0559, E0599.
+error: could not compile `toyos-aml` (test "load") due to 15 previous errors
 error: could not compile `toyos-aml` (test "regions") due to 13 previous errors
-error: could not compile `toyos-aml` (test "walk") due to 14 previous errors
-error: could not compile `toyos-aml` (test "namespace") due to 13 previous errors
-error: could not compile `toyos-aml` (test "evaluate") due to 13 previous errors
 error: could not compile `toyos-aml` (test "hostile") due to 13 previous errors
+error: could not compile `toyos-aml` (test "evaluate") due to 13 previous errors
