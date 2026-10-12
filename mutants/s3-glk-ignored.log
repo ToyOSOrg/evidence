@@ -1,20 +1,20 @@
    Compiling toyos-aml v0.1.0 (<worktree>/system/acpiserver/aml)
    Compiling acpiserver v0.1.0 (<worktree>/system/acpiserver)
-    Finished `test` profile [optimized + debuginfo] target(s) in 2.97s
+    Finished `test` profile [optimized + debuginfo] target(s) in 3.73s
      Running unittests src/main.rs (target/debug/deps/acpiserver-814daf8de80eb8d4)
 
 running 13 tests
-test battery::tests::a_current_is_power_only_at_its_present_voltage ... ok
+test battery::tests::a_bif_is_read_by_its_place_in_the_package ... ok
 test battery::tests::a_bix_of_either_revision_is_read_at_the_same_places ... ok
+test battery::tests::a_current_is_power_only_at_its_present_voltage ... ok
+test battery::tests::a_full_charge_of_zero_is_no_percent ... ok
 test battery::tests::a_bst_reads_its_four_dwords_and_names_its_state ... ok
 test battery::tests::a_package_that_is_not_what_10_2_2_says_is_refused_by_name ... ok
-test battery::tests::a_full_charge_of_zero_is_no_percent ... ok
 test battery::tests::an_unknown_dword_is_unknown_and_never_a_number ... ok
-test battery::tests::a_bif_is_read_by_its_place_in_the_package ... ok
 test battery::tests::a_controller_that_wants_the_global_lock_is_reached_under_it_alone ... FAILED
 test battery::tests::a_machine_that_stops_mid_read_refuses_nothing ... ok
-test battery::tests::the_census_counts_the_global_lock_of_the_power_sources_methods_alone ... ok
 test battery::tests::a_laptops_battery_is_found_after_reg_and_read_through_the_controller ... ok
+test battery::tests::the_census_counts_the_global_lock_of_the_power_sources_methods_alone ... ok
 test battery::tests::a_refused_reading_is_said_once_and_counted ... ok
 test battery::tests::a_reading_is_said_only_where_its_percent_its_state_or_the_adapter_moves ... ok
 
@@ -25,12 +25,12 @@ acpiserver: the FADT's fixed hardware does not decode, so this machine's AML cal
 acpiserver: table 1 of 1 (DSDT) loaded
 acpiserver: 1 of 1 tables loaded in 0 ms
 acpiserver: the tables' bytes took 122 reads of firmware memory, in pages: 4 of type 9
-acpiserver: the tables' AML read SystemMemory 0 times, SystemIO 0 and PCI_Config 0, its memory in pages: none; took the Global Lock 0 times, 0 of them from the firmware, which held it 0ns at the longest; and ran Notify 0 times
+acpiserver: the tables' AML read SystemMemory 0 times, SystemIO 0 and PCI_Config 0, its memory in pages: none; took the Global Lock 0 times, 0 of them from the firmware; the firmware held it 0ns at the longest against a take; and ran Notify 0 times
 acpiserver: (this machine's own, quoted in no record) \_S5 was refused NotFound("\\_S5")
 acpiserver: \_S5 refused: a name that does not resolve
 acpiserver: (this machine's own, quoted in no record) \_SB_.EC0_ is the embedded controller
 
-thread 'battery::tests::a_controller_that_wants_the_global_lock_is_reached_under_it_alone' (2211994) panicked at system/acpiserver/src/host.rs:785:25:
+thread 'battery::tests::a_controller_that_wants_the_global_lock_is_reached_under_it_alone' (5044112) panicked at system/acpiserver/src/host.rs:787:25:
 a transaction on a controller whose _GLK asks for the Global Lock, made without it
 note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 
@@ -38,6 +38,6 @@ note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 failures:
     battery::tests::a_controller_that_wants_the_global_lock_is_reached_under_it_alone
 
-test result: FAILED. 12 passed; 1 failed; 0 ignored; 0 measured; 66 filtered out; finished in 0.00s
+test result: FAILED. 12 passed; 1 failed; 0 ignored; 0 measured; 66 filtered out; finished in 0.08s
 
 error: test failed, to rerun pass `-p acpiserver --bin acpiserver`

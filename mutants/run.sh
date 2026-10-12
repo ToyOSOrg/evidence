@@ -2,7 +2,7 @@
 # Each mutant applied as a checked patch, its tests run, its exit recorded,
 # and the patch reversed: the tree is clean after each.
 T=<worktree>
-M=$(dirname "$0")
+M=<scratch>/mutants-final
 cd "$T" || exit 1
 run() {
   name=$1; shift

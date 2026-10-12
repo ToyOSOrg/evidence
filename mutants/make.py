@@ -27,7 +27,7 @@ M = [
   "    announce_config(aml, names, 0, census);\n    if names.paths.contains(\"\\\\_SB_._INI\") {",
   "    announce_config(aml, names, 0, census);\n    announce(aml, names, EMBEDDED_CONTROL, 0, census);\n    if names.paths.contains(\"\\\\_SB_._INI\") {"),
  ("s3-bridge-by-hid-dropped", "system/acpiserver/aml/src/field.rs",
-  "if self.ns.child(host, bbn).is_some() || self.host_bridge(host)? {", "if self.ns.child(host, bbn).is_some() {"),
+  "if self.ns.child(host, bbn).is_some() || self.host_bridge(host)? {", "if self.ns.child(host, bbn).is_some() || (self.host_bridge(host)? \&\& false) {"),
  ("s3-glk-ignored", "system/acpiserver/src/devices.rs",
   "            ec.glk = true;\n", "            ec.glk = false;\n"),
  ("s4-store-answers-its-source", "system/acpiserver/aml/src/exec.rs",
