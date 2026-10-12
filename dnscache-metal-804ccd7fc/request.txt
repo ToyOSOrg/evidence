@@ -1,0 +1,108 @@
+# #883 (netstack's per-program DNS cache): the metal measurement the design
+# names, staged. Three boots on the T14, one session, one machine, one cable.
+# Each invocation is `cargo <words>` from the worktree its arm names.
+#
+# Arms (measurement-only commits that never land; each tree committed, clean):
+#  BASE   the negative control, no cache. wt/toyos-dnscache-mbase at
+#         89a2dd00fe2c4be25c4a926fbb5db0d3f9d50f17, worktree <home>/Dev/jan/toyos-dnscache-mbase:
+#         origin/main 867ec23ed (#883's base) + wt/toyos-scout-tcp d26de3a19
+#         (#861's head, round 4's instrument, the scout's stamps; the merge
+#         took no hand) + the K4/uncached/judge commit.
+#  CACHE  #883's head 804ccd7fcd99f27e1109d296217b5ca885137f72 + the same scout merge (serve.rs resolved by
+#         hand: the scout's lookup table carries the cache's badge) + the
+#         cache arm's three stamps + the same K4/uncached/judge commit.
+#         wt/toyos-dnscache-mhead at 703f474c69e1ad484eee24dba3afd9df830835ed, worktree
+#         <home>/Dev/jan/toyos-dnscache-mhead.
+#  TESTCASES (optional) #883's head 804ccd7fcd99f27e1109d296217b5ca885137f72, worktree
+#         <home>/Dev/jan/toyos-dnscache: the shared testcases boot with
+#         its three members endowment_denied, pipe_flag_forgery and
+#         netstack_gone_mid_bind, the named jobs no QEMU test runs.
+#
+# Images (staged by the command under each; exit 2 = staged, as designed):
+#  BASE   <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/metal/base/download/image.img
+#         136314880 bytes, sha256 4889f13cf1971af7627dca3637ff6593cd9333ce0010a586641cae2f044d1f5c
+#         cargo test --test toyos-build -- --metal --metal-readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/metal/base internet_download
+#  CACHE  <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/metal/cache/download/image.img
+#         136314880 bytes, sha256 beb3c96800db4d0db237d1374994195b935e1abcfc43b6e386023cd7bba1d755
+#         cargo test --test toyos-build -- --metal --metal-readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/metal/cache internet_download
+#  TESTCASES <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/metal/testcases/testcases/image.img
+#         sha256 00fce6fdb898b3691cfc5973b9ef57233dc151a8ab1346ca9b7447df35d6622c
+#         cargo test --test toyos-build -- --metal --metal-readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/metal/testcases endowment_denied pipe_flag_forgery netstack_gone_mid_bind
+#
+# ORDER, one session:
+#   B1  boot BASE:  (from the BASE worktree)
+#       cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/metal/base/download/image.img --readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/metal/base/download --fat32-check
+#       then judge it, from the BASE worktree:
+#       cargo test --test toyos-build -- --metal --metal-readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/metal/base internet_download > judge-base.log 2>&1
+#   C1  boot CACHE: (from the CACHE worktree)
+#       cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/metal/cache/download/image.img --readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/metal/cache/download --fat32-check
+#       then judge it, from the CACHE worktree:
+#       cargo test --test toyos-build -- --metal --metal-readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/metal/cache internet_download > judge-cache.log 2>&1
+#   T1  (optional) boot TESTCASES from #883's worktree:
+#       cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/metal/testcases/testcases/image.img --readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/metal/testcases/testcases --fat32-check
+#       cargo test --test toyos-build -- --metal --metal-readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/dnscache-build/metal/testcases endowment_denied pipe_flag_forgery netstack_gone_mid_bind > judge-testcases.log 2>&1
+#
+# WHAT THE JOB DOES (both arms): the scout's probes, suite, lan_idle (ten
+# lookups of the file's host), lan_control; then phase `uncached`: ten
+# lookups of dnscache-gate-<k>.invalid, 50 ms apart, names no view holds
+# (RFC 6761 §6.4); the six downloads (run1..run6), each with its lookup
+# between J1 and J2; then K4's step: phase k4_warm (the job looks the file's
+# host up once), k4_a (again), k4_host (/system/bin/host, launched as the
+# `host` row, its exit said as `k4 host exit=`), k4_b (again).
+# The cache arm's netstack also says, on every lookup stamp, `row=` (the
+# badge's bytes after its kind and share), on a miss `hit=0 keep_s=` (the
+# least TTL its lookup read off the T14's own replies, capped at 3600), and
+# for an answer the cache gave `hit=1` with n1, n2, n6 and no n3-n5.
+#
+# THE JUDGE'S NEW LINES (setup_table.rs; both arms print them):
+#   setup:   lookup asked   query yes|no, row, keep_s      (per fetch)
+#   setup: K2 fetches whose lookup sent a query: <n> of <m> (<k> with no lookup stamp)
+#   setup: K3 reference B-(R+W+A) = ...                    (off the fetches' medians)
+#   setup:   lookup (J2-J1), hit / asked                   (n/min/med/max)
+#   setup: uncached lookups: <n>, of which <k> sent a query
+#   setup:   uncached span (read->query + reply->answer)   (n/min/med/max)
+#   setup: k4 <phase>: row= query= keep_s=   ...   setup: K4 holds | does not hold: <why>
+#
+# GATES (written before the run):
+#  K2  CACHE: "setup: K2 fetches whose lookup sent a query" is at most 2 of
+#      6. More: does not land until explained, by the keep_s each miss's
+#      stamp read off the T14's own replies.
+#  K4  CACHE: "setup: K4 holds": host exits 0; between brackets A and B
+#      exactly one lookup stamp names row=host and it sent a query; brackets
+#      A and B each have one lookup naming row=test-runner and neither sent
+#      a query. A bracket that sent a query means K4 was not read: nothing
+#      lands until its keep_s explains it. BASE prints K4 too, unread (it
+#      has no badge, so no row).
+#  G   the no-regression gate for the badge read and the keep on uncached
+#      lookups. The lookups: the ten `uncached` ones, the same names in
+#      both arms (each arm's "uncached lookups: 10, of which 10 sent a
+#      query"; fewer than six stamped in either arm voids G). The span:
+#      read->query + reply->answer of each, which holds the badge read, the
+#      cache's miss and the keep and nothing of the wire. The figure: the
+#      median of that span. G holds iff
+#        CACHE's "uncached span" med <= BASE's "uncached span" med + 0.017 ms.
+#      0.017 ms is derived before the run: the max-min of the same span,
+#      read->query + reply->answer, over d26de3a19's six T1 fetch lookups
+#      (judge-1.log L1096-L1131: 0.081 0.089 0.079 0.079 0.096 0.085), the
+#      span's own range across one boot on this machine; the change adds one
+#      SYS_PORT_BADGE call and scans of at most 32 views and 128 names [I].
+#
+# REPORTED, never gated:
+#  K1  CACHE's "lookup (J2-J1)" median over the six fetches.
+#  K3  CACHE's "lookup (J2-J1), hit" median, beside BASE's "K3 reference
+#      B-(R+W+A)" (d26de3a19's values gave 0.531 ms).
+#
+# TRIPWIRES (one missed voids what rests on it):
+#  E1  each arm: PASS internet_download; six `whole` lines bytes=170439044
+#      sha256=1a9ee8ca...7e7f; six `setup run=` lines.
+#  E2  BASE: each fetch's lookup clean=1 queries_between=1 (the scout's E2).
+#      CACHE: each fetch's lookup stamp is there (no fetch "with no lookup
+#      stamp"); a miss among them clean=1.
+#  E3  each arm: "uncached lookups: 10, of which 10 sent a query".
+#
+# Dry run: netperf_qemu, the QEMU check of the same job and judge, ran green
+# in both worktrees at these heads (the QEMU URL is an address, so its fetches
+# make no lookup and K2 is not exercised there; its K4 held in CACHE).
+#
+# Return whole: judge-base.log, judge-cache.log, (judge-testcases.log), each
+# readback's kernel.log, boot.txt and verdict.txt, and the flash logs.
