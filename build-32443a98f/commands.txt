@@ -1,0 +1,45 @@
+Each file's command, run on the development host at ToyOS 32443a98f (branch wt/toyos-storebound, on origin/main
+528b9a6c2, which `git merge origin/main` left as it was: "Already up to date.", EXIT=0), and its exit code.
+
+gates/ci-host.log             cargo run -- --ci host; the last line is the wrapper's echo of its exit     EXIT=0 ("Host: 73 step(s), all green", L8661)
+gates/build-only.log          cargo run -- --build-only, run after both oracle runs; last line likewise     EXIT=0 (built no sysroot, removed nothing)
+
+tests/mutate.out              tests/mutate.sh > mutate.out 2>&1                                              EXIT=0 (each arm's own exit is in mutate.out)
+tests/logs/green.log          cargo test --lib -- keystore:: compiler:: llvm:: sysroot::  (head as committed)   EXIT=0
+tests/logs/<patch>.log        the same, with tests/patches/<patch>.patch applied                             EXIT=101 each
+  m7-lock-unbound and m8-lock-dropped-before-removal do not compile (E0425, E0382); every other arm compiles
+  and its tests go red. Each patch is `git apply --check`ed, applied, run and `git apply -R`ed in mutate.sh,
+  which stops on a dirty tree; mutate.out ends "tree clean".
+
+oracle/oracle.out             oracle/oracle.sh > oracle.out 2>&1                                             EXIT=0 (each step's exit is in oracle.out)
+oracle-second/oracle.out      oracle-second/oracle.sh > oracle.out 2>&1, right after oracle/                 EXIT=0 (each step's exit is in oracle.out)
+  Both run physdu.py from design/physdu.py of this clone and census.sh, perkind.sh and workingset.sh from
+  build-eb13e2b88/oracle/, and first print, for each, the blob its commit holds and the blob of the copy that
+  runs: they are equal, and physdu.py's sha256 is 704244d8d407d8d1e166fa92d4057ea899bdd616c7140c94a9196c65403f980f.
+  physdu-*.txt   python3 -I physdu.py ~/.cache/toyos 2 physdu-*.json                                     EXIT=0
+  perkind-*.txt  perkind.sh physdu-*.txt                                                                  EXIT=0
+  census-*.txt   census.sh (before, at the sweep's end when the build log printed a removal, and after)   EXIT=0
+  workingset-*.txt  workingset.sh census-*.txt                                                            EXIT=0
+  df-*.txt       df -k ~/.cache/toyos                                                                     EXIT=0
+  locks-open-*.txt  lsof +D ~/.cache/toyos/locks                                                          EXIT=1 whatever it lists:
+                 lsof exits 1 whenever any file under the directory is not open (first-sweep/lsof-exit-probe.txt),
+                 so the listing is the reading and the exit is not
+  holders-*.txt  for each pid that listing names: ps -o pid=,ppid=,lstart=,command= and its cwd (lsof -d cwd)  EXIT=0
+  builds-running-*.txt  ps -Ao pid,ppid,lstart,command, the lines naming toyos-build or a toyos_build test binary  EXIT=0
+  build-fresh-sysroot.log  cargo run -- --build-only with the run's fresh-sysroot.patch applied, each line
+                 prefixed by the epoch second it was read                                                  EXIT=0
+  census-diff.txt  oracle/censusdiff.sh census-before.txt census-after.txt                                EXIT=0
+  sweep-times.txt  stat -f '%N ctime=%Fc mtime=%Fm birth=%FB' of the placed sysroot, its lock and sysroots/  EXIT=0
+oracle-second/predicted.txt   predict.sh census-before.txt 24 locks-open-before.txt, before the build       EXIT=0
+oracle-second/predicted-goes.txt, removed.txt  the keys predicted.txt says go, and those the build log says it removed;
+                 `diff` of the two                                                                          EXIT=0
+  oracle-second/oracle.sh named censusdiff.sh in its own directory, where there is none: its oracle.out reads
+  "censusdiff EXIT=127" and "placed sysroots: none". Its census-diff.txt and sweep-times.txt were made at
+  2026-10-12T13:20:02Z, after it ended (its physdu-after reads 13:19:51Z), by the same two commands with oracle/censusdiff.sh and the placed
+  key e1617814e899e7b3 named: both EXIT=0.
+
+first-sweep/check.out         first-sweep/check.sh > check.out 2>&1                                          EXIT=0
+  The sweep at eb13e2b88 (build-eb13e2b88/oracle) against oracle-second/predict.sh over that run's census and
+  lock listing before its build: predicted.txt, removed.txt, and their diff, "diff predicted removed EXIT=0".
+first-sweep/census-diff.txt   oracle/censusdiff.sh over build-eb13e2b88/oracle's census-before and census-after  EXIT=0
+first-sweep/lsof-exit-probe.txt  first-sweep/lsof-exit-probe.sh > lsof-exit-probe.txt 2>&1                   EXIT=0

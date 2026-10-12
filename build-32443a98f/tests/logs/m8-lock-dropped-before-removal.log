@@ -1,0 +1,25 @@
+   Compiling toyos-build v0.1.0 (/Users/jan/Dev/jan/toyos-storebound)
+error[E0382]: borrow of moved value: `idle`
+   --> build/keystore.rs:171:55
+    |
+164 |         let Some(idle) = buildlock::keyed_idle(store, kind, &key) else { continue };
+    |                  ---- move occurs because `idle` has type `Guard`, which does not implement the `Copy` trait
+...
+170 |         drop(idle);
+    |              ---- value moved here
+171 |         removed.extend(remove_idle(&dir, &key, names, &idle, remove));
+    |                                                       ^^^^^ value borrowed here after move
+    |
+note: if `Guard` implemented `Clone`, you could clone the value
+   --> build/buildlock.rs:76:1
+    |
+ 76 | pub struct Guard {
+    | ^^^^^^^^^^^^^^^^ consider implementing `Clone` for this type
+    |
+   ::: build/keystore.rs:170:14
+    |
+170 |         drop(idle);
+    |              ---- you could clone this value
+
+For more information about this error, try `rustc --explain E0382`.
+error: could not compile `toyos-build` (lib) due to 1 previous error

@@ -1,0 +1,11 @@
+--- a/build/keystore.rs
++++ b/build/keystore.rs
+@@ -160,7 +160,7 @@
+     // The least lately used of the whole products kept by date: any older one goes.
+     let cut = whole.len().checked_sub(kept(kind)).map(|older| (whole[older].0, whole[older].1.clone()));
+     let mut removed = Vec::new();
+-    for (_, key, mut names) in by_use {
++    for (_, key, mut names) in by_use.into_iter().rev() {
+         let Some(idle) = buildlock::keyed_idle(store, kind, &key) else { continue };
+         // Read again under the key's lock: a use since the ranking has dated the key past the cut.
+         let used = buildlock::keyed_used(store, kind, &key);
