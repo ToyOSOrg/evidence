@@ -1,0 +1,47 @@
+$ cat e11.sh
+#!/bin/bash
+# E11: the NOTICE entries each branch on origin holding the demo's first commit
+# adds past origin/main, by heading (a NOTICE entry's heading line carries an
+# em dash). The bench's model name is masked in either case.
+# argv: <worktree> <demo's first commit> <word to mask, lower case>
+set -u
+repo=$1 first=$2 mask=$3
+upper=$(echo "$mask" | tr '[:lower:]' '[:upper:]')
+m() { sed -e "s/$mask/<bench>/g" -e "s/$upper/<BENCH>/g"; }
+cd "$repo" || exit 2
+echo "\$ git rev-parse origin/main"; git rev-parse origin/main
+git ls-remote origin 'refs/heads/*' > "$TMPDIR/e11-heads" || exit 3
+while read -r sha ref; do
+  git merge-base --is-ancestor "$first" "$sha" || continue
+  echo "$ref $sha" | m
+  git diff -U0 "origin/main...$sha" -- NOTICE 2>/dev/null | grep '^+[^+]' | grep '—' | m
+done < "$TMPDIR/e11-heads"
+
+$ bash e11.sh <the wifi worktree> a8e1c9673a2ef20d6bbbf228230afe389d00ba40 <the bench word>
+$ git rev-parse origin/main
+c0cdddf4e872c2a1f202b32e589c442054eb0864
+refs/heads/wt/toyos-survey 66e72bf87ca68c1b544effda72ee8709b3d72340
+refs/heads/wt/toyos-<bench> 14fea1662dba8f419bda8351b7af6b305c9bad98
+refs/heads/wt/toyos-<bench>-tp cbf45a476a9f9831ea92363a95da85ab2cfc7f7f
++assets/firmware/iwlwifi-cc-a0-77.ucode — Intel AX200 Wi-Fi firmware (<BENCH> WIFI HACK)
+refs/heads/wt/toyos-<bench>-v10 ecd95d11211086f345de6845d6d8375f4e44ac16
++assets/firmware/iwlwifi-cc-a0-77.ucode — Intel AX200 Wi-Fi firmware (<BENCH> WIFI HACK)
+refs/heads/wt/toyos-<bench>-v11 bb504f284516acb9c782c67cea750e720a82e044
++assets/firmware/iwlwifi-cc-a0-77.ucode — Intel AX200 Wi-Fi firmware (<BENCH> WIFI HACK)
+refs/heads/wt/toyos-<bench>-v12 4484ab6b4a2ca652bbb8eb0be83ed34f72b412a1
++assets/firmware/iwlwifi-cc-a0-77.ucode — Intel AX200 Wi-Fi firmware (<BENCH> WIFI HACK)
+refs/heads/wt/toyos-<bench>-v13 f5c7ed8f83253f48215c77f885a5138b8452f701
++assets/firmware/iwlwifi-cc-a0-77.ucode — Intel AX200 Wi-Fi firmware (<BENCH> WIFI HACK)
+refs/heads/wt/toyos-<bench>-v14 1b63c3e16069c54ea3397d1d8a38c7e4cf53921a
++assets/firmware/iwlwifi-cc-a0-77.ucode — Intel AX200 Wi-Fi firmware (<BENCH> WIFI HACK)
+refs/heads/wt/toyos-<bench>-v15 6d951f19be11e7e80a974857cf97b5b81cf2b793
++assets/firmware/iwlwifi-cc-a0-77.ucode — Intel AX200 Wi-Fi firmware (<BENCH> WIFI HACK)
+refs/heads/wt/toyos-<bench>-v16 27d689b9b81b1b36ff335b1567740f248d79d92b
++assets/firmware/iwlwifi-cc-a0-77.ucode — Intel AX200 Wi-Fi firmware (<BENCH> WIFI HACK)
+refs/heads/wt/toyos-<bench>-v9 270f2f1a547dca5eee6f90979c461c57fbf3df65
++assets/firmware/iwlwifi-cc-a0-77.ucode — Intel AX200 Wi-Fi firmware (<BENCH> WIFI HACK)
+refs/heads/wt/toyos-<bench>-vol 6324a013e5a38ad9906dbd1f1558a87f1cc6068d
++assets/firmware/iwlwifi-cc-a0-77.ucode — Intel AX200 Wi-Fi firmware (<BENCH> WIFI HACK)
+refs/heads/wt/toyos-<bench>-wifi 46b1767226ae690aefa5139530e5bf0e2c9db36a
++assets/firmware/iwlwifi-cc-a0-77.ucode — Intel AX200 Wi-Fi firmware (<BENCH> WIFI HACK)
+EXIT=0
