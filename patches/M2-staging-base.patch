@@ -1,0 +1,59 @@
+diff --git a/kernel/sim/src/vm.rs b/kernel/sim/src/vm.rs
+index f7e85f7c0..610055951 100644
+--- a/kernel/sim/src/vm.rs
++++ b/kernel/sim/src/vm.rs
+@@ -731,6 +731,7 @@ impl<'q> Vm<'q> {
+         let dst = match self.scenario.placement {
+             PlacementShape::LeastLoadedRotating => least_loaded,
+             PlacementShape::AllOn(cpu) => cpu,
++            PlacementShape::Listed(cpus) => cpus[self.spawned.len()],
+         };
+         let builder = TaskBuilder {
+             key,
+diff --git a/kernel/sim/src/workload.rs b/kernel/sim/src/workload.rs
+index 91e49661a..33e7ea17c 100644
+--- a/kernel/sim/src/workload.rs
++++ b/kernel/sim/src/workload.rs
+@@ -250,6 +250,8 @@ pub enum PlacementShape {
+     /// one is a measurement rather than a belief. See
+     /// `scenarios::lopsided_placement`.
+     AllOn(usize),
++    /// STAGING for mutation M2: spawn `i` onto the `i`th CPU listed.
++    Listed(&'static [usize]),
+ }
+ 
+ /// Which teardown/balance algorithm the VM drives the core with.
+diff --git a/kernel/sim/tests/m2.rs b/kernel/sim/tests/m2.rs
+new file mode 100644
+index 000000000..018c622d4
+--- /dev/null
++++ b/kernel/sim/tests/m2.rs
+@@ -0,0 +1,28 @@
++//! STAGING for mutation M2 on the base: the branch's `scenarios::group_imbalance`
++//! machine at its sixteen flat CPUs — cpu8 idle while cpu9..15 each hold a task
++//! queued behind the one they run, and cpu0 holds two.
++
++use kernel_sim::choice::ChoiceStream;
++use kernel_sim::explore::run;
++use kernel_sim::scenarios;
++use kernel_sim::workload::PlacementShape;
++
++const MS: u64 = 1_000_000;
++const ON: &[usize] = &[
++    0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13, 14, 14, 15, 15,
++];
++
++#[test]
++fn m2_group_imbalance_staged() {
++    let mut scenario = scenarios::lopsided_placement(16, ON.len(), 240 * MS);
++    scenario.placement = PlacementShape::Listed(ON);
++    for seed in 0..20u64 {
++        let mut choices = if seed % 2 == 0 {
++            ChoiceStream::from_seed(seed)
++        } else {
++            ChoiceStream::pct(seed, 16, 3)
++        };
++        let outcome = run(scenario.clone(), &mut choices);
++        assert!(outcome.passed(), "{}", outcome.report());
++    }
++}

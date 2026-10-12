@@ -1,0 +1,13 @@
+diff --git a/kernel/sim/src/vm.rs b/kernel/sim/src/vm.rs
+index 6bd266ac6..f2b31e212 100644
+--- a/kernel/sim/src/vm.rs
++++ b/kernel/sim/src/vm.rs
+@@ -1031,7 +1031,7 @@ impl<'q> Vm<'q> {
+             let idle = self.scenario.protocol == Protocol::New
+                 && !halted[cpu]
+                 && self.cpus[cpu].running().is_none();
+-            let owed = resched[cpu] || idle;
++            let owed = resched[cpu] || (idle && false); // MUTATION M3: an awake idle CPU owes no pass
+             match (owed, self.resched_at[cpu]) {
+                 (true, None) => self.resched_at[cpu] = Some(self.clock),
+                 (false, _) => self.resched_at[cpu] = None,

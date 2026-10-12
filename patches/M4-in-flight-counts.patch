@@ -1,0 +1,13 @@
+diff --git a/kernel/sim/src/invariants.rs b/kernel/sim/src/invariants.rs
+index 1c7c5b743..9c93daac5 100644
+--- a/kernel/sim/src/invariants.rs
++++ b/kernel/sim/src/invariants.rs
+@@ -912,7 +912,7 @@ fn check_work_conservation(vm: &mut Vm<'_>) {
+         };
+         let answered = kicks > 0 || !vm.cpus[cpu].mailbox_is_empty();
+         let rounds = vm.wc_idle[cpu].get_or_insert(0);
+-        if !answered {
++        if !answered || true { // MUTATION M4: a round with an answer in flight counts
+             *rounds += completed;
+         }
+         let rounds = *rounds;
