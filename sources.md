@@ -37,13 +37,16 @@ in BAR 5); `src/VBox/Devices/Network/DevVirtioNet.cpp`
 (`PCI_DEVICE_ID_VIRTIONET_HOST` `0x1000`); `src/VBox/Devices/VirtIO/VirtioCore.h`
 (`VIRTIO_F_ACCESS_PLATFORM`, "VirtIO 1.1 NYI"); `src/VBox/Devices/PC/DevACPI.cpp`
 (`HpetEnabled` default false; MCFG, DMAR, IVRS gated); `src/VBox/Devices/Audio/DevHda.cpp`
-(MSI); `src/VBox/Devices/Bus/DevIommuIntel.cpp` (interrupt remapping).
+(MSI); `src/VBox/Devices/Bus/DevIommuIntel.cpp` (interrupt remapping);
+`src/VBox/Devices/Input/UsbMouse.cpp` (the USB tablet's interface: subclass 0,
+protocol 0).
 
 bhyve: `bhyve(8)`, https://man.freebsd.org/cgi/man.cgi?query=bhyve&sektion=8;
 `usr.sbin/bhyve/virtio.c` and `virtio.h` (legacy I/O BAR, `QUEUE_PFN`, ids
 `0x1000`..), `pci_nvme.c` (`fb5d:0a0a`, MSI-X in BAR 4), `pci_e82545.c`
 (`8086:100f`), `pci_hda.c` (INTx alone), `acpi.c` (HPET, MCFG, FADT with
-SMI_CMD, PM1 and PM timer), `amd64/` (atkbdc, ps2kbd, ps2mouse).
+SMI_CMD, PM1 and PM timer), `amd64/` (atkbdc, ps2kbd, ps2mouse),
+`usb_mouse.c` (the xHCI tablet's interface: boot subclass, mouse protocol).
 
 QEMU: `hw/virtio/virtio-pci.c` (`disable-legacy=auto`; a transitional device
 refuses `iommu_platform`), `hw/nvme/ctrl.c` (`use-intel-id`,
