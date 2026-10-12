@@ -4,7 +4,7 @@
 
 Fetched from `https://cdrdv2-public.intel.com/929349/325462-093-sdm-vol-1-2abcd-3abcd-4.pdf`, SHA-256 `a4a62e6a7ba11a76c7753a195b825087306812aac39b930973f9168ee599f321`.
 
-Vol. 3A §7.6, the instruction boundary (`every-syscall-saves-…`) (PDF page 3355 of the extract, lines 225147-225151):
+Vol. 3A §7.6, the instruction boundary (`every-syscall-saves-…`, which #871 closed) (PDF page 3355 of the extract, lines 225147-225151):
 
 ```text
 7.6 
@@ -85,7 +85,7 @@ rupt.
 In TSC-deadline mode, writing 0 to the IA32_TSC_DEADLINE MSR disarms the local-APIC timer. Transitioning 
 ```
 
-Vol. 3A §16.4, saving FP state on a switch (`every-syscall-saves-…`) (PDF page 3670 of the extract, lines 244830-244845):
+Vol. 3A §16.4, saving FP state on a switch (`every-syscall-saves-…`, which #871 closed) (PDF page 3670 of the extract, lines 244830-244845):
 
 ```text
 DESIGNING OS FACILITIES FOR SAVING X87 FPU, SSE, AND EXTENDED 
@@ -196,7 +196,7 @@ accessed data in the parameter block.
 
 Fetched through the Internet Archive's snapshot `https://web.archive.org/web/20250405225925id_/https://www.amd.com/content/dam/amd/en/documents/processor-tech-docs/programmer-references/24593.pdf` (amd.com reset the connection), SHA-256 `0829b862bf93e0d455b1d418664dc6ab3f494e866af53b2a04dff0f0b48eb649`. Its text was searched for an idle loop, TSC-deadline mode and false sharing, and says nothing on any of them.
 
-§2.5.12, FXSAVE and FXRSTOR (`every-syscall-saves-…`) (PDF page 97 of the extract, lines 4885-4888):
+§2.5.12, FXSAVE and FXRSTOR (`every-syscall-saves-…`, which #871 closed) (PDF page 97 of the extract, lines 4885-4888):
 
 ```text
 2.5.12  FXSAVE and FXRSTOR Instructions
@@ -304,6 +304,13 @@ WRGSBASE instructions.
 Support for this instruction is indicated by CPUID Fn0000_0007_EBX_x0[FSGSBASE] = 1.
 ```
 
+CLFLUSH, the line size by CPUID (`per-cpu-scheduler-…`) (PDF page 186 of the extract, lines 11662-11663):
+
+```text
+The CLFLUSH instruction is supported if the feature flag CPUID Fn0000_0001_EDX[CLFSH] is set.
+The 8-bit field CPUID Fn 0000_0001_EBX[CLFlush] returns the size of the cacheline in quadwords.
+```
+
 ## AMD, Software Optimization Guide for AMD EPYC™ 7002 Processors, 56305 rev. 3.02
 
 Fetched through the Internet Archive's snapshot `https://web.archive.org/web/20221127101035id_/https://www.amd.com/system/files/TechDocs/56305.zip`, SHA-256 `70ad6f1437f34bf17d6202e1b2f6189b8540f408c941e5a4117a94552cdda0f0`; its `56305-3.02.pdf`, SHA-256 `392ffc9262d0d8e7315bdc82eca57483f4db3619ce71137a414c9f474ddc89fb`. Its text was searched for MONITOR, MWAIT, an idle loop and false sharing, and says nothing on any of them.
@@ -332,6 +339,30 @@ Chapter 2
 Microarchitecture of AMD Family 17h Models 30h and Greater Processors
 17
 Software Optimization Guide for AMD EPYC™ 
+```
+
+§2.6.1, the line size (`per-cpu-scheduler-…`) (PDF page 17 of the extract, lines 632-635):
+
+```text
+2.6.1
+L1 Instruction Cache
+The processor contains a 32-Kbyte, 8-way set associative L1 instruction cache. Cache line size is 64 
+bytes; 32 bytes are fetched in a cycle. Functions associated with the L1 instruction cache are fetching 
+```
+
+§2.6.2, its heading (PDF page 17 of the extract, lines 646-647):
+
+```text
+2.6.2
+L1 Data Cache
+```
+
+§2.6.2, the data cache's 64-byte boundary (PDF page 17 of the extract, lines 654-656):
+
+```text
+The data cache natural alignment boundary is 64 bytes for loads. A misaligned load operation suffers, 
+at minimum, a one cycle penalty in the load-store pipeline if it spans a 64-byte boundary. Stores have 
+two different alignment boundaries. The alignment boundary for accessing TLB and tags is 64 bytes, 
 ```
 
 ## Intel, Guidance for Enabling FSGSBASE, ID 767615, updated 9/15/2019
@@ -535,5 +566,606 @@ autonomously transition to another non-operational power state). If an operation
 by a Set Features command specifying the Autonomous Power State Transitions feature (i.e., the Feature 
 Identifier field set to 0Ch (refer to section 5.1.25.1.6), then the controller should abort the command with a 
 status code of Invalid Field in Command. Refer to section 8.1.17.1 for more details. 
+```
+
+## Linux commits
+
+Each commit fetched as `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/patch/?id=<hash>`, which kernel.org redirects to the full hash. The release that first carries it is read by fetching a file it touches at the tag before and at that tag.
+
+### 279f1461432c, the one-shot through `IA32_TSC_DEADLINE` (`the-timer-is-a-lapic-count-…`)
+
+SHA-256 of the patch `239bc4d695e8d58b7224c6d50eb8986b23ff621c1880e4f351c596ef1460a842`.
+
+Header and message (lines 1-25 of the patch):
+
+```text
+From 279f1461432ccdec0b98c0bcbe0a8e2c0f6fdda5 Mon Sep 17 00:00:00 2001
+From: Suresh Siddha <suresh.b.siddha@intel.com>
+Date: Mon, 22 Oct 2012 14:37:58 -0700
+Subject: x86: apic: Use tsc deadline for oneshot when available
+
+If the TSC deadline mode is supported, LAPIC timer one-shot mode can be
+implemented using IA32_TSC_DEADLINE MSR. An interrupt will be generated
+when the TSC value equals or exceeds the value in the IA32_TSC_DEADLINE
+MSR.
+
+This enables us to skip the APIC calibration during boot. Also, in
+xapic mode, this enables us to skip the uncached apic access to re-arm
+the APIC timer.
+
+As this timer ticks at the high frequency TSC rate, we use the
+TSC_DIVISOR (32) to work with the 32-bit restrictions in the
+clockevent API's to avoid 64-bit divides etc (frequency is u32 and
+"unsigned long" in the set_next_event(), max_delta limits the next
+event to 32-bit for 32-bit kernel).
+
+Signed-off-by: Suresh Siddha <suresh.b.siddha@intel.com>
+Cc: venki@google.com
+Cc: len.brown@intel.com
+Link: http://lkml.kernel.org/r/1350941878.6017.31.camel@sbsiddha-desk.sc.intel.com
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+```
+
+`arch/x86/kernel/apic/apic.c` at `v3.7`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/arch/x86/kernel/apic/apic.c?h=v3.7`, SHA-256 `e49c0e3b79e1b280e5175e44b030c6c0950dd2894ee0405cf69d4e90b28071ab`: `TSC_DEADLINE` matches 0 of its lines.
+
+`arch/x86/kernel/apic/apic.c` at `v3.8`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/arch/x86/kernel/apic/apic.c?h=v3.8`, SHA-256 `20ec8038599e566d1aa0490f414eab852ec84ca05f1009b3b6b354b92172029b`, the deadline write (lines 469-476):
+
+```c
+static int lapic_next_deadline(unsigned long delta,
+			       struct clock_event_device *evt)
+{
+	u64 tsc;
+
+	rdtscll(tsc);
+	wrmsrl(MSR_IA32_TSC_DEADLINE, tsc + (((u64) delta) * TSC_DIVISOR));
+	return 0;
+```
+
+`arch/x86/kernel/apic/apic.c` at `v3.8`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/arch/x86/kernel/apic/apic.c?h=v3.8`, SHA-256 `20ec8038599e566d1aa0490f414eab852ec84ca05f1009b3b6b354b92172029b`, registered on every CPU that enumerates the mode (lines 559-567):
+
+```c
+	if (this_cpu_has(X86_FEATURE_TSC_DEADLINE_TIMER)) {
+		levt->features &= ~(CLOCK_EVT_FEAT_PERIODIC |
+				    CLOCK_EVT_FEAT_DUMMY);
+		levt->set_next_event = lapic_next_deadline;
+		clockevents_config_and_register(levt,
+						(tsc_khz / TSC_DIVISOR) * 1000,
+						0xF, ~0UL);
+	} else
+		clockevents_register_device(levt);
+```
+
+`arch/x86/kernel/apic/apic.c` at `v3.8`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/arch/x86/kernel/apic/apic.c?h=v3.8`, SHA-256 `20ec8038599e566d1aa0490f414eab852ec84ca05f1009b3b6b354b92172029b`, no calibration where the mode is (lines 695-697):
+
+```c
+	if (boot_cpu_has(X86_FEATURE_TSC_DEADLINE_TIMER)) {
+		return 0;
+	} else if (lapic_timer_frequency) {
+```
+
+`arch/x86/kernel/apic/apic.c` at `v7.2`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/arch/x86/kernel/apic/apic.c?h=v7.2`, SHA-256 `e187313fbae0c6941331be18e51ac6fb3f2b5e33bc11caf84f6b621b7c215a40`, its errata table, `deadline_match`, today (lines 513-542):
+
+```c
+static const struct x86_cpu_id deadline_match[] __initconst = {
+	X86_MATCH_VFM_STEPS(INTEL_HASWELL_X,   0x2, 0x2, 0x3a), /* EP */
+	X86_MATCH_VFM_STEPS(INTEL_HASWELL_X,   0x4, 0x4, 0x0f), /* EX */
+
+	X86_MATCH_VFM(INTEL_BROADWELL_X,	0x0b000020),
+
+	X86_MATCH_VFM_STEPS(INTEL_BROADWELL_D, 0x2, 0x2, 0x00000011),
+	X86_MATCH_VFM_STEPS(INTEL_BROADWELL_D, 0x3, 0x3, 0x0700000e),
+	X86_MATCH_VFM_STEPS(INTEL_BROADWELL_D, 0x4, 0x4, 0x0f00000c),
+	X86_MATCH_VFM_STEPS(INTEL_BROADWELL_D, 0x5, 0x5, 0x0e000003),
+
+	X86_MATCH_VFM_STEPS(INTEL_SKYLAKE_X,   0x3, 0x3, 0x01000136),
+	X86_MATCH_VFM_STEPS(INTEL_SKYLAKE_X,   0x4, 0x4, 0x02000014),
+	X86_MATCH_VFM_STEPS(INTEL_SKYLAKE_X,   0x5, 0xf, 0),
+
+	X86_MATCH_VFM(INTEL_HASWELL,		0x22),
+	X86_MATCH_VFM(INTEL_HASWELL_L,		0x20),
+	X86_MATCH_VFM(INTEL_HASWELL_G,		0x17),
+
+	X86_MATCH_VFM(INTEL_BROADWELL,		0x25),
+	X86_MATCH_VFM(INTEL_BROADWELL_G,	0x17),
+
+	X86_MATCH_VFM(INTEL_SKYLAKE_L,		0xb2),
+	X86_MATCH_VFM(INTEL_SKYLAKE,		0xb2),
+
+	X86_MATCH_VFM(INTEL_KABYLAKE_L,		0x52),
+	X86_MATCH_VFM(INTEL_KABYLAKE,		0x52),
+
+	{},
+};
+```
+
+`arch/x86/kernel/apic/apic.c` at `v7.2`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/arch/x86/kernel/apic/apic.c?h=v7.2`, SHA-256 `e187313fbae0c6941331be18e51ac6fb3f2b5e33bc11caf84f6b621b7c215a40`, `setup_APIC_timer` today (lines 580-605):
+
+```c
+static void setup_APIC_timer(void)
+{
+	struct clock_event_device *levt = this_cpu_ptr(&lapic_events);
+
+	if (this_cpu_has(X86_FEATURE_ARAT)) {
+		lapic_clockevent.features &= ~CLOCK_EVT_FEAT_C3STOP;
+		/* Make LAPIC timer preferable over percpu HPET */
+		lapic_clockevent.rating = 150;
+	}
+
+	memcpy(levt, &lapic_clockevent, sizeof(*levt));
+	levt->cpumask = cpumask_of(smp_processor_id());
+
+	if (this_cpu_has(X86_FEATURE_TSC_DEADLINE_TIMER)) {
+		levt->name = "lapic-deadline";
+		levt->features &= ~(CLOCK_EVT_FEAT_PERIODIC | CLOCK_EVT_FEAT_DUMMY);
+		levt->features |= CLOCK_EVT_FEAT_CLOCKSOURCE_COUPLED;
+		levt->cs_id = CSID_X86_TSC;
+		levt->set_next_event = lapic_next_deadline;
+		clockevents_config_and_register(levt, tsc_khz * (1000 / TSC_DIVISOR), 0xF, ~0UL);
+	} else {
+		clockevents_register_device(levt);
+	}
+
+	apic_update_vector(smp_processor_id(), LOCAL_TIMER_VECTOR, true);
+}
+```
+
+`arch/x86/kernel/apic/apic.c` at `v7.2`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/arch/x86/kernel/apic/apic.c?h=v7.2`, SHA-256 `e187313fbae0c6941331be18e51ac6fb3f2b5e33bc11caf84f6b621b7c215a40`, `calibrate_APIC_clock` today (lines 799-810):
+
+```c
+static int __init calibrate_APIC_clock(void)
+{
+	struct clock_event_device *levt = this_cpu_ptr(&lapic_events);
+	u64 tsc_perj = 0, tsc_start = 0;
+	long delta_tsc_khz, bus_khz;
+	unsigned long jif_start;
+	unsigned long deltaj;
+	long delta, deltatsc;
+	int pm_referenced = 0;
+
+	if (boot_cpu_has(X86_FEATURE_TSC_DEADLINE_TIMER))
+		return 0;
+```
+
+The T14 is family 6 model 140, 0x8C (`kernel/cpuvuln/fixtures/t14/cpuinfo.txt:2-4` in ToyOS), and no `deadline_match` row names it.
+
+`arch/x86/include/asm/intel-family.h` at `v7.2`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/arch/x86/include/asm/intel-family.h?h=v7.2`, SHA-256 `894e851bf5fdc55c5dbf5a6270fb1b095c74798d4100db440b328a20f53fd184`, model 0x8C (lines 120-120):
+
+```c
+#define INTEL_TIGERLAKE_L		IFM(6, 0x8C) /* Willow Cove */
+```
+
+### f246ec3478cf, TSC-coupled programming (`the-timer-is-a-lapic-count-…`)
+
+SHA-256 of the patch `42f7af783e0301844fe016ea3827f2bc102efa5e7e781b58e9ee53673bd144d4`.
+
+Header and message (lines 1-23 of the patch):
+
+```text
+From f246ec3478cfdab830ee0815209f48923e7ee5e2 Mon Sep 17 00:00:00 2001
+From: Thomas Gleixner <tglx@kernel.org>
+Date: Tue, 24 Feb 2026 17:36:49 +0100
+Subject: x86/apic: Enable TSC coupled programming mode
+
+The TSC deadline timer is directly coupled to the TSC and setting the next
+deadline is tedious as the clockevents core code converts the
+CLOCK_MONOTONIC based absolute expiry time to a relative expiry by reading
+the current time from the TSC. It converts that delta to cycles and hands
+the result to lapic_next_deadline(), which then has read to the TSC and add
+the delta to program the timer.
+
+The core code now supports coupled clock event devices and can provide the
+expiry time in TSC cycles directly without reading the TSC at all.
+
+This obviouly works only when the TSC is the current clocksource, but
+that's the default for all modern CPUs which implement the TSC deadline
+timer. If the TSC is not the current clocksource (e.g. early boot) then the
+core code falls back to the relative set_next_event() callback as before.
+
+Signed-off-by: Thomas Gleixner <tglx@kernel.org>
+Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
+Link: https://patch.msgid.link/20260224163430.076565985@kernel.org
+```
+
+`arch/x86/kernel/apic/apic.c` at `v7.0`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/arch/x86/kernel/apic/apic.c?h=v7.0`, SHA-256 `2093f0e0e7bd056a54e68959d33fd4a6a54481523ec1ea3f8530e0649ae62c9b`: `CLOCKSOURCE_COUPLED` matches 0 of its lines.
+
+`arch/x86/kernel/apic/apic.c` at `v7.1`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/arch/x86/kernel/apic/apic.c?h=v7.1`, SHA-256 `a4fbffbc322c38c4f89cbcb1f2b124a3e6a2b444b9f0db9f50ea69933772ebea`, the deadline device, coupled (lines 592-599):
+
+```c
+	if (this_cpu_has(X86_FEATURE_TSC_DEADLINE_TIMER)) {
+		levt->name = "lapic-deadline";
+		levt->features &= ~(CLOCK_EVT_FEAT_PERIODIC | CLOCK_EVT_FEAT_DUMMY);
+		levt->features |= CLOCK_EVT_FEAT_CLOCKSOURCE_COUPLED;
+		levt->cs_id = CSID_X86_TSC;
+		levt->set_next_event = lapic_next_deadline;
+		clockevents_config_and_register(levt, tsc_khz * (1000 / TSC_DIVISOR), 0xF, ~0UL);
+	} else {
+```
+
+`arch/x86/include/asm/clock_inlined.h` at `v7.1`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/arch/x86/include/asm/clock_inlined.h?h=v7.1`, SHA-256 `7bf4bd9213c5a4c33c64f81d79819f15cc0c96e716a3758a5bc5b06333bc968b`, the absolute write (lines 14-20):
+
+```c
+struct clock_event_device;
+
+static __always_inline void
+arch_inlined_clockevent_set_next_coupled(u64 cycles, struct clock_event_device *evt)
+{
+	native_wrmsrq(MSR_IA32_TSC_DEADLINE, cycles);
+}
+```
+
+### 147f3efaa241, EEVDF, and wakeup preemption since CFS (`a-wake-to-a-busy-cpu-…`)
+
+SHA-256 of the patch `7fae396127a776d551c700615f58628d060d33f2f86b1c369729ae4b1a49976e`.
+
+Header and message (lines 1-34 of the patch):
+
+```text
+From 147f3efaa24182a21706bca15eab2f3f4630b5fe Mon Sep 17 00:00:00 2001
+From: Peter Zijlstra <peterz@infradead.org>
+Date: Wed, 31 May 2023 13:58:44 +0200
+Subject: sched/fair: Implement an EEVDF-like scheduling policy
+
+Where CFS is currently a WFQ based scheduler with only a single knob,
+the weight. The addition of a second, latency oriented parameter,
+makes something like WF2Q or EEVDF based a much better fit.
+
+Specifically, EEVDF does EDF like scheduling in the left half of the
+tree -- those entities that are owed service. Except because this is a
+virtual time scheduler, the deadlines are in virtual time as well,
+which is what allows over-subscription.
+
+EEVDF has two parameters:
+
+ - weight, or time-slope: which is mapped to nice just as before
+
+ - request size, or slice length: which is used to compute
+   the virtual deadline as: vd_i = ve_i + r_i/w_i
+
+Basically, by setting a smaller slice, the deadline will be earlier
+and the task will be more eligible and ran earlier.
+
+Tick driven preemption is driven by request/slice completion; while
+wakeup preemption is driven by the deadline.
+
+Because the tree is now effectively an interval tree, and the
+selection is no longer 'leftmost', over-scheduling is less of a
+problem.
+
+Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
+Signed-off-by: Ingo Molnar <mingo@kernel.org>
+Link: https://lore.kernel.org/r/20230531124603.931005524@infradead.org
+```
+
+The wakeup-preemption hunk (lines 577-593 of the patch):
+
+```text
+@@ -8228,7 +8460,19 @@ static void check_preempt_wakeup(struct rq *rq, struct task_struct *p, int wake_
+ 	if (cse_is_idle != pse_is_idle)
+ 		return;
+ 
+-	update_curr(cfs_rq_of(se));
++	cfs_rq = cfs_rq_of(se);
++	update_curr(cfs_rq);
++
++	if (sched_feat(EEVDF)) {
++		/*
++		 * XXX pick_eevdf(cfs_rq) != se ?
++		 */
++		if (pick_eevdf(cfs_rq) == pse)
++			goto preempt;
++
++		return;
++	}
+```
+
+`kernel/sched/fair.c` at `v6.5`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/kernel/sched/fair.c?h=v6.5`, SHA-256 `c3b7ee0a0bc51b9f5c39c25c97490b5c5b220b5e456a7c5eeb678463d2886188`: `eevdf` matches 0 of its lines.
+
+`kernel/sched/fair.c` at `v6.6`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/kernel/sched/fair.c?h=v6.6`, SHA-256 `7d259d533ffb439992969e5d1d20b27dc64c9203f5c09e09f839047cbd4e40bb`, wakeup preemption by the EEVDF pick (lines 8117-8132):
+
+```c
+	if (cse_is_idle != pse_is_idle)
+		return;
+
+	cfs_rq = cfs_rq_of(se);
+	update_curr(cfs_rq);
+
+	/*
+	 * XXX pick_eevdf(cfs_rq) != se ?
+	 */
+	if (pick_eevdf(cfs_rq) == pse)
+		goto preempt;
+
+	return;
+
+preempt:
+	resched_curr(rq);
+```
+
+`kernel/sched_fair.c` at `v2.6.23`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/kernel/sched_fair.c?h=v2.6.23`, SHA-256 `9572c1797db2ee5e7a87e5700030cf46c0f11fbde28407f0fb3d76d5816903a0`, CFS's first release: the running task preempted for a woken one (lines 976-1001):
+
+```c
+/*
+ * Preempt the current task with a newly woken task if needed:
+ */
+static void check_preempt_curr_fair(struct rq *rq, struct task_struct *p)
+{
+	struct task_struct *curr = rq->curr;
+	struct cfs_rq *cfs_rq = task_cfs_rq(curr);
+	unsigned long gran;
+
+	if (unlikely(rt_prio(p->prio))) {
+		update_rq_clock(rq);
+		update_curr(cfs_rq);
+		resched_task(curr);
+		return;
+	}
+
+	gran = sysctl_sched_wakeup_granularity;
+	/*
+	 * Batch tasks prefer throughput over latency:
+	 */
+	if (unlikely(p->policy == SCHED_BATCH))
+		gran = sysctl_sched_batch_wakeup_granularity;
+
+	if (is_same_group(curr, p))
+		__check_preempt_curr_fair(cfs_rq, &p->se, &curr->se, gran);
+}
+```
+
+### aebef63cf7ff, MWAIT as AMD's default idle state from family 17h (`idle-is-hlt-…`)
+
+SHA-256 of the patch `aba8056f09218ff84aeb677e431962d72eb1445aebb33879b5d23c2708ab3b66`.
+
+Header and message (lines 1-40 of the patch):
+
+```text
+From aebef63cf7ff222660fd321c47e24452e8437673 Mon Sep 17 00:00:00 2001
+From: Wyes Karny <wyes.karny@amd.com>
+Date: Mon, 6 Jun 2022 23:33:35 +0530
+Subject: x86: Remove vendor checks from prefer_mwait_c1_over_halt
+
+Remove vendor checks from prefer_mwait_c1_over_halt function. Restore
+the decision tree to support MWAIT C1 as the default idle state based on
+CPUID checks as done by Thomas Gleixner in
+commit 09fd4b4ef5bc ("x86: use cpuid to check MWAIT support for C1")
+
+The decision tree is removed in
+commit 69fb3676df33 ("x86 idle: remove mwait_idle() and "idle=mwait" cmdline param")
+
+Prefer MWAIT when the following conditions are satisfied:
+    1. CPUID_Fn00000001_ECX [Monitor] should be set
+    2. CPUID_Fn00000005 should be supported
+    3. If CPUID_Fn00000005_ECX [EMX] is set then there should be
+       at least one C1 substate available, indicated by
+       CPUID_Fn00000005_EDX [MWaitC1SubStates] bits.
+
+Otherwise use HLT for default_idle function.
+
+HPC customers who want to optimize for lower latency are known to
+disable Global C-States in the BIOS. In fact, some vendors allow
+choosing a BIOS 'performance' profile which explicitly disables
+C-States.  In this scenario, the cpuidle driver will not be loaded and
+the kernel will continue with the default idle state chosen at boot
+time. On AMD systems currently the default idle state is HLT which has
+a higher exit latency compared to MWAIT.
+
+The reason for the choice of HLT over MWAIT on AMD systems is:
+
+1. Families prior to 10h didn't support MWAIT
+2. Families 10h-15h supported MWAIT, but not MWAIT C1. Hence it was
+   preferable to use HLT as the default state on these systems.
+
+However, AMD Family 17h onwards supports MWAIT as well as MWAIT C1. And
+it is preferable to use MWAIT as the default idle state on these
+systems, as it has lower exit latencies.
+
+```
+
+Its sign-offs (lines 106-111 of the patch):
+
+```text
+Signed-off-by: Wyes Karny <wyes.karny@amd.com>
+Signed-off-by: Dave Hansen <dave.hansen@linux.intel.com>
+Acked-by: Peter Zijlstra (Intel) <peterz@infradead.org>
+Tested-by: Zhang Rui <rui.zhang@intel.com>
+Link: https://ozlabs.org/~anton/junkcode/context_switch2.c
+Link: https://lkml.kernel.org/r/0cc675d8fd1f55e41b510e10abf2e21b6e9803d5.1654538381.git-series.wyes.karny@amd.com
+```
+
+`arch/x86/kernel/process.c` at `v5.19`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/arch/x86/kernel/process.c?h=v5.19`, SHA-256 `60cb1943549f39f5866dbab0ad1b5eaf2bd63f0a73049e7d529a3954b369071e`, the vendor check before it (lines 815-832):
+
+```c
+ * on systems that support only C1 -- so the boot default must be MWAIT.
+ *
+ * Some AMD machines are the opposite, they depend on using HALT.
+ *
+ * So for default C1, which is used during boot until cpuidle loads,
+ * use MWAIT-C1 on Intel HW that has it, else use HALT.
+ */
+static int prefer_mwait_c1_over_halt(const struct cpuinfo_x86 *c)
+{
+	if (c->x86_vendor != X86_VENDOR_INTEL)
+		return 0;
+
+	if (!cpu_has(c, X86_FEATURE_MWAIT) || boot_cpu_has_bug(X86_BUG_MONITOR))
+		return 0;
+
+	return 1;
+}
+
+```
+
+`arch/x86/kernel/process.c` at `v6.0`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/arch/x86/kernel/process.c?h=v6.0`, SHA-256 `048f28acf5cfdf5083f9824e7c1d138a0452ffb5e15eb47703577ad7f20d034d`, no vendor check at v6.0 (lines 812-850):
+
+```c
+/*
+ * Prefer MWAIT over HALT if MWAIT is supported, MWAIT_CPUID leaf
+ * exists and whenever MONITOR/MWAIT extensions are present there is at
+ * least one C1 substate.
+ *
+ * Do not prefer MWAIT if MONITOR instruction has a bug or idle=nomwait
+ * is passed to kernel commandline parameter.
+ */
+static int prefer_mwait_c1_over_halt(const struct cpuinfo_x86 *c)
+{
+	u32 eax, ebx, ecx, edx;
+
+	/* User has disallowed the use of MWAIT. Fallback to HALT */
+	if (boot_option_idle_override == IDLE_NOMWAIT)
+		return 0;
+
+	/* MWAIT is not supported on this platform. Fallback to HALT */
+	if (!cpu_has(c, X86_FEATURE_MWAIT))
+		return 0;
+
+	/* Monitor has a bug. Fallback to HALT */
+	if (boot_cpu_has_bug(X86_BUG_MONITOR))
+		return 0;
+
+	cpuid(CPUID_MWAIT_LEAF, &eax, &ebx, &ecx, &edx);
+
+	/*
+	 * If MWAIT extensions are not available, it is safe to use MWAIT
+	 * with EAX=0, ECX=0.
+	 */
+	if (!(ecx & CPUID5_ECX_EXTENSIONS_SUPPORTED))
+		return 1;
+
+	/*
+	 * If MWAIT extensions are available, there should be at least one
+	 * MWAIT C1 substate present.
+	 */
+	return (edx & MWAIT_C1_SUBSTATE_MASK);
+}
+```
+
+`arch/x86/kernel/process.c` at `v7.2`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/arch/x86/kernel/process.c?h=v7.2`, SHA-256 `f1792e208d5c0a01d0752154c66745d310728dc7beaf1567c37cd0bebd5cb61c`, no vendor check today (lines 869-908):
+
+```c
+/*
+ * Prefer MWAIT over HALT if MWAIT is supported, MWAIT_CPUID leaf
+ * exists and whenever MONITOR/MWAIT extensions are present there is at
+ * least one C1 substate.
+ *
+ * Do not prefer MWAIT if MONITOR instruction has a bug or idle=nomwait
+ * is passed to kernel commandline parameter.
+ */
+static __init bool prefer_mwait_c1_over_halt(void)
+{
+	const struct cpuinfo_x86 *c = &boot_cpu_data;
+	u32 eax, ebx, ecx, edx;
+
+	/* If override is enforced on the command line, fall back to HALT. */
+	if (boot_option_idle_override != IDLE_NO_OVERRIDE)
+		return false;
+
+	/* MWAIT is not supported on this platform. Fallback to HALT */
+	if (!cpu_has(c, X86_FEATURE_MWAIT))
+		return false;
+
+	/* Monitor has a bug or APIC stops in C1E. Fallback to HALT */
+	if (boot_cpu_has_bug(X86_BUG_MONITOR) || boot_cpu_has_bug(X86_BUG_AMD_APIC_C1E))
+		return false;
+
+	cpuid(CPUID_LEAF_MWAIT, &eax, &ebx, &ecx, &edx);
+
+	/*
+	 * If MWAIT extensions are not available, it is safe to use MWAIT
+	 * with EAX=0, ECX=0.
+	 */
+	if (!(ecx & CPUID5_ECX_EXTENSIONS_SUPPORTED))
+		return true;
+
+	/*
+	 * If MWAIT extensions are available, there should be at least one
+	 * MWAIT C1 substate present.
+	 */
+	return !!(edx & MWAIT_C1_SUBSTATE_MASK);
+}
+```
+
+## Linux v7.2, a CPU's hot data on lines of its own (`per-cpu-scheduler-…`)
+
+`kernel/sched/core.c` at `v7.2`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/kernel/sched/core.c?h=v7.2`, SHA-256 `957f657af1a2327c75dac495548eaa7bd1571a12a756c7f704e6f3195b156988`, the run queues (lines 131-131):
+
+```c
+DEFINE_PER_CPU_SHARED_ALIGNED(struct rq, runqueues);
+```
+
+`include/linux/percpu-defs.h` at `v7.2`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/include/linux/percpu-defs.h?h=v7.2`, SHA-256 `409b36b90d949956583fc786b55367eca4ae0d4078fe2f79418732fa133f3195`, `DEFINE_PER_CPU_SHARED_ALIGNED` (lines 129-146):
+
+```c
+/*
+ * Declaration/definition used for per-CPU variables that must be cacheline
+ * aligned under SMP conditions so that, whilst a particular instance of the
+ * data corresponds to a particular CPU, inefficiencies due to direct access by
+ * other CPUs are reduced by preventing the data from unnecessarily spanning
+ * cachelines.
+ *
+ * An example of this would be statistical data, where each CPU's set of data
+ * is updated by that CPU alone, but the data from across all CPUs is collated
+ * by a CPU processing a read from a proc file.
+ */
+#define DECLARE_PER_CPU_SHARED_ALIGNED(type, name)			\
+	DECLARE_PER_CPU_SECTION(type, name, PER_CPU_SHARED_ALIGNED_SECTION) \
+	____cacheline_aligned_in_smp
+
+#define DEFINE_PER_CPU_SHARED_ALIGNED(type, name)			\
+	DEFINE_PER_CPU_SECTION(type, name, PER_CPU_SHARED_ALIGNED_SECTION) \
+	____cacheline_aligned_in_smp
+```
+
+`include/linux/cache.h` at `v7.2`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/include/linux/cache.h?h=v7.2`, SHA-256 `80126344324f512af39227e0c54ea4dc19933e6943fdedf900fb3cbf9d3f654a`, `____cacheline_aligned_in_smp` (lines 63-69):
+
+```c
+#ifndef ____cacheline_aligned_in_smp
+#ifdef CONFIG_SMP
+#define ____cacheline_aligned_in_smp ____cacheline_aligned
+#else
+#define ____cacheline_aligned_in_smp
+#endif /* CONFIG_SMP */
+#endif
+```
+
+`include/vdso/cache.h` at `v7.2`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/include/vdso/cache.h?h=v7.2`, SHA-256 `7cf987365a5ed2a3cea1ac1afe31d23c5287af54a9b99417e30f545fdc8a2ded`, `____cacheline_aligned` and `SMP_CACHE_BYTES` (lines 7-13):
+
+```c
+#ifndef SMP_CACHE_BYTES
+#define SMP_CACHE_BYTES L1_CACHE_BYTES
+#endif
+
+#ifndef ____cacheline_aligned
+#define ____cacheline_aligned __attribute__((__aligned__(SMP_CACHE_BYTES)))
+#endif
+```
+
+`arch/x86/include/asm/cache.h` at `v7.2`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/arch/x86/include/asm/cache.h?h=v7.2`, SHA-256 `a4940ff4b26143d543d46089e40864ede0dc3d50d905de20e1f95e76c9d7f3e5`, x86's line, which defines no `SMP_CACHE_BYTES` of its own (lines 7-9):
+
+```c
+/* L1 cache line size */
+#define L1_CACHE_SHIFT	(CONFIG_X86_L1_CACHE_SHIFT)
+#define L1_CACHE_BYTES	(1 << L1_CACHE_SHIFT)
+```
+
+## Linux v7.2, the unlocked preempt count (round 2's NOTE 3)
+
+Cited by no issue: `every-syscall-saves-…`, where the review asked for it, was closed by #871 in the merge before this round's commit. Quoted for the review's claim.
+
+`arch/x86/include/asm/preempt.h` at `v7.2`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/arch/x86/include/asm/preempt.h?h=v7.2`, SHA-256 `4a0be0a532563e85ee4ac28dcbffe23d7e6592fd6870fe7ce6f7e29dc605bb83`, `__preempt_count_add` and `__preempt_count_sub` (lines 74-86):
+
+```c
+/*
+ * The various preempt_count add/sub methods
+ */
+
+static __always_inline void __preempt_count_add(int val)
+{
+	raw_cpu_add_4(__preempt_count, val);
+}
+
+static __always_inline void __preempt_count_sub(int val)
+{
+	raw_cpu_add_4(__preempt_count, -val);
+}
 ```
 
