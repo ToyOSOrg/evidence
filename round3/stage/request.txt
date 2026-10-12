@@ -1,0 +1,99 @@
+# PR #873 round 3: the AMD bench's shared-debug arms, now that #884 has landed, and the T14's head arms again,
+# all at the merged head 854509da16f87602436d99bf928fa65f63be3ec9 (wt/toyos-pge, pushed) = round 2's 86877feb6
+# merged with origin/main at ab655a115, which carries #884 (the `iommu-firmware-left` ring whose overflow panicked
+# every AMD shared-debug boot), #871 and #861.
+#
+# Every image below was staged with `cargo test --test toyos-build -- --metal --metal-readback <dir>
+# [--metal-host '<user>@<amd-bench>'] <rows>` from a committed, clean tree, exit 2 each (Verdict::Staged); nothing
+# touched a machine. Each <dir>/request.txt is the harness's own; this file orders them. The staging script and its two
+# runs' output: stage.sh, stage-mut.out, stage-head.out, beside this file.
+M=<scratchpad>/pge-r3/metal
+#
+# Trees (both clean; keep them until this run is judged):
+#   HEAD  <dev>/toyos-pge      wt/toyos-pge 854509da1
+#   MUT   <dev>/toyos-pge-mut  detached 854509da1; each mutation was a local commit there, never pushed,
+#           reset after staging: m1 d2f6fe4b9, m3 c040cd94c, m4 68a92ea33; patches in $M/../mut/
+#
+# Every arm is its own directory, so judging one never rebuilds another's image. A judge whose directory is missing a
+# readback stages instead and rewrites that image, so each directory is judged only once all its boots are back.
+#
+# The AMD invocations carry the harness's placeholder `--host <user>@<amd-bench>`: substitute the bench, and quote the
+# word, since an unquoted `<` is a shell redirection. Each toyos-metal run is `cargo <words>` from the HEAD tree.
+#
+# Which kernel each image carries (scripts/elfs.py over the five shared-debug images): m1, m3 and m4 each carry a
+# kernel of its own and every other embedded ELF byte-identical, so the kernel is the only part a mutation changed;
+# head-amd and head-t14 carry one identical kernel.
+
+######## AMD bench (Ryzen 7 4800U) — one session, in this order (5 boots) ########
+
+ 1. HEAD shared-debug (the three global-leaf rows)   sha256 ecccb3aa54474c2b424ac49a12ff08a298fe909139bd14ffe06ee1b8578c71e6
+    tree HEAD 854509da1
+    cargo run -p toyos-metal -- --image $M/head-amd/shared-debug/image.img --readback $M/head-amd/shared-debug --fat32-check --host '<user>@<amd-bench>'
+ 2. HEAD testcases (control_regs)                     sha256 2058a86c3c22cbfbf056bd91b1b2137ccf46337c1f0e7cb29d315b8cdb279332
+    tree HEAD 854509da1
+    cargo run -p toyos-metal -- --image $M/head-amd/testcases/image.img --readback $M/head-amd/testcases --fat32-check --host '<user>@<amd-bench>'
+ 3. M1 shared-debug                                   sha256 566ac56fe6d25100fe6705c0690cca265f5374c789dbcc2597c669832442fd53
+    tree MUT d2f6fe4b9 = 854509da1 + m1-nopcid-machine-flush-is-a-cr3-reload.patch
+    cargo run -p toyos-metal -- --image $M/m1-amd/shared-debug/image.img --readback $M/m1-amd/shared-debug --fat32-check --host '<user>@<amd-bench>'
+ 4. M3 shared-debug                                   sha256 2aa28cdda03b18b7938bd9adb255aa4491245a7a4372c26eb0e84dec200beda9
+    tree MUT c040cd94c = 854509da1 + m3-no-global-arm-in-discharge.patch
+    cargo run -p toyos-metal -- --image $M/m3-amd/shared-debug/image.img --readback $M/m3-amd/shared-debug --fat32-check --host '<user>@<amd-bench>'
+ 5. M4 shared-debug                                   sha256 a5b9390e1afdf48b7e7bbb1c452f14ce9bf939abea2ccd0a31a49666b86c6d4e
+    tree MUT 68a92ea33 = 854509da1 + m4-user-half-shootdown-flushes-global.patch
+    cargo run -p toyos-metal -- --image $M/m4-amd/shared-debug/image.img --readback $M/m4-amd/shared-debug --fat32-check --host '<user>@<amd-bench>'
+
+Judge (exit 0 green, 1 red), each from the HEAD tree, once its directory's readbacks are all present:
+   cargo test --test toyos-build -- --metal --metal-readback $M/head-amd --metal-host '<user>@<amd-bench>' a_global_kernel_leafs_discharge_drops_it a_kernel_half_shootdown_drops_a_global_kernel_translation a_user_half_shootdown_keeps_a_global_kernel_translation control_regs
+   cargo test --test toyos-build -- --metal --metal-readback $M/m1-amd --metal-host '<user>@<amd-bench>' a_global_kernel_leafs_discharge_drops_it a_kernel_half_shootdown_drops_a_global_kernel_translation a_user_half_shootdown_keeps_a_global_kernel_translation
+   cargo test --test toyos-build -- --metal --metal-readback $M/m3-amd --metal-host '<user>@<amd-bench>' a_global_kernel_leafs_discharge_drops_it a_kernel_half_shootdown_drops_a_global_kernel_translation a_user_half_shootdown_keeps_a_global_kernel_translation
+   cargo test --test toyos-build -- --metal --metal-readback $M/m4-amd --metal-host '<user>@<amd-bench>' a_global_kernel_leafs_discharge_drops_it a_kernel_half_shootdown_drops_a_global_kernel_translation a_user_half_shootdown_keeps_a_global_kernel_translation
+
+######## T14 — one session (2 boots) ########
+
+These replace round 2's T14 boots 5 and 6 (pge-r2/request.txt, the head's arms at 86877feb6), so the head that lands
+is the head measured. Round 2's other T14 boots are not restaged here.
+
+ 1. HEAD shared-debug (the three global-leaf rows)   sha256 32ab6be94f8b975be8b2f454db300671a1b4454e65016949d55038419f1ea6e2
+    tree HEAD 854509da1
+    cargo run -p toyos-metal -- --image $M/head-t14/shared-debug/image.img --readback $M/head-t14/shared-debug --fat32-check
+ 2. HEAD testcases (control_regs)                     sha256 899f124a94bc336c4172f897ceb5e62e80b9886dfa32625e2658ebd0048c2242
+    tree HEAD 854509da1
+    cargo run -p toyos-metal -- --image $M/head-t14/testcases/image.img --readback $M/head-t14/testcases --fat32-check
+
+Judge, from the HEAD tree:
+   cargo test --test toyos-build -- --metal --metal-readback $M/head-t14 a_global_kernel_leafs_discharge_drops_it a_kernel_half_shootdown_drops_a_global_kernel_translation a_user_half_shootdown_keeps_a_global_kernel_translation control_regs
+
+######## What each verdict should be ########
+
+Each row's job reads a global 2 MiB kernel leaf over frame A, points it at frame B and reads again with nothing
+invalidated (the control), invalidates as the row asks, and reads a third time, one CPU, interrupts closed. The issuing
+CPU answers its own shootdown by the same reach as every other CPU (tlb::shootdown -> SHOOTDOWN.serve(me, flush)).
+The AMD bench has no PCID, so its kernel-half flush is flush_global (the PGE toggle) and its user-half one a CR3 reload.
+
+HEAD, both benches: all three rows GREEN, judge exit 0.
+   On the AMD bench the keeping row's GREEN is itself a reading that Zen 2 caches the leaf global: its user-half
+   answer there is a CR3 reload, which drops every translation that is not global.
+HEAD control_regs, both benches: GREEN, every CPU's cr4 carrying bit 7 (PGE) and bit 18 (OSXSAVE, which #871
+   declares). Derived, not measured: round 1's readings plus bit 18, so cr4=0x00360ee8 on every T14 CPU (bit 17,
+   PCIDE, set) and cr4=0x00340ee8 on every AMD CPU (bit 17 clear: Zen 2 enumerates no PCID). Another value the judge
+   still passes is a finding for me, with the line.
+HEAD, the T14, both boots' kernel logs: "control_regs: cpuN signature 0x806c1 microcode 0xbe" for every N, with
+   nothing after 0xbe. 0xbe is Linux's reading of MSR 8BH on every T14 CPU (kernel/cpuvuln/fixtures/t14/msr.txt); any
+   other revision, or a line naming the erratum, is a finding for me. No such line on the AMD bench: the read is Intel's.
+
+M1, AMD (flush_tlb_all without PCID back to a CR3 reload): a_kernel_half_shootdown_drops_a_global_kernel_translation
+   RED, judge exit 1, the job exiting 101 with "the shootdown's flush left the old frame's global translation";
+   the other two GREEN. **This is the AMD-only reading that matters**: beside the head's GREEN on the same row it shows
+   that the Zen 2 caches the leaf global, which a CR3 reload leaves, and that flush_global's PGE toggle, every AMD
+   kernel-half shootdown's flush, drops it. No other boot on either bench can show both.
+M3, AMD (Owed::Address's global arm removed): a_global_kernel_leafs_discharge_drops_it RED, "the write's discharge left
+   the old frame's global translation"; the other two GREEN. Without PCID, m3 falls to the arm that invalidates only
+   where the target root is loaded, and the syscall runs on its process's root: this red shows the global arm is the
+   one that acts, not that the leaf is global (that is m1's).
+M4, AMD (the user-half answer is flush_tlb_all again, the PGE toggle there): a_user_half_shootdown_keeps_a_global_kernel_translation
+   RED, "the user-half shootdown dropped a global kernel translation"; the other two GREEN.
+
+Any row RED with "the control: with nothing invalidated the second read did not see the first frame" is neither: that
+   CPU held no translation to go stale, and that boot's mutation evidence is void. Report it as such.
+A mutation that stays GREEN where RED is expected is a finding for me, with the boot's kernel log.
+A shared-debug boot that panics, in `amdvi` or anywhere, is a finding for me, with its flash log.

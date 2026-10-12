@@ -1,0 +1,16 @@
+diff --git a/kernel/src/arch/x86_64/paging.rs b/kernel/src/arch/x86_64/paging.rs
+index ce37c92fe..cee213a9a 100644
+--- a/kernel/src/arch/x86_64/paging.rs
++++ b/kernel/src/arch/x86_64/paging.rs
+@@ -210,10 +210,7 @@ impl Owed {
+     fn discharge(self, target: Cr3) {
+         match self {
+             Self::Nothing => {}
+-            // `INVLPG` drops the page's global translation in every PCID, but
+-            // on a CPU with Intel's ADL063/RPL043, which `control_regs` declares
+-            // without PCID.
+-            Self::Address { va, prior } if prior & PAGE_GLOBAL != 0 => crate::arch::cpu::invlpg(va),
++            // MUTATION, never lands: no global arm.
+             Self::Address { va, .. } => {
+                 if let Some(have) = pcid_active() {
+                     crate::arch::cpu::invpcid(have, Invpcid::Address, target.pcid(), va);

@@ -1,0 +1,14 @@
+diff --git a/kernel/src/arch/x86_64/tlb.rs b/kernel/src/arch/x86_64/tlb.rs
+index 6337cd9c9..756e6aa35 100644
+--- a/kernel/src/arch/x86_64/tlb.rs
++++ b/kernel/src/arch/x86_64/tlb.rs
+@@ -157,7 +157,8 @@ fn wait_for(me: usize, cpu: u32, generation: Generation) {
+ fn flush(reach: Reach) {
+     match reach {
+         Reach::Wide => crate::mm::paging::flush_tlb_all(),
+-        Reach::Narrow => crate::mm::paging::flush_tlb_user(),
++        // MUTATION, never lands: the user-half answer drops global translations too.
++        Reach::Narrow => crate::mm::paging::flush_tlb_all(),
+     }
+ }
+ 

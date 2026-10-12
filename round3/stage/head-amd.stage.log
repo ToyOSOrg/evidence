@@ -1,0 +1,36 @@
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.80s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-608bd856a6e56707)
+18:22:04   BUILD x86_64 binaries of tests/guest/rust-tests
+18:22:10 external deps changed: cleaning <dev>/toyos-pge/tests/guest/rust-tests/tls-dlopen-lib/target/x86_64-unknown-toyos
+18:22:10 external deps changed: cleaning <dev>/toyos-pge/tests/guest/rust-tests/tls-lib/target/x86_64-unknown-toyos
+18:22:10 external deps changed: cleaning <dev>/toyos-pge/tests/guest/rust-tests/tls-multi-crate/target/x86_64-unknown-toyos
+18:22:10 external deps changed: cleaning <dev>/toyos-pge/tests/guest/rust-tests/tls-cranelift/target/x86_64-unknown-toyos
+18:24:22   BUILT x86_64 binaries of tests/guest/rust-tests  (138s)
+18:24:22 [toyos] Compiling 138 C tests, and attempting 24 declared ones...
+18:24:31 [metal] 4 registration(s) and 0 shared member(s) over 2 boot(s)
+18:24:31   BUILD x86_64 kernel boot-actuators,test-actuators, loader, ROOT of <scratchpad>/pge-r3/metal/head-amd/shared-debug/system-02fcb6c151029f91.toml
+18:24:37 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+18:24:37   BUILT x86_64 kernel boot-actuators,test-actuators, loader, ROOT of <scratchpad>/pge-r3/metal/head-amd/shared-debug/system-02fcb6c151029f91.toml  (6s)
+18:24:37 [metal] shared-debug: 3 job(s) under a list bound of 60000 ms, armed with ["pci-cap-selftest", "revoked-backing-selftest", "leak-rollback-selftest", "lapic-spurious-selftest", "unclaimed-vector-selftest", "xhci-xecp-selftest", "xhci-descriptor-selftest", "sysret-ss-probe", "test-input-merge", "sched-operation-nesting", "iommu-firmware-left"] and a boot deadline of 120000 ms — <scratchpad>/pge-r3/metal/head-amd/shared-debug/image.img
+18:24:37   BUILD x86_64 kernel, ROOT of <scratchpad>/pge-r3/metal/head-amd/testcases/system-789c4635baf75c07.toml
+18:24:40 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+18:24:40   BUILT x86_64 kernel, ROOT of <scratchpad>/pge-r3/metal/head-amd/testcases/system-789c4635baf75c07.toml  (3s)
+18:24:40 [metal] testcases: 8 job(s) under a list bound of 60000 ms, armed with [] and a boot deadline of 120000 ms — <scratchpad>/pge-r3/metal/head-amd/testcases/image.img
+# One boot per image. Each invocation is `cargo <words>` from this worktree.
+
+shared-debug
+  image: <scratchpad>/pge-r3/metal/head-amd/shared-debug/image.img
+  cargo run -p toyos-metal -- --image <scratchpad>/pge-r3/metal/head-amd/shared-debug/image.img --readback <scratchpad>/pge-r3/metal/head-amd/shared-debug --fat32-check --host <user>@<amd-bench>
+
+testcases
+  image: <scratchpad>/pge-r3/metal/head-amd/testcases/image.img
+  cargo run -p toyos-metal -- --image <scratchpad>/pge-r3/metal/head-amd/testcases/image.img --readback <scratchpad>/pge-r3/metal/head-amd/testcases --fat32-check --host <user>@<amd-bench>
+18:24:40 [metal] staged 2 image(s); <scratchpad>/pge-r3/metal/head-amd/request.txt lists them. The machine was not touched, so this run establishes nothing about it.
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `<dev>/toyos-pge/target/debug/deps/toyos_build-608bd856a6e56707 --metal --metal-readback <scratchpad>/pge-r3/metal/head-amd --metal-host '<user>@<amd-bench>' a_global_kernel_leafs_discharge_drops_it a_kernel_half_shootdown_drops_a_global_kernel_translation a_user_half_shootdown_keeps_a_global_kernel_translation control_regs` (exit status: 2)
+EXIT=2
