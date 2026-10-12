@@ -1,0 +1,45 @@
+# Recovered from the analysing agent's own transcript of 2026-10-12: what the command below printed, as the
+# tool returned it. The files it read were lost when the session scratchpad was wiped at a restart.
+# command: mkdir -p <scratchpad>/sysentry/analysis/scripts && cat > <scratchpad>/sysentry/analysis/scripts/findelf.py <<'EOF'
+#          # Usage: findelf.py <image> <outdir>
+#          # Lists the GPT partitions, then every 64-bit x86-64 ELF header in the image, and for each
+#          # carves the ELF by its section-header table's end (e_shoff + e_shnum*e_shentsize).
+#          import sys, struct, hashlib, os
+#          img, out = sys.argv[1], sys.argv[2]
+#          data = open(img, 'rb').read()
+#          hdr = data[512:512+92]
+#          assert hdr[:8] == b'EFI PART', hdr[:8]
+#          pe_lba, n, esz = struct.unpack_from('<QII', hdr, 72)
+#          for i in range(n):
+#              e = data[pe_lba*512 + i*esz: pe_lba*512 + (i+1)*esz]
+#              if e[:16] == b'\0'*16: continue
+#              first, last = struct.unpack_from('<QQ', e, 32)
+#              name = e[56:128].decode('utf-16le').rstrip('\0')
+#              print(f'part {i}: lba {first}..{last} name={name!r}')
+#          pos = 0
+#          k = 0
+#          while True:
+#              pos = data.find(b'\x7fELF\x02\x01\x01', pos)
+#              if pos < 0: break
+#              e_type, e_machine = struct.unpack_from('<HH', data, pos+16)
+#              if e_machine == 62:
+#                  shoff, = struct.unpack_from('<Q', data, pos+40)
+#                  shentsize, shnum = struct.unpack_from('<HH', data, pos+58)
+#                  size = shoff + shentsize*shnum
+#                  blob = data[pos:pos+size]
+#                  h = hashlib.sha256(blob).hexdigest()
+#                  print(f'elf at {pos:#x} type={e_type} size={size} ({size:#x}) sha256={h}')
+#                  open(os.path.join(out, f'elf-{pos:x}.bin'), 'wb').write(blob)
+#                  k += 1
+#              pos += 1
+#          EOF
+#          A=<scratchpad>/sysentry/analysis; D=<scratchpad>/sysentry/metal; mkdir -p $A/elf-mut $A/elf-head; python3 -I $A/scripts/findelf.py $D/t14-mut-slot/testcases/image.img $A/elf-mut 2>&1 | grep -v "size=.*sha" ; python3 -I $A/scripts/findelf.py $D/t14-mut-slot/testcases/image.img $A/elf-mut 2>&1 | grep -E "size=2[0-9]{6} " ; shasum -a 256 <home>/toyos-sysentry-metal/target/kernel-x86_64-*
+#
+part 0: lba 2048..71679 name='EFI System'
+part 1: lba 71680..73727 name='ToyOS slots'
+part 2: lba 73728..143359 name='ToyOS log'
+part 3: lba 143360..212991 name='ToyOS slot A'
+part 4: lba 212992..260095 name='ToyOS root A'
+elf at 0x4687400 type=3 size=2458296 (0x2582b8) sha256=df6d048f4d7b538dc8680c8a64caa41b6b3973c2a1922ad2cfc47d7274d72dd0
+df6d048f4d7b538dc8680c8a64caa41b6b3973c2a1922ad2cfc47d7274d72dd0  <home>/toyos-sysentry-metal/target/kernel-x86_64-4be7ccf4859a9aa6
+1063d9e6b2d70dbab3ade771fa7209008fad4f72d4b0bb8bb3eeb5a71ed76695  <home>/toyos-sysentry-metal/target/kernel-x86_64-6037782411f58b47

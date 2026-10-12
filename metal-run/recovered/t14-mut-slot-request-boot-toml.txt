@@ -1,0 +1,90 @@
+# Recovered from the analysing agent's own transcript of 2026-10-12: what the command below printed, as the
+# tool returned it. The files it read were lost when the session scratchpad was wiped at a restart.
+# command: D=<scratchpad>/sysentry/metal; cat $D/t14-mut-slot/request.txt; echo; echo "== boot"; cat $D/t14-mut-slot/testcases/boot.txt; echo; echo "== verdict"; cat $D/t14-mut-slot/testcases/verdict.txt; echo "== toml"; cat $D/t14-mut-slot/testcases/system-*.toml
+#
+# One boot per image. Each invocation is `cargo <words>` from this worktree.
+
+testcases
+  image: <scratchpad>/sysentry/metal/t14-mut-slot/testcases/image.img
+  cargo run -p toyos-metal -- --image <scratchpad>/sysentry/metal/t14-mut-slot/testcases/image.img --readback <scratchpad>/sysentry/metal/t14-mut-slot/testcases --fat32-check
+
+== boot
+back_secs 47
+stick_secs 0
+machine_vendor <vendor>
+machine_product <model>
+machine_bios <bios> (1.71 )
+preamble_secs 1.207
+wipe_secs 0.546
+flash_secs 19.393
+dd_secs 12.585
+entry_secs 3.572
+down_secs 10.027
+read_log_secs 6.634
+raw_log_secs 1.898
+
+== verdict
+passed
+== toml
+# Derived by `toyos_metal::image::derive` — not committed, not edited.
+# A metal boot ends itself: the job list below, then `reboot`.
+[boot]
+start = ["logkeeper", "diskserver", "fileserver", "soundserver", "acpiserver", "test-runner"]
+
+[programs.acpiserver]
+devices = ["acpi"]
+receives = ["power"]
+service = true
+
+[programs.diskserver]
+devices = ["pci:1b36:0010"]
+restart = true
+serves = ["block"]
+service = true
+
+[programs.fileserver]
+receives = ["block"]
+restart = true
+roles = ["data", "log", "boot"]
+
+[programs.logkeeper]
+serves = ["log"]
+service = true
+syscap = ["logread"]
+
+[programs.soundserver]
+devices = ["hda-audio", "pci:1af4:1059"]
+serves = ["soundserver"]
+service = true
+syscap = ["rt"]
+
+[programs.symbolize]
+
+[programs.test-runner]
+args = ["--bound-ms=60300", "test_rs_vector_state", "reboot"]
+receives = ["soundserver", "power", "log"]
+syscap = ["device", "dup", "logread", "power", "roster", "counters", "trace"]
+
+[programs.toybox]
+receives = ["soundserver"]
+
+[programs.toyfetch]
+
+[programs.usbd]
+
+[symlinks]
+"bin/cat" = "/system/bin/toybox"
+"bin/cp" = "/system/bin/toybox"
+"bin/echo" = "/system/bin/toybox"
+"bin/free" = "/system/bin/toybox"
+"bin/grep" = "/system/bin/toybox"
+"bin/hexdump" = "/system/bin/toybox"
+"bin/ls" = "/system/bin/toybox"
+"bin/mkdir" = "/system/bin/toybox"
+"bin/mv" = "/system/bin/toybox"
+"bin/ps" = "/system/bin/toybox"
+"bin/pwd" = "/system/bin/toybox"
+"bin/reboot" = "/system/bin/toybox"
+"bin/rm" = "/system/bin/toybox"
+"bin/shutdown" = "/system/bin/toybox"
+"bin/tone" = "/system/bin/toybox"

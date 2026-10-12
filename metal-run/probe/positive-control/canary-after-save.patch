@@ -1,0 +1,15 @@
+diff --git a/kernel/src/arch/x86_64/hw.rs b/kernel/src/arch/x86_64/hw.rs
+index f223a9270..df9d55a93 100644
+--- a/kernel/src/arch/x86_64/hw.rs
++++ b/kernel/src/arch/x86_64/hw.rs
+@@ -542,6 +542,10 @@ impl Hw for KernelHw {
+                 let pid = (*save).id.map_or(u32::MAX, |id| id.0.raw());
+                 let scribbled = slot_probe::before_save(area, (*save).kernel_stack_top, pid);
+                 super::fpu::save(area);
++                // POSITIVE CONTROL, never lands: the canary written after the save, as a skipping save would leave it.
++                if scribbled {
++                    core::ptr::write_bytes((area as usize + 576) as *mut u8, 0xA5, crate::arch::fpu::area_bytes() - 576);
++                }
+                 if scribbled {
+                     slot_probe::after_save(area, pid);
+                 }

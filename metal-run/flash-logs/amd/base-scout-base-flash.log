@@ -1,0 +1,455 @@
+5a4dc2f37854e01df51720e18b651fef65295dbb6883a69bf4a11e1aab01c99a  <scratchpad>/sysentry/metal/amd-base/scout-base/image.img
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.10s
+     Running `target/debug/toyos-metal --image <scratchpad>/sysentry/metal/amd-base/scout-base/image.img --readback <scratchpad>/sysentry/metal/amd-base/scout-base --fat32-check --host 'toyos-metal-tester@<host>'`
+image <scratchpad>/sysentry/metal/amd-base/scout-base/image.img: 134217728 bytes, ESP p1 at 2048+69632, log p3 at 73728+69632
+image <scratchpad>/sysentry/metal/amd-base/scout-base/image.img: armed with ["boot-deadline=120000"], so it is waited 420 s to come back
+machine <vendor> <model>, BIOS <bios>
+disk /dev/sda: 240328704 sectors, USB SanDisk 3.2Gen1, removable — the stick <home>/.cache/toyos/metal/<vendor>-<model>.toml names
+  run: sudo -n '/usr/sbin/wipefs' '--all' '/dev/sda'
+  run: sudo -n '/usr/bin/dd' 'of=/dev/sda' 'bs=4M' 'conv=fsync'
+  run: sudo -n '/usr/bin/efibootmgr' '--delete-bootnum' '--bootnum' '0002'
+  run: sudo -n '/usr/bin/efibootmgr' '--create-only' '--disk' '/dev/sda' '--part' '1' '--label' 'ToyOS' '--loader' '\EFI\BOOT\BOOTX64.EFI'
+  run: sudo -n '/usr/bin/efibootmgr' '--bootnext' '0002'
+  run: sudo -n '/usr/sbin/reboot'
+the machine answered ssh again after 41 s
+the boot stick enumerated 0 s after the machine answered
+  run: sudo -n '/usr/bin/mount' '-o' 'ro' '/dev/sda3' '<path>
+  run: sudo -n '/usr/bin/umount' '<path>
+[--.--- cpu0 loader] ToyOS Bootloader 1.0
+[--.--- cpu0 loader] Loader clock: this CPU states no counter rate, so no line carries the time it was said
+[--.--- cpu0 loader] Boot attempts: this image has had the machine 0 time(s) without reporting; now 1
+[--.--- cpu0 loader] Anti-rollback floor: ToyOSImageFloor-Icb8c108a2bb08c0e is no floor this image loader keeps; deleted
+[--.--- cpu0 loader] Anti-rollback floor: ToyOSImageFloor-I9ff53db6c09a5703 (image scope) holds 0
+[--.--- cpu0 loader] Firmware watchdog: 60 s, until ExitBootServices disables it
+[--.--- cpu0 loader] RSDP address: 0xcdffe014
+[--.--- cpu0 loader] Boot partition: LBA 2048+69632 signature [37, 84, 4b, bc, 8c, 8a, 8e, 4c, 94, 40, ae, c1, 06, d8, 2c, cd]
+[--.--- cpu0 loader] Log partition: signature [09, 40, 3d, 5e, 20, c3, 6a, 4d, ad, 44, 76, ce, 81, a6, 0e, 62]
+[--.--- cpu0 loader] Slots: the table marks A (sequence 1); slot A present, slot B absent; the floor is 0
+[--.--- cpu0 loader] Slot A: signed header be7809a9668f2ae451fadfd48a8b68fb3ecf3cd45987e7936599c92c1e968886 verifies under this loader's key, version 1791795459
+[--.--- cpu0 loader] ROOT: read into memory at 0xb349f000+0x1700000 from LBA 212992+47104, 1048576 bytes a request (optimal granularity: not reported), in 1402848162 counter ticks
+[--.--- cpu0 loader] Slot A: ROOT hashed in 20426778 counter ticks
+[--.--- cpu0 loader] Slot A: kernel, cmdline and ROOT are the bytes the signed header names
+[--.--- cpu0 loader] Boot attempts: slot A's image is written down as the one this pass boots
+[--.--- cpu0 loader] Kernel: 2460968 bytes
+[--.--- cpu0 loader] Boot parameter: "root=ba0b2a0eae516b387fa33951712b6592,boot-deadline=120000,boot-slot=A,blackbox=0x8000000"
+[--.--- cpu0 loader] Loading kernel elf...
+[--.--- cpu0 loader] Kernel stack size: 8388608
+[--.--- cpu0 loader] Kernel memory size: 13692928
+[--.--- cpu0 loader] Kernel memory located at: 0xb2600000
+[--.--- cpu0 loader] Loading segment: Segment { image: ImageRange { start: 0, len: 298172 }, filesz: 298172, file_offset: 0, flags: SegmentFlags(4) }
+[--.--- cpu0 loader] Loading segment: Segment { image: ImageRange { start: 302272, len: 1359421 }, filesz: 1359421, file_offset: 298176, flags: SegmentFlags(5) }
+[--.--- cpu0 loader] Loading segment: Segment { image: ImageRange { start: 1665792, len: 79104 }, filesz: 78320, file_offset: 1657600, flags: SegmentFlags(6) }
+[--.--- cpu0 loader] Loading segment: Segment { image: ImageRange { start: 1748208, len: 3552624 }, filesz: 27400, file_offset: 1735920, flags: SegmentFlags(6) }
+[--.--- cpu0 loader] Applied 3877 relocations
+[--.--- cpu0 loader] GOP: mode 1920x1080 stride=1920 format=1 fb=0xfc90000000 size=8294400
+[--.--- cpu0 loader] Wall clock: firmware's GetTime reads 2026-10-12 05:46:42 UTC at counter 11158768926
+[--.--- cpu0 loader] Black box: 0x8000000 armed at 2026-10-12-054642 for [09, 40, 3d, 5e, 20, c3, 6a, 4d, ad, 44, 76, ce, 81, a6, 0e, 62], and the kernel is told so on its parameter line
+[--.--- cpu0 loader] Boot chain: BootNext=0002, so this loader gets the machine back
+[--.--- cpu0 loader] Starting kernel...
+[--.--- cpu0 loader] GCD: 0xd0700000+0x27900000 mmio cap=0xc000000000022000 attr=0x0 free
+[--.--- cpu0 loader] GCD: 0xfc000000+0x1c00000 mmio cap=0xc000000000022000 attr=0x0 free
+[--.--- cpu0 loader] GCD: 0xff000000+0xeab000 mmio cap=0xc300000000022001 attr=0x8000000000000001 free
+[--.--- cpu0 loader] GCD: 0x450200000+0xf83fe00000 mmio cap=0xc000000000022000 attr=0x0 free
+[--.--- cpu0 loader] GCD: 0xfca0200000+0xfe00000 mmio cap=0xc000000000022000 attr=0x0 free
+[--.--- cpu0 loader] GCD: 70 descriptor(s); 5 free mmio range(s) of 0x200000 bytes or more handed to the kernel, 0 past its room
+[--.--- cpu0 loader] Scanout: 0xfc90000000+0x800000 mapped as the scanout in 2 MiB pages at identity and at PHYS_OFFSET, in 6 page directories under 2 second-level tables
+[--.--- cpu0 loader] Loader image: 0x140000000+0x4d000, mapped at identity as 0x140000000+0x200000
+[--.--- cpu0 loader] Boot map: root 0xb671b000, 0x100000000 bytes at identity and at PHYS_OFFSET
+[--.--- cpu0 loader] Kernel image: 0xb2600000+0xd0f000 is inside the 0x100000000-byte boot map
+[--.--- cpu0 loader] Parameter buffer: 0xb673cc98+0x59 is inside the 0x100000000-byte boot map
+[--.--- cpu0 loader] Seed: 32 bytes from EFI_RNG_PROTOCOL for the kernel's generator
+[--.--- cpu0 loader] Kernel arguments: 0xb88ec198+0x538 is inside the 0x100000000-byte boot map
+[--.--- cpu0 loader] Loader counter: 8216516646 at entry, 11773254258 at the handoff
+[--.--- cpu0 loader] Loader log: the kernel handoff begins, so this file ends here
+[--.--- cpu0 loader] --- the pass after the reset, reading what the boot above left
+[--.--- cpu0 loader] ToyOS Bootloader 1.0
+[--.--- cpu0 loader] Loader clock: this CPU states no counter rate, so no line carries the time it was said
+[--.--- cpu0 loader] Boot attempts: this image has had the machine 1 time(s) without reporting; now 0
+[--.--- cpu0 loader] Anti-rollback floor: ToyOSImageFloor-I9ff53db6c09a5703 (image scope) holds 0
+[--.--- cpu0 loader] Slot A: signed header be7809a9668f2ae451fadfd48a8b68fb3ecf3cd45987e7936599c92c1e968886 verifies under this loader's key, version 1791795459
+[--.--- cpu0 loader] Anti-rollback floor: 1791795459, raised from 0 by the boot that proved it
+[--.--- cpu0 loader] Black box: the record below is from the boot armed at 2026-10-12-054642
+[--.--- cpu0 loader] Black box: the last boot read DONE, so it handed the machine back on purpose and this chain ends here
+[--.--- cpu0 loader] | log: this boot's newest records follow, newest first
+[--.--- cpu0 loader] | log-tail: [ 8.128 cpu0 kernel] Rebooting.
+[--.--- cpu0 loader] | log-tail: [ 8.128 cpu0 kernel] usb-quiesce: disk 0 implements no SYNCHRONIZE CACHE, so it owed none
+[--.--- cpu0 loader] | log-tail: [ 8.128 cpu0 kernel] stop: 19 of 19 userland thread(s) stopped across 8 cpu(s) in 0 ms of a 2010 ms budget over 2 sweep(s), 0 of 62 userland block operation(s) still open
+[--.--- cpu0 loader] | log-tail: [ 8.128 cpu0 kernel] panel: paints=9 px=8078592 us=8721 max_us=2895
+[--.--- cpu0 loader] | log-tail: [ 8.128 cpu0 kernel] irq: unclaimed vectors no-isr=0
+[--.--- cpu0 loader] | log-tail: [ 8.128 cpu0 kernel] tlb: shootdowns=48 wait=511us max=22us dlopen=0 pcid=0 mmio=0 unmap=48 pipe=0 staged=0 bench=0 stop=0
+[--.--- cpu0 loader] | log-tail: [ 8.128 cpu0 kernel] irq: cpu7 timer=202 kick=32 xhci=0 userdev=0 i8042=0 dmafault=0 hda=0 tlb=45 nmi=0 spurious=0 unclaimed=0
+[--.--- cpu0 loader] | log-tail: [ 8.128 cpu0 kernel] irq: cpu6 timer=313 kick=22 xhci=0 userdev=0 i8042=0 dmafault=0 hda=0 tlb=45 nmi=0 spurious=0 unclaimed=0
+[--.--- cpu0 loader] | log-tail: [ 8.128 cpu0 kernel] irq: cpu5 timer=600 kick=36 xhci=0 userdev=0 i8042=0 dmafault=0 hda=0 tlb=44 nmi=0 spurious=0 unclaimed=0
+[--.--- cpu0 loader] | log-tail: [ 8.128 cpu0 kernel] irq: cpu4 timer=212 kick=13 xhci=0 userdev=0 i8042=0 dmafault=0 hda=0 tlb=47 nmi=0 spurious=0 unclaimed=0
+[--.--- cpu0 loader] | log-tail: [ 8.128 cpu1 kernel] console: klogd let the wire go to the stop
+[--.--- cpu0 loader] | log-tail: [ 8.128 cpu0 kernel] irq: cpu3 timer=402 kick=41 xhci=0 userdev=0 i8042=0 dmafault=0 hda=0 tlb=43 nmi=0 spurious=0 unclaimed=0
+[--.--- cpu0 loader] | log-tail: [ 8.128 cpu0 kernel] irq: cpu2 timer=400 kick=38 xhci=0 userdev=0 i8042=0 dmafault=0 hda=0 tlb=29 nmi=0 spurious=0 unclaimed=0
+[--.--- cpu0 loader] | log-tail: [ 8.128 cpu0 kernel] irq: cpu1 timer=221 kick=29 xhci=0 userdev=0 i8042=0 dmafault=0 hda=0 tlb=44 nmi=0 spurious=0 unclaimed=0
+[--.--- cpu0 loader] | log-tail: [ 8.128 cpu0 kernel] irq: cpu0 timer=305 kick=58 xhci=290 userdev=0 i8042=0 dmafault=0 hda=0 tlb=37 nmi=0 spurious=0 unclaimed=0
+[--.--- cpu0 loader] | usb-recovery: the log ring holds no transport break
+[--.--- cpu0 loader] | usb-quiesce: the controller lock was held from before the log volume's last durable byte, so no transfer was in flight
+[--.--- cpu0 loader] | usb-quiesce: no Bulk-Only command was open, so this reset cuts none
+[--.--- cpu0 loader] | usb-quiesce: xHCI 03:00.3 2/2 connected port(s) reset
+[--.--- cpu0 loader] | usb-quiesce: xHCI 03:00.3 halted=true USBSTS=0x00001019
+[--.--- cpu0 loader] | usb-quiesce: xHCI 03:00.3 reset=true ready=true
+[--.--- cpu0 loader] | usb-quiesce: xHCI 03:00.3 6/6 port(s) unpowered
+[--.--- cpu0 loader] | usb-quiesce: xHCI 03:00.3 bus mastering off
+[--.--- cpu0 loader] | usb-quiesce: xHCI 03:00.4 1/1 connected port(s) reset
+[--.--- cpu0 loader] | usb-quiesce: xHCI 03:00.4 halted=true USBSTS=0x00001019
+[--.--- cpu0 loader] | usb-quiesce: xHCI 03:00.4 reset=true ready=true
+[--.--- cpu0 loader] | usb-quiesce: xHCI 03:00.4 6/6 port(s) unpowered
+[--.--- cpu0 loader] | usb-quiesce: xHCI 03:00.4 bus mastering off
+[--.--- cpu0 loader] | usb-quiesce: 1/1 disk cache(s) flushed, 1 with no cache to flush, 3/3 connected port(s) reset, 2/2 controller(s) halted, 2 reset, 12/12 port(s) unpowered
+[--.--- cpu0 loader] Loader log: the last boot is accounted for, so this pass resets the machine
+[---------- -------- --.--- cpu0 kernel] panic console: armed 1920x1080 stride=1920 format=1 at 0xfc90000000, write-combining
+[---------- -------- --.--- cpu0 kernel] black box: 0x8000000 is this boot's, 16344 bytes for the next boot's loader
+[---------- -------- --.--- cpu0 kernel] serial: 16550 loopback read 0xff (absent or wrong port)
+[---------- -------- --.--- cpu0 kernel] PAT: IA32_PAT=0x0007040100070406, entry 4 = WC
+[---------- -------- --.--- cpu0 kernel] boot: memory map 0xb6719018+0x528, kernel 0xb2600000+0xd0f000, stack image+0x50f000+0x800000
+[---------- -------- --.--- cpu0 kernel] boot: kernel elf 0xb4b9f018+0x258d28, rsdp 0xcdffe014, boot pml4 0xb671b000
+[---------- -------- --.--- cpu0 kernel] boot: gop 0xfc90000000+0x7e9000 1920x1080 stride 1920 format 1
+[---------- -------- --.--- cpu0 kernel] boot: boot partition present=1 lba 2048 +69632 blocks guid [37, 84, 4b, bc, 8c, 8a, 8e, 4c, 94, 40, ae, c1, 06, d8, 2c, cd]
+[---------- -------- --.--- cpu0 kernel] boot: log partition guid [09, 40, 3d, 5e, 20, c3, 6a, 4d, ad, 44, 76, ce, 81, a6, 0e, 62]
+[---------- -------- --.--- cpu0 kernel] boot: cmdline 0xb673cc98+89
+[---------- -------- --.--- cpu0 kernel] boot: root=ba0b2a0eae516b387fa33951712b6592
+[---------- -------- --.--- cpu0 kernel] boot: slot A, the one the slot table marks
+[---------- -------- --.--- cpu0 kernel] random: the loader's seed is mixed into the generator's key
+[---------- -------- --.--- cpu0 kernel] random: RDSEED is mixed into the generator's key
+[---------- -------- --.--- cpu0 kernel] random: RDRAND is mixed into the generator's key
+[---------- -------- --.--- cpu0 kernel] random: the generator is keyed from 3 source(s), and every random byte is its ChaCha20
+[---------- -------- --.--- cpu0 kernel] pmm: the firmware map calls 16505958400 bytes usable in 35 entries; managed=16435380224 withheld=39845888 unaligned=30732288, and the three sum to it; frames=7837 reserved_frames=19 base=0x200000 span=8312
+[---------- -------- --.--- cpu0 kernel] paging: the direct map covers 0x0..0x40f400000
+[---------- -------- --.--- cpu0 kernel] mmio: 0xfc90000000+0x7e9000 PAT WriteCombining (MTRR UC)
+[---------- -------- --.--- cpu0 kernel] ACPI: APIC at 0xcdfeb000 len=312 rev=3 oem="<vendor>" checksummed
+[---------- -------- --.--- cpu0 kernel] ACPI: FACP at 0xcdfed000 len=268 rev=5 oem="<vendor>" checksummed
+[---------- -------- --.--- cpu0 kernel] ACPI: HPET at 0xcdfec000 len=56 rev=1 oem="<vendor>" checksummed
+[---------- -------- --.--- cpu0 kernel] ACPI: MCFG at 0xcdfea000 len=60 rev=1 oem="<vendor>" checksummed
+[---------- -------- --.--- cpu0 kernel] ACPI: DMAR not read: Absent
+[---------- -------- --.--- cpu0 kernel] ACPI: IVRS at 0xcdff4000 len=420 rev=2 oem="<vendor>" checksummed
+[---------- -------- --.--- cpu0 kernel] ACPI: 5 of 6 tables checksummed under the RSDP at 0xcdffe014
+[---------- -------- --.--- cpu0 kernel] ACPI: MADT cpus=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+[---------- -------- --.--- cpu0 kernel] ACPI: reset register SystemIO 0xb0 <- 0xfb, which is SMI_CMD too
+[---------- -------- --.--- cpu0 kernel] control_regs: cpu0 cr0=0x80010033 cr4=0x00340e68 efer=0x0d01 xcr0=0x7 save=xsavec smep smap umip nx
+[---------- -------- --.--- cpu0 kernel] idt: 256 vectors, 35 declared, 221 unclaimed, table at 0xffff8000b2a673f0 limit 0xfff
+[---------- -------- --.--- cpu0 kernel] control_regs: no performance request is declared: no HWP (CPUID.6:EAX[7])
+[---------- -------- --.--- cpu0 kernel] fpu: cpu0 cpuid.1.eax=0x860f01 xsave=1 osxsave=1 xcr0=0x7 cpuid.d.0=(0x207,832,896) cpuid.d.1=(0xf,832) cpuid.d.2..9.(eax,ebx,ecx)=[(256, 576, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0)] save=xsavec area=832
+[---------- -------- --.--- cpu0 kernel] percpu: BSP cpu_id=0 lapic_id=0
+[---------- -------- --.--- cpu0 kernel] control_regs: cpu0 apic_base=0xfee00900 Xapic
+[---------- -------- --.--- cpu0 kernel] mmio: 0xfee00000+0x1000 PAT Uncacheable (MTRR UC)
+[---------- -------- --.--- cpu0 kernel] LAPIC: Xapic enabled (ID 0)
+[---------- -------- --.--- cpu0 kernel] mmio: 0xfec00000+0x20 PAT Uncacheable (MTRR UC)
+[---------- -------- --.--- cpu0 kernel] ioapic: id=33 at 0xfec00000 ver=0x21 gsi 0..23 masked 24/24
+[---------- -------- --.--- cpu0 kernel] mmio: 0xfec01000+0x20 PAT Uncacheable (MTRR UC)
+[---------- -------- --.--- cpu0 kernel] ioapic: id=34 at 0xfec01000 ver=0x21 gsi 24..55 masked 32/32
+[---------- -------- --.--- cpu0 kernel] ioapic: iso bus:irq->gsi [0:0->2 edge/high, 0:9->9 level/low]
+[---------- -------- --.--- cpu0 kernel] counters: cpu0 reads smi=false aperf=true mperf=true hwp_request=false hwp_request_pkg=false energy_perf_bias=false
+[---------- -------- --.--- cpu0 kernel] symbols: loaded 6273 kernel symbols
+[---------- -------- --.--- cpu0 kernel] ACPI: HPET at 0xfed00000
+[---------- -------- --.--- cpu0 kernel] mmio: 0xfed00000+0x1000 PAT Uncacheable (MTRR UC)
+[---------- -------- --.--- cpu0 kernel] clock: HPET at 0xfed00000 enabled, period=69841278fs, counter reads 0, calibrating over 715909 ticks
+[2026-10-12 05:46:43  6.635 cpu0 kernel] TSC: 1796MHz (period=556634fs, calibrated over 50ms)
+[2026-10-12 05:46:43  6.635 cpu0 kernel] clock: TSC measured 1796512609Hz against the HPET; CPUID leaves 15H and 16H stating no frequency, so nothing independent confirms it
+[2026-10-12 05:46:43  6.635 cpu0 kernel] ACPI: the FADT names no RTC century register
+[2026-10-12 05:46:43  6.635 cpu0 kernel] clock: the RTC reads 2026-10-12 05:46:43 UTC
+[2026-10-12 05:46:43  6.645 cpu0 kernel] LAPIC timer: 998067 ticks/10ms, so 99806700Hz
+[2026-10-12 05:46:43  6.645 cpu0 kernel] boot deadline: 120000 ms, after which this kernel seals a WEDGED record and writes the reset register itself
+[2026-10-12 05:46:43  6.645 cpu0 kernel] hard lockup: 60000 ms, but CPUID states no architectural performance counter on this machine, so nothing samples a cpu that stops taking interrupts
+[2026-10-12 05:46:43  6.645 cpu0 kernel] Boot: CPU ready (60ms)
+[2026-10-12 05:46:43  6.648 cpu0 kernel] ACPI: RSDP at 0xcdffe014
+[2026-10-12 05:46:43  6.648 cpu0 kernel] ACPI: MCFG found at 0xcdfea000
+[2026-10-12 05:46:43  6.648 cpu0 kernel] ACPI: ECAM window: segment 0 buses 0x00..=0x3f, bus 0 at 0xf8000000
+[2026-10-12 05:46:43  6.648 cpu0 kernel] PCI: Enumerating devices...
+[2026-10-12 05:46:43  6.648 cpu0 kernel] mmio: 0xf8000000+0x4000000 PAT Uncacheable (MTRR UC)
+[2026-10-12 05:46:43  6.648 cpu0 kernel]   PCI 00:00.0 [0600] vendor=1022 device=1630 prog_if=00 bars=[]
+[2026-10-12 05:46:43  6.648 cpu0 kernel]   PCI 00:00.2 [0806] vendor=1022 device=1631 prog_if=00 bars=[]
+[2026-10-12 05:46:43  6.648 cpu0 kernel]   PCI 00:01.0 [0600] vendor=1022 device=1632 prog_if=00 bars=[]
+[2026-10-12 05:46:43  6.648 cpu0 kernel]   PCI 00:02.0 [0600] vendor=1022 device=1632 prog_if=00 bars=[]
+[2026-10-12 05:46:43  6.648 cpu0 kernel]   PCI 00:02.2 [0604] vendor=1022 device=1634 prog_if=00 bars=[]
+[2026-10-12 05:46:43  6.648 cpu0 kernel]   PCI 00:02.3 [0604] vendor=1022 device=1634 prog_if=00 bars=[]
+[2026-10-12 05:46:43  6.648 cpu0 kernel]   PCI 00:08.0 [0600] vendor=1022 device=1632 prog_if=00 bars=[]
+[2026-10-12 05:46:43  6.648 cpu0 kernel]   PCI 00:08.1 [0604] vendor=1022 device=1635 prog_if=00 bars=[]
+[2026-10-12 05:46:43  6.648 cpu0 kernel]   PCI 00:14.0 [0c05] vendor=1022 device=790b prog_if=00 bars=[]
+[2026-10-12 05:46:43  6.648 cpu0 kernel]   PCI 00:14.3 [0601] vendor=1022 device=790e prog_if=00 bars=[]
+[2026-10-12 05:46:43  6.648 cpu0 kernel]   PCI 00:18.0 [0600] vendor=1022 device=1448 prog_if=00 bars=[]
+[2026-10-12 05:46:43  6.648 cpu0 kernel]   PCI 00:18.1 [0600] vendor=1022 device=1449 prog_if=00 bars=[]
+[2026-10-12 05:46:43  6.648 cpu0 kernel]   PCI 00:18.2 [0600] vendor=1022 device=144a prog_if=00 bars=[]
+[2026-10-12 05:46:43  6.648 cpu0 kernel]   PCI 00:18.3 [0600] vendor=1022 device=144b prog_if=00 bars=[]
+[2026-10-12 05:46:43  6.648 cpu0 kernel]   PCI 00:18.4 [0600] vendor=1022 device=144c prog_if=00 bars=[]
+[2026-10-12 05:46:43  6.648 cpu0 kernel]   PCI 00:18.5 [0600] vendor=1022 device=144d prog_if=00 bars=[]
+[2026-10-12 05:46:43  6.648 cpu0 kernel]   PCI 00:18.6 [0600] vendor=1022 device=144e prog_if=00 bars=[]
+[2026-10-12 05:46:43  6.648 cpu0 kernel]   PCI 00:18.7 [0600] vendor=1022 device=144f prog_if=00 bars=[]
+[2026-10-12 05:46:43  6.648 cpu0 kernel]   PCI 01:00.0 [0280] vendor=8086 device=2723 prog_if=00 bars=[bar0=0xd0600000]
+[2026-10-12 05:46:43  6.649 cpu0 kernel]   PCI 02:00.0 [0108] vendor=144d device=a808 prog_if=02 bars=[bar0=0xd0500000]
+[2026-10-12 05:46:43  6.649 cpu0 kernel]   PCI 03:00.0 [0300] vendor=1002 device=1636 prog_if=00 bars=[bar0=0xfc90000000 bar2=0xfca0000000 bar4=none(it is an I/O BAR at port 0x1000, not memory) bar5=0xd0400000]
+[2026-10-12 05:46:43  6.649 cpu0 kernel]   PCI 03:00.1 [0403] vendor=1002 device=1637 prog_if=00 bars=[bar0=0xd04c8000]
+[2026-10-12 05:46:43  6.649 cpu0 kernel]   PCI 03:00.2 [1080] vendor=1022 device=15df prog_if=00 bars=[bar2=0xd0300000 bar5=0xd04ce000]
+[2026-10-12 05:46:43  6.649 cpu0 kernel]   PCI 03:00.3 [0c03] vendor=1022 device=1639 prog_if=30 bars=[bar0=0xd0000000]
+[2026-10-12 05:46:43  6.649 cpu0 kernel]   PCI 03:00.4 [0c03] vendor=1022 device=1639 prog_if=30 bars=[bar0=0xd0100000]
+[2026-10-12 05:46:43  6.649 cpu0 kernel]   PCI 03:00.5 [0480] vendor=1022 device=15e2 prog_if=00 bars=[bar0=0xd0480000]
+[2026-10-12 05:46:43  6.649 cpu0 kernel]   PCI 03:00.6 [0403] vendor=1022 device=15e3 prog_if=00 bars=[bar0=0xd04c0000]
+[2026-10-12 05:46:43  6.649 cpu0 kernel]   PCI 03:00.7 [1180] vendor=1022 device=15e4 prog_if=00 bars=[bar2=0xd0200000 bar5=0xd04cc000]
+[2026-10-12 05:46:43  6.651 cpu0 kernel] PCI: Enumeration complete, 28 functions.
+[2026-10-12 05:46:43  6.651 cpu0 kernel] pcidev: PCI 00:02.2 forwards 0xd0600000..0xd0700000 to its secondary bus
+[2026-10-12 05:46:43  6.651 cpu0 kernel] pcidev: PCI 00:02.3 forwards 0xd0500000..0xd0600000 to its secondary bus
+[2026-10-12 05:46:43  6.651 cpu0 kernel] pcidev: PCI 00:08.1 forwards 0xd0000000..0xd0500000 to its secondary bus
+[2026-10-12 05:46:43  6.651 cpu0 kernel] pcidev: PCI 00:08.1 forwards 0xfc90000000..0xfca0200000 to its secondary bus
+[2026-10-12 05:46:43  6.651 cpu0 kernel] pcidev: firmware declared root bridge memory: mem 0xd0000000..0xd0700000, mem 0xfc90000000..0xfca0200000, mem 0xd0700000..0xf8000000, mem 0xfc000000..0xfdc00000, mem 0xff000000..0xffeab000, mem 0x450200000..0xfc90000000, mem 0xfca0200000..0xfcb0000000
+[2026-10-12 05:46:43  6.651 cpu0 kernel] pcidev: 28 functions; 4 run(s) of 2 MiB or more below 0xfec00000 and 2 from 0x100000000
+[2026-10-12 05:46:43  6.651 cpu0 kernel] pcidev:   0xcf000000..0xd0000000 (16 MiB)
+[2026-10-12 05:46:43  6.651 cpu0 kernel] pcidev:   0xd0700000..0xf8000000 (633 MiB)
+[2026-10-12 05:46:43  6.651 cpu0 kernel] pcidev:   0xfc000000..0xfde00000 (30 MiB)
+[2026-10-12 05:46:43  6.651 cpu0 kernel] pcidev:   0xfdf00000..0xfec00000 (13 MiB)
+[2026-10-12 05:46:43  6.651 cpu0 kernel] pcidev:   0x430000000..0xfc90000000 (1017344 MiB)
+[2026-10-12 05:46:43  6.651 cpu0 kernel] pcidev:   0xfca0200000..0xffffffffffffffff (17592185009661 MiB)
+[2026-10-12 05:46:43  6.652 cpu0 kernel] iommu: IVRS rev=2 ivinfo=0x00203041 efr_images=y preboot_dma_protection=n pa=48 va=64
+[2026-10-12 05:46:43  6.652 cpu0 kernel] iommu: IVRS IVHD 0x10 at +48 describes 00:00.2 again, which is read at its higher type
+[2026-10-12 05:46:43  6.652 cpu0 kernel] iommu: IVRS IVHD 0x11 at +120 describes 00:00.2 again, which is read at its higher type
+[2026-10-12 05:46:43  6.652 cpu0 kernel] iommu: amdvi unit0 @0xfdf00000 seg=0 dev=00:00.2 ivhd=0x40 flags=0xb0 cap=0x40 info=0x0000 attributes=0x00040200 efr_image=0x206d73ef22254ade efr2_image=0x0000000000000000
+[2026-10-12 05:46:43  6.652 cpu0 kernel] iommu: amdvi unit0 serves 00:01.0..=ff:1f.6 data=0x00
+[2026-10-12 05:46:43  6.652 cpu0 kernel] iommu: amdvi unit0 serves ff:00.0..=ff:1f.7 as 00:14.5 data=0x00
+[2026-10-12 05:46:43  6.652 cpu0 kernel] iommu: amdvi unit0 serves special variety=2 handle=0 as 00:14.0 data=0x00
+[2026-10-12 05:46:43  6.652 cpu0 kernel] iommu: amdvi unit0 serves special variety=1 handle=33 as 00:14.0 data=0xd7
+[2026-10-12 05:46:43  6.652 cpu0 kernel] iommu: amdvi unit0 serves special variety=1 handle=34 as 00:00.1 data=0x00
+[2026-10-12 05:46:43  6.652 cpu0 kernel] iommu: amdvi unit0 serves acpi "AMDI0020" cid="" uid="\\_SB.FUR0" as 00:14.5 data=0x40
+[2026-10-12 05:46:43  6.652 cpu0 kernel] iommu: amdvi unit0 serves acpi "AMDI0020" cid="" uid="\\_SB.FUR1" as 00:14.5 data=0x40
+[2026-10-12 05:46:43  6.652 cpu0 kernel] iommu: amdvi unit0 serves acpi "AMDI0020" cid="" uid="\\_SB.FUR2" as 00:14.5 data=0x40
+[2026-10-12 05:46:43  6.652 cpu0 kernel] iommu: amdvi unit0 serves acpi "AMDI0020" cid="" uid="\\_SB.FUR3" as 00:14.5 data=0x40
+[2026-10-12 05:46:43  6.652 cpu0 kernel] mmio: 0xfdf00000+0x4000 PAT Uncacheable (MTRR UC)
+[2026-10-12 05:46:43  6.652 cpu0 kernel] iommu: amdvi unit0 handed over control=0x0000220000000400 status=0x00000000 efr=0x206d73ef22254ade
+[2026-10-12 05:46:43  6.652 cpu0 kernel] iommu: amdvi unit0 @0xfdf00000 switched off control=0x0000220000000400 status=0x00000000
+[2026-10-12 05:46:43  6.652 cpu0 kernel] iommu: AMD-Vi isolates no device this boot: 1 unit(s) described, 1 switched off, so DMA behind those reaches memory untranslated
+[2026-10-12 05:46:43  6.652 cpu0 kernel] file cache: budget 62696 pages (244 MiB)
+[2026-10-12 05:46:43  6.652 cpu0 kernel] gpt: the boot volume names 5E3D4009-C320-4D6A-AD44-76CE81A60E62 as the log partition
+[2026-10-12 05:46:43  6.652 cpu0 kernel] gpt: firmware booted us from partition BC4B8437-8A8C-4C8E-9440-AEC106D82CCD at LBA 2048+69632
+[2026-10-12 05:46:43  6.652 cpu0 kernel] Boot: peripherals ready (3ms)
+[2026-10-12 05:46:43  6.653 cpu0 kernel] mtrr: the boot processor's range registers: IA32_MTRR_DEF_TYPE 0xc00 and 8 variable pairs
+[2026-10-12 05:46:43  6.663 cpu1 kernel] control_regs: cpu1 cr0=0x80010033 cr4=0x00340e68 efer=0x0d01 xcr0=0x7 save=xsavec smep smap umip nx
+[2026-10-12 05:46:43  6.663 cpu1 kernel] fpu: cpu1 cpuid.1.eax=0x860f01 xsave=1 osxsave=1 xcr0=0x7 cpuid.d.0=(0x207,832,896) cpuid.d.1=(0xf,832) cpuid.d.2..9.(eax,ebx,ecx)=[(256, 576, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0)] save=xsavec area=832
+[2026-10-12 05:46:43  6.663 cpu1 kernel] control_regs: cpu1 apic_base=0xfee00800 Xapic
+[2026-10-12 05:46:43  6.663 cpu1 kernel] mtrr: cpu1's range registers are the boot processor's
+[2026-10-12 05:46:43  6.664 cpu0 kernel] SMP: cpu1 tsc=11970657270 inside the BSP's 11952685764..11972448234 (19762470 cycles wide)
+[2026-10-12 05:46:43  6.664 cpu0 kernel] SMP: AP cpu1 lapic=1 online
+[2026-10-12 05:46:43  6.674 cpu2 kernel] control_regs: cpu2 cr0=0x80010033 cr4=0x00340e68 efer=0x0d01 xcr0=0x7 save=xsavec smep smap umip nx
+[2026-10-12 05:46:43  6.674 cpu2 kernel] fpu: cpu2 cpuid.1.eax=0x860f01 xsave=1 osxsave=1 xcr0=0x7 cpuid.d.0=(0x207,832,896) cpuid.d.1=(0xf,832) cpuid.d.2..9.(eax,ebx,ecx)=[(256, 576, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0)] save=xsavec area=832
+[2026-10-12 05:46:43  6.674 cpu2 kernel] control_regs: cpu2 apic_base=0xfee00800 Xapic
+[2026-10-12 05:46:43  6.674 cpu2 kernel] mtrr: cpu2's range registers are the boot processor's
+[2026-10-12 05:46:43  6.675 cpu0 kernel] SMP: cpu2 tsc=11990543058 inside the BSP's 11972571660..11992333500 (19761840 cycles wide)
+[2026-10-12 05:46:43  6.675 cpu0 kernel] SMP: AP cpu2 lapic=2 online
+[2026-10-12 05:46:43  6.685 cpu3 kernel] control_regs: cpu3 cr0=0x80010033 cr4=0x00340e68 efer=0x0d01 xcr0=0x7 save=xsavec smep smap umip nx
+[2026-10-12 05:46:43  6.685 cpu3 kernel] fpu: cpu3 cpuid.1.eax=0x860f01 xsave=1 osxsave=1 xcr0=0x7 cpuid.d.0=(0x207,832,896) cpuid.d.1=(0xf,832) cpuid.d.2..9.(eax,ebx,ecx)=[(256, 576, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0)] save=xsavec area=832
+[2026-10-12 05:46:43  6.685 cpu3 kernel] control_regs: cpu3 apic_base=0xfee00800 Xapic
+[2026-10-12 05:46:43  6.685 cpu3 kernel] mtrr: cpu3's range registers are the boot processor's
+[2026-10-12 05:46:43  6.686 cpu0 kernel] SMP: cpu3 tsc=12010425930 inside the BSP's 11992456818..12012219774 (19762956 cycles wide)
+[2026-10-12 05:46:43  6.686 cpu0 kernel] SMP: AP cpu3 lapic=3 online
+[2026-10-12 05:46:43  6.696 cpu4 kernel] control_regs: cpu4 cr0=0x80010033 cr4=0x00340e68 efer=0x0d01 xcr0=0x7 save=xsavec smep smap umip nx
+[2026-10-12 05:46:43  6.696 cpu4 kernel] fpu: cpu4 cpuid.1.eax=0x860f01 xsave=1 osxsave=1 xcr0=0x7 cpuid.d.0=(0x207,832,896) cpuid.d.1=(0xf,832) cpuid.d.2..9.(eax,ebx,ecx)=[(256, 576, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0)] save=xsavec area=832
+[2026-10-12 05:46:43  6.696 cpu4 kernel] control_regs: cpu4 apic_base=0xfee00800 Xapic
+[2026-10-12 05:46:43  6.696 cpu4 kernel] mtrr: cpu4's range registers are the boot processor's
+[2026-10-12 05:46:43  6.697 cpu0 kernel] SMP: cpu4 tsc=12030315570 inside the BSP's 12012344766..12032107236 (19762470 cycles wide)
+[2026-10-12 05:46:43  6.697 cpu0 kernel] SMP: AP cpu4 lapic=4 online
+[2026-10-12 05:46:43  6.707 cpu5 kernel] control_regs: cpu5 cr0=0x80010033 cr4=0x00340e68 efer=0x0d01 xcr0=0x7 save=xsavec smep smap umip nx
+[2026-10-12 05:46:43  6.707 cpu5 kernel] fpu: cpu5 cpuid.1.eax=0x860f01 xsave=1 osxsave=1 xcr0=0x7 cpuid.d.0=(0x207,832,896) cpuid.d.1=(0xf,832) cpuid.d.2..9.(eax,ebx,ecx)=[(256, 576, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0)] save=xsavec area=832
+[2026-10-12 05:46:43  6.707 cpu5 kernel] control_regs: cpu5 apic_base=0xfee00800 Xapic
+[2026-10-12 05:46:43  6.707 cpu5 kernel] mtrr: cpu5's range registers are the boot processor's
+[2026-10-12 05:46:43  6.708 cpu0 kernel] SMP: cpu5 tsc=12050203068 inside the BSP's 12032233416..12051995886 (19762470 cycles wide)
+[2026-10-12 05:46:43  6.708 cpu0 kernel] SMP: AP cpu5 lapic=5 online
+[2026-10-12 05:46:43  6.718 cpu6 kernel] control_regs: cpu6 cr0=0x80010033 cr4=0x00340e68 efer=0x0d01 xcr0=0x7 save=xsavec smep smap umip nx
+[2026-10-12 05:46:43  6.718 cpu6 kernel] fpu: cpu6 cpuid.1.eax=0x860f01 xsave=1 osxsave=1 xcr0=0x7 cpuid.d.0=(0x207,832,896) cpuid.d.1=(0xf,832) cpuid.d.2..9.(eax,ebx,ecx)=[(256, 576, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0)] save=xsavec area=832
+[2026-10-12 05:46:43  6.718 cpu6 kernel] control_regs: cpu6 apic_base=0xfee00800 Xapic
+[2026-10-12 05:46:43  6.718 cpu6 kernel] mtrr: cpu6's range registers are the boot processor's
+[2026-10-12 05:46:43  6.719 cpu0 kernel] SMP: cpu6 tsc=12070093320 inside the BSP's 12052122372..12071884518 (19762146 cycles wide)
+[2026-10-12 05:46:43  6.719 cpu0 kernel] SMP: AP cpu6 lapic=6 online
+[2026-10-12 05:46:43  6.729 cpu7 kernel] control_regs: cpu7 cr0=0x80010033 cr4=0x00340e68 efer=0x0d01 xcr0=0x7 save=xsavec smep smap umip nx
+[2026-10-12 05:46:43  6.729 cpu7 kernel] fpu: cpu7 cpuid.1.eax=0x860f01 xsave=1 osxsave=1 xcr0=0x7 cpuid.d.0=(0x207,832,896) cpuid.d.1=(0xf,832) cpuid.d.2..9.(eax,ebx,ecx)=[(256, 576, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0)] save=xsavec area=832
+[2026-10-12 05:46:43  6.729 cpu7 kernel] control_regs: cpu7 apic_base=0xfee00800 Xapic
+[2026-10-12 05:46:43  6.729 cpu7 kernel] mtrr: cpu7's range registers are the boot processor's
+[2026-10-12 05:46:43  6.730 cpu0 kernel] SMP: cpu7 tsc=12089978676 inside the BSP's 12072008448..12091770702 (19762254 cycles wide)
+[2026-10-12 05:46:43  6.730 cpu0 kernel] SMP: AP cpu7 lapic=7 online
+[2026-10-12 05:46:43  6.730 cpu0 kernel] SMP: roster full at 8 CPUs; ignoring further MADT entries
+[2026-10-12 05:46:43  6.730 cpu0 kernel] SMP: 8 of 16 MADT cpus online, 7 of 7 APs inside the BSP's TSC bracket
+[2026-10-12 05:46:43  6.730 cpu0 kernel] control_regs: 8 of 8 cpus hold cr0=0x80010033 cr4=0x00340e68 efer=0x0d01 xcr0=0x7 save=xsavec apic=Xapic
+[2026-10-12 05:46:43  6.730 cpu0 kernel] root: mounted read-only from memory at 0xb349f000+0x1700000, filesystem ba0b2a0eae516b387fa33951712b6592, 5888 blocks
+[2026-10-12 05:46:43  6.730 cpu0 kernel] Boot: subsystems ready (77ms)
+[2026-10-12 05:46:43  6.734 cpu0 kernel] spawn: /system/bin/supervisor pid=0 (layout=0ms tls=1ms total=1ms)
+[2026-10-12 05:46:43  6.734 cpu0 kernel] spawned /system/bin/supervisor pid=0
+[2026-10-12 05:46:43  6.734 cpu0 kernel] boot: the supervisor spawned with ROOT from memory; storage commands before it: 0
+[2026-10-12 05:46:43  6.734 cpu0 kernel] xHCI: found at PCI 03:00.3 1022:1639
+[2026-10-12 05:46:43  6.734 cpu0 kernel] xHCI: BAR0=0xd0000000
+[2026-10-12 05:46:43  6.734 cpu0 kernel] mmio: 0xd00fe000+0x1000 PAT Uncacheable (MTRR UC)
+[2026-10-12 05:46:43  6.734 cpu0 kernel] PCI 03:00.3: msix address=0xfee00000 data=0x00000021
+[2026-10-12 05:46:43  6.734 cpu0 kernel] xHCI: MSI-X enabled (vector 0x21)
+[2026-10-12 05:46:43  6.734 cpu0 kernel] mmio: 0xd0000000+0x10000 PAT Uncacheable (MTRR UC)
+[2026-10-12 05:46:43  6.734 cpu0 kernel] xHCI: max_slots=64 max_ports=6 ctx_size=64 pagesize=0x1
+[2026-10-12 05:46:43  6.734 cpu0 kernel] xHCI: dma 2048 KiB: scratchpad=2 device blocks=64 of 12288 B (max_slots=64)
+[2026-10-12 05:46:43  6.736 cpu0 kernel] xHCI: firmware released the controller in 1252us (USBLEGSUP 0x00010401 -> 0x01000401)
+[2026-10-12 05:46:43  6.736 cpu0 kernel] xHCI: USBLEGCTLSTS 0xc0002000 -> 0x00000000 (SMI generation off)
+[2026-10-12 05:46:43  6.736 cpu0 kernel] xHCI: USB 2.0 on ports 1..=4
+[2026-10-12 05:46:43  6.736 cpu0 kernel] xHCI: USB 3.1 on ports 5..=5
+[2026-10-12 05:46:43  6.736 cpu0 kernel] xHCI: USB 3.1 on ports 6..=6
+[2026-10-12 05:46:43  6.736 cpu0 kernel] xHCI: 4 USB2 and 2 USB3 port register(s) of 6 named, 0 capability(ies) refused
+[2026-10-12 05:46:43  6.736 cpu0 kernel] xHCI: controller reset
+[2026-10-12 05:46:43  6.736 cpu0 kernel] iommu: no domain of its own for a device: no unit on this machine translates
+[2026-10-12 05:46:43  6.736 cpu0 kernel] xHCI: 2 scratchpad buffers configured
+[2026-10-12 05:46:43  6.736 cpu0 kernel] xHCI: controller started
+[2026-10-12 05:46:43  6.736 cpu0 kernel] xHCI: 6/6 root-hub ports powered (PPC=0)
+[2026-10-12 05:46:43  6.736 cpu0 kernel] xHCI: found at PCI 03:00.4 1022:1639
+[2026-10-12 05:46:43  6.736 cpu0 kernel] xHCI: BAR0=0xd0100000
+[2026-10-12 05:46:43  6.736 cpu0 kernel] mmio: 0xd01fe000+0x1000 PAT Uncacheable (MTRR UC)
+[2026-10-12 05:46:43  6.736 cpu0 kernel] PCI 03:00.4: msix address=0xfee00000 data=0x00000021
+[2026-10-12 05:46:43  6.736 cpu0 kernel] xHCI: MSI-X enabled (vector 0x21)
+[2026-10-12 05:46:43  6.736 cpu0 kernel] mmio: 0xd0100000+0x10000 PAT Uncacheable (MTRR UC)
+[2026-10-12 05:46:43  6.736 cpu0 kernel] xHCI: max_slots=64 max_ports=6 ctx_size=64 pagesize=0x1
+[2026-10-12 05:46:43  6.736 cpu0 kernel] xHCI: dma 2048 KiB: scratchpad=2 device blocks=64 of 12288 B (max_slots=64)
+[2026-10-12 05:46:43  6.737 cpu0 kernel] xHCI: firmware released the controller in 1082us (USBLEGSUP 0x00010401 -> 0x01000401)
+[2026-10-12 05:46:43  6.737 cpu0 kernel] xHCI: USBLEGCTLSTS 0xc0002000 -> 0x00000000 (SMI generation off)
+[2026-10-12 05:46:43  6.737 cpu0 kernel] xHCI: USB 2.0 on ports 1..=4
+[2026-10-12 05:46:43  6.737 cpu0 kernel] xHCI: USB 3.1 on ports 5..=5
+[2026-10-12 05:46:43  6.737 cpu0 kernel] xHCI: USB 3.1 on ports 6..=6
+[2026-10-12 05:46:43  6.737 cpu0 kernel] xHCI: 4 USB2 and 2 USB3 port register(s) of 6 named, 0 capability(ies) refused
+[2026-10-12 05:46:43  6.737 cpu0 kernel] xHCI: controller reset
+[2026-10-12 05:46:43  6.737 cpu0 kernel] iommu: no domain of its own for a device: no unit on this machine translates
+[2026-10-12 05:46:43  6.737 cpu0 kernel] xHCI: 2 scratchpad buffers configured
+[2026-10-12 05:46:43  6.737 cpu0 kernel] xHCI: controller started
+[2026-10-12 05:46:43  6.737 cpu0 kernel] xHCI: 6/6 root-hub ports powered (PPC=0)
+[2026-10-12 05:46:43  6.839 cpu0 kernel] xHCI: port 2 connected
+[2026-10-12 05:46:43  6.889 cpu0 kernel] xHCI: port 2 enabled, speed=3
+[2026-10-12 05:46:43  6.889 cpu0 kernel] xHCI: slot 1 enabled (dma +0x30000)
+[2026-10-12 05:46:43  6.999 cpu0 kernel] xHCI: device addressed
+[2026-10-12 05:46:44  7.000 cpu0 kernel] xHCI: device class=0x0 vendor=0781 product=55a9
+[2026-10-12 05:46:44  7.000 cpu0 kernel] xHCI: mass storage iface=0 in=0x81/512 out=0x2/512
+[2026-10-12 05:46:44  7.001 cpu0 kernel] xHCI: configuration set
+[2026-10-12 05:46:44  7.001 cpu0 kernel] xHCI: endpoint configured
+[2026-10-12 05:46:44  7.002 cpu0 kernel] usb-storage: slot 1 vendor " USB...." product " SanDisk 3.2Gen1"
+[2026-10-12 05:46:44  7.003 cpu0 kernel] usb-storage: slot 1 serial number "<serial>"
+[2026-10-12 05:46:44  7.003 cpu0 kernel] usb-storage: disk 0 ready on slot 1, 30041088 blocks of 512 B (117348 MiB), msc_block +0x10000
+[2026-10-12 05:46:44  7.003 cpu0 kernel] xHCI: port 4 connected
+[2026-10-12 05:46:44  7.053 cpu0 kernel] xHCI: port 4 enabled, speed=3
+[2026-10-12 05:46:44  7.053 cpu0 kernel] xHCI: slot 2 enabled (dma +0x33000)
+[2026-10-12 05:46:44  7.053 cpu0 kernel] xHCI: device addressed
+[2026-10-12 05:46:44  7.054 cpu0 kernel] xHCI: device class=0xef vendor=04f2 product=b6cb
+[2026-10-12 05:46:44  7.054 cpu0 kernel] xHCI: no HID boot interface found on port 4, skipping it
+[2026-10-12 05:46:44  7.054 cpu0 kernel] xHCI: slot 2 disabled
+[2026-10-12 05:46:44  7.054 cpu0 kernel] xHCI: no HID devices on the controller at 03:00.3
+[2026-10-12 05:46:44  7.054 cpu0 kernel] xHCI: port 4 connected
+[2026-10-12 05:46:44  7.104 cpu0 kernel] xHCI: port 4 enabled, speed=1
+[2026-10-12 05:46:44  7.104 cpu0 kernel] xHCI: slot 1 enabled (dma +0x30000)
+[2026-10-12 05:46:44  7.105 cpu0 kernel] xHCI: device addressed
+[2026-10-12 05:46:44  7.107 cpu0 kernel] xHCI: port 4 EP0 packet size 8 -> 64
+[2026-10-12 05:46:44  7.111 cpu0 kernel] xHCI: device class=0xe0 vendor=8087 product=0029
+[2026-10-12 05:46:44  7.115 cpu0 kernel] xHCI: no HID boot interface found on port 4, skipping it
+[2026-10-12 05:46:44  7.115 cpu0 kernel] xHCI: slot 1 disabled
+[2026-10-12 05:46:44  7.116 cpu0 kernel] xHCI: no HID devices on the controller at 03:00.4
+[2026-10-12 05:46:44  7.116 cpu0 kernel] xHCI: 2 controller(s), 0 HID device(s)
+[2026-10-12 05:46:44  7.116 cpu0 kernel] usb-storage: 1 device(s)
+[2026-10-12 05:46:44  7.116 cpu0 kernel] block: device 16 registered, 30041088 blocks
+[2026-10-12 05:46:44  7.135 cpu0 kernel] gpt: device 16 carries the boot partition at LBA 2048+69632 (512-byte blocks), entry 0 of 5 on disk 0971A1A4-6BA4-40FA-B304-34A4C1169588
+[2026-10-12 05:46:44  7.145 cpu0 kernel] root: holding E49DB82E-F54A-4799-AD84-AAC11EC9FFE2, the partition ROOT was read from, on device 16; disks that did not answer: []
+[2026-10-12 05:46:44  7.145 cpu0 kernel] Boot: storage ready (410ms)
+[2026-10-12 05:46:44  7.146 cpu0 kernel] i8042: FADT rev 5 iapc_boot_arch=0x0003, bit 1 (8042) set — probing either way
+[2026-10-12 05:46:44  7.148 cpu0 kernel] i8042: ok selftest=0x55 cfg=0x77->0x64 port1=ok port2=ok
+[2026-10-12 05:46:44  7.898 cpu0 kernel] i8042: kbd DISABLED - the 0xF0 0x00 set query did not complete
+[2026-10-12 05:46:44  7.898 cpu0 kernel] acpi: the ACPI row: PM1a events 0x400+4, GPE0 0x420+8, SCI gsi 9 level/low, a control-method power button; the firmware handed over in legacy mode
+[2026-10-12 05:46:44  7.898 cpu0 kernel] acpi: the Global Lock is the FACS's at 0xcded6010, in memory the firmware's map types 10
+[2026-10-12 05:46:44  7.899 cpu0 kernel] virtio-console: no device found
+[2026-10-12 05:46:44  7.899 cpu0 kernel] mmio: 0xd04c8000+0x4000 PAT Uncacheable (MTRR UC)
+[2026-10-12 05:46:44  7.900 cpu0 kernel] hda: 03:00.1 1002:1637 version 1.0 gcap=0x4001 statests=0x0001
+[2026-10-12 05:46:44  7.900 cpu0 kernel] mmio: 0xd04c0000+0x4000 PAT Uncacheable (MTRR UC)
+[2026-10-12 05:46:44  7.901 cpu0 kernel] hda: 03:00.6 1022:15e3 version 1.0 gcap=0x4401 statests=0x0001
+[2026-10-12 05:46:44  7.901 cpu0 kernel] hda: 03:00.1 has a live link (statests=0x0001)
+[2026-10-12 05:46:44  7.901 cpu0 kernel] hda: 03:00.6 has a live link (statests=0x0001)
+[2026-10-12 05:46:44  7.901 cpu0 kernel] hda: 2 controllers answer on this machine and choosing between them means walking their codec graphs, which is the driver's — refused by name, no HDA audio
+[2026-10-12 05:46:44  7.902 cpu0 kernel] GPU: using UEFI GOP
+[2026-10-12 05:46:44  7.902 cpu0 kernel] mmio: 0xfc90000000+0x800000 PAT WriteCombining (MTRR UC)
+[2026-10-12 05:46:44  7.902 cpu0 kernel] GOP: 1920x1080 stride=1920 format=1 at 0xfc90000000
+[2026-10-12 05:46:44  7.902 cpu0 kernel] GOP: scanout memory type WC (MTRR UC, PAT entry 4)
+[2026-10-12 05:46:44  7.902 cpu0 kernel] mouse: rel scale x=36 y=64 (screen 1920x1080)
+[2026-10-12 05:46:44  7.902 cpu0 kernel] Boot: devices ready (756ms)
+[2026-10-12 05:46:44  7.903 cpu0 kernel] log: no serial console - this boot is on /log and on the screen
+[2026-10-12 05:46:44  7.903 cpu0 kernel] Boot: complete (1317ms)
+[2026-10-12 05:46:44  7.904 cpu0 kernel] boot: IA32_TSC_ADJUST not on this CPU
+[2026-10-12 05:46:44  7.904 cpu0 kernel] boot: power-on to loader 4573 ms, loader 1979 ms (ROOT read 780 ms), kernel to Boot: complete 1349 ms
+[2026-10-12 05:46:44  7.904 cpu0 kernel] kthread: klogd pid=1 tid=0 runs in the kernel address space
+[2026-10-12 05:46:44  7.904 cpu3 kernel] counters: cpu3 reads smi=false aperf=true mperf=true hwp_request=false hwp_request_pkg=false energy_perf_bias=false
+[2026-10-12 05:46:44  7.904 cpu7 kernel] counters: cpu7 reads smi=false aperf=true mperf=true hwp_request=false hwp_request_pkg=false energy_perf_bias=false
+[2026-10-12 05:46:44  7.904 cpu5 kernel] counters: cpu5 reads smi=false aperf=true mperf=true hwp_request=false hwp_request_pkg=false energy_perf_bias=false
+[2026-10-12 05:46:44  7.904 cpu4 kernel] counters: cpu4 reads smi=false aperf=true mperf=true hwp_request=false hwp_request_pkg=false energy_perf_bias=false
+[2026-10-12 05:46:44  7.904 cpu6 kernel] counters: cpu6 reads smi=false aperf=true mperf=true hwp_request=false hwp_request_pkg=false energy_perf_bias=false
+[2026-10-12 05:46:44  7.904 cpu2 kernel] counters: cpu2 reads smi=false aperf=true mperf=true hwp_request=false hwp_request_pkg=false energy_perf_bias=false
+[2026-10-12 05:46:44  7.904 cpu1 kernel] counters: cpu1 reads smi=false aperf=true mperf=true hwp_request=false hwp_request_pkg=false energy_perf_bias=false
+[2026-10-12 05:46:44  7.904 cpu5 kernel] CPU 5: joining scheduler
+[2026-10-12 05:46:44  7.904 cpu4 kernel] CPU 4: joining scheduler
+[2026-10-12 05:46:44  7.904 cpu3 kernel] CPU 3: joining scheduler
+[2026-10-12 05:46:44  7.904 cpu2 kernel] CPU 2: joining scheduler
+[2026-10-12 05:46:44  7.904 cpu1 kernel] CPU 1: joining scheduler
+[2026-10-12 05:46:44  7.904 cpu7 kernel] CPU 7: joining scheduler
+[2026-10-12 05:46:44  7.904 cpu6 kernel] CPU 6: joining scheduler
+[2026-10-12 05:46:44  7.905 supervisor] supervisor: build 23cc92f2268b807be6e9b573ab75fe6b3d128e68 clean, committed 2026-10-12 08:13:25 UTC, toolchain e0dd91272aad59f6, x86_64
+[2026-10-12 05:46:44  7.906 supervisor] supervisor: diskserver: no pci:1b36:0010 on this machine
+[2026-10-12 05:46:44  7.908 cpu0 kernel] spawn: /system/bin/diskserver pid=2 (layout=0ms tls=1ms total=1ms)
+[2026-10-12 05:46:44  7.908 supervisor] supervisor: started diskserver
+[2026-10-12 05:46:44  7.909 diskserver] diskserver: no NVMe controller this row names is on this machine; serving no partition
+[2026-10-12 05:46:44  7.911 cpu0 kernel] spawn: /system/bin/fileserver pid=3 (layout=0ms tls=1ms total=1ms)
+[2026-10-12 05:46:44  7.911 supervisor] supervisor: started fileserver
+[2026-10-12 05:46:44  7.913 fileserver] fileserver: this machine has no DATA partition; /apps, /config, /home and /state are in memory and will not survive a reboot
+[2026-10-12 05:46:44  7.913 fileserver] fileserver: Data serving /apps, /config, /home, /state — bcachefs, 0 names, 0 files open; cache 11 blocks (11 dirty), 12 of 12 reads hit
+[2026-10-12 05:46:44  7.923 cpu0 kernel] spawn: /system/bin/fileserver pid=4 (layout=0ms tls=1ms total=1ms)
+[2026-10-12 05:46:44  7.923 supervisor] supervisor: started fileserver
+[2026-10-12 05:46:44  7.926 fileserver] fileserver: FAT32 mounted, 35651584 bytes, 512-byte sectors, 512-byte clusters
+[2026-10-12 05:46:44  7.926 fileserver] fileserver: Log serving /log — FAT32, 0 files open; cache 1 blocks (0 dirty), 2 of 3 reads hit
+[2026-10-12 05:46:44  7.936 cpu0 kernel] spawn: /system/bin/fileserver pid=5 (layout=0ms tls=1ms total=1ms)
+[2026-10-12 05:46:44  7.936 supervisor] supervisor: started fileserver
+[2026-10-12 05:46:44  7.939 fileserver] fileserver: FAT32 mounted, 35651584 bytes, 512-byte sectors, 512-byte clusters
+[2026-10-12 05:46:44  7.939 fileserver] fileserver: Boot serving /boot — FAT32 read-only, 0 files open; cache 1 blocks (0 dirty), 2 of 3 reads hit
+[2026-10-12 05:46:44  7.943 cpu0 kernel] spawn: /system/bin/logkeeper pid=6 (layout=0ms tls=1ms total=1ms)
+[2026-10-12 05:46:44  7.943 supervisor] supervisor: started logkeeper
+[2026-10-12 05:46:44  7.946 supervisor] supervisor: soundserver: no hda-audio on this machine
+[2026-10-12 05:46:44  7.946 supervisor] supervisor: soundserver: no pci:1af4:1059 on this machine
+[2026-10-12 05:46:44  7.948 cpu0 kernel] spawn: /system/bin/soundserver pid=7 (layout=0ms tls=1ms total=1ms)
+[2026-10-12 05:46:44  7.948 supervisor] supervisor: started soundserver
+[2026-10-12 05:46:44  7.948 logkeeper] logkeeper: this boot's kernel log is /log/2026-10-12-054644.log (2026-10-12 05:46:44 UTC)
+[2026-10-12 05:46:44  7.949 soundserver] soundserver: no audio device, presenting a null sink (44100Hz 2ch, 128 frames/period, streams discarded)
+[2026-10-12 05:46:44  7.951 soundserver] soundserver: null sink idle
+[2026-10-12 05:46:44  7.951 cpu0 kernel] ioapic: gsi 9 on id=33 rte=0x000000000001a02d
+[2026-10-12 05:46:44  7.952 cpu0 kernel] acpi: ACPI mode: ACPI_ENABLE 0xa0 written to SMI_CMD 0xb0 on cpu0, asked from cpu0; the write held cpu0 373313ns, its SMI count unread before the write and unread after; SCI_EN set 1402ns after
+[2026-10-12 05:46:44  7.954 cpu0 kernel] spawn: /system/bin/acpiserver pid=8 (layout=0ms tls=1ms total=1ms)
+[2026-10-12 05:46:44  7.954 supervisor] supervisor: started acpiserver
+[2026-10-12 05:46:44  7.955 cpu1 kernel] isa: the ACPI fixed hardware's ports are pid 8's
+[2026-10-12 05:46:44  7.955 acpiserver] acpiserver: armed: power button a control method device, served once the namespace names it
+[2026-10-12 05:46:44  7.956 cpu0 kernel] spawn: /system/bin/test-runner pid=9 (layout=0ms tls=1ms total=1ms)
+[2026-10-12 05:46:44  7.956 supervisor] supervisor: started test-runner
+[2026-10-12 05:46:44  7.957 test-runner] ===READY===
+[2026-10-12 05:46:44  7.958 test-runner] ===TEST_START test_rs_syscall_cost===
+[2026-10-12 05:46:44  7.960 cpu2 kernel] spawn: /system/bin/test_rs_syscall_cost pid=10 (layout=0ms tls=0ms total=1ms)
+[2026-10-12 05:46:44  7.967 cpu7 kernel] usb-storage: disk 0 does not implement SYNCHRONIZE CACHE (sense 0x05/0x20/0x00); its writes are durable once they complete
+[2026-10-12 05:46:44  7.976 acpiserver] acpiserver: a SystemIO write of 0xcd6, Byte, asked of the kernel for the first time
+[2026-10-12 05:46:44  7.977 acpiserver] acpiserver: refused for the first time: a SystemMemory read the kernel refused MemoryType, in memory of type 11
+[2026-10-12 05:46:44  7.977 acpiserver] acpiserver: (this machine's own, quoted in no record) that was Byte at Memory(fed8036a)
+[2026-10-12 05:46:44  7.977 acpiserver] acpiserver: (this machine's own, quoted in no record) table 1 was refused Host("a SystemMemory read the kernel refused MemoryType, in memory of type 11")
+[2026-10-12 05:46:44  7.977 acpiserver] acpiserver: table 1 of 17 (DSDT) refused: denied by this server: a SystemMemory read the kernel refused MemoryType, in memory of type 11
+[2026-10-12 05:46:44  7.977 acpiserver] acpiserver: no namespace: the DSDT was refused, so the 16 SSDT(s) after it are not loaded; the power button is served, and nothing of this machine's AML
+[2026-10-12 05:46:44  7.977 acpiserver] acpiserver: 0 of 17 tables loaded in 21 ms
+[2026-10-12 05:46:44  7.977 acpiserver] acpiserver: the tables' bytes took 17660 reads of firmware memory, in pages: 63 of type 9, 1 of type 10
+[2026-10-12 05:46:44  7.977 acpiserver] acpiserver: the tables' AML read SystemMemory 1 times, SystemIO 2 and PCI_Config 0, its memory in pages: 1 of type 10; took the Global Lock 0 times, 0 of them from the firmware; and ran Notify 0 times
+[2026-10-12 05:46:44  7.977 acpiserver error] acpiserver: no \_S5 was handed to the kernel, which powers off only on one an ACPI server supplied and refuses a shutdown without one
+[2026-10-12 05:46:44  7.977 acpiserver] acpiserver: refused so far, of accesses: a SystemMemory read the kernel refused MemoryType, in memory of type 11 x1
+[2026-10-12 05:46:44  7.977 acpiserver] acpiserver: no control-method power button served: no namespace was kept
+[2026-10-12 05:46:44  7.977 acpiserver] acpiserver: embedded controller none: no namespace was kept
+[2026-10-12 05:46:45  8.005 test-runner pid=10] scout-sys: fp check: 16 threads x 200 sleeps, 0 with an XMM register not their own
+[2026-10-12 05:46:45  8.056 test-runner pid=10] scout-sys: getpid: min tsc=452 core=1049 busy=0.999 | median tsc=454 core=1078 busy=0.998 | over 9x20000
+[2026-10-12 05:46:45  8.069 test-runner pid=10] scout-sys: ring3 fxsave64+fxrstor64: min tsc=111 core=NaN busy=0.000 | median tsc=111 core=264 busy=0.998 | over 9x20000
+[2026-10-12 05:46:45  8.070 test-runner pid=10] scout-sys: ring3 lock add: min tsc=7 core=NaN busy=0.000 | median tsc=7 core=NaN busy=0.000 | over 9x20000
+[2026-10-12 05:46:45  8.070 test-runner pid=10] scout-sys: ring3 add: min tsc=2 core=NaN busy=0.000 | median tsc=2 core=NaN busy=0.000 | over 9x20000
+[2026-10-12 05:46:45  8.083 test-runner pid=10] scout-sys: ring3 fxsave64;lock add;fxrstor64: min tsc=117 core=NaN busy=0.000 | median tsc=117 core=NaN busy=0.000 | over 9x20000
+[2026-10-12 05:46:45  8.096 test-runner pid=10] scout-sys: ring3 fxsave64;add;fxrstor64: min tsc=111 core=NaN busy=0.000 | median tsc=112 core=267 busy=0.998 | over 9x20000
+[2026-10-12 05:46:45  8.116 test-runner pid=10] syscall_cost: 452 cycles/syscall over 9x20000
+[2026-10-12 05:46:45  8.116 test-runner pid=10] syscall_cost: tsc 1796 MHz
+[2026-10-12 05:46:45  8.116 cpu4 kernel] exit: test_rs_syscall_cost pid=10 code=0 cpu=124ms peak=66MB allocs=18 frees=0 syscalls=200300 syscall_wall=43ms 6=1 10=1 14=1 40=16 41=16 50=1 51=200001 62=121 63=17 72=1 73=1 91=1 99=1 106=1 124=120
+[2026-10-12 05:46:45  8.116 test-runner] ===TEST_END test_rs_syscall_cost exit=0===
+[2026-10-12 05:46:45  8.116 test-runner] ===TEST_START reboot===
+[2026-10-12 05:46:45  8.118 cpu2 kernel] spawn: /system/bin/reboot pid=11 (layout=0ms tls=1ms total=1ms)
+[2026-10-12 05:46:45  8.120 supervisor] supervisor: power: the machine stops, and logkeeper makes the log whole first (Reboot)
+  run: sudo -n '/usr/bin/dd' 'if=/dev/sda3' 'bs=4M'  (69632 sectors)
+toyos-fat32-check: the log partition's 35651584 bytes check out
+phases: preamble 1.8 s, wipe 0.7 s, flash 17.2 s (dd 15.9 s), entry 3.2 s, down 11.0 s, read_log 2.0 s, raw_log 2.8 s
+readback written to <scratchpad>/sysentry/metal/amd-base/scout-base
+PASS: the machine booted ToyOS in 1317 ms

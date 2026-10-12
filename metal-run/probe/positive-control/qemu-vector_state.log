@@ -1,0 +1,44 @@
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.21s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-608bd856a6e56707)
+
+12:49:40 running 1 tests, 12 wide
+
+12:49:40   RUN   vector_state_survives_a_switch
+12:49:40   BUILD x86_64 vector_state of tests/guest/rust-tests, for vector_state_survives_a_switch
+12:49:42   BUILT x86_64 vector_state of tests/guest/rust-tests, for vector_state_survives_a_switch  (2s)
+12:49:42   BUILD x86_64 kernel, loader, ROOT of tests/images/testcases.toml, for vector_state_survives_a_switch
+12:49:46 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+12:49:46   BUILT x86_64 kernel, loader, ROOT of tests/images/testcases.toml, for vector_state_survives_a_switch  (4s)
+12:50:06 FAIL vector_state_survives_a_switch: kernel panic: PANIC: panicked at kernel/src/arch/x86_64/hw.rs:216:13: — the guest went quiet because every CPU is halted, not because it was still working. The panic is the finding and the guard never got to be one.
+--- what the kernel said as it died ---
+[ 5.045 cpu0 kernel alert tid=5] PANIC: panicked at kernel/src/arch/x86_64/hw.rs:216:13:
+slot-probe test_rs_vector_state pid=10 code=101: saves=73 same=57 same_depth=4608..4608 changed_lines(line:saves): 8:57 44:5 45:7 46:7 47:8 48:21 49:23 50:12 51:57 52:11 53:13 54:57 55:11 56:57 57:10 58:57 59:13 60:31 61:23 62:30 63:6 | scribbled=57 xstate_bv=0x7 all_in_use=57 canary_kept_lines(line:saves): 9:57 10:57 11:57 12:57 | area=832 || slot-probe total: saves=663 same=602 same_depth=4608..5760 changed_lines(line:saves): 0:21 1:2 2:3 3:3 4:2 5:2 6:2 8:602 9:20 10:20 11:20 12:20 13:1 14:3 15:21 16:21 17:9 18:5 19:2 20:3 21:3 22:2 26:1 27:1 28:1 29:1 30:1 31:1 32:1 33:19 34:13 35:22 36:12 37:18 38:18 39:4 40:2 44:19 45:24 46:11 47:28 48:48 49:47 50:39 51:110 52:56 53:38 54:116 55:31 56:594 57:504 58:554 59:519 60:113 61:521 62:81 63:26 | scribbled=602 xstate_bv=0x7 all_in_use=602 canary_kept_lines(line:saves): 9:602 10:602 11:602 12:602
+[ 5.045 cpu0 kernel tid=5]   Backtrace:
+[ 5.046 cpu0 kernel tid=5]     0xffff80007af93bdc  core::panicking::panic_fmt+0x2c
+[ 5.046 cpu0 kernel tid=5]     0xffff80007af0c5e5  kernel::arch::x86_64::hw::slot_probe::report+0x345
+[ 5.046 cpu0 kernel tid=5]     0xffff80007aefb87c  kernel::process::leave+0xa2c
+[ 5.046 cpu0 kernel tid=5]     0xffff80007aedc8cc  kernel::scheduler::exit_to_user+0x1ac
+[ 5.046 cpu0 kernel tid=5]     0xffff80007ae4f1e1  kernel::arch::x86_64::idt::timer::timer_entry+0x31
+[ 5.046 cpu0 kernel tid=5]   Contexts: cpu0 crashed at sp=0xffff800014ca47d0, asking about ctx 0xffff800014c21c30
+[ 5.046 cpu0 kernel tid=5]   cpu0 is on ctx 0xffff800014c21c30 pid=10 tid=5 stack_top=0xffff800014ca5000 saved_sp=0xffff800014ca3800
+[ 5.046 cpu0 kernel tid=5]   cpu1 is on ctx 0xffff80000022e060 pid=6 tid=0 stack_top=0xffff800006aa5000 saved_sp=0xffff800006aa3a00
+[ 5.046 cpu0 kernel tid=5]   Running: pid=10 tid=Some(Tid(5))
+[ 5.046 cpu0 kernel tid=5]   [Process: PROCESS_TABLE locked, skipping]
+[ 5.047 cpu0 kernel alert tid=5] panic: rebooting in 60 s, timed by the calibrated clock
+the job said:
+slot-probe test_rs_vector_state pid=10 code=101: saves=73 same=57 same_depth=4608..4608 changed_lines(line:saves): 8:57 44:5 45:7 46:7 47:8 48:21 49:23 50:12 51:57 52:11 53:13 54:57 55:11 56:57 57:10 58:57 59:13 60:31 61:23 62:30 63:6 | scribbled=57 xstate_bv=0x7 all_in_use=57 canary_kept_lines(line:saves): 9:57 10:57 11:57 12:57 | area=832 || slot-probe total: saves=663 same=602 same_depth=4608..5760 changed_lines(line:saves): 0:21 1:2 2:3 3:3 4:2 5:2 6:2 8:602 9:20 10:20 11:20 12:20 13:1 14:3 15:21 16:21 17:9 18:5 19:2 20:3 21:3 22:2 26:1 27:1 28:1 29:1 30:1 31:1 32:1 33:19 34:13 35:22 36:12 37:18 38:18 39:4 40:2 44:19 45:24 46:11 47:28 48:48 49:47 50:39 51:110 52:56 53:38 54:116 55:31 56:594 57:504 58:554 59:519 60:113 61:521 62:81 63:26 | scribbled=602 xstate_bv=0x7 all_in_use=602 canary_kept_lines(line:saves): 9:602 10:602 11:602 12:602
+
+12:50:06   FAIL  vector_state_survives_a_switch  (20s)
+12:50:06   --- 1 guests, 0 of them not the shipping kernel, 1 kernel build(s): [""]
+
+12:50:06 host: fastest boot 4638 ms against the reference 1424 ms — liveness ceilings paid at 3.26x
+12:50:06 host: 14 core(s); a guest wider than that waits vcpus/cores longer again
+12:50:06 failures:
+12:50:06     vector_state_survives_a_switch: kernel panic: PANIC: panicked at kernel/src/arch/x86_64/hw.rs:216:13: — the guest went quiet because every CPU is halted, not because it was still working. The panic is the finding and the guard never got to be one.
+
+12:50:06 test result: FAILED. 0 passed, 1 failed, 0 invalidated, 1 total (25.6s; workers: 5s building, 20s testing)
+12:50:06 [toyos] this red run's serial logs are kept at <home>/toyos-sysentry-probe/target/red-run-serial/toyos-tmp-14465-0
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `<home>/toyos-sysentry-probe/target/debug/deps/toyos_build-608bd856a6e56707 vector_state_survives_a_switch` (exit status: 1)
