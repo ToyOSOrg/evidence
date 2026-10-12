@@ -1,0 +1,206 @@
+   Compiling kernel-loom v0.1.0 (/Users/jan/Dev/jan/toyos-busywake-sim/kernel/loom)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.88s
+     Running tests/loom_sleep.rs (target/debug/deps/loom_sleep-fbeb36964b587f51)
+
+running 2 tests
+
+thread 'a_halted_cpu_with_queued_work_was_kicked' (299477020) panicked at kernel/loom/tests/loom_sleep.rs:113:13:
+halted with 2 of 2 messages queued and no IPI in flight — a sleep-through
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'a_halted_cpu_with_queued_work_was_kicked' (299477020) panicked at kernel/loom/src/../../pure/sched/mailbox.rs:178:9:
+mailbox node dropped with a message in flight
+stack backtrace:
+   0:        0x1044bdf54 - std[5d97c59e5e5fafcc]::backtrace_rs::backtrace::libunwind::trace
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/../../backtrace/src/backtrace/libunwind.rs:117:9
+   1:        0x1044bdf54 - std[5d97c59e5e5fafcc]::backtrace_rs::backtrace::trace_unsynchronized::<std[5d97c59e5e5fafcc]::sys::backtrace::_print_fmt::{closure#1}>
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/../../backtrace/src/backtrace/mod.rs:66:14
+   2:        0x1044bdf54 - std[5d97c59e5e5fafcc]::sys::backtrace::_print_fmt
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/sys/backtrace.rs:74:9
+   3:        0x1044bdf54 - <<std[5d97c59e5e5fafcc]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[663bb9e1522ba5ef]::fmt::Display>::fmt
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/sys/backtrace.rs:44:26
+   4:        0x1044cf2d4 - <core[663bb9e1522ba5ef]::fmt::rt::Argument>::fmt
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/fmt/rt.rs:152:76
+   5:        0x1044cf2d4 - core[663bb9e1522ba5ef]::fmt::write
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/fmt/mod.rs:1687:22
+   6:        0x1044c1acc - std[5d97c59e5e5fafcc]::io::default_write_fmt::<alloc[cc4db322bb1ac55d]::vec::Vec<u8>>
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/io/mod.rs:626:11
+   7:        0x1044c1acc - <alloc[cc4db322bb1ac55d]::vec::Vec<u8> as std[5d97c59e5e5fafcc]::io::Write>::write_fmt
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/io/mod.rs:1730:13
+   8:        0x1044a4c4c - <std[5d97c59e5e5fafcc]::sys::backtrace::BacktraceLock>::print
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/sys/backtrace.rs:47:25
+   9:        0x1044a4c4c - std[5d97c59e5e5fafcc]::panicking::default_hook::{closure#0}
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/panicking.rs:292:27
+  10:        0x1044b770c - std[5d97c59e5e5fafcc]::panicking::default_hook
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/panicking.rs:316:9
+  11:        0x10444fcf0 - <alloc[cc4db322bb1ac55d]::boxed::Box<dyn for<'a, 'b> core[663bb9e1522ba5ef]::ops::function::Fn<(&'a std[5d97c59e5e5fafcc]::panic::PanicHookInfo<'b>,), Output = ()> + core[663bb9e1522ba5ef]::marker::Sync + core[663bb9e1522ba5ef]::marker::Send> as core[663bb9e1522ba5ef]::ops::function::Fn<(&std[5d97c59e5e5fafcc]::panic::PanicHookInfo,)>>::call
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/alloc/src/boxed.rs:2333:9
+  12:        0x10444fcf0 - test[4aa3eea2f4983582]::test_main_inner::<test[4aa3eea2f4983582]::test_main_static::{closure#0}>::{closure#0}
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/test/src/lib.rs:155:21
+  13:        0x104491cc4 - <alloc[cc4db322bb1ac55d]::boxed::Box<dyn for<'a, 'b> core[663bb9e1522ba5ef]::ops::function::Fn<(&'a std[5d97c59e5e5fafcc]::panic::PanicHookInfo<'b>,), Output = ()> + core[663bb9e1522ba5ef]::marker::Sync + core[663bb9e1522ba5ef]::marker::Send> as core[663bb9e1522ba5ef]::ops::function::Fn<(&std[5d97c59e5e5fafcc]::panic::PanicHookInfo,)>>::call
+                               at /Users/jan/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/alloc/src/boxed.rs:2333:9
+  14:        0x104491cc4 - generator[50749e7e4996c531]::detail::gen::catch_unwind_filter::<generator[50749e7e4996c531]::detail::gen::gen_init_impl::{closure#0}, ()>::{closure#0}::{closure#0}
+                               at /Users/jan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/generator-0.8.9/src/detail/gen.rs:19:13
+  15:        0x1044b7c4c - <alloc[cc4db322bb1ac55d]::boxed::Box<dyn for<'a, 'b> core[663bb9e1522ba5ef]::ops::function::Fn<(&'a std[5d97c59e5e5fafcc]::panic::PanicHookInfo<'b>,), Output = ()> + core[663bb9e1522ba5ef]::marker::Sync + core[663bb9e1522ba5ef]::marker::Send> as core[663bb9e1522ba5ef]::ops::function::Fn<(&std[5d97c59e5e5fafcc]::panic::PanicHookInfo,)>>::call
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/alloc/src/boxed.rs:2333:9
+  16:        0x1044b7c4c - std[5d97c59e5e5fafcc]::panicking::panic_with_hook
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/panicking.rs:823:13
+  17:        0x1044a4d00 - std[5d97c59e5e5fafcc]::panicking::panic_handler::{closure#0}
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/panicking.rs:681:13
+  18:        0x10449bdd8 - std[5d97c59e5e5fafcc]::sys::backtrace::__rust_end_short_backtrace::<std[5d97c59e5e5fafcc]::panicking::panic_handler::{closure#0}, !>
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/sys/backtrace.rs:182:18
+  19:        0x1044a546c - __rustc[100742bb89c490cb]::rust_begin_unwind
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/panicking.rs:679:5
+  20:        0x1044de06c - core[663bb9e1522ba5ef]::panicking::panic_fmt
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/panicking.rs:80:14
+  21:        0x104441174 - <kernel_loom[809217da25ecbc5a]::sched::mailbox::MailboxNode<kernel_loom[809217da25ecbc5a]::sched_model::Msg> as core[663bb9e1522ba5ef]::ops::drop::Drop>::drop
+                               at /Users/jan/Dev/jan/toyos-busywake-sim/kernel/loom/src/../../pure/sched/mailbox.rs:178:9
+  22:        0x104441174 - core[663bb9e1522ba5ef]::ptr::drop_glue::<kernel_loom[809217da25ecbc5a]::sched::mailbox::MailboxNode<kernel_loom[809217da25ecbc5a]::sched_model::Msg>>
+                               at /Users/jan/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/core/src/ptr/mod.rs:823:1
+  23:        0x104441174 - core[663bb9e1522ba5ef]::ptr::drop_glue::<[kernel_loom[809217da25ecbc5a]::sched::mailbox::MailboxNode<kernel_loom[809217da25ecbc5a]::sched_model::Msg>]>
+                               at /Users/jan/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/core/src/ptr/mod.rs:823:1
+  24:        0x104441174 - core[663bb9e1522ba5ef]::ptr::drop_glue::<[kernel_loom[809217da25ecbc5a]::sched::mailbox::MailboxNode<kernel_loom[809217da25ecbc5a]::sched_model::Msg>; 2usize]>
+                               at /Users/jan/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/core/src/ptr/mod.rs:823:1
+  25:        0x104441174 - core[663bb9e1522ba5ef]::ptr::drop_glue::<loom_sleep[e343fdcb29461ba5]::World>
+                               at /Users/jan/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/core/src/ptr/mod.rs:823:1
+  26:        0x104442438 - core[663bb9e1522ba5ef]::ptr::drop_in_place::<loom_sleep[e343fdcb29461ba5]::World>
+                               at /Users/jan/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/core/src/ptr/mod.rs:818:14
+  27:        0x104442438 - <alloc[cc4db322bb1ac55d]::sync::Arc<loom_sleep[e343fdcb29461ba5]::World>>::drop_slow
+                               at /Users/jan/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/alloc/src/sync.rs:2143:18
+  28:        0x104444908 - loom_sleep[e343fdcb29461ba5]::a_halted_cpu_with_queued_work_was_kicked::{closure#0}
+                               at /Users/jan/Dev/jan/toyos-busywake-sim/kernel/loom/tests/loom_sleep.rs:130:5
+  29:        0x104444908 - <loom[709ac591f2027ef2]::model::Builder>::check::<loom_sleep[e343fdcb29461ba5]::a_halted_cpu_with_queued_work_was_kicked::{closure#0}>::{closure#0}
+                               at /Users/jan/.cargo/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/model.rs:194:17
+  30:        0x104444908 - <<loom[709ac591f2027ef2]::model::Builder>::check<loom_sleep[e343fdcb29461ba5]::a_halted_cpu_with_queued_work_was_kicked::{closure#0}>::{closure#0} as core[663bb9e1522ba5ef]::ops::function::FnOnce<()>>::call_once::{shim:vtable#0}
+                               at /Users/jan/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/core/src/ops/function.rs:250:5
+  31:        0x10448724c - <alloc[cc4db322bb1ac55d]::boxed::Box<dyn core[663bb9e1522ba5ef]::ops::function::FnOnce<(), Output = ()>> as core[663bb9e1522ba5ef]::ops::function::FnOnce<()>>::call_once
+                               at /Users/jan/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/alloc/src/boxed.rs:2319:9
+  32:        0x10448724c - loom[709ac591f2027ef2]::rt::scheduler::spawn_thread::{closure#0}
+                               at /Users/jan/.cargo/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/rt/scheduler.rs:142:17
+  33:        0x10448724c - <loom[709ac591f2027ef2]::rt::scheduler::spawn_thread::{closure#0} as core[663bb9e1522ba5ef]::ops::function::FnOnce<()>>::call_once
+                               at /Users/jan/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/core/src/ops/function.rs:250:5
+  34:        0x10448724c - <generator[50749e7e4996c531]::gen_impl::GeneratorImpl<core[663bb9e1522ba5ef]::option::Option<alloc[cc4db322bb1ac55d]::boxed::Box<dyn core[663bb9e1522ba5ef]::ops::function::FnOnce<(), Output = ()>>>, ()>>::init_code::<loom[709ac591f2027ef2]::rt::scheduler::spawn_thread::{closure#0}>::{closure#0}
+                               at /Users/jan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/generator-0.8.9/src/gen_impl.rs:357:21
+  35:        0x10448724c - <generator[50749e7e4996c531]::stack::StackBox<<generator[50749e7e4996c531]::gen_impl::GeneratorImpl<core[663bb9e1522ba5ef]::option::Option<alloc[cc4db322bb1ac55d]::boxed::Box<dyn core[663bb9e1522ba5ef]::ops::function::FnOnce<(), Output = ()>>>, ()>>::init_code<loom[709ac591f2027ef2]::rt::scheduler::spawn_thread::{closure#0}>::{closure#0}>>::call_once
+                               at /Users/jan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/generator-0.8.9/src/stack/mod.rs:137:13
+  36:        0x1044d8c54 - <generator[50749e7e4996c531]::stack::Func>::call_once
+                               at /Users/jan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/generator-0.8.9/src/stack/mod.rs:119:9
+  37:        0x1044d8c54 - generator[50749e7e4996c531]::detail::gen::gen_init_impl::{closure#0}
+                               at /Users/jan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/generator-0.8.9/src/detail/gen.rs:35:14
+  38:        0x1044d8c54 - <generator[50749e7e4996c531]::detail::gen::gen_init_impl::{closure#0} as core[663bb9e1522ba5ef]::ops::function::FnOnce<()>>::call_once
+                               at /Users/jan/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/core/src/ops/function.rs:250:5
+  39:        0x1044d8c54 - std[5d97c59e5e5fafcc]::panicking::catch_unwind::do_call::<generator[50749e7e4996c531]::detail::gen::gen_init_impl::{closure#0}, ()>
+                               at /Users/jan/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/std/src/panicking.rs:576:43
+  40:        0x1044d8c54 - std[5d97c59e5e5fafcc]::panicking::catch_unwind::<(), generator[50749e7e4996c531]::detail::gen::gen_init_impl::{closure#0}>
+                               at /Users/jan/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/std/src/panicking.rs:544:19
+  41:        0x1044d8c54 - std[5d97c59e5e5fafcc]::panic::catch_unwind::<generator[50749e7e4996c531]::detail::gen::gen_init_impl::{closure#0}, ()>
+                               at /Users/jan/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/std/src/panic.rs:359:14
+  42:        0x1044d8c54 - generator[50749e7e4996c531]::detail::gen::catch_unwind_filter::<generator[50749e7e4996c531]::detail::gen::gen_init_impl::{closure#0}, ()>
+                               at /Users/jan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/generator-0.8.9/src/detail/gen.rs:23:5
+  43:        0x1044d8c54 - generator[50749e7e4996c531]::detail::gen::gen_init_impl
+                               at /Users/jan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/generator-0.8.9/src/detail/gen.rs:50:25
+  44:        0x1044d8be4 - generator[50749e7e4996c531]::detail::asm::gen_init
+                               at /Users/jan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/generator-0.8.9/src/detail/aarch64_unix.rs:22:5
+
+thread 'a_halted_cpu_with_queued_work_was_kicked' (299477020) panicked at kernel/loom/src/../../pure/sched/mailbox.rs:178:9:
+mailbox node dropped with a message in flight
+stack backtrace:
+   0:        0x1044bdf54 - std[5d97c59e5e5fafcc]::backtrace_rs::backtrace::libunwind::trace
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/../../backtrace/src/backtrace/libunwind.rs:117:9
+   1:        0x1044bdf54 - std[5d97c59e5e5fafcc]::backtrace_rs::backtrace::trace_unsynchronized::<std[5d97c59e5e5fafcc]::sys::backtrace::_print_fmt::{closure#1}>
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/../../backtrace/src/backtrace/mod.rs:66:14
+   2:        0x1044bdf54 - std[5d97c59e5e5fafcc]::sys::backtrace::_print_fmt
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/sys/backtrace.rs:74:9
+   3:        0x1044bdf54 - <<std[5d97c59e5e5fafcc]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[663bb9e1522ba5ef]::fmt::Display>::fmt
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/sys/backtrace.rs:44:26
+   4:        0x1044cf2d4 - <core[663bb9e1522ba5ef]::fmt::rt::Argument>::fmt
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/fmt/rt.rs:152:76
+   5:        0x1044cf2d4 - core[663bb9e1522ba5ef]::fmt::write
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/fmt/mod.rs:1687:22
+   6:        0x1044c1acc - std[5d97c59e5e5fafcc]::io::default_write_fmt::<alloc[cc4db322bb1ac55d]::vec::Vec<u8>>
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/io/mod.rs:626:11
+   7:        0x1044c1acc - <alloc[cc4db322bb1ac55d]::vec::Vec<u8> as std[5d97c59e5e5fafcc]::io::Write>::write_fmt
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/io/mod.rs:1730:13
+   8:        0x1044a4c4c - <std[5d97c59e5e5fafcc]::sys::backtrace::BacktraceLock>::print
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/sys/backtrace.rs:47:25
+   9:        0x1044a4c4c - std[5d97c59e5e5fafcc]::panicking::default_hook::{closure#0}
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/panicking.rs:292:27
+  10:        0x1044b770c - std[5d97c59e5e5fafcc]::panicking::default_hook
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/panicking.rs:316:9
+  11:        0x10444fcf0 - <alloc[cc4db322bb1ac55d]::boxed::Box<dyn for<'a, 'b> core[663bb9e1522ba5ef]::ops::function::Fn<(&'a std[5d97c59e5e5fafcc]::panic::PanicHookInfo<'b>,), Output = ()> + core[663bb9e1522ba5ef]::marker::Sync + core[663bb9e1522ba5ef]::marker::Send> as core[663bb9e1522ba5ef]::ops::function::Fn<(&std[5d97c59e5e5fafcc]::panic::PanicHookInfo,)>>::call
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/alloc/src/boxed.rs:2333:9
+  12:        0x10444fcf0 - test[4aa3eea2f4983582]::test_main_inner::<test[4aa3eea2f4983582]::test_main_static::{closure#0}>::{closure#0}
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/test/src/lib.rs:155:21
+  13:        0x104491cc4 - <alloc[cc4db322bb1ac55d]::boxed::Box<dyn for<'a, 'b> core[663bb9e1522ba5ef]::ops::function::Fn<(&'a std[5d97c59e5e5fafcc]::panic::PanicHookInfo<'b>,), Output = ()> + core[663bb9e1522ba5ef]::marker::Sync + core[663bb9e1522ba5ef]::marker::Send> as core[663bb9e1522ba5ef]::ops::function::Fn<(&std[5d97c59e5e5fafcc]::panic::PanicHookInfo,)>>::call
+                               at /Users/jan/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/alloc/src/boxed.rs:2333:9
+  14:        0x104491cc4 - generator[50749e7e4996c531]::detail::gen::catch_unwind_filter::<generator[50749e7e4996c531]::detail::gen::gen_init_impl::{closure#0}, ()>::{closure#0}::{closure#0}
+                               at /Users/jan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/generator-0.8.9/src/detail/gen.rs:19:13
+  15:        0x1044b7c4c - <alloc[cc4db322bb1ac55d]::boxed::Box<dyn for<'a, 'b> core[663bb9e1522ba5ef]::ops::function::Fn<(&'a std[5d97c59e5e5fafcc]::panic::PanicHookInfo<'b>,), Output = ()> + core[663bb9e1522ba5ef]::marker::Sync + core[663bb9e1522ba5ef]::marker::Send> as core[663bb9e1522ba5ef]::ops::function::Fn<(&std[5d97c59e5e5fafcc]::panic::PanicHookInfo,)>>::call
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/alloc/src/boxed.rs:2333:9
+  16:        0x1044b7c4c - std[5d97c59e5e5fafcc]::panicking::panic_with_hook
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/panicking.rs:823:13
+  17:        0x1044a4d00 - std[5d97c59e5e5fafcc]::panicking::panic_handler::{closure#0}
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/panicking.rs:681:13
+  18:        0x10449bdd8 - std[5d97c59e5e5fafcc]::sys::backtrace::__rust_end_short_backtrace::<std[5d97c59e5e5fafcc]::panicking::panic_handler::{closure#0}, !>
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/sys/backtrace.rs:182:18
+  19:        0x1044a546c - __rustc[100742bb89c490cb]::rust_begin_unwind
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/panicking.rs:679:5
+  20:        0x1044de06c - core[663bb9e1522ba5ef]::panicking::panic_fmt
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/panicking.rs:80:14
+  21:        0x104440b50 - <kernel_loom[809217da25ecbc5a]::sched::mailbox::MailboxNode<kernel_loom[809217da25ecbc5a]::sched_model::Msg> as core[663bb9e1522ba5ef]::ops::drop::Drop>::drop
+                               at /Users/jan/Dev/jan/toyos-busywake-sim/kernel/loom/src/../../pure/sched/mailbox.rs:178:9
+  22:        0x104440b50 - core[663bb9e1522ba5ef]::ptr::drop_glue::<kernel_loom[809217da25ecbc5a]::sched::mailbox::MailboxNode<kernel_loom[809217da25ecbc5a]::sched_model::Msg>>
+                               at /Users/jan/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/core/src/ptr/mod.rs:823:1
+  23:        0x1044411b4 - core[663bb9e1522ba5ef]::ptr::drop_glue::<[kernel_loom[809217da25ecbc5a]::sched::mailbox::MailboxNode<kernel_loom[809217da25ecbc5a]::sched_model::Msg>]>
+                               at /Users/jan/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/core/src/ptr/mod.rs:823:1
+  24:        0x1044411b4 - core[663bb9e1522ba5ef]::ptr::drop_glue::<[kernel_loom[809217da25ecbc5a]::sched::mailbox::MailboxNode<kernel_loom[809217da25ecbc5a]::sched_model::Msg>; 2usize]>
+                               at /Users/jan/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/core/src/ptr/mod.rs:823:1
+  25:        0x1044411b4 - core[663bb9e1522ba5ef]::ptr::drop_glue::<loom_sleep[e343fdcb29461ba5]::World>
+                               at /Users/jan/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/core/src/ptr/mod.rs:823:1
+  26:        0x104442438 - core[663bb9e1522ba5ef]::ptr::drop_in_place::<loom_sleep[e343fdcb29461ba5]::World>
+                               at /Users/jan/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/core/src/ptr/mod.rs:818:14
+  27:        0x104442438 - <alloc[cc4db322bb1ac55d]::sync::Arc<loom_sleep[e343fdcb29461ba5]::World>>::drop_slow
+                               at /Users/jan/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/alloc/src/sync.rs:2143:18
+  28:        0x104444908 - loom_sleep[e343fdcb29461ba5]::a_halted_cpu_with_queued_work_was_kicked::{closure#0}
+                               at /Users/jan/Dev/jan/toyos-busywake-sim/kernel/loom/tests/loom_sleep.rs:130:5
+  29:        0x104444908 - <loom[709ac591f2027ef2]::model::Builder>::check::<loom_sleep[e343fdcb29461ba5]::a_halted_cpu_with_queued_work_was_kicked::{closure#0}>::{closure#0}
+                               at /Users/jan/.cargo/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/model.rs:194:17
+  30:        0x104444908 - <<loom[709ac591f2027ef2]::model::Builder>::check<loom_sleep[e343fdcb29461ba5]::a_halted_cpu_with_queued_work_was_kicked::{closure#0}>::{closure#0} as core[663bb9e1522ba5ef]::ops::function::FnOnce<()>>::call_once::{shim:vtable#0}
+                               at /Users/jan/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/core/src/ops/function.rs:250:5
+  31:        0x10448724c - <alloc[cc4db322bb1ac55d]::boxed::Box<dyn core[663bb9e1522ba5ef]::ops::function::FnOnce<(), Output = ()>> as core[663bb9e1522ba5ef]::ops::function::FnOnce<()>>::call_once
+                               at /Users/jan/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/alloc/src/boxed.rs:2319:9
+  32:        0x10448724c - loom[709ac591f2027ef2]::rt::scheduler::spawn_thread::{closure#0}
+                               at /Users/jan/.cargo/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/rt/scheduler.rs:142:17
+  33:        0x10448724c - <loom[709ac591f2027ef2]::rt::scheduler::spawn_thread::{closure#0} as core[663bb9e1522ba5ef]::ops::function::FnOnce<()>>::call_once
+                               at /Users/jan/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/core/src/ops/function.rs:250:5
+  34:        0x10448724c - <generator[50749e7e4996c531]::gen_impl::GeneratorImpl<core[663bb9e1522ba5ef]::option::Option<alloc[cc4db322bb1ac55d]::boxed::Box<dyn core[663bb9e1522ba5ef]::ops::function::FnOnce<(), Output = ()>>>, ()>>::init_code::<loom[709ac591f2027ef2]::rt::scheduler::spawn_thread::{closure#0}>::{closure#0}
+                               at /Users/jan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/generator-0.8.9/src/gen_impl.rs:357:21
+  35:        0x10448724c - <generator[50749e7e4996c531]::stack::StackBox<<generator[50749e7e4996c531]::gen_impl::GeneratorImpl<core[663bb9e1522ba5ef]::option::Option<alloc[cc4db322bb1ac55d]::boxed::Box<dyn core[663bb9e1522ba5ef]::ops::function::FnOnce<(), Output = ()>>>, ()>>::init_code<loom[709ac591f2027ef2]::rt::scheduler::spawn_thread::{closure#0}>::{closure#0}>>::call_once
+                               at /Users/jan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/generator-0.8.9/src/stack/mod.rs:137:13
+  36:        0x1044d8c54 - <generator[50749e7e4996c531]::stack::Func>::call_once
+                               at /Users/jan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/generator-0.8.9/src/stack/mod.rs:119:9
+  37:        0x1044d8c54 - generator[50749e7e4996c531]::detail::gen::gen_init_impl::{closure#0}
+                               at /Users/jan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/generator-0.8.9/src/detail/gen.rs:35:14
+  38:        0x1044d8c54 - <generator[50749e7e4996c531]::detail::gen::gen_init_impl::{closure#0} as core[663bb9e1522ba5ef]::ops::function::FnOnce<()>>::call_once
+                               at /Users/jan/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/core/src/ops/function.rs:250:5
+  39:        0x1044d8c54 - std[5d97c59e5e5fafcc]::panicking::catch_unwind::do_call::<generator[50749e7e4996c531]::detail::gen::gen_init_impl::{closure#0}, ()>
+                               at /Users/jan/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/std/src/panicking.rs:576:43
+  40:        0x1044d8c54 - std[5d97c59e5e5fafcc]::panicking::catch_unwind::<(), generator[50749e7e4996c531]::detail::gen::gen_init_impl::{closure#0}>
+                               at /Users/jan/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/std/src/panicking.rs:544:19
+  41:        0x1044d8c54 - std[5d97c59e5e5fafcc]::panic::catch_unwind::<generator[50749e7e4996c531]::detail::gen::gen_init_impl::{closure#0}, ()>
+                               at /Users/jan/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/std/src/panic.rs:359:14
+  42:        0x1044d8c54 - generator[50749e7e4996c531]::detail::gen::catch_unwind_filter::<generator[50749e7e4996c531]::detail::gen::gen_init_impl::{closure#0}, ()>
+                               at /Users/jan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/generator-0.8.9/src/detail/gen.rs:23:5
+  43:        0x1044d8c54 - generator[50749e7e4996c531]::detail::gen::gen_init_impl
+                               at /Users/jan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/generator-0.8.9/src/detail/gen.rs:50:25
+  44:        0x1044d8be4 - generator[50749e7e4996c531]::detail::asm::gen_init
+                               at /Users/jan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/generator-0.8.9/src/detail/aarch64_unix.rs:22:5
+
+thread 'a_halted_cpu_with_queued_work_was_kicked' (299477020) panicked at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/panicking.rs:233:5:
+panic in a destructor during cleanup
+thread caused non-unwinding panic. aborting.
+error: test failed, to rerun pass `-p kernel-loom --test loom_sleep`
+
+Caused by:
+  process didn't exit successfully: `/Users/jan/Dev/jan/toyos-busywake-sim/target/debug/deps/loom_sleep-fbeb36964b587f51` (signal: 6, SIGABRT: process abort signal)
+EXIT=101
