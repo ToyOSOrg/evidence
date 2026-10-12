@@ -1,0 +1,150 @@
+# PR #874 round 3: the restaged wake_onto_busy row and its control, and every boot the second judgement
+# did not flash. Both benches. Nothing here has touched a machine.
+#
+# Trees (both committed and pushed; the control never lands):
+#   head     wt/toyos-busywake at a5e247249552728692757ccfc6754d64ae630e41, the branch's head;
+#            worktree <home>/Dev/jan/toyos-busywake
+#   control  wt/toyos-busywake-judge-control at aa7b41581c8dae51a54be5df5b529275a3e01644 = the head plus the
+#            review's busy-target-unkicked (kernel/pure/sched/mailbox.rs: an ordinary wake kicks only a
+#            SLEEPING target); worktree <home>/Dev/jan/toyos-busywake-judge-base
+# The two trees differ by that one line. Every `cargo` line below runs from the worktree its section names.
+#
+# The row: wake_onto_busy rides the `testcases` boot. 200 partners parked on one CPU (not the waker's, not
+# x2APIC id 0) beside a spinner, every other CPU idle; each round wakes a partner never woken, timed in
+# userland; a spinner the kernel moves away is kept on the busy CPU again (at most 8 times). Exit code =
+# p99 in us; -5 not staged, -4 too few rounds, -3 past the histogram. The judge reds at a p99 >= 1000 us.
+# Its stdout line names the wakes, how many ran off the busy CPU, how often the spinner was kept again.
+#
+# Lines, stated before any number:
+#   ROW      head: wake_onto_busy green (p99 < 1000 us); control: red with a measured p99 >= 1000 us, not a
+#            refusal; both benches.
+#   SUITE    head: every other row green, but for the AMD bench's five rows that name hardware it lacks and
+#            red at base and head alike in the second judgement (hda_tone, hda_client_stall,
+#            smp_roster_and_tsc_trail, claim_reuses_its_remapping_entry, domain_ends_below_the_host_bridges;
+#            issues/a-metal-row-names-no-hardware-and-a-bench-without-it-reds.md).
+#   REPORTED wake_storm_cost's per-waiter ns on both trees' testcases boots (the busy kick's cost to a waker;
+#            second judgement: T14 386 -> 976, AMD 151 -> 328).
+
+## T14 - head: one boot per image, in any order (worktree toyos-busywake)
+
+acpicase
+  image: <home>/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r3/metal/t14-head/acpicase/image.img
+  sha256: 8008f8a0b663221086652a493ec218927e8e3304551c97e9f3ec89f17fcc35f1
+  cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r3/metal/t14-head/acpicase/image.img --readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r3/metal/t14-head/acpicase --fat32-check
+
+deadlinewedge
+  image: <home>/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r3/metal/t14-head/deadlinewedge/image.img
+  sha256: 5ba075601b820833f0ef0ef800f8b504512979d9509f7a1d95c4212f7a8764be
+  cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r3/metal/t14-head/deadlinewedge/image.img --readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r3/metal/t14-head/deadlinewedge --fat32-check
+
+foreignrecord
+  image: <home>/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r3/metal/t14-head/foreignrecord/image.img
+  sha256: 5d4e1709b38a24b20f2200ad3def1648692eac5a25fde35688bafec66cb15610
+  cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r3/metal/t14-head/foreignrecord/image.img --readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r3/metal/t14-head/foreignrecord --fat32-check
+
+hardlockup
+  image: <home>/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r3/metal/t14-head/hardlockup/image.img
+  sha256: 124775f90d3ba47e0e8ced0daa92406a2bf99f540afb456e9a1e095d98be166a
+  cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r3/metal/t14-head/hardlockup/image.img --readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r3/metal/t14-head/hardlockup --fat32-check
+
+iommu-no-remap
+  image: <home>/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r3/metal/t14-head/iommu-no-remap/image.img
+  sha256: a4f71d54eaa10519f1c2488dc916a455a7f72f0e3a2c61c3a1d4cb8c97bf743c
+  cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r3/metal/t14-head/iommu-no-remap/image.img --readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r3/metal/t14-head/iommu-no-remap --fat32-check
+
+isa-withheld
+  image: <home>/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r3/metal/t14-head/isa-withheld/image.img
+  sha256: 8e03b12b59ec81ea3a90e50e66cc8d8386c51d592719fde4c852d59ca9aa3e5b
+  cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r3/metal/t14-head/isa-withheld/image.img --readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r3/metal/t14-head/isa-withheld --fat32-check
+
+latencycase
+  image: <home>/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r3/metal/t14-head/latencycase/image.img
+  sha256: c70885b565f127b8b08b3c721a2b93695bafb30d574e9d0ff6bf21d83177c414
+  cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r3/metal/t14-head/latencycase/image.img --readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r3/metal/t14-head/latencycase --fat32-check
+
+logstallcase
+  image: <home>/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r3/metal/t14-head/logstallcase/image.img
+  sha256: 58f542ff31a0f842bcbd4292f1649f3e7c66c197987c59d3bb4bde04e11b5a7b
+  cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r3/metal/t14-head/logstallcase/image.img --readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r3/metal/t14-head/logstallcase --fat32-check
+
+metalcase
+  image: <home>/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r3/metal/t14-head/metalcase/image.img
+  sha256: bf63d7dbe4407664b36787ce9598ed55fa794e1550fd5ad2217fd0cb119dd874
+  cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r3/metal/t14-head/metalcase/image.img --readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r3/metal/t14-head/metalcase --fat32-check
+
+metaldevicecase
+  image: <home>/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r3/metal/t14-head/metaldevicecase/image.img
+  sha256: b3f6ccc23b4b56156c696d6e400addac1cf717284bcdbb769fce93dd5ab7a262
+  cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r3/metal/t14-head/metaldevicecase/image.img --readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r3/metal/t14-head/metaldevicecase --fat32-check
+
+proctreecase
+  image: <home>/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r3/metal/t14-head/proctreecase/image.img
+  sha256: 8f09e97b6bd443f8bc6dc7e50e46dd3eda173a3d65eaf812405ad9041b7ec889
+  cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r3/metal/t14-head/proctreecase/image.img --readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r3/metal/t14-head/proctreecase --fat32-check
+
+shared-debug
+  image: <home>/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r3/metal/t14-head/shared-debug/image.img
+  sha256: bb75acfc3f971132d67872c8987000621272c62e8cf4944fe8287e3c28e6b556
+  cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r3/metal/t14-head/shared-debug/image.img --readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r3/metal/t14-head/shared-debug --fat32-check
+
+testcases
+  image: <home>/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r3/metal/t14-head/testcases/image.img
+  sha256: 8e2e1dc9077712e9bf111972912307245323b16db55d8dff45d3873ffdc250b5
+  cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r3/metal/t14-head/testcases/image.img --readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r3/metal/t14-head/testcases --fat32-check
+
+testcases-mkdir
+  image: <home>/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r3/metal/t14-head/testcases-mkdir/image.img
+  sha256: 84ad6e2e01d090898a8f6c98ce45117f71126c10ac9de31ad35d7a39e3343b4b
+  cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r3/metal/t14-head/testcases-mkdir/image.img --readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r3/metal/t14-head/testcases-mkdir --fat32-check
+
+testcases-readdir
+  image: <home>/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r3/metal/t14-head/testcases-readdir/image.img
+  sha256: 37718ba14630288e008f14004e85709e39ec6917ea9674529597138c6a392fb7
+  cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r3/metal/t14-head/testcases-readdir/image.img --readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r3/metal/t14-head/testcases-readdir --fat32-check
+
+testcases-watchdog
+  image: <home>/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r3/metal/t14-head/testcases-watchdog/image.img
+  sha256: 7cfc24fe0033b2bf858980344fc3bf9d5bb5bd73a2d0c1653bf5a04549d46cf1
+  cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r3/metal/t14-head/testcases-watchdog/image.img --readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r3/metal/t14-head/testcases-watchdog --fat32-check
+
+testcases-xhci-leave
+  image: <home>/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r3/metal/t14-head/testcases-xhci-leave/image.img
+  sha256: ec09c1359964a74f30a2770509a0a9aac02452cc516786d3efae6529b90074e5
+  cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r3/metal/t14-head/testcases-xhci-leave/image.img --readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r3/metal/t14-head/testcases-xhci-leave --fat32-check
+
+usbbreak
+  image: <home>/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r3/metal/t14-head/usbbreak/image.img
+  sha256: 31c47277eb6beb2ebeceaa94f3f7c4e1825e23d4a58b3af66d9aa46cd94c9ac8
+  cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r3/metal/t14-head/usbbreak/image.img --readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r3/metal/t14-head/usbbreak --fat32-check
+
+usbload
+  image: <home>/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r3/metal/t14-head/usbload/image.img
+  sha256: fb4e62c8c969779c85925ae9a4ee0ba28f730ae4cedbd86a5590dc281cdfb8de
+  cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r3/metal/t14-head/usbload/image.img --readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r3/metal/t14-head/usbload --fat32-check
+
+windowscase
+  image: <home>/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r3/metal/t14-head/windowscase/image.img
+  sha256: aff128be6b8e5b1ff188a06a57d5c028571a6e89beed18d6eceff654cff65352
+  cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r3/metal/t14-head/windowscase/image.img --readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r3/metal/t14-head/windowscase --fat32-check
+
+judge (exit 0 is every row green):
+  cargo test --test toyos-build -- --metal --metal-readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r3/metal/t14-head
+
+## T14 - control: one boot (worktree toyos-busywake-judge-base, branch wt/toyos-busywake-judge-control)
+
+testcases
+  image: <home>/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r3/metal/t14-control/testcases/image.img
+  sha256: f3f4d02b58cc893883ac12acd602517bc30a2a1540f534cd5e27e9bb4518a383
+  cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r3/metal/t14-control/testcases/image.img --readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r3/metal/t14-control/testcases --fat32-check
+
+judge (wake_onto_busy is expected red with a measured p99, so this exits non-zero by design):
+  cargo test --test toyos-build -- --metal --metal-readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/busywake-r3/metal/t14-control wake_onto_busy
+
+## AMD bench: builds the same images, flashes, drives and judges in one run per tree
+  (from toyos-busywake, the head)            cargo test --test toyos-build -- --metal --metal-host <user>@<amd-bench>
+  (from toyos-busywake-judge-base, control)  cargo test --test toyos-build -- --metal --metal-host <user>@<amd-bench> wake_onto_busy
+  readbacks land in each worktree's target/metal/<boot>/
+
+## What to read
+# Each bench, each tree: the "wake_onto_busy: N wakes ..." line and the row's verdict; at the head every row's
+# verdict and every shared member's; at both trees wake_storm_cost's "ns per waiter" line.
