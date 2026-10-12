@@ -31,6 +31,8 @@ mod init;
 mod ledger;
 #[path = "<worktree>/system/acpiserver/src/osc.rs"]
 mod osc;
+#[path = "<worktree>/system/acpiserver/src/sci.rs"]
+mod sci;
 #[path = "<worktree>/system/acpiserver/src/tables.rs"]
 mod tables;
 
@@ -265,6 +267,11 @@ impl Kernel for Dump {
 
     fn s5(&self, slp_typ_a: u64) -> Result<bool, Stopping> {
         Ok(slp_typ_a <= 7)
+    }
+
+    /// A Sleep's wait: no SCI latches in a dump, and no time passes.
+    fn sleep(&self, _: Instant, _: Option<u16>) -> sci::Latched {
+        sci::Latched::default()
     }
 }
 
