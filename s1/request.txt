@@ -1,0 +1,64 @@
+# Wi-Fi design (#876) stage S1, the T14 read-out and the compatibility-format A/B. Measurement scout, never lands, no PR.
+# Tree: <home> branch wt/toyos-wifi-s1 at bd135c4db4b92c0b087f5c8308399117d03f0d32 (pushed; clean),
+#       = acc660715 (the scout) merged with origin/main ecd6d1cc5 (#884).
+# Staged with: cargo test --test toyos-build -- --metal --metal-readback $M wifi_s1   -> exit 2 (Verdict::Staged); no machine touched.
+# The harness's own listing is request.harness.txt beside this file (the invocations below are copied from it verbatim).
+M=<scratchpad>
+
+######## T14 - one session, two boots, in this order (a reset between them, as every boot ends) ########
+
+ 1. wifi-s1-a   sha256 4c0694a7271e00228803f2a47fc093824e313c90804e60d4949ebabadfc65f3f
+    armed: xhci-leave=8086:9a13, pci-readout, claim-compat-format; job test_rs_scout_compat_format; config tests/images/wifis1case.toml
+    cargo run -p toyos-metal -- --image $M/wifi-s1-a/image.img --readback $M/wifi-s1-a --fat32-check
+ 2. wifi-s1-b   sha256 1ee61b65ea7340ddeb6b247eb2104559b5de7e05e23c43b3c768333a6a56f766
+    armed: xhci-leave=8086:9a13, pci-readout;                      job test_rs_scout_compat_format; config tests/images/wifis1case.toml
+    cargo run -p toyos-metal -- --image $M/wifi-s1-b/image.img --readback $M/wifi-s1-b --fat32-check
+
+The two images carry one kernel build (boot-actuators,test-actuators; the staging log builds it for A and only ROOT for B)
+and one system config (system-f2406d4fe8042b11.toml in each directory, identical): they differ in claim-compat-format alone.
+
+######## Judge and read-out (exit 0 green, 1 red), from the tree above, once both readbacks are present ########
+(a directory missing a boot makes the harness stage instead, rewriting that image and this file)
+
+    cd <home> && cargo test --test toyos-build -- --metal --metal-readback $M wifi_s1
+
+It judges two rows over the same two boots and prints every reading under "[s1]":
+  wifi_s1_compat_format  (tests/common/wifis1.rs, compat_on_metal)
+  wifi_s1_readout        (tests/common/wifis1.rs, readout; red if A's and B's pci-readout lines differ)
+
+######## Expected readings, fixed before the run ########
+
+wifi_s1_compat_format - GREEN expected. The source is the Type-C xHCI 00:0d.0 [8086:9a13], left to a claim and driven
+by usbd, whose bring-up No-Op raises the claim's message.
+  A: "iommu: claim slot N's message for 00:0d.0 left in compatibility format (claim-compat-format): address=0xfee00000 data=0x000000VV";
+     "PCI 00:0d.0: msi address=0xfee00000 ..." read back off the device, bit 4 clear (compatibility format);
+     every unit "ires=y cfis=n eime=y";
+     "iommu: DMA FAULT owner=slotN unit3 stream=00:0d.0 ... reason=0x25 ... compatibility-format-interrupt-blocked";
+     NO "pcidev: slot N took its first message"; usbd ends on the claim's refusal ("the claim refused its interrupt record (Io)"),
+     the job says "usbd ended before it settled". The boot hands the machine back: a claim's fault is its holder's, not the machine's.
+  B: "PCI 00:0d.0: msi address=0xfee0XXXX ..." with bit 4 set (remappable); "pcidev: slot N took its first message on vector ...";
+     no DMA FAULT naming 00:0d.0; usbd "a No-Op command completed, announced by an interrupt"; the job says "usbd settled".
+  Unit3 is the DMAR's INCLUDE_PCI_ALL unit, which covers 00:0d.0 and the AX210 alike (no explicit scope names either:
+  a T14 log of main's kernel, scratchpad busywake-r2/metal/t14-head/testcases/kernel.log).
+  Reds and what each means:
+    "A's compatibility-format message was delivered under IRE" -> exit 1 of issues/qemu-passes-compatibility-format-interrupts.md
+       reads red: a kernel-wide isolation defect, filed against every claim, and P1 waits (the owner's Q2).
+    "A was not delivered and the unit recorded no reason=0x25" -> blocked without the fault VT-d records: report, do not file as Q2's red.
+    a premise red (A not compatibility format, or B not delivered without a fault) -> the instrument failed, nothing is read.
+  What A cannot separate: the T14 runs EIME=1 (eime=y in the log above), and VT-d 4.0 section 5.1.4 blocks compatibility format
+  where EIME is set OR CFIS is clear. A reads the block under EIME=1 and CFIS=0 together; a reading under CFIS=0 alone needs a
+  boot with EIME withheld, which these two do not include.
+  By-product, issue's exit 2: a DMA FAULT line in A at all means the unit's fault event (compatibility format, section 5.1.6)
+  was delivered with IRE set, since vtd/fault.rs reads the records only in that interrupt's handler.
+
+wifi_s1_readout - GREEN expected, values read rather than predicted. Priors, from main's T14 log above, not fixed:
+  radio 09:00.0 [8086:2725] class 02:80:00, behind 00:1c.4 [8086:a0bc] (secondary=0x09 subordinate=0x09, mem 0xbc300000..0xbc400000),
+  path ends on root bus 0x00; bar0 at 0xbc300000 (size, MSI and MSI-X BIR and offset: the reading; the AX200's on the AMD bench
+  was BAR 0 alone, 16 KiB, table at +0x2000).
+  nvme 04:00.0 [1c5c:1327], behind 00:06.0 (mem 0xbce00000..0xbcf00000), bar0 at 0xbce00000; where it keeps its MSI-X table:
+  the reading (never measured: issues/a-controller-whose-msix-table-is-in-bar-0-cannot-be-driven-from-userland.md).
+  DMAR: no unit's scope names 09:00.0 or 00:1c.4, so it is unit3's (INCLUDE_PCI_ALL); rmrr0 names 00:02.0 alone, so no reserved
+  region names the radio.
+  ACPI: one host bridge (\_SB_.PC00), a device under it with _ADR=0x001c0004 and under that one with _ADR=0x00000000, whose
+  names are printed; paths and names are acpiserver's "this machine's own" lines, quoted in no record.
+  Red only where a part is missing: no pci-readout line, no radio, no acpi-readout summary, or A and B reading out differently.
