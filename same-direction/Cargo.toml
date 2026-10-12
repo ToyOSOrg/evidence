@@ -1,0 +1,20 @@
+[package]
+name = "netring-same-direction"
+version = "0.0.0"
+edition = "2021"
+publish = false
+description = "Measurement only, never lands: a blocking call and a poll of one direction of one netring stream under loom, as PR #863 records the rule and as its amendment B changes it."
+
+[workspace]
+
+[features]
+# The handshake's own control: a waker clears the want `Relaxed`, here and in
+# stage 2's ends.
+want-relaxed = ["toyos-transport/want-relaxed"]
+# The rule as written's poll starts at once, not once the blocking call holds
+# the end: whether loom reaches the review's interleaving on its own.
+ungated = []
+
+[dependencies]
+toyos-transport = { path = "src/lib/blockring/transport" }
+loom = "0.7"
