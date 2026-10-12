@@ -1,0 +1,39 @@
+# PR #871 fix round: vector_state's control on the T14. Two boots, one per image.
+#
+# Every line below that starts with `cargo` runs from <home> the worktree at
+# wt/toyos-sysentry 1eeca8742 (pushed). The judge is the same at both arms: the mutant touches the kernel alone.
+# The images were built from a committed, clean tree for each arm:
+#   head     = 1eeca87423276e95d9fbaa52bb8735143051c8f2: the branch's head, whose vector_state stops its hold
+#              loop every 100,000 turns for a stat of its own path, which the kernel answers on the thread's
+#              own kernel stack
+#   mut-slot = 1c008f46f85ef54140292e3edd1f561a797293c1, local and never pushed: head plus the stack-slot
+#              mutant patch posted on PR #871 (sha256 330a845d...8507, the same bytes as b0d75d331's), so
+#              switch saves to and restores from [rsp + 0x40] in its own frame (switch+0x294..0x2af)
+# Row: vector_state, a member of the testcases boot; each image's job list is vector_state alone.
+#
+# Fixed before the run:
+#   head:      judge exit 0, and the job prints "vector_state: 17 threads each held Width(Avx512) through 3 rounds".
+#   mut-slot:  judge exit 1, vector_state red: the job panics "thread <t> round <r>: <zmm<N>|k<N>> changed
+#              while it was switched out" and exits 101. The T14's XSAVES skips every extended component on a
+#              save from the address of the CPU's last restore (the probe boot of 72e3cea6b), and each stat
+#              writes the switch's slot between that restore and that save (under QEMU, 180 of vector_state's
+#              185 such saves found the area's lines changed since the restore).
+#   Under QEMU (TCG's XSAVEOPT skips nothing) the mutant stays green, exit 0: that run is no control.
+#
+# Image sha256:
+#   5435ea252b8c288387c56fb3f7b50ff15d791ce019a203d8a430c1ce80cafa56  t14-head/testcases/image.img
+#   17db7ad8a9c10bf830e6e5ea08c6dea79db349616d7a903bc9847abc13dc601e  t14-mut-slot/testcases/image.img
+#
+# If the images are gone, re-stage the head from wt/toyos-sysentry with
+#   cargo test --test toyos-build -- --metal --metal-readback <dir> vector_state
+# and the mutant by `git apply`ing the patch onto that head, committing it, and staging the same way.
+
+## t14-head
+cargo run -p toyos-metal -- --image <scratchpad> --readback <scratchpad> --fat32-check
+# judge, once the boot above has its readback (expected: exit 0):
+cargo test --test toyos-build -- --metal --metal-readback <scratchpad> vector_state
+
+## t14-mut-slot
+cargo run -p toyos-metal -- --image <scratchpad> --readback <scratchpad> --fat32-check
+# judge, once the boot above has its readback (expected: exit 1, vector_state red):
+cargo test --test toyos-build -- --metal --metal-readback <scratchpad> vector_state
