@@ -1,0 +1,40 @@
+# Wi-Fi design (#876) stage S1, round 2: boot B again, for the ACPI read-out alone. Measurement scout, never lands, no PR.
+# Tree: <home> branch wt/toyos-wifi-s1 at a6934ff22e9c270a02ec4135d28cd36ef77dbf9b (pushed; clean),
+#       = bd135c4db (round 1's head) + one commit: scout_compat_format holds the boot until acpiserver's read-out is in the log,
+#       and the wifi_s1_readout row rides boot B alone.
+# Staged with: cargo test --test toyos-build -- --metal --metal-readback $M wifi_s1_readout   -> exit 2 (Verdict::Staged); no machine touched.
+# The harness's own listing is request.harness.txt beside this file (the invocation below is copied from it verbatim).
+M=<scratchpad>
+
+######## T14 - one boot ########
+
+ 1. wifi-s1-b   sha256 295be113462d07921bc1d60521debe95b1c99038b63e7b6b8f2ef6bdb3602b85
+    armed: xhci-leave=8086:9a13, pci-readout; job test_rs_scout_compat_format; config tests/images/wifis1case.toml
+    (system-f2406d4fe8042b11.toml, byte-identical to round 1's)
+    cargo run -p toyos-metal -- --image $M/wifi-s1-b/image.img --readback $M/wifi-s1-b --fat32-check
+
+######## Judge and read-out (exit 0 green, 1 red), from the tree above, once the readback is present ########
+
+    cd <home> && cargo test --test toyos-build -- --metal --metal-readback $M wifi_s1_readout
+
+  wifi_s1_readout (tests/common/wifis1.rs, readout): red where the job did not exit 0 (its hold of the read-out timed out
+  or the log port failed), or a part is missing: no pci-readout line, no radio, no acpi-readout summary.
+
+######## Why round 1 read no names ########
+
+In both of round 1's boots the machine stopped 15 ms after acpiserver started (B: started 13.126, reboot 13.141; A: 13.079,
+13.095), before acpiserver had loaded a table: its only line was "armed: power button served". On main's T14 boot
+(busywake-r2/metal/t14-head/testcases/kernel.log) acpiserver takes 70 ms to load the 14 tables alone. The job list ended
+once usbd did. Not #875: main's acpiserver evaluates every device's _HID on the T14 with no refusal.
+
+######## Expected readings, fixed before the run ########
+
+  The job: usbd settles as in round 1's B, then "scout_compat_format: acpiserver's read-out is in the log", exit=0.
+  acpiserver: "14 of 14 tables loaded", then "(this machine's own, ...) acpi-readout:" lines, then the summary
+  "acpiserver: acpi-readout: N host bridge(s), ...", all before the job's last line.
+  ACPI: one host bridge (\_SB_.PC00 expected), a device under it with _ADR=0x001c0004, and under that one with
+  _ADR=0x00000000, the radio's device, whose names the judge prints ("[s1] ACPI: 09:00.0 is <path>, with N name(s) below it").
+  A refusal of either _ADR prints as "refused, <kind>" on its device line and leaves the judge's root port or device
+  empty while the row stays green: read the [s1] ACPI lines, not the verdict alone.
+  PCI and DMAR: as round 1's B (pci-readout lines are no longer held to A's by the judge; compare by hand against
+  round 1's judge log, evidence pr-876 cd368b25 s1/judge.log).
