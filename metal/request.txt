@@ -1,0 +1,71 @@
+# PR #871: base against head on the T14 and on the AMD bench, and the stack-slot mutant on the T14.
+#
+# Every line below that starts with `cargo` runs from /Users/jan/Dev/jan/toyos-sysentry-metal, a worktree
+# left at wt/toyos-sysentry-metal-head 229c55558. toyos-metal and the judge are the same at every arm's commit.
+# The images were built from a committed, clean tree for each arm:
+#   base     = wt/toyos-sysentry-metal-base 23cc92f22 (pushed): 050e46beb, which is main 177e72a9e with #859's
+#              reviewed head cbf8e09e4 merged, plus the scout's test side from wt/toyos-scout-sys fbb958b17
+#              without its kernel twins
+#   head     = wt/toyos-sysentry-metal-head 229c55558 (pushed): bbe8df088, this PR's head, plus the same test side
+#   mut-slot = b0d75d331, local and never pushed: head plus the stack-slot mutant patch posted on PR #871
+# Rows: scout_syscall scout_wake vector_state control_regs syscall_cost. vector_state, control_regs and syscall_cost share the testcases boot.
+#
+# Fixed before the run (PR #871 §5):
+#   kill:        the build is dropped if, on either bench, head's `scout-sys: getpid: min tsc=` is above 0.75 x base's.
+#   prediction:  head lands within 5 % of the scout's `both` arm: 423 TSC on the T14, 218 on the AMD bench.
+#   guard:       the build goes back if, on either bench, head's `scout-wake: phase=0 ... rounds=` is more than 5 % below base's.
+#   correctness: vector_state passes for base and head on both benches.
+#   control:     the mutant turns vector_state red on the T14 (exit 1), whose XSAVES applies the modified optimisation.
+#                It is not run on the AMD bench: XSAVEC has no modified optimisation.
+#
+# Image sha256:
+#   87c4fa6bc4c561de4968b454da3e26ce2a744a33418b796cd6d46c1848ee6f46  t14-base/scout-base/image.img
+#   6085145e37e0a45b1ccf4388497d6c7c423287b6286a91566426b4c1641d5039  t14-base/scout-wake/image.img
+#   a3d70a1affdcc270e06e04bc1efb5c92b5ffb0f5a077bcaa6afaf061f1f3616d  t14-base/testcases/image.img
+#   c7689b313b771cb2103d2bb3f2d4a5fa7626dfc9e0a1a1f45b0ca80826b95120  t14-head/scout-base/image.img
+#   5e326fa07a9cf77cf88ee433a0feed863e2ad50dab37d93793943d07dfbf7767  t14-head/scout-wake/image.img
+#   9f5e3ab2f1a47e42dcb4eae47c7ca39f85af0d63772acff1cfef108482228500  t14-head/testcases/image.img
+#   ea5272bba7b98656cb983474711820f960f42103783ea74a671d2e83adc94c65  t14-mut-slot/testcases/image.img
+#   5a4dc2f37854e01df51720e18b651fef65295dbb6883a69bf4a11e1aab01c99a  amd-base/scout-base/image.img
+#   18e05f04317733beba21f5f2d642fb760a9c214d53d1cac246969e618b8f0c76  amd-base/scout-wake/image.img
+#   00a39ba9328412706cbf12f0b493c5b37c03dfac1d47e3d258795d9b8554f8a9  amd-base/testcases/image.img
+#   ef7ef9e04ac1468784ce11cb55f223a5fb18b355fb92afe8ca233b44eca2b597  amd-head/scout-base/image.img
+#   6da31dd97e2c227c0d8e01dfa47e68b8a741790fd5cdc5580ceae4a6f125efde  amd-head/scout-wake/image.img
+#   07c26c6208c398ccf24bbdc7648851a23d7ab5a5a8152fa7fe8a037adf523404  amd-head/testcases/image.img
+#
+# If the images are gone, re-stage an arm from its branch with:
+#   cargo test --test toyos-build -- --metal --metal-readback <dir> scout_syscall scout_wake vector_state control_regs syscall_cost
+# For the mutant: `git apply` the patch onto wt/toyos-sysentry-metal-head, commit it, and stage `vector_state` alone.
+
+## t14-base
+cargo run -p toyos-metal -- --image /private/tmp/claude-502/-Users-jan-Dev-jan-toyos/80e90c3a-7449-46b8-84cc-b59e9dd31ae9/scratchpad/sysentry/metal/t14-base/scout-base/image.img --readback /private/tmp/claude-502/-Users-jan-Dev-jan-toyos/80e90c3a-7449-46b8-84cc-b59e9dd31ae9/scratchpad/sysentry/metal/t14-base/scout-base --fat32-check
+cargo run -p toyos-metal -- --image /private/tmp/claude-502/-Users-jan-Dev-jan-toyos/80e90c3a-7449-46b8-84cc-b59e9dd31ae9/scratchpad/sysentry/metal/t14-base/scout-wake/image.img --readback /private/tmp/claude-502/-Users-jan-Dev-jan-toyos/80e90c3a-7449-46b8-84cc-b59e9dd31ae9/scratchpad/sysentry/metal/t14-base/scout-wake --fat32-check
+cargo run -p toyos-metal -- --image /private/tmp/claude-502/-Users-jan-Dev-jan-toyos/80e90c3a-7449-46b8-84cc-b59e9dd31ae9/scratchpad/sysentry/metal/t14-base/testcases/image.img --readback /private/tmp/claude-502/-Users-jan-Dev-jan-toyos/80e90c3a-7449-46b8-84cc-b59e9dd31ae9/scratchpad/sysentry/metal/t14-base/testcases --fat32-check
+# judge, once every boot above has its readback (expected: exit 0):
+cargo test --test toyos-build -- --metal --metal-readback /private/tmp/claude-502/-Users-jan-Dev-jan-toyos/80e90c3a-7449-46b8-84cc-b59e9dd31ae9/scratchpad/sysentry/metal/t14-base scout_syscall scout_wake vector_state control_regs syscall_cost
+
+## t14-head
+cargo run -p toyos-metal -- --image /private/tmp/claude-502/-Users-jan-Dev-jan-toyos/80e90c3a-7449-46b8-84cc-b59e9dd31ae9/scratchpad/sysentry/metal/t14-head/scout-base/image.img --readback /private/tmp/claude-502/-Users-jan-Dev-jan-toyos/80e90c3a-7449-46b8-84cc-b59e9dd31ae9/scratchpad/sysentry/metal/t14-head/scout-base --fat32-check
+cargo run -p toyos-metal -- --image /private/tmp/claude-502/-Users-jan-Dev-jan-toyos/80e90c3a-7449-46b8-84cc-b59e9dd31ae9/scratchpad/sysentry/metal/t14-head/scout-wake/image.img --readback /private/tmp/claude-502/-Users-jan-Dev-jan-toyos/80e90c3a-7449-46b8-84cc-b59e9dd31ae9/scratchpad/sysentry/metal/t14-head/scout-wake --fat32-check
+cargo run -p toyos-metal -- --image /private/tmp/claude-502/-Users-jan-Dev-jan-toyos/80e90c3a-7449-46b8-84cc-b59e9dd31ae9/scratchpad/sysentry/metal/t14-head/testcases/image.img --readback /private/tmp/claude-502/-Users-jan-Dev-jan-toyos/80e90c3a-7449-46b8-84cc-b59e9dd31ae9/scratchpad/sysentry/metal/t14-head/testcases --fat32-check
+# judge, once every boot above has its readback (expected: exit 0):
+cargo test --test toyos-build -- --metal --metal-readback /private/tmp/claude-502/-Users-jan-Dev-jan-toyos/80e90c3a-7449-46b8-84cc-b59e9dd31ae9/scratchpad/sysentry/metal/t14-head scout_syscall scout_wake vector_state control_regs syscall_cost
+
+## t14-mut-slot
+cargo run -p toyos-metal -- --image /private/tmp/claude-502/-Users-jan-Dev-jan-toyos/80e90c3a-7449-46b8-84cc-b59e9dd31ae9/scratchpad/sysentry/metal/t14-mut-slot/testcases/image.img --readback /private/tmp/claude-502/-Users-jan-Dev-jan-toyos/80e90c3a-7449-46b8-84cc-b59e9dd31ae9/scratchpad/sysentry/metal/t14-mut-slot/testcases --fat32-check
+# judge, once every boot above has its readback (expected: exit 1, vector_state red):
+cargo test --test toyos-build -- --metal --metal-readback /private/tmp/claude-502/-Users-jan-Dev-jan-toyos/80e90c3a-7449-46b8-84cc-b59e9dd31ae9/scratchpad/sysentry/metal/t14-mut-slot vector_state
+
+## amd-base (the AMD bench: <user>@<amd-bench> is the orchestrator's to fill)
+cargo run -p toyos-metal -- --image /private/tmp/claude-502/-Users-jan-Dev-jan-toyos/80e90c3a-7449-46b8-84cc-b59e9dd31ae9/scratchpad/sysentry/metal/amd-base/scout-base/image.img --readback /private/tmp/claude-502/-Users-jan-Dev-jan-toyos/80e90c3a-7449-46b8-84cc-b59e9dd31ae9/scratchpad/sysentry/metal/amd-base/scout-base --fat32-check --host <user>@<amd-bench>
+cargo run -p toyos-metal -- --image /private/tmp/claude-502/-Users-jan-Dev-jan-toyos/80e90c3a-7449-46b8-84cc-b59e9dd31ae9/scratchpad/sysentry/metal/amd-base/scout-wake/image.img --readback /private/tmp/claude-502/-Users-jan-Dev-jan-toyos/80e90c3a-7449-46b8-84cc-b59e9dd31ae9/scratchpad/sysentry/metal/amd-base/scout-wake --fat32-check --host <user>@<amd-bench>
+cargo run -p toyos-metal -- --image /private/tmp/claude-502/-Users-jan-Dev-jan-toyos/80e90c3a-7449-46b8-84cc-b59e9dd31ae9/scratchpad/sysentry/metal/amd-base/testcases/image.img --readback /private/tmp/claude-502/-Users-jan-Dev-jan-toyos/80e90c3a-7449-46b8-84cc-b59e9dd31ae9/scratchpad/sysentry/metal/amd-base/testcases --fat32-check --host <user>@<amd-bench>
+# judge, once every boot above has its readback (expected: exit 0):
+cargo test --test toyos-build -- --metal --metal-readback /private/tmp/claude-502/-Users-jan-Dev-jan-toyos/80e90c3a-7449-46b8-84cc-b59e9dd31ae9/scratchpad/sysentry/metal/amd-base scout_syscall scout_wake vector_state control_regs syscall_cost
+
+## amd-head (the AMD bench: <user>@<amd-bench> is the orchestrator's to fill)
+cargo run -p toyos-metal -- --image /private/tmp/claude-502/-Users-jan-Dev-jan-toyos/80e90c3a-7449-46b8-84cc-b59e9dd31ae9/scratchpad/sysentry/metal/amd-head/scout-base/image.img --readback /private/tmp/claude-502/-Users-jan-Dev-jan-toyos/80e90c3a-7449-46b8-84cc-b59e9dd31ae9/scratchpad/sysentry/metal/amd-head/scout-base --fat32-check --host <user>@<amd-bench>
+cargo run -p toyos-metal -- --image /private/tmp/claude-502/-Users-jan-Dev-jan-toyos/80e90c3a-7449-46b8-84cc-b59e9dd31ae9/scratchpad/sysentry/metal/amd-head/scout-wake/image.img --readback /private/tmp/claude-502/-Users-jan-Dev-jan-toyos/80e90c3a-7449-46b8-84cc-b59e9dd31ae9/scratchpad/sysentry/metal/amd-head/scout-wake --fat32-check --host <user>@<amd-bench>
+cargo run -p toyos-metal -- --image /private/tmp/claude-502/-Users-jan-Dev-jan-toyos/80e90c3a-7449-46b8-84cc-b59e9dd31ae9/scratchpad/sysentry/metal/amd-head/testcases/image.img --readback /private/tmp/claude-502/-Users-jan-Dev-jan-toyos/80e90c3a-7449-46b8-84cc-b59e9dd31ae9/scratchpad/sysentry/metal/amd-head/testcases --fat32-check --host <user>@<amd-bench>
+# judge, once every boot above has its readback (expected: exit 0):
+cargo test --test toyos-build -- --metal --metal-readback /private/tmp/claude-502/-Users-jan-Dev-jan-toyos/80e90c3a-7449-46b8-84cc-b59e9dd31ae9/scratchpad/sysentry/metal/amd-head scout_syscall scout_wake vector_state control_regs syscall_cost

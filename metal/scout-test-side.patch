@@ -1,0 +1,696 @@
+diff --git a/build/build.rs b/build/build.rs
+index 64acf05f3..f3ab4e15a 100644
+--- a/build/build.rs
++++ b/build/build.rs
+@@ -1375,8 +1375,8 @@ const KERNEL_CARRIES: &[&str] = &["loom", "protocol-port"];
+ pub const TEST_KERNEL: &[&str] = &["boot-actuators", "test-actuators"];
+ 
+ /// Kernel builds the ordinary test suite is allowed to make.
+-pub const TEST_SUITE_KERNEL_BUILDS: [&str; 3] =
+-    ["", "boot-actuators,test-actuators", MASK_WINDOWS_KERNEL[0]];
++pub const TEST_SUITE_KERNEL_BUILDS: [&str; 7] =
++    ["", "boot-actuators,test-actuators", MASK_WINDOWS_KERNEL[0], "scout-nofp", "scout-nolock", "scout-nofp,scout-nolock", "scout-wake"];
+ 
+ /// The shipping kernel with the windows' instrument and nothing else, for
+ /// [`SCHED_CHECK_KERNEL`]'s reason: one spelling, so one build.
+diff --git a/kernel/Cargo.toml b/kernel/Cargo.toml
+index 7b0d5e278..97b9335b0 100644
+--- a/kernel/Cargo.toml
++++ b/kernel/Cargo.toml
+@@ -257,6 +257,14 @@ sched-check = []
+ # count crossing zero, on every entry and exit: a kernel being measured for
+ # anything else must not carry it.
+ mask-windows = []
++# Measurement scout, never landed: the null syscall's entry without its
++# `fxsave64`/`fxrstor64` (the save moved to `context_switch`, so a build is
++# still correct), and without the `lock` prefix on the preempt count.
++scout-nofp = []
++scout-nolock = []
++# Measurement scout, never landed: post-to-dispatch latency of an ordinary
++# wake, split by the target CPU's state, read out through `SYS_DEBUG`.
++scout-wake = []
+ # The stray-write tripwire on the per-CPU `CpuSched` record: a shadow copy of its
+ # bytes, taken when the driver's exclusive region is left and compared when it is
+ # next entered, so a word that changed while nothing was allowed to change it is
+diff --git a/kernel/pure/sched/hw.rs b/kernel/pure/sched/hw.rs
+index 49cf297da..773babbaa 100644
+--- a/kernel/pure/sched/hw.rs
++++ b/kernel/pure/sched/hw.rs
+@@ -76,6 +76,11 @@ pub enum TraceKind {
+ pub trait Kicker: Sync {
+     /// Targeted kick IPI. Never broadcast.
+     fn kick(&self, target: CpuId);
++
++    /// Scout: an ordinary wake of `task` was posted to `target`, which had
++    /// published SLEEPING before the post when `sleeping`.
++    #[cfg(feature = "scout-wake")]
++    fn scout_wake_posted(&self, _target: CpuId, _task: crate::sched::task::TaskKey, _sleeping: bool) {}
+ }
+ 
+ /// The half of the hardware surface that says nothing about tasks: clock,
+diff --git a/kernel/pure/sched/park.rs b/kernel/pure/sched/park.rs
+index 2e4eadf84..2d7264bc9 100644
+--- a/kernel/pure/sched/park.rs
++++ b/kernel/pure/sched/park.rs
+@@ -121,6 +121,11 @@ fn deliver<M: SchedMsg>(
+             .claim()
+             .expect("the wake claim admits one poster: node must be free");
+         let handle = cpus.get(cpu);
++        // Stamped before the post, so the target cannot dispatch ahead of it.
++        #[cfg(feature = "scout-wake")]
++        if cause.urgency() == crate::sched::mailbox::Urgency::Normal {
++            kicker.scout_wake_posted(cpu, shared.key(), handle.doorbell().sleeping());
++        }
+         if handle.post(slot, M::wake(shared.key(), cause), cause.urgency(), preempt) == Kick::Send {
+             kicker.kick(cpu);
+         }
+diff --git a/kernel/src/arch/x86_64/hw.rs b/kernel/src/arch/x86_64/hw.rs
+index 5e17d59f3..5831b9ee2 100644
+--- a/kernel/src/arch/x86_64/hw.rs
++++ b/kernel/src/arch/x86_64/hw.rs
+@@ -300,6 +300,8 @@ impl Hw for KernelHw {
+                 feature = "switch-witness-mutate-rsp"
+             ))]
+             switch_witness_mutate(restore);
++            #[cfg(feature = "scout-wake")]
++            crate::scout_wake::switched(token.incoming(), incoming.id.map(|id| id.0.raw()), token.outgoing());
+             crate::preempt::set_count(incoming.preempt);
+             percpu::set_current_tid(incoming.id.map(|id| id.1));
+             percpu::set_current_pid(incoming.id.map(|id| id.0));
+diff --git a/kernel/src/hw.rs b/kernel/src/hw.rs
+index 75740cbd9..2bc6061f8 100644
+--- a/kernel/src/hw.rs
++++ b/kernel/src/hw.rs
+@@ -37,6 +37,11 @@ impl Kicker for KernelHw {
+     fn kick(&self, target: CpuId) {
+         irqchip::kick_cpu(target.0);
+     }
++
++    #[cfg(feature = "scout-wake")]
++    fn scout_wake_posted(&self, target: CpuId, task: kernel::sched::task::TaskKey, sleeping: bool) {
++        crate::scout_wake::posted(target, task, sleeping);
++    }
+ }
+ 
+ impl Machine for KernelHw {
+diff --git a/kernel/src/main.rs b/kernel/src/main.rs
+index 1c8980c4d..effae465d 100644
+--- a/kernel/src/main.rs
++++ b/kernel/src/main.rs
+@@ -78,6 +78,8 @@ mod irq_census;
+ #[cfg(feature = "mask-windows")]
+ mod windows;
+ mod irq_ring;
++#[cfg(feature = "scout-wake")]
++mod scout_wake;
+ mod trace;
+ mod time;
+ mod clock;
+diff --git a/kernel/src/scout_wake.rs b/kernel/src/scout_wake.rs
+new file mode 100644
+index 000000000..9ae1eea0d
+--- /dev/null
++++ b/kernel/src/scout_wake.rs
+@@ -0,0 +1,150 @@
++//! Measurement scout, never landed: how long an ordinary wake takes from its
++//! post to the woken task's dispatch, split by what the target CPU was doing
++//! when the wake was posted — the poster's own CPU, a CPU that had published
++//! SLEEPING, or a busy one.
++//!
++//! One word per task slot carries the post's clock, its class and a tag of the
++//! task's key; the switch onto the task consumes it, and the switch off a task
++//! drops it, so a wake that raced its own park is never read later as a slow
++//! one. Only the armed process's tasks are recorded.
++
++use core::sync::atomic::{AtomicU32, AtomicU64, Ordering::Relaxed};
++
++use kernel::sched::hw::CpuId;
++use kernel::sched::task::TaskKey;
++
++/// `SYS_DEBUG` actions. Arm: reset and record the process `a2`. Dump: log
++/// every class's quantiles under the phase `a2`, then reset.
++pub const ARM: u64 = 0x5C00_0001;
++pub const DUMP: u64 = 0x5C00_0002;
++
++const SLOTS: usize = 4096;
++const NS_BITS: u32 = 40;
++const NS_MASK: u64 = (1 << NS_BITS) - 1;
++const TAG_SHIFT: u32 = NS_BITS + 2;
++
++const CLASSES: [&str; 3] = ["same", "sleeping", "busy"];
++const BUCKETS: usize = 16 + 8 * 44;
++
++static SLOT: [AtomicU64; SLOTS] = [const { AtomicU64::new(0) }; SLOTS];
++static ARMED: AtomicU32 = AtomicU32::new(u32::MAX);
++static HIST: [[AtomicU64; BUCKETS]; 3] = [const { [const { AtomicU64::new(0) }; BUCKETS] }; 3];
++static MAX: [AtomicU64; 3] = [const { AtomicU64::new(0) }; 3];
++
++fn slot(task: TaskKey) -> &'static AtomicU64 {
++    &SLOT[task.0 as usize % SLOTS]
++}
++
++fn tag(task: TaskKey) -> u64 {
++    task.0 & ((1 << (64 - TAG_SHIFT)) - 1)
++}
++
++/// Eight buckets per octave above 16 ns: a quantile is read to within 12.5%.
++fn bucket(ns: u64) -> usize {
++    if ns < 16 {
++        return ns as usize;
++    }
++    let octave = 63 - ns.leading_zeros() as usize;
++    let sub = ((ns >> (octave - 3)) & 7) as usize;
++    (16 + (octave - 4) * 8 + sub).min(BUCKETS - 1)
++}
++
++fn upper(b: usize) -> u64 {
++    if b < 16 {
++        return b as u64;
++    }
++    let octave = (b - 16) / 8 + 4;
++    let sub = ((b - 16) % 8) as u64;
++    ((9 + sub) << (octave - 3)) - 1
++}
++
++pub fn posted(target: CpuId, task: TaskKey, sleeping: bool) {
++    if ARMED.load(Relaxed) == u32::MAX {
++        return;
++    }
++    let class = if target.0 == crate::arch::percpu::cpu_id() {
++        0
++    } else if sleeping {
++        1
++    } else {
++        2
++    };
++    let now = crate::clock::nanos_since_boot() & NS_MASK;
++    slot(task).store(tag(task) << TAG_SHIFT | class << NS_BITS | now, Relaxed);
++}
++
++/// At the switch, before the stack moves.
++pub fn switched(incoming: Option<TaskKey>, incoming_pid: Option<u32>, outgoing: Option<TaskKey>) {
++    let armed = ARMED.load(Relaxed);
++    if armed == u32::MAX {
++        return;
++    }
++    if let Some(out) = outgoing {
++        let word = slot(out).load(Relaxed);
++        if word >> TAG_SHIFT == tag(out) {
++            let _ = slot(out).compare_exchange(word, 0, Relaxed, Relaxed);
++        }
++    }
++    let Some(task) = incoming else { return };
++    let word = slot(task).swap(0, Relaxed);
++    if word == 0 || word >> TAG_SHIFT != tag(task) || incoming_pid != Some(armed) {
++        return;
++    }
++    let now = crate::clock::nanos_since_boot() & NS_MASK;
++    let ns = now.wrapping_sub(word & NS_MASK) & NS_MASK;
++    let class = ((word >> NS_BITS) & 3) as usize;
++    HIST[class][bucket(ns)].fetch_add(1, Relaxed);
++    MAX[class].fetch_max(ns, Relaxed);
++}
++
++fn reset() {
++    for class in &HIST {
++        for b in class {
++            b.store(0, Relaxed);
++        }
++    }
++    for m in &MAX {
++        m.store(0, Relaxed);
++    }
++}
++
++pub fn debug(action: u64, arg: u64) -> u64 {
++    match action {
++        ARM => {
++            reset();
++            ARMED.store(arg as u32, Relaxed);
++            0
++        }
++        DUMP => {
++            for (class, name) in CLASSES.iter().enumerate() {
++                let counts: [u64; BUCKETS] = core::array::from_fn(|b| HIST[class][b].load(Relaxed));
++                let n: u64 = counts.iter().sum();
++                let q = |p: u64| -> u64 {
++                    if n == 0 {
++                        return 0;
++                    }
++                    let want = (n * p).div_ceil(1000).max(1);
++                    let mut seen = 0;
++                    for (b, c) in counts.iter().enumerate() {
++                        seen += c;
++                        if seen >= want {
++                            return upper(b);
++                        }
++                    }
++                    upper(BUCKETS - 1)
++                };
++                crate::log!(
++                    "scout-wake: phase={arg} target={name} n={n} p50<={}ns p90<={}ns p99<={}ns p999<={}ns max={}ns",
++                    q(500),
++                    q(900),
++                    q(990),
++                    q(999),
++                    MAX[class].load(Relaxed),
++                );
++            }
++            reset();
++            0
++        }
++        _ => toyos_abi::syscall::SyscallError::InvalidArgument.to_u64(),
++    }
++}
+diff --git a/kernel/src/syscall/dispatch.rs b/kernel/src/syscall/dispatch.rs
+index e61b604b5..eabe2fc07 100644
+--- a/kernel/src/syscall/dispatch.rs
++++ b/kernel/src/syscall/dispatch.rs
+@@ -562,6 +562,8 @@ pub(crate) fn syscall_dispatch(num: u64, a1: u64, a2: u64, a3: u64, a4: u64) ->
+             let Some(mut buf) = ctx.user_bytes_mut(UserAddr::new(a1), a2) else { return bad_addr };
+             sys_query_modules(&mut buf)
+         }
++        #[cfg(all(feature = "scout-wake", not(feature = "test-actuators")))]
++        SYS_DEBUG => crate::scout_wake::debug(a1, a2),
+         // Feature-gated, not capability-checked: a shipping kernel has no SYS_DEBUG
+         // arm, so the number falls to the same default InvalidArgument as any unassigned one.
+         #[cfg(feature = "test-actuators")]
+diff --git a/tests/common/qemu.rs b/tests/common/qemu.rs
+index 144826a69..c3c81f33b 100644
+--- a/tests/common/qemu.rs
++++ b/tests/common/qemu.rs
+@@ -158,7 +158,7 @@ pub fn boot_census() -> (u32, u32, Vec<String>) {
+ /// entry and masking primitive, where a parameter would be a branch on the path
+ /// they measure. Interactive debug mode is separate: it builds
+ /// [`toyos_build::build::DEBUG_KERNEL_BUILD`] and returns before the suite.
+-pub const DECLARED_KERNEL_BUILDS: [&str; 3] =
++pub const DECLARED_KERNEL_BUILDS: [&str; 7] =
+     toyos_build::build::TEST_SUITE_KERNEL_BUILDS;
+ 
+ /// The fastest boot-to-ready this run has seen, in milliseconds.
+diff --git a/tests/guest/rust-tests/src/bin/scout_wake.rs b/tests/guest/rust-tests/src/bin/scout_wake.rs
+new file mode 100644
+index 000000000..1666194b1
+--- /dev/null
++++ b/tests/guest/rust-tests/src/bin/scout_wake.rs
+@@ -0,0 +1,83 @@
++//! Scout, never landed: an ordinary wake's post-to-dispatch latency, by the
++//! target CPU's state, read off a `scout-wake` kernel (`kernel/src/scout_wake.rs`).
++//!
++//! The main thread and one partner ping-pong through `park`/`unpark`, each
++//! round two wakes, beside a number of threads that spin and never block.
++//! Each phase arms the kernel's record for this process, ping-pongs for its
++//! span, and has the kernel log the phase's quantiles before anything stops.
++
++use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
++use std::sync::Arc;
++use std::thread;
++use std::time::{Duration, Instant};
++
++const ARM: u64 = 0x5C00_0001;
++const DUMP: u64 = 0x5C00_0002;
++
++/// One phase: its id in the kernel's lines, its spinners, its span.
++fn phase(id: u64, spinners: usize, span: Duration) {
++    let stop = Arc::new(AtomicBool::new(false));
++    let turn = Arc::new(AtomicU32::new(0));
++    let spin: Vec<_> = (0..spinners)
++        .map(|_| {
++            let stop = stop.clone();
++            thread::spawn(move || {
++                let mut x = 1u64;
++                while !stop.load(Ordering::Relaxed) {
++                    for _ in 0..1000 {
++                        x = std::hint::black_box(x.wrapping_mul(6364136223846793005).wrapping_add(1));
++                    }
++                }
++            })
++        })
++        .collect();
++    let main = thread::current();
++    let partner = {
++        let (stop, turn) = (stop.clone(), turn.clone());
++        thread::spawn(move || loop {
++            while turn.load(Ordering::Acquire) != 1 {
++                if stop.load(Ordering::Acquire) {
++                    return;
++                }
++                thread::park();
++            }
++            turn.store(0, Ordering::Release);
++            main.unpark();
++        })
++    };
++    // Every thread is up before the record is armed.
++    thread::sleep(Duration::from_millis(50));
++    let pid = toyos_abi::syscall::getpid().0 as u64;
++    assert_eq!(toyos_abi::syscall::debug_with(ARM, pid), 0, "this kernel carries scout-wake");
++    let begun = Instant::now();
++    let mut rounds = 0u64;
++    while begun.elapsed() < span {
++        turn.store(1, Ordering::Release);
++        partner.thread().unpark();
++        while turn.load(Ordering::Acquire) != 0 {
++            thread::park();
++        }
++        rounds += 1;
++    }
++    let took = begun.elapsed();
++    assert_eq!(toyos_abi::syscall::debug_with(DUMP, id), 0);
++    println!(
++        "scout-wake: phase={id} spinners={spinners} cpus={} rounds={rounds} in {} ms",
++        toyos_abi::syscall::cpu_count(),
++        took.as_millis()
++    );
++    stop.store(true, Ordering::Release);
++    partner.thread().unpark();
++    partner.join().unwrap();
++    for s in spin {
++        s.join().unwrap();
++    }
++}
++
++fn main() {
++    let cpus = toyos_abi::syscall::cpu_count() as usize;
++    phase(0, 0, Duration::from_secs(3));
++    phase(1, cpus - 1, Duration::from_secs(5));
++    phase(2, cpus, Duration::from_secs(5));
++    phase(3, 2 * cpus, Duration::from_secs(5));
++}
+diff --git a/tests/guest/rust-tests/src/bin/syscall_cost.rs b/tests/guest/rust-tests/src/bin/syscall_cost.rs
+index 7215e46a3..fd419372c 100644
+--- a/tests/guest/rust-tests/src/bin/syscall_cost.rs
++++ b/tests/guest/rust-tests/src/bin/syscall_cost.rs
+@@ -16,8 +16,15 @@
+ //! Reported as the minimum over repetitions rather than the mean: the minimum
+ //! is the run with the least interference, and on a host running eleven other
+ //! guests interference is all the mean measures.
++//!
++//! Scout, never landed: each repetition is also read in core cycles, as TSC
++//! cycles times the busiest CPU's `APERF`/`MPERF` across it, and the entry's
++//! two suspects are timed alone in Ring 3 beside it.
+ 
++use toyos::endow::{Endowments, SYSCAP_LABEL};
++use toyos::syscap::SysCap;
+ use toyos_abi::clock::nanos_since_boot as clock_nanos;
++use toyos_abi::counters::{Counter, RawRecord, Record};
+ 
+ const REPS: usize = 9;
+ const SYSCALLS_PER_REP: u64 = 20_000;
+@@ -37,23 +44,155 @@ fn rdtsc() -> u64 {
+     ((hi as u64) << 32) | lo as u64
+ }
+ 
+-/// Cycles per `SYS_GETPID`, the cheapest syscall there is: it reads one word
+-/// and returns, so what it measures is the entry and the exit.
+-fn syscall_cycles() -> u64 {
++fn records(cap: &SysCap) -> Vec<Record> {
++    let mut raw = vec![RawRecord::EMPTY; toyos_abi::syscall::cpu_count() as usize];
++    let n = cap.counters(&mut raw).expect("the estate's capability reads the counters");
++    raw[..n].iter().map(|r| Record::decode(r).expect("a record that decodes")).collect()
++}
++
++/// One repetition: TSC cycles per call, core cycles per call off the CPU whose
++/// `MPERF` moved most, and the share of the span that CPU was in C0.
++struct Rep {
++    tsc: u64,
++    core: f64,
++    busy: f64,
++}
++
++fn rep(cap: &SysCap, calls: u64, mut body: impl FnMut()) -> Rep {
++    let before = records(cap);
+     let start = rdtsc();
+-    for _ in 0..SYSCALLS_PER_REP {
+-        std::hint::black_box(toyos_abi::syscall::getpid());
++    for _ in 0..calls {
++        body();
+     }
+     let end = rdtsc();
+-    (end - start) / SYSCALLS_PER_REP
++    let after = records(cap);
++    let delta = |r: &Record, b: &Record, c: Counter| r.get(c).unwrap_or(0).wrapping_sub(b.get(c).unwrap_or(0));
++    let (aperf, mperf, stamp) = after
++        .iter()
++        .zip(&before)
++        .map(|(a, b)| (delta(a, b, Counter::Aperf), delta(a, b, Counter::Mperf), delta(a, b, Counter::Stamp)))
++        .max_by_key(|&(_, m, _)| m)
++        .expect("a machine has a cpu");
++    let tsc = (end - start) / calls;
++    let ratio = if mperf == 0 { f64::NAN } else { aperf as f64 / mperf as f64 };
++    Rep { tsc, core: tsc as f64 * ratio, busy: mperf as f64 / stamp.max(1) as f64 }
+ }
+ 
+-fn main() {
++fn report(cap: &SysCap, what: &str, calls: u64, mut body: impl FnMut()) -> u64 {
+     // A first pass nobody reads: the loop's own pages have to be faulted in
+-    // before the number is about the syscall rather than about the text.
+-    syscall_cycles();
++    // before the number is about the body rather than about the text.
++    rep(cap, calls, &mut body);
++    let mut reps: Vec<Rep> = (0..REPS).map(|_| rep(cap, calls, &mut body)).collect();
++    reps.sort_by_key(|r| r.tsc);
++    let (min, mid) = (&reps[0], &reps[REPS / 2]);
++    println!(
++        "scout-sys: {what}: min tsc={} core={:.0} busy={:.3} | median tsc={} core={:.0} busy={:.3} | over {REPS}x{calls}",
++        min.tsc, min.core, min.busy, mid.tsc, mid.core, mid.busy
++    );
++    min.tsc
++}
++
++#[repr(C, align(64))]
++struct Area([u8; 512]);
++
++macro_rules! xmm_check {
++    ($($r:literal)*) => {
++        concat!(
++            "mov {t}, {p}\n",
++            $("movq xmm", $r, ", {t}\n", "add {t}, 1\n",)*
++            "mov rdi, {sleep}\n",
++            "mov rsi, 50000\n",
++            "syscall\n",
++            "mov {t}, {p}\n",
++            $("movq {u}, xmm", $r, "\n", "cmp {u}, {t}\n", "jne 2f\n", "add {t}, 1\n",)*
++            "xor {bad:e}, {bad:e}\n",
++            "jmp 3f\n",
++            "2:\n",
++            "mov {bad:e}, 1\n",
++            "3:\n",
++        )
++    };
++}
+ 
+-    let syscall = (0..REPS).map(|_| syscall_cycles()).min().unwrap();
++/// Every XMM register a thread loaded is still its own after it slept,
++/// with twice as many threads as CPUs sleeping and loading their own: the
++/// `scout-nofp` twin saves the user state at the switch instead of the entry.
++fn fp_survives_switches() {
++    let threads = 2 * toyos_abi::syscall::cpu_count() as u64;
++    let bad: u32 = (0..threads)
++        .map(|i| {
++            std::thread::spawn(move || {
++                let mut bad = 0u32;
++                for round in 0..200u64 {
++                    let p = (i << 48) | (round << 8);
++                    let mut b: u32;
++                    // SAFETY: loads and compares XMM0–15, which it declares
++                    // clobbered, around one `SYS_NANOSLEEP`.
++                    unsafe {
++                        core::arch::asm!(
++                            xmm_check!("0" "1" "2" "3" "4" "5" "6" "7" "8" "9" "10" "11" "12" "13" "14" "15"),
++                            p = in(reg) p,
++                            t = out(reg) _,
++                            u = out(reg) _,
++                            bad = out(reg) b,
++                            sleep = const toyos_abi::syscall::SYS_NANOSLEEP,
++                            out("rdi") _, out("rsi") _, out("rax") _, out("rcx") _, out("r11") _,
++                            out("xmm0") _, out("xmm1") _, out("xmm2") _, out("xmm3") _,
++                            out("xmm4") _, out("xmm5") _, out("xmm6") _, out("xmm7") _,
++                            out("xmm8") _, out("xmm9") _, out("xmm10") _, out("xmm11") _,
++                            out("xmm12") _, out("xmm13") _, out("xmm14") _, out("xmm15") _,
++                        );
++                    }
++                    bad += b;
++                }
++                bad
++            })
++        })
++        .collect::<Vec<_>>()
++        .into_iter()
++        .map(|h| h.join().unwrap())
++        .sum();
++    println!("scout-sys: fp check: {threads} threads x 200 sleeps, {bad} with an XMM register not their own");
++    assert_eq!(bad, 0, "a thread's XMM state did not survive a switch");
++}
++
++fn main() {
++    let cap: SysCap = Endowments::get().take(SYSCAP_LABEL).expect("test-runner endows a capability");
++    fp_survives_switches();
++
++    let syscall = report(&cap, "getpid", SYSCALLS_PER_REP, || {
++        std::hint::black_box(toyos_abi::syscall::getpid());
++    });
++
++    let mut area = Area([0; 512]);
++    let at = area.0.as_mut_ptr();
++    let mut word = 0u32;
++    let w = &raw mut word;
++    // SAFETY: each body touches only `area`, 64-byte aligned and 512 bytes,
++    // and `word`; `fxrstor64` loads the image `fxsave64` wrote just before.
++    report(&cap, "ring3 fxsave64+fxrstor64", SYSCALLS_PER_REP, || unsafe {
++        core::arch::asm!("fxsave64 [{a}]", "fxrstor64 [{a}]", a = in(reg) at, options(nostack));
++    });
++    report(&cap, "ring3 lock add", SYSCALLS_PER_REP, || unsafe {
++        core::arch::asm!("lock add dword ptr [{w}], 1", w = in(reg) w, options(nostack));
++    });
++    report(&cap, "ring3 add", SYSCALLS_PER_REP, || unsafe {
++        core::arch::asm!("add dword ptr [{w}], 1", w = in(reg) w, options(nostack));
++    });
++    // The entry's order: the save's 512 bytes of stores, then the locked add
++    // that waits for them to drain.
++    report(&cap, "ring3 fxsave64;lock add;fxrstor64", SYSCALLS_PER_REP, || unsafe {
++        core::arch::asm!(
++            "fxsave64 [{a}]", "lock add dword ptr [{w}], 1", "fxrstor64 [{a}]",
++            a = in(reg) at, w = in(reg) w, options(nostack),
++        );
++    });
++    report(&cap, "ring3 fxsave64;add;fxrstor64", SYSCALLS_PER_REP, || unsafe {
++        core::arch::asm!(
++            "fxsave64 [{a}]", "add dword ptr [{w}], 1", "fxrstor64 [{a}]",
++            a = in(reg) at, w = in(reg) w, options(nostack),
++        );
++    });
+ 
+     // The clock alongside the cycles, because a TSC that does not tick at a
+     // fixed rate makes the cycle counts incomparable and this is the only
+diff --git a/tests/toyos.rs b/tests/toyos.rs
+index 36f92181a..670157d01 100644
+--- a/tests/toyos.rs
++++ b/tests/toyos.rs
+@@ -80,6 +80,9 @@ const RUST_SKIP: &[&str] = &[
+     // Its product is a cycle count per syscall and the clock rate beside it,
+     // which a guest's host sets: the `syscall_cost` metal row runs it.
+     "syscall_cost",
++    // Scout, never landed: needs the `scout-wake` kernel; the `scout_wake`
++    // metal row runs it.
++    "scout_wake",
+     // Its product is how long a spawn of `toybox` takes to its exit, which a
+     // guest's host sets: the `spawn_cost` metal row runs it.
+     "spawn_cost",
+@@ -436,6 +439,9 @@ const MACHINE_TESTS: &[&str] = &[
+     // the T14 boots from a stick, so no disk diskserver drives holds a
+     // partition the loader named.
+     "block_grants_reach_their_partitions",
++    // Scout, never landed: each scout kernel boots and runs its job clean
++    // before a T14 boot is spent on it.
++    "scout_smoke",
+     // The supervisor reading the slot table through a block session and
+     // minting `update` the idle slot's partitions, which `update` writes and
+     // marks through diskserver: the supervisor, the launcher and diskserver
+@@ -668,6 +674,23 @@ const METAL: &[(&str, metal::Metal)] = &[
+             },
+         },
+     ),
++    (
++        // Scout, never landed: the null syscall on the shipping entry and on
++        // its three twins, one boot each; the lines are the product.
++        "scout_syscall",
++        metal::Metal { arms: SCOUT_SYSCALL, judge: |b| scout_said(b, "test_rs_syscall_cost", "scout-sys: ") },
++    ),
++    (
++        // Scout, never landed: an ordinary wake's latency by its target's state.
++        "scout_wake",
++        metal::Metal {
++            arms: &[metal::Arm {
++                features: &["scout-wake"],
++                ..metal::once("scout-wake", "tests/images/testcases.toml", &[], &["test_rs_scout_wake"])
++            }],
++            judge: |b| scout_said(b, "test_rs_scout_wake", "scout-wake: "),
++        },
++    ),
+     (
+         // How long a spawn of `toybox` takes to its exit, printed by the job and
+         // read off the stick for an A/B against another build: that it ran, and
+@@ -1104,6 +1127,39 @@ const TESTCASES: &[metal::Arm] = &[metal::once(
+     ],
+ )];
+ 
++/// Scout, never landed: `syscall_cost` on the shipping kernel and its twins.
++const SCOUT_SYSCALL: &[metal::Arm] = &[
++    metal::once("scout-base", "tests/images/testcases.toml", &[], &["test_rs_syscall_cost"]),
++    metal::Arm {
++        features: &["scout-nofp"],
++        ..metal::once("scout-nofp", "tests/images/testcases.toml", &[], &["test_rs_syscall_cost"])
++    },
++    metal::Arm {
++        features: &["scout-nolock"],
++        ..metal::once("scout-nolock", "tests/images/testcases.toml", &[], &["test_rs_syscall_cost"])
++    },
++    metal::Arm {
++        features: &["scout-nofp", "scout-nolock"],
++        ..metal::once("scout-both", "tests/images/testcases.toml", &[], &["test_rs_syscall_cost"])
++    },
++];
++
++/// Scout: every boot ran `job` clean; its lines carrying `prefix`, printed.
++fn scout_said(b: &[&metal::Readback], job: &str, prefix: &str) -> Result<(), String> {
++    for back in b {
++        back.job_passed(job)?;
++        let log = back.log();
++        let lines: Vec<&str> = log.text().lines().filter(|l| l.contains(prefix)).collect();
++        if lines.is_empty() {
++            return Err(format!("{}: {job} said no {prefix:?} line", back.label));
++        }
++        for line in lines {
++            eprintln!("  [{}] {line}", back.label);
++        }
++    }
++    Ok(())
++}
++
+ /// The same boot, its rows ended on the hold: the count it waits for comes
+ /// thirty seconds after the server arms, and a row's job behind it would wait
+ /// that out too. The members run behind it: the hold gives up at a time since
+@@ -3920,6 +3976,7 @@ fn run_machine_test(name: &str, test_config: &Path) -> Result<(), String> {
+         "nvme_disk_keeps_log_and_home" => nvme_disk_keeps_log_and_home(test_config),
+         "hosted_clang_hello" => common::hostedclang::hosted_clang_hello(),
+         "block_grants_reach_their_partitions" => block_grants_reach_their_partitions(),
++        "scout_smoke" => scout_smoke(test_config),
+         "update_writes_the_idle_slot_through_the_block_service" => update_writes_the_idle_slot_through_the_block_service(),
+         "usbd_drives_the_spare" => usbd_drives_the_spare(test_config),
+         "usb_keyboard_rollover" => usb_keyboard_rollover(test_config),
+@@ -4406,6 +4463,34 @@ fn nvme_disk_keeps_log_and_home(test_config: &Path) -> Result<(), String> {
+     Ok(())
+ }
+ 
++/// Scout, never landed: every scout kernel boots `tests/images/testcases.toml`
++/// and its job ends clean, each line it printed shown.
++fn scout_smoke(test_config: &Path) -> Result<(), String> {
++    let rust = compile::repo_root().join("tests/guest/rust-tests");
++    let cases: [(&'static [&'static str], &str); 4] = [
++        (&["scout-nofp"], "syscall_cost"),
++        (&["scout-nolock"], "syscall_cost"),
++        (&["scout-nofp", "scout-nolock"], "syscall_cost"),
++        (&["scout-wake"], "scout_wake"),
++    ];
++    for (features, job) in cases {
++        let bin = qemu::build_toyos_bin(qemu::SUITE_ARCH, &rust, job);
++        let options = BootOptions { kernel_features: features, ..Default::default() };
++        let mut qemu = QemuInstance::boot_with_options(test_config, &[], &[(job.to_string(), bin)], options);
++        let result = qemu.run_test(&format!("test_rs_{job}"), Duration::from_secs(120));
++        for line in result.serial.lines().filter(|l| l.contains("scout-")) {
++            eprintln!("  [{features:?}] {line}");
++        }
++        if let Some(why) = &result.error {
++            return Err(format!("{features:?}: {why}\n{}", result.serial));
++        }
++        if result.exit_code != Some(0) {
++            return Err(format!("{features:?}: the job ended {:?}:\n{}", result.exit_code, result.serial));
++        }
++    }
++    Ok(())
++}
++
+ /// What `partition_grant` says, a line per grant it was refused through.
+ const GRANTS_SAID: [&str; 5] = [
+     "partition_grant: the log's grant opened the log and was refused the boot volume NotGranted",

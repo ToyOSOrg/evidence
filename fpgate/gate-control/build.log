@@ -1,0 +1,12 @@
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.17s
+     Running `target/debug/toyos-build --build-only`
+    Blocking waiting for file lock on package cache
+   Compiling kernel v0.1.0 (/Users/jan/Dev/jan/toyos-sysentry/kernel)
+    Finished `toyos` profile [optimized + debuginfo] target(s) in 3.57s
+    Finished `toyos` profile [optimized + debuginfo] target(s) in 0.13s
+
+thread 'main' (298156302) panicked at build/build.rs:1679:17:
+the kernel touches the user FP or vector state outside `arch::fpu` and `arch::entry`, which a thread keeps in its registers across every entry: 1 instruction(s), the first 1:
+  kernel::sched::driver::execute+0x116 (0x6ea66): Movaps [0f, 28, c1]
+The kernel is soft-float and saves that state only at a switch; an instruction anywhere else corrupts a thread's registers with no fault.
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
