@@ -242,7 +242,7 @@ mod tests {
         // The final pair must preserve the nonce and serialize MAX-1/MAX in order.
         let mut pair_bytes = [0u8; 32];
         unsafe {
-            let mut iv = [0xff; 16];
+            let mut iv = [0xffu8; 16];
             iv[12..].fill(0);
             let base = _mm256_broadcastsi128_si256(_mm_loadu_si128(iv.as_ptr().cast()));
             _mm256_storeu_si256(
