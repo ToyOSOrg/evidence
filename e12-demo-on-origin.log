@@ -1,0 +1,105 @@
+$ cat e12.sh
+#!/bin/bash
+# E12: the demo's footprint on origin as it stands, after its branches went.
+# 1. E10 again, over every ref this time (heads, tags, pull requests' refs): the
+#    refs whose name carries the bench's model name, the refs that hold the
+#    demo's first commit, those of them touching a Wi-Fi-named path past
+#    origin/main, and the lines past it carrying the model name.
+# 2. Each of the 12 tips E10 prints past wt/toyos-survey (its lines 41 to 52),
+#    asked of GitHub's API for origin: whether it still resolves, and whether
+#    the answer carries the model name.
+# 3. The lines of the commit message of E10 line 52's tip that name a reference.
+# The model name is masked in every case; no tip is printed.
+# argv: <worktree> <demo's first commit> <word to mask> <scratch dir> <E10's log>
+set -u
+repo=$1 first=$2 mask=$3 scratch=$4 e10=$5
+ci=$(echo "$mask" | awk '{ s=""; for (i=1;i<=length($0);i++) { c=substr($0,i,1); s=s "[" tolower(c) toupper(c) "]" } print s }')
+m() { sed "s/$ci/<bench>/g"; }
+[ -r "$e10" ] || exit 3
+cd "$repo" || exit 2
+echo "## 1. refs on origin"
+echo "\$ git fetch origin"; git fetch origin 2>&1 | m; echo "exit ${PIPESTATUS[0]}"
+echo "\$ git rev-parse origin/main"; git rev-parse origin/main
+echo "\$ git ls-remote origin"; git ls-remote origin > "$scratch/refs"; echo "exit $?, $(wc -l < "$scratch/refs" | tr -d ' ') refs, $(grep -c 'refs/heads/' "$scratch/refs") of them branches"
+named=$(awk '{print $2}' "$scratch/refs" | grep -c -i -- "$mask")
+echo "refs whose name carries the word, in any case: $named"
+awk '{print $2}' "$scratch/refs" | grep -i -- "$mask" | m
+holding=0 touching=0 unread=0
+while read -r sha ref; do
+  git cat-file -e "$sha^{commit}" 2>/dev/null || git fetch -q origin "$ref" 2>/dev/null
+  if ! git cat-file -e "$sha^{commit}" 2>/dev/null; then echo "unread: $ref" | m; unread=$((unread+1)); continue; fi
+  git merge-base --is-ancestor "$first" "$sha" || continue
+  holding=$((holding+1))
+  n=$(git log --name-only --format= "origin/main..$sha" | grep -c -i -E 'wifi|iwl|iwx|80211|wpa|wlan|eapol|supplicant')
+  w=$(( $(git log --format=%B "origin/main..$sha" | grep -c -i -- "$mask") + $(git diff "origin/main...$sha" | grep -c -i -- "$mask") ))
+  echo "$ref: holds ${first:0:12}, Wi-Fi-named path lines past main $n, message and diff lines past main carrying the word $w" | m
+  [ "$n" -gt 0 ] && touching=$((touching+1))
+done < "$scratch/refs"
+echo "refs unread: $unread"
+echo "refs on origin holding ${first:0:12}: $holding"
+echo "of them touching a Wi-Fi-named path: $touching"
+echo
+echo "## 2. E10's 12 demo tips, asked of origin by hash"
+resolving=0 carrying=0
+for line in $(seq 41 52); do
+  tip=$(sed -n "${line}p" "$e10" | awk '{print $2}' | tr -d ':')
+  gh api "repos/ToyOSOrg/ToyOS/commits/$tip" > "$scratch/answer" 2> "$scratch/answer.err"; e=$?
+  c=$(grep -c -i -- "$mask" "$scratch/answer")
+  [ "$e" -eq 0 ] && resolving=$((resolving+1))
+  [ "$c" -gt 0 ] && carrying=$((carrying+1))
+  echo "E10 line $line: gh api repos/ToyOSOrg/ToyOS/commits/<tip> exit $e, HTTP 404 in its error $(grep -c 'HTTP 404' "$scratch/answer.err"), answer carries the word: $([ "$c" -gt 0 ] && echo yes || echo no)"
+done
+rm -f "$scratch/answer" "$scratch/answer.err"
+echo "tips resolving on origin: $resolving of 12; answers carrying the word: $carrying"
+echo
+echo "## 3. the message of E10 line 52's tip, its lines naming a reference"
+tip=$(sed -n "52p" "$e10" | awk '{print $2}' | tr -d ':')
+echo "\$ git log -1 --format=%B <tip> | grep -n -i -E 'openbsd|linux|iwx'"
+git log -1 --format=%B "$tip" | grep -n -i -E 'openbsd|linux|iwx' | m
+echo "grep exit ${PIPESTATUS[1]}"
+echo "\$ git show --stat --format= <tip> -- '*wifi*'"
+git show --stat --format= "$tip" -- '*wifi*' | m
+
+$ bash e12.sh <the wifi worktree> a8e1c9673a2ef20d6bbbf228230afe389d00ba40 <the bench word> <scratch dir> <E10, e10-demo-branches-on-origin.log at pr-876 5d27b8209199>
+## 1. refs on origin
+$ git fetch origin
+exit 0
+$ git rev-parse origin/main
+ab655a1154b3aa27634f2ab1f3230dbf7744bf91
+$ git ls-remote origin
+exit 0, 1119 refs, 83 of them branches
+refs whose name carries the word, in any case: 0
+refs/heads/wt/toyos-survey: holds a8e1c9673a2e, Wi-Fi-named path lines past main 0, message and diff lines past main carrying the word 0
+refs/pull/834/head: holds a8e1c9673a2e, Wi-Fi-named path lines past main 0, message and diff lines past main carrying the word 0
+refs unread: 0
+refs on origin holding a8e1c9673a2e: 2
+of them touching a Wi-Fi-named path: 0
+
+## 2. E10's 12 demo tips, asked of origin by hash
+E10 line 41: gh api repos/ToyOSOrg/ToyOS/commits/<tip> exit 0, HTTP 404 in its error 0, answer carries the word: yes
+E10 line 42: gh api repos/ToyOSOrg/ToyOS/commits/<tip> exit 0, HTTP 404 in its error 0, answer carries the word: yes
+E10 line 43: gh api repos/ToyOSOrg/ToyOS/commits/<tip> exit 0, HTTP 404 in its error 0, answer carries the word: yes
+E10 line 44: gh api repos/ToyOSOrg/ToyOS/commits/<tip> exit 0, HTTP 404 in its error 0, answer carries the word: yes
+E10 line 45: gh api repos/ToyOSOrg/ToyOS/commits/<tip> exit 0, HTTP 404 in its error 0, answer carries the word: yes
+E10 line 46: gh api repos/ToyOSOrg/ToyOS/commits/<tip> exit 0, HTTP 404 in its error 0, answer carries the word: yes
+E10 line 47: gh api repos/ToyOSOrg/ToyOS/commits/<tip> exit 0, HTTP 404 in its error 0, answer carries the word: yes
+E10 line 48: gh api repos/ToyOSOrg/ToyOS/commits/<tip> exit 0, HTTP 404 in its error 0, answer carries the word: yes
+E10 line 49: gh api repos/ToyOSOrg/ToyOS/commits/<tip> exit 0, HTTP 404 in its error 0, answer carries the word: yes
+E10 line 50: gh api repos/ToyOSOrg/ToyOS/commits/<tip> exit 0, HTTP 404 in its error 0, answer carries the word: yes
+E10 line 51: gh api repos/ToyOSOrg/ToyOS/commits/<tip> exit 0, HTTP 404 in its error 0, answer carries the word: yes
+E10 line 52: gh api repos/ToyOSOrg/ToyOS/commits/<tip> exit 0, HTTP 404 in its error 0, answer carries the word: yes
+tips resolving on origin: 12 of 12; answers carrying the word: 12
+
+## 3. the message of E10 line 52's tip, its lines naming a reference
+$ git log -1 --format=%B <tip> | grep -n -i -E 'openbsd|linux|iwx'
+9:- netstack/src/wifi.rs, Card::Wifi: written against OpenBSD's ISC-licensed
+10:  if_iwx (22000 family). Firmware TLVs parsed (SEC_RT split into 14 lmac, 15
+14:  ALIVE (restock on the interrupt as iwx does), INIT_EXTENDED_CFG,
+16:  CSR strap/OTP, then iwx_init_hw's sequence (tx antennas, BT coex, SoC config,
+20:  layout iwx sends to -77 firmware (which declares v15): passive, every NVM/MCC
+grep exit 0
+$ git show --stat --format= <tip> -- '*wifi*'
+ userland/netstack/src/wifi.rs | 1808 +++++++++++++++++++++++++++++++++++++++++
+ userland/toybox/src/wifi.rs   |   76 ++
+ 2 files changed, 1884 insertions(+)
+EXIT=0

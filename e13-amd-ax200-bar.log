@@ -1,0 +1,89 @@
+$ cat e13.sh
+#!/bin/bash
+# E13: the AX200's BAR on the AMD bench and the bridge in front of it.
+# 1. As main's kernel logged them on the AMD bench: #884's metal run at
+#    f2c537a51, metal/head-amd-kernel.log on ToyOSOrg/evidence pr-884 at
+#    7b6ac575cf12e4afb2adda3bd2ec80d76896a06f, already masked there: the AX200's
+#    function, the bridge forwarding to its bus, the root bridge windows and the
+#    free runs placement offers candidates from.
+# 2. What the Wi-Fi demo's run logged of placing that BAR, as its commit
+#    messages record it: E10 line 42's tip, and the one commit under E10 line
+#    44's tip whose subject opens "<bench> image v11: the AX200's BAR 0". The
+#    bench's model name is masked in every case; no commit is named by hash.
+# argv: <evidence clone> <worktree> <word to mask> <E10's log>
+set -u
+ev=$1 repo=$2 mask=$3 e10=$4
+[ -r "$e10" ] || exit 3
+ci=$(echo "$mask" | awk '{ s=""; for (i=1;i<=length($0);i++) { c=substr($0,i,1); s=s "[" tolower(c) toupper(c) "]" } print s }')
+m() { sed "s/$ci/<bench>/g"; }
+echo "## 1. main's kernel on the AMD bench"
+echo "\$ git -C <evidence> show 7b6ac575cf12e4afb2adda3bd2ec80d76896a06f:metal/head-amd-kernel.log | sed -n '65p;79p;90,101p'"
+git -C "$ev" show 7b6ac575cf12e4afb2adda3bd2ec80d76896a06f:metal/head-amd-kernel.log | sed -n '65p;79p;90,101p' | m
+echo "exit ${PIPESTATUS[0]}"
+echo
+echo "## 2. the demo's commit messages"
+cd "$repo" || exit 2
+t42=$(sed -n '42p' "$e10" | awk '{print $2}' | tr -d ':')
+t44=$(sed -n '44p' "$e10" | awk '{print $2}' | tr -d ':')
+echo "\$ git log -1 --format='%s%n%n%b' <E10 line 42's tip> | sed -n '1,12p'"
+git log -1 --format='%s%n%n%b' "$t42" | sed -n '1,12p' | m
+echo "exit ${PIPESTATUS[0]}"
+v11=$(git log --format=%H --grep="^$ci image v11: the AX200's BAR 0" "origin/main..$t44")
+echo "\$ git log --format=%H --grep=\"^<bench> image v11: the AX200's BAR 0\" origin/main..<E10 line 44's tip> | wc -l"
+n=$(echo "$v11" | grep -c .); echo "$n"
+[ "$n" -eq 1 ] || exit 4
+echo "\$ git log -1 --format='%s%n%n%b' <that commit> | sed -n '1,12p'"
+git log -1 --format='%s%n%n%b' "$v11" | sed -n '1,12p' | m
+echo "exit ${PIPESTATUS[0]}"
+
+$ bash e13.sh <evidence clone> <the wifi worktree> <the bench word> <E10, e10-demo-branches-on-origin.log at pr-876 5d27b8209199>
+## 1. main's kernel on the AMD bench
+$ git -C <evidence> show 7b6ac575cf12e4afb2adda3bd2ec80d76896a06f:metal/head-amd-kernel.log | sed -n '65p;79p;90,101p'
+[2026-10-12 10:02:18  6.715 cpu0 kernel]   PCI 00:02.2 [0604] vendor=1022 device=1634 prog_if=00 bars=[]
+[2026-10-12 10:02:18  6.716 cpu0 kernel]   PCI 01:00.0 [0280] vendor=8086 device=2723 prog_if=00 bars=[bar0=0xd0600000]
+[2026-10-12 10:02:18  6.718 cpu0 kernel] pcidev: PCI 00:02.2 forwards 0xd0600000..0xd0700000 to its secondary bus
+[2026-10-12 10:02:18  6.718 cpu0 kernel] pcidev: PCI 00:02.3 forwards 0xd0500000..0xd0600000 to its secondary bus
+[2026-10-12 10:02:18  6.718 cpu0 kernel] pcidev: PCI 00:08.1 forwards 0xd0000000..0xd0500000 to its secondary bus
+[2026-10-12 10:02:18  6.718 cpu0 kernel] pcidev: PCI 00:08.1 forwards 0xfc90000000..0xfca0200000 to its secondary bus
+[2026-10-12 10:02:18  6.719 cpu0 kernel] pcidev: firmware declared root bridge memory: mem 0xd0000000..0xd0700000, mem 0xfc90000000..0xfca0200000, mem 0xd0700000..0xf8000000, mem 0xfc000000..0xfdc00000, mem 0xff000000..0xffeab000, mem 0x450200000..0xfc90000000, mem 0xfca0200000..0xfcb0000000
+[2026-10-12 10:02:18  6.719 cpu0 kernel] pcidev: 28 functions; 4 run(s) of 2 MiB or more below 0xfec00000 and 2 from 0x100000000
+[2026-10-12 10:02:18  6.719 cpu0 kernel] pcidev:   0xcf000000..0xd0000000 (16 MiB)
+[2026-10-12 10:02:18  6.719 cpu0 kernel] pcidev:   0xd0700000..0xf8000000 (633 MiB)
+[2026-10-12 10:02:18  6.719 cpu0 kernel] pcidev:   0xfc000000..0xfde00000 (30 MiB)
+[2026-10-12 10:02:18  6.719 cpu0 kernel] pcidev:   0xfdf00000..0xfec00000 (13 MiB)
+[2026-10-12 10:02:18  6.719 cpu0 kernel] pcidev:   0x430000000..0xfc90000000 (1017344 MiB)
+[2026-10-12 10:02:18  6.719 cpu0 kernel] pcidev:   0xfca0200000..0xffffffffffffffff (17592185009661 MiB)
+exit 0
+
+## 2. the demo's commit messages
+$ git log -1 --format='%s%n%n%b' <E10 line 42's tip> | sed -n '1,12p'
+<bench> image v8: the AX200 keeps its firmware BAR, and soundserver dumps the ALC287's COEFs and GPIO and runs Linux's ALC287 COEF init
+
+Measurement-only; never lands.
+
+Wi-Fi. v7's laptop boot handed 8086:2723 over, then pcidev moved its BAR 0 to
+0x450200000 and seven later 2 MiB windows; the bridge in front of it (00:02.2)
+forwards only 0xd0600000..0xd0700000, so every moved BAR read 0xffffffff
+and the claim was refused, netstack never got the card, and `wifi scan`
+said "no netstack to ask". For 8086:2723 alone, place_bar now keeps the BAR
+where firmware put it (0xd0600000, 2 MiB aligned, inside that window),
+checks it against every other function's BARs and cut windows, records it
+as cut, and logs "kept at ... where firmware put it" with the dword it
+exit 0
+$ git log --format=%H --grep="^<bench> image v11: the AX200's BAR 0" origin/main..<E10 line 44's tip> | wc -l
+1
+$ git log -1 --format='%s%n%n%b' <that commit> | sed -n '1,12p'
+<bench> image v11: the AX200's BAR 0 is kept before any gate, and relocation never runs for it
+
+Measurement-only scaffolding; never lands. <bench> WIFI HACK v11.
+
+The laptop's last boot ran build 6324a013e (the volume-keys branch),
+which does not contain v8's keep hack: its log shows BAR 0 of 01:00.0
+moved to eight addresses from 0x450200000, all outside the 1 MiB that
+bridge 00:02.2 forwards (0xd0600000..0xd0700000), the function silent at
+each, and the hand-over refused. v10 already contains v8's keep, so v10
+would not take that path; but the keep sat behind the routed-window and
+reference-dword gates, either of which refuses the BAR outright.
+
+exit 0
+EXIT=0
