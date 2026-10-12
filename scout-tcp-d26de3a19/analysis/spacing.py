@@ -34,8 +34,10 @@ for k, v in sorted(groups.items()):
     print(f"  {k:<44} n={len(v)} min={min(v):.3f} med={st.median(v):.3f} max={max(v):.3f}")
 first = groups['first'] + groups.get('first +dns-miss', [])
 print(f"  first of each process (any DNS)              n={len(first)} med={st.median(first):.3f}")
+apart = [v for k, vs in groups.items() if k in ('first', 'first +dns-miss', 'back-to-back +dns-miss') for v in vs]
+print(f"  not within 3 ms of a download (first, or after a resolver miss) n={len(apart)} min={min(apart):.3f} med={st.median(apart):.3f} max={max(apart):.3f}")
 
-print('\nToyOS: per fetch, syn_wire against the gap since the previous upstream frames')
+print('\nToyOS: per fetch, syn_wire against its own DNS query and the previous download')
 stamps = []
 setups = []
 lan = []
