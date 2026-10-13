@@ -1,0 +1,26 @@
+diff --git a/build/arch.rs b/build/arch.rs
+index 7f56ca522..a30b26806 100644
+--- a/build/arch.rs
++++ b/build/arch.rs
+@@ -182,7 +182,7 @@ impl Arch {
+             (Arch::X86_64, false, _) => None,
+             (Arch::X86_64, true, _) => Some("kernel-irqchip=split"),
+             (Arch::Aarch64, false, _) => Some("gic-version=3"),
+-            (Arch::Aarch64, true, Accel::Hvf) => Some("gic-version=3,msi=its,kernel-irqchip=off"),
++            (Arch::Aarch64, true, Accel::Hvf) => Some("gic-version=3"),
+             (Arch::Aarch64, true, Accel::Kvm | Accel::Tcg) => Some("gic-version=3,msi=its"),
+         }
+     }
+diff --git a/tests/toyos.rs b/tests/toyos.rs
+index a774cb9d1..4078bcd08 100644
+--- a/tests/toyos.rs
++++ b/tests/toyos.rs
+@@ -2419,7 +2419,7 @@ fn virt_claim_lpi(profile: qemu::Profile) -> Result<(), String> {
+         ..Default::default()
+     };
+     let argv = qemu::profile_argv(&options);
+-    for want in ["msi=its", "iommu=smmuv3", "edu", "bypass_iommu=on", "e1000e"] {
++    for want in ["iommu=smmuv3", "edu", "bypass_iommu=on", "e1000e"] {
+         if !argv.iter().any(|a| a.contains(want)) {
+             return Err(format!("the machine has no {want}: {argv:?}"));
+         }

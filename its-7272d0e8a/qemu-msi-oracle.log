@@ -1,0 +1,22 @@
+== -accel hvf -machine virt,gic-version=3,msi=its,kernel-irqchip=off,iommu=smmuv3
+  dev: arm-gicv3, id ""
+  dev: arm-gicv3-its, id ""
+  dev: arm-smmuv3, id ""
+exit 0
+== -accel hvf -machine virt,gic-version=3,msi=its,iommu=smmuv3
+qemu-system-aarch64: ITS not supported on HVF when using the hardware vGIC.
+exit 1
+== -accel hvf -machine virt,gic-version=3,iommu=smmuv3
+  dev: arm-gicv2m, id ""
+  dev: arm-smmuv3, id ""
+  dev: hvf-arm-gicv3, id ""
+exit 0
+== tcg -machine virt,gic-version=3,msi=its,iommu=smmuv3
+  dev: arm-gicv3, id ""
+  dev: arm-gicv3-its, id ""
+  dev: arm-smmuv3, id ""
+exit 0
+== tcg -machine virt,gic-version=3,virtualization=on
+  dev: arm-gicv3, id ""
+  dev: arm-gicv3-its, id ""
+exit 0
