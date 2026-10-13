@@ -1,4 +1,4 @@
-**Sources the speed track's stages cite**, quoted verbatim. A PDF's text is extracted with PyMuPDF 1.28.0 (`page.get_text()`); each quote is a line range of the extract, and the page is the PDF's. A PDF's text drops its section headings' numbers, so a section is numbered by the document's own cross-references to it.
+**Sources the speed track's stages cite**, quoted verbatim. No Linux source, commit or reading is quoted: the tree cites none. A PDF's text is extracted with PyMuPDF 1.28.0 (`page.get_text()`); each quote is a line range of the extract, and the page is the PDF's. A PDF's text drops its section headings' numbers, so a section is numbered by the document's own cross-references to it.
 
 ## Intel® 64 and IA-32 Architectures Software Developer's Manual, combined volumes, 325462-093
 
@@ -377,73 +377,6 @@ Fetched from `https://www.intel.com/content/www/us/en/developer/articles/technic
  Given the purpose of this bit,  Intel recommends that it be used with caution and never in production environments unless accompanied by a complete OS implementation. Incomplete implementations, such as those listed above, can be exploited to gain privilege escalation. 
 ```
 
-## Linux v5.9, its FSGSBASE implementation (`fsgsbase-is-taken`)
-
-Each file fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/<path>?h=v5.9`.
-
-`arch/x86/kernel/cpu/common.c`, SHA-256 `db77ac5712f33c457a0966f700de450ab4b22b1b8e3cfbe09e90ea6ff4417826`, enabling it on every CPU that enumerates it (lines 1515-1519):
-
-```text
-	/* Enable FSGSBASE instructions if available. */
-	if (cpu_has(c, X86_FEATURE_FSGSBASE)) {
-		cr4_set_bits(X86_CR4_FSGSBASE);
-		elf_hwcap2 |= HWCAP2_FSGSBASE;
-	}
-```
-
-`arch/x86/kernel/process_64.c`, SHA-256 `b9fdf09491187f8bc0eca867e250ad3c860f20018add907d7acebcf67211ea80`, the switch saving each thread's bases (lines 248-264):
-
-```text
-static __always_inline void save_fsgs(struct task_struct *task)
-{
-	savesegment(fs, task->thread.fsindex);
-	savesegment(gs, task->thread.gsindex);
-	if (static_cpu_has(X86_FEATURE_FSGSBASE)) {
-		/*
-		 * If FSGSBASE is enabled, we can't make any useful guesses
-		 * about the base, and user code expects us to save the current
-		 * value.  Fortunately, reading the base directly is efficient.
-		 */
-		task->thread.fsbase = rdfsbase();
-		task->thread.gsbase = __rdgsbase_inactive();
-	} else {
-		save_base_legacy(task, task->thread.fsindex, FS);
-		save_base_legacy(task, task->thread.gsindex, GS);
-	}
-}
-```
-
-`arch/x86/entry/entry_64.S`, SHA-256 `d73e2f1bdc7d5c8fbd23fdf3c3b26e159433c395f32463d296d08550a8678f5f`, the paranoid entry (lines 823-848):
-
-```text
-	 * Switching CR3 does not depend on kernel GSBASE so it can
-	 * be done before switching to the kernel GSBASE. This is
-	 * required for FSGSBASE because the kernel GSBASE has to
-	 * be retrieved from a kernel internal table.
-	 */
-	SAVE_AND_SWITCH_TO_KERNEL_CR3 scratch_reg=%rax save_reg=%r14
-
-	/*
-	 * Handling GSBASE depends on the availability of FSGSBASE.
-	 *
-	 * Without FSGSBASE the kernel enforces that negative GSBASE
-	 * values indicate kernel GSBASE. With FSGSBASE no assumptions
-	 * can be made about the GSBASE value when entering from user
-	 * space.
-	 */
-	ALTERNATIVE "jmp .Lparanoid_entry_checkgs", "", X86_FEATURE_FSGSBASE
-
-	/*
-	 * Read the current GSBASE and store it in %rbx unconditionally,
-	 * retrieve and set the current CPUs kernel GSBASE. The stored value
-	 * has to be restored in paranoid_exit unconditionally.
-	 *
-	 * The MSR write ensures that no subsequent load is based on a
-	 * mispredicted GSBASE. No extra FENCE required.
-	 */
-	SAVE_AND_SET_GSBASE scratch_reg=%rax save_reg=%rbx
-```
-
 ## Lozi et al., "The Linux Scheduler: a Decade of Wasted Cores", EuroSys '16, doi 10.1145/2901318.2901326
 
 Fetched from `https://people.ece.ubc.ca/sasha/papers/eurosys16-final29.pdf`, SHA-256 `c0d99ee07a3ec791e0e75b60a2834a6f46afb41c0959230aae4110d5321f9515`.
@@ -568,1409 +501,254 @@ Identifier field set to 0Ch (refer to section 5.1.25.1.6), then the controller s
 status code of Invalid Field in Command. Refer to section 8.1.17.1 for more details. 
 ```
 
-## Linux commits
+## Intel, 11th Generation Intel® Core™ Processor Specification Update, 631123-034
 
-Each commit fetched as `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/patch/?id=<hash>`, which kernel.org redirects to the full hash. The release that first carries it is read by fetching a file it touches at the tag before and at that tag.
+Fetched from `https://cdrdv2.intel.com/v1/dl/getContent/631123` (served as `https://cdrdv2-public.intel.com/631123/631123_034.pdf`), SHA-256 `9eaacfd64a426fa384034a91a73d59b5262ce2d01381d71429adfad4779f3e4f`. Its errata summary (TGL001-TGL075, PDF pages 12-17) was read whole: no title names the TSC, TSC-deadline mode, the APIC timer, MONITOR or MWAIT, and a search of the whole extract for `tsc`, `deadline`, `apic`, `mwait`, `monitor` and `timer` finds only TGL004/TGL010's APIC page, TGL040/TGL044's internal timer error, TGL066's display monitor and TGL073's virtual machine monitor.
 
-### 279f1461432c, the one-shot through `IA32_TSC_DEADLINE` (`the-timer-is-a-lapic-count-…`)
-
-SHA-256 of the patch `239bc4d695e8d58b7224c6d50eb8986b23ff621c1880e4f351c596ef1460a842`.
-
-Header and message (lines 1-25 of the patch):
+The title and revision (extract lines 3-22):
 
 ```text
-From 279f1461432ccdec0b98c0bcbe0a8e2c0f6fdda5 Mon Sep 17 00:00:00 2001
-From: Suresh Siddha <suresh.b.siddha@intel.com>
-Date: Mon, 22 Oct 2012 14:37:58 -0700
-Subject: x86: apic: Use tsc deadline for oneshot when available
-
-If the TSC deadline mode is supported, LAPIC timer one-shot mode can be
-implemented using IA32_TSC_DEADLINE MSR. An interrupt will be generated
-when the TSC value equals or exceeds the value in the IA32_TSC_DEADLINE
-MSR.
-
-This enables us to skip the APIC calibration during boot. Also, in
-xapic mode, this enables us to skip the uncached apic access to re-arm
-the APIC timer.
-
-As this timer ticks at the high frequency TSC rate, we use the
-TSC_DIVISOR (32) to work with the 32-bit restrictions in the
-clockevent API's to avoid 64-bit divides etc (frequency is u32 and
-"unsigned long" in the set_next_event(), max_delta limits the next
-event to 32-bit for 32-bit kernel).
-
-Signed-off-by: Suresh Siddha <suresh.b.siddha@intel.com>
-Cc: venki@google.com
-Cc: len.brown@intel.com
-Link: http://lkml.kernel.org/r/1350941878.6017.31.camel@sbsiddha-desk.sc.intel.com
-Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
-```
-
-`arch/x86/kernel/apic/apic.c` at `v3.7`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/arch/x86/kernel/apic/apic.c?h=v3.7`, SHA-256 `e49c0e3b79e1b280e5175e44b030c6c0950dd2894ee0405cf69d4e90b28071ab`: `TSC_DEADLINE` matches 0 of its lines.
-
-`arch/x86/kernel/apic/apic.c` at `v3.8`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/arch/x86/kernel/apic/apic.c?h=v3.8`, SHA-256 `20ec8038599e566d1aa0490f414eab852ec84ca05f1009b3b6b354b92172029b`, the deadline write (lines 469-476):
-
-```c
-static int lapic_next_deadline(unsigned long delta,
-			       struct clock_event_device *evt)
-{
-	u64 tsc;
-
-	rdtscll(tsc);
-	wrmsrl(MSR_IA32_TSC_DEADLINE, tsc + (((u64) delta) * TSC_DIVISOR));
-	return 0;
-```
-
-`arch/x86/kernel/apic/apic.c` at `v3.8`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/arch/x86/kernel/apic/apic.c?h=v3.8`, SHA-256 `20ec8038599e566d1aa0490f414eab852ec84ca05f1009b3b6b354b92172029b`, registered on every CPU that enumerates the mode (lines 559-567):
-
-```c
-	if (this_cpu_has(X86_FEATURE_TSC_DEADLINE_TIMER)) {
-		levt->features &= ~(CLOCK_EVT_FEAT_PERIODIC |
-				    CLOCK_EVT_FEAT_DUMMY);
-		levt->set_next_event = lapic_next_deadline;
-		clockevents_config_and_register(levt,
-						(tsc_khz / TSC_DIVISOR) * 1000,
-						0xF, ~0UL);
-	} else
-		clockevents_register_device(levt);
-```
-
-`arch/x86/kernel/apic/apic.c` at `v3.8`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/arch/x86/kernel/apic/apic.c?h=v3.8`, SHA-256 `20ec8038599e566d1aa0490f414eab852ec84ca05f1009b3b6b354b92172029b`, no calibration where the mode is (lines 695-697):
-
-```c
-	if (boot_cpu_has(X86_FEATURE_TSC_DEADLINE_TIMER)) {
-		return 0;
-	} else if (lapic_timer_frequency) {
-```
-
-`arch/x86/kernel/apic/apic.c` at `v7.2`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/arch/x86/kernel/apic/apic.c?h=v7.2`, SHA-256 `e187313fbae0c6941331be18e51ac6fb3f2b5e33bc11caf84f6b621b7c215a40`, its errata table, `deadline_match`, today (lines 513-542):
-
-```c
-static const struct x86_cpu_id deadline_match[] __initconst = {
-	X86_MATCH_VFM_STEPS(INTEL_HASWELL_X,   0x2, 0x2, 0x3a), /* EP */
-	X86_MATCH_VFM_STEPS(INTEL_HASWELL_X,   0x4, 0x4, 0x0f), /* EX */
-
-	X86_MATCH_VFM(INTEL_BROADWELL_X,	0x0b000020),
-
-	X86_MATCH_VFM_STEPS(INTEL_BROADWELL_D, 0x2, 0x2, 0x00000011),
-	X86_MATCH_VFM_STEPS(INTEL_BROADWELL_D, 0x3, 0x3, 0x0700000e),
-	X86_MATCH_VFM_STEPS(INTEL_BROADWELL_D, 0x4, 0x4, 0x0f00000c),
-	X86_MATCH_VFM_STEPS(INTEL_BROADWELL_D, 0x5, 0x5, 0x0e000003),
-
-	X86_MATCH_VFM_STEPS(INTEL_SKYLAKE_X,   0x3, 0x3, 0x01000136),
-	X86_MATCH_VFM_STEPS(INTEL_SKYLAKE_X,   0x4, 0x4, 0x02000014),
-	X86_MATCH_VFM_STEPS(INTEL_SKYLAKE_X,   0x5, 0xf, 0),
-
-	X86_MATCH_VFM(INTEL_HASWELL,		0x22),
-	X86_MATCH_VFM(INTEL_HASWELL_L,		0x20),
-	X86_MATCH_VFM(INTEL_HASWELL_G,		0x17),
-
-	X86_MATCH_VFM(INTEL_BROADWELL,		0x25),
-	X86_MATCH_VFM(INTEL_BROADWELL_G,	0x17),
-
-	X86_MATCH_VFM(INTEL_SKYLAKE_L,		0xb2),
-	X86_MATCH_VFM(INTEL_SKYLAKE,		0xb2),
-
-	X86_MATCH_VFM(INTEL_KABYLAKE_L,		0x52),
-	X86_MATCH_VFM(INTEL_KABYLAKE,		0x52),
-
-	{},
-};
-```
-
-`arch/x86/kernel/apic/apic.c` at `v7.2`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/arch/x86/kernel/apic/apic.c?h=v7.2`, SHA-256 `e187313fbae0c6941331be18e51ac6fb3f2b5e33bc11caf84f6b621b7c215a40`, `setup_APIC_timer` today (lines 580-605):
-
-```c
-static void setup_APIC_timer(void)
-{
-	struct clock_event_device *levt = this_cpu_ptr(&lapic_events);
-
-	if (this_cpu_has(X86_FEATURE_ARAT)) {
-		lapic_clockevent.features &= ~CLOCK_EVT_FEAT_C3STOP;
-		/* Make LAPIC timer preferable over percpu HPET */
-		lapic_clockevent.rating = 150;
-	}
-
-	memcpy(levt, &lapic_clockevent, sizeof(*levt));
-	levt->cpumask = cpumask_of(smp_processor_id());
-
-	if (this_cpu_has(X86_FEATURE_TSC_DEADLINE_TIMER)) {
-		levt->name = "lapic-deadline";
-		levt->features &= ~(CLOCK_EVT_FEAT_PERIODIC | CLOCK_EVT_FEAT_DUMMY);
-		levt->features |= CLOCK_EVT_FEAT_CLOCKSOURCE_COUPLED;
-		levt->cs_id = CSID_X86_TSC;
-		levt->set_next_event = lapic_next_deadline;
-		clockevents_config_and_register(levt, tsc_khz * (1000 / TSC_DIVISOR), 0xF, ~0UL);
-	} else {
-		clockevents_register_device(levt);
-	}
-
-	apic_update_vector(smp_processor_id(), LOCAL_TIMER_VECTOR, true);
-}
-```
-
-`arch/x86/kernel/apic/apic.c` at `v7.2`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/arch/x86/kernel/apic/apic.c?h=v7.2`, SHA-256 `e187313fbae0c6941331be18e51ac6fb3f2b5e33bc11caf84f6b621b7c215a40`, `calibrate_APIC_clock` today (lines 799-810):
-
-```c
-static int __init calibrate_APIC_clock(void)
-{
-	struct clock_event_device *levt = this_cpu_ptr(&lapic_events);
-	u64 tsc_perj = 0, tsc_start = 0;
-	long delta_tsc_khz, bus_khz;
-	unsigned long jif_start;
-	unsigned long deltaj;
-	long delta, deltatsc;
-	int pm_referenced = 0;
-
-	if (boot_cpu_has(X86_FEATURE_TSC_DEADLINE_TIMER))
-		return 0;
-```
-
-The T14 is family 6 model 140, 0x8C (`kernel/cpuvuln/fixtures/t14/cpuinfo.txt:2-4` in ToyOS), and no `deadline_match` row names it.
-
-`arch/x86/include/asm/intel-family.h` at `v7.2`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/arch/x86/include/asm/intel-family.h?h=v7.2`, SHA-256 `894e851bf5fdc55c5dbf5a6270fb1b095c74798d4100db440b328a20f53fd184`, model 0x8C (lines 120-120):
-
-```c
-#define INTEL_TIGERLAKE_L		IFM(6, 0x8C) /* Willow Cove */
-```
-
-### f246ec3478cf, TSC-coupled programming (`the-timer-is-a-lapic-count-…`)
-
-SHA-256 of the patch `42f7af783e0301844fe016ea3827f2bc102efa5e7e781b58e9ee53673bd144d4`.
-
-Header and message (lines 1-23 of the patch):
-
-```text
-From f246ec3478cfdab830ee0815209f48923e7ee5e2 Mon Sep 17 00:00:00 2001
-From: Thomas Gleixner <tglx@kernel.org>
-Date: Tue, 24 Feb 2026 17:36:49 +0100
-Subject: x86/apic: Enable TSC coupled programming mode
-
-The TSC deadline timer is directly coupled to the TSC and setting the next
-deadline is tedious as the clockevents core code converts the
-CLOCK_MONOTONIC based absolute expiry time to a relative expiry by reading
-the current time from the TSC. It converts that delta to cycles and hands
-the result to lapic_next_deadline(), which then has read to the TSC and add
-the delta to program the timer.
-
-The core code now supports coupled clock event devices and can provide the
-expiry time in TSC cycles directly without reading the TSC at all.
-
-This obviouly works only when the TSC is the current clocksource, but
-that's the default for all modern CPUs which implement the TSC deadline
-timer. If the TSC is not the current clocksource (e.g. early boot) then the
-core code falls back to the relative set_next_event() callback as before.
-
-Signed-off-by: Thomas Gleixner <tglx@kernel.org>
-Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
-Link: https://patch.msgid.link/20260224163430.076565985@kernel.org
-```
-
-`arch/x86/kernel/apic/apic.c` at `v7.0`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/arch/x86/kernel/apic/apic.c?h=v7.0`, SHA-256 `2093f0e0e7bd056a54e68959d33fd4a6a54481523ec1ea3f8530e0649ae62c9b`: `CLOCKSOURCE_COUPLED` matches 0 of its lines.
-
-`arch/x86/kernel/apic/apic.c` at `v7.1`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/arch/x86/kernel/apic/apic.c?h=v7.1`, SHA-256 `a4fbffbc322c38c4f89cbcb1f2b124a3e6a2b444b9f0db9f50ea69933772ebea`, the deadline device, coupled (lines 592-599):
-
-```c
-	if (this_cpu_has(X86_FEATURE_TSC_DEADLINE_TIMER)) {
-		levt->name = "lapic-deadline";
-		levt->features &= ~(CLOCK_EVT_FEAT_PERIODIC | CLOCK_EVT_FEAT_DUMMY);
-		levt->features |= CLOCK_EVT_FEAT_CLOCKSOURCE_COUPLED;
-		levt->cs_id = CSID_X86_TSC;
-		levt->set_next_event = lapic_next_deadline;
-		clockevents_config_and_register(levt, tsc_khz * (1000 / TSC_DIVISOR), 0xF, ~0UL);
-	} else {
-```
-
-`arch/x86/include/asm/clock_inlined.h` at `v7.1`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/arch/x86/include/asm/clock_inlined.h?h=v7.1`, SHA-256 `7bf4bd9213c5a4c33c64f81d79819f15cc0c96e716a3758a5bc5b06333bc968b`, the absolute write (lines 14-20):
-
-```c
-struct clock_event_device;
-
-static __always_inline void
-arch_inlined_clockevent_set_next_coupled(u64 cycles, struct clock_event_device *evt)
-{
-	native_wrmsrq(MSR_IA32_TSC_DEADLINE, cycles);
-}
-```
-
-### 147f3efaa241, EEVDF, and wakeup preemption since CFS (`a-wake-to-a-busy-cpu-…`)
-
-SHA-256 of the patch `7fae396127a776d551c700615f58628d060d33f2f86b1c369729ae4b1a49976e`.
-
-Header and message (lines 1-34 of the patch):
-
-```text
-From 147f3efaa24182a21706bca15eab2f3f4630b5fe Mon Sep 17 00:00:00 2001
-From: Peter Zijlstra <peterz@infradead.org>
-Date: Wed, 31 May 2023 13:58:44 +0200
-Subject: sched/fair: Implement an EEVDF-like scheduling policy
-
-Where CFS is currently a WFQ based scheduler with only a single knob,
-the weight. The addition of a second, latency oriented parameter,
-makes something like WF2Q or EEVDF based a much better fit.
-
-Specifically, EEVDF does EDF like scheduling in the left half of the
-tree -- those entities that are owed service. Except because this is a
-virtual time scheduler, the deadlines are in virtual time as well,
-which is what allows over-subscription.
-
-EEVDF has two parameters:
-
- - weight, or time-slope: which is mapped to nice just as before
-
- - request size, or slice length: which is used to compute
-   the virtual deadline as: vd_i = ve_i + r_i/w_i
-
-Basically, by setting a smaller slice, the deadline will be earlier
-and the task will be more eligible and ran earlier.
-
-Tick driven preemption is driven by request/slice completion; while
-wakeup preemption is driven by the deadline.
-
-Because the tree is now effectively an interval tree, and the
-selection is no longer 'leftmost', over-scheduling is less of a
-problem.
-
-Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
-Signed-off-by: Ingo Molnar <mingo@kernel.org>
-Link: https://lore.kernel.org/r/20230531124603.931005524@infradead.org
-```
-
-The wakeup-preemption hunk (lines 577-593 of the patch):
-
-```text
-@@ -8228,7 +8460,19 @@ static void check_preempt_wakeup(struct rq *rq, struct task_struct *p, int wake_
- 	if (cse_is_idle != pse_is_idle)
- 		return;
+Document Number: 631123-034 
  
--	update_curr(cfs_rq_of(se));
-+	cfs_rq = cfs_rq_of(se);
-+	update_curr(cfs_rq);
-+
-+	if (sched_feat(EEVDF)) {
-+		/*
-+		 * XXX pick_eevdf(cfs_rq) != se ?
-+		 */
-+		if (pick_eevdf(cfs_rq) == pse)
-+			goto preempt;
-+
-+		return;
-+	}
+ 
+ 
+ 
+ 
+ 
+11th Generation Intel® Core™ 
+Processor 
+ 
+Specification Update 
+ 
+Supporting 11th Generation Intel® Core™ Processor, Intel® 
+Pentium® Processor, and Intel® Celeron® Processor for UP3, 
+UP3 IOT, UP4, H35, H81, UP3-Refresh, and H35-Refresh 
+Processor Line Platforms, formerly known as Tiger Lake 
+ 
+Revision 034 
+ 
+April 2026 
 ```
 
-`kernel/sched/fair.c` at `v6.5`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/kernel/sched/fair.c?h=v6.5`, SHA-256 `c3b7ee0a0bc51b9f5c39c25c97490b5c5b220b5e456a7c5eeb678463d2886188`: `eevdf` matches 0 of its lines.
-
-`kernel/sched/fair.c` at `v6.6`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/kernel/sched/fair.c?h=v6.6`, SHA-256 `7d259d533ffb439992969e5d1d20b27dc64c9203f5c09e09f839047cbd4e40bb`, wakeup preemption by the EEVDF pick (lines 8117-8132):
-
-```c
-	if (cse_is_idle != pse_is_idle)
-		return;
-
-	cfs_rq = cfs_rq_of(se);
-	update_curr(cfs_rq);
-
-	/*
-	 * XXX pick_eevdf(cfs_rq) != se ?
-	 */
-	if (pick_eevdf(cfs_rq) == pse)
-		goto preempt;
-
-	return;
-
-preempt:
-	resched_curr(rq);
-```
-
-`kernel/sched_fair.c` at `v2.6.23`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/kernel/sched_fair.c?h=v2.6.23`, SHA-256 `9572c1797db2ee5e7a87e5700030cf46c0f11fbde28407f0fb3d76d5816903a0`, CFS's first release: the running task preempted for a woken one (lines 976-1001):
-
-```c
-/*
- * Preempt the current task with a newly woken task if needed:
- */
-static void check_preempt_curr_fair(struct rq *rq, struct task_struct *p)
-{
-	struct task_struct *curr = rq->curr;
-	struct cfs_rq *cfs_rq = task_cfs_rq(curr);
-	unsigned long gran;
-
-	if (unlikely(rt_prio(p->prio))) {
-		update_rq_clock(rq);
-		update_curr(cfs_rq);
-		resched_task(curr);
-		return;
-	}
-
-	gran = sysctl_sched_wakeup_granularity;
-	/*
-	 * Batch tasks prefer throughput over latency:
-	 */
-	if (unlikely(p->policy == SCHED_BATCH))
-		gran = sysctl_sched_batch_wakeup_granularity;
-
-	if (is_same_group(curr, p))
-		__check_preempt_curr_fair(cfs_rq, &p->se, &curr->se, gran);
-}
-```
-
-### 63304558ba5d, EEVDF's curb on wakeup preemption, `RUN_TO_PARITY` (`a-wake-to-a-busy-cpu-…`)
-
-SHA-256 of the patch `9d76759c2fb670c7cdd3d906c66d3c79138e6066e1c403087b0967e2ed04efcb`.
-
-Header and message (lines 1-41 of the patch):
+The T14's processor, family 6 model 140 stepping 1, is the UP3 line's 000806C1h (extract lines 399-406):
 
 ```text
-From 63304558ba5dcaaff9e052ee43cfdcc7f9c29e85 Mon Sep 17 00:00:00 2001
-From: Peter Zijlstra <peterz@infradead.org>
-Date: Wed, 16 Aug 2023 15:40:59 +0200
-Subject: sched/eevdf: Curb wakeup-preemption
-
-Mike and others noticed that EEVDF does like to over-schedule quite a
-bit -- which does hurt performance of a number of benchmarks /
-workloads.
-
-In particular, what seems to cause over-scheduling is that when lag is
-of the same order (or larger) than the request / slice then placement
-will not only cause the task to be placed left of current, but also
-with a smaller deadline than current, which causes immediate
-preemption.
-
-[ notably, lag bounds are relative to HZ ]
-
-Mike suggested we stick to picking 'current' for as long as it's
-eligible to run, giving it uninterrupted runtime until it reaches
-parity with the pack.
-
-Augment Mike's suggestion by only allowing it to exhaust it's initial
-request.
-
-One random data point:
-
-echo NO_RUN_TO_PARITY > /debug/sched/features
-perf stat -a -e context-switches --repeat 10 -- perf bench sched messaging -g 20 -t -l 5000
-
-	3,723,554        context-switches      ( +-  0.56% )
-	9.5136 +- 0.0394 seconds time elapsed  ( +-  0.41% )
-
-echo RUN_TO_PARITY > /debug/sched/features
-perf stat -a -e context-switches --repeat 10 -- perf bench sched messaging -g 20 -t -l 5000
-
-	2,556,535        context-switches      ( +-  0.51% )
-	9.2427 +- 0.0302 seconds time elapsed  ( +-  0.33% )
-
-Suggested-by: Mike Galbraith <umgwanakikbuti@gmail.com>
-Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
-Link: https://lkml.kernel.org/r/20230816134059.GC982867@hirez.programming.kicks-ass.net
+UP3/UP4/H35 000806C1h R e s e r v e d 
+0000000b 
+1000b 
+Reserved 
+00b 
+0110b 
+1100b 
+0001b 
 ```
 
-The hunks: `pick_eevdf` keeps `curr`, and the feature, on by default (lines 47-88 of the patch):
+## Intel, Pentium® and Celeron® Processor N- and J- Series Specification Update, 334820-010
+
+Fetched from `https://cdrdv2.intel.com/v1/dl/getContent/334820` (served as `https://cdrdv2-public.intel.com/334820/334820-APL_Spec_Update_rev010.pdf`), SHA-256 `0138c484022b88927e91d4e9459137119fea2f1fda7b6d716135cfae9a6af250`.
+
+The title (extract lines 1-14):
 
 ```text
-diff --git a/kernel/sched/fair.c b/kernel/sched/fair.c
-index f496cef90ce771..0b7445cd5af98b 100644
---- a/kernel/sched/fair.c
-+++ b/kernel/sched/fair.c
-@@ -873,6 +873,13 @@ static struct sched_entity *pick_eevdf(struct cfs_rq *cfs_rq)
- 	if (curr && (!curr->on_rq || !entity_eligible(cfs_rq, curr)))
- 		curr = NULL;
+=====PAGE 1=====
+Document Number:  334820-010 
  
-+	/*
-+	 * Once selected, run a task until it either becomes non-eligible or
-+	 * until it gets a new slice. See the HACK in set_next_entity().
-+	 */
-+	if (sched_feat(RUN_TO_PARITY) && curr && curr->vlag == curr->deadline)
-+		return curr;
-+
- 	while (node) {
- 		struct sched_entity *se = __node_2_se(node);
  
-@@ -5167,6 +5174,11 @@ set_next_entity(struct cfs_rq *cfs_rq, struct sched_entity *se)
- 		update_stats_wait_end_fair(cfs_rq, se);
- 		__dequeue_entity(cfs_rq, se);
- 		update_load_avg(cfs_rq, se, UPDATE_TG);
-+		/*
-+		 * HACK, stash a copy of deadline at the point of pick in vlag,
-+		 * which isn't used until dequeue.
-+		 */
-+		se->vlag = se->deadline;
- 	}
  
- 	update_stats_curr_start(cfs_rq, se);
-diff --git a/kernel/sched/features.h b/kernel/sched/features.h
-index 61bcbf5e46a450..f770168230ae4a 100644
---- a/kernel/sched/features.h
-+++ b/kernel/sched/features.h
-@@ -6,6 +6,7 @@
-  */
- SCHED_FEAT(PLACE_LAG, true)
- SCHED_FEAT(PLACE_DEADLINE_INITIAL, true)
-+SCHED_FEAT(RUN_TO_PARITY, true)
  
- /*
-  * Prefer to schedule the task we woke last (assuming it failed
+ 
+Intel® Pentium® and Celeron® Processor 
+N- and J- Series
+ 
+Specification Update 
+ 
+August 2022 
+ 
 ```
 
-`kernel/sched/features.h` at `v6.5`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/kernel/sched/features.h?h=v6.5`, SHA-256 `b89cf04277f8064b7fb9314dd105341474d88711524a6cf4208bb69250f3e3bf`: `RUN_TO_PARITY` matches 0 of its lines.
-
-`kernel/sched/features.h` at `v6.6`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/kernel/sched/features.h?h=v6.6`, SHA-256 `cbd722fd1adba7a49148ab954f74e3fc5de42241b85c9cd63d356965939cca21`, the release that first carries it (lines 7-9):
-
-```c
-SCHED_FEAT(PLACE_LAG, true)
-SCHED_FEAT(PLACE_DEADLINE_INITIAL, true)
-SCHED_FEAT(RUN_TO_PARITY, true)
-```
-
-`kernel/sched/features.h` at `v7.2`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/kernel/sched/features.h?h=v7.2`, SHA-256 `6ea97b9773bc3662a11028155479a8b609b94070e2e602dd918db9269bfe5c49`, the feature today, on by default (lines 16-25):
-
-```c
-/*
- * Inhibit (wakeup) preemption until the current task has either matched the
- * 0-lag point or until is has exhausted it's slice.
- */
-SCHED_FEAT(RUN_TO_PARITY, true)
-/*
- * Allow wakeup of tasks with a shorter slice to cancel RUN_TO_PARITY for
- * current.
- */
-SCHED_FEAT(PREEMPT_SHORT, true)
-```
-
-`kernel/sched/fair.c` at `v7.2`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/kernel/sched/fair.c?h=v7.2`, SHA-256 `830ae44741cd322df8de5ae75be8fe2c5469fa6e9e1365fbc4233481e6f1fff0`, the base slice, 0.7 ms before CPU-count scaling (lines 74-80):
-
-```c
-/*
- * Minimal preemption granularity for CPU-bound tasks:
- *
- * (default: 0.70 msec * (1 + ilog(ncpus)), units: nanoseconds)
- */
-unsigned int sysctl_sched_base_slice			= 700000ULL;
-static unsigned int normalized_sysctl_sched_base_slice	= 700000ULL;
-```
-
-`kernel/sched/fair.c` at `v7.2`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/kernel/sched/fair.c?h=v7.2`, SHA-256 `830ae44741cd322df8de5ae75be8fe2c5469fa6e9e1365fbc4233481e6f1fff0`, the protected slice (lines 1076-1115):
-
-```c
-/*
- * Set the vruntime up to which an entity can run before looking
- * for another entity to pick.
- * In case of run to parity, we use the shortest slice of the enqueued
- * entities to set the protected period.
- * When run to parity is disabled, we give a minimum quantum to the running
- * entity to ensure progress.
- */
-static inline void set_protect_slice(struct cfs_rq *cfs_rq, struct sched_entity *se)
-{
-	u64 slice = normalized_sysctl_sched_base_slice;
-	u64 vprot = se->deadline;
-
-	if (sched_feat(RUN_TO_PARITY))
-		slice = cfs_rq_min_slice(cfs_rq);
-
-	slice = min(slice, se->slice);
-	if (slice != se->slice)
-		vprot = min_vruntime(vprot, se->vruntime + calc_delta_fair(slice, se));
-
-	se->vprot = vprot;
-}
-
-static inline void update_protect_slice(struct cfs_rq *cfs_rq, struct sched_entity *se)
-{
-	u64 slice = cfs_rq_min_slice(cfs_rq);
-
-	se->vprot = min_vruntime(se->vprot, se->vruntime + calc_delta_fair(slice, se));
-}
-
-static inline bool protect_slice(struct sched_entity *se)
-{
-	return vruntime_cmp(se->vruntime, "<", se->vprot);
-}
-
-static inline void cancel_protect_slice(struct sched_entity *se)
-{
-	if (protect_slice(se))
-		se->vprot = se->vruntime;
-}
-```
-
-`kernel/sched/fair.c` at `v7.2`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/kernel/sched/fair.c?h=v7.2`, SHA-256 `830ae44741cd322df8de5ae75be8fe2c5469fa6e9e1365fbc4233481e6f1fff0`, `pick_eevdf` keeps a protected `curr` (lines 1160-1164):
-
-```c
-	if (curr && (!curr->on_rq || !entity_eligible(cfs_rq, curr)))
-		curr = NULL;
-
-	if (curr && protect && protect_slice(curr))
-		return curr;
-```
-
-`kernel/sched/fair.c` at `v7.2`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/kernel/sched/fair.c?h=v7.2`, SHA-256 `830ae44741cd322df8de5ae75be8fe2c5469fa6e9e1365fbc4233481e6f1fff0`, `wakeup_preempt_fair` preempts only for what that pick returns (lines 9886-9905):
-
-```c
-pick:
-	nse = pick_next_entity(rq, cfs_rq, preempt_action != PREEMPT_WAKEUP_SHORT);
-	/* If @p has become the most eligible task, force preemption */
-	if (nse == pse)
-		goto preempt;
-
-	/*
-	 * Because p is enqueued, nse being null can only mean that we
-	 * dequeued a delayed task. If there are still entities queued in
-	 * cfs, check if the next one will be p.
-	 */
-	if (!nse && cfs_rq->nr_queued)
-		goto pick;
-
-	if (sched_feat(RUN_TO_PARITY))
-		update_protect_slice(cfs_rq, se);
-
-	return;
-
-preempt:
-```
-
-### aebef63cf7ff, MWAIT as AMD's default idle state from family 17h (`idle-is-hlt-…`)
-
-SHA-256 of the patch `aba8056f09218ff84aeb677e431962d72eb1445aebb33879b5d23c2708ab3b66`.
-
-Header and message (lines 1-40 of the patch):
+The signature, family 6, extended model 5, model C (extract lines 993-1006):
 
 ```text
-From aebef63cf7ff222660fd321c47e24452e8437673 Mon Sep 17 00:00:00 2001
-From: Wyes Karny <wyes.karny@amd.com>
-Date: Mon, 6 Jun 2022 23:33:35 +0530
-Subject: x86: Remove vendor checks from prefer_mwait_c1_over_halt
-
-Remove vendor checks from prefer_mwait_c1_over_halt function. Restore
-the decision tree to support MWAIT C1 as the default idle state based on
-CPUID checks as done by Thomas Gleixner in
-commit 09fd4b4ef5bc ("x86: use cpuid to check MWAIT support for C1")
-
-The decision tree is removed in
-commit 69fb3676df33 ("x86 idle: remove mwait_idle() and "idle=mwait" cmdline param")
-
-Prefer MWAIT when the following conditions are satisfied:
-    1. CPUID_Fn00000001_ECX [Monitor] should be set
-    2. CPUID_Fn00000005 should be supported
-    3. If CPUID_Fn00000005_ECX [EMX] is set then there should be
-       at least one C1 substate available, indicated by
-       CPUID_Fn00000005_EDX [MWaitC1SubStates] bits.
-
-Otherwise use HLT for default_idle function.
-
-HPC customers who want to optimize for lower latency are known to
-disable Global C-States in the BIOS. In fact, some vendors allow
-choosing a BIOS 'performance' profile which explicitly disables
-C-States.  In this scenario, the cpuidle driver will not be loaded and
-the kernel will continue with the default idle state chosen at boot
-time. On AMD systems currently the default idle state is HLT which has
-a higher exit latency compared to MWAIT.
-
-The reason for the choice of HLT over MWAIT on AMD systems is:
-
-1. Families prior to 10h didn't support MWAIT
-2. Families 10h-15h supported MWAIT, but not MWAIT C1. Hence it was
-   preferable to use HLT as the default state on these systems.
-
-However, AMD Family 17h onwards supports MWAIT as well as MWAIT C1. And
-it is preferable to use MWAIT as the default idle state on these
-systems, as it has lower exit latencies.
-
+27:20 
+19:16 
+15:13 
+12 
+11:8 
+7:4 
+3:0 
+0x0 
+0x00 
+0x5 
+0 
+0 
+0x6 
+0xC 
 ```
 
-Its sign-offs (lines 106-111 of the patch):
+APL30 (extract lines 1858-1872):
 
 ```text
-Signed-off-by: Wyes Karny <wyes.karny@amd.com>
-Signed-off-by: Dave Hansen <dave.hansen@linux.intel.com>
-Acked-by: Peter Zijlstra (Intel) <peterz@infradead.org>
-Tested-by: Zhang Rui <rui.zhang@intel.com>
-Link: https://ozlabs.org/~anton/junkcode/context_switch2.c
-Link: https://lkml.kernel.org/r/0cc675d8fd1f55e41b510e10abf2e21b6e9803d5.1654538381.git-series.wyes.karny@amd.com
+APL30 A Store Instruction May Not Wake Up MWAIT 
+Problem: 
+One use of the MONITOR/MWAIT instruction pair is to allow a logical 
+processor to wait in a sleep state until a store to the armed address range 
+occurs. Due to this erratum, stores to the armed address range may not 
+trigger MWAIT to resume execution. 
+Implication: 
+The logical processor that executed the MWAIT instruction may not resume 
+execution until it receives an interrupt. Software that does not rely on stores 
+to the armed address range to wake a logical processor from an MWAIT 
+sleep state is not affected by this erratum. 
+Workaround: 
+Software needs to use interrupts to wake processors from MWAIT-induced 
+sleep states. 
+Status: 
 ```
 
-`arch/x86/kernel/process.c` at `v5.19`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/arch/x86/kernel/process.c?h=v5.19`, SHA-256 `60cb1943549f39f5866dbab0ad1b5eaf2bd63f0a73049e7d529a3954b369071e`, the vendor check before it (lines 815-832):
+## Intel, Core™ Ultra 200V Series specification update
 
-```c
- * on systems that support only C1 -- so the boot default must be MWAIT.
- *
- * Some AMD machines are the opposite, they depend on using HALT.
- *
- * So for default C1, which is used during boot until cpuidle loads,
- * use MWAIT-C1 on Intel HW that has it, else use HALT.
- */
-static int prefer_mwait_c1_over_halt(const struct cpuinfo_x86 *c)
-{
-	if (c->x86_vendor != X86_VENDOR_INTEL)
-		return 0;
+Not read. No document number was found: DuckDuckGo answered 202 and Mojeek a captcha, Bing ignored the quoted title, and the Internet Archive, through which citeseerx and Intel's older links are served, answered 503 (Temporarily Offline).
 
-	if (!cpu_has(c, X86_FEATURE_MWAIT) || boot_cpu_has_bug(X86_BUG_MONITOR))
-		return 0;
+## Stoica, Abdel-Wahab, Jeffay, Baruah, Gehrke and Plaxton, "A Proportional Share Resource Allocation Algorithm for Real-Time, Time-Shared Systems", RTSS 1996
 
-	return 1;
-}
+Fetched from `https://www.cs.unc.edu/~jeffay/papers/RTSS-96a.pdf`, SHA-256 `3b4f7f194cb21db263d7959c5b187292e3fc316f0a9578232fb3b14ee360ae78`. PyMuPDF extracts this PDF a word fragment per line, with its digits lost to the font; the quotes are the extract joined with spaces and folded at 200 columns. Stoica and Abdel-Wahab's ODU TR-95-22, the ruling's paper, was not fetched this round: citeseerx now redirects to the Internet Archive, which answered 503.
 
-```
-
-`arch/x86/kernel/process.c` at `v6.0`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/arch/x86/kernel/process.c?h=v6.0`, SHA-256 `048f28acf5cfdf5083f9824e7c1d138a0452ffb5e15eb47703577ad7f20d034d`, no vendor check at v6.0 (lines 812-850):
-
-```c
-/*
- * Prefer MWAIT over HALT if MWAIT is supported, MWAIT_CPUID leaf
- * exists and whenever MONITOR/MWAIT extensions are present there is at
- * least one C1 substate.
- *
- * Do not prefer MWAIT if MONITOR instruction has a bug or idle=nomwait
- * is passed to kernel commandline parameter.
- */
-static int prefer_mwait_c1_over_halt(const struct cpuinfo_x86 *c)
-{
-	u32 eax, ebx, ecx, edx;
-
-	/* User has disallowed the use of MWAIT. Fallback to HALT */
-	if (boot_option_idle_override == IDLE_NOMWAIT)
-		return 0;
-
-	/* MWAIT is not supported on this platform. Fallback to HALT */
-	if (!cpu_has(c, X86_FEATURE_MWAIT))
-		return 0;
-
-	/* Monitor has a bug. Fallback to HALT */
-	if (boot_cpu_has_bug(X86_BUG_MONITOR))
-		return 0;
-
-	cpuid(CPUID_MWAIT_LEAF, &eax, &ebx, &ecx, &edx);
-
-	/*
-	 * If MWAIT extensions are not available, it is safe to use MWAIT
-	 * with EAX=0, ECX=0.
-	 */
-	if (!(ecx & CPUID5_ECX_EXTENSIONS_SUPPORTED))
-		return 1;
-
-	/*
-	 * If MWAIT extensions are available, there should be at least one
-	 * MWAIT C1 substate present.
-	 */
-	return (edx & MWAIT_C1_SUBSTATE_MASK);
-}
-```
-
-`arch/x86/kernel/process.c` at `v7.2`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/arch/x86/kernel/process.c?h=v7.2`, SHA-256 `f1792e208d5c0a01d0752154c66745d310728dc7beaf1567c37cd0bebd5cb61c`, no vendor check today (lines 869-908):
-
-```c
-/*
- * Prefer MWAIT over HALT if MWAIT is supported, MWAIT_CPUID leaf
- * exists and whenever MONITOR/MWAIT extensions are present there is at
- * least one C1 substate.
- *
- * Do not prefer MWAIT if MONITOR instruction has a bug or idle=nomwait
- * is passed to kernel commandline parameter.
- */
-static __init bool prefer_mwait_c1_over_halt(void)
-{
-	const struct cpuinfo_x86 *c = &boot_cpu_data;
-	u32 eax, ebx, ecx, edx;
-
-	/* If override is enforced on the command line, fall back to HALT. */
-	if (boot_option_idle_override != IDLE_NO_OVERRIDE)
-		return false;
-
-	/* MWAIT is not supported on this platform. Fallback to HALT */
-	if (!cpu_has(c, X86_FEATURE_MWAIT))
-		return false;
-
-	/* Monitor has a bug or APIC stops in C1E. Fallback to HALT */
-	if (boot_cpu_has_bug(X86_BUG_MONITOR) || boot_cpu_has_bug(X86_BUG_AMD_APIC_C1E))
-		return false;
-
-	cpuid(CPUID_LEAF_MWAIT, &eax, &ebx, &ecx, &edx);
-
-	/*
-	 * If MWAIT extensions are not available, it is safe to use MWAIT
-	 * with EAX=0, ECX=0.
-	 */
-	if (!(ecx & CPUID5_ECX_EXTENSIONS_SUPPORTED))
-		return true;
-
-	/*
-	 * If MWAIT extensions are available, there should be at least one
-	 * MWAIT C1 substate present.
-	 */
-	return !!(edx & MWAIT_C1_SUBSTATE_MASK);
-}
-```
-
-### c9a4b55431e5, MONITOR loses wakes on Lunar Lake, so the IPI stays (`idle-is-hlt-…`)
-
-SHA-256 of the patch `94f4b720e3b4cf45965ec4a3bec69055b416451e072b4c897e5936c7af5972b4`.
-
-Header and message (lines 1-23 of the patch):
+The model's quanta (PDF page 3) (extract lines 57-58):
 
 ```text
-From c9a4b55431e5220347881e148725bed69c84e037 Mon Sep 17 00:00:00 2001
-From: Len Brown <len.brown@intel.com>
-Date: Tue, 12 Nov 2024 21:07:00 -0500
-Subject: x86/cpu: Add Lunar Lake to list of CPUs with a broken MONITOR
- implementation
-
-Under some conditions, MONITOR wakeups on Lunar Lake processors
-can be lost, resulting in significant user-visible delays.
-
-Add Lunar Lake to X86_BUG_MONITOR so that wake_up_idle_cpu()
-always sends an IPI, avoiding this potential delay.
-
-Reported originally here:
-
-	https://bugzilla.kernel.org/show_bug.cgi?id=219364
-
-[ dhansen: tweak subject ]
-
-Signed-off-by: Len Brown <len.brown@intel.com>
-Signed-off-by: Dave Hansen <dave.hansen@linux.intel.com>
-Reviewed-by: Rafael J. Wysocki <rafael.j.wysocki@intel.com>
-Cc:stable@vger.kernel.org
-Link: https://lore.kernel.org/all/a4aa8842a3c3bfdb7fe9807710eef159cbf0e705.1731463305.git.len.brown%40intel.com
+erwise. W e assume that the resource is allo cated in time quan ta of size at most q . A t the b eginning of eac h time quan tum a clien t is selected to use the resource. Once the clien t acquires 
+the resource, it ma y use it either for the en tire time quan tum, or it ma y release it b efore the time quan tum expires. Although simple, this mo del captures the basic mec hanisms traditionally 
 ```
 
-The hunk (lines 28-42 of the patch):
+The lag bound (PDF page 5) (extract lines 121-121):
 
 ```text
-diff --git a/arch/x86/kernel/cpu/intel.c b/arch/x86/kernel/cpu/intel.c
-index d1de300af17374..8ded9f859a3a96 100644
---- a/arch/x86/kernel/cpu/intel.c
-+++ b/arch/x86/kernel/cpu/intel.c
-@@ -555,7 +555,9 @@ static void init_intel(struct cpuinfo_x86 *c)
- 	     c->x86_vfm == INTEL_WESTMERE_EX))
- 		set_cpu_bug(c, X86_BUG_CLFLUSH_MONITOR);
+ounds). In comparison, our algorithm (describ ed next) guaran tees optimal lag b ounds of one time quan tum. Third, w e prop ose a new appro ximation sc heme for main taining virtual time, in whic h 
+```
+
+The algorithm (PDF page 6) (extract lines 162-163):
+
+```text
+times and deadlines and not of the real times. With this, the Earliest Eligible Virtual Deadline First (EEVDF) algorithm can b e simply stated as follo ws: EEVDF Algorithm. A new quantum is al lo c 
+ate d to the client which has the eligible r e quest with the e arliest virtual de ad line. Since EEVDF is form ulated in terms of virtual- times, in the remaining of this pap er w e use v e and v d 
+```
+
+## AMD, Processor Programming Reference (PPR) for AMD Family 17h Model 60h, Revision A1 Processors, 55922 rev. 3.06
+
+`55922-A1-PUB_3.06.pdf`, supplied by the owner, SHA-256 `b48d3cb4c4f22e2ed308f9e0d2bfd5dcca814afcc8ce582066263b93679996c5`. Its text was searched for `mwait`, `monitor`, `c-state`, `idle`, `halt`, `false shar`, `deadline`: it names no idle loop, nothing on false sharing, and no TSC-deadline mode.
+
+The title (extract lines 2-7):
+
+```text
+55922-A1 Rev 3.06 - Sep 28, 2020
+PPR for AMD Family 17h Model 60h A1
+Processor Programming
+Reference (PPR)
+for AMD Family 17h
+Model 60h, Revision A1
+```
+
+CPUID_Fn00000001_EBX, the CLFLUSH size (extract lines 4001-4001):
+
+```text
+15:8 CLFlush. Read-only. Reset: Fixed,08h. CLFLUSH size in quadwords.
+```
+
+CPUID_Fn00000001_ECX bit 24, reserved (extract lines 4031-4032):
+
+```text
+24
+Reserved. 
+```
+
+CPUID_Fn00000001_ECX bit 3, MONITOR/MWAIT (extract lines 4053-4054):
+
+```text
+3
+Monitor. Read-only. Reset: !Core::X86::Msr::HWCR[MonMwaitDis]. Monitor/Mwait instructions.
+```
+
+CPUID_Fn00000005, the monitor line and MWAIT's sub-states (extract lines 4130-4163):
+
+```text
+CPUID_Fn00000005_EAX [Monitor/MWait] (Core::X86::Cpuid::MonMWaitEax)
+Read-only. Reset: Fixed,0000_0040h. 
+_lthree[1:0]_core[3:0]_thread[1:0]; CPUID_Fn00000005_EAX
+Bits
+Description
+31:16 Reserved. 
+15:0 MonLineSizeMin. Read-only. Reset: Fixed,0040h. Smallest monitor-line size in bytes.
+CPUID_Fn00000005_EBX [Monitor/MWait] (Core::X86::Cpuid::MonMWaitEbx)
+Read-only. Reset: Fixed,0000_0040h. 
+_lthree[1:0]_core[3:0]_thread[1:0]; CPUID_Fn00000005_EBX
+Bits
+Description
+31:16 Reserved. 
+15:0 MonLineSizeMax. Read-only. Reset: Fixed,0040h. Largest monitor-line size in bytes.
+CPUID_Fn00000005_ECX [Monitor/MWait] (Core::X86::Cpuid::MonMWaitEcx)
+Read-only. Reset: Fixed,0000_0003h. 
+_lthree[1:0]_core[3:0]_thread[1:0]; CPUID_Fn00000005_ECX
+Bits
+Description
+31:2 Reserved. 
+1
+IBE. Read-only. Reset: Fixed,1. Interrupt break-event.
+0
+EMX. Read-only. Reset: Fixed,1. Enumerate MONITOR/MWAIT extensions.
+CPUID_Fn00000005_EDX [Monitor/MWait] (Core::X86::Cpuid::MonMWaitEdx)
+Read-only. Reset: Fixed,0000_0011h. 
+_lthree[1:0]_core[3:0]_thread[1:0]; CPUID_Fn00000005_EDX
+Bits
+Description
+31:8 Reserved. 
+7:4
+MWaitC1SubStates. Read-only. Reset: Fixed,1h. Number of C1 sub-cstates supported by MWAIT.
+3:0
+MWaitC0SubStates. Read-only. Reset: Fixed,1h. Number of C0 sub-cstates supported by MWAIT.
+```
+
+## AMD, Software Optimization Guide for AMD Family 17h Processors, 55723 rev. 3.00
+
+`amd_zen.pdf`, supplied by the owner, SHA-256 `05ccc2b153b167e813f2c621142c8c47f64bffdd04d3184ecf6bf82497c9822d`. Its block diagram is titled for models 00h-0Fh (extract line 586), and it refers to the PPR for models 00h-0Fh (line 191). Its text was searched for `shar`, `false`, `mwait`, `monitor`, `idle`, `coheren`: it says nothing on false sharing, MONITOR, MWAIT or an idle loop.
+
+The title page (extract lines 1-11):
+
+```text
+=====PAGE 1=====
+Advanced Micro Devices 
  
--	if (boot_cpu_has(X86_FEATURE_MWAIT) && c->x86_vfm == INTEL_ATOM_GOLDMONT)
-+	if (boot_cpu_has(X86_FEATURE_MWAIT) &&
-+	    (c->x86_vfm == INTEL_ATOM_GOLDMONT ||
-+	     c->x86_vfm == INTEL_LUNARLAKE_M))
- 		set_cpu_bug(c, X86_BUG_MONITOR);
- 
- #ifdef CONFIG_X86_64
+Software Optimization 
+Guide for
+AMD Family 17h Processors
+Publication No.
+Revision
+Date
+55723
+3.00
 ```
 
-`arch/x86/kernel/cpu/intel.c` at `v6.12`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/arch/x86/kernel/cpu/intel.c?h=v6.12`, SHA-256 `74c5ab60349488aa31d260dbec8acbdd8fd38d7f1b00ecc071fa04e994deee16`, Goldmont alone before it (lines 589-590):
+§2.6.1, the line size (extract lines 610-613):
 
-```c
-	if (boot_cpu_has(X86_FEATURE_MWAIT) && c->x86_vfm == INTEL_ATOM_GOLDMONT)
-		set_cpu_bug(c, X86_BUG_MONITOR);
+```text
+L1 Instruction Cache
+The AMD Family 17h processor contains a 64-Kbyte, 4-way set associative L1 instruction cache. 
+Cache line size is 64 bytes; 32 bytes are fetched in a cycle. Functions associated with the L1 
+instruction cache are fetching cache lines from the L2 cache, providing instruction bytes to the 
 ```
 
-`arch/x86/kernel/cpu/intel.c` at `v6.13`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/arch/x86/kernel/cpu/intel.c?h=v6.13`, SHA-256 `9c647e23e004e176baa229dcad37535a19bf07e56d2c5d5b6f2ca014a262f44b`, the release that first carries it (lines 558-561):
+§2.6.4, the L3 and the cache-to-cache transfer (extract lines 694-704):
 
-```c
-	if (boot_cpu_has(X86_FEATURE_MWAIT) &&
-	    (c->x86_vfm == INTEL_ATOM_GOLDMONT ||
-	     c->x86_vfm == INTEL_LUNARLAKE_M))
-		set_cpu_bug(c, X86_BUG_MONITOR);
+```text
+L3 Cache
+The AMD Family 17h processor implements a 4 MB or 8 MB L3 cache (depending on SOC 
+configuration) that is 16-way set associative and shared by four cores inside a CPU complex.  The L3 
+is a write-back cache populated by L2 victims.  When there is an L3 hit, the line is invalidated from 
+the L3 if the access was a store.  It is invalidated from the L3 if the access was a load and the line was 
+read by just one core.  It stays valid in the L3 if it was a code fetch.  It stays valid in the L3 if it was a 
+load and the line has been read by more than one core. The L3 maintains shadow tags for each L2 
+cache in the complex. If a core misses in its local L2 and also in the L3, the shadow tags are 
+consulted. If the shadow tags indicate that the data resides in another L2 within the complex, a cache-
+to-cache transfer is initiated within the complex. The L3 has an average load-to-use latency of 35 
+cycles. The non-temporal cache fill hint, indicated with PREFETCHNTA, reduces cache pollution for 
 ```
-
-`arch/x86/kernel/cpu/intel.c` at `v7.2`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/arch/x86/kernel/cpu/intel.c?h=v7.2`, SHA-256 `e718ec56f420a2ee68de3bf0b9c1474362e737c5d33ce0e41f74d905f4a5fb88`, the bug today (lines 560-563):
-
-```c
-	if (boot_cpu_has(X86_FEATURE_MWAIT) &&
-	    (c->x86_vfm == INTEL_ATOM_GOLDMONT ||
-	     c->x86_vfm == INTEL_LUNARLAKE_M))
-		set_cpu_bug(c, X86_BUG_MONITOR);
-```
-
-`arch/x86/include/asm/intel-family.h` at `v7.2`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/arch/x86/include/asm/intel-family.h?h=v7.2`, SHA-256 `894e851bf5fdc55c5dbf5a6270fb1b095c74798d4100db440b328a20f53fd184`, Lunar Lake's model (lines 152-152):
-
-```c
-#define INTEL_LUNARLAKE_M		IFM(6, 0xBD) /* Lion Cove / Skymont */
-```
-
-`arch/x86/include/asm/intel-family.h` at `v7.2`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/arch/x86/include/asm/intel-family.h?h=v7.2`, SHA-256 `894e851bf5fdc55c5dbf5a6270fb1b095c74798d4100db440b328a20f53fd184`, Goldmont's model (lines 179-179):
-
-```c
-#define INTEL_ATOM_GOLDMONT		IFM(6, 0x5C) /* Apollo Lake */
-```
-
-`arch/x86/include/asm/mwait.h` at `v7.2`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/arch/x86/include/asm/mwait.h?h=v7.2`, SHA-256 `aad26ca72fafddc2e07e452dfb9604c66adae0f1616816a8499d015574d8a63f`, MWAIT idle sets no polling flag on such a CPU (lines 99-135):
-
-```c
-/*
- * This uses new MONITOR/MWAIT instructions on P4 processors with PNI,
- * which can obviate IPI to trigger checking of need_resched.
- * We execute MONITOR against need_resched and enter optimized wait state
- * through MWAIT. Whenever someone changes need_resched, we would be woken
- * up from MWAIT (without an IPI).
- *
- * New with Core Duo processors, MWAIT can take some hints based on CPU
- * capability.
- */
-static __always_inline void mwait_idle_with_hints(u32 eax, u32 ecx)
-{
-	if (need_resched())
-		return;
-
-	x86_idle_clear_cpu_buffers();
-
-	if (static_cpu_has_bug(X86_BUG_MONITOR) || !current_set_polling_and_test()) {
-		const void *addr = &current_thread_info()->flags;
-
-		alternative_input("", "clflush (%[addr])", X86_BUG_CLFLUSH_MONITOR, [addr] "a" (addr));
-		__monitor(addr, 0, 0);
-
-		if (need_resched())
-			goto out;
-
-		if (ecx & 1) {
-			__mwait(eax, ecx);
-		} else {
-			__sti_mwait(eax, ecx);
-			raw_local_irq_disable();
-		}
-	}
-
-out:
-	current_clr_polling();
-}
-```
-
-`kernel/sched/core.c` at `v7.2`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/kernel/sched/core.c?h=v7.2`, SHA-256 `957f657af1a2327c75dac495548eaa7bd1571a12a756c7f704e6f3195b156988`, a wake sends the IPI unless the polling flag is set (lines 1046-1055):
-
-```c
-#ifdef TIF_POLLING_NRFLAG
-/*
- * Atomically set TIF_NEED_RESCHED and test for TIF_POLLING_NRFLAG,
- * this avoids any races wrt polling state changes and thereby avoids
- * spurious IPIs.
- */
-static inline bool set_nr_and_not_polling(struct thread_info *ti, int tif)
-{
-	return !(fetch_or(&ti->flags, 1 << tif) & _TIF_POLLING_NRFLAG);
-}
-```
-
-`kernel/sched/core.c` at `v7.2`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/kernel/sched/core.c?h=v7.2`, SHA-256 `957f657af1a2327c75dac495548eaa7bd1571a12a756c7f704e6f3195b156988`, `wake_up_idle_cpu` (lines 1324-1357):
-
-```c
-static void wake_up_idle_cpu(int cpu)
-{
-	struct rq *rq = cpu_rq(cpu);
-
-	if (cpu == smp_processor_id())
-		return;
-
-	/*
-	 * Set TIF_NEED_RESCHED and send an IPI if in the non-polling
-	 * part of the idle loop. This forces an exit from the idle loop
-	 * and a round trip to schedule(). Now this could be optimized
-	 * because a simple new idle loop iteration is enough to
-	 * re-evaluate the next tick. Provided some re-ordering of tick
-	 * nohz functions that would need to follow TIF_NR_POLLING
-	 * clearing:
-	 *
-	 * - On most architectures, a simple fetch_or on ti::flags with a
-	 *   "0" value would be enough to know if an IPI needs to be sent.
-	 *
-	 * - x86 needs to perform a last need_resched() check between
-	 *   monitor and mwait which doesn't take timers into account.
-	 *   There a dedicated TIF_TIMER flag would be required to
-	 *   fetch_or here and be checked along with TIF_NEED_RESCHED
-	 *   before mwait().
-	 *
-	 * However, remote timer enqueue is not such a frequent event
-	 * and testing of the above solutions didn't appear to report
-	 * much benefits.
-	 */
-	if (set_nr_and_not_polling(task_thread_info(rq->idle), TIF_NEED_RESCHED))
-		smp_send_reschedule(cpu);
-	else
-		trace_sched_wake_idle_without_ipi(cpu);
-}
-```
-
-`arch/x86/kernel/process.c` at `v7.2`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/arch/x86/kernel/process.c?h=v7.2`, SHA-256 `f1792e208d5c0a01d0752154c66745d310728dc7beaf1567c37cd0bebd5cb61c`, `prefer_mwait_c1_over_halt` takes `hlt` on such a CPU (lines 890-892):
-
-```c
-	/* Monitor has a bug or APIC stops in C1E. Fallback to HALT */
-	if (boot_cpu_has_bug(X86_BUG_MONITOR) || boot_cpu_has_bug(X86_BUG_AMD_APIC_C1E))
-		return false;
-```
-
-## Linux v7.2, a CPU's hot data on lines of its own (`per-cpu-scheduler-…`)
-
-`kernel/sched/core.c` at `v7.2`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/kernel/sched/core.c?h=v7.2`, SHA-256 `957f657af1a2327c75dac495548eaa7bd1571a12a756c7f704e6f3195b156988`, the run queues (lines 131-131):
-
-```c
-DEFINE_PER_CPU_SHARED_ALIGNED(struct rq, runqueues);
-```
-
-`include/linux/percpu-defs.h` at `v7.2`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/include/linux/percpu-defs.h?h=v7.2`, SHA-256 `409b36b90d949956583fc786b55367eca4ae0d4078fe2f79418732fa133f3195`, `DEFINE_PER_CPU_SHARED_ALIGNED` (lines 129-146):
-
-```c
-/*
- * Declaration/definition used for per-CPU variables that must be cacheline
- * aligned under SMP conditions so that, whilst a particular instance of the
- * data corresponds to a particular CPU, inefficiencies due to direct access by
- * other CPUs are reduced by preventing the data from unnecessarily spanning
- * cachelines.
- *
- * An example of this would be statistical data, where each CPU's set of data
- * is updated by that CPU alone, but the data from across all CPUs is collated
- * by a CPU processing a read from a proc file.
- */
-#define DECLARE_PER_CPU_SHARED_ALIGNED(type, name)			\
-	DECLARE_PER_CPU_SECTION(type, name, PER_CPU_SHARED_ALIGNED_SECTION) \
-	____cacheline_aligned_in_smp
-
-#define DEFINE_PER_CPU_SHARED_ALIGNED(type, name)			\
-	DEFINE_PER_CPU_SECTION(type, name, PER_CPU_SHARED_ALIGNED_SECTION) \
-	____cacheline_aligned_in_smp
-```
-
-`include/linux/cache.h` at `v7.2`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/include/linux/cache.h?h=v7.2`, SHA-256 `80126344324f512af39227e0c54ea4dc19933e6943fdedf900fb3cbf9d3f654a`, `____cacheline_aligned_in_smp` (lines 63-69):
-
-```c
-#ifndef ____cacheline_aligned_in_smp
-#ifdef CONFIG_SMP
-#define ____cacheline_aligned_in_smp ____cacheline_aligned
-#else
-#define ____cacheline_aligned_in_smp
-#endif /* CONFIG_SMP */
-#endif
-```
-
-`include/vdso/cache.h` at `v7.2`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/include/vdso/cache.h?h=v7.2`, SHA-256 `7cf987365a5ed2a3cea1ac1afe31d23c5287af54a9b99417e30f545fdc8a2ded`, `____cacheline_aligned` and `SMP_CACHE_BYTES` (lines 7-13):
-
-```c
-#ifndef SMP_CACHE_BYTES
-#define SMP_CACHE_BYTES L1_CACHE_BYTES
-#endif
-
-#ifndef ____cacheline_aligned
-#define ____cacheline_aligned __attribute__((__aligned__(SMP_CACHE_BYTES)))
-#endif
-```
-
-`arch/x86/include/asm/cache.h` at `v7.2`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/arch/x86/include/asm/cache.h?h=v7.2`, SHA-256 `a4940ff4b26143d543d46089e40864ede0dc3d50d905de20e1f95e76c9d7f3e5`, x86's line, which defines no `SMP_CACHE_BYTES` of its own (lines 7-9):
-
-```c
-/* L1 cache line size */
-#define L1_CACHE_SHIFT	(CONFIG_X86_L1_CACHE_SHIFT)
-#define L1_CACHE_BYTES	(1 << L1_CACHE_SHIFT)
-```
-
-## Linux v7.2, the unlocked preempt count (round 2's NOTE 3)
-
-Cited by no issue: `every-syscall-saves-…`, where the review asked for it, was closed by #871 in the merge before this round's commit. Quoted for the review's claim.
-
-`arch/x86/include/asm/preempt.h` at `v7.2`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/arch/x86/include/asm/preempt.h?h=v7.2`, SHA-256 `4a0be0a532563e85ee4ac28dcbffe23d7e6592fd6870fe7ce6f7e29dc605bb83`, `__preempt_count_add` and `__preempt_count_sub` (lines 74-86):
-
-```c
-/*
- * The various preempt_count add/sub methods
- */
-
-static __always_inline void __preempt_count_add(int val)
-{
-	raw_cpu_add_4(__preempt_count, val);
-}
-
-static __always_inline void __preempt_count_sub(int val)
-{
-	raw_cpu_add_4(__preempt_count, -val);
-}
-```
-
-## Linux v7.2, the drives whose APST failed (`diskserver-drives-nvme-apst`)
-
-`drivers/nvme/host/nvme.h` at `v7.2`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/drivers/nvme/host/nvme.h?h=v7.2`, SHA-256 `2b38e70d68395306c49646011630874f679f49e7ae83f8bd55e94b5fa33d0a91`, the two quirks (lines 83-91):
-
-```c
-	/*
-	 * APST should not be used.
-	 */
-	NVME_QUIRK_NO_APST			= (1 << 4),
-
-	/*
-	 * The deepest sleep state should not be used.
-	 */
-	NVME_QUIRK_NO_DEEPEST_PS		= (1 << 5),
-```
-
-`drivers/nvme/host/core.c` at `v7.2`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/drivers/nvme/host/core.c?h=v7.2`, SHA-256 `a946234dc13cb09d7c608f1a27b934adf53bfc02a93a48788132cf0e5a0122c7`, no transition to the deepest state on a `NO_DEEPEST_PS` drive (lines 2966-2972):
-
-```c
-		/*
-		 * Don't allow transitions to the deepest state if it's quirked
-		 * off.
-		 */
-		if (state == ctrl->npss &&
-		    (ctrl->quirks & NVME_QUIRK_NO_DEEPEST_PS))
-			continue;
-```
-
-`drivers/nvme/host/core.c` at `v7.2`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/drivers/nvme/host/core.c?h=v7.2`, SHA-256 `a946234dc13cb09d7c608f1a27b934adf53bfc02a93a48788132cf0e5a0122c7`, `core_quirks`, by vendor, model and firmware (lines 3048-3108):
-
-```c
-struct nvme_core_quirk_entry {
-	/*
-	 * NVMe model and firmware strings are padded with spaces.  For
-	 * simplicity, strings in the quirk table are padded with NULLs
-	 * instead.
-	 */
-	u16 vid;
-	const char *mn;
-	const char *fr;
-	unsigned long quirks;
-};
-
-static const struct nvme_core_quirk_entry core_quirks[] = {
-	{
-		/*
-		 * This Toshiba device seems to die using any APST states.  See:
-		 * https://bugs.launchpad.net/ubuntu/+source/linux/+bug/1678184/comments/11
-		 */
-		.vid = 0x1179,
-		.mn = "THNSF5256GPUK TOSHIBA",
-		.quirks = NVME_QUIRK_NO_APST,
-	},
-	{
-		/*
-		 * This LiteON CL1-3D*-Q11 firmware version has a race
-		 * condition associated with actions related to suspend to idle
-		 * LiteON has resolved the problem in future firmware
-		 */
-		.vid = 0x14a4,
-		.fr = "22301111",
-		.quirks = NVME_QUIRK_SIMPLE_SUSPEND,
-	},
-	{
-		/*
-		 * This Kioxia CD6-V Series / HPE PE8030 device times out and
-		 * aborts I/O during any load, but more easily reproducible
-		 * with discards (fstrim).
-		 *
-		 * The device is left in a state where it is also not possible
-		 * to use "nvme set-feature" to disable APST, but booting with
-		 * nvme_core.default_ps_max_latency_us=0 works.
-		 */
-		.vid = 0x1e0f,
-		.mn = "KCD6XVUL6T40",
-		.quirks = NVME_QUIRK_NO_APST,
-	},
-	{
-		/*
-		 * The external Samsung X5 SSD fails initialization without a
-		 * delay before checking if it is ready and has a whole set of
-		 * other problems.  To make this even more interesting, it
-		 * shares the PCI ID with internal Samsung 970 Evo Plus that
-		 * does not need or want these quirks.
-		 */
-		.vid = 0x144d,
-		.mn = "Samsung Portable SSD X5",
-		.quirks = NVME_QUIRK_DELAY_BEFORE_CHK_RDY |
-			  NVME_QUIRK_NO_DEEPEST_PS |
-			  NVME_QUIRK_IGNORE_DEV_SUBNQN,
-	}
-};
-```
-
-`drivers/nvme/host/core.c` at `v7.2`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/drivers/nvme/host/core.c?h=v7.2`, SHA-256 `a946234dc13cb09d7c608f1a27b934adf53bfc02a93a48788132cf0e5a0122c7`, no APST on a `NO_APST` drive (lines 3686-3698):
-
-```c
-	ctrl->npss = id->npss;
-	ctrl->apsta = id->apsta;
-	prev_apst_enabled = ctrl->apst_enabled;
-	if (ctrl->quirks & NVME_QUIRK_NO_APST) {
-		if (force_apst && id->apsta) {
-			dev_warn(ctrl->device, "forcibly allowing APST due to nvme_core.force_apst -- use at your own risk\n");
-			ctrl->apst_enabled = true;
-		} else {
-			ctrl->apst_enabled = false;
-		}
-	} else {
-		ctrl->apst_enabled = id->apsta;
-	}
-```
-
-`drivers/nvme/host/pci.c` at `v7.2`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/drivers/nvme/host/pci.c?h=v7.2`, SHA-256 `f01e258f3e9bcc2d8bee918bda9296c6a7bff36ea21a6ddb740e266c6277b12d`, `check_vendor_combination_bug`, by drive and machine (lines 3584-3657):
-
-```c
-static unsigned long check_vendor_combination_bug(struct pci_dev *pdev)
-{
-	if (pdev->vendor == 0x144d && pdev->device == 0xa802) {
-		/*
-		 * Several Samsung devices seem to drop off the PCIe bus
-		 * randomly when APST is on and uses the deepest sleep state.
-		 * This has been observed on a Samsung "SM951 NVMe SAMSUNG
-		 * 256GB", a "PM951 NVMe SAMSUNG 512GB", and a "Samsung SSD
-		 * 950 PRO 256GB", but it seems to be restricted to two Dell
-		 * laptops.
-		 */
-		if (dmi_match(DMI_SYS_VENDOR, "Dell Inc.") &&
-		    (dmi_match(DMI_PRODUCT_NAME, "XPS 15 9550") ||
-		     dmi_match(DMI_PRODUCT_NAME, "Precision 5510")))
-			return NVME_QUIRK_NO_DEEPEST_PS;
-	} else if (pdev->vendor == 0x144d && pdev->device == 0xa804) {
-		/*
-		 * Samsung SSD 960 EVO drops off the PCIe bus after system
-		 * suspend on a Ryzen board, ASUS PRIME B350M-A, as well as
-		 * within few minutes after bootup on a Coffee Lake board -
-		 * ASUS PRIME Z370-A
-		 */
-		if (dmi_match(DMI_BOARD_VENDOR, "ASUSTeK COMPUTER INC.") &&
-		    (dmi_match(DMI_BOARD_NAME, "PRIME B350M-A") ||
-		     dmi_match(DMI_BOARD_NAME, "PRIME Z370-A")))
-			return NVME_QUIRK_NO_APST;
-	} else if ((pdev->vendor == 0x144d && (pdev->device == 0xa801 ||
-		    pdev->device == 0xa808 || pdev->device == 0xa809)) ||
-		   (pdev->vendor == 0x1e0f && pdev->device == 0x0001)) {
-		/*
-		 * Forcing to use host managed nvme power settings for
-		 * lowest idle power with quick resume latency on
-		 * Samsung and Toshiba SSDs based on suspend behavior
-		 * on Coffee Lake board for LENOVO C640
-		 */
-		if ((dmi_match(DMI_BOARD_VENDOR, "LENOVO")) &&
-		     dmi_match(DMI_BOARD_NAME, "LNVNB161216"))
-			return NVME_QUIRK_SIMPLE_SUSPEND;
-	} else if (pdev->vendor == 0x2646 && (pdev->device == 0x2263 ||
-		   pdev->device == 0x500f)) {
-		/*
-		 * Exclude some Kingston NV1 and A2000 devices from
-		 * NVME_QUIRK_SIMPLE_SUSPEND. Do a full suspend to save a
-		 * lot of energy with s2idle sleep on some TUXEDO platforms.
-		 */
-		if (dmi_match(DMI_BOARD_NAME, "NS5X_NS7XAU") ||
-		    dmi_match(DMI_BOARD_NAME, "NS5x_7xAU") ||
-		    dmi_match(DMI_BOARD_NAME, "NS5x_7xPU") ||
-		    dmi_match(DMI_BOARD_NAME, "PH4PRX1_PH6PRX1"))
-			return NVME_QUIRK_FORCE_NO_SIMPLE_SUSPEND;
-	} else if (pdev->vendor == 0x144d && pdev->device == 0xa80d) {
-		/*
-		 * Exclude Samsung 990 Evo from NVME_QUIRK_SIMPLE_SUSPEND
-		 * because of high power consumption (> 2 Watt) in s2idle
-		 * sleep. Only some boards with Intel CPU are affected.
-		 * (Note for testing: Samsung 990 Evo Plus has same PCI ID)
-		 */
-		if (dmi_match(DMI_BOARD_NAME, "DN50Z-140HC-YD") ||
-		    dmi_match(DMI_BOARD_NAME, "GMxPXxx") ||
-		    dmi_match(DMI_BOARD_NAME, "GXxMRXx") ||
-		    dmi_match(DMI_BOARD_NAME, "NS5X_NS7XAU") ||
-		    dmi_match(DMI_BOARD_NAME, "PH4PG31") ||
-		    dmi_match(DMI_BOARD_NAME, "PH4PRX1_PH6PRX1") ||
-		    dmi_match(DMI_BOARD_NAME, "PH6PG01_PH6PG71"))
-			return NVME_QUIRK_FORCE_NO_SIMPLE_SUSPEND;
-	}
-
-	/*
-	 * NVMe SSD drops off the PCIe bus after system idle
-	 * for 10 hours on a Lenovo N60z board.
-	 */
-	if (dmi_match(DMI_BOARD_NAME, "LXKT-ZXEG-N6"))
-		return NVME_QUIRK_NO_APST;
-
-```
-
-`drivers/nvme/host/pci.c` at `v7.2`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/drivers/nvme/host/pci.c?h=v7.2`, SHA-256 `f01e258f3e9bcc2d8bee918bda9296c6a7bff36ea21a6ddb740e266c6277b12d`, applied at probe (lines 3699-3699):
-
-```c
-	quirks |= check_vendor_combination_bug(pdev);
-```
-
-`drivers/nvme/host/pci.c` at `v7.2`, fetched from `https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/drivers/nvme/host/pci.c?h=v7.2`, SHA-256 `f01e258f3e9bcc2d8bee918bda9296c6a7bff36ea21a6ddb740e266c6277b12d`, `nvme_id_table`, by PCI ID (lines 4097-4290):
-
-```c
-static const struct pci_device_id nvme_id_table[] = {
-	{ PCI_VDEVICE(INTEL, 0x0953),	/* Intel 750/P3500/P3600/P3700 */
-		.driver_data = NVME_QUIRK_STRIPE_SIZE |
-				NVME_QUIRK_DEALLOCATE_ZEROES, },
-	{ PCI_VDEVICE(INTEL, 0x0a53),	/* Intel P3520 */
-		.driver_data = NVME_QUIRK_STRIPE_SIZE |
-				NVME_QUIRK_DEALLOCATE_ZEROES, },
-	{ PCI_VDEVICE(INTEL, 0x0a54),	/* Intel P4500/P4600 */
-		.driver_data = NVME_QUIRK_STRIPE_SIZE |
-				NVME_QUIRK_IGNORE_DEV_SUBNQN |
-				NVME_QUIRK_BOGUS_NID, },
-	{ PCI_VDEVICE(INTEL, 0x0a55),	/* Dell Express Flash P4600 */
-		.driver_data = NVME_QUIRK_STRIPE_SIZE, },
-	{ PCI_VDEVICE(INTEL, 0xf1a5),	/* Intel 600P/P3100 */
-		.driver_data = NVME_QUIRK_NO_DEEPEST_PS |
-				NVME_QUIRK_MEDIUM_PRIO_SQ |
-				NVME_QUIRK_NO_TEMP_THRESH_CHANGE |
-				NVME_QUIRK_DISABLE_WRITE_ZEROES, },
-	{ PCI_VDEVICE(INTEL, 0xf1a6),	/* Intel 760p/Pro 7600p */
-		.driver_data = NVME_QUIRK_IGNORE_DEV_SUBNQN, },
-	{ PCI_VDEVICE(INTEL, 0x5845),	/* Qemu emulated controller */
-		.driver_data = NVME_QUIRK_IDENTIFY_CNS |
-				NVME_QUIRK_DISABLE_WRITE_ZEROES |
-				NVME_QUIRK_BOGUS_NID, },
-	{ PCI_VDEVICE(REDHAT, 0x0010),	/* Qemu emulated controller */
-		.driver_data = NVME_QUIRK_BOGUS_NID, },
-	{ PCI_DEVICE(0x1217, 0x8760), /* O2 Micro 64GB Steam Deck */
-		.driver_data = NVME_QUIRK_DMAPOOL_ALIGN_512, },
-	{ PCI_DEVICE(0x126f, 0x1001),	/* Silicon Motion generic */
-		.driver_data = NVME_QUIRK_NO_DEEPEST_PS |
-				NVME_QUIRK_IGNORE_DEV_SUBNQN, },
-	{ PCI_DEVICE(0x126f, 0x2262),	/* Silicon Motion generic */
-		.driver_data = NVME_QUIRK_NO_DEEPEST_PS |
-				NVME_QUIRK_BOGUS_NID, },
-	{ PCI_DEVICE(0x126f, 0x2263),	/* Silicon Motion unidentified */
-		.driver_data = NVME_QUIRK_NO_NS_DESC_LIST |
-				NVME_QUIRK_BOGUS_NID, },
-	{ PCI_DEVICE(0x1bb1, 0x0100),   /* Seagate Nytro Flash Storage */
-		.driver_data = NVME_QUIRK_DELAY_BEFORE_CHK_RDY |
-				NVME_QUIRK_NO_NS_DESC_LIST, },
-	{ PCI_DEVICE(0x1c58, 0x0003),	/* HGST adapter */
-		.driver_data = NVME_QUIRK_DELAY_BEFORE_CHK_RDY, },
-	{ PCI_DEVICE(0x1c58, 0x0023),	/* WDC SN200 adapter */
-		.driver_data = NVME_QUIRK_DELAY_BEFORE_CHK_RDY, },
-	{ PCI_DEVICE(0x1c5f, 0x0540),	/* Memblaze Pblaze4 adapter */
-		.driver_data = NVME_QUIRK_DELAY_BEFORE_CHK_RDY, },
-	{ PCI_DEVICE(0x1c5f, 0x0555),	/* Memblaze Pblaze5 adapter */
-		.driver_data = NVME_QUIRK_NO_NS_DESC_LIST, },
-	{ PCI_DEVICE(0x144d, 0xa821),   /* Samsung PM1725 */
-		.driver_data = NVME_QUIRK_DELAY_BEFORE_CHK_RDY, },
-	{ PCI_DEVICE(0x144d, 0xa822),   /* Samsung PM1725a */
-		.driver_data = NVME_QUIRK_DELAY_BEFORE_CHK_RDY |
-				NVME_QUIRK_DISABLE_WRITE_ZEROES|
-				NVME_QUIRK_IGNORE_DEV_SUBNQN, },
-	{ PCI_DEVICE(0x15b7, 0x5008),   /* Sandisk SN530 */
-		.driver_data = NVME_QUIRK_BROKEN_MSI },
-	{ PCI_DEVICE(0x15b7, 0x5009),   /* Sandisk SN550 */
-		.driver_data = NVME_QUIRK_BROKEN_MSI |
-				NVME_QUIRK_NO_DEEPEST_PS },
-	{ PCI_DEVICE(0x1987, 0x5012),	/* Phison E12 */
-		.driver_data = NVME_QUIRK_BOGUS_NID, },
-	{ PCI_DEVICE(0x1987, 0x5016),	/* Phison E16 */
-		.driver_data = NVME_QUIRK_IGNORE_DEV_SUBNQN |
-				NVME_QUIRK_BOGUS_NID, },
-	{ PCI_DEVICE(0x1987, 0x5019),  /* phison E19 */
-		.driver_data = NVME_QUIRK_DISABLE_WRITE_ZEROES, },
-	{ PCI_DEVICE(0x1987, 0x5021),   /* Phison E21 */
-		.driver_data = NVME_QUIRK_DISABLE_WRITE_ZEROES, },
-	{ PCI_DEVICE(0x1b4b, 0x1092),	/* Lexar 256 GB SSD */
-		.driver_data = NVME_QUIRK_NO_NS_DESC_LIST |
-				NVME_QUIRK_IGNORE_DEV_SUBNQN, },
-	{ PCI_DEVICE(0x1cc1, 0x33f8),   /* ADATA IM2P33F8ABR1 1 TB */
-		.driver_data = NVME_QUIRK_BOGUS_NID, },
-	{ PCI_DEVICE(0x10ec, 0x5762),   /* ADATA SX6000LNP */
-		.driver_data = NVME_QUIRK_IGNORE_DEV_SUBNQN |
-				NVME_QUIRK_BOGUS_NID, },
-	{ PCI_DEVICE(0x10ec, 0x5763),  /* ADATA SX6000PNP */
-		.driver_data = NVME_QUIRK_BOGUS_NID, },
-	{ PCI_DEVICE(0x1cc1, 0x8201),   /* ADATA SX8200PNP 512GB */
-		.driver_data = NVME_QUIRK_NO_DEEPEST_PS |
-				NVME_QUIRK_IGNORE_DEV_SUBNQN, },
-	 { PCI_DEVICE(0x1344, 0x5407), /* Micron Technology Inc NVMe SSD */
-		.driver_data = NVME_QUIRK_IGNORE_DEV_SUBNQN },
-	 { PCI_DEVICE(0x1344, 0x6001),   /* Micron Nitro NVMe */
-		 .driver_data = NVME_QUIRK_BOGUS_NID, },
-	{ PCI_DEVICE(0x1c5c, 0x1504),   /* SK Hynix PC400 */
-		.driver_data = NVME_QUIRK_DISABLE_WRITE_ZEROES, },
-	{ PCI_DEVICE(0x1c5c, 0x174a),   /* SK Hynix P31 SSD */
-		.driver_data = NVME_QUIRK_BOGUS_NID, },
-	{ PCI_DEVICE(0x1c5c, 0x1D59),   /* SK Hynix BC901 */
-		.driver_data = NVME_QUIRK_DISABLE_WRITE_ZEROES, },
-	{ PCI_DEVICE(0x15b7, 0x2001),   /*  Sandisk Skyhawk */
-		.driver_data = NVME_QUIRK_DISABLE_WRITE_ZEROES, },
-	{ PCI_DEVICE(0x1d97, 0x2263),   /* SPCC */
-		.driver_data = NVME_QUIRK_DISABLE_WRITE_ZEROES, },
-	{ PCI_DEVICE(0x144d, 0xa80b),   /* Samsung PM9B1 256G and 512G */
-		.driver_data = NVME_QUIRK_DISABLE_WRITE_ZEROES |
-				NVME_QUIRK_BOGUS_NID, },
-	{ PCI_DEVICE(0x144d, 0xa809),   /* Samsung MZALQ256HBJD 256G */
-		.driver_data = NVME_QUIRK_DISABLE_WRITE_ZEROES, },
-	{ PCI_DEVICE(0x144d, 0xa802),   /* Samsung SM953 */
-		.driver_data = NVME_QUIRK_BOGUS_NID, },
-	{ PCI_DEVICE(0x1cc4, 0x6303),   /* UMIS RPJTJ512MGE1QDY 512G */
-		.driver_data = NVME_QUIRK_DISABLE_WRITE_ZEROES, },
-	{ PCI_DEVICE(0x1cc4, 0x6302),   /* UMIS RPJTJ256MGE1QDY 256G */
-		.driver_data = NVME_QUIRK_DISABLE_WRITE_ZEROES, },
-	{ PCI_DEVICE(0x2646, 0x2262),   /* KINGSTON SKC2000 NVMe SSD */
-		.driver_data = NVME_QUIRK_NO_DEEPEST_PS, },
-	{ PCI_DEVICE(0x2646, 0x2263),   /* KINGSTON A2000 NVMe SSD  */
-		.driver_data = NVME_QUIRK_NO_DEEPEST_PS, },
-	{ PCI_DEVICE(0x2646, 0x5013),   /* Kingston KC3000, Kingston FURY Renegade */
-		.driver_data = NVME_QUIRK_NO_SECONDARY_TEMP_THRESH, },
-	{ PCI_DEVICE(0x2646, 0x5018),   /* KINGSTON OM8SFP4xxxxP OS21012 NVMe SSD */
-		.driver_data = NVME_QUIRK_DISABLE_WRITE_ZEROES, },
-	{ PCI_DEVICE(0x2646, 0x5016),   /* KINGSTON OM3PGP4xxxxP OS21011 NVMe SSD */
-		.driver_data = NVME_QUIRK_DISABLE_WRITE_ZEROES, },
-	{ PCI_DEVICE(0x2646, 0x501A),   /* KINGSTON OM8PGP4xxxxP OS21005 NVMe SSD */
-		.driver_data = NVME_QUIRK_DISABLE_WRITE_ZEROES, },
-	{ PCI_DEVICE(0x2646, 0x501B),   /* KINGSTON OM8PGP4xxxxQ OS21005 NVMe SSD */
-		.driver_data = NVME_QUIRK_DISABLE_WRITE_ZEROES, },
-	{ PCI_DEVICE(0x2646, 0x501E),   /* KINGSTON OM3PGP4xxxxQ OS21011 NVMe SSD */
-		.driver_data = NVME_QUIRK_DISABLE_WRITE_ZEROES, },
-	{ PCI_DEVICE(0x2646, 0x502F),   /* KINGSTON OM3SGP4xxxxK NVMe SSD */
-		.driver_data = NVME_QUIRK_DISABLE_WRITE_ZEROES, },
-	{ PCI_DEVICE(0x1f40, 0x1202),   /* Netac Technologies Co. NV3000 NVMe SSD */
-		.driver_data = NVME_QUIRK_BOGUS_NID, },
-	{ PCI_DEVICE(0x1f40, 0x5236),   /* Netac Technologies Co. NV7000 NVMe SSD */
-		.driver_data = NVME_QUIRK_BOGUS_NID, },
-	{ PCI_DEVICE(0x1e4B, 0x1001),   /* MAXIO MAP1001 */
-		.driver_data = NVME_QUIRK_BOGUS_NID, },
-	{ PCI_DEVICE(0x1e4B, 0x1002),   /* MAXIO MAP1002 */
-		.driver_data = NVME_QUIRK_BOGUS_NID, },
-	{ PCI_DEVICE(0x1e4B, 0x1202),   /* MAXIO MAP1202 */
-		.driver_data = NVME_QUIRK_BOGUS_NID, },
-	{ PCI_DEVICE(0x1e4B, 0x1602),   /* MAXIO MAP1602 */
-		.driver_data = NVME_QUIRK_BOGUS_NID, },
-	{ PCI_DEVICE(0x1cc1, 0x5350),   /* ADATA XPG GAMMIX S50 */
-		.driver_data = NVME_QUIRK_BOGUS_NID, },
-	{ PCI_DEVICE(0x1dbe, 0x5216),   /* Acer/INNOGRIT FA100/5216 NVMe SSD */
-		.driver_data = NVME_QUIRK_BOGUS_NID, },
-	{ PCI_DEVICE(0x1dbe, 0x5236),   /* ADATA XPG GAMMIX S70 */
-		.driver_data = NVME_QUIRK_BOGUS_NID, },
-	{ PCI_DEVICE(0x1e49, 0x0021),   /* ZHITAI TiPro5000 NVMe SSD */
-		.driver_data = NVME_QUIRK_NO_DEEPEST_PS, },
-	{ PCI_DEVICE(0x1e49, 0x0041),   /* ZHITAI TiPro7000 NVMe SSD */
-		.driver_data = NVME_QUIRK_NO_DEEPEST_PS, },
-	{ PCI_DEVICE(0x1fa0, 0x2283),   /* Wodposit WPBSNM8-256GTP */
-		.driver_data = NVME_QUIRK_NO_SECONDARY_TEMP_THRESH, },
-	{ PCI_DEVICE(0x025e, 0xf1ac),   /* SOLIDIGM  P44 pro SSDPFKKW020X7  */
-		.driver_data = NVME_QUIRK_NO_DEEPEST_PS, },
-	{ PCI_DEVICE(0xc0a9, 0x540a),   /* Crucial P2 */
-		.driver_data = NVME_QUIRK_BOGUS_NID, },
-	{ PCI_DEVICE(0x1d97, 0x2263), /* Lexar NM610 */
-		.driver_data = NVME_QUIRK_BOGUS_NID, },
-	{ PCI_DEVICE(0x1d97, 0x1d97), /* Lexar NM620 */
-		.driver_data = NVME_QUIRK_BOGUS_NID, },
-	{ PCI_DEVICE(0x1d97, 0x2269), /* Lexar NM760 */
-		.driver_data = NVME_QUIRK_BOGUS_NID |
-				NVME_QUIRK_IGNORE_DEV_SUBNQN, },
-	{ PCI_DEVICE(0x10ec, 0x5763), /* TEAMGROUP T-FORCE CARDEA ZERO Z330 SSD */
-		.driver_data = NVME_QUIRK_BOGUS_NID, },
-	{ PCI_DEVICE(0x1e4b, 0x1602), /* HS-SSD-FUTURE 2048G  */
-		.driver_data = NVME_QUIRK_BOGUS_NID, },
-	{ PCI_DEVICE(0x10ec, 0x5765), /* TEAMGROUP MP33 2TB SSD */
-		.driver_data = NVME_QUIRK_BOGUS_NID, },
-	{ PCI_DEVICE(PCI_VENDOR_ID_AMAZON, 0x0061),
-		.driver_data = NVME_QUIRK_DMA_ADDRESS_BITS_48, },
-	{ PCI_DEVICE(PCI_VENDOR_ID_AMAZON, 0x0065),
-		.driver_data = NVME_QUIRK_DMA_ADDRESS_BITS_48, },
-	{ PCI_DEVICE(PCI_VENDOR_ID_AMAZON, 0x8061),
-		.driver_data = NVME_QUIRK_DMA_ADDRESS_BITS_48, },
-	{ PCI_DEVICE(PCI_VENDOR_ID_AMAZON, 0xcd00),
-		.driver_data = NVME_QUIRK_DMA_ADDRESS_BITS_48, },
-	{ PCI_DEVICE(PCI_VENDOR_ID_AMAZON, 0xcd01),
-		.driver_data = NVME_QUIRK_DMA_ADDRESS_BITS_48, },
-	{ PCI_DEVICE(PCI_VENDOR_ID_AMAZON, 0xcd02),
-		.driver_data = NVME_QUIRK_DMA_ADDRESS_BITS_48, },
-	{ PCI_DEVICE(PCI_VENDOR_ID_APPLE, 0x2001),
-		/*
-		 * Fix for the Apple controller found in the MacBook8,1 and
-		 * some MacBook7,1 to avoid controller resets and data loss.
-		 */
-		.driver_data = NVME_QUIRK_SINGLE_VECTOR |
-				NVME_QUIRK_QDEPTH_ONE },
-	{ PCI_DEVICE(PCI_VENDOR_ID_APPLE, 0x2003) },
-	{ PCI_DEVICE(PCI_VENDOR_ID_APPLE, 0x2005),
-		.driver_data = NVME_QUIRK_SINGLE_VECTOR |
-				NVME_QUIRK_128_BYTES_SQES |
-				NVME_QUIRK_SHARED_TAGS |
-				NVME_QUIRK_SKIP_CID_GEN |
-				NVME_QUIRK_IDENTIFY_CNS },
-	{ PCI_DEVICE_CLASS(PCI_CLASS_STORAGE_EXPRESS, 0xffffff) },
-	{ 0, }
-};
-```
-
-No reading in ToyOS's tree names the T14's drive by PCI ID, model or firmware: `issues/features-no-proving-machine-is-known-to-offer.md` has its `id-ctrl` unread, and `issues/no-program-measures-toyos-against-linux-on-one-machine.md` reads its NVMe identity.
 
