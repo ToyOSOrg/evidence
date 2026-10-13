@@ -1425,6 +1425,58 @@ fn s_paste_crossed_by_host_grab(two_clients: bool) {
     log!("{tag}: the guest's REQUEST after it is answered with {text:?}");
 }
 
+/// The push's interleave: a kept GRAB [0] alone, then a host paste (it reaches the guest as
+/// REQUEST), and only then the push's second message, `CLIPBOARD "guest-text"` or `RELEASE`, as a
+/// paste handled between the two messages of one push element would see them. `stray`: the guest
+/// then sends the answer that REQUEST would owe if it were answered again, the same `CLIPBOARD`
+/// after a text push and an empty `CLIPBOARD` after a release. Then the host pastes again, the
+/// guest pushes GRAB [1] + CLIPBOARD "next-copy" in one element, the host pastes, and the guest
+/// sends REQUEST.
+fn s_interleave(release: bool, stray: bool) {
+    let tag = format!("interleave-{}-{}", if release { "release" } else { "text" }, if stray { "stray" } else { "alone" });
+    let (qemu, mut g) = opened(&tag);
+    let mut a = qemu.vnc();
+    g.send("GRAB [0][UTF8_TEXT] alone", &chunked(&grab(Some(0), &[UTF8]), 2048));
+    host_events(&mut [&mut a], &mut g, "the guest's grab");
+    a.request();
+    let r = guest_requests(&mut g, "the host paste");
+    log!("{tag}: the paste reaches the guest as {r} REQUEST(s)");
+    if release {
+        g.send("RELEASE, the push's second message", &chunked(&message(RELEASE, &[]), 2048));
+    } else {
+        g.send("CLIPBOARD \"guest-text\", the push's second message", &chunked(&clip(b"guest-text"), 2048));
+    }
+    let e1 = host_events(&mut [&mut a], &mut g, "the push's second message");
+    log!("{tag}: after the push's second message, provides {:?}; every host event {}", provides(&e1), e1.len());
+    let g1 = guest_requests(&mut g, "the push's second message");
+    log!("{tag}: further REQUESTs to the guest after it {g1}");
+    if stray {
+        if release {
+            g.send("CLIPBOARD [UTF8_TEXT] with no data, the answer the REQUEST would owe", &chunked(&clip(b""), 2048));
+        } else {
+            g.send("CLIPBOARD \"guest-text\" again, the answer the REQUEST would owe", &chunked(&clip(b"guest-text"), 2048));
+        }
+        let e2 = host_events(&mut [&mut a], &mut g, "the stray answer");
+        log!("{tag}: after the stray answer, provides {:?}; every host event {}", provides(&e2), e2.len());
+        drain(&mut g, "the stray answer");
+    }
+    a.request();
+    let e3 = host_events(&mut [&mut a], &mut g, "the host's next paste");
+    let r3 = guest_requests(&mut g, "the host's next paste");
+    log!("{tag}: the host's next paste: provides {:?}; REQUESTs to the guest {r3}", provides(&e3));
+    push(&mut g, 1, b"next-copy");
+    let e4 = host_events(&mut [&mut a], &mut g, "the push of \"next-copy\"");
+    log!("{tag}: after the push of \"next-copy\", provides {:?}; every host event {}", provides(&e4), e4.len());
+    drain(&mut g, "the push of \"next-copy\"");
+    let p = a.paste(&mut g).map(|d| String::from_utf8_lossy(&d).to_string());
+    log!("{tag}: the host's paste after it is provided {p:?}");
+    drain(&mut g, "that paste");
+    g.send("REQUEST UTF8_TEXT", &chunked(&request(), 2048));
+    let c = g.next();
+    let text = match &c { Some(Ev::Msg(m)) if m.ty == CLIPBOARD => Some(String::from_utf8_lossy(&m.data[4..]).to_string()), _ => None };
+    log!("{tag}: the guest's REQUEST after it is answered with {text:?}");
+}
+
 fn main() {
     let which: Vec<String> = std::env::args().skip(1).collect();
     let all = which.is_empty();
@@ -1459,5 +1511,6 @@ fn main() {
     if on("empty-copy") { s_empty_copy(1); s_empty_copy(0); }
     if on("two-pastes") { s_two_pastes(false); s_two_pastes(true); }
     if on("crossed-paste") { s_paste_crossed_by_host_grab(false); s_paste_crossed_by_host_grab(true); }
+    if on("interleave") { for release in [true, false] { for stray in [false, true] { s_interleave(release, stray); } } }
     log!("probe end");
 }
