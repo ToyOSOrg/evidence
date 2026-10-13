@@ -8,7 +8,7 @@ USB device serial number masked.
 - `testcases-xhci-leave/`: `usbd_drives_the_type_c_controller` PASS, with
   `end_returns_claims` on 00:0d.0 [8086:9a13]: "100 rounds, every claim
   granted after its holder's end; mean kill to end 59 µs, end to claim
-  3764 µs" (`kernel.log`'s log stream, `judge-1a.log`). The timings are
+  3764 µs" (`testcases-xhci-leave/kernel.log`). The timings are
   printed, not judged.
 - `isa/`: `isa_ports_are_the_binders_alone` and
   `isa_lines_reach_their_holder` PASS, with `claim_after` deleted: each
