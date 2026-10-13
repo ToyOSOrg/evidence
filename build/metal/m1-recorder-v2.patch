@@ -1,0 +1,21 @@
+diff --git a/system/soundserver/src/hda.rs b/system/soundserver/src/hda.rs
+--- a/system/soundserver/src/hda.rs
++++ b/system/soundserver/src/hda.rs
+@@ -106,7 +106,16 @@
+ 
+ impl probe::Verbs for Link {
+     fn get(&mut self, codec: Address, node: Node, verb: u16, payload: u8) -> Option<Response> {
+-        self.send(Verb::short(codec, node, verb, payload))
++        let answer = self.send(Verb::short(codec, node, verb, payload));
++        // The ring's shared half, not `say!`: `main` holds a lane of 32 slots,
++        // and a walk's few hundred records through it drop whatever follows.
++        toyos::log::say(toyos::log::Severity::Info, format_args!(
++            "m1: hda controller {} codec{codec} node={:#04x} verb={verb:#05x} payload={payload:#04x} answer={}",
++            self.controller,
++            node.0,
++            match answer { Some(r) => format!("{:#010x}", r.raw()), None => String::from("none") }
++        ));
++        answer
+     }
+ }
+ 
