@@ -1,0 +1,35 @@
+--- a/system/vdagent/bridge/src/lib.rs
++++ b/system/vdagent/bridge/src/lib.rs
+@@ -134,6 +134,7 @@
+ /// never with a push.
+ #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+ struct Owed {
++    answer: bool,
+     capabilities: bool,
+     request: bool,
+     push: Option<Push>,
+@@ -180,7 +181,10 @@
+             Message::Capabilities { request: false, .. } => Effect::Named(Named::Unasked),
+             Message::Grab { serial, types } => self.host_grab(serial, &types),
+             Message::Clipboard { kind, data } => self.host_clipboard(kind, data),
+-            Message::Request { kind } => Effect::Named(Named::Request { kind }),
++            Message::Request { kind } => {
++                self.owed.answer = true;
++                Effect::Named(Named::Request { kind })
++            }
+             Message::Release if self.owner == Owner::Host => {
+                 self.owner = Owner::None;
+                 Effect::Guest(String::new())
+@@ -283,6 +287,12 @@
+         if owed.request {
+             writer.request();
+         }
++        if owed.answer {
++            match &self.owner {
++                Owner::Guest(text) => writer.clipboard(text.as_bytes()),
++                Owner::None | Owner::Host => writer.clipboard(b""),
++            }
++        }
+         match owed.push {
+             None => {}
+             Some(Push::Text { serial }) => {

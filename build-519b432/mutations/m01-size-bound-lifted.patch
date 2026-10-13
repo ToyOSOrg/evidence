@@ -1,0 +1,11 @@
+--- a/lib/vdagent/src/stream.rs
++++ b/lib/vdagent/src/stream.rs
+@@ -201,7 +201,7 @@
+         let protocol = word(&self.header, 0);
+         let kind = word(&self.header, 4);
+         let size = word(&self.header, 16);
+-        let left = match Untrusted::new(size).at_most(MAX_DATA as u64) {
++        let left = match Untrusted::new(size).at_most(u32::MAX as u64) {
+             Ok(left) => left as usize,
+             Err(_) => {
+                 each(Err(Refusal::TooLarge { kind, size }));

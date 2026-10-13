@@ -1,0 +1,14 @@
+--- a/system/vdagent/bridge/src/lib.rs
++++ b/system/vdagent/bridge/src/lib.rs
+@@ -177,7 +177,10 @@
+     pub fn host(&mut self, message: Message) -> Effect {
+         match message {
+             Message::Capabilities { request: true, caps } => self.session(caps),
+-            Message::Capabilities { request: false, .. } => Effect::Named(Named::Unasked),
++            Message::Capabilities { request: false, .. } => {
++                self.owed.capabilities = true;
++                Effect::Named(Named::Unasked)
++            }
+             Message::Grab { serial, types } => self.host_grab(serial, &types),
+             Message::Clipboard { kind, data } => self.host_clipboard(kind, data),
+             Message::Request { kind } => Effect::Named(Named::Request { kind }),

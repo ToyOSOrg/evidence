@@ -1,0 +1,11 @@
+--- a/system/vdagent/bridge/src/lib.rs
++++ b/system/vdagent/bridge/src/lib.rs
+@@ -228,7 +228,7 @@
+ 
+     fn host_clipboard(&mut self, kind: u32, data: Vec<u8>) -> Effect {
+         let len = data.len();
+-        if self.owner != Owner::Host || kind != wire::UTF8_TEXT {
++        if kind != wire::UTF8_TEXT {
+             return Effect::Named(Named::ClipboardRefused { kind, len });
+         }
+         match String::from_utf8(data) {

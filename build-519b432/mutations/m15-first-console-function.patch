@@ -1,0 +1,11 @@
+--- a/kernel/pci/src/choose.rs
++++ b/kernel/pci/src/choose.rs
+@@ -18,7 +18,7 @@
+ /// console ports by `CONSOLE_PORT` messages on control queues (§5.3.6.2),
+ /// which a single-port driver has none of.
+ pub fn console(features: &[u64]) -> Option<usize> {
+-    features.iter().position(|offered| offered & VIRTIO_CONSOLE_F_MULTIPORT == 0)
++    (!features.is_empty()).then_some(0)
+ }
+ 
+ /// Why a claim's `vendor:device` names no function to hand over.

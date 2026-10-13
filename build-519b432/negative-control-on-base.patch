@@ -1,0 +1,81 @@
+diff --git a/tests/images/clipboardcase.toml b/tests/images/clipboardcase.toml
+new file mode 100644
+index 000000000..4794dd22e
+--- /dev/null
++++ b/tests/images/clipboardcase.toml
+@@ -0,0 +1,23 @@
++# The boot `the_opening_exchange_with_qemus_agent_completes` reads: the
++# clipboard agent against QEMU's own vdagent, with the compositor whose
++# clipboard it watches, on `Profile::HeadlessVirtioGpu`, the one virtio machine
++# with a framebuffer for the compositor to claim.
++#
++# test-runner makes the boot announce itself.
++
++assets = ["assets"]
++
++[boot]
++start = ["logkeeper", "compositor", "test-runner"]
++
++# `every_boot_config_runs_logkeeper` is what refuses a boot config without it.
++[programs.logkeeper]
++service = true
++syscap = ["logread"]
++
++[programs.compositor]
++service = true
++serves = ["compositor", "prompt", "clipboard"]
++devices = ["framebuffer", "keyboard", "mouse"]
++
++[programs.test-runner]
+diff --git a/tests/toyos.rs b/tests/toyos.rs
+index 6cd2b717d..afc6b4195 100644
+--- a/tests/toyos.rs
++++ b/tests/toyos.rs
+@@ -380,6 +380,11 @@ const MACHINE_TESTS: &[&str] = &[
+     // run is the benches'; this is TCG's, whose XSAVE is QEMU's own reading of
+     // the SDM, and the KVM runner's CPU.
+     "vector_state_survives_a_switch",
++    // The clipboard agent's opening exchange with QEMU's own vdagent: the
++    // device exists only under QEMU, so no metal row reaches it, and the other
++    // end of the handshake and of the request is QEMU's vdagent chardev and
++    // virtio-serial device, which no host test runs.
++    "the_opening_exchange_with_qemus_agent_completes",
+ ];
+ 
+ /// **The metal profile**: which registrations run on the ThinkPad T14, what
+@@ -3397,10 +3402,35 @@ fn run_machine_test(name: &str, test_config: &Path) -> Result<(), String> {
+         "usbd_drives_the_spare" => usbd_drives_the_spare(test_config),
+         "usb_keyboard_rollover" => usb_keyboard_rollover(test_config),
+         "vector_state_survives_a_switch" => vector_state_survives_a_switch(test_config),
++        "the_opening_exchange_with_qemus_agent_completes" => the_opening_exchange_with_qemus_agent_completes(),
+         other => Err(format!("unknown machine test {other}")),
+     }
+ }
+ 
++/// The clipboard agent opens its port and QEMU's vdagent answers its opening
++/// `REQUEST` with no data, since `-display none` gives QEMU's clipboard no
++/// peer: the agent said both, in this order.
++fn the_opening_exchange_with_qemus_agent_completes() -> Result<(), String> {
++    const OPEN: &str = "vdagent: port 1 open, the host announces capabilities 0x00020060";
++    const ANSWERED: &str = "vdagent: the host's clipboard, 0 bytes";
++    let mut qemu = QemuInstance::boot_with_options(
++        &compile::repo_root().join("tests/images/clipboardcase.toml"),
++        &[],
++        &[],
++        BootOptions { profile: qemu::Profile::HeadlessVirtioGpu, ..Default::default() },
++    );
++    let mut console = format!("{}\n", qemu.boot_log());
++    await_guest(&mut qemu, &mut console, "the agent's opening exchange", |t| t.contains(ANSWERED))
++        .map_err(|e| format!("{e}\n{console}"))?;
++    let said = serial::Serial::named("the clipboard boot", console);
++    said.must_be_clean()?;
++    let text = said.text();
++    match (text.find(OPEN), text.find(ANSWERED)) {
++        (Some(open), Some(answered)) if open < answered => Ok(()),
++        _ => Err(format!("the agent did not say {OPEN:?} before {ANSWERED:?}:\n{text}")),
++    }
++}
++
+ /// A machine with one NVMe disk and no USB controller boots the image off
+ /// that disk to ready, and says nothing a clean boot does not.
+ fn nvme_disk_boots(test_config: &Path) -> Result<(), String> {

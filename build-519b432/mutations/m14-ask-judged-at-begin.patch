@@ -1,0 +1,37 @@
+--- a/system/compositor/desktop/src/clipboard.rs
++++ b/system/compositor/desktop/src/clipboard.rs
+@@ -24,6 +24,7 @@
+ /// The watcher's ask, the copy it has not been sent, and the region of a set
+ /// it is writing (`R`, opaque here).
+ pub struct Watch<R> {
++    judged: bool,
+     asked: bool,
+     unsent: bool,
+     region: Option<R>,
+@@ -31,7 +32,7 @@
+ 
+ impl<R> Default for Watch<R> {
+     fn default() -> Self {
+-        Self { asked: false, unsent: false, region: None }
++        Self { judged: false, asked: false, unsent: false, region: None }
+     }
+ }
+ 
+@@ -75,6 +76,7 @@
+             Some(_) => Err(region),
+             None => {
+                 self.region = Some(region);
++                self.judged = self.asked;
+                 Ok(())
+             }
+         }
+@@ -84,7 +86,8 @@
+     /// holds lands. `None` where none is open, which is out of protocol.
+     pub fn commit(&mut self) -> Option<(R, Landing)> {
+         let region = self.region.take()?;
+-        Some((region, self.set()))
++        let landing = if self.judged { Landing::Lands } else { Landing::Stale };
++        Some((region, landing))
+     }
+ }
+ 
