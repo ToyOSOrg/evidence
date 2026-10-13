@@ -1,0 +1,13 @@
+diff --git a/build/publish.rs b/build/publish.rs
+index 8c5acffef..103a4a035 100644
+--- a/build/publish.rs
++++ b/build/publish.rs
+@@ -198,7 +198,7 @@ pub fn publish(manifest: &Path, dir: &Path, key: &RepoKey, now: u64) -> Result<P
+ /// version, and every archive neither names. Never a root.
+ pub fn pruned(files: &[String], newest: &Targets, previous: Option<&Targets>) -> Vec<String> {
+     let named: BTreeSet<&str> = newest.items.iter().chain(previous.iter().flat_map(|t| &t.items)).map(|i| i.url.as_str()).collect();
+-    let keep_from = newest.version - 1;
++    let keep_from = newest.version;
+     let mut gone: Vec<String> = files
+         .iter()
+         .filter(|name| match name.strip_prefix("targets.").and_then(|v| v.strip_suffix(".txt")) {

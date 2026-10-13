@@ -1,0 +1,64 @@
+== HOME=<scratch>/home cargo run -q -- --repo-signing-key-new > <C>/signing.pub
+02:39:59 The repository's signing key is at <scratch>/home/.config/toyos/repo-signing-key (SHA256:t0A6MqU/OOCEDr77kRcdM+2tHpnaiSTa2iDmP22rLEA).
+EXIT=0
+-- signing.pub:
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBYcKO1oXSiW10UyM9nYmn9cl9As73gQ9REyzS1JJ2v6
+-rw-------
+== again, which must refuse
+02:39:59 Error: <scratch>/home/.config/toyos/repo-signing-key already holds a key, and it is not replaced
+EXIT=1
+== step 1.2: cargo build --release -p toyos-root --target aarch64-apple-darwin
+EXIT=0
+<worktree>/target/aarch64-apple-darwin/release/toyos-root: Mach-O 64-bit executable arm64
+== toyos-root new <A>/root-key
+EXIT=0
+root key SHA256:1Jc5f9G7AA33+Iru/mt582aiKfIzFCbpJHSck8+u2oQ
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIG+1ruC0Or/ZegDUpSaLzkSEcZTFGdZ0A/3zoRxOk9KE
+-- the root key's mode, under umask 0022:
+-rw-------
+== toyos-root new over it again, which must refuse
+toyos-root: <scratch>/A/root-key already exists, and it is not replaced
+EXIT=1
+cmp EXIT=0
+== toyos-root sign --key <A>/root-key --signing <C>/signing.pub --out <C>/root.1.txt
+toyos-repo root 1
+expires 2027-10-13T02:40:00Z
+key b7403a32a53f38e0840ebefb91171d33edad1e99da8924dada20e63f6dab2c40 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBYcKO1oXSiW10UyM9nYmn9cl9As73gQ9REyzS1JJ2v6
+key d497397fd1bb000df7f88aeefe6b79f366a229f2331426e924749c93cfaeda84 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIG+1ruC0Or/ZegDUpSaLzkSEcZTFGdZ0A/3zoRxOk9KE
+role root 1 d497397fd1bb000df7f88aeefe6b79f366a229f2331426e924749c93cfaeda84
+role timestamp 1 b7403a32a53f38e0840ebefb91171d33edad1e99da8924dada20e63f6dab2c40
+role targets 1 b7403a32a53f38e0840ebefb91171d33edad1e99da8924dada20e63f6dab2c40
+sig d497397fd1bb000df7f88aeefe6b79f366a229f2331426e924749c93cfaeda84 U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgb7Wu4LQ6v9l6ANSlJovORIRxlMUZ1nQD/fOhHE6T0oQAAAAKdG95b3Mtcm9vdAAAAAAAAAAGc2hhNTEyAAAAUwAAAAtzc2gtZWQyNTUxOQAAAEDxbd5nbIQB5bKTitdDkwelVk4rq5dtPXWWsvGvqHOrRw1T+h9p4OGoaRdjags/B7aj4YDku3XC3zztq6NdaBgF
+root key SHA256:1Jc5f9G7AA33+Iru/mt582aiKfIzFCbpJHSck8+u2oQ
+signing key SHA256:t0A6MqU/OOCEDr77kRcdM+2tHpnaiSTa2iDmP22rLEA
+expires 2027-10-13T02:40:00Z
+EXIT=0
+-rw-r--r--
+== oracle: ssh-keygen -l over each public line
+256 SHA256:1Jc5f9G7AA33+Iru/mt582aiKfIzFCbpJHSck8+u2oQ no comment (ED25519)
+EXIT=0
+256 SHA256:t0A6MqU/OOCEDr77kRcdM+2tHpnaiSTa2iDmP22rLEA no comment (ED25519)
+EXIT=0
+== oracle: ssh-keygen -Y verify -n toyos-root over root 1's signed bytes
+Good "toyos-root" signature for root with ED25519 key SHA256:1Jc5f9G7AA33+Iru/mt582aiKfIzFCbpJHSck8+u2oQ
+EXIT=0
+== control: the same signature under the signing key's line, which must fail
+Could not verify signature.
+EXIT=255
+== control: one byte of the body bent, which must fail
+Signature verification failed: incorrect signature
+Could not verify signature.
+EXIT=255
+== the publisher under root 1: HOME=<scratch>/home cargo run -q -- --publish <scratch>/pub/packages.toml
+Published into <scratch>/home/.config/toyos/pkg-repository: root 1, targets 1, timestamp 1, signed by SHA256:t0A6MqU/OOCEDr77kRcdM+2tHpnaiSTa2iDmP22rLEA; pruned 0.
+EXIT=0
+demo-1-x86_64-unknown-toyos.tar.gz
+root.1.txt
+targets.1.txt
+timestamp.txt
+== again: the root is not rewritten, the versions move on
+Published into <scratch>/home/.config/toyos/pkg-repository: root 1, targets 2, timestamp 2, signed by SHA256:t0A6MqU/OOCEDr77kRcdM+2tHpnaiSTa2iDmP22rLEA; pruned 0.
+EXIT=0
+== control: a root.3.txt past the gap at root 2, which must refuse
+02:40:01 Error: <scratch>/pub/roots holds root.3.txt, which is not a root the walk from root 1 reaches: it stops before root.2.txt
+EXIT=1

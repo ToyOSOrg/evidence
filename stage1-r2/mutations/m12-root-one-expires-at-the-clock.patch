@@ -1,0 +1,13 @@
+diff --git a/build/root/src/main.rs b/build/root/src/main.rs
+index 5ec4c7f59..fb28842fc 100644
+--- a/build/root/src/main.rs
++++ b/build/root/src/main.rs
+@@ -107,7 +107,7 @@ fn sign(key: &Path, signing: &Path, out: &Path, now: u64) -> Result<String, Stri
+     if root_key == signing_key {
+         return Err(format!("{} names the root key, which holds the root role alone", signing.display()));
+     }
+-    let bytes = repo::render::first_root(&seed, &signing_key, now + LIFE);
++    let bytes = repo::render::first_root(&seed, &signing_key, now + LIFE - 86_400);
+     let root = repo::self_signed(&bytes).expect("the root this signed is self-signed");
+     write_new(out, &bytes, 0o644)?;
+     Ok(format!(

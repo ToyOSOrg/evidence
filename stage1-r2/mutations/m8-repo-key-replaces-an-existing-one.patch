@@ -1,0 +1,13 @@
+diff --git a/build/signing.rs b/build/signing.rs
+index 0fd2b9c44..1233ac94d 100644
+--- a/build/signing.rs
++++ b/build/signing.rs
+@@ -304,7 +304,7 @@ fn write_secret(path: &Path, text: &str) -> Result<(), String> {
+     use std::os::unix::fs::OpenOptionsExt;
+     let dir = path.parent().ok_or_else(|| format!("{} has no directory", path.display()))?;
+     std::fs::create_dir_all(dir).map_err(|e| format!("{}: {e}", dir.display()))?;
+-    let mut file = std::fs::OpenOptions::new().write(true).create_new(true).mode(0o600).open(path).map_err(|e| {
++    let mut file = std::fs::OpenOptions::new().write(true).create(true).truncate(true).mode(0o600).open(path).map_err(|e| {
+         match e.kind() {
+             std::io::ErrorKind::AlreadyExists => format!("{} already holds a key, and it is not replaced", path.display()),
+             _ => format!("{}: {e}", path.display()),

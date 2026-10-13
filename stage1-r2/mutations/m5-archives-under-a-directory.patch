@@ -1,0 +1,13 @@
+diff --git a/build/publish.rs b/build/publish.rs
+index 8c5acffef..2c50ad83c 100644
+--- a/build/publish.rs
++++ b/build/publish.rs
+@@ -119,7 +119,7 @@ pub fn publish(manifest: &Path, dir: &Path, key: &RepoKey, now: u64) -> Result<P
+     for row in &rows.package {
+         let path = beside.join(&row.archive);
+         let bytes = fs::read(&path).map_err(|e| format!("{}: {e}", path.display()))?;
+-        let url = format!("{}-{}-{}.tar.gz", row.name, row.sequence, row.target);
++        let url = format!("archives/{}-{}-{}.tar.gz", row.name, row.sequence, row.target);
+         // An archive already published is never rewritten: the read-back's
+         // stream refuses one with other bytes.
+         if read_if_there(&dir.join(&url))?.is_none() {
