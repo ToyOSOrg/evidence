@@ -1,0 +1,88 @@
+== m08-system-flag-0: cargo test --manifest-path system/ps2server/Cargo.toml
+diff --git a/system/ps2server/src/bus.rs b/system/ps2server/src/bus.rs
+index 598ed4e9c..eb1abfb3a 100644
+--- a/system/ps2server/src/bus.rs
++++ b/system/ps2server/src/bus.rs
+@@ -36,7 +36,7 @@ pub const WRITE_AUX: u8 = 0xD4;
+ pub const CB_KEYBOARD_IRQ: u8 = 1 << 0;
+ pub const CB_AUX_IRQ: u8 = 1 << 1;
+ /// Placed in the status register's System Flag; 0 after a power-on reset.
+-pub const CB_SYSTEM_FLAG: u8 = 1 << 2;
++pub const CB_SYSTEM_FLAG: u8 = 0;
+ /// "Disable Keyboard": the keyboard interface's clock held low, as `0xAD`
+ /// sets it and `0xAE` clears it (C 12).
+ pub const CB_KEYBOARD_DISABLED: u8 = 1 << 4;
+   Compiling ps2server v0.1.0 (/Users/jan/Dev/jan/toyos-ps2server/system/ps2server)
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.39s
+     Running unittests src/main.rs (target/debug/deps/ps2server-1b975cee12b07564)
+
+running 18 tests
+test probe::tests::a_floating_status_port_is_no_controller ... ok
+test probe::tests::a_start_after_set_1_with_translation_off_arms_set_2_translated ... ok
+test probe::tests::a_keystroke_during_the_aux_reset_reaches_the_keyboard_after_the_arming ... ok
+test probe::tests::a_reset_with_no_0xfa_disables_the_keyboard_by_name ... ok
+test probe::tests::bytes_waiting_before_the_probe_are_drained_by_name ... ok
+test probe::tests::a_reset_answered_0xfc_disables_the_keyboard_by_name ... FAILED
+test probe::tests::a_command_byte_the_controller_dropped_is_said_by_name ... FAILED
+test probe::tests::an_0xaa_past_the_keyboard_stages_ceiling_disables_the_keyboard_by_name ... ok
+test stream::tests::a_keystroke_found_waiting_before_the_reenable_reaches_the_keyboards_decoder ... ok
+test probe::tests::the_amd_bench_arms_its_keyboard_and_finds_no_pointer ... FAILED
+test probe::tests::the_t14_arms_its_keyboard_and_its_trackpoint ... FAILED
+test stream::tests::a_packet_survives_a_reader_later_than_the_packet_gap ... ok
+test stream::tests::a_keystroke_is_its_make_and_its_break ... ok
+test probe::tests::qemu_arms_its_keyboard_set_2_translated_and_its_mouse ... FAILED
+test stream::tests::an_output_buffer_full_after_32_reads_ends_the_stream_by_name ... ok
+test stream::tests::an_overrun_code_sends_lost ... ok
+test stream::tests::an_undecoded_run_is_named_whole ... ok
+test stream::tests::three_failed_reenables_write_the_pointer_off_with_0xa7 ... ok
+
+failures:
+
+---- probe::tests::a_reset_answered_0xfc_disables_the_keyboard_by_name stdout ----
+
+thread 'probe::tests::a_reset_answered_0xfc_disables_the_keyboard_by_name' (26191822) panicked at system/ps2server/src/probe.rs:463:9:
+assertion `left == right` failed: the keyboard's interrupt off and its interface disabled
+  left: 82
+ right: 86
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- probe::tests::a_command_byte_the_controller_dropped_is_said_by_name stdout ----
+
+thread 'probe::tests::a_command_byte_the_controller_dropped_is_said_by_name' (26191819) panicked at system/ps2server/src/probe.rs:501:9:
+assertion `left == right` failed
+  left: Armed { keyboard: true, aux: true, backlog: [] }
+ right: Failed
+
+---- probe::tests::the_amd_bench_arms_its_keyboard_and_finds_no_pointer stdout ----
+
+thread 'probe::tests::the_amd_bench_arms_its_keyboard_and_finds_no_pointer' (26191828) panicked at system/ps2server/src/probe.rs:416:9:
+assertion `left == right` failed: the keyboard's interrupt, the System Flag, translation, the aux clock off
+  left: 97
+ right: 101
+
+---- probe::tests::the_t14_arms_its_keyboard_and_its_trackpoint stdout ----
+
+thread 'probe::tests::the_t14_arms_its_keyboard_and_its_trackpoint' (26191829) panicked at system/ps2server/src/probe.rs:405:9:
+assertion `left == right` failed
+  left: 67
+ right: 71
+
+---- probe::tests::qemu_arms_its_keyboard_set_2_translated_and_its_mouse stdout ----
+
+thread 'probe::tests::qemu_arms_its_keyboard_set_2_translated_and_its_mouse' (26191827) panicked at system/ps2server/src/probe.rs:388:9:
+assertion `left == right` failed: both interrupts, the System Flag, translation, both clocks on
+  left: 67
+ right: 71
+
+
+failures:
+    probe::tests::a_command_byte_the_controller_dropped_is_said_by_name
+    probe::tests::a_reset_answered_0xfc_disables_the_keyboard_by_name
+    probe::tests::qemu_arms_its_keyboard_set_2_translated_and_its_mouse
+    probe::tests::the_amd_bench_arms_its_keyboard_and_finds_no_pointer
+    probe::tests::the_t14_arms_its_keyboard_and_its_trackpoint
+
+test result: FAILED. 13 passed; 5 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--bin ps2server`
+EXIT=101

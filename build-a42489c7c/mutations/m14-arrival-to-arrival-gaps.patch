@@ -1,0 +1,14 @@
+--- a/system/ps2server/src/stream.rs
++++ b/system/ps2server/src/stream.rs
+@@ -166,7 +166,10 @@
+             let byte = Byte { value: c.read_after(shown), aux: status & AUXB != 0 };
+             last.push(byte.value);
+             if byte.aux {
+-                self.device_ns += gap.take().unwrap_or(0);
++                let _ = gap.take();
++                if let Some(irq) = irq {
++                    self.device_ns = irq.first_nanos;
++                }
+             }
+             self.feed(byte, &mut out, say);
+         }

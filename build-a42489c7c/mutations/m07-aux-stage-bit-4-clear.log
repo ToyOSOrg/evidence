@@ -1,0 +1,70 @@
+== m07-aux-stage-bit-4-clear: cargo test --manifest-path system/ps2server/Cargo.toml
+diff --git a/system/ps2server/src/probe.rs b/system/ps2server/src/probe.rs
+index ed2d940e3..833ef29df 100644
+--- a/system/ps2server/src/probe.rs
++++ b/system/ps2server/src/probe.rs
+@@ -51,7 +51,7 @@ const ENABLE: u8 = 0xF4;
+ /// The command bytes the stages write, each with the System Flag and the
+ /// keyboard interface disabled.
+ const KEYBOARD_STAGE: u8 = CB_KEYBOARD_IRQ | CB_SYSTEM_FLAG | CB_KEYBOARD_DISABLED | CB_AUX_DISABLED | CB_TRANSLATE;
+-const AUX_STAGE: u8 = CB_AUX_IRQ | CB_SYSTEM_FLAG | CB_KEYBOARD_DISABLED | CB_TRANSLATE;
++const AUX_STAGE: u8 = CB_AUX_IRQ | CB_SYSTEM_FLAG | CB_TRANSLATE;
+ 
+ /// What the probe left.
+ #[derive(Debug, PartialEq, Eq)]
+   Compiling ps2server v0.1.0 (/Users/jan/Dev/jan/toyos-ps2server/system/ps2server)
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.41s
+     Running unittests src/main.rs (target/debug/deps/ps2server-1b975cee12b07564)
+
+running 18 tests
+test probe::tests::a_floating_status_port_is_no_controller ... ok
+test probe::tests::a_reset_answered_0xfc_disables_the_keyboard_by_name ... ok
+test probe::tests::a_reset_with_no_0xfa_disables_the_keyboard_by_name ... ok
+test probe::tests::a_start_after_set_1_with_translation_off_arms_set_2_translated ... ok
+test probe::tests::a_command_byte_the_controller_dropped_is_said_by_name ... FAILED
+test probe::tests::a_keystroke_during_the_aux_reset_reaches_the_keyboard_after_the_arming ... FAILED
+test probe::tests::the_t14_arms_its_keyboard_and_its_trackpoint ... ok
+test probe::tests::bytes_waiting_before_the_probe_are_drained_by_name ... ok
+test probe::tests::qemu_arms_its_keyboard_set_2_translated_and_its_mouse ... ok
+test stream::tests::a_keystroke_is_its_make_and_its_break ... ok
+test stream::tests::a_keystroke_found_waiting_before_the_reenable_reaches_the_keyboards_decoder ... ok
+test stream::tests::a_packet_survives_a_reader_later_than_the_packet_gap ... ok
+test probe::tests::the_amd_bench_arms_its_keyboard_and_finds_no_pointer ... ok
+test stream::tests::an_output_buffer_full_after_32_reads_ends_the_stream_by_name ... ok
+test stream::tests::an_overrun_code_sends_lost ... ok
+test probe::tests::an_0xaa_past_the_keyboard_stages_ceiling_disables_the_keyboard_by_name ... FAILED
+test stream::tests::an_undecoded_run_is_named_whole ... ok
+test stream::tests::three_failed_reenables_write_the_pointer_off_with_0xa7 ... ok
+
+failures:
+
+---- probe::tests::a_command_byte_the_controller_dropped_is_said_by_name stdout ----
+
+thread 'probe::tests::a_command_byte_the_controller_dropped_is_said_by_name' (26191468) panicked at system/ps2server/src/fake.rs:395:17:
+C 12: 0x20 written while the keyboard interface is enabled
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- probe::tests::a_keystroke_during_the_aux_reset_reaches_the_keyboard_after_the_arming stdout ----
+
+thread 'probe::tests::a_keystroke_during_the_aux_reset_reaches_the_keyboard_after_the_arming' (26191470) panicked at system/ps2server/src/probe.rs:433:9:
+[
+    "ps2server: kbd reset, 0xfa 88 us after the command and 0xaa 516000 us after the 0xfa — set 2, translated",
+    "ps2server: aux DISABLED — the reset's 0xfa was followed by Err(Silent { full: false }) and Err(Silent { full: false }), not 0xaa and an id",
+    "ps2server: armed, command byte 0x75 — keyboard on, aux off",
+]
+
+---- probe::tests::an_0xaa_past_the_keyboard_stages_ceiling_disables_the_keyboard_by_name stdout ----
+
+thread 'probe::tests::an_0xaa_past_the_keyboard_stages_ceiling_disables_the_keyboard_by_name' (26191474) panicked at system/ps2server/src/fake.rs:385:9:
+C 11: the answer 0xaa was read before its interrupt
+
+
+failures:
+    probe::tests::a_command_byte_the_controller_dropped_is_said_by_name
+    probe::tests::a_keystroke_during_the_aux_reset_reaches_the_keyboard_after_the_arming
+    probe::tests::an_0xaa_past_the_keyboard_stages_ceiling_disables_the_keyboard_by_name
+
+test result: FAILED. 15 passed; 3 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--bin ps2server`
+EXIT=101
