@@ -1,0 +1,53 @@
+From 4b673bac09ccad3d73e3b67637bb3e6611a90bae Mon Sep 17 00:00:00 2001
+From: <author masked>
+Date: Tue, 13 Oct 2026 21:23:45 +0200
+Subject: [PATCH] probe: time each Device release and each teardown's close and
+ publish (measurement only, never landed)
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_015xhaydXCVRNscoccHYFUWy
+---
+ kernel/src/object/mod.rs | 5 +++++
+ kernel/src/process.rs    | 2 ++
+ 2 files changed, 7 insertions(+)
+
+diff --git a/kernel/src/object/mod.rs b/kernel/src/object/mod.rs
+index bb532bc8f..0ad87e2c8 100644
+--- a/kernel/src/object/mod.rs
++++ b/kernel/src/object/mod.rs
+@@ -288,7 +288,12 @@ pub fn drain_zero_handles() {
+             core::mem::take(&mut *queue)
+         };
+         for object in batch {
++            let t0 = crate::clock::nanos_since_boot();
++            let kind = object.kind();
+             object.run_zero_handles();
++            if kind == "Device" {
++                crate::log!("zqprobe: Device hook_ns={} at={t0}", crate::clock::nanos_since_boot() - t0);
++            }
+         }
+     }
+ }
+diff --git a/kernel/src/process.rs b/kernel/src/process.rs
+index 2318afee9..697c4ec45 100644
+--- a/kernel/src/process.rs
++++ b/kernel/src/process.rs
+@@ -1146,6 +1146,7 @@ fn teardown(pid: Pid, tid: Tid, code: i32, mark: i32, process_data: &Arc<Lock<Pr
+         Arc::clone(&proc.threads.get(proc.main_tid).expect("teardown: a claimed process gives up no thread").thread_data)
+     };
+     let consumed = teardown_resources(process_data, &main_thread_data, pid);
++    log!("zqprobe: pid={pid} handles closed at={}", crate::clock::nanos_since_boot());
+     let cpu_ns = {
+         let mut guard = PROCESS_TABLE.lock();
+         teardown_bookkeeping(guard.as_mut().unwrap(), pid, code, &consumed)
+@@ -1160,6 +1161,7 @@ fn teardown(pid: Pid, tid: Tid, code: i32, mark: i32, process_data: &Arc<Lock<Pr
+         tree::teardown_done(table, pid)
+     };
+     // The table says zombie now, which a sweep counts as nothing left to stop.
++    log!("zqprobe: pid={pid} end publishable at={}", crate::clock::nanos_since_boot());
+     crate::quiesce::note_progress();
+     publish_climb(ready);
+ }
+-- 
+2.54.0 (Apple Git-157)
+
