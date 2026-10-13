@@ -1,12 +1,12 @@
-//! Measurement only, never lands: PR #863 round 7's BLOCKERs 2 and 3, a
-//! datagram socket's two waits, modelled with stage 2's (#878)
+//! Measurement only, never lands: PR #863 round 7's BLOCKERs 2 and 3 and
+//! round 8's BLOCKER, a datagram socket's two waits, modelled with stage 2's (#878)
 //! `toyos_transport::stream` ends unchanged as `main` holds them.
 //!
 //! A datagram region has a receive ring and a send ring of records, each
 //! record one ring unit here, and a `pending` word. The connection is the
 //! netstack-to-client doorbell a receiver waits on; the bell is the one a
-//! sender waits on for room; a third pipe carries the client's rings to
-//! netstack. A doorbell is a kernel pipe as the client waits on it: a ring is a
+//! sender waits on for room; a third pipe carries the client's rings and the
+//! card's leaves to netstack, and a fourth netstack's rings to the card. A doorbell is a kernel pipe as the client waits on it: a ring is a
 //! byte written and every waiting thread woken, a drain takes every byte there
 //! without waiting, and a wait blocks until a byte is there and takes them
 //! all. Every sleeper drains its doorbell before it looks. loom fails a run
@@ -262,8 +262,12 @@ enum RoomBell {
 
 #[derive(Clone, Copy, PartialEq)]
 enum AtFull {
-    /// The design: a full [udp] queue holds the send ring.
+    /// The design: a record found at a full [udp] queue is held on the send
+    /// ring, and netstack looks at the ring again when a datagram leaves.
     Hold,
+    /// The control: the record is held, but after the leave netstack waits on
+    /// the client's next ring without looking at the send ring again.
+    HoldUntilRing,
     /// The control: a record taken off the ring at a full queue is refused,
     /// as `TxQueueFull` is today.
     Refuse,
@@ -272,38 +276,80 @@ enum AtFull {
 /// As the kernel's own models bound theirs, and amendment B's.
 const PREEMPTIONS: usize = 5;
 
-/// Records the sender sends, each one past the ring's room.
+/// Records sent: the first fills the ring before any thread runs, the second
+/// waits for room.
 const RECORDS: u32 = 2;
 
-/// netstack's [udp] queue holds one datagram, 0, and is full; the card then
-/// takes it, and netstack takes each record into the queue as room comes and
-/// the card takes it in turn. A `recv_from` waits on the connection until
-/// netstack hands it a datagram after the last record. Every record must leave,
-/// in order, none refused.
+/// netstack's [udp] queue holds one datagram and starts full with datagram 0,
+/// and the send ring starts full with record 1.
+/// The card is its own thread: a leave is its step, taking the queued datagram
+/// and ringing netstack, at any point loom interleaves it, so netstack may find
+/// a published record while its queue is still full. netstack moves each
+/// record into the queue as room comes and rings the card. A `recv_from`
+/// waits on the connection until netstack hands it a datagram after the last
+/// record, where room is rung on the connection. Every record must leave, in
+/// order, none refused.
 fn room(bell: RoomBell, at_full: AtFull) {
     let mut model = loom::model::Builder::new();
     model.preemption_bound = Some(PREEMPTIONS);
     model.check(move || {
         let page = page();
         let cells: Rc<[AtomicU32; RING as usize]> = Rc::new(core::array::from_fn(|_| AtomicU32::new(0)));
+        let queue: Rc<Mutex<Option<u32>>> = Rc::new(Mutex::new(Some(0)));
         let connection = Rc::new(Pipe::new());
         let room_bell = match bell {
             RoomBell::Own => Rc::new(Pipe::new()),
             RoomBell::Connection => Rc::clone(&connection),
         };
         let to_netstack = Rc::new(Pipe::new());
+        let to_card = Rc::new(Pipe::new());
 
         let mut net_rx = stream::Producer::new(&*page, RX);
         let mut client_rx = stream::Consumer::new(&*page, RX);
         let mut client_tx = stream::Producer::new(&*page, TX);
         let mut net_tx = stream::Consumer::new(&*page, TX);
 
+        let send = |client_tx: &mut stream::Producer<RING, WORDS>, record: u32| {
+            cells[((record - 1) % RING) as usize].store(record, Ordering::Relaxed);
+            assert!(client_tx.advance(1));
+            if client_tx.publish(&*page) {
+                to_netstack.ring();
+            }
+        };
+        assert_eq!(client_tx.room(&*page), Ok(1));
+        send(&mut client_tx, 1);
+
+        let card = {
+            let (queue, to_netstack, to_card) = (Rc::clone(&queue), Rc::clone(&to_netstack), Rc::clone(&to_card));
+            loom::thread::spawn(move || {
+                let mut sent = vec![];
+                while sent.len() <= RECORDS as usize {
+                    let left = queue.lock().unwrap().take();
+                    match left {
+                        Some(datagram) => {
+                            sent.push(datagram);
+                            to_netstack.ring();
+                        }
+                        None => to_card.wait(),
+                    }
+                }
+                assert_eq!(sent, (0..=RECORDS).collect::<Vec<_>>(), "every record leaves, in order, none refused");
+            })
+        };
+
         let netstack = {
-            let (page, cells, connection, room_bell, to_netstack) =
-                (Rc::clone(&page), Rc::clone(&cells), Rc::clone(&connection), Rc::clone(&room_bell), Rc::clone(&to_netstack));
+            let (page, cells, queue, connection, room_bell, to_netstack, to_card) = (
+                Rc::clone(&page),
+                Rc::clone(&cells),
+                Rc::clone(&queue),
+                Rc::clone(&connection),
+                Rc::clone(&room_bell),
+                Rc::clone(&to_netstack),
+                Rc::clone(&to_card),
+            );
             loom::thread::spawn(move || {
                 let mut taken = 0u32;
-                let mut sent = vec![];
+                let mut refused = vec![];
                 let take = |net_tx: &mut stream::Consumer<RING, WORDS>, taken: &mut u32| {
                     let record = cells[(*taken % RING) as usize].load(Ordering::Relaxed);
                     assert!(net_tx.advance(1));
@@ -313,10 +359,6 @@ fn room(bell: RoomBell, at_full: AtFull) {
                     }
                     record
                 };
-                if at_full == AtFull::Refuse && net_tx.ready(&*page) == Ok(1) {
-                    let _refused = take(&mut net_tx, &mut taken);
-                }
-                sent.push(0);
                 while taken < RECORDS {
                     if net_tx.ready(&*page) == Ok(0) {
                         to_netstack.drain();
@@ -325,10 +367,27 @@ fn room(bell: RoomBell, at_full: AtFull) {
                         }
                         continue;
                     }
+                    to_netstack.drain();
+                    if queue.lock().unwrap().is_some() {
+                        if at_full == AtFull::Refuse {
+                            refused.push(take(&mut net_tx, &mut taken));
+                            continue;
+                        }
+                        // Held: the record stays on the ring, and the leave rings netstack.
+                        to_netstack.wait();
+                        if at_full == AtFull::HoldUntilRing {
+                            while queue.lock().unwrap().is_some() {
+                                to_netstack.wait();
+                            }
+                            to_netstack.wait();
+                        }
+                        continue;
+                    }
                     let record = take(&mut net_tx, &mut taken);
-                    sent.push(record);
+                    *queue.lock().unwrap() = Some(record);
+                    to_card.ring();
                 }
-                assert_eq!(sent, (0..=RECORDS).collect::<Vec<_>>(), "every record leaves, in order, none refused");
+                assert_eq!(refused, [], "no record is refused");
 
                 assert_eq!(net_rx.room(&*page), Ok(1));
                 assert!(net_rx.advance(1));
@@ -338,7 +397,10 @@ fn room(bell: RoomBell, at_full: AtFull) {
             })
         };
 
-        let receiver = {
+        // Only room rung on the connection reaches a `recv_from`: on the
+        // socket's own bell, it shares no step with the sender's path but
+        // netstack's last publish.
+        let receiver = (bell == RoomBell::Connection).then(|| {
             let (page, connection) = (Rc::clone(&page), Rc::clone(&connection));
             loom::thread::spawn(move || {
                 while client_rx.ready(&*page) == Ok(0) {
@@ -348,24 +410,23 @@ fn room(bell: RoomBell, at_full: AtFull) {
                     }
                 }
             })
-        };
+        });
 
-        for record in 1..=RECORDS {
+        for record in 2..=RECORDS {
             while client_tx.room(&*page) == Ok(0) {
                 room_bell.drain();
                 if client_tx.arm(&*page) == Ok(0) {
                     room_bell.wait();
                 }
             }
-            cells[((record - 1) % RING) as usize].store(record, Ordering::Relaxed);
-            assert!(client_tx.advance(1));
-            if client_tx.publish(&*page) {
-                to_netstack.ring();
-            }
+            send(&mut client_tx, record);
         }
 
-        receiver.join().unwrap();
+        if let Some(receiver) = receiver {
+            receiver.join().unwrap();
+        }
         netstack.join().unwrap();
+        card.join().unwrap();
     });
 }
 
@@ -377,6 +438,11 @@ fn sender_waits_on_its_own_bell() {
 #[test]
 fn sender_waits_on_the_connection() {
     room(RoomBell::Connection, AtFull::Hold);
+}
+
+#[test]
+fn netstack_waits_for_a_ring_after_the_leave() {
+    room(RoomBell::Own, AtFull::HoldUntilRing);
 }
 
 #[test]
