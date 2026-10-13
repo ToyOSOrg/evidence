@@ -47,3 +47,10 @@ metal/                      the orchestrator's runs of request.txt (runner logs 
   metal-control/judge-ctl.log      control 759623914 on the T14: both rows red, "the server
                                    refused something of this machine's AML" (the two _INIs).
   metal-control-amd/judge-ctl.log  control on the AMD bench: red, _REG refused ConfigWrite.
+
+Correction: control-host.log's base is 759623914 (its first line), not ef684e4fc as
+written above; the two differ only in #907's CLAUDE.md and one issue file.
+
+Review round 1 (tree 175788fa2, committed with the same tree as the head below):
+ci-host-2.log               cargo run -- --ci host after merging origin/main and the
+                            review's prose, issue and test-name fixes: 77 steps green, EXIT 0.
