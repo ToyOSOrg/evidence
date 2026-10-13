@@ -39,3 +39,7 @@ Masked fields: the machine's SMBIOS vendor, product and BIOS version (`<vendor>`
 ## host/ci-host-merged.log
 
 `cargo run -- --ci host` at `ca217141d`, `f7a07b1db` merged with `origin/main`: exit 0, all 77 steps green.
+
+## host/ci-host-reduced.log
+
+`cargo run -- --ci host` at `496da7af8af78a7350621f874c3e7720e8bf8263`, the branch reduced to the loader inputs and merged with `origin/main` at `3ba4a4a2f`: exit 0, all 77 steps green.
