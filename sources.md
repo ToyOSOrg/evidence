@@ -752,3 +752,19 @@ to-cache transfer is initiated within the complex. The L3 has an average load-to
 cycles. The non-temporal cache fill hint, indicated with PREFETCHNTA, reduces cache pollution for 
 ```
 
+
+## Intel® Core™ i5-1135G7 Processor, Intel's product specification
+
+Fetched on 2026-10-13 from `https://www.intel.com/content/www/us/en/products/sku/208658/intel-core-i51135g7-processor-8m-cache-up-to-4-20-ghz/specifications.html`, SHA-256 `8e3bd3f42d571ea622a090db17acfd8b4c87634a275d0a7e5183cd93fd0cbe3d`. The page's markup is stripped (`<script>` blocks, then tags, then HTML entities); each row is a label and the value the page gives it. The speed track's clock item (`toyos-uses-what-modern-hardware-offers-for-speed.md`) takes these as its target.
+
+```text
+Code Name: Products formerly Tiger Lake
+Total Cores: 4
+Total Threads: 8
+Max Turbo Frequency: 4.20 GHz
+Configurable TDP-up Base Frequency: 2.40 GHz
+Configurable TDP-up: 28 W
+Configurable TDP-down Base Frequency: 900 MHz
+Configurable TDP-down: 12 W
+Max Turbo Frequency refers to the maximum single-core processor frequency that can be achieved with Intel® Turbo Boost Technology. See
+```
