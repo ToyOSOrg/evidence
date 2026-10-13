@@ -1,0 +1,10 @@
+--- a/system/ps2server/src/probe.rs
++++ b/system/ps2server/src/probe.rs
+@@ -180,6 +180,7 @@
+     fn quiet(&mut self) -> Result<(), Stopped> {
+         self.drain()?;
+         let deadline = self.deadline(CONTROLLER_NS);
++        self.command(0xAA, deadline, "0xAA")?;
+         self.command(DISABLE_KEYBOARD, deadline, "0xAD")?;
+         self.command(DISABLE_AUX, deadline, "0xA7")?;
+         self.drain()?;

@@ -1,0 +1,169 @@
+== m01-no-read-delay at 26c86737400f3353287e319b232b984c1c117797: cargo test --manifest-path system/ps2server/Cargo.toml
+diff --git a/system/ps2server/src/bus.rs b/system/ps2server/src/bus.rs
+index 48df57ba4..85cf25381 100644
+--- a/system/ps2server/src/bus.rs
++++ b/system/ps2server/src/bus.rs
+@@ -106,9 +106,7 @@ pub trait Bus: Controller {
+ 
+     /// Port 0x60, `READ_DELAY_NS` after `shown`, when a status read showed it full.
+     fn read_after(&mut self, shown: u64) -> u8 {
+-        while self.now() < shown + READ_DELAY_NS {
+-            core::hint::spin_loop();
+-        }
++        let _ = shown;
+         self.data()
+     }
+ 
+   Compiling toyos v0.18.0 (<path>
+   Compiling toyos-ps2 v0.1.0 (<path>
+   Compiling ps2server v0.1.0 (<path>
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.93s
+     Running unittests src/main.rs (target/debug/deps/ps2server-1b975cee12b07564)
+
+running 21 tests
+test bus::tests::a_record_landing_as_the_deadline_passes_is_found ... ok
+test probe::tests::a_floating_status_port_is_no_controller ... ok
+test probe::tests::a_wedged_output_buffer_is_said_after_32_reads_with_nothing_written ... FAILED
+test probe::tests::a_command_byte_the_controller_dropped_is_said_by_name ... FAILED
+test probe::tests::a_keystroke_during_the_aux_reset_reaches_the_keyboard_after_the_arming ... FAILED
+test probe::tests::the_t14_arms_its_keyboard_and_its_trackpoint ... FAILED
+test probe::tests::qemu_arms_its_keyboard_set_2_translated_and_its_mouse ... FAILED
+test probe::tests::the_amd_bench_arms_its_keyboard_and_finds_no_pointer ... FAILED
+test probe::tests::a_start_after_set_1_with_translation_off_arms_set_2_translated ... FAILED
+test probe::tests::a_reset_answered_0xfc_disables_the_keyboard_by_name ... FAILED
+test probe::tests::an_0xaa_past_the_keyboard_stages_ceiling_disables_the_keyboard_by_name ... FAILED
+test probe::tests::bytes_waiting_before_the_probe_are_drained_by_name ... FAILED
+test probe::tests::a_reset_with_no_0xfa_disables_the_keyboard_by_name ... FAILED
+test stream::tests::a_discarded_aux_byte_sends_nothing ... FAILED
+test stream::tests::a_keystroke_is_its_make_and_its_break ... FAILED
+test stream::tests::a_keystroke_found_waiting_before_the_reenable_reaches_the_keyboards_decoder ... FAILED
+test stream::tests::a_packet_survives_a_reader_later_than_the_packet_gap ... FAILED
+test stream::tests::an_output_buffer_full_after_32_reads_ends_the_stream_by_name ... FAILED
+test stream::tests::an_overrun_code_sends_lost ... FAILED
+test stream::tests::an_undecoded_run_is_named_whole ... FAILED
+test stream::tests::three_failed_reenables_write_the_pointer_off_with_0xa7 ... FAILED
+
+failures:
+
+---- probe::tests::a_wedged_output_buffer_is_said_after_32_reads_with_nothing_written stdout ----
+
+thread 'probe::tests::a_wedged_output_buffer_is_said_after_32_reads_with_nothing_written' (27846431) panicked at system/ps2server/src/fake.rs:380:9:
+C 14: a data read 1000 ns after the status read that showed it
+
+---- probe::tests::a_command_byte_the_controller_dropped_is_said_by_name stdout ----
+
+thread 'probe::tests::a_command_byte_the_controller_dropped_is_said_by_name' (27846425) panicked at system/ps2server/src/fake.rs:380:9:
+C 14: a data read 1000 ns after the status read that showed it
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- probe::tests::a_keystroke_during_the_aux_reset_reaches_the_keyboard_after_the_arming stdout ----
+
+thread 'probe::tests::a_keystroke_during_the_aux_reset_reaches_the_keyboard_after_the_arming' (27846427) panicked at system/ps2server/src/fake.rs:380:9:
+C 14: a data read 1000 ns after the status read that showed it
+
+---- probe::tests::the_t14_arms_its_keyboard_and_its_trackpoint stdout ----
+
+thread 'probe::tests::the_t14_arms_its_keyboard_and_its_trackpoint' (27846436) panicked at system/ps2server/src/fake.rs:380:9:
+C 14: a data read 1000 ns after the status read that showed it
+
+---- probe::tests::qemu_arms_its_keyboard_set_2_translated_and_its_mouse stdout ----
+
+thread 'probe::tests::qemu_arms_its_keyboard_set_2_translated_and_its_mouse' (27846434) panicked at system/ps2server/src/fake.rs:380:9:
+C 14: a data read 1000 ns after the status read that showed it
+
+---- probe::tests::the_amd_bench_arms_its_keyboard_and_finds_no_pointer stdout ----
+
+thread 'probe::tests::the_amd_bench_arms_its_keyboard_and_finds_no_pointer' (27846435) panicked at system/ps2server/src/fake.rs:380:9:
+C 14: a data read 1000 ns after the status read that showed it
+
+---- probe::tests::a_start_after_set_1_with_translation_off_arms_set_2_translated stdout ----
+
+thread 'probe::tests::a_start_after_set_1_with_translation_off_arms_set_2_translated' (27846430) panicked at system/ps2server/src/fake.rs:380:9:
+C 14: a data read 1000 ns after the status read that showed it
+
+---- probe::tests::a_reset_answered_0xfc_disables_the_keyboard_by_name stdout ----
+
+thread 'probe::tests::a_reset_answered_0xfc_disables_the_keyboard_by_name' (27846428) panicked at system/ps2server/src/fake.rs:380:9:
+C 14: a data read 1000 ns after the status read that showed it
+
+---- probe::tests::an_0xaa_past_the_keyboard_stages_ceiling_disables_the_keyboard_by_name stdout ----
+
+thread 'probe::tests::an_0xaa_past_the_keyboard_stages_ceiling_disables_the_keyboard_by_name' (27846432) panicked at system/ps2server/src/fake.rs:380:9:
+C 14: a data read 1000 ns after the status read that showed it
+
+---- probe::tests::bytes_waiting_before_the_probe_are_drained_by_name stdout ----
+
+thread 'probe::tests::bytes_waiting_before_the_probe_are_drained_by_name' (27846433) panicked at system/ps2server/src/fake.rs:380:9:
+C 14: a data read 1000 ns after the status read that showed it
+
+---- probe::tests::a_reset_with_no_0xfa_disables_the_keyboard_by_name stdout ----
+
+thread 'probe::tests::a_reset_with_no_0xfa_disables_the_keyboard_by_name' (27846429) panicked at system/ps2server/src/fake.rs:380:9:
+C 14: a data read 1000 ns after the status read that showed it
+
+---- stream::tests::a_discarded_aux_byte_sends_nothing stdout ----
+
+thread 'stream::tests::a_discarded_aux_byte_sends_nothing' (27846437) panicked at system/ps2server/src/fake.rs:380:9:
+C 14: a data read 1000 ns after the status read that showed it
+
+---- stream::tests::a_keystroke_is_its_make_and_its_break stdout ----
+
+thread 'stream::tests::a_keystroke_is_its_make_and_its_break' (27846439) panicked at system/ps2server/src/fake.rs:380:9:
+C 14: a data read 1000 ns after the status read that showed it
+
+---- stream::tests::a_keystroke_found_waiting_before_the_reenable_reaches_the_keyboards_decoder stdout ----
+
+thread 'stream::tests::a_keystroke_found_waiting_before_the_reenable_reaches_the_keyboards_decoder' (27846438) panicked at system/ps2server/src/fake.rs:380:9:
+C 14: a data read 1000 ns after the status read that showed it
+
+---- stream::tests::a_packet_survives_a_reader_later_than_the_packet_gap stdout ----
+
+thread 'stream::tests::a_packet_survives_a_reader_later_than_the_packet_gap' (27846440) panicked at system/ps2server/src/fake.rs:380:9:
+C 14: a data read 1000 ns after the status read that showed it
+
+---- stream::tests::an_output_buffer_full_after_32_reads_ends_the_stream_by_name stdout ----
+
+thread 'stream::tests::an_output_buffer_full_after_32_reads_ends_the_stream_by_name' (27846441) panicked at system/ps2server/src/fake.rs:380:9:
+C 14: a data read 1000 ns after the status read that showed it
+
+---- stream::tests::an_overrun_code_sends_lost stdout ----
+
+thread 'stream::tests::an_overrun_code_sends_lost' (27846442) panicked at system/ps2server/src/fake.rs:380:9:
+C 14: a data read 1000 ns after the status read that showed it
+
+---- stream::tests::an_undecoded_run_is_named_whole stdout ----
+
+thread 'stream::tests::an_undecoded_run_is_named_whole' (27846443) panicked at system/ps2server/src/fake.rs:380:9:
+C 14: a data read 1000 ns after the status read that showed it
+
+---- stream::tests::three_failed_reenables_write_the_pointer_off_with_0xa7 stdout ----
+
+thread 'stream::tests::three_failed_reenables_write_the_pointer_off_with_0xa7' (27846444) panicked at system/ps2server/src/fake.rs:380:9:
+C 14: a data read 1000 ns after the status read that showed it
+
+
+failures:
+    probe::tests::a_command_byte_the_controller_dropped_is_said_by_name
+    probe::tests::a_keystroke_during_the_aux_reset_reaches_the_keyboard_after_the_arming
+    probe::tests::a_reset_answered_0xfc_disables_the_keyboard_by_name
+    probe::tests::a_reset_with_no_0xfa_disables_the_keyboard_by_name
+    probe::tests::a_start_after_set_1_with_translation_off_arms_set_2_translated
+    probe::tests::a_wedged_output_buffer_is_said_after_32_reads_with_nothing_written
+    probe::tests::an_0xaa_past_the_keyboard_stages_ceiling_disables_the_keyboard_by_name
+    probe::tests::bytes_waiting_before_the_probe_are_drained_by_name
+    probe::tests::qemu_arms_its_keyboard_set_2_translated_and_its_mouse
+    probe::tests::the_amd_bench_arms_its_keyboard_and_finds_no_pointer
+    probe::tests::the_t14_arms_its_keyboard_and_its_trackpoint
+    stream::tests::a_discarded_aux_byte_sends_nothing
+    stream::tests::a_keystroke_found_waiting_before_the_reenable_reaches_the_keyboards_decoder
+    stream::tests::a_keystroke_is_its_make_and_its_break
+    stream::tests::a_packet_survives_a_reader_later_than_the_packet_gap
+    stream::tests::an_output_buffer_full_after_32_reads_ends_the_stream_by_name
+    stream::tests::an_overrun_code_sends_lost
+    stream::tests::an_undecoded_run_is_named_whole
+    stream::tests::three_failed_reenables_write_the_pointer_off_with_0xa7
+
+test result: FAILED. 2 passed; 19 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--bin ps2server`
+EXIT=101

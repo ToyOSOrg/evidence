@@ -1,0 +1,116 @@
+== m09-no-keyboard-reset at 26c86737400f3353287e319b232b984c1c117797: cargo test --manifest-path system/ps2server/Cargo.toml
+diff --git a/system/ps2server/src/probe.rs b/system/ps2server/src/probe.rs
+index d7849fbc6..88ed401b6 100644
+--- a/system/ps2server/src/probe.rs
++++ b/system/ps2server/src/probe.rs
+@@ -204,6 +204,10 @@ impl<C: Controller> Probe<'_, C> {
+         let deadline = self.deadline(KEYBOARD_NS);
+         self.command_byte(KEYBOARD_STAGE, deadline)?;
+         self.command(ENABLE_KEYBOARD, deadline, "0xAE")?;
++        if true {
++            self.scanning = true;
++            return Ok(true);
++        }
+         self.send(Port::Data, RESET, deadline, "the keyboard's reset")?;
+         let reset = self.c.now();
+         let disabled = |this: &mut Self, why: String| {
+   Compiling ps2server v0.1.0 (<path>
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.58s
+     Running unittests src/main.rs (target/debug/deps/ps2server-1b975cee12b07564)
+
+running 21 tests
+test bus::tests::a_record_landing_as_the_deadline_passes_is_found ... ok
+test probe::tests::a_command_byte_the_controller_dropped_is_said_by_name ... ok
+test probe::tests::a_floating_status_port_is_no_controller ... ok
+test probe::tests::a_wedged_output_buffer_is_said_after_32_reads_with_nothing_written ... ok
+test probe::tests::a_reset_answered_0xfc_disables_the_keyboard_by_name ... FAILED
+test probe::tests::a_reset_with_no_0xfa_disables_the_keyboard_by_name ... FAILED
+test probe::tests::a_keystroke_during_the_aux_reset_reaches_the_keyboard_after_the_arming ... FAILED
+test probe::tests::bytes_waiting_before_the_probe_are_drained_by_name ... FAILED
+test probe::tests::a_start_after_set_1_with_translation_off_arms_set_2_translated ... FAILED
+test probe::tests::an_0xaa_past_the_keyboard_stages_ceiling_disables_the_keyboard_by_name ... FAILED
+test probe::tests::qemu_arms_its_keyboard_set_2_translated_and_its_mouse ... ok
+test probe::tests::the_amd_bench_arms_its_keyboard_and_finds_no_pointer ... FAILED
+test stream::tests::a_discarded_aux_byte_sends_nothing ... ok
+test stream::tests::a_keystroke_is_its_make_and_its_break ... ok
+test stream::tests::a_keystroke_found_waiting_before_the_reenable_reaches_the_keyboards_decoder ... ok
+test probe::tests::the_t14_arms_its_keyboard_and_its_trackpoint ... FAILED
+test stream::tests::a_packet_survives_a_reader_later_than_the_packet_gap ... ok
+test stream::tests::an_output_buffer_full_after_32_reads_ends_the_stream_by_name ... ok
+test stream::tests::an_overrun_code_sends_lost ... ok
+test stream::tests::an_undecoded_run_is_named_whole ... ok
+test stream::tests::three_failed_reenables_write_the_pointer_off_with_0xa7 ... ok
+
+failures:
+
+---- probe::tests::a_reset_answered_0xfc_disables_the_keyboard_by_name stdout ----
+
+thread 'probe::tests::a_reset_answered_0xfc_disables_the_keyboard_by_name' (27853121) panicked at system/ps2server/src/probe.rs:382:70:
+no "ps2server: kbd DISABLED — the reset's 0xfa was followed by 0xfc, not 0xaa" in [
+    "ps2server: aux reset, 0xaa 367000 us after its 0xfa, id 0x00 — reporting",
+    "ps2server: armed, command byte 0x57 — keyboard on, aux on",
+]
+
+---- probe::tests::a_reset_with_no_0xfa_disables_the_keyboard_by_name stdout ----
+
+thread 'probe::tests::a_reset_with_no_0xfa_disables_the_keyboard_by_name' (27853122) panicked at system/ps2server/src/probe.rs:382:70:
+no "ps2server: kbd DISABLED — no 0xfa to the reset in 750 ms (the output buffer empty)" in [
+    "ps2server: aux reset, 0xaa 367000 us after its 0xfa, id 0x00 — reporting",
+    "ps2server: armed, command byte 0x57 — keyboard on, aux on",
+]
+
+---- probe::tests::a_keystroke_during_the_aux_reset_reaches_the_keyboard_after_the_arming stdout ----
+
+thread 'probe::tests::a_keystroke_during_the_aux_reset_reaches_the_keyboard_after_the_arming' (27853120) panicked at system/ps2server/src/probe.rs:450:9:
+[]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- probe::tests::bytes_waiting_before_the_probe_are_drained_by_name stdout ----
+
+thread 'probe::tests::bytes_waiting_before_the_probe_are_drained_by_name' (27853126) panicked at system/ps2server/src/probe.rs:533:9:
+[Byte { value: 30, aux: false }]
+
+---- probe::tests::a_start_after_set_1_with_translation_off_arms_set_2_translated stdout ----
+
+thread 'probe::tests::a_start_after_set_1_with_translation_off_arms_set_2_translated' (27853123) panicked at system/ps2server/src/probe.rs:466:9:
+assertion failed: typed_a(&records(&mut fake, aux, &backlog, at + 10 * MS))
+
+---- probe::tests::an_0xaa_past_the_keyboard_stages_ceiling_disables_the_keyboard_by_name stdout ----
+
+thread 'probe::tests::an_0xaa_past_the_keyboard_stages_ceiling_disables_the_keyboard_by_name' (27853125) panicked at system/ps2server/src/probe.rs:382:70:
+no "ps2server: kbd DISABLED — no 0xaa in 750 ms of the reset (the output buffer empty)" in [
+    "ps2server: aux reset, 0xaa 367000 us after its 0xfa, id 0x00 — reporting",
+    "ps2server: armed, command byte 0x57 — keyboard on, aux on",
+]
+
+---- probe::tests::the_amd_bench_arms_its_keyboard_and_finds_no_pointer stdout ----
+
+thread 'probe::tests::the_amd_bench_arms_its_keyboard_and_finds_no_pointer' (27853128) panicked at system/ps2server/src/probe.rs:382:70:
+no "ps2server: kbd reset" in [
+    "ps2server: aux absent — its reset went unanswered in 600 ms (the output buffer empty)",
+    "ps2server: armed, command byte 0x75 — keyboard on, aux off",
+]
+
+---- probe::tests::the_t14_arms_its_keyboard_and_its_trackpoint stdout ----
+
+thread 'probe::tests::the_t14_arms_its_keyboard_and_its_trackpoint' (27853129) panicked at system/ps2server/src/probe.rs:382:70:
+no "ps2server: kbd reset" in [
+    "ps2server: aux reset, 0xaa 367000 us after its 0xfa, id 0x00 — reporting",
+    "ps2server: armed, command byte 0x57 — keyboard on, aux on",
+]
+
+
+failures:
+    probe::tests::a_keystroke_during_the_aux_reset_reaches_the_keyboard_after_the_arming
+    probe::tests::a_reset_answered_0xfc_disables_the_keyboard_by_name
+    probe::tests::a_reset_with_no_0xfa_disables_the_keyboard_by_name
+    probe::tests::a_start_after_set_1_with_translation_off_arms_set_2_translated
+    probe::tests::an_0xaa_past_the_keyboard_stages_ceiling_disables_the_keyboard_by_name
+    probe::tests::bytes_waiting_before_the_probe_are_drained_by_name
+    probe::tests::the_amd_bench_arms_its_keyboard_and_finds_no_pointer
+    probe::tests::the_t14_arms_its_keyboard_and_its_trackpoint
+
+test result: FAILED. 13 passed; 8 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--bin ps2server`
+EXIT=101

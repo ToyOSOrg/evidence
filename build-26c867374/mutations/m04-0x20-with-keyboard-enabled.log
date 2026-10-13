@@ -1,0 +1,174 @@
+== m04-0x20-with-keyboard-enabled at 26c86737400f3353287e319b232b984c1c117797: cargo test --manifest-path system/ps2server/Cargo.toml
+diff --git a/system/ps2server/src/probe.rs b/system/ps2server/src/probe.rs
+index d7849fbc6..d56ecf2bd 100644
+--- a/system/ps2server/src/probe.rs
++++ b/system/ps2server/src/probe.rs
+@@ -294,6 +294,7 @@ impl<C: Controller> Probe<'_, C> {
+         }
+         byte |= if aux { CB_AUX_IRQ } else { CB_AUX_DISABLED };
+         self.command_byte(byte, deadline)?;
++        self.command(ENABLE_KEYBOARD, deadline, "0xAE")?;
+         self.command(READ_COMMAND_BYTE, deadline, "0x20")?;
+         let read = loop {
+             let past = self.c.now() >= deadline;
+   Compiling ps2server v0.1.0 (<path>
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.47s
+     Running unittests src/main.rs (target/debug/deps/ps2server-1b975cee12b07564)
+
+running 21 tests
+test bus::tests::a_record_landing_as_the_deadline_passes_is_found ... ok
+test probe::tests::a_floating_status_port_is_no_controller ... ok
+test probe::tests::a_command_byte_the_controller_dropped_is_said_by_name ... FAILED
+test probe::tests::a_wedged_output_buffer_is_said_after_32_reads_with_nothing_written ... ok
+test probe::tests::a_reset_with_no_0xfa_disables_the_keyboard_by_name ... FAILED
+test probe::tests::a_reset_answered_0xfc_disables_the_keyboard_by_name ... FAILED
+test probe::tests::qemu_arms_its_keyboard_set_2_translated_and_its_mouse ... FAILED
+test probe::tests::a_start_after_set_1_with_translation_off_arms_set_2_translated ... FAILED
+test probe::tests::an_0xaa_past_the_keyboard_stages_ceiling_disables_the_keyboard_by_name ... FAILED
+test probe::tests::the_t14_arms_its_keyboard_and_its_trackpoint ... FAILED
+test probe::tests::bytes_waiting_before_the_probe_are_drained_by_name ... FAILED
+test probe::tests::a_keystroke_during_the_aux_reset_reaches_the_keyboard_after_the_arming ... FAILED
+test stream::tests::a_discarded_aux_byte_sends_nothing ... FAILED
+test probe::tests::the_amd_bench_arms_its_keyboard_and_finds_no_pointer ... FAILED
+test stream::tests::a_keystroke_found_waiting_before_the_reenable_reaches_the_keyboards_decoder ... FAILED
+test stream::tests::a_packet_survives_a_reader_later_than_the_packet_gap ... FAILED
+test stream::tests::a_keystroke_is_its_make_and_its_break ... FAILED
+test stream::tests::an_output_buffer_full_after_32_reads_ends_the_stream_by_name ... FAILED
+test stream::tests::an_overrun_code_sends_lost ... FAILED
+test stream::tests::an_undecoded_run_is_named_whole ... FAILED
+test stream::tests::three_failed_reenables_write_the_pointer_off_with_0xa7 ... FAILED
+
+failures:
+
+---- probe::tests::a_command_byte_the_controller_dropped_is_said_by_name stdout ----
+
+thread 'probe::tests::a_command_byte_the_controller_dropped_is_said_by_name' (27850777) panicked at system/ps2server/src/fake.rs:395:17:
+C 12: 0x20 written while the keyboard interface is enabled
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- probe::tests::a_reset_with_no_0xfa_disables_the_keyboard_by_name stdout ----
+
+thread 'probe::tests::a_reset_with_no_0xfa_disables_the_keyboard_by_name' (27850781) panicked at system/ps2server/src/fake.rs:395:17:
+C 12: 0x20 written while the keyboard interface is enabled
+
+---- probe::tests::a_reset_answered_0xfc_disables_the_keyboard_by_name stdout ----
+
+thread 'probe::tests::a_reset_answered_0xfc_disables_the_keyboard_by_name' (27850780) panicked at system/ps2server/src/fake.rs:395:17:
+C 12: 0x20 written while the keyboard interface is enabled
+
+---- probe::tests::qemu_arms_its_keyboard_set_2_translated_and_its_mouse stdout ----
+
+thread 'probe::tests::qemu_arms_its_keyboard_set_2_translated_and_its_mouse' (27850786) panicked at system/ps2server/src/fake.rs:395:17:
+C 12: 0x20 written while the keyboard interface is enabled
+
+---- probe::tests::a_start_after_set_1_with_translation_off_arms_set_2_translated stdout ----
+
+thread 'probe::tests::a_start_after_set_1_with_translation_off_arms_set_2_translated' (27850782) panicked at system/ps2server/src/fake.rs:395:17:
+C 12: 0x20 written while the keyboard interface is enabled
+
+---- probe::tests::an_0xaa_past_the_keyboard_stages_ceiling_disables_the_keyboard_by_name stdout ----
+
+thread 'probe::tests::an_0xaa_past_the_keyboard_stages_ceiling_disables_the_keyboard_by_name' (27850784) panicked at system/ps2server/src/fake.rs:395:17:
+C 12: 0x20 written while the keyboard interface is enabled
+
+---- probe::tests::the_t14_arms_its_keyboard_and_its_trackpoint stdout ----
+
+thread 'probe::tests::the_t14_arms_its_keyboard_and_its_trackpoint' (27850788) panicked at system/ps2server/src/fake.rs:395:17:
+C 12: 0x20 written while the keyboard interface is enabled
+
+---- probe::tests::bytes_waiting_before_the_probe_are_drained_by_name stdout ----
+
+thread 'probe::tests::bytes_waiting_before_the_probe_are_drained_by_name' (27850785) panicked at system/ps2server/src/fake.rs:395:17:
+C 12: 0x20 written while the keyboard interface is enabled
+
+---- probe::tests::a_keystroke_during_the_aux_reset_reaches_the_keyboard_after_the_arming stdout ----
+
+thread 'probe::tests::a_keystroke_during_the_aux_reset_reaches_the_keyboard_after_the_arming' (27850779) panicked at system/ps2server/src/fake.rs:395:17:
+C 12: 0x20 written while the keyboard interface is enabled
+
+---- stream::tests::a_discarded_aux_byte_sends_nothing stdout ----
+ps2server: kbd reset, 0xfa 58 us after the command and 0xaa 300 us after the 0xfa — set 2, translated
+ps2server: aux reset, 0xaa 300 us after its 0xfa, id 0x00 — reporting
+
+thread 'stream::tests::a_discarded_aux_byte_sends_nothing' (27850789) panicked at system/ps2server/src/fake.rs:395:17:
+C 12: 0x20 written while the keyboard interface is enabled
+
+---- probe::tests::the_amd_bench_arms_its_keyboard_and_finds_no_pointer stdout ----
+
+thread 'probe::tests::the_amd_bench_arms_its_keyboard_and_finds_no_pointer' (27850787) panicked at system/ps2server/src/fake.rs:395:17:
+C 12: 0x20 written while the keyboard interface is enabled
+
+---- stream::tests::a_keystroke_found_waiting_before_the_reenable_reaches_the_keyboards_decoder stdout ----
+ps2server: kbd reset, 0xfa 58 us after the command and 0xaa 300 us after the 0xfa — set 2, translated
+ps2server: aux reset, 0xaa 300 us after its 0xfa, id 0x00 — reporting
+
+thread 'stream::tests::a_keystroke_found_waiting_before_the_reenable_reaches_the_keyboards_decoder' (27850790) panicked at system/ps2server/src/fake.rs:395:17:
+C 12: 0x20 written while the keyboard interface is enabled
+
+---- stream::tests::a_packet_survives_a_reader_later_than_the_packet_gap stdout ----
+ps2server: kbd reset, 0xfa 88 us after the command and 0xaa 516000 us after the 0xfa — set 2, translated
+ps2server: aux reset, 0xaa 367000 us after its 0xfa, id 0x00 — reporting
+
+thread 'stream::tests::a_packet_survives_a_reader_later_than_the_packet_gap' (27850792) panicked at system/ps2server/src/fake.rs:395:17:
+C 12: 0x20 written while the keyboard interface is enabled
+
+---- stream::tests::a_keystroke_is_its_make_and_its_break stdout ----
+ps2server: kbd reset, 0xfa 58 us after the command and 0xaa 300 us after the 0xfa — set 2, translated
+ps2server: aux reset, 0xaa 300 us after its 0xfa, id 0x00 — reporting
+
+thread 'stream::tests::a_keystroke_is_its_make_and_its_break' (27850791) panicked at system/ps2server/src/fake.rs:395:17:
+C 12: 0x20 written while the keyboard interface is enabled
+
+---- stream::tests::an_output_buffer_full_after_32_reads_ends_the_stream_by_name stdout ----
+ps2server: kbd reset, 0xfa 58 us after the command and 0xaa 300 us after the 0xfa — set 2, translated
+ps2server: aux reset, 0xaa 300 us after its 0xfa, id 0x00 — reporting
+
+thread 'stream::tests::an_output_buffer_full_after_32_reads_ends_the_stream_by_name' (27850793) panicked at system/ps2server/src/fake.rs:395:17:
+C 12: 0x20 written while the keyboard interface is enabled
+
+---- stream::tests::an_overrun_code_sends_lost stdout ----
+ps2server: kbd reset, 0xfa 58 us after the command and 0xaa 300 us after the 0xfa — set 2, translated
+ps2server: aux reset, 0xaa 300 us after its 0xfa, id 0x00 — reporting
+
+thread 'stream::tests::an_overrun_code_sends_lost' (27850794) panicked at system/ps2server/src/fake.rs:395:17:
+C 12: 0x20 written while the keyboard interface is enabled
+
+---- stream::tests::an_undecoded_run_is_named_whole stdout ----
+ps2server: kbd reset, 0xfa 58 us after the command and 0xaa 300 us after the 0xfa — set 2, translated
+ps2server: aux reset, 0xaa 300 us after its 0xfa, id 0x00 — reporting
+
+thread 'stream::tests::an_undecoded_run_is_named_whole' (27850795) panicked at system/ps2server/src/fake.rs:395:17:
+C 12: 0x20 written while the keyboard interface is enabled
+
+---- stream::tests::three_failed_reenables_write_the_pointer_off_with_0xa7 stdout ----
+ps2server: kbd reset, 0xfa 58 us after the command and 0xaa 300 us after the 0xfa — set 2, translated
+ps2server: aux reset, 0xaa 300 us after its 0xfa, id 0x00 — reporting
+
+thread 'stream::tests::three_failed_reenables_write_the_pointer_off_with_0xa7' (27850796) panicked at system/ps2server/src/fake.rs:395:17:
+C 12: 0x20 written while the keyboard interface is enabled
+
+
+failures:
+    probe::tests::a_command_byte_the_controller_dropped_is_said_by_name
+    probe::tests::a_keystroke_during_the_aux_reset_reaches_the_keyboard_after_the_arming
+    probe::tests::a_reset_answered_0xfc_disables_the_keyboard_by_name
+    probe::tests::a_reset_with_no_0xfa_disables_the_keyboard_by_name
+    probe::tests::a_start_after_set_1_with_translation_off_arms_set_2_translated
+    probe::tests::an_0xaa_past_the_keyboard_stages_ceiling_disables_the_keyboard_by_name
+    probe::tests::bytes_waiting_before_the_probe_are_drained_by_name
+    probe::tests::qemu_arms_its_keyboard_set_2_translated_and_its_mouse
+    probe::tests::the_amd_bench_arms_its_keyboard_and_finds_no_pointer
+    probe::tests::the_t14_arms_its_keyboard_and_its_trackpoint
+    stream::tests::a_discarded_aux_byte_sends_nothing
+    stream::tests::a_keystroke_found_waiting_before_the_reenable_reaches_the_keyboards_decoder
+    stream::tests::a_keystroke_is_its_make_and_its_break
+    stream::tests::a_packet_survives_a_reader_later_than_the_packet_gap
+    stream::tests::an_output_buffer_full_after_32_reads_ends_the_stream_by_name
+    stream::tests::an_overrun_code_sends_lost
+    stream::tests::an_undecoded_run_is_named_whole
+    stream::tests::three_failed_reenables_write_the_pointer_off_with_0xa7
+
+test result: FAILED. 3 passed; 18 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--bin ps2server`
+EXIT=101
