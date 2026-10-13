@@ -1,0 +1,10 @@
+Base: ef684e4fc (origin/main). Fix: 8278802b8 (terminal + window), 729cf4289 (ci step; image unaffected).
+Target: x86_64 guest, QEMU 11.1.1 TCG on an arm64 macOS host, Profile::Virtio shape, -display none (repro/qemu.sh).
+
+cargo run -- --build-only               base  -> exit 0  build-base.log
+cargo run -- --build-only               8278802b8 -> exit 0  build-fix.log
+repro/qemu.sh + repro/drive.sh          base: selection 1 copy, Cmd+C (+2) = 3, Ctrl+C (+0) = 3   repro/console-base.log, qemu-trace-base.log (3 guest clipboard-grab)
+repro/qemu.sh + repro/drive.sh          8278802b8: selection 1, Cmd+C (+1) = 2, Ctrl+C (+0) = 2   repro/console-fix.log, qemu-trace-fix.log (2 guest clipboard-grab)
+cargo test -p toyos-window              8278802b8 -> exit 0  test-window.log
+negative control: negative-control.patch (drop pressed() from KeyEvent::copies), cargo test -p toyos-window -> exit 101, copies at [1, 2] not [1]; restored  test-window-negctl.log
+cargo run -- --ci host                  729cf4289 tree -> exit 0, 76 steps, the_copy_chord_copies_once ran  ci-host-729cf4289.log
