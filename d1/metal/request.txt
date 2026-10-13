@@ -1,0 +1,11 @@
+# One boot per image. Each invocation is `cargo <words>` from this worktree.
+
+testcases
+  image: <scratchpad>/metal/testcases/image.img
+  cargo run -p toyos-metal -- --image <scratchpad>/metal/testcases/image.img --readback <scratchpad>/metal/testcases --fat32-check
+Machine: the AMD bench (Family 17h Model 60h), not the T14: add the AMD bench's --host to the invocation.
+Image built at b3e77cac4e9c6f39d30953761d4746357e5201d2 (PR #909), b09c2e4588621b85803c2fd99049b1709bc2195b85b3a8c4527665d5abc471b4
+Row word: blackbox_unclaimed_page (testcases boot; already green on this bench). Any row on the plain
+testcases boot serves; no actuator touches the IOMMU on it.
+Reading wanted from the readback's kernel log: every line starting "iommu: amdvi unit" -- the new
+"function ... caps=[...] misc0=... va= pa= msinum=" line and "handed over ... exclusion=..".
