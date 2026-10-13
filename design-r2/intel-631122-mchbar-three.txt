@@ -1,0 +1,71 @@
+Intel 631122 rev 003 (11th Gen Core Datasheet Vol 2a), sha256 b41caeb529f63e9e3642aea19d2c072989bf5407561098865de7edc55e4c2d39
+Text by design/pdftext (lopdf). The three MCHBAR registers the T14's HKEY._INI writes, verbatim;
+the PDF layout puts each register's access table and fields after the next heading.
+
+== §3.3.31 PACKAGE_RAPL_LIMIT 59A0h (lines 889, 893 and 896 of the text) ==
+3.3.30Temperature Target  (TEMPERATURE_TARGET_0_0_0_MCHBAR_PCU) — Offset  599Ch This register is a read-only copy of the TEMPERATURE_TARGET MSR (MSR 1A2h). Register Level Access: 3.3.31Package Power Limit  (PACKAGE_RAPL_LIMIT_0_0_0_MCHBAR_PCU) — Offset  59A0h Allows setting PL1 and PL2. 7:0 00h RO RP0 Capability (RP0_CAP): RP0 is the highest RP state. This field indicates the maximum RP0 PLL ratio for the Integrated Graphics Engine  (GT). Values are in units of 50 MHz (assuming BCLK = 100MHz). Bit  Range Default &  Access Field Name (ID): Description 
+This register has an MSR version as well. Power limits from this MMIO register and the MSR are evaluated separately. Register Level Access: TypeSize Offset Default MMIO64 bitMCHBAR + 59A0h 0000000000000000h BIOS Access SMM Access OS Access RW RW RW Bit  Range Default &  Access Field Name (ID): Description 63 0h RW/L Package Limitation #2 Lock (PKG_PWR_LIM_LOCK): When set, all settings in this register are locked and are treated as Read Only. This bit will typically set by BIOS during boot time or resume from Sx. Locked by:  PACKAGE_RAPL_LIMIT_0_0_0_MCHBAR_PCU.PKG_PWR_LIM_LOCK 62:48 0h RO Reserved 47 0h RW/L Package Limitation #2 Enable (PKG_PWR_LIM_2_EN): This bit enables/disables Package Limitation #2 (PL2). 0b: Package Power Limit 2 is Disabled 1b: Package Power Limit 2 is Enabled Locked by:  PACKAGE_RAPL_LIMIT_0_0_0_MCHBAR_PCU.PKG_PWR_LIM_LOCK 46:32 0000h RW/L Package Power Limitation #2 (PKG_PWR_LIM_2): This field indicates the power limitation #2. The unit of measurement is defined in MSR  PACKAGE_POWER_SKU_UNIT[PWR_UNIT]. Locked by:  PACKAGE_RAPL_LIMIT_0_0_0_MCHBAR_PCU.PKG_PWR_LIM_LOCK 31:24 0h RO Reserved 23:17 00h RW/L Package Limitation #1 Time Window (PKG_PWR_LIM_1_TIME): Specifies the time window used to calculate average power for PL1 and PL2. The timing interval window is Floating Point number given by 1.x * power(2,y). x = PKG_PWR_LIM_1_TIME[23:22] y = PKG_PWR_LIM_1_TIME[21:17] The unit of measurement is defined in MSR  PACKAGE_POWER_SKU_UNIT[TIME_UNIT]. The maximal time window is bounded by MSR  PACKAGE_POWER_SKU[PKG_MAX_WIN]. The minimum time window is 1 unit of measurement (as defined above). Locked by:  PACKAGE_RAPL_LIMIT_0_0_0_MCHBAR_PCU.PKG_PWR_LIM_LOCK 16 0h RO Reserved 15 0h RW/L Package Power Limit 1 Enable (PKG_PWR_LIM_1_EN): This bit enables/disables Package Power Limit 1. 0b: Package Power Limit 1 is Disabled 1b: Package Power Limit 1 is Enabled Locked by:  PACKAGE_RAPL_LIMIT_0_0_0_MCHBAR_PCU.PKG_PWR_LIM_LOCK 
+3.3.32Thermal Status GT  (THERM_STATUS_GT_0_0_0_MCHBAR_PCU) — Offset  59C0h Contains status information about the processors thermal sensor and automatic  thermal monitoring facilities. Register Level Access: 14:0 0000h RW/L Package Power Limit 1 (PKG_PWR_LIM_1): This field indicates the power limitation #1 (PL1). The unit of measurement is defined in  PACKAGE_POWER_SKU_UNIT_MSR[PWR_UNIT]. Locked by:  PACKAGE_RAPL_LIMIT_0_0_0_MCHBAR_PCU.PKG_PWR_LIM_LOCK Bit  Range Default &  Access Field Name (ID): Description 
+
+== §3.3.50 CONFIG_TDP_CONTROL 5F50h, §3.3.51 TURBO_ACTIVATION_RATIO 5F54h (lines 962-968) ==
+3.3.49Configurable TDP Level 1  (CONFIG_TDP_LEVEL2_0_0_0_MCHBAR_PCU) — Offset  5F48h Level 2 Configurable TDP settings. On SKUs that do not support Configurable TDP, these registers will report 0. Note: Bit definitions are the same as  CONFIG_TDP_LEVEL1_0_0_0_MCHBAR_PCU, offset  5F40h .3.3.50Configurable TDP Control  (CONFIG_TDP_CONTROL_0_0_0_MCHBAR_PCU) — Offset  5F50h Allows platform software to select the TDP level. Can be done via all three interfaces (MSR, MMIO and PECI/PCS). 62:48 0000h RO/V Minimum Package Power (PKG_MIN_PWR): Minimum package power setting allowed for this Configurable TDP level. Lower values will be clamped up to this value. Units defined in MSR PACKAGE_POWER_SKU[PWR_UNIT]. Similar to PACKAGE_POWER_SKU[PKG_MIN_PWR]. 47 0h RO Reserved 46:32 0000h RO/V Maximum Package Power (PKG_MAX_PWR): Maximum package power setting allowed for this Configurable TDP level. Higher values will be clamped down to this value. Units defined in MSR PACKAGE_POWER_SKU[PWR_UNIT]. Similar to PACKAGE_POWER_SKU[PKG_MAX_PWR]. 31:24 0h RO Reserved 23:16 00h RO/V TDP Ratio (TDP_RATIO): TDP ratio for this Configurable TDP Level. 15 0h RO Reserved 14:0 0000h RO/V Package TDP (PKG_TDP): Power Limit (PL1) for this Configurable TDP level. Units defined in MSR PACKAGE_POWER_SKU[PWR_UNIT] Similar to PACKAGE_POWER_SKU[PKG_TDP] Bit  Range Default &  Access Field Name (ID): Description 
+=====PAGE 203=====
+Datasheet Volume 2a of 2 203  
+Register Level Access: 3.3.51Turbo Activation Ratio  (TURBO_ACTIVATION_RATIO_0_0_0_MCHBAR_PCU) —  Offset 5F54h This is the MMIO interface for MSR TURBO_ACTIVATION_RATIO (64Ch). Allows setting a ratio that acts as a threshold for maximum P-State. When the OS request a P-state equal or higher to this ratio threshold, this request is  treated as a maximum P-State request. This has no affect when using Intel Speed Shift interface, only legacy P-States. TypeSize Offset Default MMIO32 bitMCHBAR + 5F50h 00000000h BIOS Access SMM Access OS Access RW RW RW Bit  Range Default &  Access Field Name (ID): Description 31 0h RW/L Configurable TDP Lock (CONFIG_TDP_LOCK): Configurable TDP level select lock. 0b: Unlocked. 1b: Locked till next reset. Locked by:  CONFIG_TDP_CONTROL.CONFIG_TDP_LOCK 30:2 0h RO Reserved 1:0 0h RW/L TDP Level (TDP_LEVEL): Select Configurable TDP level: 0h: Nominal TDP level (default) 1h: Level from CONFIG_TDP_LEVEL_1 2h: Level from CONFIG_TDP_LEVEL_2 3h: Reserved Locked by:  CONFIG_TDP_CONTROL.CONFIG_TDP_LOCK 
+=====PAGE 204=====
+204  Datasheet Volume 2a of 2  
+Register Level Access: 3.3.52Overclocking Status (OC_STATUS_0_0_0_MCHBAR_PCU)  — Offset 5F58h This register exposes the usage of various overclocking features. Security oriented software can examine which overclocking features have been used  and act accordingly. Register Level Access: TypeSize Offset Default MMIO32 bitMCHBAR + 5F54h 00000000h BIOS Access SMM Access OS Access RW RW RW Bit  Range Default &  Access Field Name (ID): Description 31 0h RW/L Turbo Activation Ratio Lock (TURBO_ACTIVATION_RATIO_LOCK): Locks this register until the next reset. 0b: Unlocked 1b: Locked Locked by:  TURBO_ACTIVATION_RATIO.TURBO_ACTIVATION_RATIO_LOCK 30:8 0h RO Reserved 7:0 00h RW/L Maximum Non-Turbo Ratio (MAX_NON_TURBO_RATIO): CPU will treat any P-state request above this ratio as a request for max turbo 0 is special encoding which disables the feature. Locked by:  TURBO_ACTIVATION_RATIO.TURBO_ACTIVATION_RATIO_LOCK 
+
+== §3.3.41-42, the BIOS mailbox the narrowed rule no longer admits (table of contents line 52) ==
+3.3.41BIOS Mailbox Data (BIOS_MAILBOX_DATA_0_0_0_MCHBAR_PCU) — Offset  5DA0h.................................................................................................195 3.3.42BIOS Mailbox Interface 
+
+== The T14's writes into MCHBAR (0xFEDC0000) and the GPIO pad, from the host trace
+   pr-875 88b02eab45baf01c1b184b5097907e2409308592 round5/facts/host-trace-pc00-ec-hkey-ini.txt ==
+3:W Memory(9497f000) Word <- 0x3e8
+6:W Memory(9497f000) Word <- 0x7d1
+9:W Memory(9497f000) Word <- 0x7d1
+12:W Memory(9497f000) Word <- 0x7d2
+15:W Memory(9497f000) Word <- 0x7d6
+18:W Memory(9497f000) Word <- 0x7d9
+21:W Memory(9497f000) Word <- 0x7dc
+24:W Memory(9497f000) Word <- 0x7dd
+27:W Memory(9497f000) Word <- 0x7df
+40:W Memory(9497f00b) Byte <- 0x0
+66:W EmbeddedControl(5) Byte <- 0x0
+70:W Memory(949b8fd8) Byte <- 0x9
+71:W Memory(949b8fd8) QWord <- 0x1010100000000110
+72:W Memory(949b8fdd) Byte <- 0x1
+73:W Memory(949b8fde) Byte <- 0x0
+74:W Memory(949b8fdf) Byte <- 0x0
+75:W Memory(949b8fe0) Byte <- 0x0
+76:W Memory(949b8fe0) QWord <- 0x1010100000000010
+77:W Memory(949b8fe5) Byte <- 0x0
+78:W Memory(949b8fe6) Byte <- 0x0
+79:W Memory(949b8fe7) Byte <- 0x0
+80:W Memory(949b8fe8) Byte <- 0x0
+81:W Memory(949b8fe8) QWord <- 0x1010100000000010
+82:W Io(b2) Byte <- 0xf5
+98:W Memory(fd6e0a70) Byte <- 0x1
+134:W EmbeddedControl(3a) Byte <- 0x20
+173:W Memory(949b8f04) DWord <- 0xa00c00f0
+188:W Memory(949b8fd8) Byte <- 0xa
+189:W Memory(949b8fd8) QWord <- 0x1010100000000110
+190:W Memory(949b8fdd) Byte <- 0x4
+191:W Memory(949b8fde) Byte <- 0x0
+192:W Memory(949b8fdf) Byte <- 0x0
+193:W Memory(949b8fe0) Byte <- 0x0
+194:W Memory(949b8fe0) QWord <- 0x1010100000000110
+195:W Memory(949b8fe5) Byte <- 0x0
+196:W Memory(949b8fe6) Byte <- 0x0
+197:W Memory(949b8fe7) Byte <- 0x0
+198:W Memory(949b8fe8) Byte <- 0x0
+199:W Memory(949b8fe8) QWord <- 0x1010100000000010
+200:W Io(b2) Byte <- 0xf5
+224:W Memory(949b8f08) DWord <- 0xa0000000
+225:W Memory(949b8f0c) DWord <- 0x0
+230:W Memory(fedc5f50) Byte <- 0x0
+232:W Memory(fedc5f54) Byte <- 0xff
+236:W Memory(fedc59a0) Byte <- 0xa0
+238:W Memory(fedc59a1) Byte <- 0x0
+240:W Memory(fedc59a1) Byte <- 0x80
+256:W Memory(949b8f04) DWord <- 0xa00c00f0

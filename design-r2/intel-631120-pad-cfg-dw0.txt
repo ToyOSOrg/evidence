@@ -1,0 +1,328 @@
+Intel 631120-002 (500 Series On-Package PCH Datasheet Vol 2), sha256 ea56d3cc61b1dbc481bdc3c13887134a0f641a6681fc276666cb903236ed30e9
+Text as extracted in the pr-875 rounds (lines of 631120-002.txt).
+
+== PAD_CFG_DW0 byte 0: §27.1.36/§27.1.37, verbatim, lines 56174-56220 (the PDF layout puts DW0's bits 12:0 after DW1's heading) ==
+27.1.37 Pad Configura tion DW1 (PAD_CFG_DW1_GPPC_B_0)—
+Offset 704h
+Refer to Register Field for detail
+Access Method
+Default: 18h
+12:10 --
+RW
+Pad Mode (PMODE): This field determines whether the Pad is controlled by GPIO 
+controller logic or one of the native functions muxed onto the Pad. 
+0h = GPIO controls the Pad 
+1h = Function 1, if applicable, controls the Pad 
+... 
+7h = Function 7, if applicable, controls the Pad 
+ 
+Default value is determined by the default functionality of the pad.
+9 1h
+RW
+GPIO RX Disable (GPIORXDIS): RX buffer enable control when PMode = 0 ONLY. 
+No effect when the pad in native mode. 
+0 = Enable the input buffer (active low enable) of the pad 
+1 = Disable the input buffer of the pad. 
+Notes: 
+When the input buffer is disabled, the internal pad state is always driven to '0'.
+8 1h
+RW
+GPIO TX Disable (GPIOTXDIS): TX buffer enable control when PMode = 0 ONLY. 
+No effect when the pad in native mode. 
+0 = Enable the output buffer of the pad 
+1 = Disable the output buffer of the pad; i.e. Hi-Z
+7:2 0h
+RO Reserved.
+1 0h
+RO/V
+GPIO RX State (GPIORXSTATE): This is the current internal RX pad state after 
+Glitch Filter logic stage and is not affected by PMode and RXINV, hardware debouncer 
+(if any) settings. 
+When read, this bit returns a 0 if GPIORxDis is 1.
+0 0h
+RW
+GPIO TX State (GPIOTXSTATE): TX state when PMode = 0 ONLY. No effect when 
+the pad in native mode. 
+0 = Drive a level '0' to the TX output pad 
+1 = Drive a level '1' to the TX output pad
+Bit 
+Range
+Default & 
+Access Field Name (ID): Description
+Type: MSG Register
+
+== The interrupt routes in bits 20:17 of the same register, lines 56120-56165 ==
+20 0h
+RW
+GPIO Input Route IOxAPIC (GPIROUTIOXAPIC): Determine if the pad can be 
+routed to cause peripheral IRQ when configured in GPIO input mode. If the pad is not 
+configured in GPIO input mode, this field has no effect. 
+0 = Routing does not cause peripheral IRQ 
+1 = Routing can cause peripheral IRQ 
+Note: 
+This bit does not affect any interrupt status bit within GPIO, but is used as the last 
+qualifier for the peripheral IRQ indication to the intended recipient(s).
+19 0h
+RW
+GPIO Input Route SCI (GPIROUTSCI): Determine if the pad can be routed to 
+cause SCI when configured in GPIO input mode. If the pad is not configured in GPIO 
+input mode, this field has no effect. 
+0 = Routing does not cause SCI 
+1 = Routing can cause SCI 
+Note: 
+This bit does not affect any interrupt status bit within GPIO, but is used as the last 
+qualifier for the GPE indication to the intended recipient(s). 
+This bit only applies to a GPIO that has SMI capability. Otherwise, the bit is RO.
+18 0h
+RO
+GPIO Input Route SMI (GPIROUTSMI): 
+Determine if the pad can be routed to 
+cause SMI when configured in GPIO input mode. If the pad is not configured in GPIO 
+input mode, this field has no effect. 
+0 = Routing does not cause SMI. 
+1 = Routing can cause SMI. 
+Note: 
+This bit does not affect any interrupt status bit within GPIO, but is used as the last 
+qualifier for the SMI indication to the intended recipient(s).
+17 0h
+RO
+GPIO Input Route NMI (GPIROUTNMI): Determine if the pad can be routed to 
+cause NMI when configured in GPIO input mode. If the pad is not configured in GPIO 
+input mode, this field has no effect. 
+0 = Routing does not cause NMI. 
+1 = Routing can cause NMI. 
+Note: 
+This bit also affects GPI_NMI_STS. If '0', GPI_NMI_STS is always clear. If '1', 
+GPI_NMI_STS could be set (depending on GPIOOwn setting) when there is an event. 
+Whether a NMI indication is generated and sent to the intended recipient(s) is also 
+depending on the corresponding GPI_NMI_EN bit. 
+This bit only applies to a GPIO that has NMI capability. Otherwise, the bit is RO.
+16:13 0h
+
+== Every 'Pad Configuration DW0' row of the register summaries §27.1-§27.5, by community ==
+(community 3, Target Port ID 6Bh in 631119-007 Table 109, has no register summary in 631120-002)
+54463:27.1 GPIO Community 0 Registers Summary
+54527:700h 703h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_B_0)—Offset 700h
+54532:710h 713h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_B_1)—Offset 710h
+54537:720h 723h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_B_2)—Offset 720h
+54542:730h 733h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_B_3)—Offset 730h
+54547:740h 743h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_B_4)—Offset 740h
+54552:750h 753h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_B_5)—Offset 750h
+54557:760h 763h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_B_6)—Offset 760h
+54562:770h 773h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_B_7)—Offset 770h
+54574:780h 783h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_B_8)—Offset 780h
+54579:790h 793h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_B_9)—Offset 790h
+54584:7A0h 7A3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_B_10)—Offset 7A0h
+54589:7B0h 7B3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_B_11)—Offset 7B0h
+54594:7C0h 7C3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_B_12)—Offset 7C0h
+54599:7D0h 7D3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_B_13)—Offset 7D0h
+54604:7E0h 7E3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_B_14)—Offset 7E0h
+54609:7F0h 7F3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_B_15)—Offset 7F0h
+54614:800h 803h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_B_16)—Offset 800h
+54619:810h 813h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_B_17)—Offset 810h
+54624:820h 823h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_B_18)—Offset 820h
+54629:830h 833h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_B_19)—Offset 830h
+54634:840h 843h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_B_20)—Offset 840h
+54647:850h 853h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_B_21)—Offset 850h
+54652:860h 863h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_B_22)—Offset 860h
+54657:870h 873h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_B_23)—Offset 870h
+54662:8C0h 8C3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_T_2)—Offset 8C0h
+54667:8D0h 8D3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_T_3)—Offset 8D0h
+54672:9A0h 9A3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_A_0)—Offset 9A0h
+54677:9B0h 9B3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_A_1)—Offset 9B0h
+54682:9C0h 9C3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_A_2)—Offset 9C0h
+54687:9D0h 9D3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_A_3)—Offset 9D0h
+54692:9E0h 9E3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_A_4)—Offset 9E0h
+54697:9F0h 9F3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_A_5)—Offset 9F0h
+54702:A00h A03h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_A_6)—Offset A00h
+54707:A10h A13h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_A_7)—Offset A10h
+54719:A20h A23h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_A_8)—Offset A20h
+54724:A30h A33h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_A_9)—Offset A30h
+54729:A40h A43h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_A_10)—Offset A40h
+54734:A50h A53h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_A_11)—Offset A50h
+54739:A60h A63h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_A_12)—Offset A60h
+54744:A70h A73h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_A_13)—Offset A70h
+54749:A80h A83h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_A_14)—Offset A80h
+54754:A90h A93h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_A_15)—Offset A90h
+54759:AA0h AA3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_A_16)—Offset AA0h
+54764:AB0h AB3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_A_17)—Offset AB0h
+54769:AC0h AC3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_A_18)—Offset AC0h
+54774:AD0h AD3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_A_19)—Offset AD0h
+54779:AE0h AE3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_A_20)—Offset AE0h
+54800:AF0h AF3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_A_21)—Offset AF0h
+54805:B00h B03h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_A_22)—Offset B00h
+54810:B10h B13h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_A_23)—Offset B10h
+57757:27.2 GPIO Community 1 Registers Summary
+57870:700h 703h Pad Configuration DW0 (PAD_CFG_DW0_GPP_S_0)—Offset 700h 0h
+57872:710h 713h Pad Configuration DW0 (PAD_CFG_DW0_GPP_S_1)—Offset 710h 0h
+57874:720h 723h Pad Configuration DW0 (PAD_CFG_DW0_GPP_S_2)—Offset 720h 0h
+57876:730h 733h Pad Configuration DW0 (PAD_CFG_DW0_GPP_S_3)—Offset 730h 0h
+57878:740h 743h Pad Configuration DW0 (PAD_CFG_DW0_GPP_S_4)—Offset 740h 0h
+57880:750h 753h Pad Configuration DW0 (PAD_CFG_DW0_GPP_S_5)—Offset 750h 0h
+57882:760h 763h Pad Configuration DW0 (PAD_CFG_DW0_GPP_S_6)—Offset 760h 0h
+57884:770h 773h Pad Configuration DW0 (PAD_CFG_DW0_GPP_S_7)—Offset 770h 0h
+57886:780h 783h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_H_0)—Offset 780h
+57891:790h 793h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_H_1)—Offset 790h
+57903:7A0h 7A3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_H_2)—Offset 7A0h
+57908:7B0h 7B3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_H_3)—Offset 7B0h
+57913:7C0h 7C3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_H_4)—Offset 7C0h
+57918:7D0h 7D3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_H_5)—Offset 7D0h
+57923:7E0h 7E3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_H_6)—Offset 7E0h
+57928:7F0h 7F3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_H_7)—Offset 7F0h
+57933:800h 803h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_H_8)—Offset 800h
+57938:810h 813h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_H_9)—Offset 810h
+57943:820h 823h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_H_10)—Offset 820h
+57948:830h 833h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_H_11)—Offset 830h
+57953:840h 843h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_H_12)—Offset 840h
+57958:850h 853h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_H_13)—Offset 850h
+57963:860h 863h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_H_14)—Offset 860h
+57976:870h 873h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_H_15)—Offset 870h
+57981:880h 883h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_H_16)—Offset 880h
+57986:890h 893h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_H_17)—Offset 890h
+57991:8A0h 8A3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_H_18)—Offset 8A0h
+57996:8B0h 8B3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_H_19)—Offset 8B0h
+58001:8C0h 8C3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_H_20)—Offset 8C0h
+58006:8D0h 8D3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_H_21)—Offset 8D0h
+58011:8E0h 8E3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_H_22)—Offset 8E0h
+58016:8F0h 8F3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_H_23)—Offset 8F0h
+58021:900h 903h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_D_0)—Offset 900h
+58026:910h 913h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_D_1)—Offset 910h
+58031:920h 923h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_D_2)—Offset 920h
+58036:930h 933h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_D_3)—Offset 930h
+58048:940h 943h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_D_4)—Offset 940h
+58053:950h 953h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_D_5)—Offset 950h
+58058:960h 963h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_D_6)—Offset 960h
+58063:970h 973h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_D_7)—Offset 970h
+58068:980h 983h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_D_8)—Offset 980h
+58073:990h 993h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_D_9)—Offset 990h
+58078:9A0h 9A3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_D_10)—Offset 9A0h
+58083:9B0h 9B3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_D_11)—Offset 9B0h
+58088:9C0h 9C3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_D_12)—Offset 9C0h
+58093:9D0h 9D3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_D_13)—Offset 9D0h
+58098:9E0h 9E3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_D_14)—Offset 9E0h
+58103:9F0h 9F3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_D_15)—Offset 9F0h
+58108:A00h A03h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_D_16)—Offset A00h
+58127:A10h A13h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_D_17)—Offset A10h
+58132:A20h A23h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_D_18)—Offset A20h
+58137:A30h A33h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_D_19)—Offset A30h
+58142:A90h A93h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_U_4)—Offset A90h
+58147:AA0h AA3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_U_5)—Offset AA0h
+61514:27.3 GPIO Community 2 Registers Summary
+61560:700h 703h Pad Configuration DW0 (PAD_CFG_DW0_GPD_0)—Offset 700h
+61565:710h 713h Pad Configuration DW0 (PAD_CFG_DW0_GPD_1)—Offset 710h
+61577:720h 723h Pad Configuration DW0 (PAD_CFG_DW0_GPD_2)—Offset 720h
+61582:730h 733h Pad Configuration DW0 (PAD_CFG_DW0_GPD_3)—Offset 730h
+61588:740h 743h Pad Configuration DW0 (PAD_CFG_DW0_GPD_4)—Offset 740h
+61593:750h 753h Pad Configuration DW0 (PAD_CFG_DW0_GPD_5)—Offset 750h
+61598:760h 763h Pad Configuration DW0 (PAD_CFG_DW0_GPD_6)—Offset 760h
+61603:770h 773h Pad Configuration DW0 (PAD_CFG_DW0_GPD_7)—Offset 770h
+61608:780h 783h Pad Configuration DW0 (PAD_CFG_DW0_GPD_8)—Offset 780h
+61613:790h 793h Pad Configuration DW0 (PAD_CFG_DW0_GPD_9)—Offset 790h 0h
+61615:7A0h 7A3h Pad Configuration DW0 (PAD_CFG_DW0_GPD_10)—Offset 7A0h
+61620:7B0h 7B3h Pad Configuration DW0 (PAD_CFG_DW0_GPD_11)—Offset 7B0h
+62907:27.4 GPIO Community 4 Registers Summary
+63003:700h 703h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_C_0)—Offset 700h 0h
+63005:710h 713h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_C_1)—Offset 710h 0h
+63007:720h 723h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_C_2)—Offset 720h 0h
+63009:730h 733h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_C_3)—Offset 730h 0h
+63011:740h 743h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_C_4)—Offset 740h 0h
+63013:750h 753h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_C_5)—Offset 750h 0h
+63015:760h 763h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_C_6)—Offset 760h 0h
+63017:770h 773h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_C_7)—Offset 770h 0h
+63019:780h 783h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_C_8)—Offset 780h 0h
+63021:790h 793h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_C_9)—Offset 790h 0h
+63023:7A0h 7A3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_C_10)—Offset 7A0h 0h
+63025:7B0h 7B3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_C_11)—Offset 7B0h 0h
+63027:7C0h 7C3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_C_12)—Offset 7C0h 0h
+63029:7D0h 7D3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_C_13)—Offset 7D0h 0h
+63031:7E0h 7E3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_C_14)—Offset 7E0h 0h
+63033:7F0h 7F3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_C_15)—Offset 7F0h 0h
+63035:800h 803h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_C_16)—Offset 800h 0h
+63037:810h 813h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_C_17)—Offset 810h 0h
+63039:820h 823h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_C_18)—Offset 820h 0h
+63041:830h 833h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_C_19)—Offset 830h 0h
+63051:840h 843h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_C_20)—Offset 840h 0h
+63053:850h 853h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_C_21)—Offset 850h 0h
+63055:860h 863h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_C_22)—Offset 860h 0h
+63057:870h 873h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_C_23)—Offset 870h 0h
+63059:880h 883h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_F_0)—Offset 880h
+63064:890h 893h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_F_1)—Offset 890h
+63069:8A0h 8A3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_F_2)—Offset 8A0h
+63074:8B0h 8B3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_F_3)—Offset 8B0h
+63079:8C0h 8C3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_F_4)—Offset 8C0h
+63084:8D0h 8D3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_F_5)—Offset 8D0h
+63089:8E0h 8E3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_F_6)—Offset 8E0h
+63094:8F0h 8F3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_F_7)—Offset 8F0h
+63099:900h 903h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_F_8)—Offset 900h
+63104:910h 913h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_F_9)—Offset 910h
+63116:920h 923h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_F_10)—Offset 920h
+63121:930h 933h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_F_11)—Offset 930h
+63126:940h 943h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_F_12)—Offset 940h
+63131:950h 953h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_F_13)—Offset 950h
+63136:960h 963h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_F_14)—Offset 960h
+63141:970h 973h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_F_15)—Offset 970h
+63146:980h 983h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_F_16)—Offset 980h
+63151:990h 993h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_F_17)—Offset 990h
+63156:9A0h 9A3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_F_18)—Offset 9A0h
+63161:9B0h 9B3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_F_19)—Offset 9B0h
+63166:9C0h 9C3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_F_20)—Offset 9C0h
+63171:9D0h 9D3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_F_21)—Offset 9D0h
+63176:9E0h 9E3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_F_22)—Offset 9E0h
+63189:9F0h 9F3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_F_23)—Offset 9F0h
+63194:A70h A73h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_E_0)—Offset A70h
+63199:A80h A83h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_E_1)—Offset A80h
+63204:A90h A93h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_E_2)—Offset A90h
+63209:AA0h AA3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_E_3)—Offset AA0h
+63214:AB0h AB3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_E_4)—Offset AB0h
+63219:AC0h AC3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_E_5)—Offset AC0h
+63224:AD0h AD3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_E_6)—Offset AD0h
+63229:AE0h AE3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_E_7)—Offset AE0h
+63234:AF0h AF3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_E_8)—Offset AF0h
+63239:B00h B03h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_E_9)—Offset B00h
+63244:B10h B13h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_E_10)—Offset B10h
+63249:B20h B23h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_E_11)—Offset B20h
+63263:B30h B33h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_E_12)—Offset B30h
+63268:B40h B43h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_E_13)—Offset B40h
+63273:B50h B53h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_E_14)—Offset B50h
+63278:B60h B63h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_E_15)—Offset B60h
+63283:B70h B73h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_E_16)—Offset B70h
+63288:B80h B83h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_E_17)—Offset B80h
+63293:B90h B93h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_E_18)—Offset B90h
+63298:BA0h BA3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_E_19)—Offset BA0h
+63303:BB0h BB3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_E_20)—Offset BB0h
+63308:BC0h BC3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_E_21)—Offset BC0h
+63313:BD0h BD3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_E_22)—Offset BD0h
+63318:BE0h BE3h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_E_23)—Offset BE0h
+67216:27.5 GPIO Community 5 Registers Summary
+67261:700h 703h Pad Configuration DW0 (PAD_CFG_DW0_GPP_R_0)—Offset 700h
+67266:710h 713h Pad Configuration DW0 (PAD_CFG_DW0_GPP_R_1)—Offset 710h
+67281:720h 723h Pad Configuration DW0 (PAD_CFG_DW0_GPP_R_2)—Offset 720h
+67286:730h 733h Pad Configuration DW0 (PAD_CFG_DW0_GPP_R_3)—Offset 730h
+67291:740h 743h Pad Configuration DW0 (PAD_CFG_DW0_GPP_R_4)—Offset 740h
+67296:750h 753h Pad Configuration DW0 (PAD_CFG_DW0_GPP_R_5)—Offset 750h
+67301:760h 763h Pad Configuration DW0 (PAD_CFG_DW0_GPP_R_6)—Offset 760h
+67306:770h 773h Pad Configuration DW0 (PAD_CFG_DW0_GPP_R_7)—Offset 770h
+
+== Counts ==
+27.1 GPIO Community 0 Registers Summary 50 rows, first 700h, last B10h
+27.2 GPIO Community 1 Registers Summary 54 rows, first 700h, last AA0h
+27.3 GPIO Community 2 Registers Summary 12 rows, first 700h, last 7B0h
+27.4 GPIO Community 4 Registers Summary 72 rows, first 700h, last BE0h
+27.5 GPIO Community 5 Registers Summary 8 rows, first 700h, last 770h
+
+== PADCFGLOCKTX, lines 55250-55264 ==
+bit 0.
+1 0h
+RW
+Pad Config Lock TXState (PADCFGLOCKTX_GPPC_B_1): Same description as 
+bit 0.
+0 0h
+RW
+Pad Config Lock TXState (PADCFGLOCKTX_GPPC_B_0): PadCfgLockTx locks 
+the GPIOTxState bit from being configured. The GPIOTxState register becomes Read-
+Only and software writes to the register have no effect. 
+0 = Unlock 
+1 = Locks the Pad Configuration GPIOTXState field as read-only (RO) 
+When PadCfgLockTx is written from a '1' to a '0' (unlock), a synchronous SMI# is 
+generated if enabled. This ensures that only SMM code can change the above GPIO 
+registers after the lockdown.
