@@ -1,0 +1,39 @@
+$ awk -f scale-rule-r3.awk scale-rule-r3.rows
+# Rows: QEMU 11.1.1's generator (qemu-edid, and the device's own GET_EDID at 1024x768), sizes as the parser reads them
+qemu-default-1280x800-dtd            diag=15.09in dpi= 100.1 ideal=0.893 -> 1  logical=1280x800
+qemu-display-none-1280x720-100dpi    diag=14.68in dpi= 100.0 ideal=0.893 -> 1  logical=1280x720
+device-get-edid-1024x768-dtd         diag=12.80in dpi= 100.0 ideal=0.893 -> 1  logical=1024x768
+qemu-edid-1920x1080-157dpi-dtd       diag=14.00in dpi= 157.4 ideal=1.405 -> 1.5  logical=1280x720
+qemu-edid-2560x1600-254dpi-dtd       diag=11.89in dpi= 254.0 ideal=2.268 -> 2.25  logical=1138x711
+qemu-edid-3456x2234-254dpi-basecm    diag=15.94in dpi= 258.1 ideal=2.305 -> 2.25  logical=1536x993
+cocoa-small-1280x720-254dpi          diag= 5.78in dpi= 254.0 ideal=2.268 -> 1.5  logical=853x480
+cocoa-1x-initial-640x360-100dpi      diag= 7.35in dpi=  99.9 ideal=0.892 -> 1  logical=640x360
+# An assumed 14-inch 1920x1080 panel (309x174 mm), not a reading: the T14's own size waits for M1
+t14-like-1920x1080-309x174           diag=13.96in dpi= 157.8 ideal=1.409 -> 1.5  logical=1280x720
+# Desktop monitors, sizes from the diagonal and aspect
+monitor-24in-2560x1440               diag=23.99in dpi= 122.4 ideal=1.093 -> 1  logical=2560x1440
+monitor-27in-3840x2160               diag=27.01in dpi= 163.1 ideal=1.457 -> 1.5  logical=2560x1440
+monitor-27in-5120x2880               diag=27.01in dpi= 217.5 ideal=1.942 -> 2  logical=2560x1440
+monitor-23in-3840x2160               diag=22.99in dpi= 191.7 ideal=1.711 -> 1.75  logical=2194x1234
+# Round 2's counterexample across its 20-inch switch, now one rule
+panel-19.5in-1920x1080               diag=19.51in dpi= 112.9 ideal=1.008 -> 1  logical=1920x1080
+panel-20in-1920x1080                 diag=20.01in dpi= 110.1 ideal=0.983 -> 1  logical=1920x1080
+EXIT=0
+
+$ awk -f scale-rule-r3.awk scale-rule-r3-ms.rows
+# Comparison only, not an oracle: Microsoft's published Windows 8.1 default for each row of its Table 1
+# (learn.microsoft.com, "DPI-related APIs and registry settings", page sha256 f8eea0b7...4814), whose
+# scale set is 100/125/150/200 only. Size in mm is derived from the stated diagonal and resolution.
+ms-10.6in-1920x1080-windows-150%     diag=10.61in dpi= 207.6 ideal=1.854 -> 1.75  logical=1097x617
+ms-10.6in-1366x768-windows-100%      diag=10.61in dpi= 147.7 ideal=1.319 -> 1.25  logical=1093x614
+ms-11.6in-1920x1200-windows-150%     diag=11.60in dpi= 195.2 ideal=1.742 -> 1.75  logical=1097x686
+ms-11.6in-1366x768-windows-100%      diag=11.60in dpi= 135.1 ideal=1.206 -> 1.25  logical=1093x614
+ms-13.3in-1920x1200-windows-150%     diag=13.28in dpi= 170.5 ideal=1.522 -> 1.5  logical=1280x800
+ms-13.3in-2560x1440-windows-200%     diag=13.29in dpi= 221.0 ideal=1.973 -> 2  logical=1280x720
+ms-13.3in-1366x768-windows-100%      diag=13.29in dpi= 117.9 ideal=1.053 -> 1  logical=1366x768
+ms-15.4in-1920x1080-windows-125%     diag=15.41in dpi= 143.0 ideal=1.277 -> 1.25  logical=1536x864
+ms-15.6in-3200x1800-windows-200%     diag=15.58in dpi= 235.6 ideal=2.104 -> 2  logical=1600x900
+ms-17in-1920x1080-windows-125%       diag=16.99in dpi= 129.6 ideal=1.157 -> 1.25  logical=1536x864
+ms-23in-3840x2160-windows-200%       diag=22.99in dpi= 191.7 ideal=1.711 -> 1.75  logical=2194x1234
+ms-24in-2560x1440-windows-125%       diag=23.99in dpi= 122.4 ideal=1.093 -> 1  logical=2560x1440
+EXIT=0
