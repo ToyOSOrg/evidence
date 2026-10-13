@@ -1,0 +1,29 @@
+Provenance of the specification of facts in pull request #894's body (design round 3).
+
+Writer: the design agent of #894. Under the clean-room rule it is the reader: the
+agent that builds from the body must have read neither QEMU's source nor
+spice-vdagent's.
+
+What the writer's role read before this round, as recorded on the pull request:
+- round 1 (body and review): QEMU v11.1.1 source, spice-vdagent at e940b009,
+  spice-protocol's spice/vd_agent.h at 499cc832;
+- round 2 (body and review): QEMU v11.1.1 source files under ui/, hw/char/,
+  hw/virtio/, util/, qapi/ and meson files, and QEMU's git history for the
+  GTK clipboard option.
+
+What round 3 rests on:
+- every statement of what QEMU does is a black-box observation in
+  qemu-vdagent-blackbox.log, made by qemu-vdagent-probe/ against the
+  development host's qemu-system-x86_64 11.1.1, or is marked unmeasured in
+  the body;
+- published definitions: virtio 1.2 cs01 (OASIS), spice-protocol's
+  spice/vd_agent.h at 499cc832, QEMU's QAPI documentation (qapi/char.json,
+  qapi/ui.json at v11.1.1), and, for the probe's host peer only, rfbproto's
+  Extended Clipboard Pseudo-Encoding (rfbproto/rfbproto at 152107db).
+In round 3 the writer opened no QEMU or spice-vdagent source file.
+
+The probe drives QEMU under -accel qtest: it is the guest's virtio driver
+(PCI configuration and guest memory through the qtest socket, split
+virtqueues per virtio 1.2), and a VNC client on a unix socket is the host's
+clipboard peer. Every wait is on an event, bounded at 3 s; an absence is
+reported as "nothing ... within 3000 ms".
