@@ -1,0 +1,391 @@
+HEAD 6db1716873e8115597bfd3ba20aefd9d12788089; reverted to d94ed4cb9: lib/userbound/src/firmware.rs lib/acpiserver-api/src/lib.rs system/acpiserver/src/battery.rs system/acpiserver/src/host.rs system/acpiserver/src/init.rs system/acpiserver/aml/src/exec.rs system/acpiserver/aml/src/lib.rs
+ lib/acpiserver-api/src/lib.rs     |  5 +++++
+ lib/userbound/src/firmware.rs     | 24 ++++++++++++------------
+ system/acpiserver/aml/src/exec.rs | 14 +++++++-------
+ system/acpiserver/aml/src/lib.rs  |  7 ++++---
+ system/acpiserver/src/battery.rs  |  2 +-
+ system/acpiserver/src/host.rs     | 21 ++++++++++-----------
+ system/acpiserver/src/init.rs     | 22 +++++++++++-----------
+ 7 files changed, 50 insertions(+), 45 deletions(-)
+   Compiling toyos-aml v0.1.0 (<path>
+   Compiling toyos-userbound v0.1.0 (<path>
+    Finished `test` profile [optimized + debuginfo] target(s) in 4.39s
+     Running unittests src/lib.rs (target/debug/deps/toyos_aml-724b8c9133286c5e)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/evaluate.rs (target/debug/deps/evaluate-32643eb9ec1156d0)
+
+running 28 tests
+test break_and_continue_outside_a_while_are_refused ... ok
+test bcd_converts_both_ways_and_refuses_what_is_not_bcd ... ok
+test an_acquire_of_the_global_lock_waits_as_its_timeout_says ... ok
+test concatenate_takes_the_first_operands_type ... ok
+test divide_stores_remainder_and_quotient_and_refuses_zero ... ok
+test comparisons_follow_the_first_operands_type ... ok
+test events_count_signals_and_a_wait_without_one_times_out ... ok
+test index_reaches_into_buffers_strings_and_packages ... ok
+test if_else_and_while_with_break_and_continue ... ok
+test explicit_conversions_follow_their_definitions ... ok
+test a_method_without_return_returns_nothing_usable ... ok
+test an_arg_holding_a_reference_stores_through_it ... ok
+test buffers_and_packages_are_sized_as_declared ... ok
+test integer_arithmetic_wraps_at_the_integer_width ... ok
+test logical_operators_answer_ones_or_zero ... ok
+test match_finds_the_first_element_both_tests_accept ... ok
+test methods_take_their_declared_arguments_and_return_a_copy ... ok
+test mid_takes_what_lies_within ... ok
+test mutexes_follow_sync_levels_and_are_released_by_the_end ... ok
+test notify_sleep_stall_and_fatal_reach_the_host ... ok
+test osi_answers_like_windows ... ok
+test references_are_made_followed_and_asked_about ... ok
+test resource_templates_join_under_one_end_tag ... ok
+test recursion_runs_until_its_bound ... ok
+test s5_evaluates_to_its_sleep_types ... ok
+test source_operands_convert_by_the_conversion_rules ... ok
+test store_converts_to_the_named_type_and_copy_object_does_not ... ok
+test the_debug_object_takes_writes_and_refuses_reads ... ok
+
+test result: ok. 28 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/heap.rs (target/debug/deps/heap-160502af4986f591)
+
+running 21 tests
+test a_nest_of_mids_holds_one_copy ... ok
+test an_evaluation_holds_at_most_256_mutexes ... ok
+test a_nest_of_concatenates_holds_one_buffers_copy ... ok
+test a_nest_of_to_strings_holds_one_copy ... ok
+test buffers_of_a_mebibyte_fill_it_to_the_bound ... ok
+test a_method_refused_at_the_bound_gives_back_what_it_made ... ok
+test fields_read_through_each_other_are_held_while_they_are_read ... ok
+test a_returned_value_of_buffers_is_held_while_it_is_built ... ok
+test a_returned_value_of_packages_is_held_while_it_is_built ... ok
+test a_returned_value_is_given_back_when_it_is_the_callers ... ok
+test a_nest_of_concatenates_holds_one_strings_copy ... ok
+test field_units_fill_it_to_the_bound ... ok
+test a_refused_load_gives_back_what_it_took ... ok
+test a_nest_of_packages_is_held_while_it_is_read ... ok
+test package_elements_naming_nothing_yet_fill_it_to_the_bound ... ok
+test a_walk_is_held_against_the_bound_while_it_lasts ... ok
+test a_parent_whose_last_child_is_unwound_holds_no_map ... ok
+test empty_buffers_fill_it_to_the_bound ... ok
+test a_full_interpreter_reads_a_field_that_fits_an_integer ... ok
+test references_into_a_buffer_fill_it_to_the_bound ... ok
+test devices_of_one_child_each_fill_it_to_the_bound ... ok
+
+test result: ok. 21 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.11s
+
+     Running tests/hostile.rs (target/debug/deps/hostile-0a6992a10e6b673c)
+
+running 24 tests
+test a_package_length_that_leaves_its_package_is_refused ... ok
+test a_loop_that_sleeps_is_bounded_in_time_asked ... ok
+test a_field_beyond_what_is_held_is_refused ... ok
+test a_reference_outliving_its_object_names_nothing ... ok
+test a_reference_chain_cannot_form ... ok
+test a_reference_to_a_local_ends_with_its_method ... ok
+test a_caller_value_is_refused_where_it_is_malformed ... ok
+test a_resource_template_join_is_bounded ... ok
+test an_alias_goes_with_what_created_it ... ok
+test names_and_strings_hold_only_what_their_encoding_allows ... ok
+test objects_are_bounded_in_size ... ok
+test the_wait_limit_is_exact_and_a_loads_too ... ok
+test every_truncation_yields_a_value_or_a_refusal ... ok
+test a_conversion_is_bounded_in_what_it_constructs ... ok
+test what_is_held_live_is_bounded_in_sum ... ok
+test waits_and_stalls_are_bounded_in_time_asked ... ok
+test a_string_stored_to_a_field_is_bounded_as_it_is_written ... ok
+test usage_is_each_calls_own_and_a_refusals_too ... ok
+test a_loop_without_end_is_bounded_in_steps ... ok
+test work_in_one_step_is_charged_in_proportion ... ok
+test tables_and_names_are_held_against_the_live_bound ... ok
+test nesting_is_bounded_before_the_stack ... ok
+test mutated_tables_yield_a_value_or_a_refusal ... ok
+test a_walk_or_a_read_a_table_sizes_is_charged_for_all_of_it ... ok
+
+test result: ok. 24 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.19s
+
+     Running tests/load.rs (target/debug/deps/load-00425e1e8b115d6c)
+
+running 10 tests
+test a_loaded_blocks_integers_are_the_dsdts_width ... ok
+test a_loaded_blocks_objects_are_walked_past_what_was_defined_before ... ok
+test load_table_loads_the_listed_table_below_its_root_and_stores_its_parameter ... ok
+test a_block_that_would_outlive_its_parent_or_source_is_refused ... ok
+test load_table_of_no_table_or_denied_memory_is_false_and_a_long_identifier_is_refused ... ok
+test a_block_a_method_loads_outlives_it_and_the_methods_own_objects_do_not ... ok
+test a_refused_block_is_false_and_keeps_nothing ... ok
+test a_block_loads_from_a_region_a_field_unit_and_a_buffer_at_definition_block_level ... ok
+test a_data_table_region_is_the_listed_tables_memory ... ok
+test a_bound_a_block_reaches_refuses_the_evaluation ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/namespace.rs (target/debug/deps/namespace-8324236958b8931a)
+
+running 18 tests
+test a_definition_needs_every_segment_but_its_last ... ok
+test a_dsdt_loads_first_and_then_ssdts ... ok
+test a_dsdt_below_revision_2_makes_every_integer_32_bits ... ok
+test a_package_names_its_elements ... ok
+test a_prefix_above_the_root_finds_nothing ... ok
+test a_processor_parses_opens_a_scope_and_takes_notify ... ok
+test a_caller_names_only_absolute_paths_and_passes_the_declared_arguments ... ok
+test a_scope_opens_only_what_has_one ... ok
+test an_external_defines_nothing ... ok
+test an_alias_acts_exactly_as_its_source ... ok
+test a_lone_name_is_searched_for_toward_the_root_and_a_path_is_not ... ok
+test a_collision_refuses_the_table_and_leaves_none_of_it ... ok
+test definition_block_level_code_runs_at_load ... ok
+test names_a_method_creates_go_when_it_exits ... ok
+test parent_prefixes_climb_one_scope_each ... ok
+test the_predefined_objects_are_there_before_any_table ... ok
+test qemus_dsdt_loads_and_its_s5_is_what_its_boot_logged ... ok
+test qemus_methods_run_against_the_registers_they_read ... ok
+
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/regions.rs (target/debug/deps/regions-5b41387f69d5f39a)
+
+running 20 tests
+test a_lock_field_holds_the_global_lock_across_its_access ... ok
+test a_pci_config_region_addresses_its_devices_function ... ok
+test a_field_store_writes_its_source_as_it_was_when_firmware_changes_it ... ok
+test a_bank_field_selects_its_bank_first ... ok
+test a_buffer_field_over_a_conversion_and_a_conversion_into_one ... ok
+test a_host_bridge_without_a_bbn_is_found_by_its_hid_or_cid_on_bus_0 ... ok
+test a_field_is_read_shifted_and_masked_from_its_units ... ok
+test an_access_past_its_region_is_refused ... ok
+test a_host_refusal_and_a_reserved_space_are_refused_by_name ... ok
+test an_access_type_sets_the_unit_and_anyacc_takes_the_narrowest_natural_one ... ok
+test an_index_field_writes_its_offset_then_reaches_the_data ... ok
+test an_address_out_of_its_form_is_refused ... ok
+test copy_object_into_a_field_writes_an_integer_or_buffer_alone ... ok
+test buffer_fields_read_and_write_their_buffer ... ok
+test a_field_wider_than_an_integer_is_a_buffer ... ok
+test a_pci_config_region_below_bridges_is_on_the_nearest_ones_secondary_bus ... ok
+test system_io_and_the_embedded_controller_are_addressed_by_offset ... ok
+test the_update_rule_completes_a_unit_the_field_covers_in_part ... ok
+test qemus_interrupt_link_reads_its_routing_register_below_a_bridge_named_by_its_hid ... ok
+test a_pci_config_region_below_more_bridges_than_buses_is_refused ... ok
+
+test result: ok. 20 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/spaces.rs (target/debug/deps/spaces-5e624dae8c5b6e00)
+
+running 7 tests
+test a_reference_to_an_unnamed_object_is_handed_over_as_what_it_refers_to ... ok
+test a_reserved_space_buffer_acc_by_offset_and_a_bank_of_a_carried_space_are_refused ... ok
+test unload_is_a_reserved_opcode ... ok
+test smbus_ipmi_prm_and_ffh_fields_are_carried_whole ... ok
+test a_general_purpose_io_field_reaches_its_pins_through_its_connection ... ok
+test a_generic_serial_bus_field_is_one_transfer_with_its_protocol_and_connection ... ok
+test every_space_addressed_by_offset_reaches_the_host ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/walk.rs (target/debug/deps/walk-abd0da6cbf7575cf)
+
+running 6 tests
+test an_alias_is_not_walked ... ok
+test every_object_is_walked_as_what_it_is ... ok
+test siblings_are_read_in_the_order_they_were_declared ... ok
+test a_parent_of_thousands_is_walked_in_their_order ... ok
+test a_walk_takes_its_links_and_its_deepest_path_from_the_bound ... ok
+test a_namespace_nested_deep_is_walked_whole ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running unittests src/lib.rs (target/debug/deps/toyos_userbound-3a7cf1e25b85f4ec)
+
+running 43 tests
+test place::tests::a_hole_between_regions_takes_exactly_span_and_guard ... ok
+test fault::tests::a_ring_is_only_ever_what_cs_said ... ok
+test place::tests::a_full_window_is_a_refusal_for_a_span_that_could_fit ... ok
+test place::tests::a_length_near_the_top_of_u64_is_refused_and_not_summed ... ok
+test place::tests::a_region_at_or_above_the_ceiling_bounds_nothing ... ok
+test place::tests::a_span_from_a_wider_window_is_refused_by_a_narrower_one ... ok
+test place::tests::a_span_is_whole_pages ... ok
+test place::tests::a_window_not_2_mib_aligned_is_a_kernel_bug - should panic ... ok
+test place::tests::a_zero_length_is_refused ... ok
+test place::tests::a_window_without_room_for_its_guard_is_a_kernel_bug - should panic ... ok
+test place::tests::nothing_is_placed_below_the_floor ... ok
+test place::tests::placement_is_top_down_with_the_guard_above ... ok
+test place::tests::a_window_reaching_the_last_page_of_the_user_half_is_a_kernel_bug - should panic ... ok
+test place::tests::the_largest_span_is_the_window_less_one_guard ... ok
+test port::tests::a_declared_run_refuses_every_run_that_shares_a_port_with_it ... ok
+test port::tests::a_full_declaration_refuses_one_more_run ... ok
+test port::tests::a_refused_access_names_the_first_port_it_may_not_touch ... ok
+test port::tests::a_run_is_never_empty_and_never_past_the_last_port ... ok
+test port::tests::a_fresh_bitmap_refuses_every_port_and_ends_in_ones ... ok
+test port::tests::a_held_row_opens_its_ports_and_no_other ... ok
+test port::tests::the_last_port_of_the_space_opens_without_touching_the_end_byte ... ok
+test port::tests::a_switch_to_a_process_holding_nothing_closes_the_row ... ok
+test segment::tests::a_read_only_page_between_writable_ones_refuses_a_write_only ... ok
+test segment::tests::a_run_that_cannot_be_pinned_refuses_the_window_and_leaves_nothing_pinned ... ok
+test segment::tests::an_empty_or_kernel_window_is_refused_before_the_walk ... ok
+test segment::tests::a_range_is_looked_up_once_per_leaf ... ok
+test span::tests::a_kernel_address_is_not_a_user_address ... ok
+test span::tests::a_range_ending_past_the_bound_is_refused_and_a_wrapping_one_too ... ok
+test span::tests::a_vaddr_min_above_the_base_cannot_rebase ... ok
+test span::tests::a_zero_sized_object_is_nothing_to_dereference ... ok
+test span::tests::an_entry_is_an_address_of_the_user_half_and_nothing_else ... ok
+test span::tests::an_image_at_vaddr_zero_rebases_to_the_base_itself ... ok
+test span::tests::an_image_that_reaches_the_last_page_of_the_user_half_is_refused ... ok
+test span::tests::an_object_is_refused_for_its_alignment_before_anything_else ... ok
+test span::tests::an_object_may_not_end_past_the_bound ... ok
+test span::tests::no_type_may_cross_a_2_mib_boundary ... ok
+test segment::tests::frames_in_reverse_are_one_segment_per_leaf ... ok
+test segment::tests::an_absent_page_anywhere_refuses_the_window ... ok
+test segment::tests::the_segments_are_the_maximal_runs_and_cover_the_window_exactly ... ok
+test segment::tests::frames_in_order_are_one_segment ... ok
+test segment::tests::every_run_is_pinned_until_the_window_is_dropped ... ok
+test segment::tests::a_read_across_shuffled_frames_gets_the_bytes_at_their_addresses ... ok
+test segment::tests::a_write_across_shuffled_frames_lands_where_a_ring_3_load_reads_it ... ok
+
+test result: ok. 43 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.60s
+
+     Running tests/firmware.rs (target/debug/deps/firmware-f550ba53aca71e37)
+
+running 28 tests
+test a_configuration_read_is_held_to_the_window_and_to_one_register ... ok
+test a_byte_for_smi_cmd_is_a_firmware_call_unless_the_fadt_names_it ... ok
+test a_later_window_is_held_as_the_first_is ... ok
+test a_memory_bar_is_refused_where_firmware_types_its_range_as_its_own ... ok
+test a_port_answers_as_its_declaration_says ... ok
+test a_sleep_type_is_three_bits_and_lands_only_in_its_field ... ok
+test a_smi_cmd_that_is_the_reset_register_keeps_the_resets_byte ... ok
+test a_wide_access_is_held_to_every_port_it_spans ... ok
+test a_write_that_reaches_smi_cmd_and_is_no_byte_to_it_is_refused ... ok
+test an_unlisted_address_below_1_mib_is_refused_whatever_the_range_registers_answer ... ok
+test an_address_in_the_ecam_window_is_a_configuration_access_whatever_the_map_types_it ... ok
+test an_unlisted_register_is_read_where_it_is_uncached_and_never_written ... ok
+test every_other_type_and_an_unlisted_address_is_refused_with_its_type ... ok
+test every_configuration_write_is_refused_by_one_name ... ok
+test every_page_a_window_the_kernel_drives_lies_in_is_refused_inside_any_type ... ok
+test memory_any_usable_range_holds_is_refused_whatever_lists_it_first ... ok
+test memory_mapped_io_is_read_as_a_register_is_and_never_written ... ok
+test memory_past_what_the_kernel_maps_is_refused ... ok
+test no_unlisted_address_is_read_where_a_cpus_range_registers_differ ... ok
+test nvs_and_reserved_memory_pass_both_ways_to_their_last_byte_and_no_further ... ok
+test ram_is_refused_both_ways_whatever_usable_type_it_is ... ok
+test runtime_services_code_is_refused_both_ways ... ok
+test runtime_services_data_is_read_as_the_tables_memory_is_and_never_written ... ok
+test the_facs_is_read_and_its_bytes_are_never_written ... ok
+test the_kernel_admits_a_fixed_few_firmware_calls_in_any_period ... ok
+test the_lock_word_is_exchanged_only_where_all_four_bytes_are_the_firmwares_own ... ok
+test the_tables_memory_is_read_and_never_written ... ok
+test the_8259s_edge_level_control_is_refused_though_nothing_declares_it ... FAILED
+
+failures:
+
+---- the_8259s_edge_level_control_is_refused_though_nothing_declares_it stdout ----
+
+thread 'the_8259s_edge_level_control_is_refused_though_nothing_declares_it' (17338166) panicked at lib/userbound/tests/firmware.rs:653:13:
+assertion `left == right` failed: DWord at 0x40
+  left: None
+ right: Some((64, DWord))
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    the_8259s_edge_level_control_is_refused_though_nothing_declares_it
+
+test result: FAILED. 27 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-userbound --test firmware`
+EXIT(userbound, aml)=101
+   Compiling acpiserver-api v0.1.0 (<path>
+   Compiling acpiserver v0.1.0 (<path>
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.82s
+     Running unittests src/main.rs (target/debug/deps/acpiserver-814daf8de80eb8d4)
+
+running 80 tests
+test aml::tests::a_machine_that_stops_mid_load_ends_it_with_nothing_refused ... ok
+test aml::tests::tables_in_memory_of_a_type_the_kernel_keeps_are_refused_by_that_name_and_type ... ok
+test aml::tests::tables_the_kernel_will_not_read_are_refused_by_its_name_for_it ... ok
+test aml::tests::every_refusals_kind_is_free_of_what_the_firmware_chose ... ok
+test aml::tests::an_s5_that_is_no_package_of_two_integers_is_refused_by_kind ... ok
+test aml::tests::a_refused_dsdt_leaves_no_namespace_and_loads_no_ssdt ... ok
+test aml::tests::only_an_s5_the_kernel_kept_is_a_power_off ... ok
+test aml::tests::the_ecdts_controller_is_attached_before_any_control_method ... ok
+test aml::tests::a_lock_field_read_at_load_takes_the_lock_and_waits_out_the_firmwares_hold ... ok
+test aml::tests::a_refused_ssdt_is_one_block_refused_and_the_rest_load ... ok
+test battery::tests::a_bix_of_either_revision_is_read_at_the_same_places ... ok
+test battery::tests::a_bst_reads_its_four_dwords_and_names_its_state ... ok
+test battery::tests::a_bif_is_read_by_its_place_in_the_package ... ok
+test battery::tests::a_full_charge_of_zero_is_no_percent ... ok
+test battery::tests::a_current_is_power_only_at_its_present_voltage ... ok
+test battery::tests::a_package_that_is_not_what_10_2_2_says_is_refused_by_name ... ok
+test battery::tests::an_unknown_dword_is_unknown_and_never_a_number ... ok
+test devices::tests::an_eisa_id_is_its_three_letters_and_four_digits ... ok
+test devices::tests::query_0x28_on_an_amd_laptop_is_a_press_of_its_power_button ... ok
+test devices::tests::a_controller_this_server_cannot_serve_is_none ... ok
+test battery::tests::a_laptops_battery_is_found_after_reg_and_read_through_the_controller ... ok
+test ec::tests::a_byte_before_the_command_is_refused - should panic ... ok
+test battery::tests::a_refused_reading_is_said_once_and_counted ... ok
+test ec::tests::a_query_writes_its_command_once_the_input_is_empty_and_reads_once_the_output_is_full ... ok
+test devices::tests::a_query_whose_write_the_kernel_refuses_is_no_press ... ok
+test ec::tests::a_read_writes_its_address_only_once_the_command_is_taken ... ok
+test ec::tests::a_write_ends_once_the_controller_has_taken_its_value ... ok
+test battery::tests::a_reading_is_said_only_where_its_percent_its_state_or_the_adapter_moves ... ok
+test ec::tests::a_write_reads_no_byte - should panic ... ok
+test ec::tests::every_transaction_runs_against_a_controller_that_takes_each_byte_late ... ok
+test host::tests::a_controller_port_the_kernel_refuses_detaches_the_controller ... ok
+test host::tests::a_lock_the_firmware_holds_is_waited_for_and_taken_after_its_release ... ok
+test host::tests::a_lock_the_kernel_cannot_take_is_denied_and_never_reported_held ... ok
+test host::tests::a_firmware_that_holds_the_lock_past_the_bound_ends_the_server - should panic ... ok
+test devices::tests::an_amd_laptops_controller_and_button_are_found_in_its_dsdt ... ok
+test host::tests::a_memory_write_is_the_kernels_to_make_or_refuse ... ok
+test host::tests::a_page_the_firmware_lists_nowhere_is_counted_under_a_name_of_its_own ... ok
+test host::tests::a_read_is_the_kernels_in_each_space_and_counted_by_space_and_page ... ok
+test host::tests::a_read_the_kernel_refuses_is_denied_under_the_kernels_name_and_counted ... ok
+test host::tests::a_stopping_machine_denies_everything_and_is_no_refusal_of_the_firmwares ... ok
+test host::tests::a_space_this_server_serves_no_aml_in_is_denied_by_name ... ok
+test host::tests::an_acquires_own_bound_ends_the_wait_untaken ... ok
+test host::tests::a_table_is_found_by_its_identifiers_only_in_reserved_or_nvs_memory ... ok
+test aml::tests::qemus_tables_load_and_s5_is_what_its_kernel_decoded ... ok
+test host::tests::only_a_notify_of_a_press_to_a_served_button_is_a_press ... ok
+test host::tests::every_port_write_is_asked_of_the_kernel_and_made_or_refused_as_it_answers ... ok
+test battery::tests::a_machine_that_stops_mid_read_refuses_nothing ... ok
+test host::tests::the_controllers_space_is_read_and_written_through_its_transactions ... ok
+test battery::tests::the_census_counts_the_global_lock_of_the_power_sources_methods_alone ... ok
+test host::tests::the_lock_is_taken_and_given_back_through_the_kernel ... ok
+test battery::tests::a_controller_that_wants_the_global_lock_is_reached_under_it_alone ... ok
+test init::tests::a_device_with_no_ini_at_or_below_it_is_not_examined ... ok
+test ledger::tests::a_thing_is_new_once_and_counted_every_time ... ok
+test osc::tests::a_status_is_read_by_name ... ok
+test osc::tests::a_uuid_is_laid_out_as_to_uuid_lays_it_out ... ok
+test sci::tests::a_firmware_that_never_lets_go_meets_the_deadline_with_its_enables_back ... ok
+test init::tests::pci_config_is_announced_before_any_ini_where_no_bbn_root_bus_holds_it ... ok
+test init::tests::sb_ini_runs_first_then_each_device_by_table_6_67 ... ok
+test sci::tests::a_press_and_the_controllers_gpe_are_both_read_off_one_sci ... ok
+test sci::tests::a_release_already_latched_ends_the_wait_without_one ... ok
+test sci::tests::a_sleep_takes_presses_and_the_controllers_gpe_and_leaves_the_rest_latched ... ok
+test sci::tests::a_status_set_with_its_enable_clear_is_no_event ... ok
+test sci::tests::an_enabled_event_outside_the_served_set_is_refused_by_name ... ok
+test init::tests::a_refused_ini_or_sta_is_counted_and_the_walk_goes_on ... ok
+test sci::tests::only_a_press_on_a_machine_handed_no_sleep_type_is_dropped ... ok
+test sci::tests::the_wait_ends_on_the_firmwares_release_and_leaves_every_other_event_latched_and_enabled ... ok
+test tables::tests::a_range_is_fetched_whole_in_qwords_and_then_bytes_and_kept ... ok
+test tables::tests::a_range_the_kernel_refuses_any_byte_of_is_not_readable_and_says_why ... ok
+test tables::tests::a_stopping_machine_reads_no_table ... ok
+test tests::a_controller_port_the_kernel_refuses_ends_the_controller ... ok
+test tests::a_commit_sends_only_what_the_query_offered_of_the_claim ... ok
+test tests::no_namespace_leaves_the_button_and_the_controller_unserved_and_keeps_the_claim ... ok
+test tests::a_querys_method_runs_only_where_a_control_method_button_is_served ... ok
+test tests::a_query_waiting_at_arm_runs_its_method_on_the_attached_controller ... ok
+test tests::a_controller_port_the_kernel_refuses_to_aml_or_the_drain_ends_it_for_both ... ok
+test tests::what_a_sleep_took_is_served_after_its_evaluation ... ok
+test tests::runtime_gpes_are_enabled_and_served_by_their_methods ... ok
+test tests::the_controllers_reg_runs_after_every_ini_which_reaches_it_through_the_ecdt ... ok
+test tests::osc_commits_only_what_toyos_claims_and_what_its_load_adds_is_initialised ... ok
+test tests::a_notify_is_delivered_to_its_owner ... ok
+
+test result: ok. 80 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+EXIT(acpiserver)=0
+tree clean above
+EXIT=0
