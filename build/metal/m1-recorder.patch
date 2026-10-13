@@ -1,0 +1,20 @@
+diff --git a/system/soundserver/src/hda.rs b/system/soundserver/src/hda.rs
+index d91884c98..0a78f6015 100644
+--- a/system/soundserver/src/hda.rs
++++ b/system/soundserver/src/hda.rs
+@@ -106,7 +106,14 @@ impl Link {
+ 
+ impl probe::Verbs for Link {
+     fn get(&mut self, codec: Address, node: Node, verb: u16, payload: u8) -> Option<Response> {
+-        self.send(Verb::short(codec, node, verb, payload))
++        let answer = self.send(Verb::short(codec, node, verb, payload));
++        say!(
++            "m1: hda controller {} codec{codec} node={:#04x} verb={verb:#05x} payload={payload:#04x} answer={}",
++            self.controller,
++            node.0,
++            match answer { Some(r) => format!("{:#010x}", r.raw()), None => String::from("none") }
++        );
++        answer
+     }
+ }
+ 
