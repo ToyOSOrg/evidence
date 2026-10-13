@@ -1,0 +1,26 @@
+diff --git a/kernel/pure/amducode/ladder.rs b/kernel/pure/amducode/ladder.rs
+index 57d5f2197..4dd9417ae 100644
+--- a/kernel/pure/amducode/ladder.rs
++++ b/kernel/pure/amducode/ladder.rs
+@@ -339,7 +339,7 @@ impl<B: Bench> Ladder<'_, B> {
+         self.wrote(Step::Guard, first, Wrote::PatchLevel, guard, 0);
+ 
+         let m1 = self.load(Step::M1, first, INTACT)?;
+-        if Outcome::of(&m1, self.level) != Outcome::Named {
++        if Outcome::of(&m1, self.level) == Outcome::Other {
+             return Err(Stop(Step::M1, Why::NotLoaded));
+         }
+ 
+diff --git a/kernel/src/arch/x86_64/amducode.rs b/kernel/src/arch/x86_64/amducode.rs
+index b99c604f9..448e99bf4 100644
+--- a/kernel/src/arch/x86_64/amducode.rs
++++ b/kernel/src/arch/x86_64/amducode.rs
+@@ -335,7 +335,7 @@ fn cpus() -> Option<Vec<Cpu>> {
+ fn core_id() -> Option<u32> {
+     const TOPOLOGY_EXTENSIONS: u32 = 1 << 22;
+     let has = cpu::cpuid(0x8000_0000, 0).0 >= 0x8000_001e && cpu::cpuid(0x8000_0001, 0).2 & TOPOLOGY_EXTENSIONS != 0;
+-    has.then(|| cpu::cpuid(0x8000_001e, 0).1 & 0xff)
++    Some(if has { cpu::cpuid(0x8000_001e, 0).1 & 0xff } else { cpu::cpuid(1, 0).1 >> 25 })
+ }
+ 
+ struct Machine<'a> {

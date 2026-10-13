@@ -1,0 +1,12 @@
+182c182
+<                     _ => write_measured(PATCH_LEVEL, 0),
+---
+>                     _ => write_measured(0x804, 0),
+343c343
+<     has.then(|| cpu::cpuid(0x8000_001e, 0).1 & 0xff)
+---
+>     Some(if has { cpu::cpuid(0x8000_001e, 0).1 & 0xff } else { cpu::cpuid(1, 0).1 >> 25 })
+417c417
+<         self.write(cpu, PATCH_LEVEL, 0)
+---
+>         let _ = cpu; self.write(1, 0x804, 0)

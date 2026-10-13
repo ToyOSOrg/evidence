@@ -1,0 +1,10 @@
+318a319,323
+>     let idled = machine.idle();
+>     log!("amducode: scratch idle {idled:?}");
+>     for cpu in 0..smp::cpu_count() {
+>         log!("amducode: scratch cpu{cpu} level after idle {:?}", machine.level(cpu));
+>     }
+343c348
+<     has.then(|| cpu::cpuid(0x8000_001e, 0).1 & 0xff)
+---
+>     Some(if has { cpu::cpuid(0x8000_001e, 0).1 & 0xff } else { cpu::cpuid(1, 0).1 >> 25 })
