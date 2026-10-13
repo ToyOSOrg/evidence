@@ -324,4 +324,11 @@ Family 6 (Intel), DisplayModel in hex, with the table that gives each one 34H:
 
 Table 2-56 (AD, AE) and 2-57 (AF) carry 34H for models §2.17 already lists.
 
-**Not admitted**: Table 2-1 names 06_5F, 06_BE, 06_B6, 06_B5, 06_C5, 06_C6, 06_CC, 06_D5 and 06_DD. No Vol. 4 section names any of them as supporting a table above; `rg -n "06_<M>H" vol4.txt` finds each only in Table 2-1 (lines 46-225). §2.4 says Table 2-6 is "also common to … newer microarchitectures for next generation Intel Atom processors", but it names no model. ToyOS's rule admits a model only where a section names it, because a wrong admission is a `#GP` at bring-up while a wrong omission loses only the SMI count. So these nine are left out.
+**Not admitted**: Table 2-1 names ten models that no Vol. 4 section names as supporting a table above: 06_5F, 06_A7, 06_BE, 06_B6, 06_B5, 06_C5, 06_C6, 06_CC, 06_D5 and 06_DD. `rg -n "06_<M>H" vol4.txt` finds each only in Table 2-1 (lines 46-225; 06_A7H at line 74). §2.4 says Table 2-6 is "also common to … newer microarchitectures for next generation Intel Atom processors", but it names no model. ToyOS's rule admits a model only where a section names it, because a wrong admission is a `#GP` at bring-up while a wrong omission loses only the SMI count.
+
+## Against the list the kernel admits at `abc2bfc15`
+
+`kernel/cpuvuln/src/table.rs`'s `counts_smis`, with its constants resolved, against the 57 above:
+
+- **lost** (admitted today, named by no Vol. 4 section): 06_5F, 06_75, 06_7D, 06_A7, 06_AC, 06_BE. 06_75, 06_7D and 06_AC occur nowhere in Vol. 4.
+- **gained** (named by a Vol. 4 section, not admitted today): 06_4A, 06_5A, 06_5D, 06_66, 06_AF, 06_BD.

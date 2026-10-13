@@ -1,6 +1,6 @@
 # AMD revision guides: erratum 1386
 
-Every public AMD revision guide under `www.amd.com/content/dam/amd/en/documents/processor-tech-docs/revision-guides/` that the Internet Archive holds. The CDX listing is below. `www.amd.com` itself did not answer from the development host within 90 s (curl exits 28 and 56). Each file was fetched as `https://web.archive.org/web/<timestamp>id_/<url>`, and its SHA-1, in base32, equals the archive's CDX digest. Text was extracted with PyMuPDF 1.28.0.
+Every AMD revision guide that the Internet Archive holds under the one prefix `www.amd.com/content/dam/amd/en/documents/processor-tech-docs/revision-guides/`. Other AMD document locations, `www.amd.com/system/files/TechDocs/` and `developer.amd.com/wp-content/resources/`, were not searched, so "public" below means public under this prefix. An error from the narrow scope can only withhold `XSAVES`, the safe direction. The CDX listing is below. `www.amd.com` itself did not answer from the development host within 90 s (curl exits 28 and 56). Each file was fetched as `https://web.archive.org/web/<timestamp>id_/<url>`, and its SHA-1, in base32, equals the archive's CDX digest. Text was extracted with PyMuPDF 1.28.0.
 
 | file | archived | sha256 | CDX digest = sha1 | title, revision |
 |---|---|---|---|---|
@@ -110,9 +110,11 @@ Reading: in 55449 the one `X` (x=480) sits under 00800F12h (ZP-B2). 00800F11h (Z
 
 ## The guides that do not list it
 
-- `57095-PUB_1_01`: `rg -c 'XSAVES|1386'` prints nothing (exit 1); its text has 160 lines that begin with a four-digit erratum number, so it decodes. 57095 covers 00A10F11h (Genoa-B1) alone; 58251 and 58730 are family 1Ah.
-- `58251`: `rg -c 'XSAVES|1386'` prints nothing (exit 1); its text has 186 lines that begin with a four-digit erratum number, so it decodes. 57095 covers 00A10F11h (Genoa-B1) alone; 58251 and 58730 are family 1Ah.
-- `58730`: `rg -c 'XSAVES|1386'` prints nothing (exit 1); its text has 176 lines that begin with a four-digit erratum number, so it decodes. 57095 covers 00A10F11h (Genoa-B1) alone; 58251 and 58730 are family 1Ah.
+57095 covers 00A10F11h (Genoa-B1) alone; 58251 and 58730 are family 1Ah.
+
+- `57095-PUB_1_01`: `rg -c 'XSAVES|1386'` prints nothing (exit 1); its text has 160 lines that begin with a four-digit erratum number, so it decodes.
+- `58251`: `rg -c 'XSAVES|1386'` prints nothing (exit 1); its text has 186 lines that begin with a four-digit erratum number, so it decodes.
+- `58730`: `rg -c 'XSAVES|1386'` prints nothing (exit 1); its text has 176 lines that begin with a four-digit erratum number, so it decodes.
 
 ## CDX listing
 
