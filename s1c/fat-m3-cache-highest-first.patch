@@ -1,0 +1,13 @@
+diff --git a/system/fileserver/src/cache.rs b/system/fileserver/src/cache.rs
+index 4bba17594..0fe144ef9 100644
+--- a/system/fileserver/src/cache.rs
++++ b/system/fileserver/src/cache.rs
+@@ -174,7 +174,7 @@ impl<D: Disk> Cache<D> {
+     /// made durable. A block the disk refused stays dirty.
+     pub fn flush(&self) -> Result<(), DiskError> {
+         let mut inner = self.inner.borrow_mut();
+-        let dirty: Vec<u64> = inner.slots.iter().filter(|(_, s)| s.dirty).map(|(b, _)| *b).collect();
++        let dirty: Vec<u64> = inner.slots.iter().filter(|(_, s)| s.dirty).map(|(b, _)| *b).rev().collect();
+         let mut i = 0;
+         let mut buf = vec![0u8; RUN * BLOCK];
+         while i < dirty.len() {
