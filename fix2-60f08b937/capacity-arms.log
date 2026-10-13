@@ -1,0 +1,37 @@
+== green arm: the fix
+   Compiling toyos-vdagent v0.1.0 (<path>)
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.55s
+     Running unittests src/lib.rs (target/debug/deps/toyos_vdagent-b23e8346bcbf42a0)
+
+running 1 test
+test stream::tests::a_kept_message_buffers_no_more_than_it_declares ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 20 filtered out; finished in 0.01s
+
+GREEN_EXIT=0
+== red arm: m24, the fix reverted to 3a60123b6's line
+   Compiling toyos-vdagent v0.1.0 (<path>)
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.34s
+     Running unittests src/lib.rs (target/debug/deps/toyos_vdagent-b23e8346bcbf42a0)
+
+running 1 test
+test stream::tests::a_kept_message_buffers_no_more_than_it_declares ... FAILED
+
+failures:
+
+---- stream::tests::a_kept_message_buffers_no_more_than_it_declares stdout ----
+
+thread 'stream::tests::a_kept_message_buffers_no_more_than_it_declares' (23349649) panicked at lib/vdagent/src/stream.rs:474:13:
+4016 bytes held for 2052 declared
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    stream::tests::a_kept_message_buffers_no_more_than_it_declares
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 20 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-vdagent --lib`
+M24_EXIT=101
+RESTORED: fix in place
+1
