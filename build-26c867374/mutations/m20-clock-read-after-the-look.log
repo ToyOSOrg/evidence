@@ -1,0 +1,62 @@
+== m20-clock-read-after-the-look at 26c86737400f3353287e319b232b984c1c117797: cargo test --manifest-path system/ps2server/Cargo.toml
+diff --git a/system/ps2server/src/bus.rs b/system/ps2server/src/bus.rs
+index 48df57ba4..fca041b25 100644
+--- a/system/ps2server/src/bus.rs
++++ b/system/ps2server/src/bus.rs
+@@ -155,10 +155,10 @@ pub trait Records {
+     /// look, so a record that lands after the deadline's read is still found.
+     fn first(&mut self, deadline: u64) -> Option<Irq> {
+         loop {
+-            let now = self.clock();
+             if let Some(irq) = self.take() {
+                 return Some(irq);
+             }
++            let now = self.clock();
+             if now >= deadline {
+                 return None;
+             }
+   Compiling ps2server v0.1.0 (<path>
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.46s
+     Running unittests src/main.rs (target/debug/deps/ps2server-1b975cee12b07564)
+
+running 21 tests
+test probe::tests::a_floating_status_port_is_no_controller ... ok
+test probe::tests::a_command_byte_the_controller_dropped_is_said_by_name ... ok
+test probe::tests::a_reset_answered_0xfc_disables_the_keyboard_by_name ... ok
+test probe::tests::a_reset_with_no_0xfa_disables_the_keyboard_by_name ... ok
+test bus::tests::a_record_landing_as_the_deadline_passes_is_found ... FAILED
+test probe::tests::a_start_after_set_1_with_translation_off_arms_set_2_translated ... ok
+test probe::tests::a_wedged_output_buffer_is_said_after_32_reads_with_nothing_written ... ok
+test probe::tests::an_0xaa_past_the_keyboard_stages_ceiling_disables_the_keyboard_by_name ... ok
+test probe::tests::a_keystroke_during_the_aux_reset_reaches_the_keyboard_after_the_arming ... ok
+test probe::tests::qemu_arms_its_keyboard_set_2_translated_and_its_mouse ... ok
+test probe::tests::the_amd_bench_arms_its_keyboard_and_finds_no_pointer ... ok
+test probe::tests::bytes_waiting_before_the_probe_are_drained_by_name ... ok
+test stream::tests::a_discarded_aux_byte_sends_nothing ... ok
+test probe::tests::the_t14_arms_its_keyboard_and_its_trackpoint ... ok
+test stream::tests::a_keystroke_found_waiting_before_the_reenable_reaches_the_keyboards_decoder ... ok
+test stream::tests::a_keystroke_is_its_make_and_its_break ... ok
+test stream::tests::a_packet_survives_a_reader_later_than_the_packet_gap ... ok
+test stream::tests::an_output_buffer_full_after_32_reads_ends_the_stream_by_name ... ok
+test stream::tests::an_overrun_code_sends_lost ... ok
+test stream::tests::an_undecoded_run_is_named_whole ... ok
+test stream::tests::three_failed_reenables_write_the_pointer_off_with_0xa7 ... ok
+
+failures:
+
+---- bus::tests::a_record_landing_as_the_deadline_passes_is_found stdout ----
+
+thread 'bus::tests::a_record_landing_as_the_deadline_passes_is_found' (27348105) panicked at system/ps2server/src/bus.rs:210:9:
+assertion `left == right` failed
+  left: None
+ right: Some(Irq { first_nanos: 4 })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    bus::tests::a_record_landing_as_the_deadline_passes_is_found
+
+test result: FAILED. 20 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--bin ps2server`
+EXIT=101

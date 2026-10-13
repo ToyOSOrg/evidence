@@ -1,0 +1,10 @@
+--- a/kernel/src/isa.rs
++++ b/kernel/src/isa.rs
+@@ -158,7 +158,6 @@
+     let function = function(row).ok_or(ClaimError::Absent)?;
+     if let Some((run, holder)) = function.runs.iter().find_map(|&run| pio::holder(run).map(|h| (run, h))) {
+         log!("isa: {}'s ports {:#x}+{} are {holder}'s", function.name, run.first(), run.count());
+-        return Err(ClaimError::KernelDriven);
+     }
+     let mut minted = MINTED[row].lock();
+     if *minted || BOUND[row].load(Ordering::Acquire) != NOBODY {

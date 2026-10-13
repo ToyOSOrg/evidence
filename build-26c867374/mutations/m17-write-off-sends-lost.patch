@@ -1,0 +1,11 @@
+--- a/system/ps2server/src/stream.rs
++++ b/system/ps2server/src/stream.rs
+@@ -265,7 +265,7 @@
+         let deadline = c.now() + ACK_NS;
+         if failures >= REENABLES {
+             self.aux = Aux::Off;
+-            out.push(pointer(0, 0, 0));
++            out.push(Record::Lost);
+             let sent = self.send(c, Port::Command, DISABLE_AUX, deadline, out, say);
+             say(format!("ps2server: aux enable failed {failures} times — pointer written off ({sent:?})"));
+             return;

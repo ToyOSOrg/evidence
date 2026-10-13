@@ -1,0 +1,53 @@
+== m18-give-back-frees-nothing at 26c86737400f3353287e319b232b984c1c117797: cargo test --manifest-path kernel/Cargo.toml --lib pointers
+diff --git a/kernel/pure/pointers.rs b/kernel/pure/pointers.rs
+index 0aa56bd9f..4ba5e2996 100644
+--- a/kernel/pure/pointers.rs
++++ b/kernel/pure/pointers.rs
+@@ -31,7 +31,7 @@ impl Sources {
+     /// `source`, which a claim took, is free again.
+     pub fn give_back(&self, source: u8) {
+         let bit = 1u64 << (source % 64);
+-        let was = self.0[usize::from(source) / 64].fetch_and(!bit, Ordering::Relaxed);
++        let was = self.0[usize::from(source) / 64].load(Ordering::Relaxed);
+         assert!(was & bit != 0, "pointer source {source} given back while free");
+     }
+ }
+   Compiling kernel v0.1.0 (<path>
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.15s
+     Running unittests pure/lib.rs (target/debug/deps/kernel-fa45b686f8e87f8e)
+
+running 4 tests
+test pointers::tests::a_number_given_back_twice_panics - should panic ... FAILED
+test pointers::tests::two_claims_take_distinct_numbers ... ok
+test pointers::tests::a_number_given_back_is_the_next_claims ... FAILED
+test pointers::tests::every_number_held_refuses_a_claim_until_one_is_given_back ... FAILED
+
+failures:
+
+---- pointers::tests::a_number_given_back_twice_panics stdout ----
+note: test did not panic as expected at kernel/pure/pointers.rs:79:8
+---- pointers::tests::a_number_given_back_is_the_next_claims stdout ----
+
+thread 'pointers::tests::a_number_given_back_is_the_next_claims' (27347241) panicked at kernel/pure/pointers.rs:62:9:
+assertion `left == right` failed
+  left: Some(201)
+ right: Some(0)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- pointers::tests::every_number_held_refuses_a_claim_until_one_is_given_back stdout ----
+
+thread 'pointers::tests::every_number_held_refuses_a_claim_until_one_is_given_back' (27347243) panicked at kernel/pure/pointers.rs:74:9:
+assertion `left == right` failed
+  left: None
+ right: Some(130)
+
+
+failures:
+    pointers::tests::a_number_given_back_is_the_next_claims
+    pointers::tests::a_number_given_back_twice_panics
+    pointers::tests::every_number_held_refuses_a_claim_until_one_is_given_back
+
+test result: FAILED. 1 passed; 3 failed; 0 ignored; 0 measured; 212 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--lib`
+EXIT=101

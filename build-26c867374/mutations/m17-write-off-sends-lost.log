@@ -1,0 +1,62 @@
+== m17-write-off-sends-lost at 26c86737400f3353287e319b232b984c1c117797: cargo test --manifest-path system/ps2server/Cargo.toml
+diff --git a/system/ps2server/src/stream.rs b/system/ps2server/src/stream.rs
+index 713441eb3..be5a54135 100644
+--- a/system/ps2server/src/stream.rs
++++ b/system/ps2server/src/stream.rs
+@@ -265,7 +265,7 @@ impl Stream {
+         let deadline = c.now() + ACK_NS;
+         if failures >= REENABLES {
+             self.aux = Aux::Off;
+-            out.push(pointer(0, 0, 0));
++            out.push(Record::Lost);
+             let sent = self.send(c, Port::Command, DISABLE_AUX, deadline, out, say);
+             say(format!("ps2server: aux enable failed {failures} times — pointer written off ({sent:?})"));
+             return;
+   Compiling ps2server v0.1.0 (<path>
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.86s
+     Running unittests src/main.rs (target/debug/deps/ps2server-1b975cee12b07564)
+
+running 21 tests
+test bus::tests::a_record_landing_as_the_deadline_passes_is_found ... ok
+test probe::tests::a_command_byte_the_controller_dropped_is_said_by_name ... ok
+test probe::tests::a_floating_status_port_is_no_controller ... ok
+test probe::tests::a_keystroke_during_the_aux_reset_reaches_the_keyboard_after_the_arming ... ok
+test probe::tests::a_reset_answered_0xfc_disables_the_keyboard_by_name ... ok
+test probe::tests::a_reset_with_no_0xfa_disables_the_keyboard_by_name ... ok
+test probe::tests::a_wedged_output_buffer_is_said_after_32_reads_with_nothing_written ... ok
+test probe::tests::a_start_after_set_1_with_translation_off_arms_set_2_translated ... ok
+test probe::tests::an_0xaa_past_the_keyboard_stages_ceiling_disables_the_keyboard_by_name ... ok
+test probe::tests::qemu_arms_its_keyboard_set_2_translated_and_its_mouse ... ok
+test probe::tests::the_t14_arms_its_keyboard_and_its_trackpoint ... ok
+test probe::tests::the_amd_bench_arms_its_keyboard_and_finds_no_pointer ... ok
+test stream::tests::a_discarded_aux_byte_sends_nothing ... ok
+test probe::tests::bytes_waiting_before_the_probe_are_drained_by_name ... ok
+test stream::tests::a_keystroke_found_waiting_before_the_reenable_reaches_the_keyboards_decoder ... ok
+test stream::tests::a_keystroke_is_its_make_and_its_break ... ok
+test stream::tests::a_packet_survives_a_reader_later_than_the_packet_gap ... ok
+test stream::tests::an_output_buffer_full_after_32_reads_ends_the_stream_by_name ... ok
+test stream::tests::an_overrun_code_sends_lost ... ok
+test stream::tests::an_undecoded_run_is_named_whole ... ok
+test stream::tests::three_failed_reenables_write_the_pointer_off_with_0xa7 ... FAILED
+
+failures:
+
+---- stream::tests::three_failed_reenables_write_the_pointer_off_with_0xa7 stdout ----
+ps2server: kbd reset, 0xfa 58 us after the command and 0xaa 300 us after the 0xfa — set 2, translated
+ps2server: aux reset, 0xaa 300 us after its 0xfa, id 0x00 — reporting
+ps2server: armed, command byte 0x57 — keyboard on, aux on
+
+thread 'stream::tests::three_failed_reenables_write_the_pointer_off_with_0xa7' (27346697) panicked at system/ps2server/src/stream.rs:442:9:
+assertion `left == right` failed: the pointer's buttons released, and no key
+  left: [Lost]
+ right: [Pointer(Report { source: 0, buttons: 0, scroll: 0, motion: Relative { dx: 0, dy: 0 } })]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    stream::tests::three_failed_reenables_write_the_pointer_off_with_0xa7
+
+test result: FAILED. 20 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+error: test failed, to rerun pass `--bin ps2server`
+EXIT=101

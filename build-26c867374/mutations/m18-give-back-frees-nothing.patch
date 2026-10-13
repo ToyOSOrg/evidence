@@ -1,0 +1,11 @@
+--- a/kernel/pure/pointers.rs
++++ b/kernel/pure/pointers.rs
+@@ -31,7 +31,7 @@
+     /// `source`, which a claim took, is free again.
+     pub fn give_back(&self, source: u8) {
+         let bit = 1u64 << (source % 64);
+-        let was = self.0[usize::from(source) / 64].fetch_and(!bit, Ordering::Relaxed);
++        let was = self.0[usize::from(source) / 64].load(Ordering::Relaxed);
+         assert!(was & bit != 0, "pointer source {source} given back while free");
+     }
+ }

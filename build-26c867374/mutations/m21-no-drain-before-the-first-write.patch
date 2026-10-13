@@ -1,0 +1,11 @@
+--- a/system/ps2server/src/probe.rs
++++ b/system/ps2server/src/probe.rs
+@@ -178,7 +178,7 @@
+     /// Step 1, drained before its first write too, so a wedged output buffer
+     /// is found by [`DRAIN`] reads and no write is made into it (C 14).
+     fn quiet(&mut self) -> Result<(), Stopped> {
+-        self.drain()?;
++        // no drain before the first write
+         let deadline = self.deadline(CONTROLLER_NS);
+         self.command(DISABLE_KEYBOARD, deadline, "0xAD")?;
+         self.command(DISABLE_AUX, deadline, "0xA7")?;

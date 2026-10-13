@@ -1,0 +1,50 @@
+# PR #899, fix round 2: metal at ToyOS 26c86737400f3353287e319b232b984c1c117797 (wt/toyos-ps2server).
+# Every image below was staged from that committed head; a control's patch was
+# applied for its staging alone and reversed, leaving the tree clean.
+# Run each image with its own cargo line (from <path>
+# then judge each directory with the words given, from the same worktree at 26c86737400f3353287e319b232b984c1c117797.
+
+## 1. The head, on the T14: four images in <path>
+isa
+  image: <path>
+  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check
+
+isa-port-declared
+  image: <path>
+  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check
+
+metalcase
+  image: <path>
+  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check
+
+metaldevicecase
+  image: <path>
+  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check
+
+  Judge (expect exit 0):
+  cargo test --test toyos-build -- --metal --metal-readback <path> ps2server_arms microcode metal_sim_scanout_wc blackbox_done_chain machine_reboot usb_reset_hands_devices_back isa_ports_are_the_binders_alone isa_lines_reach_their_holder isa_claim_refused_on_a_kernel_port
+
+## 2. The head, on the AMD bench: metalcase alone, in <path>
+metalcase
+  image: <path>
+  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check
+
+  Judge (expect exit 0; the AMD bench says aux absent):
+  cargo test --test toyos-build -- --metal --metal-readback <path> ps2server_arms microcode metal_sim_scanout_wc blackbox_done_chain machine_reboot
+
+## 3. Control c05, on the T14: the whole production change reverted onto the base bc8429e71,
+##    the tests kept but tests/images/metalcase.toml, which names ps2server (patch <path>
+metalcase
+  image: <path>
+  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check
+
+  Judge (expect exit 1, ps2server_arms red: no "ps2server: kbd reset" line):
+  cargo test --test toyos-build -- --metal --metal-readback <path> ps2server_arms
+
+## 4. Control c04, on the T14: claim_row logs a kernel-declared port and grants the claim anyway (patch <path>
+isa-port-declared
+  image: <path>
+  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check
+
+  Judge (expect exit 1, isa_claim_refused_on_a_kernel_port red: test_rs_isa_claim_refused exits non-zero):
+  cargo test --test toyos-build -- --metal --metal-readback <path> isa_claim_refused_on_a_kernel_port

@@ -1,0 +1,14 @@
+--- a/system/ps2server/src/bus.rs
++++ b/system/ps2server/src/bus.rs
+@@ -155,10 +155,10 @@
+     /// look, so a record that lands after the deadline's read is still found.
+     fn first(&mut self, deadline: u64) -> Option<Irq> {
+         loop {
+-            let now = self.clock();
+             if let Some(irq) = self.take() {
+                 return Some(irq);
+             }
++            let now = self.clock();
+             if now >= deadline {
+                 return None;
+             }

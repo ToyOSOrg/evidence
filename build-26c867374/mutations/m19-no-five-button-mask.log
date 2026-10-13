@@ -1,0 +1,71 @@
+== m19-no-five-button-mask at 26c86737400f3353287e319b232b984c1c117797: cargo test --manifest-path kernel/usbhid/Cargo.toml
+diff --git a/kernel/usbhid/src/pointer.rs b/kernel/usbhid/src/pointer.rs
+index a3f0c4f2c..72b51938f 100644
+--- a/kernel/usbhid/src/pointer.rs
++++ b/kernel/usbhid/src/pointer.rs
+@@ -67,7 +67,7 @@ impl Pointer {
+     /// `report`, as this layout reads it, or why it does not.
+     pub fn decode(self, report: &[u8]) -> Result<Report, Refused> {
+         let read = self.layout(report)?;
+-        Ok(Report { buttons: read.buttons & BUTTONS, ..read })
++        Ok(read)
+     }
+ 
+     fn layout(self, report: &[u8]) -> Result<Report, Refused> {
+   Compiling toyos-usbhid v0.1.0 (<path>
+warning: unused import: `toyos_input::wire::BUTTONS`
+  --> kernel/usbhid/src/pointer.rs:20:5
+   |
+20 | use toyos_input::wire::BUTTONS;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: `toyos-usbhid` (lib) generated 1 warning (run `cargo fix --lib -p toyos-usbhid` to apply 1 suggestion)
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.51s
+     Running unittests src/lib.rs (target/debug/deps/toyos_usbhid-dfab50211e79827d)
+
+running 16 tests
+test keyboard::tests::a_fault_usage_is_refused_and_the_keys_held_stay_held ... ok
+test keyboard::tests::a_keyboard_leaving_releases_everything_it_held_and_nothing_else ... ok
+test keyboard::tests::a_report_is_a_set_of_keys_and_not_a_list_of_slots ... ok
+test keyboard::tests::a_report_is_read_as_appendix_b_lays_it_out ... ok
+test keyboard::tests::a_report_of_any_other_length_is_refused ... ok
+test keyboard::tests::a_rollover_report_believes_its_modifiers_and_not_its_slots ... ok
+test keyboard::tests::modifiers_come_first_then_releases_then_presses ... ok
+test keyboard::tests::reports_qemu_sent_read_as_the_keys_that_were_pressed ... ok
+test pointer::tests::a_button_past_the_fifth_is_dropped ... FAILED
+test pointer::tests::a_mouse_report_is_read_as_appendix_b_lays_it_out ... ok
+test pointer::tests::a_report_of_a_length_its_layout_does_not_have_is_refused ... ok
+test pointer::tests::a_tablet_position_off_the_surface_is_refused ... ok
+test pointer::tests::a_tablet_report_is_its_position_little_endian ... ok
+test pointer::tests::every_report_is_read_or_refused_and_nothing_else ... FAILED
+test pointer::tests::reports_qemu_sent_read_as_the_motion_that_was_sent ... ok
+test keyboard::tests::every_report_is_believed_or_refused_and_nothing_else ... ok
+
+failures:
+
+---- pointer::tests::a_button_past_the_fifth_is_dropped stdout ----
+
+thread 'pointer::tests::a_button_past_the_fifth_is_dropped' (27347783) panicked at kernel/usbhid/src/pointer.rs:124:9:
+assertion `left == right` failed
+  left: Ok(Report { buttons: 248, motion: Relative { dx: 0, dy: 0 }, wheel: 1 })
+ right: Ok(Report { buttons: 24, motion: Relative { dx: 0, dy: 0 }, wheel: 1 })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- pointer::tests::every_report_is_read_or_refused_and_nothing_else stdout ----
+
+thread 'pointer::tests::every_report_is_read_or_refused_and_nothing_else' (27347788) panicked at kernel/usbhid/src/pointer.rs:202:25:
+assertion `left == right` failed: case 8
+  left: 45
+ right: 13
+
+
+failures:
+    pointer::tests::a_button_past_the_fifth_is_dropped
+    pointer::tests::every_report_is_read_or_refused_and_nothing_else
+
+test result: FAILED. 14 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+error: test failed, to rerun pass `--lib`
+EXIT=101

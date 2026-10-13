@@ -1,0 +1,14 @@
+--- a/system/ps2server/src/stream.rs
++++ b/system/ps2server/src/stream.rs
+@@ -247,7 +247,10 @@
+                 out.push(pointer(buttons, dx as i16, dy as i16));
+             }
+             MouseOutcome::Reset => self.aux = Aux::Owed { failures: 0 },
+-            MouseOutcome::Discarded => self.counts.discarded += 1,
++            MouseOutcome::Discarded => {
++                self.counts.discarded += 1;
++                out.push(Record::Lost);
++            }
+         }
+         self.aux_run.0.clear();
+     }
