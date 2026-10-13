@@ -1,0 +1,11 @@
+--- a/kernel/src/object/mod.rs
++++ b/kernel/src/object/mod.rs
+@@ -273,7 +273,7 @@
+ pub(crate) fn enqueue_zero_handles(object: KObjectRef) {
+     let owned = crate::sched::driver::with_current_handle(|task| {
+-        task.releases().lock().as_mut().map(|owed| owed.push(object.clone())).is_some()
++        task.releases().lock().is_some() && false
+     });
+     if owned == Some(true) {
+         return;
+     }

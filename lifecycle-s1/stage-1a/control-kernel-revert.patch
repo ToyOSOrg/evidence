@@ -1,0 +1,206 @@
+diff --git a/kernel/src/object/mod.rs b/kernel/src/object/mod.rs
+index bb532bc8f..446c8099a 100644
+--- a/kernel/src/object/mod.rs
++++ b/kernel/src/object/mod.rs
+@@ -4,7 +4,7 @@
+ //!
+ //! An object ends with its last handle and is never handed out again: a holder that answers more than once keeps what an object is made over (`device::Screen`, a claim's BAR windows) and makes a fresh object for each answer.
+ //!
+-//! `handle_count`, not the Arc strong count, is what userland-visible lifecycle rides: a syscall's `Arc` can be stranded on a killed thread's kernel stack, so release is deferred through [`ZERO_QUEUE`] — see `issues/deferred-release-outlives-its-syscall.md`.
++//! `handle_count`, not the Arc strong count, is what userland-visible lifecycle rides: a syscall's `Arc` can be stranded on a killed thread's kernel stack, so release is deferred: through a dying process's own [`Releases`], run before its end is published, or else through [`ZERO_QUEUE`] — see `issues/deferred-release-outlives-its-syscall.md`.
+ 
+ // `warn` here gates via CI's `-D warnings`; the rest of the kernel is not yet swept.
+ #![warn(clippy::undocumented_unsafe_blocks)]
+@@ -125,8 +125,9 @@ impl Drop for ObjectCore {
+ /// What an object does when its last handle goes; a `deferred` row must
+ /// implement it, `immediate` gets an empty impl from the macro.
+ pub trait ZeroHandles {
+-    /// Runs exactly once, from the deferred queue with no lock held — never
+-    /// inline at drop, and never taking a sleep lock: no drain site can park.
++    /// Runs exactly once with no lock held, from the deferred queue or a dying
++    /// process's [`Releases`] — never inline at drop, and never taking a sleep
++    /// lock: neither can park.
+     fn on_zero_handles(&self);
+ }
+ 
+@@ -267,12 +268,80 @@ static ZERO_QUEUE: Lock<Vec<KObjectRef>> = Lock::new(Vec::new());
+ /// says empty over a queued object.
+ static ZERO_PENDING: AtomicBool = AtomicBool::new(false);
+ 
++/// A deferred object whose last handle has gone: owed to the running thread's
++/// open [`Releases`], or else to [`ZERO_QUEUE`].
+ pub(crate) fn enqueue_zero_handles(object: KObjectRef) {
++    let owned = crate::sched::driver::with_current_handle(|task| {
++        task.releases().lock().as_mut().map(|owed| owed.push(object.clone())).is_some()
++    });
++    if owned == Some(true) {
++        return;
++    }
+     let mut queue = ZERO_QUEUE.lock();
+     queue.push(object);
+     ZERO_PENDING.store(true, Ordering::Release);
+ }
+ 
++/// The releases a dying process's last thread owes before its end is
++/// published: while one is open, every deferred object whose last handle
++/// that thread drops, a hook's included, is collected on the thread rather
++/// than [`ZERO_QUEUE`], so no other CPU's drain can take it. Carried by the
++/// thread's `TaskHandle`, so a migration mid-teardown keeps it.
++///
++/// [`Releases::run`] is the only way to end one, and the [`Released`] it
++/// answers is what a process's [`process::Exit`] is built from.
++pub(crate) struct Releases {
++    task: Arc<crate::sched::payload::TaskHandle>,
++    /// The preempt depth it was opened at: a run at any other depth holds a
++    /// lock, under which no hook may run.
++    depth: u32,
++}
++
++/// Every release the dying process's handles owed has run.
++pub struct Released(());
++
++impl Releases {
++    /// Open the running thread's scope. Opened with no lock held.
++    pub(crate) fn open() -> Self {
++        let task = crate::sched::driver::current_handle()
++            .expect("object: a process's releases are opened on one of its threads");
++        let previous = task.releases().lock().replace(Vec::new());
++        assert!(previous.is_none(), "object: a thread opened a second release scope");
++        Self { task, depth: crate::preempt::count() }
++    }
++
++    /// Run every collected hook on this thread, those the hooks retire
++    /// included, then close the scope.
++    pub(crate) fn run(self) -> Released {
++        let depth = crate::preempt::count();
++        assert!(
++            depth == self.depth,
++            "object: a release scope run at preempt depth {depth}, opened at {}: a lock is held",
++            self.depth,
++        );
++        loop {
++            let batch = core::mem::take(
++                self.task.releases().lock().as_mut().expect("object: an open scope holds its list"),
++            );
++            if batch.is_empty() {
++                break;
++            }
++            for object in batch {
++                object.run_zero_handles();
++            }
++        }
++        *self.task.releases().lock() = None;
++        core::mem::forget(self);
++        Released(())
++    }
++}
++
++impl Drop for Releases {
++    fn drop(&mut self) {
++        panic!("object: a release scope was dropped with its releases unrun");
++    }
++}
++
+ /// Runs the hooks of every object whose last handle has gone; called at
+ /// syscall exit, each scheduler pass and from idle. Another CPU's drain can
+ /// take a batch a syscall queued, so that syscall can return to userland
+diff --git a/kernel/src/object/process.rs b/kernel/src/object/process.rs
+index 45ec53263..6d4fca1d1 100644
+--- a/kernel/src/object/process.rs
++++ b/kernel/src/object/process.rs
+@@ -15,12 +15,20 @@ use crate::process::Pid;
+ use crate::watch::Watch;
+ use crate::sync::Lock;
+ 
+-use super::{KObjectVariant, ObjectCore};
++use super::{KObjectVariant, ObjectCore, Released};
+ 
+-/// What is left of a process once it has stopped running.
++/// What is left of a process once it has stopped running, built only once
++/// its own releases have run.
+ pub struct Exit {
+     pub code: i32,
+     pub stats: ProcessStats,
++    _released: Released,
++}
++
++impl Exit {
++    pub fn new(code: i32, stats: ProcessStats, released: Released) -> Self {
++        Self { code, stats, _released: released }
++    }
+ }
+ 
+ pub struct ProcessObject {
+diff --git a/kernel/src/process.rs b/kernel/src/process.rs
+index 2318afee9..0b317cf1c 100644
+--- a/kernel/src/process.rs
++++ b/kernel/src/process.rs
+@@ -1135,7 +1135,7 @@ pub fn stats_from(
+     }
+ }
+ 
+-/// The last thread out's teardown of its process, on its own stack: free what the process holds, then keep its exit until every end below it is published. Every other thread has left, so none can run in what is freed.
++/// The last thread out's teardown of its process, on its own stack: free what the process holds, run every release its handles owed, then keep its exit until every end below it is published. Every other thread has left, so none can run in what is freed.
+ /// The thread is in the process until the last table section marks it, so a machine stop waits for every record and release here.
+ /// Waits on nothing: it runs on a killed thread whose one cancel may be spent, and at the exit boundary's preempt depth, where a park asserts.
+ /// The section that marks it also lets the teardown's own hold on the publication go: the exit is published here when nothing below it is left, and otherwise by the last end below it.
+@@ -1145,7 +1145,9 @@ fn teardown(pid: Pid, tid: Tid, code: i32, mark: i32, process_data: &Arc<Lock<Pr
+         let proc = guard.as_ref().unwrap().get(pid).expect("teardown: the process its last thread is in");
+         Arc::clone(&proc.threads.get(proc.main_tid).expect("teardown: a claimed process gives up no thread").thread_data)
+     };
++    let releases = crate::object::Releases::open();
+     let consumed = teardown_resources(process_data, &main_thread_data, pid);
++    let released = releases.run();
+     let cpu_ns = {
+         let mut guard = PROCESS_TABLE.lock();
+         teardown_bookkeeping(guard.as_mut().unwrap(), pid, code, &consumed)
+@@ -1156,7 +1158,7 @@ fn teardown(pid: Pid, tid: Tid, code: i32, mark: i32, process_data: &Arc<Lock<Pr
+         let table = guard.as_mut().unwrap();
+         proclife::torn_down(table, pid, tid, mark);
+         table.get_mut(pid).expect("teardown: the process its last thread is in").exit =
+-            Some(crate::object::process::Exit { code, stats });
++            Some(crate::object::process::Exit::new(code, stats, released));
+         tree::teardown_done(table, pid)
+     };
+     // The table says zombie now, which a sweep counts as nothing left to stop.
+diff --git a/kernel/src/sched/payload.rs b/kernel/src/sched/payload.rs
+index c99180b2b..e60775e9b 100644
+--- a/kernel/src/sched/payload.rs
++++ b/kernel/src/sched/payload.rs
+@@ -3,6 +3,7 @@
+ //! released exactly once, by `Hw::release`.
+ 
+ use alloc::sync::Arc;
++use alloc::vec::Vec;
+ use core::sync::atomic::{AtomicU32, AtomicU64, Ordering};
+ 
+ use kernel::sched::fair::{FairShare, ShareState};
+@@ -113,6 +114,8 @@ pub struct TaskHandle {
+     cancels: AtomicU32,
+     /// The operation this thread is inside, if any; kept here so it survives a mid-operation migration. `scheduler::Operation` owns the rules.
+     operation: OperationSlot,
++    /// The releases this thread owns while its process is torn down (`object::Releases`); kept here, as `operation` is, so they follow the thread across a migration.
++    releases: Lock<Option<Vec<crate::object::KObjectRef>>>,
+ }
+ 
+ impl TaskHandle {
+@@ -123,6 +126,7 @@ impl TaskHandle {
+             watch: Watch::new(),
+             cancels: AtomicU32::new(0),
+             operation: OperationSlot::new(),
++            releases: Lock::new(None),
+         }
+     }
+ 
+@@ -143,6 +147,11 @@ impl TaskHandle {
+         &self.operation
+     }
+ 
++    /// Where `object::Releases` collects this thread's releases; `None` while it holds none open.
++    pub(crate) fn releases(&self) -> &Lock<Option<Vec<crate::object::KObjectRef>>> {
++        &self.releases
++    }
++
+     /// What this thread's own transitions are posted to.
+     pub fn watch(&self) -> &Watch {
+         &self.watch

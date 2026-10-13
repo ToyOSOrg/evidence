@@ -1,0 +1,24 @@
+--- a/kernel/src/process.rs
++++ b/kernel/src/process.rs
+@@ -1147,7 +1147,6 @@
+     };
+     let releases = crate::object::Releases::open();
+     let consumed = teardown_resources(process_data, &main_thread_data, pid);
+-    let released = releases.run();
+     let cpu_ns = {
+         let mut guard = PROCESS_TABLE.lock();
+         teardown_bookkeeping(guard.as_mut().unwrap(), pid, code, &consumed)
+@@ -1158,11 +1157,12 @@
+         let table = guard.as_mut().unwrap();
+         proclife::torn_down(table, pid, tid, mark);
+         table.get_mut(pid).expect("teardown: the process its last thread is in").exit =
+-            Some(crate::object::process::Exit::new(code, stats, released));
++            Some(crate::object::process::Exit { code, stats, _released: crate::object::Released(()) });
+         tree::teardown_done(table, pid)
+     };
+     // The table says zombie now, which a sweep counts as nothing left to stop.
+     crate::quiesce::note_progress();
+     publish_climb(ready);
++    let _ = releases.run();
+ }
+ 
