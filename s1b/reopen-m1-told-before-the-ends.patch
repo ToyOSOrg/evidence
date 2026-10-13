@@ -1,0 +1,15 @@
+--- a/system/diskserver/src/main.rs
++++ b/system/diskserver/src/main.rs
+@@ -735,8 +735,11 @@
+     unique: [u8; 16],
+     tell: impl FnOnce(&Opened) -> R,
+ ) -> (ServerRings, Opened, R) {
++    let mut said = [0u8; Opened::BYTES];
++    said[..8].copy_from_slice(&blocks.to_le_bytes());
++    said[8..].copy_from_slice(&unique);
++    let told = tell(&Opened::decode(&said).expect("an answer's bytes"));
+     let (rings, opened) = Opened::over(page, blocks, unique);
+-    let told = tell(&opened);
+     (rings, opened, told)
+ }
+ 

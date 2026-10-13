@@ -1,0 +1,39 @@
+HEAD=671e5c73679eba4640a515a1628496058cf9ccde
+PATCH=fat-m2-entry-before-chain.patch
+ system/fileserver/src/cache.rs | 2 +-
+ system/fileserver/src/fat.rs   | 5 -----
+ 2 files changed, 1 insertion(+), 6 deletions(-)
+   Compiling fileserver v0.0.0 (<home>/<dev>/toyos-usbd-xhci/system/fileserver)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.86s
+     Running unittests src/lib.rs (target/debug/deps/fileserver-a6db921597f2d351)
+
+running 1 test
+test fat::tests::an_append_stopped_after_any_block_write_reads_back_the_last_sync ... FAILED
+
+failures:
+
+---- fat::tests::an_append_stopped_after_any_block_write_reads_back_the_last_sync stdout ----
+fileserver: FAT32 mounted, 34128896 bytes, 512-byte sectors, 512-byte clusters
+fileserver: FAT32 mounted, 34128896 bytes, 512-byte sectors, 512-byte clusters
+fileserver: FAT32 mounted, 34128896 bytes, 512-byte sectors, 512-byte clusters
+fileserver: FAT32 mounted, 34128896 bytes, 512-byte sectors, 512-byte clusters
+fileserver: FAT32 mounted, 34128896 bytes, 512-byte sectors, 512-byte clusters
+fileserver: FAT32 mounted, 34128896 bytes, 512-byte sectors, 512-byte clusters
+fileserver: FAT32 mounted, 34128896 bytes, 512-byte sectors, 512-byte clusters
+fileserver: read of 'a.txt': corrupt cluster chain
+
+thread 'fat::tests::an_append_stopped_after_any_block_write_reads_back_the_last_sync' (25094801) panicked at system/fileserver/src/fat.rs:797:13:
+assertion `left == right` failed: stopped after block write 10 of 13: a 15288-byte file
+  left: Err(Io)
+ right: Ok(15288)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    fat::tests::an_append_stopped_after_any_block_write_reads_back_the_last_sync
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 57 filtered out; finished in 0.03s
+
+error: test failed, to rerun pass `-p fileserver --lib`
+TEST_EXIT=101
+RESTORED_CLEAN=yes
