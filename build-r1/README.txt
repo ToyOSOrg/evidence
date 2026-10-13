@@ -29,3 +29,21 @@ stage-head.log              --metal --metal-readback staging of the T14 head row
 stage-head-amd.log          the AMD bench's head row (acpi_tables_loaded), 5596d7b7e.
 stage-control*.log          the whole change reverted: origin/main 759623914, T14 and AMD.
 request.txt                 the run request handed to the orchestrator, with judge words.
+
+metal/                      the orchestrator's runs of request.txt (runner logs m906-t14.* and
+                            m906-amd.*), each readback's boot.txt, kernel.log, loader.log and
+                            verdict.txt (images left out; USB serial numbers masked), and the
+                            judge logs, judged from the head 5596d7b7e with the staging words:
+  metal-head/judge-head.log        T14: 6 passed, 0 failed, 2 boots. Kept: 0xfedc59a0 (Byte 0xa0),
+                                   said once; pages first written 0xfd6e0000 (Byte 0x1 to
+                                   0xfd6e0a70) and 0xfedc5000 (Byte 0x1 to 0xfedc5f50); census
+                                   39 _INI run, _REG(3, 1) in 1 scope(s), refused: none; AC online.
+  metal-head-amd/judge-head.log    AMD: acpi_tables_loaded green. Kept: none; pages first
+                                   written 0xf8000000 (DWord 0x3b10564 to 0xf80000b8, type 11) and
+                                   0xfe700000 (Byte 0x1 to 0xfe70039c, unlisted); ports 0x72/0x73
+                                   written; census 12 _INI run, _REG(3, 1) in 1 scope(s), refused:
+                                   none; battery reading "AC online". So the bench takes the
+                                   path the 0xFF host model traced.
+  metal-control/judge-ctl.log      control 759623914 on the T14: both rows red, "the server
+                                   refused something of this machine's AML" (the two _INIs).
+  metal-control-amd/judge-ctl.log  control on the AMD bench: red, _REG refused ConfigWrite.
