@@ -1,0 +1,31 @@
+866d1788f4c39464d811c658cc664acbd77d8edc
+    Blocking waiting for file lock on package cache
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.68s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-684d852ea5f1b5fd)
+19:08:19   BUILD x86_64 binaries of tests/guest/rust-tests
+19:08:26   BUILT x86_64 binaries of tests/guest/rust-tests  (7s)
+19:08:26 [toyos] Compiling 138 C tests, and attempting 24 declared ones...
+19:08:39 [metal] 4 registration(s) and 2 shared member(s) over 2 boot(s)
+19:08:39   BUILD x86_64 kernel boot-actuators,test-actuators, loader, ROOT of $SCRATCH/metal-head/shared-debug/system-7d4bc11e63d03791.toml
+19:08:58 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+19:08:58   BUILT x86_64 kernel boot-actuators,test-actuators, loader, ROOT of $SCRATCH/metal-head/shared-debug/system-7d4bc11e63d03791.toml  (19s)
+19:08:58 [metal] shared-debug: 1 job(s) under a list bound of 60300 ms, armed with ["pci-cap-selftest", "revoked-backing-selftest", "leak-rollback-selftest", "lapic-spurious-selftest", "unclaimed-vector-selftest", "xhci-xecp-selftest", "xhci-descriptor-selftest", "sysret-ss-probe", "test-input-merge", "sched-operation-nesting", "iommu-firmware-left"] and a boot deadline of 120600 ms — $SCRATCH/metal-head/shared-debug/image.img
+19:08:58   BUILD x86_64 kernel, ROOT of $SCRATCH/metal-head/testcases/system-065a075f42e63c41.toml
+19:09:03 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+19:09:03   BUILT x86_64 kernel, ROOT of $SCRATCH/metal-head/testcases/system-065a075f42e63c41.toml  (5s)
+19:09:03 [metal] testcases: 4 job(s) under a list bound of 60300 ms, armed with [] and a boot deadline of 120600 ms — $SCRATCH/metal-head/testcases/image.img
+# One boot per image. Each invocation is `cargo <words>` from this worktree.
+
+shared-debug
+  image: $SCRATCH/metal-head/shared-debug/image.img
+  cargo run -p toyos-metal -- --image $SCRATCH/metal-head/shared-debug/image.img --readback $SCRATCH/metal-head/shared-debug --fat32-check
+
+testcases
+  image: $SCRATCH/metal-head/testcases/image.img
+  cargo run -p toyos-metal -- --image $SCRATCH/metal-head/testcases/image.img --readback $SCRATCH/metal-head/testcases --fat32-check
+19:09:03 [metal] staged 2 image(s); $SCRATCH/metal-head/request.txt lists them. The machine was not touched, so this run establishes nothing about it.
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `$WORKTREE/target/debug/deps/toyos_build-684d852ea5f1b5fd --metal --metal-readback $SCRATCH/metal-head acpi_tables_loaded battery_read acpi_server_events counters` (exit status: 2)
+EXIT 2
