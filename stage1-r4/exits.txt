@@ -1,0 +1,13 @@
+ToyOS head c1e06aa01e4071a89e5f225ae0e143a435486e03 (wt/toyos-apps-out)
+cargo run -- --ci host: EXIT=0 (76 steps, all green; runs tests::a_key_file_that_reads_back_other_than_0600_is_refused_and_removed)
+mutate.sh (m14 and m15 against that host test, restored, tree clean): EXIT=0
+  m14 (the read-back refuses nothing) applied: test EXIT=101
+  m15 (the refused file is not removed) applied: test EXIT=101
+  restored: cargo test -p toyos-root EXIT=0, 8 passed
+medium-oracle.sh on the head's aarch64-apple-darwin release binary, run from an ExFAT stick C: EXIT=4
+  red on 4 expectations, all the ownership step: `sudo diskutil enableOwnership` needs root, which this run did not have
+  (sudo: a password is required), so ROOTA and ROOTB stayed mounted noowners.
+  green: new from C onto APFS ROOTA (exit 0, <user> -rw-------), the B copy (cmp 0, <user> -rw-------),
+  sign from C (exit 0, both fingerprints, ssh-keygen's for the signing key), new from C onto ExFAT and FAT32 (exit 1, no file).
+  The owner read-back reads the running user on a noowners volume too, so the mount line, not stat, is what tells
+  ownership enabled from not; the oracle goes green only when run by a user who can answer sudo's password prompt.

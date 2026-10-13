@@ -1,0 +1,70 @@
+umask 0022
+toyos-root: Mach-O 64-bit executable arm64
+== C: ExFAT STICKC, the binary copied onto it
+ok: C erased
+ok: the binary copied to C
+C/toyos-root: -rwx------
+ok: a signing public line on C
+== ROOTA: diskutil eraseDisk APFS ROOTA GPT <disk>, sudo diskutil enableOwnership /Volumes/ROOTA
+ok: ROOTA erased
+sudo: a terminal is required to read the password; either use the -S option to read from standard input or configure an askpass helper
+sudo: a password is required
+FAILED: enableOwnership on ROOTA (got '1', want '0')
+/dev/diskN on /Volumes/ROOTA (apfs, local, nodev, nosuid, journaled, noowners, mounted by <user>)
+FAILED: ROOTA is not mounted noowners (got 'noowners', want 'owners')
+== ROOTB: diskutil eraseDisk APFS ROOTB GPT <disk>, sudo diskutil enableOwnership /Volumes/ROOTB
+ok: ROOTB erased
+sudo: a terminal is required to read the password; either use the -S option to read from standard input or configure an askpass helper
+sudo: a password is required
+FAILED: enableOwnership on ROOTB (got '1', want '0')
+/dev/diskN on /Volumes/ROOTB (apfs, local, nodev, nosuid, journaled, noowners, mounted by <user>)
+FAILED: ROOTB is not mounted noowners (got 'noowners', want 'owners')
+== step 2.2: <C>/toyos-root new <A>/root-key
+EXIT=0
+root key SHA256:Zyb3APJCTr7xD3OmNXLqIa1pRnQLZQ07mrXtDGXS5n4
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOGPk32YpG6NDvroHQC7r5V/swy6ufFMGnCdrrTtz2Os
+ok: new on A exits 0
+ok: A's key reads back the running user and -rw-------
+== step 2.3: cp <A>/root-key <B>/root-key && cmp, stat -f '%Su %Sp' both
+ok: B's copy is A's bytes
+ok: B's key reads back the running user and -rw-------
+== step 2.4: <C>/toyos-root sign --key <A>/root-key --signing <C>/signing.pub --out <C>/root.1.txt
+EXIT=0
+toyos-repo root 1
+expires 2027-10-13T03:02:23Z
+key 0c77f14ff38a59bd608b07222b5c449f98a41068630d6b5351962538f9bf9c05 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFCIPPEaMzg9d8dTk84PsP+ZPKnLH8IC5CUNNTxHVieV
+key 6726f700f2424ebef10f73a63572ea21ad6946740b650d3b9ab5ed0c65d2e67e ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOGPk32YpG6NDvroHQC7r5V/swy6ufFMGnCdrrTtz2Os
+role root 1 6726f700f2424ebef10f73a63572ea21ad6946740b650d3b9ab5ed0c65d2e67e
+role timestamp 1 0c77f14ff38a59bd608b07222b5c449f98a41068630d6b5351962538f9bf9c05
+role targets 1 0c77f14ff38a59bd608b07222b5c449f98a41068630d6b5351962538f9bf9c05
+sig 6726f700f2424ebef10f73a63572ea21ad6946740b650d3b9ab5ed0c65d2e67e U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAg4Y+TfZikbo0O+ugdALuvlX+zDLq58UwacJ2utO3PY6wAAAAKdG95b3Mtcm9vdAAAAAAAAAAGc2hhNTEyAAAAUwAAAAtzc2gtZWQyNTUxOQAAAEAfZcVgCMCQtlBJrRTCw9575YUeUIFIdkBWsF6hfE2vNo/uoKT5gcbRpXv2y14bhMwxx9FIdnLUFJyzjtjEuUcE
+root key SHA256:Zyb3APJCTr7xD3OmNXLqIa1pRnQLZQ07mrXtDGXS5n4
+signing key SHA256:DHfxT/OKWb1giwciK1xEn5ikEGhjDWtTUZYlOPm/nAU
+expires 2027-10-13T03:02:23Z
+ok: sign from C exits 0
+ok: sign prints the root key fingerprint new printed
+ok: sign prints ssh-keygen's fingerprint of the signing key
+ok: root 1 is on C
+== ExFAT: <C>/toyos-root new <vol>/root-key
+ok: TRYEFAT erased
+/dev/diskN on <vol> (exfat, local, nodev, nosuid, noowners, noatime, fskit, mounted by <user>)
+EXIT=1
+toyos-root: <vol>/root-key reads back 0700, not 0600: its filesystem keeps no Unix mode, so the root key is not written there
+ok: new on ExFAT exits 1
+ok: new on ExFAT leaves no file
+eject EXIT=0
+== MS-DOS FAT32: <C>/toyos-root new <vol>/root-key
+ok: TRYMSDOSF erased
+/dev/diskN on <vol> (msdos, local, nodev, nosuid, noowners, noatime, fskit, mounted by <user>)
+EXIT=1
+toyos-root: <vol>/root-key reads back 0700, not 0600: its filesystem keeps no Unix mode, so the root key is not written there
+ok: new on MS-DOS FAT32 exits 1
+ok: new on MS-DOS FAT32 leaves no file
+eject EXIT=0
+eject EXIT=0
+eject EXIT=0
+eject EXIT=0
+== step 2.1's command, parsed without setting the clock: date -u -j 101312002026
+Tue Oct 13 12:00:00 UTC 2026
+EXIT=0
+failed: 4

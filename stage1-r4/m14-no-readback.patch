@@ -1,0 +1,21 @@
+diff --git a/build/root/src/main.rs b/build/root/src/main.rs
+index a0aa7bcdd..730e1c49f 100644
+--- a/build/root/src/main.rs
++++ b/build/root/src/main.rs
+@@ -146,14 +146,8 @@ fn create_new(path: &Path, mode: u32) -> Result<std::fs::File, String> {
+ /// `0600`; otherwise the file is removed and refused.
+ fn read_back_0600(file: std::fs::File, path: &Path) -> Result<std::fs::File, String> {
+     let mode = file.metadata().map_err(|e| format!("{}: {e}", path.display()))?.permissions().mode() & 0o777;
+-    if mode == 0o600 {
+-        return Ok(file);
+-    }
+-    let removed = std::fs::remove_file(path).map_or_else(|e| format!(", and removing it failed: {e}"), |()| String::new());
+-    Err(format!(
+-        "{} reads back {mode:04o}, not 0600: its filesystem keeps no Unix mode, so the root key is not written there{removed}",
+-        path.display()
+-    ))
++    let _ = mode;
++    Ok(file)
+ }
+ 
+ /// `bytes` written to `file`, the one at `path`, and synced.
