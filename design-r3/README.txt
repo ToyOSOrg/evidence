@@ -16,8 +16,8 @@ amd-trace-main.rs, amd-trace-Cargo.toml
       amdtrace <dump> ff 01 > amd-trace-fillff-ec01.txt           EXIT=0
     (the ec=00 runs differ only in that read's answer.) Under both models every write
     _REG(3, 1) and _PSR make is: 00:00.0 offsets 0xB8 and 0xBC through ECAM, and port 0x80
-    from _PSR; and, under the 0xFF fill alone, where NDPC's ODV0 is set and it sends
-    ALIB(0x0C) twelve times, ports 0x72 and 0x73 and one byte at 0xFE70039C, which no BAR the bench's kernel
+    from _PSR; and, under the 0xFF fill alone, where NDPC's ODV0 is set and its ALIB(0x0C)
+    calls send twelve messages through the mailbox, ports 0x72 and 0x73 and one byte at 0xFE70039C, which no BAR the bench's kernel
     recorded covers (pr-875 f7a9eb7 round3/amd-acpi_tables_loaded.log lines 179-206).
     No write reaches a function's header (00h-3Fh), another function, or 00:00.2 (the
     IOMMU, class 0806).
