@@ -1,0 +1,409 @@
+head 866d1788f4c39464d811c658cc664acbd77d8edc, base 7596239141c2cd6824f2d396981490568327b639: sources of lib/userbound, sdk/abi, lib/tco wiring reverted to base; head's lib/userbound/tests/firmware.rs kept
+M  Cargo.lock
+M  lib/userbound/Cargo.toml
+M  lib/userbound/src/firmware.rs
+M  sdk/abi/src/acpi.rs
+   Compiling toyos-abi v0.16.0 ($WORKTREE/sdk/abi)
+   Compiling toyos-bootmap v0.1.0 ($WORKTREE/lib/bootmap)
+   Compiling toyos-acpi v0.1.0 ($WORKTREE/lib/acpi)
+   Compiling toyos-userbound v0.1.0 ($WORKTREE/lib/userbound)
+error[E0432]: unresolved imports `toyos_userbound::firmware::Enumerated`, `toyos_userbound::firmware::HostBridge`
+ --> lib/userbound/tests/firmware.rs:8:63
+  |
+8 |     config, lock_word, port, sleep_type, type_word, CallRate, Enumerated, Function, HostBridge, Memory, MemoryVerdict, NoLockWord,
+  |                                                               ^^^^^^^^^^            ^^^^^^^^^^ no `HostBridge` in `firmware`
+  |                                                               |
+  |                                                               no `Enumerated` in `firmware`
+
+error[E0560]: struct `toyos_userbound::firmware::Memory<'_, Copied<std::slice::Iter<'_, (u64, u64)>>>` has no field named `host_bridge`
+  --> lib/userbound/tests/firmware.rs:68:136
+   |
+68 | ...registers_differ: false, host_bridge: HostBridge::ABSENT }
+   |                             ^^^^^^^^^^^ `toyos_userbound::firmware::Memory<'_, _>` does not have this field
+   |
+   = note: all struct fields are already assigned
+
+error[E0560]: struct `toyos_userbound::firmware::Memory<'_, Copied<std::slice::Iter<'_, (u64, u64)>>>` has no field named `host_bridge`
+  --> lib/userbound/tests/firmware.rs:80:178
+   |
+80 | ...registers_differ: false, host_bridge: Q35_HOST_BRIDGE }
+   |                             ^^^^^^^^^^^ `toyos_userbound::firmware::Memory<'_, _>` does not have this field
+   |
+   = note: all struct fields are already assigned
+
+error[E0560]: struct `toyos_userbound::firmware::Memory<'_, Copied<std::slice::Iter<'_, (u64, u64)>>>` has no field named `host_bridge`
+   --> lib/userbound/tests/firmware.rs:100:192
+    |
+100 | ...egisters_differ: false, host_bridge: HostBridge::ABSENT }
+    |                            ^^^^^^^^^^^ `toyos_userbound::firmware::Memory<'_, _>` does not have this field
+    |
+    = note: all struct fields are already assigned
+
+error[E0560]: struct `toyos_userbound::firmware::Memory<'_, Copied<std::slice::Iter<'_, (u64, u64)>>>` has no field named `host_bridge`
+   --> lib/userbound/tests/firmware.rs:340:164
+    |
+340 | ...egisters_differ: false, host_bridge: HostBridge::ABSENT };
+    |                            ^^^^^^^^^^^ `toyos_userbound::firmware::Memory<'_, _>` does not have this field
+    |
+    = note: all struct fields are already assigned
+
+error[E0560]: struct `toyos_userbound::firmware::Memory<'_, Copied<std::slice::Iter<'_, (u64, u64)>>>` has no field named `host_bridge`
+   --> lib/userbound/tests/firmware.rs:341:162
+    |
+341 | ...egisters_differ: false, host_bridge: HostBridge::ABSENT };
+    |                            ^^^^^^^^^^^ `toyos_userbound::firmware::Memory<'_, _>` does not have this field
+    |
+    = note: all struct fields are already assigned
+
+error[E0560]: struct `toyos_userbound::firmware::Memory<'_, Copied<std::slice::Iter<'_, (u64, u64)>>>` has no field named `host_bridge`
+   --> lib/userbound/tests/firmware.rs:389:155
+    |
+389 | ...egisters_differ: false, host_bridge: HostBridge::ABSENT };
+    |                            ^^^^^^^^^^^ `toyos_userbound::firmware::Memory<'_, _>` does not have this field
+    |
+    = note: all struct fields are already assigned
+
+error[E0061]: this function takes 6 arguments but 5 arguments were supplied
+   --> lib/userbound/tests/firmware.rs:544:20
+    |
+544 | ...   let made = config(memory.ecam, 0, function, offset, Width::DWord).and_then(|at| if write { at.write(None).map(|passed| passed...
+    |                  ^^^^^^------------------------------------------------ argument #6 of type `bool` is missing
+    |
+note: function defined here
+   --> lib/userbound/src/firmware.rs:484:8
+    |
+484 | pub fn config(ecam: &[EcamWindow], segment: u16, function: Function, offset: u16, width: Width, write: bool) -> Result<ConfigAt, Re...
+    |        ^^^^^^
+help: provide the argument
+    |
+544 |         let made = config(memory.ecam, 0, function, offset, Width::DWord, /* bool */).and_then(|at| if write { at.write(None).map(|passed| passed.at()) } else { Ok(at) });
+    |                                                                         ++++++++++++
+
+error[E0599]: no method named `write` found for struct `ConfigAt` in the current scope
+   --> lib/userbound/tests/firmware.rs:544:103
+    |
+544 | ...et, Width::DWord).and_then(|at| if write { at.write(None).map(|passed| passed.at()) } else { Ok(at) });
+    |                                                  ^^^^^ method not found in `ConfigAt`
+
+error[E0599]: no variant, associated function, or constant named `AddressMap` found for enum `toyos_abi::acpi::Refused` in the current scope
+   --> lib/userbound/tests/firmware.rs:545:89
+    |
+545 | ...te { Err(Refused::AddressMap) } else { Ok((function, 0x10)) }, "write={write}");
+    |                      ^^^^^^^^^^ variant, associated function, or constant not found in `toyos_abi::acpi::Refused`
+
+error[E0061]: this function takes 6 arguments but 5 arguments were supplied
+   --> lib/userbound/tests/firmware.rs:549:17
+    |
+549 |         assert!(config(memory.ecam, 0, function, 0, Width::DWord).is_ok(), "bus {bus:#x}");
+    |                 ^^^^^^------------------------------------------- argument #6 of type `bool` is missing
+    |
+note: function defined here
+   --> lib/userbound/src/firmware.rs:484:8
+    |
+484 | pub fn config(ecam: &[EcamWindow], segment: u16, function: Function, offset: u16, width: Width, write: bool) -> Result<ConfigAt, Re...
+    |        ^^^^^^
+help: provide the argument
+    |
+549 |         assert!(config(memory.ecam, 0, function, 0, Width::DWord, /* bool */).is_ok(), "bus {bus:#x}");
+    |                                                                 ++++++++++++
+
+error[E0061]: this function takes 6 arguments but 5 arguments were supplied
+   --> lib/userbound/tests/firmware.rs:551:16
+    |
+551 |     assert_eq!(config(memory.ecam, 0, Function { bus: 0x80, device: 0, function: 0 }, 0, Width::DWord), Err(Refused::ConfigUnreacha...
+    |                ^^^^^^--------------------------------------------------------------------------------- argument #6 of type `bool` is missing
+    |
+note: function defined here
+   --> lib/userbound/src/firmware.rs:484:8
+    |
+484 | pub fn config(ecam: &[EcamWindow], segment: u16, function: Function, offset: u16, width: Width, write: bool) -> Result<ConfigAt, Re...
+    |        ^^^^^^
+help: provide the argument
+    |
+551 |     assert_eq!(config(memory.ecam, 0, Function { bus: 0x80, device: 0, function: 0 }, 0, Width::DWord, /* bool */), Err(Refused::ConfigUnreachable));
+    |                                                                                                      ++++++++++++
+
+error[E0061]: this function takes 6 arguments but 5 arguments were supplied
+   --> lib/userbound/tests/firmware.rs:793:18
+    |
+793 |         let at = config(ecam, 0, HOST_BRIDGE, offset, width).expect("one register of a reachable function");
+    |                  ^^^^^^------------------------------------- argument #6 of type `bool` is missing
+    |
+note: function defined here
+   --> lib/userbound/src/firmware.rs:484:8
+    |
+484 | pub fn config(ecam: &[EcamWindow], segment: u16, function: Function, offset: u16, width: Width, write: bool) -> Result<ConfigAt, Re...
+    |        ^^^^^^
+help: provide the argument
+    |
+793 |         let at = config(ecam, 0, HOST_BRIDGE, offset, width, /* bool */).expect("one register of a reachable function");
+    |                                                            ++++++++++++
+
+error[E0061]: this function takes 6 arguments but 5 arguments were supplied
+   --> lib/userbound/tests/firmware.rs:797:13
+    |
+797 |     assert!(config(ecam, 0, last, 0, Width::DWord).is_ok());
+    |             ^^^^^^-------------------------------- argument #6 of type `bool` is missing
+    |
+note: function defined here
+   --> lib/userbound/src/firmware.rs:484:8
+    |
+484 | pub fn config(ecam: &[EcamWindow], segment: u16, function: Function, offset: u16, width: Width, write: bool) -> Result<ConfigAt, Re...
+    |        ^^^^^^
+help: provide the argument
+    |
+797 |     assert!(config(ecam, 0, last, 0, Width::DWord, /* bool */).is_ok());
+    |                                                  ++++++++++++
+
+error[E0061]: this function takes 6 arguments but 5 arguments were supplied
+   --> lib/userbound/tests/firmware.rs:799:20
+    |
+799 |         assert_eq!(config(ecam, 0, HOST_BRIDGE, offset, width), Err(Refused::ConfigSpan), "{offset:#x} {width:?}");
+    |                    ^^^^^^------------------------------------- argument #6 of type `bool` is missing
+    |
+note: function defined here
+   --> lib/userbound/src/firmware.rs:484:8
+    |
+484 | pub fn config(ecam: &[EcamWindow], segment: u16, function: Function, offset: u16, width: Width, write: bool) -> Result<ConfigAt, Re...
+    |        ^^^^^^
+help: provide the argument
+    |
+799 |         assert_eq!(config(ecam, 0, HOST_BRIDGE, offset, width, /* bool */), Err(Refused::ConfigSpan), "{offset:#x} {width:?}");
+    |                                                              ++++++++++++
+
+error[E0061]: this function takes 6 arguments but 5 arguments were supplied
+   --> lib/userbound/tests/firmware.rs:801:16
+    |
+801 |     assert_eq!(config(ecam, 1, HOST_BRIDGE, 0, Width::DWord), Err(Refused::ConfigUnreachable), "another segment group");
+    |                ^^^^^^--------------------------------------- argument #6 of type `bool` is missing
+    |
+note: function defined here
+   --> lib/userbound/src/firmware.rs:484:8
+    |
+484 | pub fn config(ecam: &[EcamWindow], segment: u16, function: Function, offset: u16, width: Width, write: bool) -> Result<ConfigAt, Re...
+    |        ^^^^^^
+help: provide the argument
+    |
+801 |     assert_eq!(config(ecam, 1, HOST_BRIDGE, 0, Width::DWord, /* bool */), Err(Refused::ConfigUnreachable), "another segment group");
+    |                                                            ++++++++++++
+
+error[E0061]: this function takes 6 arguments but 5 arguments were supplied
+   --> lib/userbound/tests/firmware.rs:802:16
+    |
+802 |     assert_eq!(config(ecam, 0, Function { bus: 0x80, device: 0, function: 0 }, 0, Width::DWord), Err(Refused::ConfigUnreachable));
+    |                ^^^^^^-------------------------------------------------------------------------- argument #6 of type `bool` is missing
+    |
+note: function defined here
+   --> lib/userbound/src/firmware.rs:484:8
+    |
+484 | pub fn config(ecam: &[EcamWindow], segment: u16, function: Function, offset: u16, width: Width, write: bool) -> Result<ConfigAt, Re...
+    |        ^^^^^^
+help: provide the argument
+    |
+802 |     assert_eq!(config(ecam, 0, Function { bus: 0x80, device: 0, function: 0 }, 0, Width::DWord, /* bool */), Err(Refused::ConfigUnreachable));
+    |                                                                                               ++++++++++++
+
+error[E0061]: this function takes 6 arguments but 5 arguments were supplied
+   --> lib/userbound/tests/firmware.rs:803:16
+    |
+803 |     assert_eq!(config(ecam, 0, Function { bus: 0, device: 32, function: 0 }, 0, Width::DWord), Err(Refused::ConfigUnreachable));
+    |                ^^^^^^------------------------------------------------------------------------ argument #6 of type `bool` is missing
+    |
+note: function defined here
+   --> lib/userbound/src/firmware.rs:484:8
+    |
+484 | pub fn config(ecam: &[EcamWindow], segment: u16, function: Function, offset: u16, width: Width, write: bool) -> Result<ConfigAt, Re...
+    |        ^^^^^^
+help: provide the argument
+    |
+803 |     assert_eq!(config(ecam, 0, Function { bus: 0, device: 32, function: 0 }, 0, Width::DWord, /* bool */), Err(Refused::ConfigUnreachable));
+    |                                                                                             ++++++++++++
+
+error[E0061]: this function takes 6 arguments but 5 arguments were supplied
+   --> lib/userbound/tests/firmware.rs:804:16
+    |
+804 |     assert_eq!(config(ecam, 0, Function { bus: 0, device: 0, function: 8 }, 0, Width::DWord), Err(Refused::ConfigUnreachable));
+    |                ^^^^^^----------------------------------------------------------------------- argument #6 of type `bool` is missing
+    |
+note: function defined here
+   --> lib/userbound/src/firmware.rs:484:8
+    |
+484 | pub fn config(ecam: &[EcamWindow], segment: u16, function: Function, offset: u16, width: Width, write: bool) -> Result<ConfigAt, Re...
+    |        ^^^^^^
+help: provide the argument
+    |
+804 |     assert_eq!(config(ecam, 0, Function { bus: 0, device: 0, function: 8 }, 0, Width::DWord, /* bool */), Err(Refused::ConfigUnreachable));
+    |                                                                                            ++++++++++++
+
+error[E0061]: this function takes 6 arguments but 5 arguments were supplied
+   --> lib/userbound/tests/firmware.rs:805:16
+    |
+805 |     assert_eq!(config(&[], 0, HOST_BRIDGE, 0, Width::DWord), Err(Refused::ConfigUnreachable));
+    |                ^^^^^^-------------------------------------- argument #6 of type `bool` is missing
+    |
+note: function defined here
+   --> lib/userbound/src/firmware.rs:484:8
+    |
+484 | pub fn config(ecam: &[EcamWindow], segment: u16, function: Function, offset: u16, width: Width, write: bool) -> Result<ConfigAt, Re...
+    |        ^^^^^^
+help: provide the argument
+    |
+805 |     assert_eq!(config(&[], 0, HOST_BRIDGE, 0, Width::DWord, /* bool */), Err(Refused::ConfigUnreachable));
+    |                                                           ++++++++++++
+
+error[E0061]: this function takes 6 arguments but 5 arguments were supplied
+   --> lib/userbound/tests/firmware.rs:820:5
+    |
+820 |     config(ecam, 0, HOST_BRIDGE, offset, width)?.write(found).map(|passed| passed.at().offset())
+    |     ^^^^^^------------------------------------- argument #6 of type `bool` is missing
+    |
+note: function defined here
+   --> lib/userbound/src/firmware.rs:484:8
+    |
+484 | pub fn config(ecam: &[EcamWindow], segment: u16, function: Function, offset: u16, width: Width, write: bool) -> Result<ConfigAt, Re...
+    |        ^^^^^^
+help: provide the argument
+    |
+820 |     config(ecam, 0, HOST_BRIDGE, offset, width, /* bool */)?.write(found).map(|passed| passed.at().offset())
+    |                                               ++++++++++++
+
+error[E0599]: no method named `write` found for struct `ConfigAt` in the current scope
+   --> lib/userbound/tests/firmware.rs:820:50
+    |
+820 |     config(ecam, 0, HOST_BRIDGE, offset, width)?.write(found).map(|passed| passed.at().offset())
+    |                                                  ^^^^^ method not found in `ConfigAt`
+
+error[E0599]: no variant, associated function, or constant named `AddressMap` found for enum `toyos_abi::acpi::Refused` in the current scope
+   --> lib/userbound/tests/firmware.rs:839:73
+    |
+839 |             assert_eq!(config_write(found, offset, width), Err(Refused::AddressMap), "{found:?} {offset:#x} {width:?}");
+    |                                                                         ^^^^^^^^^^ variant, associated function, or constant not found in `toyos_abi::acpi::Refused`
+
+error[E0061]: this function takes 6 arguments but 5 arguments were supplied
+   --> lib/userbound/tests/firmware.rs:849:16
+    |
+849 |     assert_eq!(config(ecam, 0, function, offset, Width::Byte).and_then(|at| at.write(Some(FREE)).map(drop)), Err(Refused::AddressMa...
+    |                ^^^^^^---------------------------------------- argument #6 of type `bool` is missing
+    |
+note: function defined here
+   --> lib/userbound/src/firmware.rs:484:8
+    |
+484 | pub fn config(ecam: &[EcamWindow], segment: u16, function: Function, offset: u16, width: Width, write: bool) -> Result<ConfigAt, Re...
+    |        ^^^^^^
+help: provide the argument
+    |
+849 |     assert_eq!(config(ecam, 0, function, offset, Width::Byte, /* bool */).and_then(|at| at.write(Some(FREE)).map(drop)), Err(Refused::AddressMap));
+    |                                                             ++++++++++++
+
+error[E0599]: no method named `write` found for struct `ConfigAt` in the current scope
+   --> lib/userbound/tests/firmware.rs:849:80
+    |
+849 |     assert_eq!(config(ecam, 0, function, offset, Width::Byte).and_then(|at| at.write(Some(FREE)).map(drop)), Err(Refused::AddressMa...
+    |                                                                                ^^^^^ method not found in `ConfigAt`
+
+error[E0599]: no variant, associated function, or constant named `AddressMap` found for enum `toyos_abi::acpi::Refused` in the current scope
+   --> lib/userbound/tests/firmware.rs:849:123
+    |
+849 | ...p)), Err(Refused::AddressMap));
+    |                      ^^^^^^^^^^ variant, associated function, or constant not found in `toyos_abi::acpi::Refused`
+
+error[E0599]: no variant, associated function, or constant named `HeldFunction` found for enum `toyos_abi::acpi::Refused` in the current scope
+   --> lib/userbound/tests/firmware.rs:864:79
+    |
+864 |             assert_eq!(config_write(Some(found), offset, width), Err(Refused::HeldFunction), "{found:?} {offset:#x}");
+    |                                                                               ^^^^^^^^^^^^ variant, associated function, or constant not found in `toyos_abi::acpi::Refused`
+
+error[E0061]: this function takes 6 arguments but 5 arguments were supplied
+   --> lib/userbound/tests/firmware.rs:873:13
+    |
+873 |     assert!(config(ecam, 0, HOST_BRIDGE, 0x40, Width::Byte).is_ok());
+    |             ^^^^^^----------------------------------------- argument #6 of type `bool` is missing
+    |
+note: function defined here
+   --> lib/userbound/src/firmware.rs:484:8
+    |
+484 | pub fn config(ecam: &[EcamWindow], segment: u16, function: Function, offset: u16, width: Width, write: bool) -> Result<ConfigAt, Re...
+    |        ^^^^^^
+help: provide the argument
+    |
+873 |     assert!(config(ecam, 0, HOST_BRIDGE, 0x40, Width::Byte, /* bool */).is_ok());
+    |                                                           ++++++++++++
+
+error[E0599]: no variant, associated function, or constant named `AddressMap` found for enum `toyos_abi::acpi::Refused` in the current scope
+   --> lib/userbound/tests/firmware.rs:887:81
+    |
+887 |             assert_eq!(config_write(Some(covered), offset, width), Err(Refused::AddressMap), "{device:#x} {offset:#x} {width:?}");
+    |                                                                                 ^^^^^^^^^^ variant, associated function, or constant not found in `toyos_abi::acpi::Refused`
+
+error[E0599]: no variant, associated function, or constant named `AddressMap` found for enum `toyos_abi::acpi::Refused` in the current scope
+   --> lib/userbound/tests/firmware.rs:915:86
+    |
+915 | ...th), Err(Refused::AddressMap), "{device:#x} {offset:#x} {width:?}");
+    |                      ^^^^^^^^^^ variant, associated function, or constant not found in `toyos_abi::acpi::Refused`
+
+error[E0599]: no variant, associated function, or constant named `AddressMap` found for enum `toyos_abi::acpi::Refused` in the current scope
+   --> lib/userbound/tests/firmware.rs:925:75
+    |
+925 |         assert_eq!(config_write(Some(smbus), offset, width), Err(Refused::AddressMap), "{offset:#x} {width:?}");
+    |                                                                           ^^^^^^^^^^ variant, associated function, or constant not found in `toyos_abi::acpi::Refused`
+
+error[E0599]: no variant, associated function, or constant named `AddressMap` found for enum `toyos_abi::acpi::Refused` in the current scope
+   --> lib/userbound/tests/firmware.rs:931:77
+    |
+931 |         assert_eq!(config_write(Some(q35_lpc), offset, width), Err(Refused::AddressMap), "{offset:#x} {width:?}");
+    |                                                                             ^^^^^^^^^^ variant, associated function, or constant not found in `toyos_abi::acpi::Refused`
+
+error[E0560]: struct `toyos_userbound::firmware::Memory<'_, Copied<std::slice::Iter<'_, (u64, u64)>>>` has no field named `host_bridge`
+   --> lib/userbound/tests/firmware.rs:954:9
+    |
+954 |         host_bridge: HostBridge { vendor: 0x8086, device: 0x9A14, at_48h: T14_MCHBAR | 1 },
+    |         ^^^^^^^^^^^ `toyos_userbound::firmware::Memory<'_, _>` does not have this field
+    |
+    = note: all struct fields are already assigned
+
+error[E0599]: no variant, associated function, or constant named `KernelRegister` found for enum `toyos_abi::acpi::Refused` in the current scope
+   --> lib/userbound/tests/firmware.rs:976:76
+    |
+976 |                     assert_eq!(refused(&memory, at, width, true), Refused::KernelRegister, "{at:#x} {width:?}");
+    |                                                                            ^^^^^^^^^^^^^^ variant, associated function, or constant not found in `toyos_abi::acpi::Refused`
+
+error[E0560]: struct `toyos_userbound::firmware::Memory<'_, _>` has no field named `host_bridge`
+   --> lib/userbound/tests/firmware.rs:996:31
+    |
+996 |         let memory = Memory { host_bridge: HostBridge { vendor: 0x8086, device, at_48h: T14_MCHBAR | 1 }, ..t14() };
+    |                               ^^^^^^^^^^^ `toyos_userbound::firmware::Memory<'_, _>` does not have this field
+    |
+    = note: available fields are: `map`, `mapped_end`, `ecam`, `devices`, `facs` ... and 2 others
+
+error[E0599]: no variant, associated function, or constant named `KernelRegister` found for enum `toyos_abi::acpi::Refused` in the current scope
+   --> lib/userbound/tests/firmware.rs:997:73
+    |
+997 |         assert_eq!(refused(&memory, rapl, Width::DWord, true), Refused::KernelRegister, "{device:#x}");
+    |                                                                         ^^^^^^^^^^^^^^ variant, associated function, or constant not found in `toyos_abi::acpi::Refused`
+
+error[E0560]: struct `toyos_userbound::firmware::Memory<'_, Copied<std::slice::Iter<'_, (u64, u64)>>>` has no field named `host_bridge`
+    --> lib/userbound/tests/firmware.rs:1008:34
+     |
+1008 |         assert!(passes(&Memory { host_bridge, ..t14() }, rapl, Width::DWord, true), "{host_bridge:?}");
+     |                                  ^^^^^^^^^^^ `toyos_userbound::firmware::Memory<'_, _>` does not have this field
+     |
+     = note: available fields are: `map`, `mapped_end`, `ecam`, `devices`, `facs` ... and 2 others
+
+error[E0560]: struct `toyos_userbound::firmware::Memory<'_, _>` has no field named `host_bridge`
+    --> lib/userbound/tests/firmware.rs:1012:26
+     |
+1012 |     let noisy = Memory { host_bridge: HostBridge { vendor: 0x8086, device: 0x9A14, at_48h: 1 << 45 | T14_MCHBAR | 0x1_FFFF }, ..t1...
+     |                          ^^^^^^^^^^^ `toyos_userbound::firmware::Memory<'_, _>` does not have this field
+     |
+     = note: available fields are: `map`, `mapped_end`, `ecam`, `devices`, `facs` ... and 2 others
+
+error[E0599]: no variant, associated function, or constant named `KernelRegister` found for enum `toyos_abi::acpi::Refused` in the current scope
+    --> lib/userbound/tests/firmware.rs:1013:67
+     |
+1013 |     assert_eq!(refused(&noisy, rapl, Width::Byte, true), Refused::KernelRegister);
+     |                                                                   ^^^^^^^^^^^^^^ variant, associated function, or constant not found in `toyos_abi::acpi::Refused`
+
+Some errors have detailed explanations: E0061, E0432, E0560, E0599.
+For more information about an error, try `rustc --explain E0061`.
+error: could not compile `toyos-userbound` (test "firmware") due to 39 previous errors
+EXIT 101
