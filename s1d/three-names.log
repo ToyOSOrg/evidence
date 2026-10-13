@@ -1,0 +1,43 @@
+HEAD=c7201d3757e506593b417406017d1452a344bf5f
+ARM=three-names
+SETUP=git apply <scratch>/three-names.patch
+CMD=cargo test -p fileserver --lib an_append_stopped
+diff --git a/system/fileserver/src/fat.rs b/system/fileserver/src/fat.rs
+index 42a8a39be..a90d58a97 100644
+--- a/system/fileserver/src/fat.rs
++++ b/system/fileserver/src/fat.rs
+@@ -839,7 +839,6 @@ mod tests {
+                     .filter(|c| match c {
+                         _ if synced_whole => true,
+                         Complaint::LostChain { .. } | Complaint::FsInfoFreeCount { .. } | Complaint::FatMirror { .. } => false,
+-                        Complaint::ChainTooLong { path, size, .. } => !(path == "/a.txt" && *size == held.len() as u64),
+                         _ => true,
+                     })
+                     .collect();
+   Compiling toyos-fat32 v0.1.0 (<worktree>/lib/fat32)
+   Compiling fileserver v0.0.0 (<worktree>/system/fileserver)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.96s
+     Running unittests src/lib.rs (target/debug/deps/fileserver-50a0d63673a2e5f4)
+
+running 1 test
+test fat::tests::an_append_stopped_with_any_writes_of_a_flush_on_the_disk_reads_back_the_last_sync ... FAILED
+
+failures:
+
+---- fat::tests::an_append_stopped_with_any_writes_of_a_flush_on_the_disk_reads_back_the_last_sync stdout ----
+fileserver: FAT32 mounted, 34128896 bytes, 512-byte sectors, 512-byte clusters
+fileserver: FAT32 mounted, 34128896 bytes, 512-byte sectors, 512-byte clusters
+
+thread 'fat::tests::an_append_stopped_with_any_writes_of_a_flush_on_the_disk_reads_back_the_last_sync' (26909487) panicked at system/fileserver/src/fat.rs:845:17:
+stopped in flush epoch 2 of 5 with writes 0b1 of its 6: /a.txt: DIR_FileSize is 3000 bytes, which needs 6 clusters, and the chain holds 30
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    fat::tests::an_append_stopped_with_any_writes_of_a_flush_on_the_disk_reads_back_the_last_sync
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 57 filtered out; finished in 0.01s
+
+error: test failed, to rerun pass `-p fileserver --lib`
+EXIT=101
+RESTORED_CLEAN=yes

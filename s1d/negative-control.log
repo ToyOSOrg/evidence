@@ -1,0 +1,52 @@
+HEAD=c7201d3757e506593b417406017d1452a344bf5f
+ARM=the fileserver barrier reverted (the production change to fat.rs, whole)
+CMD=cargo test -p fileserver --lib an_append_stopped
+diff --git a/system/fileserver/src/fat.rs b/system/fileserver/src/fat.rs
+index 42a8a39be..aefcc1788 100644
+--- a/system/fileserver/src/fat.rs
++++ b/system/fileserver/src/fat.rs
+@@ -184,11 +184,6 @@ impl<D: Disk> FatVolume<D> {
+         if open.gone {
+             return Ok(());
+         }
+-        // The chain and the data on the disk before the entry that reaches
+-        // them is in the cache.
+-        if open.file.needs_reconcile() {
+-            self.cache.flush().map_err(|_| logged("the chain", &open.path, Error::Io))?;
+-        }
+         self.fs.flush_meta(&mut open.file, time).map_err(|e| logged("the entry", &open.path, e))?;
+         if open.file.needs_reconcile() {
+             self.fs.reconcile(&mut open.file, time).map_err(|e| logged("a reconcile", &open.path, e))?;
+   Compiling fileserver v0.0.0 (<worktree>/system/fileserver)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.48s
+     Running unittests src/lib.rs (target/debug/deps/fileserver-50a0d63673a2e5f4)
+
+running 1 test
+test fat::tests::an_append_stopped_with_any_writes_of_a_flush_on_the_disk_reads_back_the_last_sync ... FAILED
+
+failures:
+
+---- fat::tests::an_append_stopped_with_any_writes_of_a_flush_on_the_disk_reads_back_the_last_sync stdout ----
+fileserver: FAT32 mounted, 34128896 bytes, 512-byte sectors, 512-byte clusters
+fileserver: FAT32 mounted, 34128896 bytes, 512-byte sectors, 512-byte clusters
+fileserver: FAT32 mounted, 34128896 bytes, 512-byte sectors, 512-byte clusters
+fileserver: FAT32 mounted, 34128896 bytes, 512-byte sectors, 512-byte clusters
+fileserver: FAT32 mounted, 34128896 bytes, 512-byte sectors, 512-byte clusters
+fileserver: FAT32 mounted, 34128896 bytes, 512-byte sectors, 512-byte clusters
+fileserver: FAT32 mounted, 34128896 bytes, 512-byte sectors, 512-byte clusters
+fileserver: FAT32 mounted, 34128896 bytes, 512-byte sectors, 512-byte clusters
+fileserver: FAT32 mounted, 34128896 bytes, 512-byte sectors, 512-byte clusters
+
+thread 'fat::tests::an_append_stopped_with_any_writes_of_a_flush_on_the_disk_reads_back_the_last_sync' (26910208) panicked at system/fileserver/src/fat.rs:841:17:
+stopped in flush epoch 1 of 3 with writes 0b1000 of its 8: /a.txt: DIR_FileSize is 15288 bytes, which needs 30 clusters, and the chain holds 6
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    fat::tests::an_append_stopped_with_any_writes_of_a_flush_on_the_disk_reads_back_the_last_sync
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 57 filtered out; finished in 0.02s
+
+error: test failed, to rerun pass `-p fileserver --lib`
+EXIT=101
+RESTORED_CLEAN=yes

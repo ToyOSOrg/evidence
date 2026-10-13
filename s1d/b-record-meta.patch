@@ -1,0 +1,13 @@
+--- a/lib/fat32/src/fs.rs
++++ b/lib/fat32/src/fs.rs
+@@ -819,7 +819,9 @@
+     fn record_meta(&mut self, f: &mut File, time: FatTime) -> Result<(), Error> {
+         let mut raw = self.live_entry(f)?;
+         raw.set_first_cluster(f.first_cluster.map_or(0, Cluster::raw));
+-        raw.set_size(f.size);
++        if f.entry_cluster.is_none() {
++            raw.set_size(f.size);
++        }
+         raw.set_write_time(time);
+         self.write_entry_at(f.loc.entry_offset, &raw)?;
+         f.entry_cluster = f.first_cluster;

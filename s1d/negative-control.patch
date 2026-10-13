@@ -1,0 +1,14 @@
+--- a/system/fileserver/src/fat.rs
++++ b/system/fileserver/src/fat.rs
+@@ -184,11 +184,6 @@
+         if open.gone {
+             return Ok(());
+         }
+-        // The chain and the data on the disk before the entry that reaches
+-        // them is in the cache.
+-        if open.file.needs_reconcile() {
+-            self.cache.flush().map_err(|_| logged("the chain", &open.path, Error::Io))?;
+-        }
+         self.fs.flush_meta(&mut open.file, time).map_err(|e| logged("the entry", &open.path, e))?;
+         if open.file.needs_reconcile() {
+             self.fs.reconcile(&mut open.file, time).map_err(|e| logged("a reconcile", &open.path, e))?;

@@ -1,0 +1,32 @@
+HEAD=c7201d3757e506593b417406017d1452a344bf5f
+ARM=b-at-17ea52983
+SETUP=git checkout 17ea52983 -- system/fileserver/src/fat.rs && git apply <scratch>/b-record-meta.patch
+CMD=cargo test -p fileserver --lib an_append_stopped
+diff --git a/lib/fat32/src/fs.rs b/lib/fat32/src/fs.rs
+index 72cdd5ea1..a2a8e76f6 100644
+--- a/lib/fat32/src/fs.rs
++++ b/lib/fat32/src/fs.rs
+@@ -819,7 +819,9 @@ impl<D: BlockAccess> Fat32<D> {
+     fn record_meta(&mut self, f: &mut File, time: FatTime) -> Result<(), Error> {
+         let mut raw = self.live_entry(f)?;
+         raw.set_first_cluster(f.first_cluster.map_or(0, Cluster::raw));
+-        raw.set_size(f.size);
++        if f.entry_cluster.is_none() {
++            raw.set_size(f.size);
++        }
+         raw.set_write_time(time);
+         self.write_entry_at(f.loc.entry_offset, &raw)?;
+         f.entry_cluster = f.first_cluster;
+    Blocking waiting for file lock on package cache
+   Compiling toyos-fat32 v0.1.0 (<worktree>/lib/fat32)
+   Compiling fileserver v0.0.0 (<worktree>/system/fileserver)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.90s
+     Running unittests src/lib.rs (target/debug/deps/fileserver-50a0d63673a2e5f4)
+
+running 1 test
+test fat::tests::an_append_stopped_with_any_writes_of_a_flush_on_the_disk_reads_back_the_last_sync ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 57 filtered out; finished in 0.06s
+
+EXIT=0
+RESTORED_CLEAN=yes
