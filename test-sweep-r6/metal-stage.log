@@ -1,0 +1,32 @@
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.39s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-c7f129e479c09297)
+01:19:11   BUILD x86_64 binaries of tests/guest/rust-tests
+01:19:12 external deps changed: cleaning <path>
+01:19:12 external deps changed: cleaning <path>
+01:19:12 external deps changed: cleaning <path>
+01:19:12 external deps changed: cleaning <path>
+01:19:59   BUILT x86_64 binaries of tests/guest/rust-tests  (49s)
+01:19:59 [toyos] Compiling 138 C tests, and attempting 24 declared ones...
+01:20:03 [metal] 23 registration(s) and 222 shared member(s) over 2 boot(s)
+01:20:03   BUILD x86_64 kernel, loader, ROOT of <path>
+01:20:05 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+01:20:06   BUILT x86_64 kernel, loader, ROOT of <path>  (2s)
+01:20:06 [metal] testcases: 230 job(s) under a list bound of 99000 ms, armed with [] and a boot deadline of 198000 ms — <path>
+01:20:06   BUILD x86_64 ROOT of <path>
+01:20:08 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+01:20:08   BUILT x86_64 ROOT of <path>  (1s)
+01:20:08 [metal] testcases-watchdog: 0 job(s) under a list bound of 60000 ms, armed with ["watchdog"] and a boot deadline of 120000 ms — <path>
+# One boot per image. Each invocation is `cargo <words>` from this worktree.
+
+testcases
+  image: <path>
+  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check
+
+testcases-watchdog
+  image: <path>
+  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check
+01:20:08 [metal] staged 2 image(s); <path> lists them. The machine was not touched, so this run establishes nothing about it.
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `<path> --metal --metal-readback <path> 'boot:testcases'` (exit status: 2)
