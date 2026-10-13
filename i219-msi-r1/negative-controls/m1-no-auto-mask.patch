@@ -1,0 +1,13 @@
+diff --git a/system/netstack/i219/src/lib.rs b/system/netstack/i219/src/lib.rs
+index 7401c3035..cee5c5d51 100644
+--- a/system/netstack/i219/src/lib.rs
++++ b/system/netstack/i219/src/lib.rs
+@@ -1014,7 +1014,7 @@ impl<R: Registers, C: Clock, D: DmaBuffers, I: Interrupts> I219<R, C, D, I> {
+         // cause until `begin_pass` unmasks them again.
+         regs.write32(regs::EIAC, 0);
+         regs.write32(regs::IAM, u32::MAX);
+-        regs.write32(regs::CTRL_EXT, regs.read32(regs::CTRL_EXT) | ctrl_ext::IAME);
++        let _ = ctrl_ext::IAME;
+ 
+         // §10.2.4.9: `IVAR` allocates every cause to no vector at reset, so a
+         // part in MSI-X mode with it unprogrammed fills `ICR` and delivers
