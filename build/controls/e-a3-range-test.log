@@ -1,0 +1,47 @@
+   Compiling toyos-ps2 v0.1.0 (<home>/<dev>/toyos-amddesk/kernel/ps2)
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.52s
+     Running unittests src/lib.rs (target/debug/deps/toyos_ps2-865fc29c56dec46f)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/decode.rs (target/debug/deps/decode-b9d132b3ab6ece29)
+
+running 20 tests
+test a_device_reset_is_reported_and_aa_is_still_a_legal_head_byte ... ok
+test a_healthy_stream_discards_nothing_and_leaves_no_byte_unaccounted ... ok
+test a_sequence_is_pending_until_the_byte_that_ends_it ... ok
+test a_stale_partial_is_abandoned_rather_than_completed ... ok
+test an_implausible_byte_at_a_boundary_costs_exactly_itself ... ok
+test buttons_are_already_in_hid_order ... ok
+test a_stream_truncated_at_any_offset_resyncs_within_two_packets ... ok
+test left_shift_break_is_not_read_as_a_reset ... ok
+test every_usage_the_rest_of_the_tree_names_is_reachable ... ok
+test make_and_break_and_the_e0_prefix ... ok
+test no_legal_head_byte_is_ever_discarded ... ok
+test overflow_drops_the_motion_and_keeps_the_buttons ... ok
+test overrun_codes_report_lost_and_clear_the_prefix_state ... ok
+test deltas_are_nine_bit_and_dy_is_inverted ... ok
+test page_up_and_down_decode_to_their_hid_usages ... ok
+test pause_consumes_exactly_six_bytes_and_emits_nothing ... ok
+test printscreen_emits_one_usage_and_no_phantom_shift ... ok
+test the_iso_key_is_the_one_the_layouts_carry ... ok
+test unmapped_scancodes_emit_nothing ... ok
+test tables_hold_only_real_usages_and_no_duplicates ... FAILED
+
+failures:
+
+---- tables_hold_only_real_usages_and_no_duplicates stdout ----
+
+thread 'tables_hold_only_real_usages_and_no_duplicates' (26566204) panicked at kernel/ps2/tests/decode.rs:33:13:
+SET1_E0[0x20] = 0x7f is not a HID keyboard usage
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    tables_hold_only_real_usages_and_no_duplicates
+
+test result: FAILED. 19 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-ps2 --test decode`

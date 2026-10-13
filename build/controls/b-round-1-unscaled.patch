@@ -1,0 +1,13 @@
+diff --git a/system/soundserver/resample/src/lib.rs b/system/soundserver/resample/src/lib.rs
+index a94c75115..81fc4d253 100644
+--- a/system/soundserver/resample/src/lib.rs
++++ b/system/soundserver/resample/src/lib.rs
+@@ -36,7 +36,7 @@ const MAX_RATIO_RELATIVE: f64 = 2.0;
+ 
+ /// The parameters a client at `client_rate` on a device at `device_rate` takes.
+ fn parameters(client_rate: u32, device_rate: u32) -> SincInterpolationParameters {
+-    let faster = (client_rate as f64 / device_rate as f64).max(1.0);
++    let faster = (client_rate as f64 / device_rate as f64).min(1.0).max(1.0);
+     let sinc_len = 8 * ((SINC_LEN as f64 * faster / 8.0).ceil() as usize);
+     SincInterpolationParameters {
+         sinc_len,

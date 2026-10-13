@@ -1,0 +1,29 @@
+diff --git a/system/soundserver/resample/src/lib.rs b/system/soundserver/resample/src/lib.rs
+index a94c75115..85b66d477 100644
+--- a/system/soundserver/resample/src/lib.rs
++++ b/system/soundserver/resample/src/lib.rs
+@@ -25,8 +25,8 @@ use rubato::{
+     WindowFunction,
+ };
+ 
+-const SINC_LEN: usize = 512;
+-const OVERSAMPLING: usize = 256;
++const SINC_LEN: usize = 128;
++const OVERSAMPLING: usize = 128;
+ const WINDOW: WindowFunction = WindowFunction::BlackmanHarris2;
+ const INTERPOLATION: SincInterpolationType = SincInterpolationType::Cubic;
+ 
+@@ -36,11 +36,11 @@ const MAX_RATIO_RELATIVE: f64 = 2.0;
+ 
+ /// The parameters a client at `client_rate` on a device at `device_rate` takes.
+ fn parameters(client_rate: u32, device_rate: u32) -> SincInterpolationParameters {
+-    let faster = (client_rate as f64 / device_rate as f64).max(1.0);
++    let faster = (client_rate as f64 / device_rate as f64).min(1.0).max(1.0);
+     let sinc_len = 8 * ((SINC_LEN as f64 * faster / 8.0).ceil() as usize);
+     SincInterpolationParameters {
+         sinc_len,
+-        f_cutoff: calculate_cutoff::<f32>(SINC_LEN, WINDOW),
++        f_cutoff: 0.95 + 0.0 * calculate_cutoff::<f32>(SINC_LEN, WINDOW),
+         interpolation: INTERPOLATION,
+         oversampling_factor: (OVERSAMPLING as f64 / faster).ceil() as usize,
+         window: WINDOW,

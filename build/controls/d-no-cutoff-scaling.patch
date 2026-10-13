@@ -1,0 +1,13 @@
+diff --git a/system/soundserver/resample/src/tests.rs b/system/soundserver/resample/src/tests.rs
+index 8731259c5..59f2eaa3d 100644
+--- a/system/soundserver/resample/src/tests.rs
++++ b/system/soundserver/resample/src/tests.rs
+@@ -56,7 +56,7 @@ fn explicit(client: u32, device: u32) -> Vec<(&'static str, SincFixedOut<f32>)>
+     let p = parameters(client, device);
+     let ratio = device as f64 / client as f64;
+     let sinc_len = 8 * (p.sinc_len as f32 / 8.0).ceil() as usize;
+-    let cutoff = if ratio >= 1.0 { p.f_cutoff } else { p.f_cutoff * ratio as f32 };
++    let cutoff = p.f_cutoff;
+     interpolators(sinc_len, p.oversampling_factor, cutoff, p.window)
+         .into_iter()
+         .map(|(name, interpolator)| {

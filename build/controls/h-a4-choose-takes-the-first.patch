@@ -1,0 +1,13 @@
+diff --git a/lib/hda/src/path.rs b/lib/hda/src/path.rs
+index d755e686a..c2f217c40 100644
+--- a/lib/hda/src/path.rs
++++ b/lib/hda/src/path.rs
+@@ -134,7 +134,7 @@ pub fn find_output_path(codecs: &[Codec]) -> Result<OutputPath, PathError> {
+ pub fn choose(controllers: &[Vec<Codec>]) -> Result<(usize, OutputPath), Unchosen> {
+     let found: Vec<Result<OutputPath, PathError>> =
+         controllers.iter().map(|codecs| find_output_path(codecs)).collect();
+-    if found.iter().filter(|walk| walk.is_ok()).count() != 1 {
++    if found.iter().filter(|walk| walk.is_ok()).count() == 0 {
+         return Err(Unchosen(found));
+     }
+     let (index, path) = found
