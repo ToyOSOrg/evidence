@@ -1,0 +1,21 @@
+--- a/system/compositor/desktop/src/clipboard.rs
++++ b/system/compositor/desktop/src/clipboard.rs
+@@ -160,4 +160,18 @@
+         assert_eq!(w.commit().map(|(r, _)| r), Some(1));
+         assert_eq!(w.commit(), None);
+     }
++
++    /// The watcher opened its region after a delivery it had not yet read, and
++    /// asked again before the commit: the ask at the commit is the one that
++    /// followed the delivery, and the text was chosen before it.
++    #[test]
++    fn a_region_opened_after_a_delivery_refuses_the_commit_after_the_next_ask() {
++        let mut w = watch();
++        w.ask();
++        assert!(w.client_set());
++        w.begin(()).expect("no region was open");
++        w.ask();
++        assert_eq!(w.commit(), Some(((), Landing::Stale)));
++    }
++
+ }

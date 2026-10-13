@@ -1,0 +1,28 @@
+--- a/lib/vdagent/src/stream.rs
++++ b/lib/vdagent/src/stream.rs
+@@ -416,5 +416,25 @@
+         let mut bytes = host(1, &[0; 12]);
+         bytes.extend(host(wire::RELEASE, &[]));
+         assert_eq!(decode(&bytes), (vec![Err(Refusal::Kind { kind: 1 }), Ok(Message::Release)], Ok(())));
++    }
++
++    /// Only the header has arrived: a message the agent would refuse is named
++    /// before any of its data is buffered.
++    #[test]
++    fn a_refusal_is_named_at_its_header_before_its_data_arrives() {
++        for (protocol, kind, size, refusal) in [
++            (2, wire::REQUEST, 4, Refusal::Protocol { protocol: 2 }),
++            (1, wire::REQUEST, 1000, Refusal::Size { kind: wire::REQUEST, size: 1000 }),
++            (1, wire::RELEASE, 1000, Refusal::Size { kind: wire::RELEASE, size: 1000 }),
++            (1, wire::GRAB, 1000, Refusal::Size { kind: wire::GRAB, size: 1000 }),
++            (1, 1, 1000, Refusal::Kind { kind: 1 }),
++        ] {
++            let header = message_with(protocol, kind, size, &[]);
++            // A chunk declaring the whole message, of which only the header came.
++            let mut bytes = words(&[1, header.len() as u32 + size]);
++            bytes.extend(header);
++            assert_eq!(decode(&bytes), (vec![Err(refusal)], Ok(())), "type {kind}");
++        }
+     }
++
+ }

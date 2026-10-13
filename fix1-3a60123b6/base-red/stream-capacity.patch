@@ -1,0 +1,20 @@
+--- a/lib/vdagent/src/stream.rs
++++ b/lib/vdagent/src/stream.rs
+@@ -416,5 +416,17 @@
+         let mut bytes = host(1, &[0; 12]);
+         bytes.extend(host(wire::RELEASE, &[]));
+         assert_eq!(decode(&bytes), (vec![Err(Refusal::Kind { kind: 1 }), Ok(Message::Release)], Ok(())));
++    }
++
++    /// The largest message the bound admits, fed as QEMU 11.1.1 chunks it,
++    /// keeps no more than it declares.
++    #[test]
++    fn a_kept_message_buffers_no_more_than_it_declares() {
++        let mut data = words(&[wire::UTF8_TEXT]);
++        data.extend(vec![b'x'; crate::MAX_TEXT]);
++        let (out, _) = decode(&host(wire::CLIPBOARD, &data));
++        let [Ok(Message::Clipboard { data, .. })] = out.as_slice() else { panic!("{} messages", out.len()) };
++        assert!(data.capacity() <= MAX_DATA, "{} bytes held for {MAX_DATA} declared", data.capacity());
+     }
++
+ }

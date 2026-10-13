@@ -1,0 +1,11 @@
+--- a/lib/vdagent/src/stream.rs
++++ b/lib/vdagent/src/stream.rs
+@@ -242,7 +242,7 @@
+     if protocol != wire::PROTOCOL {
+         return Err(Refusal::Protocol { protocol });
+     }
+-    if Untrusted::new(size).at_most(MAX_DATA as u64).is_err() {
++    if Untrusted::new(size).at_most(u32::MAX as u64).is_err() {
+         return Err(Refusal::TooLarge { kind, size });
+     }
+     let len = size as usize;

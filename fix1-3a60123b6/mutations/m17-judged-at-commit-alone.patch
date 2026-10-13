@@ -1,0 +1,12 @@
+--- a/system/compositor/desktop/src/clipboard.rs
++++ b/system/compositor/desktop/src/clipboard.rs
+@@ -91,7 +91,8 @@
+     /// The watcher's set in the open region: the region, and whether what it
+     /// holds lands. `None` where none is open, which is out of protocol.
+     pub fn commit(&mut self) -> Option<(R, Landing)> {
+-        self.region.take()
++        let landing = self.set();
++        self.region.take().map(|(region, _)| (region, landing))
+     }
+ 
+     /// The watcher is gone: its ask and its region go with it, and a copy it

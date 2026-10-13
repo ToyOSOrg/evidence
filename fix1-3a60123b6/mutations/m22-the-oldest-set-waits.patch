@@ -1,0 +1,11 @@
+--- a/system/vdagent/bridge/src/sets.rs
++++ b/system/vdagent/bridge/src/sets.rs
+@@ -20,7 +20,7 @@
+     /// The guest's clipboard is to become `text`. Answers it where it goes now.
+     pub fn set(&mut self, text: String) -> Option<String> {
+         if self.in_flight {
+-            self.queued = Some(text);
++            self.queued.get_or_insert(text);
+             return None;
+         }
+         self.in_flight = true;
