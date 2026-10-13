@@ -435,3 +435,45 @@ docRevG
 Revision Guide for AMD Family 17h Models 60h-6Fh Processors
 docSATA
 ```
+
+### Vol. 3A §13.12.3, MSR access in x2APIC mode: the fence before a WRMSR (replaces `cpu.rs`'s Linux citation)
+
+```text
+13.12.3 MSR Access in x2APIC Mode
+To allow for efficient access to the APIC registers in x2APIC mode, the serializing semantics of WRMSR are relaxed 
+when writing to the APIC registers. Thus, system software should not use “WRMSR to APIC registers in x2APIC 
+mode” as a serializing instruction. Read and write accesses to the APIC registers will occur in program order. A 
+WRMSR to an APIC register may complete before all preceding stores are globally visible; software can prevent this 
+by inserting a serializing instruction or the sequence MFENCE;LFENCE before the WRMSR.
+```
+
+### Vol. 1 §21.1, CPUID above the maximum leaf (replaces `cpu::leaf_6`'s Linux citation)
+
+```text
+Older processors before the Pentium 4 do not support the extended CPUID range and treat bit 31 of CPUID’s input 
+EAX value as zero.
+If a value entered for CPUID.EAX is higher than the maximum input value for basic or extended function for that 
+processor then the data for the highest basic information leaf is returned. Software should not rely on the values 
+returned by the processor outside of the above ranges.
+```
+
+### Vol. 3B §17.4.4.1, the note on EPB under HWP, whole
+
+```text
+Energy_Performance_Preference (bits 31:24, RW) — Conveys a hint to the HWP hardware. The OS may 
+write a range of values from 0 (performance preference) to 0FFH (energy efficiency preference) to influence 
+the rate of performance increase /decrease and the result of the hardware's energy efficiency and performance 
+optimizations. The default value of this field is 80H. Note: If CPUID.06H:EAX[10] indicates that this field is not 
+supported, HWP uses the value of the IA32_ENERGY_PERF_BIAS MSR to determine the energy efficiency / 
+performance preference.
+```
+
+This note says HWP uses `IA32_ENERGY_PERF_BIAS` when EPP is **not** supported. The design's statement that HWP does not read EPB for its own choice when EPP **is** supported is an inference from this note. The SDM does not state it.
+
+## AMD revision guides
+
+See `amd-guides.md` beside this file: hashes, archive provenance, the 1386 entry and the column of each listing.
+
+## The SMI count model list
+
+See `smi-list.md` beside this file.
