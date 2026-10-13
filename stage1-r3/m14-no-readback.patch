@@ -1,0 +1,19 @@
+diff --git a/build/root/src/main.rs b/build/root/src/main.rs
+index bc3355c8d..ef40513d1 100644
+--- a/build/root/src/main.rs
++++ b/build/root/src/main.rs
+@@ -98,13 +98,7 @@ fn new(path: &Path) -> Result<String, String> {
+     getrandom::fill(&mut seed).map_err(|e| format!("the operating system's randomness: {e}"))?;
+     let file = create_new(path, 0o600)?;
+     let mode = file.metadata().map_err(|e| format!("{}: {e}", path.display()))?.permissions().mode() & 0o777;
+-    if mode != 0o600 {
+-        let removed = std::fs::remove_file(path).map_or_else(|e| format!(", and removing it failed: {e}"), |()| String::new());
+-        return Err(format!(
+-            "{} reads back {mode:04o}, not 0600: its filesystem keeps no Unix mode, so the root key is not written there{removed}",
+-            path.display()
+-        ));
+-    }
++    let _ = mode;
+     fill(file, path, toyos_update::sig::seed_text(&seed).as_bytes())?;
+     let public = toyos_update::sig::public_of(&seed);
+     Ok(format!("root key {}\n{}\n", repo::fingerprint(&public), repo::public_line(&public)))

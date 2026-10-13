@@ -1,0 +1,111 @@
+check EXIT=0
+apply EXIT=0
+ build/root/src/main.rs | 8 +-------
+ 1 file changed, 1 insertion(+), 7 deletions(-)
+build EXIT=0
+umask 0022
+toyos-root: Mach-O 64-bit executable arm64
+== APFS: a blank 64 MiB image, attached unmounted
+create EXIT=0
+== diskutil eraseDisk APFS TRYAPFS GPT <disk>
+eraseDisk EXIT=0
+/dev/diskNsM on <vol> (apfs, local, nodev, nosuid, journaled, noowners, mounted by <user>)
+   File System Personality:   APFS
+== toyos-root new <vol>/root-key
+EXIT=0
+root key SHA256:k6yo0VmgI+Jg/12lChVXksvYKabBiTPEXaYSyDHRxiY
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHeSRJYyF5KQCQnl9+6Rn0LTp9SmH8VbUMI4wIYNycLq
+root-key: -rw-------
+ok: new on APFS exits 0
+ok: new on APFS mints -rw-------
+== step 2.3 on the same volume: cp, cmp, stat -f %Sp
+cmp EXIT=0
+ok: the B copy on APFS reads -rw-------
+detach EXIT=0
+== ExFAT: a blank 64 MiB image, attached unmounted
+create EXIT=0
+== diskutil eraseDisk ExFAT TRYEFAT GPT <disk>
+eraseDisk EXIT=0
+/dev/diskNsM on <vol> (exfat, local, nodev, nosuid, noowners, noatime, fskit, mounted by <user>)
+   File System Personality:   ExFAT
+== toyos-root new <vol>/root-key
+EXIT=0
+root key SHA256:kntnOlivKbtA6fp6Q3sgr4nJVGgAKqTNUC2vl7fFXKc
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOZCss69Hp+1aDRTGLSVnLAF7opp7nr23HdZb05crrGU
+root-key: -rwx------
+FAILED: new on ExFAT exits 1 (got '0', want '1')
+FAILED: new on ExFAT leaves no file (got '-rwx------', want 'no file')
+detach EXIT=0
+== MS-DOS FAT32: a blank 64 MiB image, attached unmounted
+create EXIT=0
+== diskutil eraseDisk MS-DOS FAT32 TRYMSDOSF GPT <disk>
+eraseDisk EXIT=0
+/dev/diskNsM on <vol> (msdos, local, nodev, nosuid, noowners, noatime, fskit, mounted by <user>)
+   File System Personality:   MS-DOS FAT32
+== toyos-root new <vol>/root-key
+EXIT=0
+root key SHA256:9OgZD3zAcwQ2eVfn7Pubr0mMSQaVKmfd4dFDeNQIeIQ
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDfmkalaY7a+hJ4cO/MJRDkGFRXv8DaeyGB8MopTxMwR
+root-key: -rwx------
+FAILED: new on MS-DOS FAT32 exits 1 (got '0', want '1')
+FAILED: new on MS-DOS FAT32 leaves no file (got '-rwx------', want 'no file')
+detach EXIT=0
+== step 2.1's command, parsed without setting the clock: date -u -j 101312002026
+Tue Oct 13 12:00:00 UTC 2026
+EXIT=0
+failed: 4
+mutated oracle EXIT=4
+restore EXIT=0
+rebuild EXIT=0
+umask 0022
+toyos-root: Mach-O 64-bit executable arm64
+== APFS: a blank 64 MiB image, attached unmounted
+create EXIT=0
+== diskutil eraseDisk APFS TRYAPFS GPT <disk>
+eraseDisk EXIT=0
+/dev/diskNsM on <vol> (apfs, local, nodev, nosuid, journaled, noowners, mounted by <user>)
+   File System Personality:   APFS
+== toyos-root new <vol>/root-key
+EXIT=0
+root key SHA256:NF+gwQxbydtc4MhIgSLoLpZbMHBaizW1vFCLcqxjwYA
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICfhcfSIWzP2Ga8GPyTfgbeGUGKni3bF+FiPMdQMPL68
+root-key: -rw-------
+ok: new on APFS exits 0
+ok: new on APFS mints -rw-------
+== step 2.3 on the same volume: cp, cmp, stat -f %Sp
+cmp EXIT=0
+ok: the B copy on APFS reads -rw-------
+detach EXIT=0
+== ExFAT: a blank 64 MiB image, attached unmounted
+create EXIT=0
+== diskutil eraseDisk ExFAT TRYEFAT GPT <disk>
+eraseDisk EXIT=0
+/dev/diskNsM on <vol> (exfat, local, nodev, nosuid, noowners, noatime, fskit, mounted by <user>)
+   File System Personality:   ExFAT
+== toyos-root new <vol>/root-key
+EXIT=1
+toyos-root: <vol>/root-key reads back 0700, not 0600: its filesystem keeps no Unix mode, so the root key is not written there
+root-key: no file
+ok: new on ExFAT exits 1
+ok: new on ExFAT leaves no file
+detach EXIT=0
+== MS-DOS FAT32: a blank 64 MiB image, attached unmounted
+create EXIT=0
+== diskutil eraseDisk MS-DOS FAT32 TRYMSDOSF GPT <disk>
+eraseDisk EXIT=0
+/dev/diskNsM on <vol> (msdos, local, nodev, nosuid, noowners, noatime, fskit, mounted by <user>)
+   File System Personality:   MS-DOS FAT32
+== toyos-root new <vol>/root-key
+EXIT=1
+toyos-root: <vol>/root-key reads back 0700, not 0600: its filesystem keeps no Unix mode, so the root key is not written there
+root-key: no file
+ok: new on MS-DOS FAT32 exits 1
+ok: new on MS-DOS FAT32 leaves no file
+detach EXIT=0
+== step 2.1's command, parsed without setting the clock: date -u -j 101312002026
+Tue Oct 13 12:00:00 UTC 2026
+EXIT=0
+failed: 0
+restored oracle EXIT=0
+git status --porcelain --ignore-submodules=none:
+(end)
