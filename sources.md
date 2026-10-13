@@ -55,3 +55,45 @@ refuses `iommu_platform`), `hw/nvme/ctrl.c` (`use-intel-id`,
 OASIS, *Virtual I/O Device (VIRTIO) Version 1.2*, Committee Specification 01,
 https://docs.oasis-open.org/virtio/virtio/v1.2/cs01/virtio-v1.2-cs01.html:
 §4.1.2.2, §4.1.4, §5.13, §5.13.6.8.1, §6, §6.1.
+
+## Read for review round 1 (ToyOSOrg/ToyOS#896, issuecomment-6131184845)
+
+At the same commits as above unless named.
+
+Cloud Hypervisor: `docs/iommu.md` ("Usage": a device sits behind the
+virtio-iommu only when tagged `iommu=virtio`, "the default value will always be
+`off`"); `docs/device_model.md` ("I/O APIC": disabled without the serial port);
+`docs/api.md` (`/vm.power-button`); `vmm/src/cpu.rs` (`create_madt` lists an
+I/O APIC unconditionally); `vmm/src/device_manager.rs` and `vmm/src/vm.rs`
+(the I/O APIC is created unconditionally); `vmm/src/acpi.rs`
+(`create_facp_table`: `X_PM_TMR_BLK` at 208 under flags
+`HW_REDUCED_ACPI|RESET_REG_SUP|TMR_VAL_EXT`; PM1a only under
+`legacy_acpi_pm1a`; `create_viot_table`).
+
+crosvm: `src/crosvm/cmdline.rs` (`--vfio PATH,iommu=viommu|coiommu|pkvm-iommu|off`,
+`--vfio-isolate-hotplug`); `src/crosvm/sys/linux.rs` (the virtio-iommu is made
+only where `iommu_attached_endpoints` is non-empty or hotplug isolation has a
+bus range); `src/crosvm/sys/linux/device_helpers.rs`
+(`setup_virtio_access_platform` attaches a device only where
+`supports_iommu()`); `devices/src/pci/pci_device.rs` (`supports_iommu`
+defaults to false); `devices/src/virtio/virtio_pci_device.rs` (no override).
+
+OASIS virtio 1.2 CS01 (URL above): §4.1.5.1.1.1 ("Non-transitional drivers
+MUST look for the Virtio PCI Capabilities ... and fail gracefully"); §5.13.2
+(`requestq`, `eventq`).
+
+Intel, *Intel 64 and IA-32 Architectures Software Developer's Manual*, Volume 1,
+253665-093US, https://cdrdv2.intel.com/v1/dl/getContent/671436: Table 21-9,
+`ECX[31]` "Not Used: Intel processors always return 0. Allocated for use by
+software emulation."; Table 21-53, leaf 15H. AMD's APM Volume 3 (24594) timed
+out from amd.com twice and is unread.
+
+ACPI: uefi.org answers 403 (a JavaScript challenge) for ACPI 6.5's HTML and
+PDF, and the Internet Archive was offline, so 6.5 is unread. The sections cited
+are read in a third-party text copy of ACPI 6.6,
+https://github.com/matotubol/svmvisor at b93b6525c7a53ffc0bacbfbf9df3bb8b443f01a9,
+`docs/ACPI_Spec_6.6/`: page_123.txt (§4.1, "the ACPI Fixed Hardware interface
+is not implemented"; §4.1.1.1, the GED's `_EVT`), page_154.txt (§4.8.3.3,
+3.579545 MHz), page_157.txt (§4.8.3.7), page_182.txt (§5.2.9's note: OSPM
+ignores offsets 46 through 108 and 148 through 232 under `HW_REDUCED_ACPI`),
+page_189.txt (`X_PM_TMR_BLK` at offset 208).
