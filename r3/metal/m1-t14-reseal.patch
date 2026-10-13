@@ -1,0 +1,16 @@
+diff --git a/tests/toyos.rs b/tests/toyos.rs
+index 0000000..0000000 100644
+--- a/tests/toyos.rs
++++ b/tests/toyos.rs
+@@ -942,7 +942,10 @@ const METAL: &[(&str, metal::Metal)] = &[
+         // Every CPU's microcode line, held to what its bench is held to:
+         // `microcode_on_metal` says which machine is held to what.
+         "microcode",
+-        metal::Metal { arms: METALCASE, judge: |b| microcode_on_metal(b[0].kernel().text(), b[0].cpus()?) },
++        metal::Metal {
++            arms: &[metal::once("metalcase-reseal", "tests/images/metalcase.toml", &["microcode-reseal"], &[])],
++            judge: |b| microcode_on_metal(b[0].kernel().text(), b[0].cpus()?),
++        },
+     ),
+     (
+         // Two boots the suite already flashes: the device boot writes and

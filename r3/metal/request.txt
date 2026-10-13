@@ -1,0 +1,50 @@
+# PR #886's metal request, round 3: the `microcode` row's arms at ToyOS
+# dfee7fa3d (wt/toyos-microcode, origin/main b680a973b merged), each staged by
+# the harness with
+#   cargo test --test toyos-build -- --metal --metal-readback <dir> [--metal-host '<user>@<amd-bench>'] microcode
+# from the tree named; no machine was touched. Each boot is the toyos-metal
+# command below, from <path> AMD arms carry the
+# placeholder '<user>@<amd-bench>': put the bench's account there. The
+# mutation arms' trees are local commits in that worktree, never pushed, each
+# the patch beside this file applied to dfee7fa3d.
+#
+# After a boot, judge it from the tree named, checked out detached in that
+# worktree, with
+#   cargo test --test toyos-build -- --metal --metal-readback <dir> microcode
+# (with --metal-host '<user>@<amd-bench>' on the AMD arms), where <dir> is the
+# arm's directory below. The row words the judge takes: `microcode`.
+
+t14-head   (T14, tree dfee7fa3d64c995a547cca2d5da31b7781957c8f)
+  dir:   <path>
+  image: <path>
+  sha256 acf803b1d9b8b625f42f4b7106aacfe470dfe746ea4203504ea861d581bbdf4f
+  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check
+  expect: GREEN. Eight lines, each 'Intel signature 0x806c1 platform 7 found 0xbe current 0xbe running 0xbe'.
+
+t14-reseal   (T14, tree 117f0d45454d24ba4c61f5f79c7dd8fd2f84c311, m1-t14-reseal.patch)
+  dir:   <path>
+  image: <path>
+  sha256 009a79592dfd75369f8b4a466195fb97125af62a0e6689246a44c854697dd9c3
+  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check
+  expect: RED on a completed boot: 'cpu0 refused the update it was handed and runs 0xbe'; cpu0 reads 'found 0xbe refused 0xbf running 0xbe', the seven APs 'current 0xbe'.
+
+amd-head   (AMD bench, tree dfee7fa3d64c995a547cca2d5da31b7781957c8f)
+  dir:   <path>
+  image: <path>
+  sha256 ac488ca6de90d21a0f4fbaed8d6cfc9d4c124a6ba3fea9c359a52e2bac153a62
+  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check --host <user>@<amd-bench>
+  expect: GREEN. Eight lines (the roster's 8 CPUs), each 'Amd signature 0x860f01 loads nothing: ToyOS has no Amd microcode loader', and no revision read.
+
+t14-reverted   (T14, tree e4b2817c31e2698b28196a4431e33edf581ce34f, m3-whole-change-reverted.patch) — the negative control
+  dir:   <path>
+  image: <path>
+  sha256 58d5e9a6f81bb2422e536f9b12f7bfeb3f2483e2e720596521a54d2aa8a58429
+  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check
+  expect: RED: every production path back to b680a973b, the row kept; it finds no microcode line.
+
+amd-reverted   (AMD bench, tree 2e8aba69fe0f937ed71a3a0a6f16acac33216022, m3-whole-change-reverted.patch) — the negative control
+  dir:   <path>
+  image: <path>
+  sha256 1bc2bb99ee6702dbea87c0f92ca3bb09d5206dac7e9c392e681d34bfcdedf37a
+  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check --host <user>@<amd-bench>
+  expect: RED: as t14-reverted; it finds no microcode line.

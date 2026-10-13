@@ -1,0 +1,44 @@
+$ cargo test -p toyos-microcode
+   Compiling toyos-microcode v0.1.0 (<path>
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.48s
+     Running unittests src/lib.rs (target/debug/deps/toyos_microcode-ab7a57ce825ffe53)
+
+running 19 tests
+test tests::a_guest_loads_nothing_whatever_revision_it_reports ... ok
+test tests::a_header_or_loader_version_other_than_1_is_refused ... ok
+test tests::a_file_cut_short_is_refused ... ok
+test tests::a_size_zero_off_its_granule_or_inside_out_is_refused ... ok
+test tests::a_damaged_extended_table_is_refused ... ok
+test tests::an_empty_file_is_refused ... ok
+test tests::an_extended_signature_names_a_cpu_the_header_does_not ... ok
+test tests::a_t14_below_it_loads_its_data_which_follows_the_header ... ok
+test tests::any_multiple_of_1024_is_a_total_size ... ok
+test tests::another_platform_or_stepping_is_not_named ... ok
+test tests::a_malformed_update_after_a_good_one_refuses_the_file ... ok
+test tests::revision_0xffffffff_loads_nothing ... ok
+test tests::a_vendor_toyos_has_no_loader_for_loads_nothing ... FAILED
+test tests::the_msrs_are_read_where_the_sdm_puts_them ... ok
+test tests::the_t14_runs_intels_newest_update_for_its_cpu ... ok
+test tests::an_extended_signature_in_intels_file_names_its_cpu ... ok
+test tests::the_newest_update_naming_the_cpu_is_chosen_wherever_it_sits ... ok
+test tests::a_flipped_bit_anywhere_in_header_or_data_is_refused ... ok
+test tests::the_embedded_intel_file_hands_the_t14_its_update_16_byte_aligned ... ok
+
+failures:
+
+---- tests::a_vendor_toyos_has_no_loader_for_loads_nothing stdout ----
+
+thread 'tests::a_vendor_toyos_has_no_loader_for_loads_nothing' (18786622) panicked at kernel/microcode/src/tests.rs:257:9:
+assertion `left == right` failed
+  left: Ok(())
+ right: Err(Vendor(Amd))
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    tests::a_vendor_toyos_has_no_loader_for_loads_nothing
+
+test result: FAILED. 18 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-microcode --lib`
+EXIT=101

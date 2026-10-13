@@ -1,0 +1,13 @@
+diff --git a/tests/toyos.rs b/tests/toyos.rs
+index 6f684e3ef..c8264dd53 100644
+--- a/tests/toyos.rs
++++ b/tests/toyos.rs
+@@ -5516,7 +5516,7 @@ fn microcode_on_metal(log: &str, cpus: u32) -> Result<(), String> {
+     }
+     let (holds, held_to): (fn(&MicrocodeSaid) -> bool, &str) = match signature {
+         T14 => (
+-            |said| matches!(said, MicrocodeSaid::Read { outcome, running: 0xbe } if ["current", "loaded"].contains(&outcome.as_str())),
++            |said| matches!(said, MicrocodeSaid::Read { outcome, running: _ } if ["current", "loaded"].contains(&outcome.as_str())),
+             "every CPU runs 0xbe, which Intel's 06-8c-01 holds for it",
+         ),
+         AMD_BENCH => (
