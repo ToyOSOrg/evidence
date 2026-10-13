@@ -3,3 +3,33 @@
 amducode
   image: <scratchpad>/agents/amd-ucode-scout/metal/amducode/amducode/image.img
   cargo run -p toyos-metal -- --image <scratchpad>/agents/amd-ucode-scout/metal/amducode/amducode/image.img --readback <scratchpad>/agents/amd-ucode-scout/metal/amducode/amducode --fat32-check
+
+# ---- For the orchestrator (amd-ucode-scout, PR #914, head f7a07b1db) ----
+# Bench: the AMD bench (Family 17h Model 60h, CPUID 0x00860f01). Not the T14.
+#   Add `--host <user>@<amd-bench>` to the invocation above. Staging set no
+#   --metal-host, and the image does not depend on the host.
+# Image: amducode/image.img  sha256 f6b79d56964a42101a9c0a813f7c262c8d62ba47f82f44deb66c24b4aa965a62
+# Row words to judge the readback: amd_ucode_scout   (or boot:amducode)
+#   cargo test --test toyos-build -- --metal --metal-readback <this dir> amd_ucode_scout --metal-host <user>@<amd-bench>
+# Shares no boot: it is its own image, metalcase's config armed with
+#   `amd-ucode-scout` on a boot-actuators kernel.
+# The row only checks that the reading is whole and prints every `amducode:` line.
+#   Send the reading, the kernel log's `amducode:` lines, back verbatim.
+#
+# What each line means (`L` = MSR0000_008B bits 31:0):
+#   M10 cpu0 signature S brand "B"     CPUID 1 EAX and brand string (FP6 mobile vs AM4)
+#   M10 smbios X.Y bios vendor/version/date/release/ec   SMBIOS type 0 as the kernel read it
+#   M10 platform "..." | none named    SMBIOS strings naming AGESA or a ...PI version
+#   patch level P equivalence E at A, container byte O, N bytes   the patch AMD's file holds for this CPU
+#   M0 cpuN apic A core C level L      every CPU before any write
+#   M0 stop: cpuN runs L, at or above the patch's P ...   firmware is already at/above 0x0860010d. The ladder ends here (expected if the firmware is post-2024-02)
+#   guard cpu0 ... wrmsr 0x8b 0 ...    the Error-on-write MSR. `gp 0x0` proves the guard works on this CPU
+#   M1 cpu0 ... aligned intact ...     THE load. `outcome named` = L reads 0x0860010d afterwards. Anything else gives `M1 stop`
+#   M2 ... body-flipped / level-flipped   a rejected patch on an unwritten core: gp, unchanged, or (bad) named/other
+#   M3 cpu0 ... aligned intact         same-level reload on the same thread
+#   M4 cpuK ... level L / M4 ... wrmsr  the sibling reads L before its own write (per-core register), then writes
+#   M5 ... in-place / straddling       4-byte-aligned (≡0xc mod 16) in the container, then a 16-aligned copy across a page
+#   load cpuN ...                      every CPU not yet handed the intact patch
+#   M6 cpuN after T ms halted level L  L after the APs sat 2 s in sti;hlt (this kernel's only idle state, so this is not proven CC6)
+#   done | <step> stop: why | stop: why   how it ended. `the APs leave the station` follows in every case
+#   Every write line: before L, gp none|gp <code>, after L (after CPUID 0), ticks and ns across the wrmsr alone with interrupts off (M9), outcome gp|unchanged|named|other

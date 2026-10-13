@@ -29,3 +29,13 @@ The image is `cargo run -- --build-only --kernel-param amd-ucode-scout`. TCG has
 ## metal/
 
 `request.txt` is the staged boot, from `cargo test --test toyos-build -- --metal --metal-readback <scratchpad>/agents/amd-ucode-scout/metal/amducode amd_ucode_scout` at `f7a07b1db` (`stage.log`, exit 2 = staged). `image.sha256` holds the image's digest. The staging set no `--metal-host`. The AMD bench's boot adds `--host <user>@<amd-bench>` to the invocation.
+
+## metal/amd-bench/: the AMD bench reading (run by the orchestrator)
+
+The image is `request.txt`'s `amducode` (sha256 `f6b79d56964a42101a9c0a813f7c262c8d62ba47f82f44deb66c24b4aa965a62`, staged at `f7a07b1db`), booted on the AMD bench (CPUID 0x00860f01). `runner.log` is the orchestrator's record: boot rc=0, judge EXIT=0. `judge-scout.log` is `cargo test --test toyos-build -- --metal --metal-readback … amd_ucode_scout` over the readback, which reports `1 passed, 0 failed`. `kernel.log`, `loader.log`, `boot.txt` and `verdict.txt` are the readback. The disk images are not published.
+
+Masked fields: the machine's SMBIOS vendor, product and BIOS version (`<vendor>`, `<product>`, `<bios>`), the boot stick's serial number, partition GUIDs, the root UUID, and paths.
+
+## host/ci-host-merged.log
+
+`cargo run -- --ci host` at `ca217141d`, `f7a07b1db` merged with `origin/main`: exit 0, all 77 steps green.
