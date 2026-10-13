@@ -1,0 +1,40 @@
+# DSDT bytes of the T14, the methods on EC._INI's path to the refused write, and their reading by hand (ACPI 6.5 §20.2)
+
+## WPWS, BPWS, BPWC, WGIN at DSDT offsets 0x32944..0x32a6f
+00032944: 5750 5753 00a0 0f93 4747 4f56 0c0f 0008  WPWS....GGOV....
+00032954: 0900 7000 60a1 0470 0160 a460 144f 0457  ..p.`..p.`.`.O.W
+00032964: 5057 4301 a029 9068 907b 5747 464c 0100  PWC..).h.{WGFL..
+00032974: 927b 5747 464c 0a08 0053 474f 560c 0f00  .{WGFL...SGOV...
+00032984: 0809 017d 5747 464c 0a02 5747 464c a11d  ...}WGFL..WGFL..
+00032994: 5347 4f56 0c0f 0008 0900 7b57 4746 4c0e  SGOV......{WGFL.
+000329a4: fdff ffff ffff ffff 5747 464c 141d 4250  ........WGFL..BP
+000329b4: 5753 00a0 0f93 4747 4f56 0c0d 0002 0901  WS....GGOV......
+000329c4: 7001 60a1 0470 0060 a460 1440 0542 5057  p.`..p.`.`.@.BPW
+000329d4: 4301 a02a 9068 907b 5747 464c 0a10 0092  C..*.h.{WGFL....
+000329e4: 7b57 4746 4c0a 8000 5347 4f56 0c0d 0002  {WGFL...SGOV....
+000329f4: 0901 7d57 4746 4c0a 2057 4746 4ca1 1d53  ..}WGFL. WGFL..S
+00032a04: 474f 560c 0d00 0209 007b 5747 464c 0edf  GOV......{WGFL..
+00032a14: ffff ffff ffff ff57 4746 4c14 4d04 5747  .......WGFL.M.WG
+00032a24: 494e 0070 0057 4746 4c70 5747 5356 0157  IN.p.WGFLpWGSV.W
+00032a34: 4746 4ca0 1357 494e 38a0 0d90 5747 464c  GFL..WIN8...WGFL
+00032a44: 0a10 4250 5743 01a0 1057 5057 537d 5747  ..BPWC...WPWS}WG
+00032a54: 464c 0a02 5747 464c a010 4250 5753 7d57  FL..WGFL..BPWS}W
+00032a64: 4746 4c0a 2057 4746 4c14 1357            GFL. WGFL..W
+
+## Read by hand
+
+Method (WPWS, 0)  { If (GGOV (0x0908000F) == 0) { Local0 = 0 } Else { Local0 = 1 }  Return (Local0) }
+Method (WPWC, 1)  { If (Arg0 && (WGFL & 1) && !(WGFL & 8)) { SGOV (0x0908000F, 1); WGFL |= 2 }
+                    Else { SGOV (0x0908000F, 0); WGFL &= ~2 } }
+Method (BPWS, 0)  { If (GGOV (0x0902000D) == 1) { Local0 = 1 } Else { Local0 = 0 }  Return (Local0) }
+Method (BPWC, 1)  { If (Arg0 && (WGFL & 0x10) && !(WGFL & 0x80)) { SGOV (0x0902000D, 1); WGFL |= 0x20 }
+                    Else { SGOV (0x0902000D, 0); WGFL &= ~0x20 } }
+Method (WGIN, 0)  { WGFL = 0; WGFL = WGSV (1)
+                    If (WIN8) { If (WGFL && 0x10) { BPWC (1) } }
+                    If (WPWS ()) { WGFL |= 2 }
+                    If (BPWS ()) { WGFL |= 0x20 } }
+
+WGSV (1) is SMI_ (9, 1, 0, 0, 0): the SMI handler's answer through SMI_CMD (0xB2, 0xF5).
+\_SB.SGOV (0x0902000D, 1) writes GPIOTXSTATE of the pad GADR places at 0xFD6E0A70
+(the host trace's "W Memory(fd6e0a70) Byte <- 0x1", and the T14's
+"that was Byte 0x1 to Memory(fd6e0a70)").

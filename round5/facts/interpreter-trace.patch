@@ -1,0 +1,40 @@
+diff -ru -x t <path> amlcopy/Cargo.toml
+--- <path>	2026-10-12 09:27:24
++++ amlcopy/Cargo.toml	2026-10-13 02:43:26
+@@ -11,7 +11,7 @@
+ [dependencies]
+ # The table a load takes, its §5.2.6 length and checksum already checked
+ # where every other table's are.
+-toyos-acpi = { path = "../../../lib/acpi" }
++toyos-acpi = { path = "<path>" }
+ 
+ [lints.rust]
+ warnings = "deny"
+diff -ru -x t <path> amlcopy/src/exec.rs
+--- <path>	2026-10-13 01:54:43
++++ amlcopy/src/exec.rs	2026-10-13 02:43:37
+@@ -422,7 +422,7 @@
+ 
+     pub(crate) fn invoke(&mut self, node: NodeId, m: Kept<Method>, args: Vec<Object>) -> Result<Object, Error> {
+         self.enter()?;
+-        let r = self.invoke_in(node, &m, args);
++        let p = self.path_of(node, None).unwrap_or_default(); let st = if let Body::Aml { start, .. } = &m.body { *start } else { 0 }; std::eprintln!("-> {p} @{st:#x} {}", args.len()); let r = self.invoke_in(node, &m, args); std::eprintln!("<- {p} {}", r.is_ok());
+         self.leave();
+         r
+     }
+diff -ru -x t <path> amlcopy/src/lib.rs
+--- <path>	2026-10-13 01:54:43
++++ amlcopy/src/lib.rs	2026-10-13 02:43:40
+@@ -54,10 +54,10 @@
+ //! measured at about 3.4 KiB of stack in a debug build: a caller runs it on a
+ //! stack of at least 1 MiB.
+ 
+-#![no_std]
++
+ #![forbid(unsafe_code)]
+ 
+-extern crate alloc;
++extern crate alloc; extern crate std;
+ 
+ mod exec;
+ mod field;

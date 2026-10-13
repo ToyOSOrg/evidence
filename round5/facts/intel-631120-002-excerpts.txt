@@ -1,0 +1,93 @@
+# Excerpts of Intel 500 Series Chipset Family On-Package PCH Datasheet, Volume 2 of 2 (631120-002),
+# fetched from https://cdrdv2.intel.com/v1/dl/getContent/631120?fileName=631120-002.pdf with the toyos-build User-Agent,
+# text extracted with the pdf-extract crate (its layout is the extractor's). Line numbers are the extracted text's.
+
+--- lines 1186,1190
+
+These registers are within the PCH Private Configuration Space which is accessible 
+through the PCH Sideband Interface. They can be accessed via (SBREG_BAR + PortID 
++ Register Offset).
+
+
+--- lines 65540,65553
+27.1 GPIO Community 0 Registers Summary
+
+GPIO pins are grouped into different Community (e.g. Community 0, Community 1, 
+etc.). Each Community consists of one or more GPIO groups. 
+
+This section covers registers for Community 0, which consists of GPP_A, GPP_B, and 
+GPP_T groups. 
+ 
+These registers are within the PCH Private Configuration Space which is accessible 
+through the PCH Sideband Interface. They can be accessed via (SBREG_BAR + PortID 
++ Register Offset). 
+Note that each GPIO Community has a different PortID. See the Primary to Sideband 
+Bridge Section in Vol1 for PortID info.
+
+
+--- lines 65895,65902
+A64h A67h Pad Configuration DW1 (PAD_CFG_DW1_GPPC_A_12)—Offset A64h 4Ch
+
+A70h A73h Pad Configuration DW0 (PAD_CFG_DW0_GPPC_A_13)—Offset A70h 4400XX00h 
+See register 
+for X value
+
+A74h A77h Pad Configuration DW1 (PAD_CFG_DW1_GPPC_A_13)—Offset A74h 4Dh
+
+
+--- lines 66222,66240
+5:4 0h
+RW Pad Ownership (PAD_OWN_GPPC_B_1): Same description as bits[1:0].
+
+3:2 0h
+RO Reserved.
+
+1:0 0h
+RW
+ Pad Ownership (PAD_OWN_GPPC_B_0):  
+00 = Host GPIO ACPI Mode or GPIO Driver Mode. Host software (ACPI or GPIO 
+Driver) has ownership of the pad. In Host GPIO Driver Mode (refer to 
+HOSTSW_OWN), GPIO input event update is limited to GPI_STS update only. 
+Otherwise in Host ACPI Mode, updates are limited to GPI_GPE_STS, GPI_NMI_STS 
+and/or GPI_SMI_STS. 
+No read/write restriction to the Pad Configuration register set during host ownership 
+01 = ME GPIO Mode. ME has ownership of the pad. 
+10 = ISH GPIO Mode. ME has ownership of the pad  
+11 = Reserved
+
+
+--- lines 66612,66623
+1 0h
+RW HostSW_Own (HOSTSW_OWN_GPPC_B_1): Same description as bit 0.
+
+0 0h
+RW
+ HostSW_Own (HOSTSW_OWN_GPPC_B_0): This register determines the 
+appropriate host status bit update when a pad is under host ownership. 
+0 = ACPI Mode. GPIO input event updates are limited to GPI_GPE_STS, 
+GPI_NMI_STS and/or GPI_SMI_STS. GPI_STS update is masked. 
+1 = GPIO Driver Mode. GPIO input event updates are limited to GPI_STS. 
+GPI_GPE_STS, GPI_NMI_STS and/or GPI_SMI_STS updates are masked.
+
+
+--- lines 67540,67552
+Glitch Filter logic stage and is not affected by PMode and RXINV, hardware debouncer 
+(if any) settings. 
+When read, this bit returns a 0 if GPIORxDis is 1.
+
+0 0h
+RW
+ GPIO TX State (GPIOTXSTATE): TX state when PMode = 0 ONLY. No effect when 
+the pad in native mode. 
+0 = Drive a level '0' to the TX output pad 
+1 = Drive a level '1' to the TX output pad
+
+Bit 
+Range Default & 
+
+--- lines 69062,69066
+27.1.114 Pad Configuration DW0 (PAD_CFG_DW0_GPPC_A_13)—
+Offset A70h
+
+This register applies to GPP_A13 and has the same description as 
+PAD_CFG_DW0_GPP_B_0
