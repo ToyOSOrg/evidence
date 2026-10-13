@@ -1,0 +1,13 @@
+--- a/system/ps2server/src/bus.rs
++++ b/system/ps2server/src/bus.rs
+@@ -106,9 +106,7 @@
+ 
+     /// Port 0x60, `READ_DELAY_NS` after `shown`, when a status read showed it full.
+     fn read_after(&mut self, shown: u64) -> u8 {
+-        while self.now() < shown + READ_DELAY_NS {
+-            core::hint::spin_loop();
+-        }
++        let _ = shown;
+         self.data()
+     }
+ 

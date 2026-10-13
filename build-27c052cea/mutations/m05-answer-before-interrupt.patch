@@ -1,0 +1,11 @@
+--- a/system/ps2server/src/probe.rs
++++ b/system/ps2server/src/probe.rs
+@@ -161,7 +161,7 @@
+     /// until `deadline`; every other byte read on the way is routed.
+     fn answer(&mut self, aux: bool, deadline: u64) -> Result<u8, Silent> {
+         loop {
+-            let irq = self.c.wait(deadline);
++            let irq = if self.c.now() < deadline { Some(Irq { first_nanos: 0 }) } else { None };
+             while let Some(byte) = self.c.poll() {
+                 if byte.aux == aux {
+                     return Ok(byte.value);

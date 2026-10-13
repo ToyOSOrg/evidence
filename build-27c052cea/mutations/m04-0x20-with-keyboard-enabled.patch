@@ -1,0 +1,10 @@
+--- a/system/ps2server/src/probe.rs
++++ b/system/ps2server/src/probe.rs
+@@ -289,6 +289,7 @@
+         }
+         byte |= if aux { CB_AUX_IRQ } else { CB_AUX_DISABLED };
+         self.command_byte(byte, deadline)?;
++        self.command(ENABLE_KEYBOARD, deadline, "0xAE")?;
+         self.command(READ_COMMAND_BYTE, deadline, "0x20")?;
+         let read = loop {
+             let past = self.c.now() >= deadline;

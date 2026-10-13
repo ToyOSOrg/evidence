@@ -1,0 +1,81 @@
+== m11-waiter-for-ported-starts-only: cargo test -p toyos-manifest
+diff --git a/lib/manifest/src/lib.rs b/lib/manifest/src/lib.rs
+index b7a5e4cb2..106e47549 100644
+--- a/lib/manifest/src/lib.rs
++++ b/lib/manifest/src/lib.rs
+@@ -290,7 +290,7 @@ impl Program {
+     /// which a program says only when it has nothing to serve.
+     pub fn supervised(&self, start: Start) -> bool {
+         match start {
+-            Start::Spawned => self.restart || !self.serves.is_empty() || !self.roles.is_empty(),
++            Start::Spawned => !self.serves.is_empty() || !self.roles.is_empty(),
+             Start::Ended(exit) => self.restart && exit != 0,
+         }
+     }
+   Compiling toyos-manifest v0.1.0 (/Users/jan/Dev/jan/toyos-ps2server/lib/manifest)
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.83s
+     Running unittests src/lib.rs (target/debug/deps/toyos_manifest-02eb219a06fa1e45)
+
+running 45 tests
+test consent::tests::only_always_and_deny_are_kept ... ok
+test consent::tests::the_question_says_what_the_package_may_do_in_plain_words ... ok
+test consent::tests::a_hang_up_withdraws_the_launch_before_any_answer ... ok
+test grants::tests::a_launch_gets_the_answer_for_its_exact_binary_and_is_asked_only_at_the_screen ... ok
+test grants::tests::a_launch_starts_in_the_callers_directory_inside_the_folder_or_at_its_root ... ok
+test grants::tests::a_request_reads_back_as_written_and_nothing_else_reads ... ok
+test consent::tests::an_answer_is_judged_as_a_grant_the_image_could_give ... ok
+test grants::tests::a_revoke_takes_one_grant_and_says_whether_it_did ... ok
+test grants::tests::a_folder_outside_the_home_or_of_the_apps_is_refused_by_name ... ok
+test consent::tests::an_ask_and_a_reply_read_back_as_written_and_nothing_else_reads ... ok
+test launch::tests::an_authority_reads_back_as_written ... ok
+test launch::tests::a_sessions_launches_spend_its_one_share ... ok
+test launch::tests::nothing_listed_is_nothing_started_and_apps_names_no_row ... ok
+test grants::tests::a_store_render_cannot_have_written_is_refused ... ok
+test launch::tests::what_encode_cannot_have_written_is_refused ... ok
+test launch::tests::a_caller_starts_what_its_row_lists_and_swap_and_update_only_in_a_login_session ... ok
+test package::tests::a_field_that_is_not_one_is_refused_by_name ... ok
+test package::tests::a_launch_path_names_one_package_or_none ... ok
+test package::tests::a_manifest_cannot_name_a_binary_outside_its_own_directory ... ok
+test package::tests::a_path_the_normalizer_would_change_is_not_canonical_and_classifies_as_nothing ... ok
+test package::tests::a_listing_shows_only_what_the_supervisor_would_start_and_never_more_than_the_bound ... ok
+test package::tests::what_a_shell_resolves_is_what_the_launcher_accepts ... ok
+test package::tests::what_the_installer_writes_is_what_the_supervisor_reads ... ok
+test grants::tests::the_store_reads_back_as_written_at_every_bound ... ok
+test tests::a_device_class_name_is_the_abi_s ... ok
+test tests::a_package_granted_a_folder_sees_it_beside_its_own ... ok
+test tests::a_name_that_would_not_survive_the_round_trip_is_refused ... ok
+test tests::a_package_named_after_a_declared_row_is_refused ... ok
+test tests::a_package_row_is_connectors_and_nothing_else ... ok
+test tests::a_package_s_home_is_its_own_folder ... ok
+test tests::a_package_s_view_is_its_own_directory_read_only_and_its_own_folder ... ok
+test tests::a_restart_rows_end_other_than_exit_0_is_owed_a_start_and_exit_0_is_not ... ok
+test tests::a_role_is_one_of_the_three_and_its_directories_are_fixed ... ok
+test tests::a_row_that_is_not_restart_is_never_owed_a_start ... ok
+test tests::a_row_that_serves_a_port_and_is_no_service_is_refused ... ok
+test tests::a_row_with_ports_is_waited_on_and_one_that_is_neither_is_not ... ok
+test tests::a_restart_row_with_no_port_is_waited_on ... FAILED
+test tests::a_service_s_home_is_its_state_and_every_other_row_s_the_session_s ... ok
+test tests::a_syscap_set_always_carries_transfer_and_never_an_invented_right ... ok
+test tests::every_declared_row_sees_the_whole_tree_read_write ... ok
+test tests::logread_carries_both_halves_of_reading_a_stream_that_never_blocks ... ok
+test tests::records_attach_to_the_program_above_them ... ok
+test tests::the_process_roster_is_its_own_name_and_its_own_bit ... ok
+test tests::the_same_manifest_renders_to_the_same_bytes ... ok
+test tests::what_the_build_writes_is_what_the_supervisor_reads ... ok
+
+failures:
+
+---- tests::a_restart_row_with_no_port_is_waited_on stdout ----
+
+thread 'tests::a_restart_row_with_no_port_is_waited_on' (23754333) panicked at lib/manifest/src/lib.rs:595:9:
+assertion failed: row(&[], &[], true).supervised(Start::Spawned)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    tests::a_restart_row_with_no_port_is_waited_on
+
+test result: FAILED. 44 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-manifest --lib`
+EXIT=101
