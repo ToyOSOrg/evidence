@@ -1,0 +1,14 @@
+--- a/system/acpiserver/src/main.rs
++++ b/system/acpiserver/src/main.rs
+@@ -380,9 +380,10 @@ impl<'a, K: Kernel, P: Ports> Server<'a, K, P> {
+     fn loaded(&mut self, handed: bool, kept: Option<Aml<'a, K>>) -> Option<Names> {
+         self.power_off = handed;
+         self.aml = kept;
++        let names = self.initialise();
+         self.served_aml();
+         self.latched();
+-        self.initialise()
++        names
+     }
+ 
+     /// Each SCI already latched, served without waiting for one.
