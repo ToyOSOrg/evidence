@@ -1289,6 +1289,142 @@ fn s_serial_new_session(reset: bool) {
     log!("{tag}: the next host grab carries serial {n}");
 }
 
+/// Every event each VNC client receives until all are quiet for the ceiling, pumping the guest.
+fn host_events(vs: &mut [&mut Vnc], g: &mut Guest, what: &str) -> Vec<(usize, VncEv)> {
+    log!("host events after {what}:");
+    let mut out = vec![];
+    let mut t = Instant::now();
+    loop {
+        let mut got = false;
+        for (i, v) in vs.iter_mut().enumerate() {
+            if let Ok(e) = v.rx.try_recv() {
+                log!("  vnc client {i} <- {e}");
+                out.push((i, e));
+                got = true;
+            }
+        }
+        g.pump();
+        if got {
+            t = Instant::now();
+        } else if t.elapsed() > CEILING {
+            log!("  every vnc client: nothing more within {} ms", CEILING.as_millis());
+            return out;
+        }
+        std::thread::sleep(Duration::from_millis(1));
+    }
+}
+
+fn provides(evs: &[(usize, VncEv)]) -> Vec<(usize, String)> {
+    evs.iter()
+        .filter_map(|(i, e)| match e {
+            VncEv::Provide(d) => Some((*i, String::from_utf8_lossy(d).to_string())),
+            _ => None,
+        })
+        .collect()
+}
+
+/// Every guest event until the ceiling passes with none; the count of REQUESTs among them.
+fn guest_requests(g: &mut Guest, what: &str) -> usize {
+    log!("guest events after {what}:");
+    let mut n = 0;
+    while let Some(e) = g.next() {
+        if matches!(&e, Ev::Msg(m) if m.ty == REQUEST) {
+            n += 1;
+        }
+        log!("  {e:?}");
+    }
+    n
+}
+
+/// Two host pastes against one kept guest grab (no text pushed), both before the guest answers.
+/// `two_clients`: the second paste is a second VNC client's, else the first client pastes twice.
+fn s_two_pastes(two_clients: bool) {
+    let tag = if two_clients { "two-pastes-two-clients" } else { "two-pastes-one-client" };
+    let (qemu, mut g) = opened(tag);
+    let mut a = qemu.vnc();
+    let mut b = if two_clients { Some(qemu.vnc()) } else { None };
+    g.send("GRAB [0][UTF8_TEXT] alone", &chunked(&grab(Some(0), &[UTF8]), 2048));
+    {
+        let mut vs: Vec<&mut Vnc> = vec![&mut a];
+        if let Some(b) = b.as_mut() { vs.push(b); }
+        host_events(&mut vs, &mut g, "the guest's grab");
+    }
+    a.request();
+    let r1 = guest_requests(&mut g, "the first host paste");
+    match b.as_mut() { Some(b) => b.request(), None => a.request() }
+    let r2 = guest_requests(&mut g, "the second host paste, the first still unanswered");
+    log!("{tag}: REQUESTs reaching the guest: {r1} for the first paste, {r2} for the second");
+    g.send("one CLIPBOARD \"first-answer\"", &chunked(&clip(b"first-answer"), 2048));
+    let p1 = {
+        let mut vs: Vec<&mut Vnc> = vec![&mut a];
+        if let Some(b) = b.as_mut() { vs.push(b); }
+        provides(&host_events(&mut vs, &mut g, "one CLIPBOARD"))
+    };
+    let after1 = guest_requests(&mut g, "one CLIPBOARD");
+    log!("{tag}: after one CLIPBOARD, provides (client, text) {p1:?}; further REQUESTs to the guest {after1}");
+    g.send("a second CLIPBOARD \"second-answer\"", &chunked(&clip(b"second-answer"), 2048));
+    let p2 = {
+        let mut vs: Vec<&mut Vnc> = vec![&mut a];
+        if let Some(b) = b.as_mut() { vs.push(b); }
+        provides(&host_events(&mut vs, &mut g, "a second CLIPBOARD"))
+    };
+    log!("{tag}: after a second CLIPBOARD, provides (client, text) {p2:?}");
+    a.request();
+    let r3 = guest_requests(&mut g, "a third host paste");
+    log!("{tag}: a third paste reaches the guest as {r3} REQUEST(s)");
+    g.send("CLIPBOARD \"third-answer\"", &chunked(&clip(b"third-answer"), 2048));
+    let p3 = {
+        let mut vs: Vec<&mut Vnc> = vec![&mut a];
+        if let Some(b) = b.as_mut() { vs.push(b); }
+        provides(&host_events(&mut vs, &mut g, "the third answer"))
+    };
+    log!("{tag}: after the third answer, provides (client, text) {p3:?}");
+}
+
+/// A kept guest grab (no text pushed); a host paste reaches the guest as REQUEST; then a host copy
+/// reaches it as GRAB s; only then the guest answers the REQUEST with its own, older text.
+/// `two_clients`: the copy is a second VNC client's, else the pasting client's.
+fn s_paste_crossed_by_host_grab(two_clients: bool) {
+    let tag = if two_clients { "paste-crossed-by-host-grab-two-clients" } else { "paste-crossed-by-host-grab-one-client" };
+    let (qemu, mut g) = opened(tag);
+    let mut a = qemu.vnc();
+    let mut b = if two_clients { Some(qemu.vnc()) } else { None };
+    g.send("GRAB [0][UTF8_TEXT] alone", &chunked(&grab(Some(0), &[UTF8]), 2048));
+    {
+        let mut vs: Vec<&mut Vnc> = vec![&mut a];
+        if let Some(b) = b.as_mut() { vs.push(b); }
+        host_events(&mut vs, &mut g, "the guest's grab");
+    }
+    a.request();
+    let r = guest_requests(&mut g, "the host paste");
+    log!("{tag}: the paste reaches the guest as {r} REQUEST(s)");
+    match b.as_mut() { Some(b) => b.copy(b"host-newer"), None => a.copy(b"host-newer") }
+    let m = g.expect_msg(GRAB);
+    log!("{tag}: the host copy reaches the guest as GRAB serial {}", le32(&m.data, 0));
+    let before = {
+        let mut vs: Vec<&mut Vnc> = vec![&mut a];
+        if let Some(b) = b.as_mut() { vs.push(b); }
+        host_events(&mut vs, &mut g, "the host copy, the paste still unanswered")
+    };
+    log!("{tag}: provides before the guest answers (client, text) {:?}", provides(&before));
+    drain(&mut g, "the host copy");
+    g.send("CLIPBOARD \"guest-older\", answering the paste after the host's grab", &chunked(&clip(b"guest-older"), 2048));
+    let after = {
+        let mut vs: Vec<&mut Vnc> = vec![&mut a];
+        if let Some(b) = b.as_mut() { vs.push(b); }
+        host_events(&mut vs, &mut g, "the guest's late CLIPBOARD")
+    };
+    log!("{tag}: after the late CLIPBOARD, provides (client, text) {:?}; every host event {} ", provides(&after), after.len());
+    drain(&mut g, "the late CLIPBOARD");
+    let p = a.paste(&mut g).map(|d| String::from_utf8_lossy(&d).to_string());
+    log!("{tag}: the host's next paste is provided {p:?}");
+    drain(&mut g, "that paste");
+    g.send("REQUEST UTF8_TEXT", &chunked(&request(), 2048));
+    let c = g.next();
+    let text = match &c { Some(Ev::Msg(m)) if m.ty == CLIPBOARD => Some(String::from_utf8_lossy(&m.data[4..]).to_string()), _ => None };
+    log!("{tag}: the guest's REQUEST after it is answered with {text:?}");
+}
+
 fn main() {
     let which: Vec<String> = std::env::args().skip(1).collect();
     let all = which.is_empty();
@@ -1321,5 +1457,7 @@ fn main() {
     if on("teardown") { s_teardown(); }
     if on("new-session") { s_serial_new_session(false); s_serial_new_session(true); }
     if on("empty-copy") { s_empty_copy(1); s_empty_copy(0); }
+    if on("two-pastes") { s_two_pastes(false); s_two_pastes(true); }
+    if on("crossed-paste") { s_paste_crossed_by_host_grab(false); s_paste_crossed_by_host_grab(true); }
     log!("probe end");
 }

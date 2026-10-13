@@ -1,0 +1,257 @@
+[      0.0 ms] probe start; qemu-system-x86_64 --version: "QEMU emulator version 11.1.1"
+[     23.4 ms] ==== launch two-pastes-one-client: qemu-system-x86_64 -machine q35 -accel qtest -nodefaults -m 128M -display none -monitor none -serial none -qtest-log /dev/null -qtest unix:$RUN/qtest.sock -vnc unix:$RUN/vnc.sock -chardev qemu-vdagent,id=vdagent0,clipboard=on,mouse=off -device virtio-serial-pci-non-transitional,id=vdagent-serial,max_ports=2,addr=0x5 -device virtserialport,bus=vdagent-serial.0,nr=1,chardev=vdagent0,name=com.redhat.spice.0
+[     49.2 ms] pci 00:05.0 vendor:device 1af4:1043
+[     49.3 ms] capability 0x11 (MSI-X) at 0x98
+[     49.3 ms] capability 0x09 (vendor-specific) at 0x84
+[     49.5 ms] capability 0x09 (vendor-specific) at 0x70
+[     49.6 ms] capability 0x09 (vendor-specific) at 0x60
+[     49.7 ms] capability 0x09 (vendor-specific) at 0x50
+[     49.7 ms] capability 0x09 (vendor-specific) at 0x40
+[     49.9 ms] device features: low word 0x30000006, high word 0x00000101; MULTIPORT (bit 1) 1, VERSION_1 (bit 32) 1, ACCESS_PLATFORM (bit 33) 0; num_queues 6
+[     50.0 ms] negotiated VERSION_1 | MULTIPORT; device config max_nr_ports 2
+[     50.3 ms] DRIVER_OK with 6 queues
+[     50.6 ms] posted 8 control receive buffers
+[     51.7 ms] guest -> DEVICE_READY(id 0, value 1)
+[     51.8 ms] host -> DEVICE_ADD(id 1, value 1)
+[     51.9 ms] guest -> PORT_READY(id 1, value 1)
+[     52.0 ms] host -> PORT_NAME(id 1, value 1) name "com.redhat.spice.0\0"
+[     52.0 ms] host -> PORT_OPEN(id 1, value 1)
+[     52.2 ms] guest -> PORT_OPEN(id 1, value 1)
+[     52.3 ms] host -> ANNOUNCE_CAPABILITIES (protocol 1, 8 data bytes, chunks [28]) request 1 caps 0x00020060 [CLIPBOARD_BY_DEMAND|CLIPBOARD_SELECTION|CLIPBOARD_GRAB_SERIAL]
+[     52.3 ms] guest -> one element of 36 bytes: ANNOUNCE_CAPABILITIES request 0 caps 0x00020020 [CLIPBOARD_BY_DEMAND|CLIPBOARD_GRAB_SERIAL]
+[     52.3 ms] device took back a transmit element (0 still out)
+[     52.5 ms] vnc client connected to server "QEMU", extended clipboard true
+[     52.5 ms] vnc client <- extended caps flags 0x1b000001 sizes [0]
+[     52.5 ms] vnc client -> extended flags 0x1b000001
+[     52.6 ms] guest -> one element of 36 bytes: GRAB [0][UTF8_TEXT] alone
+[     52.6 ms] device took back a transmit element (0 still out)
+[     52.6 ms] host events after the guest's grab:
+[     52.6 ms]   vnc client 0 <- extended notify, formats 0x1
+[   3064.2 ms]   every vnc client: nothing more within 3000 ms
+[   3064.2 ms] vnc client -> extended flags 0x02000001
+[   3064.2 ms] guest events after the first host paste:
+[   3080.6 ms] host -> CLIPBOARD_REQUEST (protocol 1, 4 data bytes, chunks [24]) 4 bytes [01, 00, 00, 00]
+[   3080.6 ms]   Msg(Msg { protocol: 1, ty: 8, data: [1, 0, 0, 0], chunks: [24] })
+[   6081.7 ms] nothing from the host within 3000 ms
+[   6081.7 ms] vnc client -> extended flags 0x02000001
+[   6081.7 ms] guest events after the second host paste, the first still unanswered:
+[   9092.7 ms] nothing from the host within 3000 ms
+[   9092.8 ms] two-pastes-one-client: REQUESTs reaching the guest: 1 for the first paste, 0 for the second
+[   9126.6 ms] guest -> one element of 44 bytes: one CLIPBOARD "first-answer"
+[   9126.8 ms] device took back a transmit element (0 still out)
+[   9126.9 ms] host events after one CLIPBOARD:
+[   9126.9 ms]   vnc client 0 <- extended provide, text stream 12 bytes [66, 69, 72, 73, 74, 2d, 61, 6e, 73, 77, 65, 72]
+[  12127.3 ms]   every vnc client: nothing more within 3000 ms
+[  12127.3 ms] guest events after one CLIPBOARD:
+[  15128.8 ms] nothing from the host within 3000 ms
+[  15128.8 ms] two-pastes-one-client: after one CLIPBOARD, provides (client, text) [(0, "first-answer")]; further REQUESTs to the guest 0
+[  15130.3 ms] guest -> one element of 45 bytes: a second CLIPBOARD "second-answer"
+[  15130.7 ms] device took back a transmit element (0 still out)
+[  15131.2 ms] host events after a second CLIPBOARD:
+[  18132.0 ms]   every vnc client: nothing more within 3000 ms
+[  18132.0 ms] two-pastes-one-client: after a second CLIPBOARD, provides (client, text) []
+[  18132.1 ms] vnc client -> extended flags 0x02000001
+[  18132.1 ms] guest events after a third host paste:
+[  21133.9 ms] nothing from the host within 3000 ms
+[  21134.0 ms] two-pastes-one-client: a third paste reaches the guest as 0 REQUEST(s)
+[  21137.4 ms] guest -> one element of 44 bytes: CLIPBOARD "third-answer"
+[  21137.5 ms] device took back a transmit element (0 still out)
+[  21138.4 ms] host events after the third answer:
+[  21138.4 ms]   vnc client 0 <- extended provide, text stream 13 bytes [73, 65, 63, 6f, 6e, 64, 2d, 61, 6e, 73, 77, 65, 72]
+[  24138.6 ms]   every vnc client: nothing more within 3000 ms
+[  24138.7 ms] two-pastes-one-client: after the third answer, provides (client, text) [(0, "second-answer")]
+[  24139.8 ms] qemu ended (signal: 9 (SIGKILL)); its stderr: ""
+[  24140.2 ms] ==== launch two-pastes-two-clients: qemu-system-x86_64 -machine q35 -accel qtest -nodefaults -m 128M -display none -monitor none -serial none -qtest-log /dev/null -qtest unix:$RUN/qtest.sock -vnc unix:$RUN/vnc.sock -chardev qemu-vdagent,id=vdagent0,clipboard=on,mouse=off -device virtio-serial-pci-non-transitional,id=vdagent-serial,max_ports=2,addr=0x5 -device virtserialport,bus=vdagent-serial.0,nr=1,chardev=vdagent0,name=com.redhat.spice.0
+[  24169.5 ms] pci 00:05.0 vendor:device 1af4:1043
+[  24169.5 ms] capability 0x11 (MSI-X) at 0x98
+[  24169.6 ms] capability 0x09 (vendor-specific) at 0x84
+[  24169.7 ms] capability 0x09 (vendor-specific) at 0x70
+[  24169.8 ms] capability 0x09 (vendor-specific) at 0x60
+[  24169.9 ms] capability 0x09 (vendor-specific) at 0x50
+[  24170.0 ms] capability 0x09 (vendor-specific) at 0x40
+[  24170.3 ms] device features: low word 0x30000006, high word 0x00000101; MULTIPORT (bit 1) 1, VERSION_1 (bit 32) 1, ACCESS_PLATFORM (bit 33) 0; num_queues 6
+[  24170.3 ms] negotiated VERSION_1 | MULTIPORT; device config max_nr_ports 2
+[  24170.8 ms] DRIVER_OK with 6 queues
+[  24171.1 ms] posted 8 control receive buffers
+[  24172.4 ms] guest -> DEVICE_READY(id 0, value 1)
+[  24172.5 ms] host -> DEVICE_ADD(id 1, value 1)
+[  24172.6 ms] guest -> PORT_READY(id 1, value 1)
+[  24172.7 ms] host -> PORT_NAME(id 1, value 1) name "com.redhat.spice.0\0"
+[  24172.8 ms] host -> PORT_OPEN(id 1, value 1)
+[  24173.0 ms] guest -> PORT_OPEN(id 1, value 1)
+[  24173.1 ms] host -> ANNOUNCE_CAPABILITIES (protocol 1, 8 data bytes, chunks [28]) request 1 caps 0x00020060 [CLIPBOARD_BY_DEMAND|CLIPBOARD_SELECTION|CLIPBOARD_GRAB_SERIAL]
+[  24173.2 ms] guest -> one element of 36 bytes: ANNOUNCE_CAPABILITIES request 0 caps 0x00020020 [CLIPBOARD_BY_DEMAND|CLIPBOARD_GRAB_SERIAL]
+[  24173.2 ms] device took back a transmit element (0 still out)
+[  24173.3 ms] vnc client connected to server "QEMU", extended clipboard true
+[  24173.3 ms] vnc client <- extended caps flags 0x1b000001 sizes [0]
+[  24173.3 ms] vnc client -> extended flags 0x1b000001
+[  24173.4 ms] vnc client connected to server "QEMU", extended clipboard true
+[  24173.4 ms] vnc client <- extended caps flags 0x1b000001 sizes [0]
+[  24173.4 ms] vnc client -> extended flags 0x1b000001
+[  24173.5 ms] guest -> one element of 36 bytes: GRAB [0][UTF8_TEXT] alone
+[  24173.5 ms] device took back a transmit element (0 still out)
+[  24173.5 ms] host events after the guest's grab:
+[  24173.6 ms]   vnc client 0 <- extended notify, formats 0x1
+[  24173.6 ms]   vnc client 1 <- extended notify, formats 0x1
+[  27175.1 ms]   every vnc client: nothing more within 3000 ms
+[  27175.1 ms] vnc client -> extended flags 0x02000001
+[  27175.1 ms] guest events after the first host paste:
+[  27175.2 ms] host -> CLIPBOARD_REQUEST (protocol 1, 4 data bytes, chunks [24]) 4 bytes [01, 00, 00, 00]
+[  27175.3 ms]   Msg(Msg { protocol: 1, ty: 8, data: [1, 0, 0, 0], chunks: [24] })
+[  30176.2 ms] nothing from the host within 3000 ms
+[  30176.3 ms] vnc client -> extended flags 0x02000001
+[  30176.3 ms] guest events after the second host paste, the first still unanswered:
+[  33177.1 ms] nothing from the host within 3000 ms
+[  33177.1 ms] two-pastes-two-clients: REQUESTs reaching the guest: 1 for the first paste, 0 for the second
+[  33177.3 ms] guest -> one element of 44 bytes: one CLIPBOARD "first-answer"
+[  33177.4 ms] device took back a transmit element (0 still out)
+[  33177.5 ms] host events after one CLIPBOARD:
+[  33177.5 ms]   vnc client 0 <- extended provide, text stream 12 bytes [66, 69, 72, 73, 74, 2d, 61, 6e, 73, 77, 65, 72]
+[  33177.5 ms]   vnc client 1 <- extended provide, text stream 12 bytes [66, 69, 72, 73, 74, 2d, 61, 6e, 73, 77, 65, 72]
+[  36179.2 ms]   every vnc client: nothing more within 3000 ms
+[  36179.2 ms] guest events after one CLIPBOARD:
+[  39180.2 ms] nothing from the host within 3000 ms
+[  39180.2 ms] two-pastes-two-clients: after one CLIPBOARD, provides (client, text) [(0, "first-answer"), (1, "first-answer")]; further REQUESTs to the guest 0
+[  39180.4 ms] guest -> one element of 45 bytes: a second CLIPBOARD "second-answer"
+[  39180.5 ms] device took back a transmit element (0 still out)
+[  39180.6 ms] host events after a second CLIPBOARD:
+[  42181.8 ms]   every vnc client: nothing more within 3000 ms
+[  42181.8 ms] two-pastes-two-clients: after a second CLIPBOARD, provides (client, text) []
+[  42181.8 ms] vnc client -> extended flags 0x02000001
+[  42181.8 ms] guest events after a third host paste:
+[  45181.9 ms] nothing from the host within 3000 ms
+[  45182.0 ms] two-pastes-two-clients: a third paste reaches the guest as 0 REQUEST(s)
+[  45182.2 ms] guest -> one element of 44 bytes: CLIPBOARD "third-answer"
+[  45182.3 ms] device took back a transmit element (0 still out)
+[  45182.3 ms] host events after the third answer:
+[  45182.4 ms]   vnc client 0 <- extended provide, text stream 13 bytes [73, 65, 63, 6f, 6e, 64, 2d, 61, 6e, 73, 77, 65, 72]
+[  48183.1 ms]   every vnc client: nothing more within 3000 ms
+[  48183.2 ms] two-pastes-two-clients: after the third answer, provides (client, text) [(0, "second-answer")]
+[  48184.8 ms] qemu ended (signal: 9 (SIGKILL)); its stderr: ""
+[  48185.2 ms] ==== launch paste-crossed-by-host-grab-one-client: qemu-system-x86_64 -machine q35 -accel qtest -nodefaults -m 128M -display none -monitor none -serial none -qtest-log /dev/null -qtest unix:$RUN/qtest.sock -vnc unix:$RUN/vnc.sock -chardev qemu-vdagent,id=vdagent0,clipboard=on,mouse=off -device virtio-serial-pci-non-transitional,id=vdagent-serial,max_ports=2,addr=0x5 -device virtserialport,bus=vdagent-serial.0,nr=1,chardev=vdagent0,name=com.redhat.spice.0
+[  48208.6 ms] pci 00:05.0 vendor:device 1af4:1043
+[  48208.8 ms] capability 0x11 (MSI-X) at 0x98
+[  48208.9 ms] capability 0x09 (vendor-specific) at 0x84
+[  48209.1 ms] capability 0x09 (vendor-specific) at 0x70
+[  48209.3 ms] capability 0x09 (vendor-specific) at 0x60
+[  48209.5 ms] capability 0x09 (vendor-specific) at 0x50
+[  48209.7 ms] capability 0x09 (vendor-specific) at 0x40
+[  48210.2 ms] device features: low word 0x30000006, high word 0x00000101; MULTIPORT (bit 1) 1, VERSION_1 (bit 32) 1, ACCESS_PLATFORM (bit 33) 0; num_queues 6
+[  48210.3 ms] negotiated VERSION_1 | MULTIPORT; device config max_nr_ports 2
+[  48211.0 ms] DRIVER_OK with 6 queues
+[  48211.7 ms] posted 8 control receive buffers
+[  48215.0 ms] guest -> DEVICE_READY(id 0, value 1)
+[  48215.1 ms] host -> DEVICE_ADD(id 1, value 1)
+[  48215.5 ms] guest -> PORT_READY(id 1, value 1)
+[  48215.6 ms] host -> PORT_NAME(id 1, value 1) name "com.redhat.spice.0\0"
+[  48215.8 ms] host -> PORT_OPEN(id 1, value 1)
+[  48216.2 ms] guest -> PORT_OPEN(id 1, value 1)
+[  48216.6 ms] host -> ANNOUNCE_CAPABILITIES (protocol 1, 8 data bytes, chunks [28]) request 1 caps 0x00020060 [CLIPBOARD_BY_DEMAND|CLIPBOARD_SELECTION|CLIPBOARD_GRAB_SERIAL]
+[  48216.7 ms] guest -> one element of 36 bytes: ANNOUNCE_CAPABILITIES request 0 caps 0x00020020 [CLIPBOARD_BY_DEMAND|CLIPBOARD_GRAB_SERIAL]
+[  48216.8 ms] device took back a transmit element (0 still out)
+[  48217.0 ms] vnc client connected to server "QEMU", extended clipboard true
+[  48217.0 ms] vnc client <- extended caps flags 0x1b000001 sizes [0]
+[  48217.0 ms] vnc client -> extended flags 0x1b000001
+[  48217.2 ms] guest -> one element of 36 bytes: GRAB [0][UTF8_TEXT] alone
+[  48217.3 ms] device took back a transmit element (0 still out)
+[  48217.3 ms] host events after the guest's grab:
+[  48217.3 ms]   vnc client 0 <- extended notify, formats 0x1
+[  51218.4 ms]   every vnc client: nothing more within 3000 ms
+[  51218.4 ms] vnc client -> extended flags 0x02000001
+[  51218.4 ms] guest events after the host paste:
+[  51218.8 ms] host -> CLIPBOARD_REQUEST (protocol 1, 4 data bytes, chunks [24]) 4 bytes [01, 00, 00, 00]
+[  51218.8 ms]   Msg(Msg { protocol: 1, ty: 8, data: [1, 0, 0, 0], chunks: [24] })
+[  54219.8 ms] nothing from the host within 3000 ms
+[  54219.8 ms] paste-crossed-by-host-grab-one-client: the paste reaches the guest as 1 REQUEST(s)
+[  54219.8 ms] vnc client -> ClientCutText 10 bytes [68, 6f, 73, 74, 2d, 6e, 65, 77, 65, 72]
+[  54220.0 ms] host -> CLIPBOARD_GRAB (protocol 1, 8 data bytes, chunks [28]) 8 bytes [00, 00, 00, 00, 01, 00, 00, 00]
+[  54220.0 ms] paste-crossed-by-host-grab-one-client: the host copy reaches the guest as GRAB serial 0
+[  54220.0 ms] host events after the host copy, the paste still unanswered:
+[  57221.6 ms]   every vnc client: nothing more within 3000 ms
+[  57221.6 ms] paste-crossed-by-host-grab-one-client: provides before the guest answers (client, text) []
+[  57221.6 ms] guest events after the host copy:
+[  60222.8 ms] nothing from the host within 3000 ms
+[  60223.0 ms] guest -> one element of 43 bytes: CLIPBOARD "guest-older", answering the paste after the host's grab
+[  60223.1 ms] device took back a transmit element (0 still out)
+[  60223.2 ms] host events after the guest's late CLIPBOARD:
+[  63224.0 ms]   every vnc client: nothing more within 3000 ms
+[  63224.1 ms] paste-crossed-by-host-grab-one-client: after the late CLIPBOARD, provides (client, text) []; every host event 0 
+[  63224.1 ms] guest events after the late CLIPBOARD:
+[  66224.7 ms] nothing from the host within 3000 ms
+[  66224.7 ms] vnc client -> extended flags 0x02000001
+[  69226.2 ms] vnc client: nothing from the server within 3000 ms
+[  69226.2 ms] no provide; got None
+[  69226.2 ms] paste-crossed-by-host-grab-one-client: the host's next paste is provided None
+[  69226.2 ms] guest events after that paste:
+[  72227.8 ms] nothing from the host within 3000 ms
+[  72227.9 ms] guest -> one element of 32 bytes: REQUEST UTF8_TEXT
+[  72228.0 ms] device took back a transmit element (0 still out)
+[  72228.3 ms] host -> CLIPBOARD (protocol 1, 14 data bytes, chunks [34]) 14 bytes [01, 00, 00, 00, 68, 6f, 73, 74, 2d, 6e, 65, 77, 65, 72]
+[  72228.3 ms] paste-crossed-by-host-grab-one-client: the guest's REQUEST after it is answered with Some("host-newer")
+[  72229.8 ms] qemu ended (signal: 9 (SIGKILL)); its stderr: ""
+[  72230.2 ms] ==== launch paste-crossed-by-host-grab-two-clients: qemu-system-x86_64 -machine q35 -accel qtest -nodefaults -m 128M -display none -monitor none -serial none -qtest-log /dev/null -qtest unix:$RUN/qtest.sock -vnc unix:$RUN/vnc.sock -chardev qemu-vdagent,id=vdagent0,clipboard=on,mouse=off -device virtio-serial-pci-non-transitional,id=vdagent-serial,max_ports=2,addr=0x5 -device virtserialport,bus=vdagent-serial.0,nr=1,chardev=vdagent0,name=com.redhat.spice.0
+[  72254.2 ms] pci 00:05.0 vendor:device 1af4:1043
+[  72254.3 ms] capability 0x11 (MSI-X) at 0x98
+[  72254.4 ms] capability 0x09 (vendor-specific) at 0x84
+[  72254.6 ms] capability 0x09 (vendor-specific) at 0x70
+[  72254.7 ms] capability 0x09 (vendor-specific) at 0x60
+[  72254.9 ms] capability 0x09 (vendor-specific) at 0x50
+[  72255.0 ms] capability 0x09 (vendor-specific) at 0x40
+[  72255.4 ms] device features: low word 0x30000006, high word 0x00000101; MULTIPORT (bit 1) 1, VERSION_1 (bit 32) 1, ACCESS_PLATFORM (bit 33) 0; num_queues 6
+[  72255.5 ms] negotiated VERSION_1 | MULTIPORT; device config max_nr_ports 2
+[  72256.2 ms] DRIVER_OK with 6 queues
+[  72256.9 ms] posted 8 control receive buffers
+[  72259.9 ms] guest -> DEVICE_READY(id 0, value 1)
+[  72260.1 ms] host -> DEVICE_ADD(id 1, value 1)
+[  72260.3 ms] guest -> PORT_READY(id 1, value 1)
+[  72260.5 ms] host -> PORT_NAME(id 1, value 1) name "com.redhat.spice.0\0"
+[  72260.6 ms] host -> PORT_OPEN(id 1, value 1)
+[  72261.0 ms] guest -> PORT_OPEN(id 1, value 1)
+[  72261.2 ms] host -> ANNOUNCE_CAPABILITIES (protocol 1, 8 data bytes, chunks [28]) request 1 caps 0x00020060 [CLIPBOARD_BY_DEMAND|CLIPBOARD_SELECTION|CLIPBOARD_GRAB_SERIAL]
+[  72261.4 ms] guest -> one element of 36 bytes: ANNOUNCE_CAPABILITIES request 0 caps 0x00020020 [CLIPBOARD_BY_DEMAND|CLIPBOARD_GRAB_SERIAL]
+[  72261.4 ms] device took back a transmit element (0 still out)
+[  72261.6 ms] vnc client connected to server "QEMU", extended clipboard true
+[  72261.7 ms] vnc client <- extended caps flags 0x1b000001 sizes [0]
+[  72261.7 ms] vnc client -> extended flags 0x1b000001
+[  72261.8 ms] vnc client connected to server "QEMU", extended clipboard true
+[  72261.8 ms] vnc client <- extended caps flags 0x1b000001 sizes [0]
+[  72261.8 ms] vnc client -> extended flags 0x1b000001
+[  72261.9 ms] guest -> one element of 36 bytes: GRAB [0][UTF8_TEXT] alone
+[  72262.0 ms] device took back a transmit element (0 still out)
+[  72262.0 ms] host events after the guest's grab:
+[  72262.0 ms]   vnc client 0 <- extended notify, formats 0x1
+[  72262.0 ms]   vnc client 1 <- extended notify, formats 0x1
+[  75263.7 ms]   every vnc client: nothing more within 3000 ms
+[  75263.7 ms] vnc client -> extended flags 0x02000001
+[  75263.7 ms] guest events after the host paste:
+[  75264.1 ms] host -> CLIPBOARD_REQUEST (protocol 1, 4 data bytes, chunks [24]) 4 bytes [01, 00, 00, 00]
+[  75264.1 ms]   Msg(Msg { protocol: 1, ty: 8, data: [1, 0, 0, 0], chunks: [24] })
+[  78264.8 ms] nothing from the host within 3000 ms
+[  78264.8 ms] paste-crossed-by-host-grab-two-clients: the paste reaches the guest as 1 REQUEST(s)
+[  78264.8 ms] vnc client -> ClientCutText 10 bytes [68, 6f, 73, 74, 2d, 6e, 65, 77, 65, 72]
+[  78265.1 ms] host -> CLIPBOARD_GRAB (protocol 1, 8 data bytes, chunks [28]) 8 bytes [00, 00, 00, 00, 01, 00, 00, 00]
+[  78265.1 ms] paste-crossed-by-host-grab-two-clients: the host copy reaches the guest as GRAB serial 0
+[  78265.1 ms] host events after the host copy, the paste still unanswered:
+[  78265.1 ms]   vnc client 0 <- extended notify, formats 0x1
+[  81266.5 ms]   every vnc client: nothing more within 3000 ms
+[  81266.5 ms] paste-crossed-by-host-grab-two-clients: provides before the guest answers (client, text) []
+[  81266.5 ms] guest events after the host copy:
+[  84267.5 ms] nothing from the host within 3000 ms
+[  84267.7 ms] guest -> one element of 43 bytes: CLIPBOARD "guest-older", answering the paste after the host's grab
+[  84267.8 ms] device took back a transmit element (0 still out)
+[  84267.9 ms] host events after the guest's late CLIPBOARD:
+[  87268.3 ms]   every vnc client: nothing more within 3000 ms
+[  87268.3 ms] paste-crossed-by-host-grab-two-clients: after the late CLIPBOARD, provides (client, text) []; every host event 0 
+[  87268.3 ms] guest events after the late CLIPBOARD:
+[  90268.6 ms] nothing from the host within 3000 ms
+[  90268.6 ms] vnc client -> extended flags 0x02000001
+[  90270.2 ms] vnc client <- extended provide, text stream 10 bytes [68, 6f, 73, 74, 2d, 6e, 65, 77, 65, 72]
+[  90270.3 ms] paste-crossed-by-host-grab-two-clients: the host's next paste is provided Some("host-newer")
+[  90270.3 ms] guest events after that paste:
+[  93271.5 ms] nothing from the host within 3000 ms
+[  93271.7 ms] guest -> one element of 32 bytes: REQUEST UTF8_TEXT
+[  93271.8 ms] device took back a transmit element (0 still out)
+[  93272.0 ms] host -> CLIPBOARD (protocol 1, 14 data bytes, chunks [34]) 14 bytes [01, 00, 00, 00, 68, 6f, 73, 74, 2d, 6e, 65, 77, 65, 72]
+[  93272.1 ms] paste-crossed-by-host-grab-two-clients: the guest's REQUEST after it is answered with Some("host-newer")
+[  93273.2 ms] qemu ended (signal: 9 (SIGKILL)); its stderr: ""
+[  93273.5 ms] probe end
