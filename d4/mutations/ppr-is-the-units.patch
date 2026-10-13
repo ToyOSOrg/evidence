@@ -1,0 +1,11 @@
+--- <scratchpad>/queue-b1.rs	2026-10-13 22:09:05
++++ kernel/amdvi/src/queue.rs	2026-10-13 22:09:05
+@@ -59,7 +59,7 @@
+         // `RX` [48] set is a `COMPLETE_PPR_REQUEST` of this driver's failing.
+         0b1001 if words[0] & 1 << 48 != 0 => return Event::Unit { code },
+         // `WP` [53]: the write permission the peripheral asked for.
+-        0b1001 => Some(words[0] & 1 << 53 != 0),
++        0b1001 => return Event::Unit { code },
+         0b0111 | 0b1000 => None,
+         _ => return Event::Unit { code },
+     };
