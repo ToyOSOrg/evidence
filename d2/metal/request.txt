@@ -1,0 +1,23 @@
+# PR #909 stage 5, built at a2e53ebfa, whose tree is head 9173c339b's (only the commit message moved). Machine: the AMD bench (Family 17h Model 60h), not the T14:
+# add the AMD bench's --host to every invocation. Three boots.
+
+## head: rows amdvi_translates_the_stick_controller, domain_ends_below_the_host_bridges (testcases boot) and iommu_firmware_left (shared-debug boot)
+
+shared-debug
+  image: <scratchpad>/metal-s5/head/shared-debug/image.img
+  cargo run -p toyos-metal -- --image <scratchpad>/metal-s5/head/shared-debug/image.img --readback <scratchpad>/metal-s5/head/shared-debug --fat32-check
+
+testcases
+  image: <scratchpad>/metal-s5/head/testcases/image.img
+  cargo run -p toyos-metal -- --image <scratchpad>/metal-s5/head/testcases/image.img --readback <scratchpad>/metal-s5/head/testcases --fat32-check
+
+## negative control: head + mutations/units-left-off.patch (every unit left off); row amdvi_translates_the_stick_controller must go red
+
+testcases
+  image: <scratchpad>/metal-s5/units-left-off/testcases/image.img
+  cargo run -p toyos-metal -- --image <scratchpad>/metal-s5/units-left-off/testcases/image.img --readback <scratchpad>/metal-s5/units-left-off/testcases --fat32-check
+
+## image SHA-256
+d8d75fe225384c6a28f24b4b67431482249e6cb2b2a8ce0657c7dc0cba704107  <scratchpad>/metal-s5/head/shared-debug/image.img
+770dab9bc60c128007c9e5be9584dd10c8b6f422673af9101ffee8b7a79a3a25  <scratchpad>/metal-s5/head/testcases/image.img
+e4398af28a9a363b880e78c7a65f92396cd9efc362b0cd0ae0cff1928ef1d520  <scratchpad>/metal-s5/units-left-off/testcases/image.img
