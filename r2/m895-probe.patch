@@ -1,0 +1,127 @@
+diff --git a/kernel/src/drivers/virtio_gpu.rs b/kernel/src/drivers/virtio_gpu.rs
+index fa8ade0c6..d174b2fa0 100644
+--- a/kernel/src/drivers/virtio_gpu.rs
++++ b/kernel/src/drivers/virtio_gpu.rs
+@@ -589,6 +589,74 @@ pub fn init(devices: &[PciDevice]) -> Option<(Box<dyn Gpu>, GpuInfo)> {
+         cursor_backing: None,
+     };
+ 
++    // M895 scratch measurement for PR #895's design: never lands.
++    {
++        #[repr(C)]
++        #[derive(Clone, Copy)]
++        struct DisplayOne { r: Rect, enabled: u32, flags: u32 }
++        #[repr(C)]
++        #[derive(Clone, Copy)]
++        struct RespDisplayInfo { hdr: CtrlHeader, pmodes: [DisplayOne; 16] }
++        let info: RespDisplayInfo = gpu.command_of(&CtrlHeader::new(0x0100));
++        let one = info.pmodes[0];
++        log!(
++            "M895 GET_DISPLAY_INFO -> type={:#x} flags={:#x} scanout0 enabled={} {}x{}+{}+{} flags={:#x}",
++            info.hdr.cmd_type, info.hdr.flags, one.enabled, one.r.width, one.r.height, one.r.x, one.r.y, one.flags
++        );
++        let mut hdr = CtrlHeader::new(CMD_GET_EDID);
++        hdr.flags = 1;
++        hdr.fence_id = 0x5eed_0895;
++        let fenced: RespEdid = gpu.command_of(&GetEdid { hdr, scanout: 0, padding: 0 });
++        log!(
++            "M895 GET_EDID request flags=0x1 fence_id=0x5eed0895 -> type={:#x} flags={:#x} fence_id={:#x} size={}",
++            fenced.hdr.cmd_type, fenced.hdr.flags, fenced.hdr.fence_id, fenced.size
++        );
++        let plain = gpu.get_edid(0);
++        log!(
++            "M895 GET_EDID request flags=0x0 fence_id=0x0 -> type={:#x} flags={:#x} fence_id={:#x} size={}",
++            plain.hdr.cmd_type, plain.hdr.flags, plain.hdr.fence_id, plain.size
++        );
++        let mut hex = alloc::string::String::new();
++        for b in &plain.edid[..plain.size.min(1024) as usize] {
++            use core::fmt::Write;
++            let _ = write!(hex, "{b:02x}");
++        }
++        log!("M895 EDID bytes {hex}");
++        let cmd = UpdateCursor {
++            hdr: CtrlHeader::new(CMD_MOVE_CURSOR),
++            pos: CursorPos { scanout_id: 0, x: 1, y: 1, padding: 0 },
++            resource_id: 0,
++            hot_x: 0,
++            hot_y: 0,
++            padding: 0,
++        };
++        for writable in [false, true] {
++            gpu.cursor_req.write(0, cmd);
++            gpu.cursor_resp.write(0, CtrlHeader {
++                cmd_type: 0xdead_beef, flags: 0, fence_id: 0, ctx_id: 0, ring_idx: 0, padding: [0; 3],
++            });
++            let slot = gpu.cursor_slot.take().expect("M895: cursor slot");
++            let read = (gpu.cursor_req.device_addr(), core::mem::size_of::<UpdateCursor>() as u32, BufDir::Readable);
++            let write = (gpu.cursor_resp.device_addr(), core::mem::size_of::<CtrlHeader>() as u32, BufDir::Writable);
++            let mmio = gpu.device.notify_mmio();
++            let mult = gpu.device.notify_off_multiplier();
++            if writable {
++                gpu.cursorq.submit(slot, &[read, write], mmio, mult, 1);
++            } else {
++                gpu.cursorq.submit(slot, &[read], mmio, mult, 1);
++            }
++            let (slot, len) = super::virtio::wait_used(1, || gpu.cursorq.poll_used());
++            gpu.cursor_slot = Some(slot);
++            let after: CtrlHeader = gpu.cursor_resp.read(0);
++            log!(
++                "M895 cursorq MOVE_CURSOR chain={} -> used len={} response type after={:#x}",
++                if writable { "readable(56)+writable(24)" } else { "readable(56) only" },
++                len,
++                after.cmd_type
++            );
++        }
++    }
++
+     // EDID's reported resolution is often a stale firmware default; the
+     // preferred mode is the first Detailed Timing Descriptor.
+     let edid = gpu.get_edid(0);
+diff --git a/tests/common/iommu.rs b/tests/common/iommu.rs
+index eb9625969..ed7aab8be 100644
+--- a/tests/common/iommu.rs
++++ b/tests/common/iommu.rs
+@@ -436,3 +436,17 @@ pub fn amdvi_firmware_left(test_config: &Path) -> Result<(), String> {
+     }
+     Ok(())
+ }
++
++/// M895 scratch measurement for PR #895's design: never lands.
++pub fn m895_probe(test_config: &Path) -> Result<(), String> {
++    let qemu = QemuInstance::boot_with_options(
++        test_config,
++        &[],
++        &[],
++        BootOptions { profile: Profile::HeadlessVirtioGpu, ..Default::default() },
++    );
++    let log = Serial::boot(&qemu);
++    let lines: Vec<&str> =
++        log.text().lines().filter(|l| l.contains("M895") || l.contains("VirtIO GPU") || l.contains("VirtIO: PCI")).collect();
++    Err(format!("M895 measurement, not a test:\n{}", lines.join("\n")))
++}
+diff --git a/tests/common/qemu.rs b/tests/common/qemu.rs
+index d95fbe039..cdc496a3d 100644
+--- a/tests/common/qemu.rs
++++ b/tests/common/qemu.rs
+@@ -2272,7 +2272,7 @@ fn qemu_command(
+         qemu.arg("-device").arg("virtio-rng-pci");
+     }
+     if shape.virtio_gpu {
+-        qemu.arg("-device").arg(format!("virtio-gpu-pci{platform}"));
++        qemu.arg("-device").arg(format!("virtio-gpu-pci,xres=1024,yres=768{platform}"));
+     }
+     if shape.smmu == Smmu::WithTestdev {
+         // Two, the first enumerated below the second: the kernel's selftest
+diff --git a/tests/toyos.rs b/tests/toyos.rs
+index bc9287762..c5664a534 100644
+--- a/tests/toyos.rs
++++ b/tests/toyos.rs
+@@ -3429,7 +3429,7 @@ fn scanout_wc(console: &str) -> Result<(), String> {
+ /// test.
+ fn run_machine_test(name: &str, test_config: &Path) -> Result<(), String> {
+     match name {
+-        "iommu_virtio_platform" => common::iommu::iommu_virtio_platform(test_config),
++        "iommu_virtio_platform" => common::iommu::m895_probe(test_config),
+         "amdvi_firmware_left" => common::iommu::amdvi_firmware_left(test_config),
+         "nested_nmi_is_loud" => faults::nested_nmi_is_loud(test_config),
+         "acpi_press_is_one_sci" => acpi_press_is_one_sci(),

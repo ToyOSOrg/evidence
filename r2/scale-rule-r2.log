@@ -1,0 +1,36 @@
+$ awk -f scale-rule-r2.awk scale-rule-r2.rows
+# Rows: QEMU 11.1.1's generator (qemu-edid, and the device's own GET_EDID at 1024x768), sizes as the parser reads them
+qemu-default-1280x800-dtd          diag=15.09in dist=22in target=122.18dpi dpi= 100.1 ideal=0.819 -> 1  logical=1280x800
+qemu-display-none-1280x720-100dpi  diag=14.68in dist=22in target=122.18dpi dpi= 100.0 ideal=0.819 -> 1  logical=1280x720
+device-get-edid-1024x768-dtd       diag=12.80in dist=22in target=122.18dpi dpi= 100.0 ideal=0.819 -> 1  logical=1024x768
+qemu-edid-1920x1080-157dpi-dtd     diag=14.00in dist=22in target=122.18dpi dpi= 157.4 ideal=1.288 -> 1.25  logical=1536x864
+qemu-edid-2560x1600-254dpi-dtd     diag=11.89in dist=22in target=122.18dpi dpi= 254.0 ideal=2.079 -> 2  logical=1280x800
+qemu-edid-3456x2234-254dpi-basecm  diag=15.94in dist=22in target=122.18dpi dpi= 258.1 ideal=2.112 -> 2  logical=1728x1117
+cocoa-small-1280x720-254dpi        diag= 5.78in dist=22in target=122.18dpi dpi= 254.0 ideal=2.079 -> 1.5  logical=853x480
+cocoa-1x-initial-640x360-100dpi    diag= 7.35in dist=22in target=122.18dpi dpi=  99.9 ideal=0.818 -> 1  logical=640x360
+# An assumed 14-inch 1920x1080 panel (309x174 mm), not a reading: the T14's own size waits for M1
+t14-like-1920x1080-309x174         diag=13.96in dist=22in target=122.18dpi dpi= 157.8 ideal=1.291 -> 1.25  logical=1536x864
+# Desktop monitors, sizes from the diagonal and aspect
+monitor-24in-2560x1440             diag=23.99in dist=28in target= 96.00dpi dpi= 122.4 ideal=1.275 -> 1.25  logical=2048x1152
+monitor-27in-3840x2160             diag=27.01in dist=28in target= 96.00dpi dpi= 163.1 ideal=1.699 -> 1.75  logical=2194x1234
+monitor-27in-5120x2880             diag=27.01in dist=28in target= 96.00dpi dpi= 217.5 ideal=2.266 -> 2.25  logical=2276x1280
+monitor-23in-3840x2160             diag=22.99in dist=28in target= 96.00dpi dpi= 191.7 ideal=1.997 -> 2  logical=1920x1080
+EXIT=0
+
+$ awk -f scale-rule-r2.awk scale-rule-r2-ms.rows
+# Comparison only, not an oracle: Microsoft's published Windows 8.1 default for each row of its Table 1
+# (learn.microsoft.com, "DPI-related APIs and registry settings", page sha256 f8eea0b7...4814), whose
+# scale set is 100/125/150/200 only. Size in mm is derived from the stated diagonal and resolution.
+ms-10.6in-1920x1080-windows-150%   diag=10.61in dist=22in target=122.18dpi dpi= 207.6 ideal=1.699 -> 1.75  logical=1097x617
+ms-10.6in-1366x768-windows-100%    diag=10.61in dist=22in target=122.18dpi dpi= 147.7 ideal=1.209 -> 1.25  logical=1093x614
+ms-11.6in-1920x1200-windows-150%   diag=11.60in dist=22in target=122.18dpi dpi= 195.2 ideal=1.597 -> 1.5  logical=1280x800
+ms-11.6in-1366x768-windows-100%    diag=11.60in dist=22in target=122.18dpi dpi= 135.1 ideal=1.106 -> 1  logical=1366x768
+ms-13.3in-1920x1200-windows-150%   diag=13.28in dist=22in target=122.18dpi dpi= 170.5 ideal=1.395 -> 1.5  logical=1280x800
+ms-13.3in-2560x1440-windows-200%   diag=13.29in dist=22in target=122.18dpi dpi= 221.0 ideal=1.809 -> 1.75  logical=1463x823
+ms-13.3in-1366x768-windows-100%    diag=13.29in dist=22in target=122.18dpi dpi= 117.9 ideal=0.965 -> 1  logical=1366x768
+ms-15.4in-1920x1080-windows-125%   diag=15.41in dist=22in target=122.18dpi dpi= 143.0 ideal=1.170 -> 1.25  logical=1536x864
+ms-15.6in-3200x1800-windows-200%   diag=15.58in dist=22in target=122.18dpi dpi= 235.6 ideal=1.928 -> 2  logical=1600x900
+ms-17in-1920x1080-windows-125%     diag=16.99in dist=22in target=122.18dpi dpi= 129.6 ideal=1.061 -> 1  logical=1920x1080
+ms-23in-3840x2160-windows-200%     diag=22.99in dist=28in target= 96.00dpi dpi= 191.7 ideal=1.997 -> 2  logical=1920x1080
+ms-24in-2560x1440-windows-125%     diag=23.99in dist=28in target= 96.00dpi dpi= 122.4 ideal=1.275 -> 1.25  logical=2048x1152
+EXIT=0
