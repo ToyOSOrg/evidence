@@ -1,0 +1,11 @@
+--- a/lib/update/src/repo.rs
++++ b/lib/update/src/repo.rs
+@@ -1069,7 +1069,7 @@
+         let grant = |key: &PublicKey| Grant { threshold: 1, keys: vec![key_id(key)] };
+         let mut keys = vec![public, *signing];
+         keys.sort_by_key(key_id);
+-        let first = Root { version: 1, expires, keys, grants: [grant(&public), grant(signing), grant(signing)] };
++        let first = Root { version: 1, expires, keys, grants: [grant(signing), grant(signing), grant(signing)] };
+         let body = self::root(&first);
+         let line = signature(root, Role::Root, body.as_bytes());
+         (body + &line).into_bytes()

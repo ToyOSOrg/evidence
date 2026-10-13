@@ -1,0 +1,11 @@
+--- a/build/publish.rs
++++ b/build/publish.rs
+@@ -111,7 +111,7 @@
+         None => read_if_there(&dir.join(repo::root_file(1)))?
+             .ok_or_else(|| format!("{} holds no root.1.txt, which the ceremony signs", received.display()))?,
+     };
+-    repo::self_signed(&first).map_err(|why| format!("root 1 is not self-signed: {why}"))?;
++    let _ = repo::self_signed(&first);
+     let (newest, _) = newest_root(&mut Overlay { dir, new: &new })?.expect("root 1, read above");
+     let id = repo::key_id(&key.public());
+     if ![Role::Targets, Role::Timestamp].iter().all(|&role| newest.grant(role).keys.contains(&id)) {

@@ -1,0 +1,607 @@
+=== m1-publisher-skips-the-grant-check
+ build/publish.rs | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+running 11 tests
+... 3/11
+publish::tests::a_root_that_does_not_grant_the_key_is_refused_and_no_root_is_written --- FAILED
+.......
+failures:
+
+---- publish::tests::a_root_that_does_not_grant_the_key_is_refused_and_no_root_is_written stdout ----
+
+thread 'publish::tests::a_root_that_does_not_grant_the_key_is_refused_and_no_root_is_written' (20434190) panicked at build/publish.rs:437:9:
+Err("a machine holding what /private/var/folders/gr/mr4_fg4n34jb417sx1g5cgxc0000gp/T/toyos-tmp-90374-0/publish-repo-15 holds now refuses what this publish would leave: timestamp 1 carries 0 valid signature(s) of the 1 root 1 requires; the first that did not count: its key is not one the root gives this role")
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    publish::tests::a_root_that_does_not_grant_the_key_is_refused_and_no_root_is_written
+
+test result: FAILED. 10 passed; 1 failed; 0 ignored; 0 measured; 330 filtered out; finished in 0.26s
+
+error: test failed, to rerun pass `-p toyos-build --lib`
+
+running 45 tests
+.............................................
+test result: ok. 45 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+
+running 2 tests
+..
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 1 test
+.
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 2 tests
+..
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+m1-publisher-skips-the-grant-check: toyos-build publish/signing EXIT=101; toyos-update EXIT=0; toyos-root EXIT=0
+=== m2-publisher-skips-root-ones-self-signature
+ build/publish.rs | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+running 11 tests
+....... 7/11
+publish::tests::a_root_that_does_not_grant_the_key_is_refused_and_no_root_is_written --- FAILED
+...
+failures:
+
+---- publish::tests::a_root_that_does_not_grant_the_key_is_refused_and_no_root_is_written stdout ----
+
+thread 'publish::tests::a_root_that_does_not_grant_the_key_is_refused_and_no_root_is_written' (20436232) panicked at build/publish.rs:442:34:
+called `Result::unwrap_err()` on an `Ok` value: Published { root: 1, targets: 1, timestamp: 1, pruned: [] }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    publish::tests::a_root_that_does_not_grant_the_key_is_refused_and_no_root_is_written
+
+test result: FAILED. 10 passed; 1 failed; 0 ignored; 0 measured; 330 filtered out; finished in 0.31s
+
+error: test failed, to rerun pass `-p toyos-build --lib`
+
+running 45 tests
+.............................................
+test result: ok. 45 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+
+running 2 tests
+..
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 1 test
+.
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 2 tests
+..
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+m2-publisher-skips-root-ones-self-signature: toyos-build publish/signing EXIT=101; toyos-update EXIT=0; toyos-root EXIT=0
+=== m3-pruning-drops-targets-m-minus-one
+ build/publish.rs | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+running 11 tests
+......... 9/11
+publish::tests::a_publish_moves_forward_past_a_machines_floors --- FAILED
+publish::tests::pruning_keeps_targets_m_and_m_minus_one_and_what_they_name --- FAILED
+
+failures:
+
+---- publish::tests::a_publish_moves_forward_past_a_machines_floors stdout ----
+
+thread 'publish::tests::a_publish_moves_forward_past_a_machines_floors' (20437410) panicked at build/publish.rs:419:9:
+assertion `left == right` failed
+  left: Ok(Published { root: 1, targets: 2, timestamp: 2, pruned: ["targets.1.txt"] })
+ right: Ok(Published { root: 1, targets: 2, timestamp: 2, pruned: [] })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- publish::tests::pruning_keeps_targets_m_and_m_minus_one_and_what_they_name stdout ----
+
+thread 'publish::tests::pruning_keeps_targets_m_and_m_minus_one_and_what_they_name' (20437415) panicked at build/publish.rs:517:9:
+assertion `left == right` failed
+  left: ["gbae-1-x86_64-unknown-toyos.tar.gz", "targets.2.txt"]
+ right: ["gbae-1-x86_64-unknown-toyos.tar.gz", "targets.1.txt"]
+
+
+failures:
+    publish::tests::a_publish_moves_forward_past_a_machines_floors
+    publish::tests::pruning_keeps_targets_m_and_m_minus_one_and_what_they_name
+
+test result: FAILED. 9 passed; 2 failed; 0 ignored; 0 measured; 330 filtered out; finished in 0.28s
+
+error: test failed, to rerun pass `-p toyos-build --lib`
+
+running 45 tests
+.............................................
+test result: ok. 45 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+
+running 2 tests
+..
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 1 test
+.
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 2 tests
+..
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+m3-pruning-drops-targets-m-minus-one: toyos-build publish/signing EXIT=101; toyos-update EXIT=0; toyos-root EXIT=0
+=== m4-pruning-forgets-what-m-minus-one-names
+ build/publish.rs | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+running 11 tests
+......... 9/11
+publish::tests::a_publish_moves_forward_past_a_machines_floors --- FAILED
+publish::tests::pruning_keeps_targets_m_and_m_minus_one_and_what_they_name --- FAILED
+
+failures:
+
+---- publish::tests::a_publish_moves_forward_past_a_machines_floors stdout ----
+
+thread 'publish::tests::a_publish_moves_forward_past_a_machines_floors' (20438526) panicked at build/publish.rs:419:9:
+assertion `left == right` failed
+  left: Ok(Published { root: 1, targets: 2, timestamp: 2, pruned: ["gbae-3-x86_64-unknown-toyos.tar.gz"] })
+ right: Ok(Published { root: 1, targets: 2, timestamp: 2, pruned: [] })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- publish::tests::pruning_keeps_targets_m_and_m_minus_one_and_what_they_name stdout ----
+
+thread 'publish::tests::pruning_keeps_targets_m_and_m_minus_one_and_what_they_name' (20438531) panicked at build/publish.rs:517:9:
+assertion `left == right` failed
+  left: ["gbae-2-x86_64-unknown-toyos.tar.gz", "targets.1.txt"]
+ right: ["gbae-1-x86_64-unknown-toyos.tar.gz", "targets.1.txt"]
+
+
+failures:
+    publish::tests::a_publish_moves_forward_past_a_machines_floors
+    publish::tests::pruning_keeps_targets_m_and_m_minus_one_and_what_they_name
+
+test result: FAILED. 9 passed; 2 failed; 0 ignored; 0 measured; 330 filtered out; finished in 0.27s
+
+error: test failed, to rerun pass `-p toyos-build --lib`
+
+running 45 tests
+.............................................
+test result: ok. 45 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+
+running 2 tests
+..
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 1 test
+.
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 2 tests
+..
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+m4-pruning-forgets-what-m-minus-one-names: toyos-build publish/signing EXIT=101; toyos-update EXIT=0; toyos-root EXIT=0
+=== m5-archives-under-a-directory
+ build/publish.rs | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+running 11 tests
+.. 2/11
+publish::tests::pruning_keeps_targets_m_and_m_minus_one_and_what_they_name --- FAILED
+publish::tests::a_first_publish_carries_the_received_root_and_a_machine_accepts_it --- FAILED
+. 5/11
+publish::tests::a_publish_moves_forward_past_a_machines_floors --- FAILED
+publish::tests::every_file_a_publish_writes_has_a_flat_name --- FAILED
+publish::tests::a_timestamp_naming_the_last_targets_version_is_refused --- FAILED
+publish::tests::a_publish_that_would_move_anything_back_is_refused_by_name --- FAILED
+..
+failures:
+
+---- publish::tests::pruning_keeps_targets_m_and_m_minus_one_and_what_they_name stdout ----
+
+thread 'publish::tests::pruning_keeps_targets_m_and_m_minus_one_and_what_they_name' (20439654) panicked at build/publish.rs:512:50:
+called `Result::unwrap()` on an `Err` value: "/private/var/folders/gr/mr4_fg4n34jb417sx1g5cgxc0000gp/T/toyos-tmp-90810-0/publish-repo-3/archives/gbae-1-x86_64-unknown-toyos.tar.gz: No such file or directory (os error 2)"
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- publish::tests::a_first_publish_carries_the_received_root_and_a_machine_accepts_it stdout ----
+
+thread 'publish::tests::a_first_publish_carries_the_received_root_and_a_machine_accepts_it' (20439648) panicked at build/publish.rs:400:9:
+assertion `left == right` failed
+  left: Err("/private/var/folders/gr/mr4_fg4n34jb417sx1g5cgxc0000gp/T/toyos-tmp-90810-0/publish-repo-1/archives/gbae-3-x86_64-unknown-toyos.tar.gz: No such file or directory (os error 2)")
+ right: Ok(Published { root: 1, targets: 1, timestamp: 1, pruned: [] })
+
+---- publish::tests::a_publish_moves_forward_past_a_machines_floors stdout ----
+
+thread 'publish::tests::a_publish_moves_forward_past_a_machines_floors' (20439649) panicked at build/publish.rs:416:121:
+called `Result::unwrap()` on an `Err` value: "/private/var/folders/gr/mr4_fg4n34jb417sx1g5cgxc0000gp/T/toyos-tmp-90810-0/publish-repo-11/archives/gbae-3-x86_64-unknown-toyos.tar.gz: No such file or directory (os error 2)"
+
+---- publish::tests::every_file_a_publish_writes_has_a_flat_name stdout ----
+
+thread 'publish::tests::every_file_a_publish_writes_has_a_flat_name' (20439653) panicked at build/publish.rs:545:46:
+called `Result::unwrap()` on an `Err` value: "/private/var/folders/gr/mr4_fg4n34jb417sx1g5cgxc0000gp/T/toyos-tmp-90810-0/publish-repo-5/archives/gbae-3-aarch64-unknown-toyos.tar.gz: No such file or directory (os error 2)"
+
+---- publish::tests::a_timestamp_naming_the_last_targets_version_is_refused stdout ----
+
+thread 'publish::tests::a_timestamp_naming_the_last_targets_version_is_refused' (20439652) panicked at build/publish.rs:482:46:
+called `Result::unwrap()` on an `Err` value: "/private/var/folders/gr/mr4_fg4n34jb417sx1g5cgxc0000gp/T/toyos-tmp-90810-0/publish-repo-15/archives/gbae-3-x86_64-unknown-toyos.tar.gz: No such file or directory (os error 2)"
+
+---- publish::tests::a_publish_that_would_move_anything_back_is_refused_by_name stdout ----
+
+thread 'publish::tests::a_publish_that_would_move_anything_back_is_refused_by_name' (20439650) panicked at build/publish.rs:451:121:
+called `Result::unwrap()` on an `Err` value: "/private/var/folders/gr/mr4_fg4n34jb417sx1g5cgxc0000gp/T/toyos-tmp-90810-0/publish-repo-13/archives/gbae-3-x86_64-unknown-toyos.tar.gz: No such file or directory (os error 2)"
+
+
+failures:
+    publish::tests::a_first_publish_carries_the_received_root_and_a_machine_accepts_it
+    publish::tests::a_publish_moves_forward_past_a_machines_floors
+    publish::tests::a_publish_that_would_move_anything_back_is_refused_by_name
+    publish::tests::a_timestamp_naming_the_last_targets_version_is_refused
+    publish::tests::every_file_a_publish_writes_has_a_flat_name
+    publish::tests::pruning_keeps_targets_m_and_m_minus_one_and_what_they_name
+
+test result: FAILED. 5 passed; 6 failed; 0 ignored; 0 measured; 330 filtered out; finished in 0.02s
+
+error: test failed, to rerun pass `-p toyos-build --lib`
+
+running 45 tests
+.............................................
+test result: ok. 45 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+
+running 2 tests
+..
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 1 test
+.
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 2 tests
+..
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+m5-archives-under-a-directory: toyos-build publish/signing EXIT=101; toyos-update EXIT=0; toyos-root EXIT=0
+=== m6-self-signed-vouches-for-nothing
+ lib/update/src/repo.rs | 1 -
+ 1 file changed, 1 deletion(-)
+
+running 11 tests
+....... 7/11
+publish::tests::a_root_that_does_not_grant_the_key_is_refused_and_no_root_is_written --- FAILED
+...
+failures:
+
+---- publish::tests::a_root_that_does_not_grant_the_key_is_refused_and_no_root_is_written stdout ----
+
+thread 'publish::tests::a_root_that_does_not_grant_the_key_is_refused_and_no_root_is_written' (20440911) panicked at build/publish.rs:442:34:
+called `Result::unwrap_err()` on an `Ok` value: Published { root: 1, targets: 1, timestamp: 1, pruned: [] }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    publish::tests::a_root_that_does_not_grant_the_key_is_refused_and_no_root_is_written
+
+test result: FAILED. 10 passed; 1 failed; 0 ignored; 0 measured; 330 filtered out; finished in 0.28s
+
+error: test failed, to rerun pass `-p toyos-build --lib`
+
+running 45 tests
+................. 17/45
+repo::tests::a_root_its_own_root_key_did_not_sign_is_refused --- FAILED
+...........................
+failures:
+
+---- repo::tests::a_root_its_own_root_key_did_not_sign_is_refused stdout ----
+
+thread 'repo::tests::a_root_its_own_root_key_did_not_sign_is_refused' (20441462) panicked at lib/update/src/repo.rs:1689:9:
+assertion `left == right` failed
+  left: Ok(Root { version: 1, expires: 1823040000, keys: [[138, 136, 227, 221, 116, 9, 241, 149, 253, 82, 219, 45, 60, 186, 93, 114, 202, 103, 9, 191, 29, 148, 18, 27, 243, 116, 136, 1, 180, 15, 111, 92], [129, 57, 119, 14, 168, 125, 23, 95, 86, 163, 84, 102, 195, 76, 126, 204, 203, 141, 138, 145, 180, 238, 55, 162, 93, 246, 15, 91, 143, 201, 179, 148]], grants: [Grant { threshold: 1, keys: [[125, 239, 57, 38, 66, 35, 163, 197, 79, 123, 229, 234, 92, 145, 135, 228, 198, 174, 212, 67, 5, 116, 173, 78, 116, 171, 201, 80, 88, 156, 200, 15]] }, Grant { threshold: 1, keys: [[224, 15, 99, 201, 144, 78, 134, 114, 153, 189, 193, 144, 233, 52, 69, 109, 254, 70, 202, 102, 248, 212, 7, 216, 189, 134, 149, 153, 97, 195, 248, 110]] }, Grant { threshold: 1, keys: [[224, 15, 99, 201, 144, 78, 134, 114, 153, 189, 193, 144, 233, 52, 69, 109, 254, 70, 202, 102, 248, 212, 7, 216, 189, 134, 149, 153, 97, 195, 248, 110]] }] })
+ right: Err(Threshold { role: Root, version: 1, root: 1, valid: 0, needed: 1, first: Some(NotTheRolesKey) })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    repo::tests::a_root_its_own_root_key_did_not_sign_is_refused
+
+test result: FAILED. 44 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+error: test failed, to rerun pass `-p toyos-update --lib`
+
+running 2 tests
+..
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+m6-self-signed-vouches-for-nothing: toyos-build publish/signing EXIT=101; toyos-update EXIT=101; toyos-root EXIT=0
+=== m7-first-root-grants-the-signing-key-the-root-role
+ lib/update/src/repo.rs | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+running 11 tests
+.. 2/11
+publish::tests::a_publish_that_would_move_anything_back_is_refused_by_name --- FAILED
+publish::tests::a_timestamp_naming_the_last_targets_version_is_refused --- FAILED
+publish::tests::a_root_that_does_not_grant_the_key_is_refused_and_no_root_is_written --- FAILED
+. 6/11
+publish::tests::a_publish_moves_forward_past_a_machines_floors --- FAILED
+publish::tests::pruning_keeps_targets_m_and_m_minus_one_and_what_they_name --- FAILED
+. 9/11
+publish::tests::a_first_publish_carries_the_received_root_and_a_machine_accepts_it --- FAILED
+publish::tests::every_file_a_publish_writes_has_a_flat_name --- FAILED
+
+failures:
+
+---- publish::tests::a_publish_that_would_move_anything_back_is_refused_by_name stdout ----
+
+thread 'publish::tests::a_publish_that_would_move_anything_back_is_refused_by_name' (20442752) panicked at build/publish.rs:451:121:
+called `Result::unwrap()` on an `Err` value: "root 1 is not self-signed: root 1 carries 0 valid signature(s) of the 1 root 1 requires; the first that did not count: its key is not one the root gives this role"
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- publish::tests::a_timestamp_naming_the_last_targets_version_is_refused stdout ----
+
+thread 'publish::tests::a_timestamp_naming_the_last_targets_version_is_refused' (20442754) panicked at build/publish.rs:482:46:
+called `Result::unwrap()` on an `Err` value: "root 1 is not self-signed: root 1 carries 0 valid signature(s) of the 1 root 1 requires; the first that did not count: its key is not one the root gives this role"
+
+---- publish::tests::a_root_that_does_not_grant_the_key_is_refused_and_no_root_is_written stdout ----
+
+thread 'publish::tests::a_root_that_does_not_grant_the_key_is_refused_and_no_root_is_written' (20442753) panicked at build/publish.rs:437:9:
+Err("root 1 is not self-signed: root 1 carries 0 valid signature(s) of the 1 root 1 requires; the first that did not count: its key is not one the root gives this role")
+
+---- publish::tests::a_publish_moves_forward_past_a_machines_floors stdout ----
+
+thread 'publish::tests::a_publish_moves_forward_past_a_machines_floors' (20442751) panicked at build/publish.rs:416:121:
+called `Result::unwrap()` on an `Err` value: "root 1 is not self-signed: root 1 carries 0 valid signature(s) of the 1 root 1 requires; the first that did not count: its key is not one the root gives this role"
+
+---- publish::tests::pruning_keeps_targets_m_and_m_minus_one_and_what_they_name stdout ----
+
+thread 'publish::tests::pruning_keeps_targets_m_and_m_minus_one_and_what_they_name' (20442756) panicked at build/publish.rs:512:50:
+called `Result::unwrap()` on an `Err` value: "root 1 is not self-signed: root 1 carries 0 valid signature(s) of the 1 root 1 requires; the first that did not count: its key is not one the root gives this role"
+
+---- publish::tests::a_first_publish_carries_the_received_root_and_a_machine_accepts_it stdout ----
+
+thread 'publish::tests::a_first_publish_carries_the_received_root_and_a_machine_accepts_it' (20442750) panicked at build/publish.rs:400:9:
+assertion `left == right` failed
+  left: Err("root 1 is not self-signed: root 1 carries 0 valid signature(s) of the 1 root 1 requires; the first that did not count: its key is not one the root gives this role")
+ right: Ok(Published { root: 1, targets: 1, timestamp: 1, pruned: [] })
+
+---- publish::tests::every_file_a_publish_writes_has_a_flat_name stdout ----
+
+thread 'publish::tests::every_file_a_publish_writes_has_a_flat_name' (20442755) panicked at build/publish.rs:545:46:
+called `Result::unwrap()` on an `Err` value: "root 1 is not self-signed: root 1 carries 0 valid signature(s) of the 1 root 1 requires; the first that did not count: its key is not one the root gives this role"
+
+
+failures:
+    publish::tests::a_first_publish_carries_the_received_root_and_a_machine_accepts_it
+    publish::tests::a_publish_moves_forward_past_a_machines_floors
+    publish::tests::a_publish_that_would_move_anything_back_is_refused_by_name
+    publish::tests::a_root_that_does_not_grant_the_key_is_refused_and_no_root_is_written
+    publish::tests::a_timestamp_naming_the_last_targets_version_is_refused
+    publish::tests::every_file_a_publish_writes_has_a_flat_name
+    publish::tests::pruning_keeps_targets_m_and_m_minus_one_and_what_they_name
+
+test result: FAILED. 4 passed; 7 failed; 0 ignored; 0 measured; 330 filtered out; finished in 0.03s
+
+error: test failed, to rerun pass `-p toyos-build --lib`
+
+running 45 tests
+.................................. 34/45
+repo::tests::the_ceremonys_root_is_self_signed_and_grants_the_signing_key --- FAILED
+..........
+failures:
+
+---- repo::tests::the_ceremonys_root_is_self_signed_and_grants_the_signing_key stdout ----
+
+thread 'repo::tests::the_ceremonys_root_is_self_signed_and_grants_the_signing_key' (20443308) panicked at lib/update/src/repo.rs:1671:9:
+assertion `left == right` failed
+  left: Err(Threshold { role: Root, version: 1, root: 1, valid: 0, needed: 1, first: Some(NotTheRolesKey) })
+ right: Ok(1)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    repo::tests::the_ceremonys_root_is_self_signed_and_grants_the_signing_key
+
+test result: FAILED. 44 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+error: test failed, to rerun pass `-p toyos-update --lib`
+
+running 2 tests
+tests::a_root_one_it_signs_is_self_signed_and_grants_the_signing_key --- FAILED
+.
+failures:
+
+---- tests::a_root_one_it_signs_is_self_signed_and_grants_the_signing_key stdout ----
+
+thread 'tests::a_root_one_it_signs_is_self_signed_and_grants_the_signing_key' (20443601) panicked at build/root/src/main.rs:108:42:
+the root this signed is self-signed: Threshold { role: Root, version: 1, root: 1, valid: 0, needed: 1, first: Some(NotTheRolesKey) }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    tests::a_root_one_it_signs_is_self_signed_and_grants_the_signing_key
+
+test result: FAILED. 1 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+error: test failed, to rerun pass `-p toyos-root --bin toyos-root`
+m7-first-root-grants-the-signing-key-the-root-role: toyos-build publish/signing EXIT=101; toyos-update EXIT=101; toyos-root EXIT=101
+=== m8-repo-key-replaces-an-existing-one
+ build/signing.rs | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+running 11 tests
+.. 2/11
+signing::tests::a_repo_key_is_minted_once_and_read_back --- FAILED
+........
+failures:
+
+---- signing::tests::a_repo_key_is_minted_once_and_read_back stdout ----
+
+thread 'signing::tests::a_repo_key_is_minted_once_and_read_back' (20446243) panicked at build/signing.rs:363:44:
+called `Option::unwrap()` on a `None` value
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    signing::tests::a_repo_key_is_minted_once_and_read_back
+
+test result: FAILED. 10 passed; 1 failed; 0 ignored; 0 measured; 330 filtered out; finished in 0.35s
+
+error: test failed, to rerun pass `-p toyos-build --lib`
+
+running 45 tests
+.............................................
+test result: ok. 45 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+
+running 2 tests
+..
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 1 test
+.
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 2 tests
+..
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+m8-repo-key-replaces-an-existing-one: toyos-build publish/signing EXIT=101; toyos-update EXIT=0; toyos-root EXIT=0
+=== m9-fingerprint-keeps-its-padding
+ lib/update/src/repo.rs | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+running 11 tests
+.. 2/11
+signing::tests::a_repo_key_is_minted_once_and_read_back --- FAILED
+........
+failures:
+
+---- signing::tests::a_repo_key_is_minted_once_and_read_back stdout ----
+
+thread 'signing::tests::a_repo_key_is_minted_once_and_read_back' (20449927) panicked at build/signing.rs:362:9:
+assertion `left == right` failed
+  left: "SHA256:m6fzQuBFwy8VlFphwvuZoCNY7rHaZZpXzRHD+Ztn3dk="
+ right: "SHA256:m6fzQuBFwy8VlFphwvuZoCNY7rHaZZpXzRHD+Ztn3dk"
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    signing::tests::a_repo_key_is_minted_once_and_read_back
+
+test result: FAILED. 10 passed; 1 failed; 0 ignored; 0 measured; 330 filtered out; finished in 0.31s
+
+error: test failed, to rerun pass `-p toyos-build --lib`
+
+running 45 tests
+.............................................
+test result: ok. 45 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+
+running 2 tests
+the_fixtures_root_is_self_signed_and_its_key_reads_as_openssh_names_it --- FAILED
+.
+failures:
+
+---- the_fixtures_root_is_self_signed_and_its_key_reads_as_openssh_names_it stdout ----
+
+thread 'the_fixtures_root_is_self_signed_and_its_key_reads_as_openssh_names_it' (20451049) panicked at lib/update/tests/repo_oracle.rs:111:5:
+assertion `left == right` failed
+  left: "SHA256:bdWoF+LpZIGawveHnzj/Kd4UofKmRTiHbB9Dk4KaAxc="
+ right: "SHA256:bdWoF+LpZIGawveHnzj/Kd4UofKmRTiHbB9Dk4KaAxc"
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    the_fixtures_root_is_self_signed_and_its_key_reads_as_openssh_names_it
+
+test result: FAILED. 1 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-update --test repo_oracle`
+
+running 2 tests
+..
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+m9-fingerprint-keeps-its-padding: toyos-build publish/signing EXIT=101; toyos-update EXIT=101; toyos-root EXIT=0
+=== unmutated
+
+running 11 tests
+...........
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 330 filtered out; finished in 0.28s
+
+
+running 45 tests
+.............................................
+test result: ok. 45 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+
+running 2 tests
+..
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 1 test
+.
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 2 tests
+..
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+unmutated: toyos-build publish/signing EXIT=0; toyos-update EXIT=0; toyos-root EXIT=0
+=== tree after: git status --porcelain --ignore-submodules=none
+(end of status)

@@ -1,0 +1,11 @@
+--- a/build/publish.rs
++++ b/build/publish.rs
+@@ -205,7 +205,7 @@
+ /// version, and every archive neither names. Never a root.
+ pub fn pruned(files: &[String], newest: &Targets, previous: Option<&Targets>) -> Vec<String> {
+     let named: BTreeSet<&str> = newest.items.iter().chain(previous.iter().flat_map(|t| &t.items)).map(|i| i.url.as_str()).collect();
+-    let keep_from = newest.version - 1;
++    let keep_from = newest.version;
+     let mut gone: Vec<String> = files
+         .iter()
+         .filter(|name| match name.strip_prefix("targets.").and_then(|v| v.strip_suffix(".txt")) {
