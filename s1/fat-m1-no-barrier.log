@@ -1,0 +1,34 @@
+HEAD=319be4f09f664eb3e7eb834654e5a6e6683a1505
+PATCH=fat-m1-no-barrier.patch
+ system/fileserver/src/fat.rs | 5 -----
+ 1 file changed, 5 deletions(-)
+   Compiling fileserver v0.0.0 (<home>/Dev/jan/toyos-usbd-xhci/system/fileserver)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.42s
+     Running unittests src/lib.rs (target/debug/deps/fileserver-a6db921597f2d351)
+
+running 1 test
+test fat::tests::an_append_stopped_after_any_block_write_reads_back_the_last_sync ... FAILED
+
+failures:
+
+---- fat::tests::an_append_stopped_after_any_block_write_reads_back_the_last_sync stdout ----
+fileserver: FAT32 mounted, 34128896 bytes, 512-byte sectors, 512-byte clusters
+fileserver: FAT32 mounted, 34128896 bytes, 512-byte sectors, 512-byte clusters
+fileserver: FAT32 mounted, 34128896 bytes, 512-byte sectors, 512-byte clusters
+fileserver: FAT32 mounted, 34128896 bytes, 512-byte sectors, 512-byte clusters
+fileserver: FAT32 mounted, 34128896 bytes, 512-byte sectors, 512-byte clusters
+fileserver: FAT32 mounted, 34128896 bytes, 512-byte sectors, 512-byte clusters
+
+thread 'fat::tests::an_append_stopped_after_any_block_write_reads_back_the_last_sync' (23941917) panicked at system/fileserver/src/fat.rs:798:13:
+stopped after block write 9 of 13: the file is 15288 bytes and neither the 3000 the last sync held nor the 15288 the append made
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    fat::tests::an_append_stopped_after_any_block_write_reads_back_the_last_sync
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 57 filtered out; finished in 0.03s
+
+error: test failed, to rerun pass `--lib`
+TEST_EXIT=101
+RESTORED_CLEAN=yes

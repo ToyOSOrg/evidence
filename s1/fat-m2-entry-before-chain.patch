@@ -1,0 +1,29 @@
+diff --git a/system/fileserver/src/cache.rs b/system/fileserver/src/cache.rs
+index 4bba17594..0fe144ef9 100644
+--- a/system/fileserver/src/cache.rs
++++ b/system/fileserver/src/cache.rs
+@@ -174,7 +174,7 @@ impl<D: Disk> Cache<D> {
+     /// made durable. A block the disk refused stays dirty.
+     pub fn flush(&self) -> Result<(), DiskError> {
+         let mut inner = self.inner.borrow_mut();
+-        let dirty: Vec<u64> = inner.slots.iter().filter(|(_, s)| s.dirty).map(|(b, _)| *b).collect();
++        let dirty: Vec<u64> = inner.slots.iter().filter(|(_, s)| s.dirty).map(|(b, _)| *b).rev().collect();
+         let mut i = 0;
+         let mut buf = vec![0u8; RUN * BLOCK];
+         while i < dirty.len() {
+diff --git a/system/fileserver/src/fat.rs b/system/fileserver/src/fat.rs
+index c95e7ca08..175fd3858 100644
+--- a/system/fileserver/src/fat.rs
++++ b/system/fileserver/src/fat.rs
+@@ -184,11 +184,6 @@ impl<D: Disk> FatVolume<D> {
+         if open.gone {
+             return Ok(());
+         }
+-        // The chain and the data on the disk before the entry that reaches
+-        // them is in the cache.
+-        if open.file.needs_reconcile() {
+-            self.cache.flush().map_err(|_| logged("the chain", &open.path, Error::Io))?;
+-        }
+         self.fs.flush_meta(&mut open.file, time).map_err(|e| logged("the entry", &open.path, e))?;
+         if open.file.needs_reconcile() {
+             self.fs.reconcile(&mut open.file, time).map_err(|e| logged("a reconcile", &open.path, e))?;

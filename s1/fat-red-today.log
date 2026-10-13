@@ -1,0 +1,50 @@
+   Compiling toyos-abi v0.16.0 (<home>/Dev/jan/toyos-usbd-xhci/sdk/abi)
+   Compiling toyos-untrusted v0.1.0 (<home>/Dev/jan/toyos-usbd-xhci/lib/untrusted)
+   Compiling toyos-blockhold v0.1.0 (<home>/Dev/jan/toyos-usbd-xhci/lib/blockhold)
+   Compiling toyos-gpt v0.1.0 (<home>/Dev/jan/toyos-usbd-xhci/lib/gpt)
+   Compiling toyos-disk v0.1.0 (<home>/Dev/jan/toyos-usbd-xhci/lib/disk)
+   Compiling toyos-wallclock v0.1.0 (<home>/Dev/jan/toyos-usbd-xhci/lib/wallclock)
+   Compiling bcachefs v0.1.0 (<home>/Dev/jan/toyos-usbd-xhci/lib/bcachefs)
+   Compiling toyos-transport v0.1.0 (<home>/Dev/jan/toyos-usbd-xhci/lib/blockring/transport)
+   Compiling toyos-fat32 v0.1.0 (<home>/Dev/jan/toyos-usbd-xhci/lib/fat32)
+   Compiling toyos-blockring v0.1.0 (<home>/Dev/jan/toyos-usbd-xhci/lib/blockring)
+   Compiling toyos v0.18.0 (<home>/Dev/jan/toyos-usbd-xhci/sdk/toyos)
+   Compiling toyos-manifest v0.1.0 (<home>/Dev/jan/toyos-usbd-xhci/lib/manifest)
+   Compiling diskserver v0.0.0 (<home>/Dev/jan/toyos-usbd-xhci/system/diskserver)
+   Compiling fileserver v0.0.0 (<home>/Dev/jan/toyos-usbd-xhci/system/fileserver)
+    Finished `test` profile [optimized + debuginfo] target(s) in 6.18s
+     Running unittests src/lib.rs (target/debug/deps/fileserver-a6db921597f2d351)
+
+running 9 tests
+test fat::tests::a_device_error_is_io_and_not_not_found ... ok
+test fat::tests::a_refused_read_is_an_error_and_never_zeros ... ok
+test fat::tests::a_partial_write_over_an_unreadable_block_writes_nothing ... ok
+test fat::tests::a_file_is_one_number_through_spellings_and_renames ... ok
+test fat::tests::a_read_only_volume_never_writes_its_disk ... ok
+test fat::tests::an_append_stopped_after_any_block_write_reads_back_the_last_sync ... FAILED
+test fat::tests::a_file_that_will_not_level_costs_only_its_own_file ... ok
+test fat::tests::an_unreadable_entry_is_io_and_not_undated ... ok
+test fat::tests::the_flush_stamps_its_even_second_and_not_the_write_s ... ok
+
+failures:
+
+---- fat::tests::an_append_stopped_after_any_block_write_reads_back_the_last_sync stdout ----
+fileserver: FAT32 mounted, 34128896 bytes, 512-byte sectors, 512-byte clusters
+fileserver: FAT32 mounted, 34128896 bytes, 512-byte sectors, 512-byte clusters
+fileserver: FAT32 mounted, 34128896 bytes, 512-byte sectors, 512-byte clusters
+fileserver: FAT32 mounted, 34128896 bytes, 512-byte sectors, 512-byte clusters
+fileserver: FAT32 mounted, 34128896 bytes, 512-byte sectors, 512-byte clusters
+fileserver: FAT32 mounted, 34128896 bytes, 512-byte sectors, 512-byte clusters
+
+thread 'fat::tests::an_append_stopped_after_any_block_write_reads_back_the_last_sync' (23893063) panicked at system/fileserver/src/fat.rs:795:13:
+stopped after block write 9 of 13: the file is 15288 bytes and neither the 3000 the last sync held nor the 15288 the append made
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    fat::tests::an_append_stopped_after_any_block_write_reads_back_the_last_sync
+
+test result: FAILED. 8 passed; 1 failed; 0 ignored; 0 measured; 49 filtered out; finished in 0.11s
+
+error: test failed, to rerun pass `--lib`
+EXIT=101
