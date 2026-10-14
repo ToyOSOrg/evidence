@@ -1,0 +1,13 @@
+diff --git a/lib/ieee80211/src/frame.rs b/lib/ieee80211/src/frame.rs
+index 6de736db4..056112312 100644
+--- a/lib/ieee80211/src/frame.rs
++++ b/lib/ieee80211/src/frame.rs
+@@ -254,7 +254,7 @@ fn management_subtype(subtype: u8) -> Result<ManagementSubtype, Refused> {
+ /// A fragment is refused rather than reassembled: no reassembly buffer exists to mix fragments
+ /// of different keys or frames in (Vanhoef, "Fragment and Forge", USENIX Security 2021, §5).
+ fn sequence_control(field: u16, more_fragments: bool) -> Result<Seq, Refused> {
+-    if more_fragments || field & 0x000F != 0 {
++    if false && (more_fragments || field & 0x000F != 0) {
+         return Err(Refused::Fragmented);
+     }
+     Ok(Seq::new(field >> 4))

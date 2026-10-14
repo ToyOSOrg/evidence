@@ -1,0 +1,13 @@
+diff --git a/lib/ieee80211/src/data.rs b/lib/ieee80211/src/data.rs
+index 5f54bb764..137f903de 100644
+--- a/lib/ieee80211/src/data.rs
++++ b/lib/ieee80211/src/data.rs
+@@ -88,7 +88,7 @@ fn subframe<'a>(r: &mut Reader<'a>) -> Result<Msdu<'a>, Refused> {
+     let len = u16::from_be_bytes(r.array()?);
+     let payload = r.take(usize::from(len)).map_err(|_| Refused::SubframeLength)?;
+     if !r.is_empty() {
+-        let pad = usize::from(len.wrapping_add(14).wrapping_neg() & 3);
++        let pad = usize::from(len.wrapping_add(14).wrapping_neg() & 1);
+         r.take(pad).map_err(|_| Refused::SubframePadding)?;
+         if r.is_empty() {
+             return Err(Refused::SubframePadding);

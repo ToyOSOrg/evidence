@@ -1,0 +1,14 @@
+diff --git a/lib/ieee80211/src/data.rs b/lib/ieee80211/src/data.rs
+index 5f54bb764..004b296ca 100644
+--- a/lib/ieee80211/src/data.rs
++++ b/lib/ieee80211/src/data.rs
+@@ -51,9 +51,6 @@ pub fn msdus<'a>(frame: &Data<'_>, body: &'a [u8]) -> Result<Msdus<'a>, Refused>
+     // The A-MSDU Present bit is outside CCMP's protection unless both peers negotiated SPP
+     // A-MSDU, so a first subframe whose destination is an LLC/SNAP header is a frame an attacker
+     // flipped the bit on (Vanhoef, "Fragment and Forge", USENIX Security 2021, §3.2).
+-    if body.starts_with(&SNAP) {
+-        return Err(Refused::SnapHeaderAsAddress);
+-    }
+     Ok(Msdus(Inner::Subframes(Reader::new(body))))
+ }
+ 
