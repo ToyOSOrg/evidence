@@ -1,0 +1,13 @@
+diff --git a/lib/ieee80211/src/element/he.rs b/lib/ieee80211/src/element/he.rs
+index 11aa0f184..2c510ad9e 100644
+--- a/lib/ieee80211/src/element/he.rs
++++ b/lib/ieee80211/src/element/he.rs
+@@ -29,7 +29,7 @@ impl<'a> HeCapabilities<'a> {
+         let mcs_80 = r.array().map_err(length)?;
+         let mcs_160 = if phy0 & 1 << 3 != 0 { Some(r.array().map_err(length)?) } else { None };
+         let mcs_80p80 = if phy0 & 1 << 4 != 0 { Some(r.array().map_err(length)?) } else { None };
+-        let ppe_thresholds = if phy6 & 1 << 7 != 0 { Some(ppe(&mut r)?) } else { None };
++        let ppe_thresholds = if phy[2] & 1 << 7 != 0 { Some(ppe(&mut r)?) } else { None };
+         Ok(Self { mac, phy, mcs_80, mcs_160, mcs_80p80, ppe_thresholds })
+     }
+ }

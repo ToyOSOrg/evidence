@@ -1,0 +1,13 @@
+diff --git a/lib/ieee80211/src/reorder.rs b/lib/ieee80211/src/reorder.rs
+index 6e90c4959..82b3e8f20 100644
+--- a/lib/ieee80211/src/reorder.rs
++++ b/lib/ieee80211/src/reorder.rs
+@@ -56,7 +56,7 @@ impl<T> Window<T> {
+     /// puts in order.
+     pub fn receive(&mut self, seq: Seq, item: T, out: &mut Vec<T>) -> Received {
+         let ahead = seq.since(self.start);
+-        if ahead >= HALF {
++        if ahead > HALF {
+             return Received::Old;
+         }
+         // A frame past the window's end becomes its end: the start moves to `size - 1` before it.

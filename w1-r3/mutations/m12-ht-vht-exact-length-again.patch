@@ -1,0 +1,13 @@
+diff --git a/lib/ieee80211/src/element/ht.rs b/lib/ieee80211/src/element/ht.rs
+index e3f26ce5c..b7b91b193 100644
+--- a/lib/ieee80211/src/element/ht.rs
++++ b/lib/ieee80211/src/element/ht.rs
+@@ -7,7 +7,7 @@ use crate::read::Reader;
+ use crate::Refused;
+ 
+ fn fields<const N: usize>(body: &[u8]) -> Result<[u8; N], Refused> {
+-    body.first_chunk().copied().ok_or(Refused::ElementLength)
++    body.try_into().map_err(|_| Refused::ElementLength)
+ }
+ 
+ #[derive(Clone, Copy, Debug, PartialEq, Eq)]
