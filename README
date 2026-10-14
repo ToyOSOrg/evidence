@@ -34,3 +34,15 @@ Stage 3 at c0e87be2e (the server-watch fix and review round 1) with main 6caaadf
   (`an_end_goes_with_its_last_handle_and_its_last_call`: "a freed slot is not
   taken before its halves are cleared"), restored. The merge of main touches
   no file the test or the patch reads.
+
+## Review round 1, main 5b48a3d17 merged (`round1b/`), head 0dcdbe24cb634e378b141465de82f3c55ef7336f
+
+- `host.log`: `cargo run -- --ci host`, EXIT=0, 83 steps. `build-only.log`: `cargo run -- --build-only`, EXIT=0.
+- `guest-suite.log`: `cargo test --test toyos-build` (QEMU), EXIT=0, 55 passed.
+- T14 retake staged with `--metal-readback` (machine untouched, EXIT=2 by design): `stage3-staging.log`
+  (`stream_handles` from 0dcdbe24c), `instrument-staging.log` (`internet_download` from the instrument tree
+  4313cb0b0b64279857fd66fee59626761e4cda78, whose diff against 0dcdbe24c is the instrument's 27 files alone;
+  one merge conflict in `kernel/src/arch/x86_64/idt/user_dev.rs` resolved by keeping main's claim vectors and the
+  instrument's two IrqCycles stamps), `request.txt`.
+- The round-1 netstack QEMU run and controls (`round1/`) ran at 14142f258; this merge of main changes the PCI
+  claim vectors and the bench's audio rows, nothing on the stream path, and `stream_handles` passed again in the suite.

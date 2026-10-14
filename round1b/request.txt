@@ -1,0 +1,17 @@
+# PR #905's T14 retake: two images, one boot each. Staged with --metal-readback (EXIT=2, machine untouched).
+# Both trees carry main 5b48a3d17 (#922's silenced audio rows, #918's claim slots).
+
+# 1. Shared `testcases` boot carrying test_rs_stream_handles (row word: stream_handles),
+#    tree: <tree>, wt/toyos-netring-s3 at 0dcdbe24cb634e378b141465de82f3c55ef7336f.
+testcases
+  image: <scratch>/metal/stage3/testcases/image.img
+  cargo run -p toyos-metal -- --image <scratch>/metal/stage3/testcases/image.img --readback <scratch>/metal/stage3/testcases --fat32-check
+
+# 2. internet_download (row word: internet_download), measurement only, never lands.
+#    tree: <scratch>/instrument, wt/toyos-netring-s3-instrument at 4313cb0b0b64279857fd66fee59626761e4cda78
+#    (0dcdbe24c with the scout's instrument merged; git diff 0dcdbe24c 4313cb0b0 is the instrument's 27 files alone).
+#    Exit: the download completes with matching bytes; pipe_copy_bytes < 0.01 per byte downloaded in every run;
+#    C0, lock hold and spin per MB beside the scout's rows (C0 5.310 ms, H 0.2728 ms, P 0.0397 ms per MB, 785.95 Mb/s).
+download
+  image: <scratch>/metal/instrument/download/image.img
+  cargo run -p toyos-metal -- --image <scratch>/metal/instrument/download/image.img --readback <scratch>/metal/instrument/download --fat32-check
