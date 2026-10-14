@@ -1,0 +1,13 @@
+diff --git a/kernel/pci/src/bridge.rs b/kernel/pci/src/bridge.rs
+index f272df6f4..36124bc16 100644
+--- a/kernel/pci/src/bridge.rs
++++ b/kernel/pci/src/bridge.rs
+@@ -63,7 +63,7 @@ pub fn path(bridges: &[Bridge], bus: u8) -> impl Iterator<Item = Result<&Bridge,
+     core::iter::from_fn(move || {
+         let reached = at?;
+         let mut parents = bridges.iter().filter(|b| {
+-            b.secondary == reached && b.bus < b.secondary && b.secondary <= bus && bus <= b.subordinate
++            b.secondary == reached && b.secondary <= bus && bus <= b.subordinate
+         });
+         let step = match (parents.next(), parents.next()) {
+             (None, _) => None,
