@@ -1,0 +1,30 @@
+ToyOSOrg/ToyOS #932, crypto track stage 2, round 2: both benches' tables at 85cda28d3, run by the orchestrator
+on 2026-10-14, one cryptocase boot each (jobs ring_kat, crypto_parity, crypto_parity_unasserted, nothing else).
+Masked as in ../README.
+  the T14        image sha256 2d79237ccedabf9b83c187b74fe2a3d4b9af3c25a8a3004195754d3c13501731
+                 jobs ran 11.67 s -> 28.35 s of the boot (16.7 s of the 60 s list bound)
+  the AMD bench  image sha256 6fc903485c4067121755a40da4d683189b3d6b54f6c7f69a5fe053733783bf03
+                 jobs ran 7.40 s -> 23.52 s (16.1 s)
+ring_kat exit 0 and crypto_instrument PASS on both (judge exit 0). No verdict row is registered (stage 3's).
+
+What changed from round 1 (9a318695e, ../bench-*):
+  - each row is built only after ours matched ring (AEAD/OpenSSH records and tags, SHA-2, HMAC, HKDF, Ed25519;
+    ML-KEM against ml-kem), and ours's open/reject rows open ring's ciphertext; every check held on both benches
+  - samples are printed exactly, so each row recomputes: recompute.py, an independent reading of stage 3's text,
+    reproduces every printed spread, ratio and verdict of both builds on both benches (recompute.log: 0 mismatches)
+  - each build records the ISA its feature detection admits (std's is_x86_feature_detected!, CPUID gated by
+    OSXSAVE and XCR0), the same for both builds:
+      the T14       aes,pclmulqdq,sha,movbe,bmi2,adx,avx,avx2,vaes,vpclmulqdq,avx512f,avx512vl
+      the AMD bench aes,pclmulqdq,sha,movbe,bmi2,adx,avx,avx2
+    Which path each crate took from these is still inferred from its detection code.
+  - figures: every family's median and worst move by at most ~5% (T14 AES-GCM median 1.37 -> 1.43, the largest);
+    verdicts on the shipped build: T14 70 fail, 1 remeasure, 3 pass, 3 excluded (was 68/3/3/3); AMD unchanged at
+    73 fail, 1 pass, 3 excluded
+
+bench-<b>/table.txt        the judge's table, ISA first; shipped columns | assertions-off columns (decide nothing;
+                           compare "ratio off", not "ours ns off": ring moves between the two builds' runs too)
+bench-<b>/headline.txt     per family: rows, median and worst ratio, verdict counts (shipped build)
+bench-<b>/parity-lines.log every line the three jobs printed, off the boot's log partition
+bench-<b>/recompute.log    recompute.py over parity-lines.log
+bench-<b>/judge.log        cargo test --test toyos-build -- --metal --metal-readback <dir> crypto_instrument; exit 0
+bench-<b>/isa-kernel.log   cpu0's control_regs and fpu records
