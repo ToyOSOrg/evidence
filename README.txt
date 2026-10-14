@@ -51,3 +51,11 @@ than a one-object `install_all`, which has the same effect. The panic console's 
 became private and are unchanged otherwise. The compositor's change is its refusal path alone.
 The framebuffer mint is exercised in QEMU by the GOP row screen_fatal_halt_composited in
 r2/guest-r2.log, which passes; on metal it was last read at 883e496f7.
+
+Metal after review round 1, head 1ab1d9917088c4bfeab285242c93b30914263d26: T14 only, as the
+orchestrator chose (the AMD bench's gop_edid_scale stands from 883e496f7). The image is
+s1/metal-r1/request.txt's metalcase, sha256
+b266c38de63ee30568fd66cfbf59abe233bab7a838c0d94820810ef42bb65949.
+  gop_edid_scale  metalcase  GOP handle 0 of 2, panel 309x173 mm, scale 1.5   PASS
+  (s1/metal-r1/judge-vg2.log: 1 passed, 0 failed, 1 boot)
+Readback: s1/metal-r1/metalcase/; runner manifest and log: s1/metal-r1/runner/. Masked as above.
