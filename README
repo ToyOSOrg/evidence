@@ -69,3 +69,16 @@ binary run on the T14's `testcases` boot and here through the debug boot). It wa
   same diff. `git diff f11ebeaf0 81afbe6c6` equals `git diff f0a987bc6 c5c69f12e` file for file.
 
 Correction to the `round2/` heading above: the head is c5c69f12efbeaf6c31dcdcad2f31370ed6ee419d (not "c5c69f12e3").
+
+## Round 3 (`round3/`): the baseline control and the retake on the T14, run by the orchestrator
+
+- Images: baseline `wt/toyos-netring-s3-baseline` f11ebeaf0 (main f0a987bc6 + `round2/staging/instrument-27.diff`)
+  and stage 3 `wt/toyos-netring-s3-instrument` 81afbe6c6 (wt/toyos-netring-s3 c5c69f12e + the same diff); one
+  boot each, judge EXIT=0, `1 passed, 0 failed` each. `metal/manifest.txt`, `metal/runner.log` (the orchestrator's),
+  `metal/*-judge.log`, `metal/*-download/` (readbacks; `<ip>`, `<mac>`, `<guid>`, `<serial>`, `<machine>` masked).
+- `analysis/per-run.py` reads each judge log's `perf run=` and `whole` lines and the netperf table's C0 rows;
+  `analysis/per-run.txt` is its output (`python3 -I per-run.py baseline-judge.log stage3-judge.log`, EXIT=0):
+  per run and medians, pipe copy bytes per byte downloaded, the pipe lock's hold and spin in ms of TSC per MB,
+  system C0 ms per MB and the rate.
+- `round2/metal/*/boot.txt` is re-masked here: its first publication carried the machine's product and BIOS
+  lines, which these files now mask.
