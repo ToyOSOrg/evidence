@@ -1,0 +1,43 @@
+c22745327ebdd16287329c5a95aa9fc30c9a4b24
+    Blocking waiting for file lock on package cache
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.58s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-ddd1c80cd62279e4)
+06:52:55   BUILD x86_64 binaries of tests/guest/rust-tests
+06:53:02 external deps changed: cleaning <worktree>/tests/guest/rust-tests/tls-dlopen-lib/target/x86_64-unknown-toyos
+06:53:02 external deps changed: cleaning <worktree>/tests/guest/rust-tests/tls-lib/target/x86_64-unknown-toyos
+06:53:02 external deps changed: cleaning <worktree>/tests/guest/rust-tests/tls-multi-crate/target/x86_64-unknown-toyos
+06:53:02 external deps changed: cleaning <worktree>/tests/guest/rust-tests/tls-cranelift/target/x86_64-unknown-toyos
+06:55:27   BUILT x86_64 binaries of tests/guest/rust-tests  (152s)
+06:55:27 [toyos] Compiling 138 C tests, and attempting 24 declared ones...
+06:55:36 [metal] 4 registration(s) and 0 shared member(s) over 3 boot(s)
+06:55:36   BUILD x86_64 kernel, loader, ROOT of <scratchpad>/metal2/testcases/system-7825bf189afd61c4.toml
+06:55:41 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+06:55:41   BUILT x86_64 kernel, loader, ROOT of <scratchpad>/metal2/testcases/system-7825bf189afd61c4.toml  (5s)
+06:55:42 [metal] testcases: 8 job(s) under a list bound of 60000 ms, armed with [] and a boot deadline of 120000 ms — <scratchpad>/metal2/testcases/image.img
+06:55:42   BUILD x86_64 kernel boot-actuators,test-actuators, ROOT of <scratchpad>/metal2/testcases-amd-no-remap/system-125ef8cb08a44ba3.toml
+06:55:46 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+06:55:46   BUILT x86_64 kernel boot-actuators,test-actuators, ROOT of <scratchpad>/metal2/testcases-amd-no-remap/system-125ef8cb08a44ba3.toml  (4s)
+06:55:46 [metal] testcases-amd-no-remap: 1 job(s) under a list bound of 60000 ms, armed with ["iommu-no-remap", "xhci-leave=03:00.4"] and a boot deadline of 120000 ms — <scratchpad>/metal2/testcases-amd-no-remap/image.img
+06:55:46   BUILD x86_64 ROOT of <scratchpad>/metal2/testcases-amd-xhci-leave/system-bcd4d554320d1166.toml
+06:55:54 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+06:55:54   BUILT x86_64 ROOT of <scratchpad>/metal2/testcases-amd-xhci-leave/system-bcd4d554320d1166.toml  (8s)
+06:55:54 [metal] testcases-amd-xhci-leave: 4 job(s) under a list bound of 60000 ms, armed with ["xhci-leave=03:00.4"] and a boot deadline of 120000 ms — <scratchpad>/metal2/testcases-amd-xhci-leave/image.img
+# One boot per image. Each invocation is `cargo <words>` from this worktree.
+
+testcases
+  image: <scratchpad>/metal2/testcases/image.img
+  cargo run -p toyos-metal -- --image <scratchpad>/metal2/testcases/image.img --readback <scratchpad>/metal2/testcases --fat32-check
+
+testcases-amd-no-remap
+  image: <scratchpad>/metal2/testcases-amd-no-remap/image.img
+  cargo run -p toyos-metal -- --image <scratchpad>/metal2/testcases-amd-no-remap/image.img --readback <scratchpad>/metal2/testcases-amd-no-remap --fat32-check
+
+testcases-amd-xhci-leave
+  image: <scratchpad>/metal2/testcases-amd-xhci-leave/image.img
+  cargo run -p toyos-metal -- --image <scratchpad>/metal2/testcases-amd-xhci-leave/image.img --readback <scratchpad>/metal2/testcases-amd-xhci-leave --fat32-check
+06:55:54 [metal] staged 3 image(s); <scratchpad>/metal2/request.txt lists them. The machine was not touched, so this run establishes nothing about it.
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `<worktree>/target/debug/deps/toyos_build-ddd1c80cd62279e4 --metal --metal-readback <scratchpad>/metal2 amdvi_usbd_drives_its_own_entry amdvi_claim_refused_without_remapping amdvi_remaps_the_stick_controller amdvi_translates_the_stick_controller` (exit status: 2)
+exit=2

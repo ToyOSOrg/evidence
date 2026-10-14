@@ -1,0 +1,12 @@
+--- <scratchpad>/pcidev-good.rs	2026-10-14 08:02:08
++++ kernel/src/pcidev/mod.rs	2026-10-14 08:02:08
+@@ -959,7 +959,8 @@
+         // whatever its register holds now: one a reset returned to zero reads
+         // as unassigned, and it is the window that moved, not a BAR that is
+         // not there.
+-        if pci.memory_bar(index).is_err() && !was_cut(pci, index) {
++        let table_bar = pci.capability(0x11).ok().map(|cap| (cap.read_u32(4) & 7) as u8);
++        if Some(index) == table_bar || (pci.memory_bar(index).is_err() && !was_cut(pci, index)) {
+             index += step;
+             continue;
+         }
