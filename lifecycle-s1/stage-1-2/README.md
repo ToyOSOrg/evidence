@@ -18,3 +18,5 @@ Paths are masked: `$WORKTREE` is the branch's worktree, `$SCRATCH` the agent's s
 | `classes/config-0x00-0x08.txt` | QEMU 11.1.1 HMP `o /w 0xcf8`, `i /w 0xcfc` on dwords 0x00 and 0x08 of `edu`, virtio-sound, virtio-serial (non-transitional), virtio-net (non-transitional), `nvme`, `qemu-xhci`, `nec-usb-xhci`, `e1000e` at devices 1–8 of a q35 | — | QEMU | the class codes the images' matchers spell |
 
 `c3f4e070f` differs from `14a707b1b` only in `issues/`.
+
+`metal-runs/` holds the orchestrator's T14 and AMD bench runs of the two staged rows: both passed.
