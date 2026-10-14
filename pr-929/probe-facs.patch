@@ -1,0 +1,23 @@
+diff --git a/tests/checks/metal.rs b/tests/checks/metal.rs
+index 0bc6089d5..d16eca555 100644
+--- a/tests/checks/metal.rs
++++ b/tests/checks/metal.rs
+@@ -703,3 +703,18 @@ pub fn the_loader_the_kernel_and_a_program_count_from_one_zero() {
+     let why = read(stated, " 9.876", "11.665", "").expect_err("a complete boot with no supervisor line");
+     assert!(why.contains("no timed supervisor line saying so"), "{why}");
+ }
++
++/// Negative-control probe, never committed: the FACS rule of `acpi_death_on_metal`.
++#[test]
++fn probe_facs_rule() {
++    for (ty, refused) in [(10u8, false), (0, false), (7, true), (1, true), (4, true)] {
++        let kernel = format!(
++            "[2026-09-29 18:22:39  0.070 cpu0 kernel] exit: test_rs_acpi_release pid=9 code=0 cpu=1ms\n\
++             [2026-09-29 18:22:39  0.071 cpu0 kernel] acpi: the Global Lock is the FACS's at 0x9496e010, in memory the firmware's map types {ty}\n"
++        );
++        let said = acpi_death_on_metal(&planted("", &kernel)).unwrap_err();
++        std::eprintln!("PROBE type {ty}: {said}");
++        assert_eq!(said.contains("AddressRangeMemory"), refused, "type {ty}: {said}");
++        assert_eq!(said.contains("ACPI_ENABLE"), !refused, "type {ty}: {said}");
++    }
++}
