@@ -1,0 +1,16 @@
+# PR #921 landing round, head 63902898281f9be390c61cfc827f37405df65cae (main 335927b83 merged, #928 among it). Machine: the AMD bench (Family 17h Model 60h), not the T14: add the AMD bench's --host to each invocation. Two boots.
+# Rows: amdvi_remaps_the_stick_controller + amdvi_translates_the_stick_controller (testcases), amdvi_claim_refused_without_remapping (testcases-amd-no-remap, armed iommu-no-remap and xhci-leave=03:00.4).
+# The xhci-leave image is not staged: amdvi_usbd_drives_its_own_entry moved to P1's exit (issues/there-is-no-wifi.md) and no registered row judges that boot; with #928 merged it would show 03:00.4 refused NoMappableBar after NoRoutedRun.
+# One boot per image. Each invocation is `cargo <words>` from the worktree <worktree>.
+
+testcases
+  image: <scratchpad>/agents/amdvi-s6/metal6/testcases/image.img
+  cargo run -p toyos-metal -- --image <scratchpad>/agents/amdvi-s6/metal6/testcases/image.img --readback <scratchpad>/agents/amdvi-s6/metal6/testcases --fat32-check
+
+testcases-amd-no-remap
+  image: <scratchpad>/agents/amdvi-s6/metal6/testcases-amd-no-remap/image.img
+  cargo run -p toyos-metal -- --image <scratchpad>/agents/amdvi-s6/metal6/testcases-amd-no-remap/image.img --readback <scratchpad>/agents/amdvi-s6/metal6/testcases-amd-no-remap --fat32-check
+
+## image SHA-256
+5a49577c49073a5e556c91d0aec6101559a5c7c395a2ffad449c693ab8e894f5  <scratchpad>/agents/amdvi-s6/metal6/testcases-amd-no-remap/image.img
+4113a3dcb509fe0b4cdc287d04ee88faa9716643f38e04b2ca104a98f84de70b  <scratchpad>/agents/amdvi-s6/metal6/testcases/image.img
