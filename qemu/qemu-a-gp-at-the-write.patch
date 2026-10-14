@@ -1,0 +1,30 @@
+--- a/kernel/src/arch/x86_64/microcode.rs
++++ b/kernel/src/arch/x86_64/microcode.rs
+@@ -86,14 +86,14 @@
+         }
+     };
+     let found = revision(loader);
+-    let (platform, outcome) = match (toyos_microcode::may_load(loader, ecx, found), loader) {
++    let (platform, outcome) = match (toyos_microcode::may_load(loader, ecx & !(1 << 31), found), loader) {
+         (Err(why), _) => (None, Outcome::Unloaded(why)),
+         (Ok(()), Loader::Intel) => {
+             let platform = PlatformId::from_msr(cpu::rdmsr(PLATFORM_ID));
+             let cpu = Cpu { signature: Signature(eax), platform, revision: found };
+             (Some(platform), load_intel(cpu_id, &cpu))
+         }
+-        (Ok(()), Loader::Amd) => (None, load_amd(&amd::Cpu { signature: Signature(eax), level: found })),
++        (Ok(()), Loader::Amd) => (None, load_amd(&amd::Cpu { signature: Signature(0x0086_0f01), level: found })),
+     };
+     let running = match outcome {
+         Outcome::Loaded(loaded) => loaded,
+@@ -256,8 +256,9 @@
+     "mov rdx, rdi",
+     "shr rdx, 32",
+     "xor r8d, r8d",
++    "movabs r9, 0x8000000000000000",
+     ".Lamd_patch_load_write:",
+-    "wrmsr",
++    "mov rax, qword ptr [r9]",
+     ".Lamd_patch_load_resume:",
+     "lidt [rsp]",
+     "add rsp, 16",

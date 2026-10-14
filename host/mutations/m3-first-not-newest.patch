@@ -1,0 +1,12 @@
+--- a/kernel/microcode/src/amd.rs
++++ b/kernel/microcode/src/amd.rs
+@@ -156,7 +156,8 @@
+         match newest {
+             Some(n) if patch.level == n.level => tied = Some(at),
+             Some(n) if patch.level < n.level => {}
+-            _ => (newest, tied) = (Some(patch), None),
++            Some(_) => {}
++            None => (newest, tied) = (Some(patch), None),
+         }
+     }
+     if let (Some(patch), Some(at)) = (newest, tied) {

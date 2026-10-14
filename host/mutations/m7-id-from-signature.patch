@@ -1,0 +1,11 @@
+--- a/kernel/microcode/src/amd.rs
++++ b/kernel/microcode/src/amd.rs
+@@ -150,7 +150,7 @@
+         let at = have.wrapping_sub(sections.len());
+         let (named, patch, after) = section(sections).map_err(|why| refused(at, why))?;
+         sections = after;
+-        if Some(named) != id {
++        if named != ((cpu.signature.0 >> 8) & 0xff00 | cpu.signature.0 & 0xff) as u16 {
+             continue;
+         }
+         match newest {

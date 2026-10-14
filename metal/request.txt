@@ -1,0 +1,22 @@
+# toyos-amd-ucode at d67010aa5851d343e8bfa812ca87fe41a0ebffd3: the `microcode` row on both benches, and its negative control on the AMD bench.
+# Each invocation is `cargo <words>` from <dev>/toyos-amd-ucode.
+
+## The T14 (no --host): expected green, every CPU Intel 0xbe current or loaded, as on main.
+
+metalcase
+  image: <scratchpad>/agents/amd-ucode-build/metal/t14/metalcase/image.img
+  cargo run -p toyos-metal -- --image <scratchpad>/agents/amd-ucode-build/metal/t14/metalcase/image.img --readback <scratchpad>/agents/amd-ucode-build/metal/t14/metalcase --fat32-check
+
+## The AMD bench: append `--host <the AMD bench>` to each invocation.
+# metalcase: expected green, every CPU `loaded 0x860010d`.
+# microcode-amd-flip: expected RED on cpu0's `refused 0x860010d with #GP(0x0)` line, the boot completing.
+# Judge it with the staging patch applied: <scratchpad>/agents/amd-ucode-build/mutations/stage-microcode-amd-flip.patch
+#   git apply <patch>; cargo test --test toyos-build -- --metal --metal-readback <scratchpad>/agents/amd-ucode-build/metal/amd-bench microcode; git apply -R <patch>
+
+metalcase
+  image: <scratchpad>/agents/amd-ucode-build/metal/amd-bench/metalcase/image.img
+  cargo run -p toyos-metal -- --image <scratchpad>/agents/amd-ucode-build/metal/amd-bench/metalcase/image.img --readback <scratchpad>/agents/amd-ucode-build/metal/amd-bench/metalcase --fat32-check
+
+microcode-amd-flip
+  image: <scratchpad>/agents/amd-ucode-build/metal/amd-bench/microcode-amd-flip/image.img
+  cargo run -p toyos-metal -- --image <scratchpad>/agents/amd-ucode-build/metal/amd-bench/microcode-amd-flip/image.img --readback <scratchpad>/agents/amd-ucode-build/metal/amd-bench/microcode-amd-flip --fat32-check

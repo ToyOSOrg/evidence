@@ -1,0 +1,33 @@
+    Blocking waiting for file lock on package cache
+   Compiling toyos-build v0.1.0 (<dev>/toyos-amd-ucode)
+    Finished `test` profile [optimized + debuginfo] target(s) in 10.96s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-ddd1c80cd62279e4)
+01:19:53   BUILD x86_64 binaries of tests/guest/rust-tests
+01:19:58   BUILT x86_64 binaries of tests/guest/rust-tests  (4s)
+01:19:58 [toyos] Compiling 138 C tests, and attempting 24 declared ones...
+01:20:05 [metal] 2 registration(s) and 0 shared member(s) over 2 boot(s)
+01:20:05   BUILD x86_64 kernel, loader, ROOT of <scratchpad>/agents/amd-ucode-build/metal/amd-bench/metalcase/system-32354d6cbb845909.toml
+01:20:09 assets: leaving out share/soundfont.sf2 — only /system/bin/doom opens it and this image builds no doom
+01:20:09 assets: leaving out share/doom1.wad — only /system/bin/doom opens it and this image builds no doom
+01:20:10   BUILT x86_64 kernel, loader, ROOT of <scratchpad>/agents/amd-ucode-build/metal/amd-bench/metalcase/system-32354d6cbb845909.toml  (5s)
+01:20:10 [metal] metalcase: 1 job(s) under a list bound of 60000 ms, armed with [] and a boot deadline of 120000 ms — <scratchpad>/agents/amd-ucode-build/metal/amd-bench/metalcase/image.img
+01:20:10   BUILD x86_64 kernel boot-actuators,test-actuators, ROOT of <scratchpad>/agents/amd-ucode-build/metal/amd-bench/microcode-amd-flip/system-32354d6cbb845909.toml
+01:20:14 assets: leaving out share/soundfont.sf2 — only /system/bin/doom opens it and this image builds no doom
+01:20:14 assets: leaving out share/doom1.wad — only /system/bin/doom opens it and this image builds no doom
+01:20:15   BUILT x86_64 kernel boot-actuators,test-actuators, ROOT of <scratchpad>/agents/amd-ucode-build/metal/amd-bench/microcode-amd-flip/system-32354d6cbb845909.toml  (5s)
+01:20:15 [metal] microcode-amd-flip: 1 job(s) under a list bound of 60000 ms, armed with ["microcode-amd-flip"] and a boot deadline of 120000 ms — <scratchpad>/agents/amd-ucode-build/metal/amd-bench/microcode-amd-flip/image.img
+# One boot per image. Each invocation is `cargo <words>` from this worktree.
+
+metalcase
+  image: <scratchpad>/agents/amd-ucode-build/metal/amd-bench/metalcase/image.img
+  cargo run -p toyos-metal -- --image <scratchpad>/agents/amd-ucode-build/metal/amd-bench/metalcase/image.img --readback <scratchpad>/agents/amd-ucode-build/metal/amd-bench/metalcase --fat32-check
+
+microcode-amd-flip
+  image: <scratchpad>/agents/amd-ucode-build/metal/amd-bench/microcode-amd-flip/image.img
+  cargo run -p toyos-metal -- --image <scratchpad>/agents/amd-ucode-build/metal/amd-bench/microcode-amd-flip/image.img --readback <scratchpad>/agents/amd-ucode-build/metal/amd-bench/microcode-amd-flip --fat32-check
+01:20:15 [metal] staged 2 image(s); <scratchpad>/agents/amd-ucode-build/metal/amd-bench/request.txt lists them. The machine was not touched, so this run establishes nothing about it.
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `<dev>/toyos-amd-ucode/target/debug/deps/toyos_build-ddd1c80cd62279e4 --metal --metal-readback <scratchpad>/agents/amd-ucode-build/metal/amd-bench microcode` (exit status: 2)
+exit 2

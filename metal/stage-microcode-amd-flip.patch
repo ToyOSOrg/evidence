@@ -1,0 +1,27 @@
+--- a/tests/toyos.rs
++++ b/tests/toyos.rs
+@@ -873,6 +873,11 @@
+         metal::Metal { arms: METALCASE, judge: |b| microcode_on_metal(b[0].kernel().text(), b[0].cpus()?) },
+     ),
+     (
++        // Staging only: the negative control, which must red on cpu0's `refused`.
++        "microcode_amd_flip",
++        metal::Metal { arms: MICROCODE_AMD_FLIP, judge: |b| microcode_on_metal(b[0].kernel().text(), b[0].cpus()?) },
++    ),
++    (
+         // Two boots the suite already flashes: the device boot writes and
+         // fsyncs megabytes before its reset, and `metalcase` is the same reset
+         // with nothing written behind it but the hold's line.
+@@ -1149,6 +1154,12 @@
+ const METALCASE: &[metal::Arm] = &[metal::Arm {
+     last: Some("test_rs_ps2server_hold"),
+     ..metal::once("metalcase", "tests/images/metalcase.toml", &[], &[])
++}];
++
++const MICROCODE_AMD_FLIP: &[metal::Arm] = &[metal::Arm {
++    features: ACTUATOR_KERNEL,
++    last: Some("test_rs_ps2server_hold"),
++    ..metal::once("microcode-amd-flip", "tests/images/metalcase.toml", &["microcode-amd-flip"], &[])
+ }];
+ 
+ /// A launcher and a declared `cat` and shell, which `process_tree`'s subtree
