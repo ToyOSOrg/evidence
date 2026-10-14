@@ -1,0 +1,19 @@
+# PR #921 fix round, head 4f1d6fc3aee42ec664713954b3f0d60f2491a56c (main f0a987bc6 merged). Machine: the AMD bench (Family 17h Model 60h), not the T14: add the AMD bench's --host to each invocation. Three boots.
+# Rows: amdvi_usbd_drives_its_own_entry (testcases-amd-xhci-leave, armed xhci-leave=03:00.4), amdvi_claim_refused_without_remapping (testcases-amd-no-remap, armed iommu-no-remap and xhci-leave=03:00.4), amdvi_remaps_the_stick_controller + amdvi_translates_the_stick_controller (testcases). Both parameters now have FLASHABLE rows.
+
+testcases
+  image: <scratchpad>/metal3/testcases/image.img
+  cargo run -p toyos-metal -- --image <scratchpad>/metal3/testcases/image.img --readback <scratchpad>/metal3/testcases --fat32-check
+
+testcases-amd-no-remap
+  image: <scratchpad>/metal3/testcases-amd-no-remap/image.img
+  cargo run -p toyos-metal -- --image <scratchpad>/metal3/testcases-amd-no-remap/image.img --readback <scratchpad>/metal3/testcases-amd-no-remap --fat32-check
+
+testcases-amd-xhci-leave
+  image: <scratchpad>/metal3/testcases-amd-xhci-leave/image.img
+  cargo run -p toyos-metal -- --image <scratchpad>/metal3/testcases-amd-xhci-leave/image.img --readback <scratchpad>/metal3/testcases-amd-xhci-leave --fat32-check
+
+## image SHA-256
+0bb27cdb4c9b54603811ef6843795f940a4120aae108811aef574987d70500d1  <scratchpad>/metal3/testcases-amd-no-remap/image.img
+7e938454c8a415b5a5d1148e81053516581887e9c6ff0f8ce3614e6d99442d70  <scratchpad>/metal3/testcases-amd-xhci-leave/image.img
+472f8677ee0e85f617b9197ac57466add7ef27a324fdaa0546fcf6f53eb52ed8  <scratchpad>/metal3/testcases/image.img
