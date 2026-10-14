@@ -39,3 +39,15 @@ T14 staging (no machine touched)
   cargo test --test toyos-build -- --metal --metal-readback <scratch>/t14 \
     claim_reuses_its_remapping_entry usbd_drives_the_type_c_controller
   exits 2 by design (Verdict::Staged); t14-request.txt, t14-stage.log.
+
+T14 run of the staged images (run by the orchestrator, head 9b39b7ce7)
+  machine: ThinkPad T14 (LENOVO 20W0003AMZ, BIOS N34ET71W 1.71), VT-d.
+  runner log: t14/m918-t14.log; judge: t14/judge-slots.log, "2 passed, 0 failed, 2 boot(s)".
+  readbacks: t14/testcases/ and t14/testcases-xhci-leave/ (kernel.log, loader.log,
+  boot.txt, verdict.txt "passed", the image's system toml; the USB stick's serial
+  number masked; images and log partitions not published).
+  claim_reuses_its_remapping_entry: testcases/kernel.log 607-621, the I219 (00:1f.6)
+    claimed twice, irte4 at vector 0x40 both times, p=0 after each release.
+  usbd_drives_the_type_c_controller: testcases-xhci-leave/kernel.log 340-491, 00:0d.0
+    handed over on vector 0x40 (irte3), its first message taken on vector 0x40,
+    irte3 p=0 at release.
