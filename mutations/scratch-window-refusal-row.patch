@@ -1,0 +1,27 @@
+diff --git a/tests/toyos.rs b/tests/toyos.rs
+index e77728366..49d764b2a 100644
+--- a/tests/toyos.rs
++++ b/tests/toyos.rs
+@@ -487,6 +487,7 @@ const MACHINE_TESTS: &[&str] = &[
+     // and whose firmware publishes no EDID, so the image's `scale=2` sets it;
+     // no metal machine's glass can be read.
+     "a_window_is_drawn_at_the_scale_and_relaid_at_the_next",
++    "scratch_window_refusal",
+ ];
+ 
+ /// **The metal profile**: which registrations run on the ThinkPad T14, what
+@@ -3779,6 +3780,14 @@ fn run_machine_test(name: &str, test_config: &Path) -> Result<(), String> {
+         "the_opening_exchange_with_qemus_agent_completes" => the_opening_exchange_with_qemus_agent_completes(),
+         "the_compositor_drives_the_virtio_gpu" => the_compositor_drives_the_virtio_gpu(),
+         "a_window_is_drawn_at_the_scale_and_relaid_at_the_next" => a_window_is_drawn_at_the_scale_and_relaid_at_the_next(),
++        "scratch_window_refusal" => {
++            const JOB: &str = "window_refusal";
++            let bin = qemu::build_toyos_bin(qemu::SUITE_ARCH, &compile::repo_root().join("tests/guest/rust-tests"), JOB);
++            let mut qemu = QemuInstance::boot_with_options(&compile::repo_root().join("tests/images/scalecase.toml"), &[], &[(JOB.to_string(), bin)], BootOptions { profile: qemu::Profile::Metal, ..Default::default() });
++            let r = qemu.run_test("test_rs_window_refusal", Duration::from_secs(120));
++            eprintln!("{}", r.stdout);
++            if r.exit_code == Some(0) { Ok(()) } else { Err(format!("{:?} {:?}\n{}", r.exit_code, r.error, r.serial)) }
++        }
+         other => Err(format!("unknown machine test {other}")),
+     }
+ }

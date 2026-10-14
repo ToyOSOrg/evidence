@@ -1,0 +1,18 @@
+diff --git a/system/compositor/src/session.rs b/system/compositor/src/session.rs
+index 4ce515194..523f1c54f 100644
+--- a/system/compositor/src/session.rs
++++ b/system/compositor/src/session.rs
+@@ -1843,13 +1843,6 @@ impl Session {
+         self.max_windows =
+             toyos_desktop::max_windows(self.total_mem, self.desk.screen, MAX_WINDOW_SLOTS as usize);
+         relayout(&old, &self.desk, &mut self.stack);
+-        let (pf, wire) = (self.pixel_format(), scale.wire());
+-        for win in self.stack.iter_mut() {
+-            let drawn = win.client.buffers.drawn();
+-            if rescaled || (drawn.width, drawn.height) != (win.content.w(), win.content.h()) {
+-                settle(win, pf, wire, &mut self.dead);
+-            }
+-        }
+         self.cursor.x = self.cursor.x.min(self.desk.screen.x1 - 1);
+         self.cursor.y = self.cursor.y.min(self.desk.screen.y1 - 1);
+         self.damage.add(self.desk.screen);

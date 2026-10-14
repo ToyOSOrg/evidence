@@ -1,0 +1,13 @@
+diff --git a/sdk/window/src/lib.rs b/sdk/window/src/lib.rs
+index c89da073a..c3d9afffd 100644
+--- a/sdk/window/src/lib.rs
++++ b/sdk/window/src/lib.rs
+@@ -588,7 +588,7 @@ impl Window {
+             other => return Err(CreateError::Protocol(other)),
+         }
+         let info: WindowInfo = conn.recv_payload(&header)?;
+-        let scale = Scale::from_wire(info.scale).ok_or(CreateError::Protocol(MSG_WINDOW_CREATED))?;
++        let scale = Scale::from_wire(info.scale).unwrap_or(Scale::ONE);
+ 
+         let buf_size = info.stride as usize * info.height as usize * 4;
+         // The buffer crossed ahead of the frame. A compositor that announced a

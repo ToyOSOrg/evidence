@@ -1,0 +1,324 @@
+head c849397d358f50013a8924918698dfd48617b773
+=== m7-compositor-ignores-logical-size: cargo test --test toyos-build -- a_window_is_drawn_at_the_scale_and_relaid_at_the_next
+   Compiling toyos-build v0.1.0 (<worktree>)
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.79s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-240bcc0d332cf5bf)
+
+18:18:40 running 1 tests, 12 wide
+
+18:18:40   RUN   a_window_is_drawn_at_the_scale_and_relaid_at_the_next
+18:18:40   BUILD x86_64 scale_window of tests/guest/rust-tests, for a_window_is_drawn_at_the_scale_and_relaid_at_the_next
+18:18:43   BUILT x86_64 scale_window of tests/guest/rust-tests, for a_window_is_drawn_at_the_scale_and_relaid_at_the_next  (3s)
+18:18:43   BUILD x86_64 kernel, loader, ROOT of tests/images/scalecase.toml, for a_window_is_drawn_at_the_scale_and_relaid_at_the_next
+18:18:47 assets: leaving out share/soundfont.sf2 — only /system/bin/doom opens it and this image builds no doom
+18:18:47 assets: leaving out share/doom1.wad — only /system/bin/doom opens it and this image builds no doom
+18:18:47   BUILT x86_64 kernel, loader, ROOT of tests/images/scalecase.toml, for a_window_is_drawn_at_the_scale_and_relaid_at_the_next  (5s)
+18:19:06 FAIL a_window_is_drawn_at_the_scale_and_relaid_at_the_next: STALLED: waiting for the window at 2 — it went quiet
+--- what the guest said while it was waited on ---
+[ 3.187 cpu0 kernel] spawn: /system/bin/test_rs_scale_window pid=6 (layout=0ms tls=2ms total=3ms)
+[ 3.179 test-runner] ===TEST_START test_rs_scale_window===
+[ 3.195 compositor] compositor: wallpaper 1920x1080, scaling to 1920x1080
+[ 3.348 compositor] compositor: at most 31 windows (16 MiB each of 4034 MiB total)
+[ 3.352 compositor] compositor: ready
+[ 3.356 compositor] compositor: window opened client=18 content=860,486 200x100, 1 live
+[ 3.366 compositor] compositor: the first frame is on the panel
+[ 3.368 test-runner pid=6] scale_window: logical 200x100 drawn 200x100 at scale 2
+18:19:06   STALL a_window_is_drawn_at_the_scale_and_relaid_at_the_next  (19s)
+18:19:06   --- 1 guests, 0 of them not the shipping kernel, 1 kernel build(s): [""]
+
+18:19:06 host: fastest boot 3200 ms against the reference 1424 ms — liveness ceilings paid at 2.25x
+18:19:06 host: 14 core(s); a guest wider than that waits vcpus/cores longer again
+18:19:06 failures:
+18:19:06     a_window_is_drawn_at_the_scale_and_relaid_at_the_next: STALLED: waiting for the window at 2 — it went quiet
+
+18:19:06 1 of those reds are the ceiling: a_window_is_drawn_at_the_scale_and_relaid_at_the_next
+
+18:19:06 test result: FAILED. 0 passed, 1 failed, 0 invalidated, 1 total (26.1s; workers: 7s building, 19s testing)
+18:19:06 [toyos] this red run's serial logs are kept at <worktree>/target/red-run-serial/toyos-tmp-37457-0
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `<worktree>/target/debug/deps/toyos_build-240bcc0d332cf5bf a_window_is_drawn_at_the_scale_and_relaid_at_the_next` (exit status: 1)
+exit 1
+restored: 0 changed files
+=== m8-no-relay-on-a-scale: cargo test --test toyos-build -- a_window_is_drawn_at_the_scale_and_relaid_at_the_next
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.37s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-240bcc0d332cf5bf)
+
+18:19:07 running 1 tests, 12 wide
+
+18:19:07   RUN   a_window_is_drawn_at_the_scale_and_relaid_at_the_next
+18:19:07   BUILD x86_64 scale_window of tests/guest/rust-tests, for a_window_is_drawn_at_the_scale_and_relaid_at_the_next
+18:19:10   BUILT x86_64 scale_window of tests/guest/rust-tests, for a_window_is_drawn_at_the_scale_and_relaid_at_the_next  (3s)
+18:19:10   BUILD x86_64 kernel, loader, ROOT of tests/images/scalecase.toml, for a_window_is_drawn_at_the_scale_and_relaid_at_the_next
+18:19:14 assets: leaving out share/soundfont.sf2 — only /system/bin/doom opens it and this image builds no doom
+18:19:14 assets: leaving out share/doom1.wad — only /system/bin/doom opens it and this image builds no doom
+18:19:14   BUILT x86_64 kernel, loader, ROOT of tests/images/scalecase.toml, for a_window_is_drawn_at_the_scale_and_relaid_at_the_next  (4s)
+18:19:20   [scale] 400x200 under 56 rows at 2, relaid 200x100 under 28 at 1
+18:19:20   PASS  a_window_is_drawn_at_the_scale_and_relaid_at_the_next  (6s)
+18:19:20   --- 1 guests, 0 of them not the shipping kernel, 1 kernel build(s): [""]
+
+18:19:20 host: fastest boot 4305 ms against the reference 1424 ms — liveness ceilings paid at 3.02x
+18:19:20 host: 14 core(s); a guest wider than that waits vcpus/cores longer again
+18:19:20 test result: ok. 1 passed, 1 total (12.5s; workers: 7s building, 6s testing)
+exit 0
+restored: 0 changed files
+=== m8b-no-relay-at-all: cargo test --test toyos-build -- a_window_is_drawn_at_the_scale_and_relaid_at_the_next
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.59s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-240bcc0d332cf5bf)
+
+18:19:21 running 1 tests, 12 wide
+
+18:19:21   RUN   a_window_is_drawn_at_the_scale_and_relaid_at_the_next
+18:19:21   BUILD x86_64 scale_window of tests/guest/rust-tests, for a_window_is_drawn_at_the_scale_and_relaid_at_the_next
+18:19:24   BUILT x86_64 scale_window of tests/guest/rust-tests, for a_window_is_drawn_at_the_scale_and_relaid_at_the_next  (3s)
+18:19:24   BUILD x86_64 kernel, loader, ROOT of tests/images/scalecase.toml, for a_window_is_drawn_at_the_scale_and_relaid_at_the_next
+18:19:28 assets: leaving out share/soundfont.sf2 — only /system/bin/doom opens it and this image builds no doom
+18:19:28 assets: leaving out share/doom1.wad — only /system/bin/doom opens it and this image builds no doom
+18:19:28   BUILT x86_64 kernel, loader, ROOT of tests/images/scalecase.toml, for a_window_is_drawn_at_the_scale_and_relaid_at_the_next  (4s)
+18:19:48 FAIL a_window_is_drawn_at_the_scale_and_relaid_at_the_next: STALLED: waiting for the window relaid at 1 — it went quiet
+--- what the guest said while it was waited on ---
+[ 4.309 cpu0 kernel] spawn: /system/bin/toybox pid=7 (layout=0ms tls=2ms total=3ms)
+[ 4.379 cpu1 kernel] exit: toybox pid=7 code=0 cpu=9ms peak=2MB allocs=2 frees=0 syscalls=17 syscall_wall=60ms 0=2 1=2 6=1 10=1 14=1 50=1 51=1 63=1 72=1 73=2 91=1 99=1 102=1 106=1
+[ 4.316 compositor error] compositor: /state/compositor/scale is not written, so this scale is not kept: permission denied
+[ 4.317 compositor] compositor: scale 1, kept 1
+[ 4.377 toybox] 1920x1080 scale 1 (kept 1)
+18:19:48   STALL a_window_is_drawn_at_the_scale_and_relaid_at_the_next  (20s)
+18:19:48   --- 1 guests, 0 of them not the shipping kernel, 1 kernel build(s): [""]
+
+18:19:48 host: fastest boot 3904 ms against the reference 1424 ms — liveness ceilings paid at 2.74x
+18:19:48 host: 14 core(s); a guest wider than that waits vcpus/cores longer again
+18:19:48 failures:
+18:19:48     a_window_is_drawn_at_the_scale_and_relaid_at_the_next: STALLED: waiting for the window relaid at 1 — it went quiet
+
+18:19:48 1 of those reds are the ceiling: a_window_is_drawn_at_the_scale_and_relaid_at_the_next
+
+18:19:48 test result: FAILED. 0 passed, 1 failed, 0 invalidated, 1 total (27.1s; workers: 7s building, 20s testing)
+18:19:48 [toyos] this red run's serial logs are kept at <worktree>/target/red-run-serial/toyos-tmp-44822-0
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `<worktree>/target/debug/deps/toyos_build-240bcc0d332cf5bf a_window_is_drawn_at_the_scale_and_relaid_at_the_next` (exit status: 1)
+exit 1
+restored: 0 changed files
+=== scratch row applied (control, unmutated)
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+   Compiling toyos-build v0.1.0 (<worktree>)
+    Finished `test` profile [optimized + debuginfo] target(s) in 11.74s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-240bcc0d332cf5bf)
+
+18:20:00 running 1 tests, 12 wide
+
+18:20:00   RUN   scratch_window_refusal
+18:20:00   BUILD x86_64 window_refusal of tests/guest/rust-tests, for scratch_window_refusal
+18:20:03   BUILT x86_64 window_refusal of tests/guest/rust-tests, for scratch_window_refusal  (2s)
+18:20:03   BUILD x86_64 kernel, loader, ROOT of tests/images/scalecase.toml, for scratch_window_refusal
+18:20:07 assets: leaving out share/soundfont.sf2 — only /system/bin/doom opens it and this image builds no doom
+18:20:07 assets: leaving out share/doom1.wad — only /system/bin/doom opens it and this image builds no doom
+18:20:07   BUILT x86_64 kernel, loader, ROOT of tests/images/scalecase.toml, for scratch_window_refusal  (4s)
+18:20:10 window refusal: [Refuse(1)] waiting for the client's request
+compositor: wallpaper 1920x1080, scaling to 1920x1080
+window refusal: [Refuse(1)] waiting for the answer
+window refusal: [Refuse(2)] waiting for the client's request
+window refusal: [Refuse(2)] waiting for the answer
+window refusal: [Refuse(4242)] waiting for the client's request
+window refusal: [Refuse(4242)] waiting for the answer
+window refusal: [Unrelated] waiting for the client's request
+window refusal: [Unrelated] waiting for the answer
+window refusal: [Close] waiting for the client's request
+window refusal: [Close] waiting for the answer
+window refusal: [NoBuffer] waiting for the client's request
+window refusal: [NoBuffer] waiting for the answer
+window refusal: [AbsurdScale(0)] waiting for the client's request
+window refusal: [AbsurdScale(0)] waiting for the answer
+window refusal: [AbsurdScale(481)] waiting for the client's request
+window refusal: [AbsurdScale(481)] waiting for the answer
+window refusal: waiting for the client to exit
+8 refusal outcomes decoded, none panicked the client
+
+18:20:10   PASS  scratch_window_refusal  (3s)
+18:20:10   --- 1 guests, 0 of them not the shipping kernel, 1 kernel build(s): [""]
+
+18:20:10 host: fastest boot 2563 ms against the reference 1424 ms — liveness ceilings paid at 1.80x
+18:20:10 host: 14 core(s); a guest wider than that waits vcpus/cores longer again
+18:20:10 test result: ok. 1 passed, 1 total (9.7s; workers: 7s building, 3s testing)
+exit 0
+=== m9-client-takes-an-absurd-scale: cargo test --test toyos-build -- scratch_window_refusal
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.25s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-240bcc0d332cf5bf)
+
+18:20:10 running 1 tests, 12 wide
+
+18:20:10   RUN   scratch_window_refusal
+18:20:10   BUILD x86_64 window_refusal of tests/guest/rust-tests, for scratch_window_refusal
+18:20:13   BUILT x86_64 window_refusal of tests/guest/rust-tests, for scratch_window_refusal  (3s)
+18:20:13   BUILD x86_64 kernel, loader, ROOT of tests/images/scalecase.toml, for scratch_window_refusal
+18:20:17 assets: leaving out share/soundfont.sf2 — only /system/bin/doom opens it and this image builds no doom
+18:20:17 assets: leaving out share/doom1.wad — only /system/bin/doom opens it and this image builds no doom
+18:20:17   BUILT x86_64 kernel, loader, ROOT of tests/images/scalecase.toml, for scratch_window_refusal  (4s)
+18:20:21 compositor: wallpaper 1920x1080, scaling to 1920x1080
+window refusal: [Refuse(1)] waiting for the client's request
+window refusal: [Refuse(1)] waiting for the answer
+window refusal: [Refuse(2)] waiting for the client's request
+window refusal: [Refuse(2)] waiting for the answer
+window refusal: [Refuse(4242)] waiting for the client's request
+window refusal: [Refuse(4242)] waiting for the answer
+window refusal: [Unrelated] waiting for the client's request
+window refusal: [Unrelated] waiting for the answer
+window refusal: [Close] waiting for the client's request
+window refusal: [Close] waiting for the answer
+window refusal: [NoBuffer] waiting for the client's request
+window refusal: [NoBuffer] waiting for the answer
+window refusal: [AbsurdScale(0)] waiting for the client's request
+window refusal: [AbsurdScale(0)] waiting for the answer
+window refusal: [AbsurdScale(481)] waiting for the client's request
+window refusal: [AbsurdScale(481)] waiting for the answer
+window refusal: waiting for the client to exit
+
+thread 'main' (1) panicked at src/bin/window_refusal.rs:151:9:
+assertion `left == right` failed: reply AbsurdScale(0) decoded wrongly
+  left: NoHandle
+ right: Protocol(1)
+stack backtrace:
+   0:      0x10000073bb0 - _Unwind_Backtrace
+   1:      0x1000005c383 - <<std[45037dbd1045d75b]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[73b405bef30eeff1]::fmt::Display>::fmt
+   2:      0x10000077b97 - core[73b405bef30eeff1]::fmt::write
+   3:      0x100000603bb - <std[45037dbd1045d75b]::sys::stdio::toyos::Stderr as core[73b405bef30eeff1]::io::write::Write>::write_fmt
+   4:      0x1000003bcf3 - std[45037dbd1045d75b]::panicking::default_hook::{closure#0}
+   5:      0x100000565ce - std[45037dbd1045d75b]::panicking::default_hook
+   6:      0x10000056789 - std[45037dbd1045d75b]::panicking::panic_with_hook
+   7:      0x1000003bdad - std[45037dbd1045d75b]::panicking::panic_handler::{closure#0}
+   8:      0x10000033ff9 - std[45037dbd1045d75b]::sys::backtrace::__rust_end_short_backtrace::<std[45037dbd1045d75b]::panicking::panic_handler::{closure#0}, !>
+   9:      0x1000003c518 - __rustc[d0c72ce299f394e5]::rust_begin_unwind
+  10:      0x100000782bb - core[73b405bef30eeff1]::panicking::panic_fmt
+  11:      0x1000007822f - core[73b405bef30eeff1]::panicking::assert_failed_inner
+  12:      0x1000002465f - core[73b405bef30eeff1]::panicking::assert_failed::<window[9770bc276b55790e]::CreateError, window[9770bc276b55790e]::CreateError>
+  13:      0x100000233df - window_refusal[5cc9fa0c4c84df9d]::main
+  14:      0x10000022256 - std[45037dbd1045d75b]::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  15:      0x10000024580 - std[45037dbd1045d75b]::rt::lang_start::<()>::{closure#0}
+  16:      0x10000055a76 - std[45037dbd1045d75b]::rt::lang_start_internal
+  17:      0x10000024561 - main
+  18:      0x1000005a433 - std[45037dbd1045d75b]::sys::pal::toyos::start_rust
+  19:      0x100000276ca - _start
+
+thread 'main' (1) panicked at src/bin/window_refusal.rs:101:5:
+assertion `left == right` failed: the client did not survive the refusals
+  left: Some(101)
+ right: Some(0)
+stack backtrace:
+   0:      0x10000073bb0 - _Unwind_Backtrace
+   1:      0x1000005c383 - <<std[45037dbd1045d75b]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[73b405bef30eeff1]::fmt::Display>::fmt
+   2:      0x10000077b97 - core[73b405bef30eeff1]::fmt::write
+   3:      0x100000603bb - <std[45037dbd1045d75b]::sys::stdio::toyos::Stderr as core[73b405bef30eeff1]::io::write::Write>::write_fmt
+   4:      0x1000003bcf3 - std[45037dbd1045d75b]::panicking::default_hook::{closure#0}
+   5:      0x100000565ce - std[45037dbd1045d75b]::panicking::default_hook
+   6:      0x10000056789 - std[45037dbd1045d75b]::panicking::panic_with_hook
+   7:      0x1000003bdad - std[45037dbd1045d75b]::panicking::panic_handler::{closure#0}
+   8:      0x10000033ff9 - std[45037dbd1045d75b]::sys::backtrace::__rust_end_short_backtrace::<std[45037dbd1045d75b]::panicking::panic_handler::{closure#0}, !>
+   9:      0x1000003c518 - __rustc[d0c72ce299f394e5]::rust_begin_unwind
+  10:      0x100000782bb - core[73b405bef30eeff1]::panicking::panic_fmt
+  11:      0x1000007822f - core[73b405bef30eeff1]::panicking::assert_failed_inner
+  12:      0x1000002462b - core[73b405bef30eeff1]::panicking::assert_failed::<core[73b405bef30eeff1]::option::Option<i32>, core[73b405bef30eeff1]::option::Option<i32>>
+  13:      0x10000023dd8 - window_refusal[5cc9fa0c4c84df9d]::main
+  14:      0x10000022256 - std[45037dbd1045d75b]::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  15:      0x10000024580 - std[45037dbd1045d75b]::rt::lang_start::<()>::{closure#0}
+  16:      0x10000055a76 - std[45037dbd1045d75b]::rt::lang_start_internal
+  17:      0x10000024561 - main
+  18:      0x1000005a433 - std[45037dbd1045d75b]::sys::pal::toyos::start_rust
+  19:      0x100000276ca - _start
+
+18:20:21 FAIL scratch_window_refusal: Some(101) None
+[ 3.298 cpu1 kernel] spawn: /system/bin/test_rs_window_refusal pid=6 (layout=0ms tls=3ms total=3ms)
+[ 3.314 cpu1 kernel] spawn: /system/bin/test_rs_window_refusal pid=7 (layout=0ms tls=2ms total=3ms)
+[ 3.307 compositor] compositor: wallpaper 1920x1080, scaling to 1920x1080
+[ 3.318 test-runner pid=6] window refusal: [Refuse(1)] waiting for the client's request
+[ 3.354 cpu1 kernel] exit: test_rs_window_refusal pid=7 code=101 cpu=34ms peak=6MB allocs=4 frees=0 syscalls=93 syscall_wall=15ms 0=16 1=16 6=1 9=2 10=13 13=2 14=4 21=1 50=2 51=2 63=3 72=1 73=1 91=2 99=2 102=12 104=3 105=4 106=6
+[ 3.370 cpu1 kernel] exit: test_rs_window_refusal pid=6 code=101 cpu=37ms peak=4MB allocs=3 frees=0 syscalls=95 syscall_wall=45ms 0=13 1=18 6=1 9=2 10=16 13=2 14=4 21=2 25=1 50=2 51=2 63=2 72=1 73=1 86=8 91=2 99=1 100=1 101=1 102=4 105=4 106=6 108=1
+[ 3.321 test-runner pid=7] window refusal: [Refuse(1)] waiting for the answer
+[ 3.324 test-runner pid=6] window refusal: [Refuse(2)] waiting for the client's request
+[ 3.325 test-runner pid=7] window refusal: [Refuse(2)] waiting for the answer
+[ 3.326 test-runner pid=6] window refusal: [Refuse(4242)] waiting for the client's request
+[ 3.327 test-runner pid=7] window refusal: [Refuse(4242)] waiting for the answer
+[ 3.328 test-runner pid=6] window refusal: [Unrelated] waiting for the client's request
+[ 3.328 test-runner pid=7] window refusal: [Unrelated] waiting for the answer
+[ 3.329 test-runner pid=6] window refusal: [Close] waiting for the client's request
+[ 3.329 test-runner pid=7] window refusal: [Close] waiting for the answer
+[ 3.329 test-runner pid=6] window refusal: [NoBuffer] waiting for the client's request
+[ 3.329 test-runner pid=7] window refusal: [NoBuffer] waiting for the answer
+[ 3.330 test-runner pid=6] window refusal: [AbsurdScale(0)] waiting for the client's request
+[ 3.331 test-runner pid=7] window refusal: [AbsurdScale(0)] waiting for the answer
+[ 3.331 test-runner pid=6] window refusal: [AbsurdScale(481)] waiting for the client's request
+[ 3.332 test-runner pid=7] window refusal: [AbsurdScale(481)] waiting for the answer
+[ 3.332 test-runner pid=6] window refusal: waiting for the client to exit
+[ 3.334 test-runner error pid=7] 
+[ 3.334 test-runner error pid=7] thread 'main' (1) panicked at src/bin/window_refusal.rs:151:9:
+[ 3.334 test-runner error pid=7] assertion `left == right` failed: reply AbsurdScale(0) decoded wrongly
+[ 3.334 test-runner error pid=7]   left: NoHandle
+[ 3.334 test-runner error pid=7]  right: Protocol(1)
+[ 3.334 test-runner error pid=7] stack backtrace:
+[ 3.348 test-runner error pid=7]    0:      0x10000073bb0 - _Unwind_Backtrace
+[ 3.349 test-runner error pid=7]    1:      0x1000005c383 - <<std[45037dbd1045d75b]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[73b405bef30eeff1]::fmt::Display>::fmt
+[ 3.349 test-runner error pid=7]    2:      0x10000077b97 - core[73b405bef30eeff1]::fmt::write
+[ 3.349 test-runner error pid=7]    3:      0x100000603bb - <std[45037dbd1045d75b]::sys::stdio::toyos::Stderr as core[73b405bef30eeff1]::io::write::Write>::write_fmt
+[ 3.349 test-runner error pid=7]    4:      0x1000003bcf3 - std[45037dbd1045d75b]::panicking::default_hook::{closure#0}
+[ 3.349 test-runner error pid=7]    5:      0x100000565ce - std[45037dbd1045d75b]::panicking::default_hook
+[ 3.349 test-runner error pid=7]    6:      0x10000056789 - std[45037dbd1045d75b]::panicking::panic_with_hook
+[ 3.349 test-runner error pid=7]    7:      0x1000003bdad - std[45037dbd1045d75b]::panicking::panic_handler::{closure#0}
+[ 3.350 test-runner error pid=7]    8:      0x10000033ff9 - std[45037dbd1045d75b]::sys::backtrace::__rust_end_short_backtrace::<std[45037dbd1045d75b]::panicking::panic_handler::{closure#0}, !>
+[ 3.350 test-runner error pid=7]    9:      0x1000003c518 - __rustc[d0c72ce299f394e5]::rust_begin_unwind
+[ 3.350 test-runner error pid=7]   10:      0x100000782bb - core[73b405bef30eeff1]::panicking::panic_fmt
+[ 3.350 test-runner error pid=7]   11:      0x1000007822f - core[73b405bef30eeff1]::panicking::assert_failed_inner
+[ 3.350 test-runner error pid=7]   12:      0x1000002465f - core[73b405bef30eeff1]::panicking::assert_failed::<window[9770bc276b55790e]::CreateError, window[9770bc276b55790e]::CreateError>
+[ 3.350 test-runner error pid=7]   13:      0x100000233df - window_refusal[5cc9fa0c4c84df9d]::main
+[ 3.350 test-runner error pid=7]   14:      0x10000022256 - std[45037dbd1045d75b]::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+[ 3.350 test-runner error pid=7]   15:      0x10000024580 - std[45037dbd1045d75b]::rt::lang_start::<()>::{closure#0}
+[ 3.350 test-runner error pid=7]   16:      0x10000055a76 - std[45037dbd1045d75b]::rt::lang_start_internal
+[ 3.350 test-runner error pid=7]   17:      0x10000024561 - main
+[ 3.350 test-runner error pid=7]   18:      0x1000005a433 - std[45037dbd1045d75b]::sys::pal::toyos::start_rust
+[ 3.351 test-runner error pid=7]   19:      0x100000276ca - _start
+[ 3.356 test-runner error pid=6] 
+[ 3.356 test-runner error pid=6] thread 'main' (1) panicked at src/bin/window_refusal.rs:101:5:
+[ 3.356 test-runner error pid=6] assertion `left == right` failed: the client did not survive the refusals
+[ 3.356 test-runner error pid=6]   left: Some(101)
+[ 3.356 test-runner error pid=6]  right: Some(0)
+[ 3.356 test-runner error pid=6] stack backtrace:
+[ 3.365 test-runner error pid=6]    0:      0x10000073bb0 - _Unwind_Backtrace
+[ 3.367 test-runner error pid=6]    1:      0x1000005c383 - <<std[45037dbd1045d75b]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[73b405bef30eeff1]::fmt::Display>::fmt
+[ 3.367 test-runner error pid=6]    2:      0x10000077b97 - core[73b405bef30eeff1]::fmt::write
+[ 3.367 test-runner error pid=6]    3:      0x100000603bb - <std[45037dbd1045d75b]::sys::stdio::toyos::Stderr as core[73b405bef30eeff1]::io::write::Write>::write_fmt
+[ 3.367 test-runner error pid=6]    4:      0x1000003bcf3 - std[45037dbd1045d75b]::panicking::default_hook::{closure#0}
+[ 3.367 test-runner error pid=6]    5:      0x100000565ce - std[45037dbd1045d75b]::panicking::default_hook
+[ 3.367 test-runner error pid=6]    6:      0x10000056789 - std[45037dbd1045d75b]::panicking::panic_with_hook
+[ 3.367 test-runner error pid=6]    7:      0x1000003bdad - std[45037dbd1045d75b]::panicking::panic_handler::{closure#0}
+[ 3.367 test-runner error pid=6]    8:      0x10000033ff9 - std[45037dbd1045d75b]::sys::backtrace::__rust_end_short_backtrace::<std[45037dbd1045d75b]::panicking::panic_handler::{closure#0}, !>
+[ 3.367 test-runner error pid=6]    9:      0x1000003c518 - __rustc[d0c72ce299f394e5]::rust_begin_unwind
+[ 3.367 test-runner error pid=6]   10:      0x100000782bb - core[73b405bef30eeff1]::panicking::panic_fmt
+[ 3.367 test-runner error pid=6]   11:      0x1000007822f - core[73b405bef30eeff1]::panicking::assert_failed_inner
+[ 3.367 test-runner error pid=6]   12:      0x1000002462b - core[73b405bef30eeff1]::panicking::assert_failed::<core[73b405bef30eeff1]::option::Option<i32>, core[73b405bef30eeff1]::option::Option<i32>>
+[ 3.367 test-runner error pid=6]   13:      0x10000023dd8 - window_refusal[5cc9fa0c4c84df9d]::main
+[ 3.367 test-runner error pid=6]   14:      0x10000022256 - std[45037dbd1045d75b]::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+[ 3.367 test-runner error pid=6]   15:      0x10000024580 - std[45037dbd1045d75b]::rt::lang_start::<()>::{closure#0}
+[ 3.368 test-runner error pid=6]   16:      0x10000055a76 - std[45037dbd1045d75b]::rt::lang_start_internal
+[ 3.368 test-runner error pid=6]   17:      0x10000024561 - main
+[ 3.368 test-runner error pid=6]   18:      0x1000005a433 - std[45037dbd1045d75b]::sys::pal::toyos::start_rust
+[ 3.368 test-runner error pid=6]   19:      0x100000276ca - _start
+
+18:20:21   FAIL  scratch_window_refusal  (4s)
+18:20:21   --- 1 guests, 0 of them not the shipping kernel, 1 kernel build(s): [""]
+
+18:20:21 host: fastest boot 3314 ms against the reference 1424 ms — liveness ceilings paid at 2.33x
+18:20:21 host: 14 core(s); a guest wider than that waits vcpus/cores longer again
+18:20:21 failures:
+18:20:21     scratch_window_refusal: Some(101) None
+
+18:20:21 test result: FAILED. 0 passed, 1 failed, 0 invalidated, 1 total (10.7s; workers: 7s building, 4s testing)
+18:20:21 [toyos] this red run's serial logs are kept at <worktree>/target/red-run-serial/toyos-tmp-50556-0
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `<worktree>/target/debug/deps/toyos_build-240bcc0d332cf5bf scratch_window_refusal` (exit status: 1)
+exit 1
+restored: 1 changed files
+scratch row removed: 0 changed files

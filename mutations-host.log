@@ -1,0 +1,240 @@
+head c849397d358f50013a8924918698dfd48617b773
+=== m1-rounding-half-to-even: cargo test -p toyos-window --lib -- scale::
+   Compiling toyos-window v0.20.0 (<worktree>/sdk/window)
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.74s
+     Running unittests src/lib.rs (target/debug/deps/window-724358ba7b3c4392)
+
+running 8 tests
+test scale::tests::a_scale_reads_and_writes_as_a_decimal ... ok
+test scale::tests::an_absurd_decimal_is_refused_by_name ... ok
+test scale::tests::a_rescale_rounds_the_same_way ... ok
+test scale::tests::touching_rectangles_still_touch ... ok
+test scale::tests::the_desktops_metrics_at_one_one_and_a_half_and_two ... ok
+test scale::tests::the_wire_carries_one_to_four_and_refuses_the_rest ... ok
+test scale::tests::whole_scales_multiply ... ok
+test scale::tests::a_half_rounds_away_from_zero ... FAILED
+
+failures:
+
+---- scale::tests::a_half_rounds_away_from_zero stdout ----
+
+thread 'scale::tests::a_half_rounds_away_from_zero' (27736691) panicked at sdk/window/src/scale.rs:177:9:
+assertion `left == right` failed
+  left: 4
+ right: 5
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    scale::tests::a_half_rounds_away_from_zero
+
+test result: FAILED. 7 passed; 1 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-window --lib`
+exit 101
+restored: 0 changed files
+=== m2-budget-one-buffer: cargo test -p toyos-desktop --lib -- budget::
+   Compiling toyos-window v0.20.0 (<worktree>/sdk/window)
+   Compiling toyos-desktop v0.1.0 (<worktree>/system/compositor/desktop)
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.86s
+     Running unittests src/lib.rs (target/debug/deps/toyos_desktop-7b240ffd6b9b8e08)
+
+running 10 tests
+test budget::tests::a_bigger_screen_affords_fewer_windows ... ok
+test budget::tests::a_window_larger_than_the_screen_is_refused_by_name ... ok
+test budget::tests::a_machine_with_almost_no_memory_still_gets_one_window ... ok
+test budget::tests::the_poller_ceiling_binds_before_memory_does ... ok
+test budget::tests::a_client_that_names_no_size_is_never_too_large ... ok
+test budget::tests::capacity_is_checked_before_size ... ok
+test budget::tests::a_display_request_is_admitted_past_every_client_ceiling ... ok
+test budget::tests::the_watcher_is_admitted_past_every_client_ceiling ... ok
+test budget::tests::the_prompt_is_admitted_past_every_client_ceiling ... ok
+test budget::tests::a_window_costs_two_buffers_of_whole_pages ... FAILED
+
+failures:
+
+---- budget::tests::a_window_costs_two_buffers_of_whole_pages stdout ----
+
+thread 'budget::tests::a_window_costs_two_buffers_of_whole_pages' (27737887) panicked at system/compositor/desktop/src/budget.rs:121:9:
+assertion `left == right` failed
+  left: 2097152
+ right: 4194304
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    budget::tests::a_window_costs_two_buffers_of_whole_pages
+
+test result: FAILED. 9 passed; 1 failed; 0 ignored; 0 measured; 136 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-desktop --lib`
+exit 101
+restored: 0 changed files
+=== m3-buffers-never-swap: cargo test -p toyos-desktop --lib -- window::
+    Blocking waiting for file lock on package cache
+   Compiling toyos-desktop v0.1.0 (<worktree>/system/compositor/desktop)
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.72s
+     Running unittests src/lib.rs (target/debug/deps/toyos_desktop-7b240ffd6b9b8e08)
+
+running 7 tests
+test window::tests::a_client_cannot_damage_more_than_its_own_window ... ok
+test window::tests::a_minimized_window_is_never_opaque ... ok
+test window::tests::a_window_shrunk_below_its_buffer_is_still_opaque ... ok
+test window::tests::only_the_first_departure_from_normal_is_saved ... ok
+test window::tests::a_window_mid_resize_is_not_opaque_and_its_backing_is_the_buffer ... ok
+test window::tests::a_buffer_never_presented_is_dropped_by_the_next ... FAILED
+test window::tests::a_window_is_shown_from_its_old_buffer_until_it_presents_into_the_new ... FAILED
+
+failures:
+
+---- window::tests::a_buffer_never_presented_is_dropped_by_the_next stdout ----
+
+thread 'window::tests::a_buffer_never_presented_is_dropped_by_the_next' (27738468) panicked at system/compositor/desktop/src/window.rs:207:9:
+assertion `left == right` failed
+  left: Some("second")
+ right: Some("old")
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- window::tests::a_window_is_shown_from_its_old_buffer_until_it_presents_into_the_new stdout ----
+
+thread 'window::tests::a_window_is_shown_from_its_old_buffer_until_it_presents_into_the_new' (27738471) panicked at system/compositor/desktop/src/window.rs:194:9:
+assertion `left == right` failed
+  left: Some("new")
+ right: Some("old")
+
+
+failures:
+    window::tests::a_buffer_never_presented_is_dropped_by_the_next
+    window::tests::a_window_is_shown_from_its_old_buffer_until_it_presents_into_the_new
+
+test result: FAILED. 5 passed; 2 failed; 0 ignored; 0 measured; 139 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-desktop --lib`
+exit 101
+restored: 0 changed files
+=== m4-hot-spot-at-the-corner: cargo test -p toyos-desktop --lib -- cursor::
+   Compiling toyos-desktop v0.1.0 (<worktree>/system/compositor/desktop)
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.84s
+     Running unittests src/lib.rs (target/debug/deps/toyos_desktop-7b240ffd6b9b8e08)
+
+running 3 tests
+test cursor::tests::the_hardware_cursor_carries_a_sprite_up_to_sixty_four_pixels ... ok
+test cursor::tests::the_hot_spot_scales_with_the_sprite ... FAILED
+test cursor::tests::the_sprite_is_drawn_with_its_hot_spot_on_the_pointer ... FAILED
+
+failures:
+
+---- cursor::tests::the_hot_spot_scales_with_the_sprite stdout ----
+
+thread 'cursor::tests::the_hot_spot_scales_with_the_sprite' (27740611) panicked at system/compositor/desktop/src/cursor.rs:66:13:
+assertion `left == right` failed: 1
+  left: Point { x: 0, y: 0 }
+ right: Point { x: 3, y: 3 }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- cursor::tests::the_sprite_is_drawn_with_its_hot_spot_on_the_pointer stdout ----
+
+thread 'cursor::tests::the_sprite_is_drawn_with_its_hot_spot_on_the_pointer' (27740612) panicked at system/compositor/desktop/src/cursor.rs:75:9:
+assertion `left == right` failed
+  left: Rect { x0: 100, y0: 50, x1: 140, y1: 90 }
+ right: Rect { x0: 80, y0: 30, x1: 120, y1: 70 }
+
+
+failures:
+    cursor::tests::the_hot_spot_scales_with_the_sprite
+    cursor::tests::the_sprite_is_drawn_with_its_hot_spot_on_the_pointer
+
+test result: FAILED. 1 passed; 2 failed; 0 ignored; 0 measured; 143 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-desktop --lib`
+exit 101
+restored: 0 changed files
+=== m5-relayout-keeps-physical-rect: cargo test -p toyos-desktop --lib -- layout::
+   Compiling toyos-desktop v0.1.0 (<worktree>/system/compositor/desktop)
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.67s
+     Running unittests src/lib.rs (target/debug/deps/toyos_desktop-7b240ffd6b9b8e08)
+
+running 18 tests
+test layout::tests::a_normal_window_has_no_mode_frame ... ok
+test layout::tests::a_maximized_frame_is_exactly_the_work_area ... ok
+test layout::tests::a_drag_cannot_put_a_title_bar_off_the_top ... ok
+test layout::tests::a_resize_floors_at_the_minimum_and_never_moves_the_origin ... ok
+test layout::tests::buttons_sit_inside_the_title_bar_and_do_not_overlap ... ok
+test layout::tests::an_unmaximized_window_keeps_the_pointer_at_the_same_fraction_of_its_title ... ok
+test layout::tests::frame_and_content_are_inverses ... ok
+test layout::tests::reflow_leaves_a_window_that_already_fits_where_it_is ... ok
+test layout::tests::reflow_keeps_the_size_and_brings_the_frame_back_on_screen ... ok
+test layout::tests::restoring_under_a_pointer_at_the_left_edge_keeps_the_title_bar_reachable ... ok
+test layout::tests::a_requested_window_is_centred_in_the_work_area ... ok
+test layout::tests::a_relaid_window_stays_on_the_work_area ... FAILED
+test layout::tests::a_normal_window_drifts_a_pixel_at_most_through_a_fractional_scale ... FAILED
+test layout::tests::snapped_halves_never_overlap_and_never_reach_the_taskbar ... ok
+test layout::tests::a_normal_window_keeps_its_logical_rectangle_across_a_scale ... FAILED
+test layout::tests::successive_unsized_windows_cascade_and_wrap ... ok
+test layout::tests::the_desk_at_a_scale_converts_each_metric ... ok
+test layout::tests::the_layout_follows_the_metrics_it_is_given ... ok
+
+failures:
+
+---- layout::tests::a_relaid_window_stays_on_the_work_area stdout ----
+
+thread 'layout::tests::a_relaid_window_stays_on_the_work_area' (27741306) panicked at system/compositor/desktop/src/layout.rs:541:9:
+assertion `left == right` failed
+  left: (300, 150)
+ right: (600, 300)
+
+---- layout::tests::a_normal_window_drifts_a_pixel_at_most_through_a_fractional_scale stdout ----
+
+thread 'layout::tests::a_normal_window_drifts_a_pixel_at_most_through_a_fractional_scale' (27741303) panicked at system/compositor/desktop/src/layout.rs:524:13:
+Rect { x0: 101, y0: 44, x1: 402, y1: 141 } from Rect { x0: 101, y0: 33, x1: 402, y1: 130 }
+
+---- layout::tests::a_normal_window_keeps_its_logical_rectangle_across_a_scale stdout ----
+
+thread 'layout::tests::a_normal_window_keeps_its_logical_rectangle_across_a_scale' (27741305) panicked at system/compositor/desktop/src/layout.rs:506:9:
+assertion `left == right` failed
+  left: Rect { x0: 100, y0: 120, x1: 300, y1: 220 }
+ right: Rect { x0: 200, y0: 240, x1: 600, y1: 440 }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    layout::tests::a_normal_window_drifts_a_pixel_at_most_through_a_fractional_scale
+    layout::tests::a_normal_window_keeps_its_logical_rectangle_across_a_scale
+    layout::tests::a_relaid_window_stays_on_the_work_area
+
+test result: FAILED. 15 passed; 3 failed; 0 ignored; 0 measured; 128 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-desktop --lib`
+exit 101
+restored: 0 changed files
+=== m6-display-takes-an-absurd-scale: cargo test -p toyos-window --lib -- display::
+   Compiling toyos-window v0.20.0 (<worktree>/sdk/window)
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.49s
+     Running unittests src/lib.rs (target/debug/deps/window-724358ba7b3c4392)
+
+running 5 tests
+test display::tests::a_payload_of_another_length_is_no_request ... ok
+test display::tests::each_request_decodes ... ok
+test display::tests::what_is_shown_crosses_the_wire_whole ... ok
+test display::tests::every_refusal_crosses_the_wire_as_itself ... ok
+test display::tests::an_absurd_scale_is_no_request ... FAILED
+
+failures:
+
+---- display::tests::an_absurd_scale_is_no_request stdout ----
+
+thread 'display::tests::an_absurd_scale_is_no_request' (27741793) panicked at sdk/window/src/display.rs:307:13:
+assertion `left == right` failed: 1
+  left: Some(SetScale(Auto))
+ right: None
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    display::tests::an_absurd_scale_is_no_request
+
+test result: FAILED. 4 passed; 1 failed; 0 ignored; 0 measured; 10 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-window --lib`
+exit 101
+restored: 0 changed files
