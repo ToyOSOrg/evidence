@@ -59,3 +59,7 @@ The `Malformed`/`Unsupported` class of each variant is declared once, in the
 - **IEEE Std 802.11-2024 §5.1.4 (p. 429)** names ISO/IEC 11802-5:1997, formerly
   IEEE Std 802.1H, and its selective translation table. We do not have that
   text, so checking the table's two entries stays owed.
+
+## Review round 1
+
+`c7a2ebeba` (issue record cut to state, W5/W6 notes; origin/main e136c77fd merged): `cargo run -- --ci host` exit 0, "86 step(s), all green", `ci-host-c7a2ebeba.log`. No crate code changed, so the mutations and crate logs above still apply.
