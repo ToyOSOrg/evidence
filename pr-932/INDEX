@@ -1,0 +1,27 @@
+ToyOSOrg/ToyOS #932, crypto track stage 2 (the instrument). Host: arm64 macOS (M4 Pro), rustc 1.98.1.
+Paths are masked: $WORKTREE is the branch's worktree, $SCRATCH the agent's scratch, $HOME the user's home.
+
+ci-host.log             cargo run -- --ci host at 9a318695e; exit 0, 86 steps green
+ci-host-r0.log          same on the uncommitted tree before 9a318695e; exit 1: one red, clippy::redundant_clone
+                         in toyos-parity's test (lib/parity/src/lib.rs:600), fixed before the commit
+build-x86_64.log        cargo run -- --build-only at 9a318695e; exit 0 (no shipped image changes)
+qemu-crypto_instrument_prints_its_table.log
+                        cargo test --test toyos-build -- --nocapture crypto_instrument_prints_its_table at
+                         9a318695e; exit 0. x86-64 TCG guest on the arm64 host: ring_kat, crypto_parity,
+                         crypto_parity_unasserted each exit 0; 77 rows per build read back as one table.
+                         Its timings are TCG's and decide nothing.
+qemu-r0-crypto_instrument_prints_its_table.log
+                        the same before the commit (the manifest's ml-kem requirement then read
+                         "0.3.0-rc.2"; the lock resolved 0.3.2 both times); exit 0
+mutations/m<N>-*.patch  checked patches against lib/parity/src/lib.rs at 9a318695e
+                         (sha256 00710f84...0c88, the committed file)
+mutations/m<N>-*.log    each applied, built (exit 0), tested (exit 101, exactly one test red), reverted:
+                         m1 verdict at 1 + 2*spread -> a_ratio_within_one_plus_the_spread_passes_and_above_it_fails
+                         m2 spread limit 7%         -> a_spread_above_five_percent_gets_no_verdict
+                         m3 spread at the median    -> the_spread_is_the_nineteenth_of_twenty_one_deviations
+                         m4 warmup sample kept      -> the_schedule_calibrates_discards_a_warmup_and_passes_the_table_in_rounds
+                         m5 no rotation             -> the same schedule test
+metal-stage-t14.log     cargo test --test toyos-build -- --metal --metal-readback <dir> crypto_instrument
+metal-stage-amd.log      crypto_parity, once per bench at 9a318695e; exit 2 (staged, no machine touched):
+request-t14.txt          one boot, cryptocase: 3 jobs under the 60000 ms list bound, boot deadline 120000 ms
+request-amd.txt
