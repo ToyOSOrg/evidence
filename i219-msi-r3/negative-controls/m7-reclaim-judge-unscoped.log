@@ -1,0 +1,26 @@
+   Compiling toyos-build v0.1.0 ($HOME/Dev/jan/toyos-i219-msi)
+    Finished `test` profile [optimized + debuginfo] target(s) in 19.17s
+     Running tests/checks.rs (target/debug/deps/toyos_checks-6efb785991ef1cca)
+
+running 1 test
+test checks::metal_claim_spends_one_remapping_entry ... FAILED
+
+failures:
+
+---- checks::metal_claim_spends_one_remapping_entry stdout ----
+
+thread 'checks::metal_claim_spends_one_remapping_entry' (11070235) panicked at tests/checks/claims.rs:55:5:
+assertion `left == right` failed
+  left: Err("8086:15fc was handed over 3 time(s) and released 2, want 2 and 2:\n[2026-09-29 11:54:39  0.065 cpu0 kernel]   PCI 00:1f.6 [0200] vendor=8086 device=15fc prog_if=00 bars=[bar0=0xbcf00000]\n[2026-09-29 11:54:39  0.149 cpu0 kernel] pcidev: firmware declared root bridge memory: mem 0xa2000000..0xbd000000, mem 0x4000000000..0x603dc00000, mem 0xa0800000..0xa2000000, mem 0xbd000000..0xc0000000, mem 0xff000000..0xffb80000, mem 0xffd3a070..0x100000000, mem 0x603dc00000..0x8000000000\n[2026-09-29 11:54:39  0.250 cpu0 kernel] iommu: domain2 root=0xa31000 aw=48 mgaw=39 addresses from 0x2000000000 to 0x8000000000\n[2026-09-29 12:10:34  1.190 cpu3 kernel] spawn: /system/bin/test_rs_pci_reclaim pid=7 (layout=0ms tls=0ms total=0ms)\n[2026-09-29 12:10:34  1.191 cpu0 kernel] iommu: irte0 source=00:1f.6 p=1 sid=0x00fe svt=1 sq=0 vector=0x28 apic=0x0 dst=0x0 trigger=edge\n[2026-09-29 12:10:34  1.192 cpu0 kernel] pcidev: PCI 00:1f.6 [8086:15fc] handed over on slot 0, vector 0x28\n[2026-09-29 12:10:53 20.233 cpu1 kernel] pcidev: PCI 00:1f.6 [8086:15fc] released from slot 0; reset by nothing (Express: no capability; AF: no capability; PM: No_Soft_Reset set), so where it may still be aimed is kept for its next claim\n[2026-09-29 12:10:53 20.238 cpu0 kernel] iommu: irte0 source=00:1f.6 p=1 sid=0x00fe svt=1 sq=0 vector=0x28 apic=0x0 dst=0x0 trigger=edge\n[2026-09-29 12:10:53 20.239 cpu0 kernel] pcidev: PCI 00:1f.6 [8086:15fc] handed over on slot 0, vector 0x28\n[2026-09-29 12:10:53 20.234 cpu1 kernel] iommu: irte0 source=00:1f.6 p=0 released\n[2026-09-29 12:10:55 22.000 cpu1 kernel] pcidev: PCI 00:1f.6 [8086:15fc] released from slot 0; reset by nothing\n[2026-09-29 12:10:53 20.234 cpu1 kernel] iommu: irte0 source=00:1f.6 p=0 released\n[2026-09-29 12:10:55 22.001 cpu1 kernel] exit: test_rs_pci_reclaim pid=7 code=0 cpu=1ms\n[2026-09-29 12:10:56 23.000 cpu0 kernel] iommu: irte0 source=00:1f.6 p=1 sid=0x00fe svt=1 sq=0 vector=0x28 apic=0x0 dst=0x0 trigger=edge\n[2026-09-29 12:10:56 23.001 cpu0 kernel] pcidev: PCI 00:1f.6 [8086:15fc] handed over on slot 0, vector 0x28\n")
+ right: Ok(())
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    checks::metal_claim_spends_one_remapping_entry
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 41 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--test toyos-checks`
+
+=== cargo test --test toyos-checks metal_claim_spends_one_remapping_entry exit=101
