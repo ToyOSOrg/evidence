@@ -1,0 +1,16 @@
+diff --git a/sdk/std/os/io.rs b/sdk/std/os/io.rs
+index b2589594f..e2ecd1311 100644
+--- a/sdk/std/os/io.rs
++++ b/sdk/std/os/io.rs
+@@ -65,7 +65,10 @@ impl FromRawFd for crate::net::TcpStream {
+ impl IntoRawFd for crate::net::TcpStream {
+     #[inline]
+     fn into_raw_fd(self) -> RawFd {
+-        self.into_inner().into_fd().into_raw_fd()
++        // Control: giving the handle out lets its entry go.
++        let raw = self.into_inner().into_fd().into_raw_fd();
++        toyos::net::stream::let_go(toyos_abi::RawHandle(raw as u32));
++        raw
+     }
+ }
+ 

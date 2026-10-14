@@ -1,0 +1,282 @@
+head a39ff1b7d1c711d9afc2facb720e39550f059710, gate 0xffff80007c1cb900
+=== into-raw-lets-go: git diff
+diff --git a/sdk/std/os/io.rs b/sdk/std/os/io.rs
+index b2589594f..e2ecd1311 100644
+--- a/sdk/std/os/io.rs
++++ b/sdk/std/os/io.rs
+@@ -65,7 +65,10 @@ impl FromRawFd for crate::net::TcpStream {
+ impl IntoRawFd for crate::net::TcpStream {
+     #[inline]
+     fn into_raw_fd(self) -> RawFd {
+-        self.into_inner().into_fd().into_raw_fd()
++        // Control: giving the handle out lets its entry go.
++        let raw = self.into_inner().into_fd().into_raw_fd();
++        toyos::net::stream::let_go(toyos_abi::RawHandle(raw as u32));
++        raw
+     }
+ }
+ 
+=== into-raw-lets-go result
+test: test_rs_stream_handles
+exit_code: Some(101)
+--- stdout ---
+
+thread 'main' (1) panicked at src/bin/stream_handles.rs:76:5:
+assertion `left == right` failed: the client said otherwise
+  left: []
+ right: ["shared", "stdio slot refused", "slot past stdio refused", "endow refused", "provide refused"]
+stack backtrace:
+   0:      0x1000007dc20 - _Unwind_Backtrace
+   1:      0x10000062a23 - <<std[584b25eb31e3eb14]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[73b405bef30eeff1]::fmt::Display>::fmt
+   2:      0x100000827e7 - core[73b405bef30eeff1]::fmt::write
+   3:      0x10000066edb - <std[584b25eb31e3eb14]::sys::stdio::toyos::Stderr as core[73b405bef30eeff1]::io::write::Write>::write_fmt
+   4:      0x100000401c3 - std[584b25eb31e3eb14]::panicking::default_hook::{closure#0}
+   5:      0x1000005bcde - std[584b25eb31e3eb14]::panicking::default_hook
+   6:      0x1000005be99 - std[584b25eb31e3eb14]::panicking::panic_with_hook
+   7:      0x1000004027d - std[584b25eb31e3eb14]::panicking::panic_handler::{closure#0}
+   8:      0x100000384c9 - std[584b25eb31e3eb14]::sys::backtrace::__rust_end_short_backtrace::<std[584b25eb31e3eb14]::panicking::panic_handler::{closure#0}, !>
+   9:      0x10000040ba8 - __rustc[d0c72ce299f394e5]::rust_begin_unwind
+  10:      0x10000082f6b - core[73b405bef30eeff1]::panicking::panic_fmt
+  11:      0x10000082e7f - core[73b405bef30eeff1]::panicking::assert_failed_inner
+  12:      0x10000024bba - core[73b405bef30eeff1]::panicking::assert_failed::<alloc[182abed5e6762f9e]::vec::Vec<alloc[182abed5e6762f9e]::string::String>, [&str; 5usize]>
+  13:      0x10000026af3 - stream_handles[e609ff72fece3ad6]::main
+  14:      0x10000029cb6 - std[584b25eb31e3eb14]::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  15:      0x10000028e30 - std[584b25eb31e3eb14]::rt::lang_start::<()>::{closure#0}
+  16:      0x1000005b116 - std[584b25eb31e3eb14]::rt::lang_start_internal
+  17:      0x100000286a1 - main
+  18:      0x1000005fdf3 - std[584b25eb31e3eb14]::sys::pal::toyos::start_rust
+  19:      0x1000002b15a - _start
+=== into-raw-lets-go harness EXIT=0
+=== file-takes-a-stream: git diff
+diff --git a/sdk/std/os/io.rs b/sdk/std/os/io.rs
+index b2589594f..935e27b5b 100644
+--- a/sdk/std/os/io.rs
++++ b/sdk/std/os/io.rs
+@@ -20,9 +20,7 @@ impl FromRawFd for crate::fs::File {
+     #[inline]
+     unsafe fn from_raw_fd(fd: RawFd) -> crate::fs::File {
+         let handle = toyos_abi::RawHandle(fd as u32);
+-        if toyos::net::stream::is_stream(handle) {
+-            panic!("{}", toyos::net::stream::Misuse::AsFile(handle));
+-        }
++        // Control: a stream's handle is taken as a file silently.
+         crate::fs::File::from_inner(crate::sys::fs::File::from_fd(handle))
+     }
+ }
+=== file-takes-a-stream result
+test: test_rs_stream_handles
+exit_code: Some(101)
+--- stdout ---
+  given out and taken back: one end; every spawn path refused, and the stream still serves
+  a foreign handle: refused by name, nothing written
+
+thread 'main' (1) panicked at src/bin/stream_handles.rs:112:5:
+the stream was taken as a file: taken as a file
+
+stack backtrace:
+   0:      0x1000007dbe0 - _Unwind_Backtrace
+   1:      0x100000629e3 - <<std[584b25eb31e3eb14]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[73b405bef30eeff1]::fmt::Display>::fmt
+   2:      0x100000827a7 - core[73b405bef30eeff1]::fmt::write
+   3:      0x10000066e9b - <std[584b25eb31e3eb14]::sys::stdio::toyos::Stderr as core[73b405bef30eeff1]::io::write::Write>::write_fmt
+   4:      0x10000040183 - std[584b25eb31e3eb14]::panicking::default_hook::{closure#0}
+   5:      0x1000005bc9e - std[584b25eb31e3eb14]::panicking::default_hook
+   6:      0x1000005be59 - std[584b25eb31e3eb14]::panicking::panic_with_hook
+   7:      0x1000004023d - std[584b25eb31e3eb14]::panicking::panic_handler::{closure#0}
+   8:      0x10000038489 - std[584b25eb31e3eb14]::sys::backtrace::__rust_end_short_backtrace::<std[584b25eb31e3eb14]::panicking::panic_handler::{closure#0}, !>
+   9:      0x10000040b68 - __rustc[d0c72ce299f394e5]::rust_begin_unwind
+  10:      0x10000082f2b - core[73b405bef30eeff1]::panicking::panic_fmt
+  11:      0x10000026c0e - stream_handles[e609ff72fece3ad6]::main
+  12:      0x10000029c76 - std[584b25eb31e3eb14]::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  13:      0x10000028e50 - std[584b25eb31e3eb14]::rt::lang_start::<()>::{closure#0}
+  14:      0x1000005b0d6 - std[584b25eb31e3eb14]::rt::lang_start_internal
+  15:      0x100000286c1 - main
+  16:      0x1000005fdb3 - std[584b25eb31e3eb14]::sys::pal::toyos::start_rust
+  17:      0x1000002b11a - _start
+=== file-takes-a-stream harness EXIT=0
+=== spawn-takes-stdio-slot: git diff
+diff --git a/sdk/std/sys/process.rs b/sdk/std/sys/process.rs
+index f9258973f..7819810f1 100644
+--- a/sdk/std/sys/process.rs
++++ b/sdk/std/sys/process.rs
+@@ -459,7 +459,8 @@ impl Command {
+             Stdio::InheritFile(file) => Some(file.raw_fd() as u32),
+             Stdio::Null | Stdio::MakePipe | Stdio::MakeTtyPipe | Stdio::InheritPipe(_) => None,
+         });
+-        let moved = self.extra_slots.iter().map(|&[_, parent]| parent);
++        // Control: a stream's handle put in a child's stdio slot is taken silently.
++        let moved = self.extra_slots.iter().filter(|&&[child, _]| child >= 3).map(|&[_, parent]| parent);
+         let given = self.endowments.iter().chain(&self.provided).map(|&(_, handle)| handle);
+         for handle in slots.chain(moved).chain(given).map(toyos_abi::RawHandle) {
+             if toyos::net::stream::is_stream(handle) {
+=== spawn-takes-stdio-slot result
+test: test_rs_stream_handles
+exit_code: Some(101)
+--- stdout ---
+
+thread 'main' (1) panicked at src/bin/stream_handles.rs:76:5:
+assertion `left == right` failed: the client said otherwise
+  left: ["shared", "stdio slot took the stream's handle", "slot past stdio refused", "endow refused", "provide refused"]
+ right: ["shared", "stdio slot refused", "slot past stdio refused", "endow refused", "provide refused"]
+stack backtrace:
+   0:      0x1000007dce0 - _Unwind_Backtrace
+   1:      0x10000062ae3 - <<std[584b25eb31e3eb14]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[73b405bef30eeff1]::fmt::Display>::fmt
+   2:      0x100000828a7 - core[73b405bef30eeff1]::fmt::write
+   3:      0x10000066f9b - <std[584b25eb31e3eb14]::sys::stdio::toyos::Stderr as core[73b405bef30eeff1]::io::write::Write>::write_fmt
+   4:      0x100000401d3 - std[584b25eb31e3eb14]::panicking::default_hook::{closure#0}
+   5:      0x1000005bd9e - std[584b25eb31e3eb14]::panicking::default_hook
+   6:      0x1000005bf59 - std[584b25eb31e3eb14]::panicking::panic_with_hook
+   7:      0x1000004028d - std[584b25eb31e3eb14]::panicking::panic_handler::{closure#0}
+   8:      0x100000384d9 - std[584b25eb31e3eb14]::sys::backtrace::__rust_end_short_backtrace::<std[584b25eb31e3eb14]::panicking::panic_handler::{closure#0}, !>
+   9:      0x10000040bb8 - __rustc[d0c72ce299f394e5]::rust_begin_unwind
+  10:      0x1000008302b - core[73b405bef30eeff1]::panicking::panic_fmt
+  11:      0x10000082f3f - core[73b405bef30eeff1]::panicking::assert_failed_inner
+  12:      0x10000024bca - core[73b405bef30eeff1]::panicking::assert_failed::<alloc[182abed5e6762f9e]::vec::Vec<alloc[182abed5e6762f9e]::string::String>, [&str; 5usize]>
+  13:      0x10000026b03 - stream_handles[e609ff72fece3ad6]::main
+  14:      0x10000029cc6 - std[584b25eb31e3eb14]::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  15:      0x10000028e40 - std[584b25eb31e3eb14]::rt::lang_start::<()>::{closure#0}
+  16:      0x1000005b1d6 - std[584b25eb31e3eb14]::rt::lang_start_internal
+  17:      0x100000286b1 - main
+  18:      0x1000005feb3 - std[584b25eb31e3eb14]::sys::pal::toyos::start_rust
+  19:      0x1000002b16a - _start
+=== spawn-takes-stdio-slot harness EXIT=0
+=== spawn-takes-slot-past-stdio: git diff
+diff --git a/sdk/std/sys/process.rs b/sdk/std/sys/process.rs
+index f9258973f..3f3181b59 100644
+--- a/sdk/std/sys/process.rs
++++ b/sdk/std/sys/process.rs
+@@ -459,7 +459,8 @@ impl Command {
+             Stdio::InheritFile(file) => Some(file.raw_fd() as u32),
+             Stdio::Null | Stdio::MakePipe | Stdio::MakeTtyPipe | Stdio::InheritPipe(_) => None,
+         });
+-        let moved = self.extra_slots.iter().map(|&[_, parent]| parent);
++        // Control: a stream's handle put in a slot past the stdio slots is taken silently.
++        let moved = self.extra_slots.iter().filter(|&&[child, _]| child < 3).map(|&[_, parent]| parent);
+         let given = self.endowments.iter().chain(&self.provided).map(|&(_, handle)| handle);
+         for handle in slots.chain(moved).chain(given).map(toyos_abi::RawHandle) {
+             if toyos::net::stream::is_stream(handle) {
+=== spawn-takes-slot-past-stdio result
+test: test_rs_stream_handles
+exit_code: Some(101)
+--- stdout ---
+
+thread 'main' (1) panicked at src/bin/stream_handles.rs:76:5:
+assertion `left == right` failed: the client said otherwise
+  left: ["shared", "stdio slot refused", "slot past stdio took the stream's handle", "endow refused", "provide refused"]
+ right: ["shared", "stdio slot refused", "slot past stdio refused", "endow refused", "provide refused"]
+stack backtrace:
+   0:      0x1000007dce0 - _Unwind_Backtrace
+   1:      0x10000062ae3 - <<std[584b25eb31e3eb14]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[73b405bef30eeff1]::fmt::Display>::fmt
+   2:      0x100000828a7 - core[73b405bef30eeff1]::fmt::write
+   3:      0x10000066f9b - <std[584b25eb31e3eb14]::sys::stdio::toyos::Stderr as core[73b405bef30eeff1]::io::write::Write>::write_fmt
+   4:      0x100000401d3 - std[584b25eb31e3eb14]::panicking::default_hook::{closure#0}
+   5:      0x1000005bd9e - std[584b25eb31e3eb14]::panicking::default_hook
+   6:      0x1000005bf59 - std[584b25eb31e3eb14]::panicking::panic_with_hook
+   7:      0x1000004028d - std[584b25eb31e3eb14]::panicking::panic_handler::{closure#0}
+   8:      0x100000384d9 - std[584b25eb31e3eb14]::sys::backtrace::__rust_end_short_backtrace::<std[584b25eb31e3eb14]::panicking::panic_handler::{closure#0}, !>
+   9:      0x10000040bb8 - __rustc[d0c72ce299f394e5]::rust_begin_unwind
+  10:      0x1000008302b - core[73b405bef30eeff1]::panicking::panic_fmt
+  11:      0x10000082f3f - core[73b405bef30eeff1]::panicking::assert_failed_inner
+  12:      0x10000024bca - core[73b405bef30eeff1]::panicking::assert_failed::<alloc[182abed5e6762f9e]::vec::Vec<alloc[182abed5e6762f9e]::string::String>, [&str; 5usize]>
+  13:      0x10000026b03 - stream_handles[e609ff72fece3ad6]::main
+  14:      0x10000029cc6 - std[584b25eb31e3eb14]::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  15:      0x10000028e40 - std[584b25eb31e3eb14]::rt::lang_start::<()>::{closure#0}
+  16:      0x1000005b1d6 - std[584b25eb31e3eb14]::rt::lang_start_internal
+  17:      0x100000286b1 - main
+  18:      0x1000005feb3 - std[584b25eb31e3eb14]::sys::pal::toyos::start_rust
+  19:      0x1000002b16a - _start
+=== spawn-takes-slot-past-stdio harness EXIT=0
+=== spawn-takes-endow: git diff
+diff --git a/sdk/std/sys/process.rs b/sdk/std/sys/process.rs
+index f9258973f..348a4deb9 100644
+--- a/sdk/std/sys/process.rs
++++ b/sdk/std/sys/process.rs
+@@ -460,7 +460,8 @@ impl Command {
+             Stdio::Null | Stdio::MakePipe | Stdio::MakeTtyPipe | Stdio::InheritPipe(_) => None,
+         });
+         let moved = self.extra_slots.iter().map(|&[_, parent]| parent);
+-        let given = self.endowments.iter().chain(&self.provided).map(|&(_, handle)| handle);
++        // Control: a stream's handle endowed is taken silently.
++        let given = self.provided.iter().map(|&(_, handle)| handle);
+         for handle in slots.chain(moved).chain(given).map(toyos_abi::RawHandle) {
+             if toyos::net::stream::is_stream(handle) {
+                 return Err(io::Error::new(io::ErrorKind::InvalidInput, toyos::net::stream::Misuse::Moved(handle).to_string()));
+=== spawn-takes-endow result
+test: test_rs_stream_handles
+exit_code: Some(101)
+--- stdout ---
+
+thread 'main' (1) panicked at src/bin/stream_handles.rs:76:5:
+assertion `left == right` failed: the client said otherwise
+  left: ["shared", "stdio slot refused", "slot past stdio refused", "endow took the stream's handle", "provide refused"]
+ right: ["shared", "stdio slot refused", "slot past stdio refused", "endow refused", "provide refused"]
+stack backtrace:
+   0:      0x1000007dba0 - _Unwind_Backtrace
+   1:      0x100000629a3 - <<std[584b25eb31e3eb14]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[73b405bef30eeff1]::fmt::Display>::fmt
+   2:      0x10000082767 - core[73b405bef30eeff1]::fmt::write
+   3:      0x10000066e5b - <std[584b25eb31e3eb14]::sys::stdio::toyos::Stderr as core[73b405bef30eeff1]::io::write::Write>::write_fmt
+   4:      0x100000401c3 - std[584b25eb31e3eb14]::panicking::default_hook::{closure#0}
+   5:      0x1000005bc5e - std[584b25eb31e3eb14]::panicking::default_hook
+   6:      0x1000005be19 - std[584b25eb31e3eb14]::panicking::panic_with_hook
+   7:      0x1000004027d - std[584b25eb31e3eb14]::panicking::panic_handler::{closure#0}
+   8:      0x100000384c9 - std[584b25eb31e3eb14]::sys::backtrace::__rust_end_short_backtrace::<std[584b25eb31e3eb14]::panicking::panic_handler::{closure#0}, !>
+   9:      0x10000040ba8 - __rustc[d0c72ce299f394e5]::rust_begin_unwind
+  10:      0x10000082eeb - core[73b405bef30eeff1]::panicking::panic_fmt
+  11:      0x10000082dff - core[73b405bef30eeff1]::panicking::assert_failed_inner
+  12:      0x10000024bba - core[73b405bef30eeff1]::panicking::assert_failed::<alloc[182abed5e6762f9e]::vec::Vec<alloc[182abed5e6762f9e]::string::String>, [&str; 5usize]>
+  13:      0x10000026af3 - stream_handles[e609ff72fece3ad6]::main
+  14:      0x10000029cb6 - std[584b25eb31e3eb14]::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  15:      0x10000028e30 - std[584b25eb31e3eb14]::rt::lang_start::<()>::{closure#0}
+  16:      0x1000005b096 - std[584b25eb31e3eb14]::rt::lang_start_internal
+  17:      0x100000286a1 - main
+  18:      0x1000005fd73 - std[584b25eb31e3eb14]::sys::pal::toyos::start_rust
+  19:      0x1000002b15a - _start
+=== spawn-takes-endow harness EXIT=0
+=== spawn-takes-provide: git diff
+diff --git a/sdk/std/sys/process.rs b/sdk/std/sys/process.rs
+index f9258973f..f0a2e69cd 100644
+--- a/sdk/std/sys/process.rs
++++ b/sdk/std/sys/process.rs
+@@ -460,7 +460,8 @@ impl Command {
+             Stdio::Null | Stdio::MakePipe | Stdio::MakeTtyPipe | Stdio::InheritPipe(_) => None,
+         });
+         let moved = self.extra_slots.iter().map(|&[_, parent]| parent);
+-        let given = self.endowments.iter().chain(&self.provided).map(|&(_, handle)| handle);
++        // Control: a stream's handle provided is taken silently.
++        let given = self.endowments.iter().map(|&(_, handle)| handle);
+         for handle in slots.chain(moved).chain(given).map(toyos_abi::RawHandle) {
+             if toyos::net::stream::is_stream(handle) {
+                 return Err(io::Error::new(io::ErrorKind::InvalidInput, toyos::net::stream::Misuse::Moved(handle).to_string()));
+=== spawn-takes-provide result
+test: test_rs_stream_handles
+exit_code: Some(101)
+--- stdout ---
+
+thread 'main' (1) panicked at src/bin/stream_handles.rs:76:5:
+assertion `left == right` failed: the client said otherwise
+  left: ["shared", "stdio slot refused", "slot past stdio refused", "endow refused", "provide answered only a launch carries a provided connector, and this process holds no launcher"]
+ right: ["shared", "stdio slot refused", "slot past stdio refused", "endow refused", "provide refused"]
+stack backtrace:
+   0:      0x1000007dba0 - _Unwind_Backtrace
+   1:      0x100000629a3 - <<std[584b25eb31e3eb14]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[73b405bef30eeff1]::fmt::Display>::fmt
+   2:      0x10000082767 - core[73b405bef30eeff1]::fmt::write
+   3:      0x10000066e5b - <std[584b25eb31e3eb14]::sys::stdio::toyos::Stderr as core[73b405bef30eeff1]::io::write::Write>::write_fmt
+   4:      0x100000401c3 - std[584b25eb31e3eb14]::panicking::default_hook::{closure#0}
+   5:      0x1000005bc5e - std[584b25eb31e3eb14]::panicking::default_hook
+   6:      0x1000005be19 - std[584b25eb31e3eb14]::panicking::panic_with_hook
+   7:      0x1000004027d - std[584b25eb31e3eb14]::panicking::panic_handler::{closure#0}
+   8:      0x100000384c9 - std[584b25eb31e3eb14]::sys::backtrace::__rust_end_short_backtrace::<std[584b25eb31e3eb14]::panicking::panic_handler::{closure#0}, !>
+   9:      0x10000040ba8 - __rustc[d0c72ce299f394e5]::rust_begin_unwind
+  10:      0x10000082eeb - core[73b405bef30eeff1]::panicking::panic_fmt
+  11:      0x10000082dff - core[73b405bef30eeff1]::panicking::assert_failed_inner
+  12:      0x10000024bba - core[73b405bef30eeff1]::panicking::assert_failed::<alloc[182abed5e6762f9e]::vec::Vec<alloc[182abed5e6762f9e]::string::String>, [&str; 5usize]>
+  13:      0x10000026af3 - stream_handles[e609ff72fece3ad6]::main
+  14:      0x10000029cb6 - std[584b25eb31e3eb14]::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  15:      0x10000028e30 - std[584b25eb31e3eb14]::rt::lang_start::<()>::{closure#0}
+  16:      0x1000005b096 - std[584b25eb31e3eb14]::rt::lang_start_internal
+  17:      0x100000286a1 - main
+  18:      0x1000005fd73 - std[584b25eb31e3eb14]::sys::pal::toyos::start_rust
+  19:      0x1000002b15a - _start
+=== spawn-takes-provide harness EXIT=0
+=== restored
+=== restored EXIT=0
+EXIT=0

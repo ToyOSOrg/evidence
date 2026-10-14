@@ -1,0 +1,14 @@
+diff --git a/sdk/std/sys/process.rs b/sdk/std/sys/process.rs
+index f9258973f..348a4deb9 100644
+--- a/sdk/std/sys/process.rs
++++ b/sdk/std/sys/process.rs
+@@ -460,7 +460,8 @@ impl Command {
+             Stdio::Null | Stdio::MakePipe | Stdio::MakeTtyPipe | Stdio::InheritPipe(_) => None,
+         });
+         let moved = self.extra_slots.iter().map(|&[_, parent]| parent);
+-        let given = self.endowments.iter().chain(&self.provided).map(|&(_, handle)| handle);
++        // Control: a stream's handle endowed is taken silently.
++        let given = self.provided.iter().map(|&(_, handle)| handle);
+         for handle in slots.chain(moved).chain(given).map(toyos_abi::RawHandle) {
+             if toyos::net::stream::is_stream(handle) {
+                 return Err(io::Error::new(io::ErrorKind::InvalidInput, toyos::net::stream::Misuse::Moved(handle).to_string()));

@@ -1,0 +1,13 @@
+diff --git a/system/netstack/shard/tcp/src/rx.rs b/system/netstack/shard/tcp/src/rx.rs
+index 7f0903320..b72a10c72 100644
+--- a/system/netstack/shard/tcp/src/rx.rs
++++ b/system/netstack/shard/tcp/src/rx.rs
+@@ -459,6 +459,8 @@ impl Rx {
+     /// grows no further than its length. Only where [`Self::lendable`] says so.
+     pub fn lend(&mut self, lent: Box<dyn Lent>) {
+         self.max = self.max.min(lent.len());
++        // Control: the FIN remembered past a hole is dropped at the lend.
++        self.fin = None;
+         self.buf.lend(lent);
+     }
+ 

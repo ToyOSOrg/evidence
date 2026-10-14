@@ -1,0 +1,26 @@
+=== test_rs_stream_handles
+test: test_rs_stream_handles
+exit_code: Some(0)
+--- stdout ---
+  given out and taken back: one end; every spawn path refused, and the stream still serves
+  a foreign handle: refused by name, nothing written
+  a stream as a file: refused by name
+a stream's handle reaches its one end in its own process and goes nowhere else
+=== test_rs_abuse_pipe_owner
+test: test_rs_abuse_pipe_owner
+exit_code: Some(0)
+--- stdout ---
+  read: ended the caller, exit 139
+  write: ended the caller, exit 139
+  map: ended the caller, exit 139
+  control: ended the caller, exit 139
+a sibling's handle values are as absent here as a number nobody ever published
+=== test_rs_netstack_gone_mid_bind
+test: test_rs_netstack_gone_mid_bind
+exit_code: Some(0)
+--- stdout ---
+  already gone: the connect itself is refused, and sshserver's guard sees NotConnected
+  mid-flight: the handle transfer says the peer is gone
+  mid-flight: the frame write says the peer is gone
+a netstack that leaves mid-bind is a netstack that is not there, at all three syscalls
+harness EXIT=0

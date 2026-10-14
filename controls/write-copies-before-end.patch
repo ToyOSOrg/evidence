@@ -1,0 +1,18 @@
+diff --git a/lib/blockring/transport/src/session.rs b/lib/blockring/transport/src/session.rs
+index 99a64e0ba..19c46b4ea 100644
+--- a/lib/blockring/transport/src/session.rs
++++ b/lib/blockring/transport/src/session.rs
+@@ -327,11 +327,9 @@ impl<const C: u32, const N: usize> Half<N> for Sending<C, N> {
+ 
+     /// The failure first, so a write after one copies nothing.
+     fn look<W: Word>(&mut self, page: &[W; N]) -> Result<Option<Writable>, Violation> {
+-        if let Some(seen @ (Writable::Shut | Writable::Failed(_))) = self.seen(page, 0, true) {
+-            return Ok(Some(seen));
+-        }
++        // Control: a write with room copies before it reads the failure.
+         let room = self.ring.room(page)?;
+-        Ok(self.seen(page, room, true))
++        Ok(self.seen(page, room, room == 0))
+     }
+ 
+     fn arm<W: Word>(&mut self, page: &[W; N]) -> Result<Option<Writable>, Violation> {

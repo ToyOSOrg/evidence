@@ -1,0 +1,14 @@
+diff --git a/sdk/std/sys/process.rs b/sdk/std/sys/process.rs
+index f9258973f..7819810f1 100644
+--- a/sdk/std/sys/process.rs
++++ b/sdk/std/sys/process.rs
+@@ -459,7 +459,8 @@ impl Command {
+             Stdio::InheritFile(file) => Some(file.raw_fd() as u32),
+             Stdio::Null | Stdio::MakePipe | Stdio::MakeTtyPipe | Stdio::InheritPipe(_) => None,
+         });
+-        let moved = self.extra_slots.iter().map(|&[_, parent]| parent);
++        // Control: a stream's handle put in a child's stdio slot is taken silently.
++        let moved = self.extra_slots.iter().filter(|&&[child, _]| child >= 3).map(|&[_, parent]| parent);
+         let given = self.endowments.iter().chain(&self.provided).map(|&(_, handle)| handle);
+         for handle in slots.chain(moved).chain(given).map(toyos_abi::RawHandle) {
+             if toyos::net::stream::is_stream(handle) {

@@ -1,0 +1,15 @@
+diff --git a/sdk/std/os/io.rs b/sdk/std/os/io.rs
+index b2589594f..935e27b5b 100644
+--- a/sdk/std/os/io.rs
++++ b/sdk/std/os/io.rs
+@@ -20,9 +20,7 @@ impl FromRawFd for crate::fs::File {
+     #[inline]
+     unsafe fn from_raw_fd(fd: RawFd) -> crate::fs::File {
+         let handle = toyos_abi::RawHandle(fd as u32);
+-        if toyos::net::stream::is_stream(handle) {
+-            panic!("{}", toyos::net::stream::Misuse::AsFile(handle));
+-        }
++        // Control: a stream's handle is taken as a file silently.
+         crate::fs::File::from_inner(crate::sys::fs::File::from_fd(handle))
+     }
+ }

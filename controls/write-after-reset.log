@@ -1,0 +1,30 @@
+head e7dadeda4dd7969f77ad4d33875557fbd12538e9
+test session::tests::a_write_with_room_after_a_reset_answers_it_and_copies_nothing ... ok
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 17 filtered out; finished in 0.00s
+=== green EXIT=0
+diff --git a/lib/blockring/transport/src/session.rs b/lib/blockring/transport/src/session.rs
+index 99a64e0ba..19c46b4ea 100644
+--- a/lib/blockring/transport/src/session.rs
++++ b/lib/blockring/transport/src/session.rs
+@@ -327,11 +327,9 @@ impl<const C: u32, const N: usize> Half<N> for Sending<C, N> {
+ 
+     /// The failure first, so a write after one copies nothing.
+     fn look<W: Word>(&mut self, page: &[W; N]) -> Result<Option<Writable>, Violation> {
+-        if let Some(seen @ (Writable::Shut | Writable::Failed(_))) = self.seen(page, 0, true) {
+-            return Ok(Some(seen));
+-        }
++        // Control: a write with room copies before it reads the failure.
+         let room = self.ring.room(page)?;
+-        Ok(self.seen(page, room, true))
++        Ok(self.seen(page, room, room == 0))
+     }
+ 
+     fn arm<W: Word>(&mut self, page: &[W; N]) -> Result<Option<Writable>, Violation> {
+test session::tests::a_write_with_room_after_a_reset_answers_it_and_copies_nothing ... FAILED
+thread 'session::tests::a_write_with_room_after_a_reset_answers_it_and_copies_nothing' (7218376) panicked at lib/blockring/transport/src/session.rs:796:9:
+assertion `left == right` failed
+  left: Ok(3)
+ right: Err(Failed(2))
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 17 filtered out; finished in 0.00s
+=== write-copies-before-end EXIT=101
+=== restored EXIT=0
