@@ -1,0 +1,12 @@
+diff --git a/kernel/src/arch/x86_64/amdvi/mod.rs b/kernel/src/arch/x86_64/amdvi/mod.rs
+index eeb5db77a..4e2b39517 100644
+--- a/kernel/src/arch/x86_64/amdvi/mod.rs
++++ b/kernel/src/arch/x86_64/amdvi/mod.rs
+@@ -280,6 +280,7 @@ pub fn init(rsdp_addr: u64, devices: &[PciDevice], windows: &[RootBridgeWindow])
+     );
+     #[cfg(feature = "boot-actuators")]
+     let remap = if crate::actuator::iommu_no_remap() { None } else { remap };
++    let remap: Option<bool> = { let _ = remap; None };
+     let identity = build(devices, &settings, remap.is_some());
+     let reserved = windows.iter().map(|w| (w.base, w.end())).chain(ivmds.iter().map(|m| (m.start, m.start + m.length)));
+     domain::start(reserved.collect(), settings, ivmds.iter().map(|m| m.requesters).collect(), translated);

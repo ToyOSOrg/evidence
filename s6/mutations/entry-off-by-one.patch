@@ -1,0 +1,11 @@
+--- <scratchpad>/interrupt-good.rs	2026-10-14 03:06:30
++++ kernel/src/arch/x86_64/amdvi/interrupt.rs	2026-10-14 03:06:30
+@@ -119,7 +119,7 @@
+         Some(true) => Destination::Extended(MSG_DEST),
+         _ => Destination::Narrow(MSG_DEST_NARROW),
+     };
+-    let read = remap.write(source.requester(), vector, irte::entry(vector, destination));
++    let read = remap.write(source.requester(), vector.wrapping_add(1), irte::entry(vector, destination));
+     drop(remap);
+     report(source, vector, read);
+     Ok(())

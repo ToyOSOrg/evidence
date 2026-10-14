@@ -1,0 +1,17 @@
+# PR stage 6 (wt/toyos-amdvi-intremap), head b85bbb0ca78b84cc09823d87c1d9355ea5cf7e09. Machine: the AMD bench (Family 17h Model 60h), not the T14: add the AMD bench's --host to each invocation. Two boots.
+
+## head: rows amdvi_remaps_the_stick_controller, amdvi_translates_the_stick_controller (testcases boot)
+
+testcases
+  image: <scratchpad>/metal/head/testcases/image.img
+  cargo run -p toyos-metal -- --image <scratchpad>/metal/head/testcases/image.img --readback <scratchpad>/metal/head/testcases --fat32-check
+
+## negative control: head + no-remapping.patch (remapping never armed); amdvi_remaps_the_stick_controller must go red
+
+testcases
+  image: <scratchpad>/metal/no-remapping/testcases/image.img
+  cargo run -p toyos-metal -- --image <scratchpad>/metal/no-remapping/testcases/image.img --readback <scratchpad>/metal/no-remapping/testcases --fat32-check
+
+## image SHA-256
+33b16b8002c7101abe7723efe899dff4c3c3a1a102e6f15f5ef82d73a72bd149  <scratchpad>/metal/head/testcases/image.img
+3b1c9381b2a16c827e33222a5c3a88f48e87dc762f5ac1efec9d3d495451d62e  <scratchpad>/metal/no-remapping/testcases/image.img
