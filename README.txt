@@ -45,3 +45,9 @@ and the boots whose argv or kernel changed were rerun. No bench rerun: gop_edid_
 differs only by the deleted actuator and the compositor's refusal path, neither on its row's path,
 and the leak_rollback_selftest row is deleted, its earlier PASS having proved nothing (a one-handle
 mint into a full table passes with or without the rollback it was written to catch).
+Correction to the paragraph above: the shipping kernel gop_edid_scale boots also changed on its
+path. The framebuffer claim's description now installs its scanout with one `install` rather
+than a one-object `install_all`, which has the same effect. The panic console's detach/rearm
+became private and are unchanged otherwise. The compositor's change is its refusal path alone.
+The framebuffer mint is exercised in QEMU by the GOP row screen_fatal_halt_composited in
+r2/guest-r2.log, which passes; on metal it was last read at 883e496f7.
