@@ -1,0 +1,14 @@
+--- a/lib/ieee80211/src/element/country.rs
++++ b/lib/ieee80211/src/element/country.rs
+@@ -43,6 +43,11 @@
+         if triplets.is_empty() {
+             return Err(Refused::ElementLength);
+         }
++        for &[first, channels, _] in triplets.as_chunks::<3>().0 {
++            if first < OPERATING_EXTENSION && u16::from(first).saturating_add(u16::from(channels)) > 201 {
++                return Err(Refused::CountryTriplet);
++            }
++        }
+         if !body.len().is_multiple_of(2) {
+             return Err(Refused::CountryPad);
+         }

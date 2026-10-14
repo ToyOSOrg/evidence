@@ -1,0 +1,65 @@
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.10s
+     Running unittests src/lib.rs (target/debug/deps/toyos_ieee80211-af8bc05aa474f936)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/corpus.rs (target/debug/deps/corpus-79bf508f660cb77e)
+
+running 5 tests
+test a_captured_ccmp_frame_keeps_its_header_and_carries_an_ipv4_msdu ... ok
+test a_captured_to_ds_frame_with_ht_control_reaches_ethernet_as_a_broadcast_dhcp_request ... ok
+test a_captured_sae_beacon_reads_its_rsn_ht_and_vht_operation ... ok
+test a_captured_association_response_carries_the_wmm_default_parameters ... ok
+test every_capture_frame_reads_as_its_bytes_say_or_is_refused_by_name ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/fuzz.rs (target/debug/deps/fuzz-992277955cd95c98)
+
+running 2 tests
+test every_drawn_frame_is_read_or_refused_by_name_and_an_unbent_one_reads_back ... ok
+test the_reorder_window_passes_every_accepted_frame_up_once_and_in_order ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests/refusals.rs (target/debug/deps/refusals-e2d130003896df22)
+
+running 20 tests
+test a_bridge_tunnel_msdu_is_its_ethertype_on_ethernet ... ok
+test a_block_ack_transmitter_with_its_bandwidth_signaling_bit_is_the_individual_address ... ok
+test a_malformed_country_element_is_refused_whichever_rule_it_breaks ... ok
+test a_block_ack_type_is_reserved_or_another_variant_as_its_table_says ... ok
+test a_wmm_information_element_and_another_wmm_subtype_are_read_and_skipped ... ok
+test an_association_response_takes_aid_1_to_2007_with_its_two_high_bits_set ... ok
+test an_element_whose_length_runs_one_past_the_body_is_refused ... ok
+test an_he_capabilities_element_is_at_least_as_long_as_its_widths_and_ppe_thresholds_say ... ok
+test an_he_operation_element_is_at_least_as_long_as_its_present_bits_say ... ok
+test an_rsnxe_ignores_octets_past_its_field ... ok
+test an_ssid_of_32_octets_and_a_tim_reaching_aid_2007_are_accepted ... ok
+test an_rsn_element_may_end_after_any_whole_field_and_not_inside_one ... ok
+test an_he_block_ack_bitmap_is_as_long_as_its_fragment_number_says ... ok
+test a_country_element_at_its_bounds_is_accepted ... FAILED
+test each_type_and_subtype_is_read_or_refused_as_table_9_1_says ... ok
+test every_prefix_of_a_frame_is_refused_as_truncated_short_of_its_header ... ok
+test every_refusal_has_a_hostile_input_that_produces_it ... ok
+test ht_and_vht_elements_ignore_octets_past_their_fields_and_refuse_fewer ... ok
+test llc_snap_refuses_a_length_and_tunnels_aarp_and_ipx ... ok
+test ppe_thresholds_are_present_under_phy_capabilities_b55_and_not_b23 ... ok
+
+failures:
+
+---- a_country_element_at_its_bounds_is_accepted stdout ----
+
+thread 'a_country_element_at_its_bounds_is_accepted' (25554686) panicked at lib/ieee80211/tests/refusals.rs:328:36:
+called `Result::unwrap()` on an `Err` value: CountryTriplet
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    a_country_element_at_its_bounds_is_accepted
+
+test result: FAILED. 19 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-ieee80211 --test refusals`

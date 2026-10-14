@@ -1,0 +1,22 @@
+--- a/lib/ieee80211/src/control.rs
++++ b/lib/ieee80211/src/control.rs
+@@ -93,14 +93,13 @@
+         let mut r = Reader::new(after_duration);
+         let (ra, ta, tid, fragment, ssn) = compressed(&mut r, &BA_TYPES)?;
+         // B2–B1 of 0 is a 64-bit bitmap and 2 a 256-bit one; 1, 3 and B3 set are reserved.
+-        let bits: u16 = match fragment & 0b1110 {
++        let bits: u16 = match fragment {
+             0b0000 => 64,
+-            0b0100 => 256,
+-            _ => return Err(Refused::BlockAckFragmentNumber),
++            0b0010 => 256,
++            0b0100 => 128,
++            0b0110 => 32,
++            _ => return Err(Refused::FragmentLevel),
+         };
+-        if fragment & 1 != 0 {
+-            return Err(Refused::FragmentLevel);
+-        }
+         let mut bitmap = [0u64; 4];
+         let mut octets = r.take(usize::from(bits / 8))?.iter();
+         for word in &mut bitmap {
