@@ -1,0 +1,13 @@
+diff --git a/kernel/src/iommu/window.rs b/kernel/src/iommu/window.rs
+index d47765d4f..23007458b 100644
+--- a/kernel/src/iommu/window.rs
++++ b/kernel/src/iommu/window.rs
+@@ -57,7 +57,7 @@ const fn bounds(translatable: u8, cpu: u8, reserved: Option<&[(u64, u64)]>) -> R
+     let floor = first_address(translatable);
+     match reserved {
+         Some(reserved) => Ok((floor, ceiling(translatable, floor, reserved))),
+-        None => Err(IommuError::Undeclared { translatable, cpu }),
++        None => Ok((floor, ceiling(translatable, floor, &[]))),
+     }
+ }
+ 

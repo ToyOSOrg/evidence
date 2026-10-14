@@ -1,0 +1,691 @@
+diff --git a/kernel/pci/src/aperture.rs b/kernel/pci/src/aperture.rs
+index 4ec8c2feb..07060531c 100644
+--- a/kernel/pci/src/aperture.rs
++++ b/kernel/pci/src/aperture.rs
+@@ -1,8 +1,8 @@
+ //! Whether an address reaches the bus at all.
+ //!
+-//! The windows are the ones firmware named
+-//! ([`toyos_abi::boot::KernelArgs::root_bridge_windows`]); what is decided here
+-//! is where one extent stands against them, for the BARs firmware assigned and
++//! The windows are a declaration of the memory the root bridges decode
++//! ([`check`] decides whether one can be held at all); what is decided here is
++//! where one extent stands against them, for the BARs firmware assigned and
+ //! for the address space this kernel would put one in.
+ 
+ use toyos_abi::boot::RootBridgeWindow;
+@@ -18,6 +18,54 @@ pub enum Decode {
+     Unrouted,
+ }
+ 
++/// Why a declaration of the root bridges' memory is refused whole.
++#[derive(Clone, Copy, PartialEq, Eq, Debug)]
++pub enum Refused {
++    /// It names no window, so nothing on the machine is known to be routed.
++    Empty,
++    /// A window of no length, or one whose end is past the address space.
++    Malformed(RootBridgeWindow),
++    /// Two windows name one address: whichever is wrong, the declaration does
++    /// not say what the bridges decode.
++    Overlap(RootBridgeWindow, RootBridgeWindow),
++}
++
++impl core::fmt::Display for Refused {
++    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
++        match self {
++            Self::Empty => write!(f, "it names no window"),
++            Self::Malformed(w) => write!(f, "its window {:#x}+{:#x} is no extent of the address space", w.base, w.length),
++            Self::Overlap(a, b) => write!(
++                f,
++                "its windows {:#x}..{:#x} and {:#x}..{:#x} share an address",
++                a.base,
++                a.end(),
++                b.base,
++                b.end()
++            ),
++        }
++    }
++}
++
++/// Whether `windows` can be held as the root bridges' memory: at least one
++/// window, each an extent that ends inside the address space, no two sharing
++/// an address. Refused whole, because a declaration with one window dropped
++/// is one with a hole a BAR would be placed in.
++pub fn check(windows: &[RootBridgeWindow]) -> Result<(), Refused> {
++    if windows.is_empty() {
++        return Err(Refused::Empty);
++    }
++    for (at, window) in windows.iter().enumerate() {
++        if window.length == 0 || window.base.checked_add(window.length).is_none() {
++            return Err(Refused::Malformed(*window));
++        }
++        if let Some(other) = windows[..at].iter().find(|o| o.base < window.end() && window.base < o.end()) {
++            return Err(Refused::Overlap(*other, *window));
++        }
++    }
++    Ok(())
++}
++
+ /// Where `base .. end` stands against `windows`.
+ ///
+ /// **An empty window list decodes nothing.** A machine whose firmware would not
+@@ -55,6 +103,31 @@ mod tests {
+         assert_eq!(decode(&T14, 0xfe01_0000, 0xfe01_1000), Decode::Unrouted);
+     }
+ 
++    /// The T14's recorded declaration, seven windows that meet end to end, is
++    /// held; an empty list, a window of no length or past the address space,
++    /// and two windows sharing an address are each refused by name.
++    #[test]
++    fn a_declaration_is_held_only_whole_and_disjoint() {
++        let w = |base, length| RootBridgeWindow { base, length };
++        let recorded = [
++            w(0xa200_0000, 0x1b00_0000),
++            w(0x40_0000_0000, 0x20_3dc0_0000),
++            w(0xa080_0000, 0x180_0000),
++            w(0xbd00_0000, 0x300_0000),
++            w(0xff00_0000, 0xb8_0000),
++            w(0xffd3_a070, 0x2c_5f90),
++            w(0x60_3dc0_0000, 0x1f_c240_0000),
++        ];
++        assert_eq!(check(&recorded), Ok(()));
++        assert_eq!(check(&[]), Err(Refused::Empty));
++        assert_eq!(check(&[w(0x1000, 0)]), Err(Refused::Malformed(w(0x1000, 0))));
++        assert_eq!(check(&[w(u64::MAX, 2)]), Err(Refused::Malformed(w(u64::MAX, 2))));
++        assert_eq!(
++            check(&[w(0x1000_0000, 0x100_0000), w(0x10ff_f000, 0x2000)]),
++            Err(Refused::Overlap(w(0x1000_0000, 0x100_0000), w(0x10ff_f000, 0x2000)))
++        );
++    }
++
+     /// A machine whose firmware named nothing, and a span of no length: neither
+     /// is an address anything decodes.
+     #[test]
+diff --git a/kernel/src/arch/aarch64/cpu.rs b/kernel/src/arch/aarch64/cpu.rs
+index 37738467f..7eecbd10e 100644
+--- a/kernel/src/arch/aarch64/cpu.rs
++++ b/kernel/src/arch/aarch64/cpu.rs
+@@ -2,6 +2,25 @@
+ 
+ use core::arch::asm;
+ 
++/// How many bits wide a physical address this CPU issues is:
++/// `ID_AA64MMFR0_EL1.PARange` (Arm ARM DDI 0487), whose encodings past
++/// 0b0110 are reserved.
++pub fn physical_address_bits() -> u8 {
++    let mmfr0: u64;
++    // SAFETY: reads an EL1 ID register, which EL1 may always read.
++    unsafe { asm!("mrs {}, id_aa64mmfr0_el1", out(reg) mmfr0, options(nomem, nostack, preserves_flags)) };
++    match mmfr0 & 0xF {
++        0 => 32,
++        1 => 36,
++        2 => 40,
++        3 => 42,
++        4 => 44,
++        5 => 48,
++        6 => 52,
++        reserved => panic!("ID_AA64MMFR0_EL1.PARange holds the reserved value {reserved:#x}"),
++    }
++}
++
+ /// The CPU's free-running counter: the generic timer's virtual count,
+ /// `CNTVCT_EL0`. The `ISB` keeps the read from being taken early, ahead of
+ /// the code it times (Arm ARM K.a, D12.2.2).
+diff --git a/kernel/src/arch/aarch64/smmu/domain.rs b/kernel/src/arch/aarch64/smmu/domain.rs
+index f40e4c641..36172c278 100644
+--- a/kernel/src/arch/aarch64/smmu/domain.rs
++++ b/kernel/src/arch/aarch64/smmu/domain.rs
+@@ -99,7 +99,7 @@ pub fn create(room: u64) -> Result<(DomainId, Iova), IommuError> {
+     let domains = if live.unit.asid(0x100).is_some() { 1 << 16 } else { 1 << 8 };
+     let id = u16::try_from(usize::from(FIRST) + live.domains.len()).map_err(|_| IommuError::DomainsExhausted(domains))?;
+     let asid = live.unit.asid(id).ok_or(IommuError::DomainsExhausted(domains))?;
+-    let (addresses, first) = Window::new(INPUT_BITS as u8, &live.reserved, room)?;
++    let (addresses, first) = Window::new(INPUT_BITS as u8, live.reserved.as_deref(), room)?;
+     let root = Phys::new(live.memory.alloc(PAGE_SIZE)).expect("SMMU: a table below the unit's output size");
+     let context = Phys::new(live.memory.alloc(64)).expect("SMMU: a descriptor below the unit's output size");
+     let words = Cd::new(root, asid, &live.unit).expect("SMMU: a table below the unit's output size").words();
+diff --git a/kernel/src/arch/aarch64/smmu/mod.rs b/kernel/src/arch/aarch64/smmu/mod.rs
+index dea774b86..ad9fd35fe 100644
+--- a/kernel/src/arch/aarch64/smmu/mod.rs
++++ b/kernel/src/arch/aarch64/smmu/mod.rs
+@@ -124,8 +124,9 @@ struct Live {
+     /// at an ITS.
+     routes: Vec<(StreamId, u32, Option<ItsDevice>)>,
+     domains: Vec<domain::Domain>,
+-    /// What no domain's addresses may reach, as `(start, end)`.
+-    reserved: Vec<(u64, u64)>,
++    /// What no domain's addresses may reach, as `(start, end)`; `None` where
++    /// no declaration is held.
++    reserved: Option<Vec<(u64, u64)>>,
+ }
+ 
+ impl Live {
+@@ -209,7 +210,7 @@ fn window(phys: u64, bytes: u64) -> Mmio {
+ 
+ /// The SMMUv3, armed; a refusal leaves every unit the IORT names aborting
+ /// what it is given, or says why one could not be told to.
+-pub fn init(rsdp_addr: u64, devices: &[PciDevice], windows: &[toyos_abi::boot::RootBridgeWindow]) {
++pub fn init(rsdp_addr: u64, devices: &[PciDevice], windows: Option<&[toyos_abi::boot::RootBridgeWindow]>) {
+     let iort = match toyos_acpi::iort(direct_phys(), rsdp_addr) {
+         Ok(iort) => iort,
+         Err(IortRefused::Table(TableError::Absent)) => {
+@@ -270,7 +271,7 @@ pub fn init(rsdp_addr: u64, devices: &[PciDevice], windows: &[toyos_abi::boot::R
+             Err(why) => log!("IOMMU: {function}'s IORT route is refused: {why:?}"),
+         }
+     }
+-    let reserved = windows.iter().map(|w| (w.base, w.end())).collect();
++    let reserved = windows.map(|w| w.iter().map(|w| (w.base, w.end())).collect());
+     let Some(live) = program(regs, smmu.base, smmu.coherent_override, smmu.event, routes, reserved) else {
+         return;
+     };
+@@ -328,7 +329,7 @@ fn program(
+     coherent_override: bool,
+     event: Option<core::num::NonZeroU32>,
+     routes: Vec<(StreamId, u32, Option<ItsDevice>)>,
+-    reserved: Vec<(u64, u64)>,
++    reserved: Option<Vec<(u64, u64)>>,
+ ) -> Option<Live> {
+     let refused = |why: core::fmt::Arguments<'_>| log!("IOMMU: the SMMUv3 at {base:#x} is left aborting: {why}");
+     let (idr0, idr1, idr5) = (regs.read(reg::IDR0), regs.read(reg::IDR1), regs.read(reg::IDR5));
+diff --git a/kernel/src/arch/x86_64/cpu.rs b/kernel/src/arch/x86_64/cpu.rs
+index 2f5dc664c..0f418921d 100644
+--- a/kernel/src/arch/x86_64/cpu.rs
++++ b/kernel/src/arch/x86_64/cpu.rs
+@@ -159,6 +159,15 @@ pub fn leaf_d(subleaf: u32) -> (u32, u32, u32, u32) {
+     if cpuid(0, 0).0 >= 0xD { cpuid(0xD, subleaf) } else { (0, 0, 0, 0) }
+ }
+ 
++/// How many bits wide a physical address this CPU issues is: CPUID
++/// 8000_0008H `EAX[7:0]` (Intel SDM Vol. 2A, CPUID; AMD APM Vol. 3,
++/// Fn8000_0008_EAX `PhysAddrSize`), a leaf every x86-64 CPU of this
++/// project's range implements.
++pub fn physical_address_bits() -> u8 {
++    assert!(cpuid(0x8000_0000, 0).0 >= 0x8000_0008, "CPUID does not reach leaf 8000_0008H");
++    cpuid(0x8000_0008, 0).0 as u8
++}
++
+ /// CPUID with both index registers, as `(eax, ebx, ecx, edx)`.
+ ///
+ /// `core`'s intrinsic and not an `asm!` of our own: `rbx` is CPUID's output
+diff --git a/kernel/src/arch/x86_64/iommu_unit.rs b/kernel/src/arch/x86_64/iommu_unit.rs
+index 987ba7ede..6a2c2c786 100644
+--- a/kernel/src/arch/x86_64/iommu_unit.rs
++++ b/kernel/src/arch/x86_64/iommu_unit.rs
+@@ -20,7 +20,7 @@ pub use super::vtd::{domain, fault, interrupt};
+ const MAX_PHYS: u64 = 1 << 52;
+ 
+ /// The units of whichever table firmware published.
+-pub fn init(rsdp_addr: u64, devices: &[PciDevice], windows: &[RootBridgeWindow]) {
++pub fn init(rsdp_addr: u64, devices: &[PciDevice], windows: Option<&[RootBridgeWindow]>) {
+     if super::vtd::init(rsdp_addr, devices, windows) || super::amdvi::init(rsdp_addr) {
+         return;
+     }
+diff --git a/kernel/src/arch/x86_64/vtd/domain.rs b/kernel/src/arch/x86_64/vtd/domain.rs
+index 35283ea9c..f812a2b89 100644
+--- a/kernel/src/arch/x86_64/vtd/domain.rs
++++ b/kernel/src/arch/x86_64/vtd/domain.rs
+@@ -41,16 +41,17 @@ struct Domains {
+     /// By id minus [`FIRST`]; never shrinks, since a released id would name a
+     /// domain some unit may still have cached.
+     live: Vec<Domain>,
+-    /// What no domain's addresses may reach: the root bridges' windows and
+-    /// the regions firmware reserved, as `(start, end)`.
+-    reserved: Vec<(u64, u64)>,
++    /// What no domain's addresses may reach: the root bridges' declared
++    /// windows and the regions firmware reserved, as `(start, end)`; `None`
++    /// where no declaration is held.
++    reserved: Option<Vec<(u64, u64)>>,
+ }
+ 
+ static DOMAINS: Lock<Domains> =
+-    Lock::new(Domains { agreement: Agreement::None, live: Vec::new(), reserved: Vec::new() });
++    Lock::new(Domains { agreement: Agreement::None, live: Vec::new(), reserved: None });
+ 
+ /// Before any domain is made: every one is built clear of these.
+-pub fn avoid(reserved: Vec<(u64, u64)>) {
++pub fn avoid(reserved: Option<Vec<(u64, u64)>>) {
+     DOMAINS.lock().reserved = reserved;
+ }
+ 
+@@ -78,7 +79,7 @@ pub fn create(room: u64) -> Result<(DomainId, Iova), IommuError> {
+     if u32::from(id) >= ceiling {
+         return Err(IommuError::DomainsExhausted(ceiling));
+     }
+-    let (domain, first) = Domain::new(&mut TABLES.lock(), id, width, mgaw, &domains.reserved, room)?;
++    let (domain, first) = Domain::new(&mut TABLES.lock(), id, width, mgaw, domains.reserved.as_deref(), room)?;
+     log!(
+         "iommu: domain{id} root={:#x} aw={} mgaw={} addresses from {:#x} to {:#x}",
+         domain.root().phys(),
+diff --git a/kernel/src/arch/x86_64/vtd/mod.rs b/kernel/src/arch/x86_64/vtd/mod.rs
+index 39ddf8f65..2398922a3 100644
+--- a/kernel/src/arch/x86_64/vtd/mod.rs
++++ b/kernel/src/arch/x86_64/vtd/mod.rs
+@@ -121,7 +121,7 @@ pub(super) fn invalidate_interrupt_entries() {
+ 
+ /// `windows` and every region firmware reserved are what no domain's addresses
+ /// reach. `false` where firmware published no DMAR.
+-pub fn init(rsdp_addr: u64, devices: &[PciDevice], windows: &[RootBridgeWindow]) -> bool {
++pub fn init(rsdp_addr: u64, devices: &[PciDevice], windows: Option<&[RootBridgeWindow]>) -> bool {
+     let dmar = match Dmar::open(rsdp_addr) {
+         Ok(dmar) => dmar,
+         Err(TableError::Absent) => return false,
+@@ -153,8 +153,9 @@ pub fn init(rsdp_addr: u64, devices: &[PciDevice], windows: &[RootBridgeWindow])
+     // Described and planned before any unit is armed: whether sources may move
+     // to the remappable format is one decision, taken before the first `IRE`.
+     let mut ready: Vec<(Unit, Plan)> = Vec::new();
+-    // What no domain's addresses may reach, RMRRs added below as the walk meets them.
+-    let mut reserved: Vec<(u64, u64)> = windows.iter().map(|w| (w.base, w.end())).collect();
++    // What no domain's addresses may reach, RMRRs added below as the walk
++    // meets them; nothing where no declaration is held.
++    let mut reserved: Option<Vec<(u64, u64)>> = windows.map(|w| w.iter().map(|w| (w.base, w.end())).collect());
+     for structure in dmar.structures() {
+         match structure {
+             Ok(Structure::Drhd(drhd)) => {
+@@ -201,7 +202,9 @@ pub fn init(rsdp_addr: u64, devices: &[PciDevice], windows: &[RootBridgeWindow])
+                          identity domain 0x0..{identity_top:#x}"
+                     );
+                 }
+-                reserved.push((base, limit.saturating_add(1)));
++                if let Some(reserved) = reserved.as_mut() {
++                    reserved.push((base, limit.saturating_add(1)));
++                }
+                 describe_scopes("rmrr", regions, rmrr.scopes());
+                 regions += 1;
+                 held_regions += usize::from(held);
+diff --git a/kernel/src/arch/x86_64/vtd/table.rs b/kernel/src/arch/x86_64/vtd/table.rs
+index 6b44d87cd..41934fcde 100644
+--- a/kernel/src/arch/x86_64/vtd/table.rs
++++ b/kernel/src/arch/x86_64/vtd/table.rs
+@@ -250,7 +250,7 @@ impl Domain {
+         id: u16,
+         width: AddressWidth,
+         mgaw: u8,
+-        reserved: &[(u64, u64)],
++        reserved: Option<&[(u64, u64)]>,
+         room: u64,
+     ) -> Result<(Self, Iova), IommuError> {
+         let (window, first) = Window::new(Self::translatable_bits(width, mgaw), reserved, room)?;
+diff --git a/kernel/src/iommu/mod.rs b/kernel/src/iommu/mod.rs
+index f6afe2a5e..35c06deea 100644
+--- a/kernel/src/iommu/mod.rs
++++ b/kernel/src/iommu/mod.rs
+@@ -118,6 +118,10 @@ pub enum IommuError {
+     /// What this machine's units translate does not reach above its memory, so
+     /// a device window has nowhere to sit that a stale descriptor would miss.
+     WindowBelowMemory { translatable: u8, floor: u64, top: u64 },
++    /// The units translate no further than the CPU's physical addresses, so a
++    /// domain has to end under the root bridges' windows, and no declaration
++    /// of them is held.
++    Undeclared { translatable: u8, cpu: u8 },
+     /// From the floor to the first root-bridge window or reserved region above
+     /// it is less than a new domain was asked to hand out.
+     NoRoom { floor: u64, ceiling: u64, room: u64 },
+@@ -144,6 +148,12 @@ impl core::fmt::Display for IommuError {
+                 "this machine's units translate {translatable} bits, whose device window would \
+                  start at {floor:#x}, at or below the {top:#x} its memory reaches"
+             ),
++            Self::Undeclared { translatable, cpu } => write!(
++                f,
++                "this machine's units translate {translatable} bits and its CPUs issue {cpu}, so a \
++                 domain has to end under the root bridges' windows, and no declaration of them \
++                 is held"
++            ),
+             Self::NoRoom { floor, ceiling, room } => write!(
+                 f,
+                 "a domain's addresses from {floor:#x} end at {ceiling:#x}, where a root bridge's \
+@@ -265,11 +275,12 @@ impl core::fmt::Display for StreamId {
+ ///
+ /// The device list must be the complete enumeration: enabling translation with an unenumerated device left off it can brick the machine's own boot disk.
+ ///
+-/// No domain's addresses reach into one of `windows`, the memory firmware says the root bridges decode.
++/// No domain's addresses reach into one of `windows`, the root bridges'
++/// declared memory, or `None` where no declaration is held ([`window`]).
+ pub fn init(
+     rsdp_addr: u64,
+     devices: &[crate::drivers::pci::PciDevice],
+-    windows: &[toyos_abi::boot::RootBridgeWindow],
++    windows: Option<&[toyos_abi::boot::RootBridgeWindow]>,
+ ) {
+     unit::init(rsdp_addr, devices, windows);
+ }
+diff --git a/kernel/src/iommu/window.rs b/kernel/src/iommu/window.rs
+index 74f31029f..d47765d4f 100644
+--- a/kernel/src/iommu/window.rs
++++ b/kernel/src/iommu/window.rs
+@@ -1,14 +1,18 @@
+ //! A domain's device addresses — where they start, where they end and which
+ //! of them are handed out — for every backend.
+ //!
+-//! They start a quarter of the way up what the unit translates and above all
+-//! memory, so a descriptor still carrying one names nothing a domain maps and
+-//! faults rather than landing on a page. They end under the first root-bridge
+-//! window or reserved region over that start: a bridge may route a window
+-//! peer-to-peer before the unit sees the request (PCIe Base §2.4), and a
+-//! region firmware reserved is not a domain's (VT-d §3.16). An address is
+-//! handed out once, unmapped or not: a device holding a stale one would reach
+-//! whatever took its place.
++//! They lie above all memory, so a descriptor still carrying one names
++//! nothing a domain maps and faults rather than landing on a page, and clear
++//! of every root-bridge window: a bridge may route a window peer-to-peer
++//! before the unit sees the request (PCIe Base §2.4). Where the unit
++//! translates past every address the CPU issues, they lie there, above all
++//! memory and every window the CPU can reach, and nothing needs declaring.
++//! Where it does not — a VT-d unit's `MGAW` (VT-d §11.4.2) no wider than the
++//! CPU's physical addresses, as on the T14 — they start a quarter of the way
++//! up and end under the first declared window or firmware-reserved region
++//! over that start (VT-d §3.16), and with no declaration accepted there is no
++//! domain. An address is handed out once, unmapped or not: a device holding
++//! a stale one would reach whatever took its place.
+ 
+ use crate::iommu::{IommuError, Iova};
+ use crate::mm::PAGE_2M;
+@@ -43,17 +47,30 @@ const fn ceiling(translatable: u8, floor: u64, reserved: &[(u64, u64)]) -> u64 {
+     ceiling
+ }
+ 
++/// Where a domain over `translatable` bits begins and ends on a CPU issuing
++/// `cpu`-bit physical addresses, `reserved` the declared root-bridge windows
++/// and firmware's reserved regions, or `None` where no declaration is held.
++const fn bounds(translatable: u8, cpu: u8, reserved: Option<&[(u64, u64)]>) -> Result<(u64, u64), IommuError> {
++    if translatable > cpu {
++        return Ok((1 << cpu, 1 << translatable));
++    }
++    let floor = first_address(translatable);
++    match reserved {
++        Some(reserved) => Ok((floor, ceiling(translatable, floor, reserved))),
++        None => Err(IommuError::Undeclared { translatable, cpu }),
++    }
++}
++
+ impl Window {
+-    /// A new domain's window over `translatable` bits, clear of `reserved`,
+-    /// with `room` bytes of it handed out first; refused where it would start
+-    /// at or below memory or hold less than that, and at least one leaf.
+-    pub fn new(translatable: u8, reserved: &[(u64, u64)], room: u64) -> Result<(Self, Iova), IommuError> {
+-        let floor = first_address(translatable);
++    /// A new domain's window over `translatable` bits ([`bounds`]), with
++    /// `room` bytes of it handed out first; refused where it would start at or
++    /// below memory or hold less than that, and at least one leaf.
++    pub fn new(translatable: u8, reserved: Option<&[(u64, u64)]>, room: u64) -> Result<(Self, Iova), IommuError> {
++        let (floor, ceiling) = bounds(translatable, crate::arch::cpu::physical_address_bits(), reserved)?;
+         let top = crate::mm::pmm::top();
+         if floor <= top {
+             return Err(IommuError::WindowBelowMemory { translatable, floor, top });
+         }
+-        let ceiling = ceiling(translatable, floor, reserved);
+         let mut window = Self::starting_at(floor, ceiling);
+         match window.reserve(room) {
+             Some(first) if ceiling.saturating_sub(floor) >= PAGE_2M => Ok((window, first)),
+@@ -154,3 +171,15 @@ const _: () = {
+     const VIRT: [(u64, u64); 2] = [(0x1000_0000, 0x3f00_0000), (0x80_0000_0000, 0x100_0000_0000)];
+     assert!(ceiling(48, first_address(48), &VIRT) == 1 << 48);
+ };
++
++/// [`bounds`] on each kind of machine: a unit wider than the CPU's addresses
++/// places above them, declared or not; the T14's 39-bit unit on its 39-bit
++/// CPU places under its first window, and with nothing declared nowhere.
++const _: () = {
++    const T14: [(u64, u64); 1] = [(0x40_0000_0000, 0x60_3DC0_0000)];
++    assert!(matches!(bounds(48, 40, None), Ok((0x100_0000_0000, 0x1_0000_0000_0000))));
++    assert!(matches!(bounds(48, 40, Some(&T14)), Ok((0x100_0000_0000, 0x1_0000_0000_0000))));
++    assert!(matches!(bounds(39, 39, Some(&T14)), Ok((0x20_0000_0000, 0x40_0000_0000))));
++    assert!(matches!(bounds(39, 39, None), Err(IommuError::Undeclared { translatable: 39, cpu: 39 })));
++    assert!(matches!(bounds(39, 46, None), Err(IommuError::Undeclared { .. })));
++};
+diff --git a/kernel/src/main.rs b/kernel/src/main.rs
+index 215cdc76c..8edf98c66 100644
+--- a/kernel/src/main.rs
++++ b/kernel/src/main.rs
+@@ -442,7 +442,7 @@ pub(crate) unsafe extern "C" fn kernel_main(loader_args: &mut KernelArgs) -> ! {
+     }
+     // After ACPI is readable and PCI is enumerable, before any driver `init`: each enumerated device needs a context entry before it can DMA.
+     // Refuses nothing — a machine with no usable IOMMU boots exactly as one without it.
+-    iommu::init(kernel_args.rsdp_addr, &pci_devices, kernel_args.root_bridge_windows());
++    iommu::init(kernel_args.rsdp_addr, &pci_devices, pcidev::declared().as_deref());
+     // Before storage and everything under it: what it covers is the rest of this
+     // boot, and a wedge down there is the reason to have one.
+     arch::watchdog::init(&pci_devices);
+diff --git a/kernel/src/pcidev/mod.rs b/kernel/src/pcidev/mod.rs
+index b3f286ce2..44f804284 100644
+--- a/kernel/src/pcidev/mod.rs
++++ b/kernel/src/pcidev/mod.rs
+@@ -30,9 +30,10 @@
+ //! **Nothing here reads an address this kernel cannot name as routed**, because
+ //! a load no bridge forwards does not answer all-ones on real hardware: it does
+ //! not complete, and the CPU cannot be interrupted out of it. The name is a
+-//! window [`toyos_abi::boot::KernelArgs::root_bridge_windows`] carries: the
+-//! address firmware put in the BAR is held against those windows here, and no
+-//! other address is ever offered ([`placement::reserve`]).
++//! window of the declaration [`Apertures`] holds: the address firmware put in
++//! the BAR is held against those windows here, no other address is ever
++//! offered ([`placement::reserve`]), and with no declaration held no function
++//! is handed over.
+ //!
+ //! **Inside one, the function itself is the proof.** [`place_bar`] reads one
+ //! dword through the BAR where firmware put it, moves the BAR onto the
+@@ -329,12 +330,9 @@ struct Machine {
+     /// which is not the same claim as reaching the bus.
+     low: Vec<Window>,
+     high: Vec<Window>,
+-    /// The memory the root bridges decode, as firmware declared it.
+-    ///
+-    /// **The necessary condition for any read this module issues**, so an
+-    /// address inside none of them is never touched; a machine whose firmware
+-    /// declared nothing is one where nothing may be.
+-    firmware: Vec<RootBridgeWindow>,
++    /// What this kernel holds of the memory the root bridges decode: the
++    /// necessary condition for any read this module issues.
++    apertures: Apertures,
+     /// Windows this module has cut, as `(requester, BAR index, at, span)`.
+     ///
+     /// **A window belongs to the BAR it was cut for, not to the claim that
+@@ -351,6 +349,19 @@ struct Machine {
+     resetting: Vec<(u16, Resetting, Kept)>,
+ }
+ 
++/// The memory the root bridges decode, as far as this kernel has been told.
++///
++/// **Only a declaration is ever read from**, so an address inside none of its
++/// windows is never touched, and a function is handed over on no other state:
++/// a machine that has not declared, or whose declaration was refused, is one
++/// where nothing is known to be routed.
++enum Apertures {
++    Unknown,
++    /// Held whole ([`aperture::check`]); never replaced.
++    Declared(Vec<RootBridgeWindow>),
++    Refused(aperture::Refused),
++}
++
+ static MACHINE: Lock<Machine> = Lock::new(Machine {
+     functions: Vec::new(),
+     identities: Vec::new(),
+@@ -359,7 +370,7 @@ static MACHINE: Lock<Machine> = Lock::new(Machine {
+     kernel_driven: Vec::new(),
+     low: Vec::new(),
+     high: Vec::new(),
+-    firmware: Vec::new(),
++    apertures: Apertures::Unknown,
+     windows: Vec::new(),
+     resetting: Vec::new(),
+ });
+@@ -545,7 +556,16 @@ pub fn publish(devices: &[PciDevice], segment: u16, maps: &[MemoryMapEntry], fir
+             taken.push(forwarded);
+         }
+     }
+-    account_for(firmware, &decoded);
++    let apertures = match aperture::check(firmware) {
++        Ok(()) => {
++            account_for(firmware, &decoded);
++            Apertures::Declared(firmware.to_vec())
++        }
++        Err(why) => {
++            log!("pcidev: the root bridges' memory is refused as declared: {why}, so no function is handed over");
++            Apertures::Refused(why)
++        }
++    };
+     let mut runs = |wide| -> Vec<Window> {
+         placement::free_runs(&mut taken, wide)
+             .filter(|run| run.end - run.start >= PAGE_2M)
+@@ -570,24 +590,25 @@ pub fn publish(devices: &[PciDevice], segment: u16, maps: &[MemoryMapEntry], fir
+         devices.iter().map(|d| d.identity(addr_of(segment, requester(d)))).collect();
+     machine.segment = segment;
+     machine.decoded = decoded;
+-    machine.firmware = firmware.to_vec();
++    machine.apertures = apertures;
+     machine.low = low;
+     machine.high = high;
+ }
+ 
++/// The root bridges' memory, where a declaration of it is held.
++pub fn declared() -> Option<Vec<RootBridgeWindow>> {
++    match &MACHINE.lock().apertures {
++        Apertures::Declared(windows) => Some(windows.clone()),
++        Apertures::Unknown | Apertures::Refused(_) => None,
++    }
++}
++
+ /// Say what memory firmware declared the root bridges decode, and which
+ /// assigned BAR lies inside none of it.
+ ///
+ /// **What this answers about is the necessary condition every read below is
+ /// checked against**, so it says the answer once and counts nothing from it.
+ fn account_for(firmware: &[RootBridgeWindow], decoded: &[(u16, u64, u64)]) {
+-    if firmware.is_empty() {
+-        log!(
+-            "pcidev: firmware declared no root bridge memory, so no address on this machine may \
+-             be read"
+-        );
+-        return;
+-    }
+     let mut said = String::new();
+     for window in firmware {
+         if !said.is_empty() {
+@@ -612,6 +633,10 @@ fn account_for(firmware: &[RootBridgeWindow], decoded: &[(u16, u64, u64)]) {
+ /// place.
+ #[derive(Clone, Copy)]
+ enum Refusal {
++    /// Nothing has declared the memory the root bridges decode yet.
++    Undeclared,
++    /// The declaration of the memory the root bridges decode was refused.
++    AperturesRefused(aperture::Refused),
+     NotRemapped,
+     /// The machine translates messages, and none could be made for this function.
+     NoMessage(Refused),
+@@ -647,6 +672,16 @@ enum Refusal {
+ impl core::fmt::Display for Refusal {
+     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+         match self {
++            Self::Undeclared => write!(
++                f,
++                "nothing has declared the memory the root bridges decode, so no address on this \
++                 machine is known to be routed"
++            ),
++            Self::AperturesRefused(why) => write!(
++                f,
++                "the declaration of the memory the root bridges decode was refused ({why}), so no \
++                 address on this machine is known to be routed"
++            ),
+             Self::NotRemapped => write!(
+                 f,
+                 "its interrupts would not be remapped on this machine, and a message that is not \
+@@ -766,6 +801,21 @@ pub fn claim(id: PciId) -> Result<(PciFunctionInfo, Claim), ClaimError> {
+         }
+     };
+ 
++    // Before anything is reserved or touched: with no declaration held, no
++    // read this claim would make is known to reach the bus.
++    let declared = match &MACHINE.lock().apertures {
++        Apertures::Declared(windows) => Ok(windows.clone()),
++        Apertures::Unknown => Err(Refusal::Undeclared),
++        Apertures::Refused(why) => Err(Refusal::AperturesRefused(*why)),
++    };
++    let windows = match declared {
++        Ok(windows) => windows,
++        Err(why) => {
++            log!("pcidev: PCI {:02x}:{:02x}.{} NOT HANDED OVER — {why}", pci.bus, pci.dev, pci.func);
++            return Err(ClaimError::Unusable);
++        }
++    };
++
+     // `Owned` before `Exhausted`: a second claim on a function somebody holds
+     // is a different fact from a machine with no slot left.
+     let who = requester(&pci);
+@@ -773,7 +823,7 @@ pub fn claim(id: PciId) -> Result<(PciFunctionInfo, Claim), ClaimError> {
+     // Dropped by every refusal below, which is what gives the slot back.
+     let binding = Binding { slot, who };
+ 
+-    match bring_up(pci, id, slot) {
++    match bring_up(pci, id, slot, &windows) {
+         Ok(mut bound) => {
+             bound.residue = take_residue(slot);
+             let info = PciFunctionInfo {
+@@ -815,7 +865,7 @@ pub fn claim(id: PciId) -> Result<(PciFunctionInfo, Claim), ClaimError> {
+ /// The order is the whole security argument: a function that could master the
+ /// bus before its domain existed would be reaching physical memory with
+ /// whatever addresses its registers still held.
+-fn bring_up(pci: PciDevice, id: PciId, slot: usize) -> Result<Bound, Refusal> {
++fn bring_up(pci: PciDevice, id: PciId, slot: usize, windows: &[RootBridgeWindow]) -> Result<Bound, Refusal> {
+     let remapping = crate::iommu::remapping().map_err(|_| Refusal::NotRemapped)?;
+ 
+     // What the slot's previous holder left mapped goes before anything attaches
+@@ -856,7 +906,7 @@ fn bring_up(pci: PciDevice, id: PciId, slot: usize) -> Result<Bound, Refusal> {
+ 
+     // From here a refusal has to undo: a vector is armed, and the arms below
+     // move the function's BARs.
+-    match place_bars(&pci, id, table_bar) {
++    match place_bars(&pci, id, table_bar, windows) {
+         Ok((bar_at, bar_bytes)) => {
+             space.attach(pci.bus, pci.dev, pci.func);
+             Ok(Bound {
+@@ -901,6 +951,7 @@ fn place_bars(
+     pci: &PciDevice,
+     id: PciId,
+     table_bar: Option<u8>,
++    windows: &[RootBridgeWindow],
+ ) -> Result<([u64; BARS], [u64; BARS]), Refusal> {
+     let mut bar_at = [0u64; BARS];
+     let mut bar_bytes = [0u64; BARS];
+@@ -919,7 +970,7 @@ fn place_bars(
+             continue;
+         }
+         let size = pci.bar_size(index).map_err(|_| Refusal::BarUnsizable(index))?;
+-        let at = match place_bar(pci, id, index, size) {
++        let at = match place_bar(pci, id, index, size, windows) {
+             Ok(at) => at,
+             // Each of these says only that nothing could settle this BAR, which
+             // is that window's loss and not the function's.
+@@ -1257,7 +1308,7 @@ fn probe_dword(at: u64, span: u64, offset: u64) -> u32 {
+ /// rather than assumed. A candidate the machine refuses leaves the register
+ /// holding what firmware left in it, and a walk that ends in a refusal gives
+ /// every address it took back to the run it came out of.
+-fn place_bar(pci: &PciDevice, id: PciId, index: u8, size: u64) -> Result<u64, Refusal> {
++fn place_bar(pci: &PciDevice, id: PciId, index: u8, size: u64, windows: &[RootBridgeWindow]) -> Result<u64, Refusal> {
+     let offset = bar::BASE + index as u64 * 4;
+     let low = pci.read_config_u32(offset);
+     let wide = matches!(bar::decode(index, low), Ok(bar::Width::Wide(_)));
+@@ -1280,7 +1331,6 @@ fn place_bar(pci: &PciDevice, id: PciId, index: u8, size: u64) -> Result<u64, Re
+         pci.set_memory_decode(true);
+     };
+ 
+-    let windows = MACHINE.lock().firmware.clone();
+     // **What this function answers, read where firmware put it.** It is the
+     // reference every candidate is settled against, and it has to be taken
+     // here: from the first write below the BAR is somewhere this kernel chose
+@@ -1293,7 +1343,7 @@ fn place_bar(pci: &PciDevice, id: PciId, index: u8, size: u64) -> Result<u64, Re
+     if was == 0 {
+         return Err(Refusal::BarUnassigned(index));
+     }
+-    let inside = aperture::decode(&windows, was, was.saturating_add(size));
++    let inside = aperture::decode(windows, was, was.saturating_add(size));
+     if !matches!(inside, aperture::Decode::Inside(_)) {
+         return Err(Refusal::BarUnrouted(index));
+     }
+@@ -1307,7 +1357,7 @@ fn place_bar(pci: &PciDevice, id: PciId, index: u8, size: u64) -> Result<u64, Re
+     let mut refused = [None; MAX_CANDIDATES];
+     let mut asked = 0usize;
+     while asked < MAX_CANDIDATES {
+-        let Some(candidate) = with_runs(wide, |runs| placement::reserve(runs, &windows, span))
++        let Some(candidate) = with_runs(wide, |runs| placement::reserve(runs, windows, span))
+         else {
+             break;
+         };

@@ -1,0 +1,31 @@
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.00s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-ddd1c80cd62279e4)
+23:35:09   BUILD x86_64 binaries of tests/guest/rust-tests
+23:39:36   BUILT x86_64 binaries of tests/guest/rust-tests  (267s)
+23:39:36 [toyos] Compiling 138 C tests, and attempting 24 declared ones...
+23:39:55 [metal] 3 registration(s) and 0 shared member(s) over 2 boot(s)
+23:39:55   BUILD x86_64 kernel, loader, ROOT of <scratch>/t14/testcases/system-7825bf189afd61c4.toml
+23:40:06 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+23:40:07   BUILT x86_64 kernel, loader, ROOT of <scratch>/t14/testcases/system-7825bf189afd61c4.toml  (12s)
+23:40:07 [metal] testcases: 8 job(s) under a list bound of 60000 ms, armed with [] and a boot deadline of 120000 ms — <scratch>/t14/testcases/image.img
+23:40:07   BUILD x86_64 kernel boot-actuators,test-actuators, ROOT of <scratch>/t14/testcases-xhci-leave/system-5c5ecd2c7fbb87ef.toml
+23:40:23 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+23:40:23   BUILT x86_64 kernel boot-actuators,test-actuators, ROOT of <scratch>/t14/testcases-xhci-leave/system-5c5ecd2c7fbb87ef.toml  (16s)
+23:40:24 [metal] testcases-xhci-leave: 1 job(s) under a list bound of 60000 ms, armed with ["xhci-leave=8086:9a13"] and a boot deadline of 120000 ms — <scratch>/t14/testcases-xhci-leave/image.img
+# One boot per image. Each invocation is `cargo <words>` from this worktree.
+
+testcases
+  image: <scratch>/t14/testcases/image.img
+  cargo run -p toyos-metal -- --image <scratch>/t14/testcases/image.img --readback <scratch>/t14/testcases --fat32-check
+
+testcases-xhci-leave
+  image: <scratch>/t14/testcases-xhci-leave/image.img
+  cargo run -p toyos-metal -- --image <scratch>/t14/testcases-xhci-leave/image.img --readback <scratch>/t14/testcases-xhci-leave --fat32-check
+23:40:24 [metal] staged 2 image(s); <scratch>/t14/request.txt lists them. The machine was not touched, so this run establishes nothing about it.
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `<src>/toyos-arm-aperture/target/debug/deps/toyos_build-ddd1c80cd62279e4 --metal --metal-readback <scratch>/t14 claim_reuses_its_remapping_entry domain_ends_below_the_host_bridges usbd_drives_the_type_c_controller` (exit status: 2)
+exit 2

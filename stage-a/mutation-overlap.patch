@@ -1,0 +1,13 @@
+diff --git a/kernel/pci/src/aperture.rs b/kernel/pci/src/aperture.rs
+index 07060531c..6b70144cf 100644
+--- a/kernel/pci/src/aperture.rs
++++ b/kernel/pci/src/aperture.rs
+@@ -59,7 +59,7 @@ pub fn check(windows: &[RootBridgeWindow]) -> Result<(), Refused> {
+         if window.length == 0 || window.base.checked_add(window.length).is_none() {
+             return Err(Refused::Malformed(*window));
+         }
+-        if let Some(other) = windows[..at].iter().find(|o| o.base < window.end() && window.base < o.end()) {
++        if let Some(other) = windows[..at].iter().find(|o| o.base == window.base) {
+             return Err(Refused::Overlap(*other, *window));
+         }
+     }
