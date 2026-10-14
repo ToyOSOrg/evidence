@@ -1,0 +1,16 @@
+# PR #921 landing round, head a8791b689df54f24efe92b7ae7991d249dc18118 (main e7e748fb2 merged; #928 not merged). Machine: the AMD bench (Family 17h Model 60h), not the T14: add the AMD bench's --host to each invocation. Two boots.
+# Rows: amdvi_remaps_the_stick_controller + amdvi_translates_the_stick_controller (testcases), amdvi_claim_refused_without_remapping (testcases-amd-no-remap, armed iommu-no-remap and xhci-leave=03:00.4).
+# The xhci-leave image is not staged: amdvi_usbd_drives_its_own_entry moved to P1's exit (issues/there-is-no-wifi.md) and no registered row judges that boot.
+# One boot per image. Each invocation is `cargo <words>` from the worktree <worktree>.
+
+testcases
+  image: <scratchpad>/agents/amdvi-s6/metal5/testcases/image.img
+  cargo run -p toyos-metal -- --image <scratchpad>/agents/amdvi-s6/metal5/testcases/image.img --readback <scratchpad>/agents/amdvi-s6/metal5/testcases --fat32-check
+
+testcases-amd-no-remap
+  image: <scratchpad>/agents/amdvi-s6/metal5/testcases-amd-no-remap/image.img
+  cargo run -p toyos-metal -- --image <scratchpad>/agents/amdvi-s6/metal5/testcases-amd-no-remap/image.img --readback <scratchpad>/agents/amdvi-s6/metal5/testcases-amd-no-remap --fat32-check
+
+## image SHA-256
+0086df57cb7a45ccaaf9253f2eb96017469c9e05ab7df4f3dec3b20bdfb388f3  <scratchpad>/agents/amdvi-s6/metal5/testcases-amd-no-remap/image.img
+56afce9dc4926164a19889244ea2ef34f8f523047b5392146a1516f4de3424d0  <scratchpad>/agents/amdvi-s6/metal5/testcases/image.img

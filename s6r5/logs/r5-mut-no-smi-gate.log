@@ -1,0 +1,77 @@
+a8791b689df54f24efe92b7ae7991d249dc18118
+mutation r5-no-smi-gate.patch applied
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.24s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-e32021b7d9f4399d)
+
+18:53:08 running 1 tests, 12 wide
+
+18:53:08   RUN   usbd_refused_without_smi_filter
+18:53:08   BUILD x86_64 usbd_spare of tests/guest/rust-tests, for usbd_refused_without_smi_filter
+18:53:10   BUILT x86_64 usbd_spare of tests/guest/rust-tests, for usbd_refused_without_smi_filter  (2s)
+18:53:10   BUILD x86_64 kernel boot-actuators,test-actuators, loader, ROOT of tests/images/testcases.toml, for usbd_refused_without_smi_filter
+18:53:14 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+18:53:14   BUILT x86_64 kernel boot-actuators,test-actuators, loader, ROOT of tests/images/testcases.toml, for usbd_refused_without_smi_filter  (4s)
+18:53:20 FAIL usbd_refused_without_smi_filter: `test_rs_usbd_spare unhanded` ended Some(101):
+[ 5.715 cpu1 kernel] spawn: /system/bin/test_rs_usbd_spare pid=10 (layout=0ms tls=2ms total=3ms)
+[ 5.702 acpiserver] acpiserver: table 1 of 1 (DSDT) loaded
+[ 5.703 acpiserver] acpiserver: 1 of 1 tables loaded in 31 ms
+[ 5.704 acpiserver] acpiserver: the tables' bytes took 1195 reads of firmware memory, in pages: 11 of type 9
+[ 5.704 acpiserver] acpiserver: the tables' AML read SystemMemory 0 times, SystemIO 0 and PCI_Config 0, its memory in pages: none; took the Global Lock 0 times, 0 of them from the firmware; the firmware held it 0ns at the longest against a take; and ran Notify 0 times
+[ 5.705 acpiserver] acpiserver: \_S5 evaluated: SLP_TYPa=0 SLP_TYPb=0
+[ 5.705 acpiserver] acpiserver: \_S5 handed to the kernel: SLP_TYPa=0
+[ 5.721 cpu0 kernel] iommu: domain6 root=0xe1b000 mode=4 addresses from 0x10000000000 to 0x1000000000000
+[ 5.721 cpu0 kernel] iommu: amdvi irte source=00:10.0 vector=0x42 p=1 dst=0x0 delivers=0x42
+[ 5.721 cpu0 kernel] PCI 00:10.0: msi address=0xfee00000 data=0x00000042
+[ 5.722 cpu0 kernel] mmio: 0xc000010000+0x4000 PAT Uncacheable (MTRR UC)
+[ 5.722 cpu0 kernel] mmio: 0xc000600000+0x200000 PAT Uncacheable (MTRR UC)
+[ 5.722 cpu0 kernel] pcidev: PCI 00:10.0 BAR 0 (0x4000 bytes) placed at 0xc000600000 — inside firmware's mem 0xc000100000; its +0x0 dword answers 0x01000040 there, and answered 0x01000040 from 0xc000010000, where firmware put it
+[ 5.723 cpu0 kernel] iommu: 00:10.0 moves to domain6
+[ 5.723 cpu0 kernel] pcidev: PCI 00:10.0 [1b36:000d] handed over, vector 0x42
+[ 5.712 acpiserver] acpiserver: embedded controller none: no PNP0C09 device is present
+[ 5.713 acpiserver] acpiserver: 0 table(s) loaded at run time and 0 refused; the namespace holds 270 objects in 512 slots, and the interpreter 155349 bytes of heap, of the 16777216 it holds between evaluations and the 34155580 while one runs
+[ 5.713 acpiserver] acpiserver: the namespace initialised: \_SB._INI absent; 0 _STA read, 0 _INI run, no _REG run; the longest wait an evaluation asked 0 µs; evaluations refused, by kind: none
+[ 5.714 acpiserver] acpiserver: GPEs: 2 with a method in GPE0, 2 of them runtime and enabled, 0 wake events left disabled, 0 past GPE0, 0 naming both triggers
+[ 5.714 acpiserver] acpiserver: (this machine's own, quoted in no record) the runtime GPEs are [1, 2]
+[ 5.718 acpiserver] acpiserver: no battery: 0 of 0 control-method batteries present, 0 AC adapter(s), with no embedded controller attached; the Global Lock taken 0 times on the way and given back 0 times, the firmware found holding it by 0 of the takes
+[ 5.724 test-runner error pid=10] 
+[ 5.724 test-runner error pid=10] thread 'main' (1) panicked at src/bin/../usbd_spare.rs:290:18:
+[ 5.724 test-runner error pid=10] usbd_spare: the claim on pci:1b36:000d was granted, on a machine that would not hand it over
+[ 5.725 test-runner error pid=10] stack backtrace:
+[ 5.742 cpu0 kernel] iommu: amdvi irte source=00:10.0 vector=0x42 p=0 released
+[ 5.743 cpu0 kernel] pcidev: PCI 00:10.0 [1b36:000d] released; reset by nothing (Express: no function level reset advertised; AF: no capability; PM: no capability), so where it may still be aimed is kept for its next claim
+[ 5.745 cpu0 kernel] exit: test_rs_usbd_spare pid=10 code=101 cpu=30ms peak=4MB allocs=3 frees=0 syscalls=44 syscall_wall=9ms 1=2 6=1 9=2 10=7 13=2 14=3 21=1 50=1 51=1 63=2 72=1 73=1 91=2 99=2 102=4 105=4 106=5 111=1 121=2
+[ 5.738 test-runner error pid=10]    0:      0x10000089820 - _Unwind_Backtrace
+[ 5.739 test-runner error pid=10]    1:      0x10000071f43 - <<std[45037dbd1045d75b]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[73b405bef30eeff1]::fmt::Display>::fmt
+[ 5.739 test-runner error pid=10]    2:      0x1000008df27 - core[73b405bef30eeff1]::fmt::write
+[ 5.739 test-runner error pid=10]    3:      0x10000075eab - <std[45037dbd1045d75b]::sys::stdio::toyos::Stderr as core[73b405bef30eeff1]::io::write::Write>::write_fmt
+[ 5.740 test-runner error pid=10]    4:      0x100000506b3 - std[45037dbd1045d75b]::panicking::default_hook::{closure#0}
+[ 5.740 test-runner error pid=10]    5:      0x1000006ba4e - std[45037dbd1045d75b]::panicking::default_hook
+[ 5.740 test-runner error pid=10]    6:      0x1000006bc09 - std[45037dbd1045d75b]::panicking::panic_with_hook
+[ 5.740 test-runner error pid=10]    7:      0x1000005076d - std[45037dbd1045d75b]::panicking::panic_handler::{closure#0}
+[ 5.740 test-runner error pid=10]    8:      0x10000048b09 - std[45037dbd1045d75b]::sys::backtrace::__rust_end_short_backtrace::<std[45037dbd1045d75b]::panicking::panic_handler::{closure#0}, !>
+[ 5.740 test-runner error pid=10]    9:      0x10000050ed8 - __rustc[d0c72ce299f394e5]::rust_begin_unwind
+[ 5.740 test-runner error pid=10]   10:      0x1000008e64b - core[73b405bef30eeff1]::panicking::panic_fmt
+[ 5.740 test-runner error pid=10]   11:      0x10000030434 - usbd_spare[25f03b678f4e6d82]::usbd_spare::unhanded
+[ 5.740 test-runner error pid=10]   12:      0x1000002d801 - usbd_spare[25f03b678f4e6d82]::main
+[ 5.740 test-runner error pid=10]   13:      0x10000031526 - std[45037dbd1045d75b]::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+[ 5.740 test-runner error pid=10]   14:      0x10000031e60 - std[45037dbd1045d75b]::rt::lang_start::<()>::{closure#0}
+[ 5.740 test-runner error pid=10]   15:      0x1000006aef6 - std[45037dbd1045d75b]::rt::lang_start_internal
+[ 5.740 test-runner error pid=10]   16:      0x1000002d921 - main
+[ 5.740 test-runner error pid=10]   17:      0x1000006fc13 - std[45037dbd1045d75b]::sys::pal::toyos::start_rust
+[ 5.741 test-runner error pid=10]   18:      0x1000003c18a - _start
+
+18:53:20   FAIL  usbd_refused_without_smi_filter  (6s)
+18:53:20   --- 1 guests, 1 of them not the shipping kernel, 1 kernel build(s): ["boot-actuators,test-actuators"]
+
+18:53:20 host: fastest boot 5738 ms against the reference 1424 ms — liveness ceilings paid at 4.03x
+18:53:20 host: 14 core(s); a guest wider than that waits vcpus/cores longer again
+18:53:20 failures:
+18:53:20     usbd_refused_without_smi_filter: `test_rs_usbd_spare unhanded` ended Some(101):
+
+18:53:20 test result: FAILED. 0 passed, 1 failed, 0 invalidated, 1 total (11.7s; workers: 6s building, 6s testing)
+18:53:20 [toyos] this red run's serial logs are kept at <worktree>/target/red-run-serial/toyos-tmp-30890-0
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `<worktree>/target/debug/deps/toyos_build-e32021b7d9f4399d usbd_refused_without_smi_filter` (exit status: 1)
+EXIT 1
