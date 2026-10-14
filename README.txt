@@ -59,3 +59,16 @@ b266c38de63ee30568fd66cfbf59abe233bab7a838c0d94820810ef42bb65949.
   gop_edid_scale  metalcase  GOP handle 0 of 2, panel 309x173 mm, scale 1.5   PASS
   (s1/metal-r1/judge-vg2.log: 1 passed, 0 failed, 1 boot)
 Readback: s1/metal-r1/metalcase/; runner manifest and log: s1/metal-r1/runner/. Masked as above.
+
+Merge of main e136c77fd (#926 claims by arrival, #927) at head 9a1bff55e4769b70bcd9c8223913ba678e307d1a:
+one conflict, pcidev's imports (LEND_WINDOW beside #926's Arrival). The compositor's claim is in
+#926's grammar: pci:03:80:00/1af4:1050 (QEMU's virtio-gpu enumerates as class 0380), looked up
+with endow::claim, in images/system.toml and tests/images/clipboardcase.toml.
+m2/build-only-m2.log  cargo run -- --build-only   exit 0
+m2/ci-host-m2.log     cargo run -- --ci host      exit 0, 86 steps green
+m2/guest-m2.log       cargo test --test toyos-build -- --nocapture the_compositor_drives_the_virtio_gpu
+                      usbd_drives_the_spare bar_map_again lent_device_memory_refused
+                      a_drives_row_holds_one_process_per_function   exit 0, 5/5
+The merge does not touch the framebuffer mint (kernel/src/object/device.rs, gop.rs, handle.rs
+unchanged against 1ab1d9917; kernel/src/device.rs changes only the PCI arm), so the T14
+gop_edid_scale at 1ab1d9917 stands.
