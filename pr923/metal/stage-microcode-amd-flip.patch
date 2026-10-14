@@ -1,0 +1,32 @@
+diff --git a/tests/toyos.rs b/tests/toyos.rs
+index 86f930e33..a8f949e2b 100644
+--- a/tests/toyos.rs
++++ b/tests/toyos.rs
+@@ -930,6 +930,14 @@ const METAL: &[(&str, metal::Metal)] = &[
+             judge: |b| microcode_on_metal(b[0].loader().text(), b[0].kernel().text(), b[0].cpus()?),
+         },
+     ),
++    (
++        // Staging only: the negative control, which must red on cpu0's `refused`.
++        "microcode_amd_flip",
++        metal::Metal {
++            arms: MICROCODE_AMD_FLIP,
++            judge: |b| microcode_on_metal(b[0].loader().text(), b[0].kernel().text(), b[0].cpus()?),
++        },
++    ),
+     (
+         // Two boots the suite already flashes: the device boot writes and
+         // fsyncs megabytes before its reset, and `metalcase` is the same reset
+@@ -1240,6 +1248,12 @@ const METALCASE: &[metal::Arm] = &[metal::Arm {
+     ..metal::once("metalcase", "tests/images/metalcase.toml", &[], &[])
+ }];
+ 
++const MICROCODE_AMD_FLIP: &[metal::Arm] = &[metal::Arm {
++    features: ACTUATOR_KERNEL,
++    last: Some("test_rs_ps2server_hold"),
++    ..metal::once("microcode-amd-flip", "tests/images/metalcase.toml", &["microcode-amd-flip"], &[])
++}];
++
+ /// A launcher and a declared `cat` and shell, which `process_tree`'s subtree
+ /// launches, a `toybox` row holding `roster`, which `launch_toctou` races, and
+ /// the `/apps` `app_view` launches its package from.
