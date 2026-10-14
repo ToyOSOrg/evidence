@@ -1,0 +1,537 @@
+diff --git a/kernel/pci/src/bridge.rs b/kernel/pci/src/bridge.rs
+index e22c8040d..42b517837 100644
+--- a/kernel/pci/src/bridge.rs
++++ b/kernel/pci/src/bridge.rs
+@@ -22,6 +22,39 @@ pub const PREFETCH_BASE: u64 = 0x24;
+ /// removed.
+ pub const HEADER_TYPE_BRIDGE: u8 = 1;
+ 
++/// Byte offsets of a Type 1 header's Secondary and Subordinate Bus Number
++/// registers (§<ip>, §<ip>): the bus directly below the bridge, and
++/// the highest bus number anywhere below it.
++pub const SECONDARY_BUS: u64 = 0x19;
++pub const SUBORDINATE_BUS: u64 = 0x1A;
++
++/// One bridge, as the path to a function behind it reads it.
++#[derive(Debug, Clone, Copy, PartialEq, Eq)]
++pub struct Bridge {
++    pub secondary: u8,
++    pub subordinate: u8,
++    pub memory: Option<Window>,
++    pub prefetchable: Option<Window>,
++}
++
++impl Bridge {
++    /// Whether `bus` is below this bridge, so every request for a function
++    /// on it passes through this bridge's windows.
++    pub fn leads_to(&self, bus: u8) -> bool {
++        self.secondary <= bus && bus <= self.subordinate
++    }
++
++    /// Whether this bridge forwards all of `at..end` to its secondary side
++    /// through a window a BAR of this kind may sit in (§<ip> to
++    /// §<ip>). The prefetchable window may be read ahead and its writes
++    /// merged, so only a prefetchable BAR belongs there; the memory window
++    /// takes either kind.
++    pub fn forwards(&self, at: u64, end: u64, prefetchable: bool) -> bool {
++        let holds = |window: Option<Window>| window.is_some_and(|w| w.start <= at && end <= w.end);
++        holds(self.memory) || (prefetchable && holds(self.prefetchable))
++    }
++}
++
+ /// The granularity both windows are expressed in: bits 31:20.
+ const GRANULE: u64 = 1 << 20;
+ 
+diff --git a/kernel/pci/src/placement.rs b/kernel/pci/src/placement.rs
+index 07d2c35f8..621f601b9 100644
+--- a/kernel/pci/src/placement.rs
++++ b/kernel/pci/src/placement.rs
+@@ -10,7 +10,7 @@
+ 
+ use toyos_abi::boot::RootBridgeWindow;
+ 
+-use crate::bridge::Window;
++use crate::bridge::{Bridge, Window};
+ 
+ /// Where the fixed platform devices start on a PC: the I/O APIC, the HPET and
+ /// the LAPIC window are at and above this, so a 32-bit run may not reach it.
+@@ -32,6 +32,11 @@ pub const WIDE_FLOOR: u64 = 1 << 32;
+ pub fn free_runs(taken: &mut [Window], wide: bool) -> impl Iterator<Item = Window> + '_ {
+     let (floor, ceiling) = if wide { (WIDE_FLOOR, u64::MAX) } else { (0, PLATFORM_MMIO) };
+     taken.sort_unstable_by_key(|extent| extent.start);
++    gaps(taken, floor, ceiling)
++}
++
++/// What sorted `taken` leaves free of `floor..ceiling`, lowest first.
++fn gaps(taken: &[Window], floor: u64, ceiling: u64) -> impl Iterator<Item = Window> + '_ {
+     let mut at = floor;
+     let mut rest = taken.iter();
+     core::iter::from_fn(move || {
+@@ -104,6 +109,49 @@ pub fn reserve(
+     None
+ }
+ 
++/// The lowest `span`-aligned address for a BAR on `bus` behind `bridges`,
++/// inside one of `windows` and free of `taken`, and that window's base;
++/// `None` where there is none.
++///
++/// **Only what every bridge on the path forwards is offered** (PCI-to-PCI
++/// Bridge Architecture §<ip> to §<ip>): an address outside a window of
++/// one of them is never forwarded to the function, and a read of it does not
++/// come back on real hardware. Candidates come from the windows of the bridge
++/// whose secondary bus is `bus`, of the BAR's kind, below 4 GiB for a 32-bit
++/// BAR. A run whose first such address an ancestor does not also forward is
++/// passed over unread: firmware nests a bridge's windows inside its parent's,
++/// and a machine that did not is offered nothing there.
++/// `taken` is every extent something else decodes in there: every BAR, every
++/// window cut or being tried, and the windows of every bridge not on the path.
++pub fn behind_bridges(
++    bridges: &[Bridge],
++    bus: u8,
++    prefetchable: bool,
++    wide: bool,
++    taken: &mut [Window],
++    windows: &[RootBridgeWindow],
++    span: u64,
++) -> Option<(u64, u64)> {
++    let parent = bridges.iter().find(|bridge| bridge.secondary == bus)?;
++    let reach = if wide { u64::MAX } else { WIDE_FLOOR };
++    taken.sort_unstable_by_key(|extent| extent.start);
++    let kinds = [parent.memory, if prefetchable { parent.prefetchable } else { None }];
++    let mut first: Option<(u64, u64)> = None;
++    for window in kinds.into_iter().flatten() {
++        for run in gaps(taken, window.start, window.end.min(reach)) {
++            let Some((at, base)) = offered(&run, windows, span) else { continue };
++            let routed = bridges
++                .iter()
++                .filter(|bridge| bridge.leads_to(bus))
++                .all(|bridge| bridge.forwards(at, at + span, prefetchable));
++            if routed && first.is_none_or(|(held, _)| at < held) {
++                first = Some((at, base));
++            }
++        }
++    }
++    first
++}
++
+ /// Put a reservation back.
+ ///
+ /// A run hands its addresses out upward and holds one extent, so the only one
+@@ -389,4 +437,95 @@ mod tests {
+         release(&mut runs, second, 2 * MIB);
+         assert_eq!(reserve(&mut runs, &T14_WINDOWS, 2 * MIB), Some(second));
+     }
++
++    /// The AMD bench's bus 3 behind its root port, as its boot enumerated it:
++    /// the port forwards `0xd0000000..0xd0700000` and, prefetchable,
++    /// `0xfc90000000..0xfca0200000`, and firmware packed every bus-3 BAR into
++    /// them. The loader's declaration for that root is the bench's own.
++    mod behind {
++        use super::*;
++
++        const MIB: u64 = 1024 * 1024;
++        const PORT: Bridge = Bridge {
++            secondary: 3,
++            subordinate: 3,
++            memory: Some(Window { start: 0xd000_0000, end: 0xd070_0000 }),
++            prefetchable: Some(Window { start: 0xfc_9000_0000, end: 0xfc_a020_0000 }),
++        };
++        const DECLARED: [RootBridgeWindow; 3] = [
++            RootBridgeWindow { base: 0xd000_0000, length: 0x70_0000 },
++            RootBridgeWindow { base: 0xfc_9000_0000, length: 0x1020_0000 },
++            RootBridgeWindow { base: 0x4_5020_0000, length: 0xf8_3fe0_0000 },
++        ];
++
++        fn bus_3() -> std::vec::Vec<Window> {
++            let bar = |start, bytes| Window { start, end: start + bytes };
++            std::vec![
++                bar(0xd000_0000, MIB),
++                bar(0xd010_0000, MIB),
++                bar(0xd030_0000, MIB),
++                bar(0xd040_0000, 512 * 1024),
++                bar(0xd048_0000, 256 * 1024),
++                bar(0xd04c_0000, 32 * 1024),
++                bar(0xd04c_8000, 16 * 1024),
++                bar(0xd04c_e000, 8 * 1024),
++                bar(0xfc_9000_0000, 256 * MIB),
++                bar(0xfc_a000_0000, 2 * MIB),
++            ]
++        }
++
++        /// The bench's xHCI at `03:00.4`, a 64-bit non-prefetchable BAR: no
++        /// 2 MiB of the port's memory window is free, so nothing is offered,
++        /// and in particular not `0x450200000`, which the declaration names
++        /// and the port does not forward.
++        #[test]
++        fn a_packed_bridge_window_offers_nothing_and_never_the_roots_space() {
++            assert_eq!(behind_bridges(&[PORT], 3, false, true, &mut bus_3(), &DECLARED, 2 * MIB), None);
++            assert_eq!(behind_bridges(&[PORT], 3, true, true, &mut bus_3(), &DECLARED, 2 * MIB), None);
++        }
++
++        /// The same port with 2 MiB of its memory window free: that address,
++        /// and nothing outside the window.
++        #[test]
++        fn a_free_run_inside_the_path_is_offered() {
++            let port = Bridge { memory: Some(Window { start: 0xd000_0000, end: 0xd080_0000 }), ..PORT };
++            let declared = [RootBridgeWindow { base: 0xd000_0000, length: 0x80_0000 }];
++            assert_eq!(
++                behind_bridges(&[port], 3, false, true, &mut bus_3(), &declared, 2 * MIB),
++                Some((0xd060_0000, 0xd000_0000))
++            );
++        }
++
++        /// A prefetchable BAR may sit in the prefetchable window; a
++        /// non-prefetchable one never does, and a 32-bit one never above 4 GiB.
++        #[test]
++        fn the_bars_kind_picks_the_window() {
++            let port = Bridge { memory: None, ..PORT };
++            let mut taken = [Window { start: 0xfc_9000_0000, end: 0xfc_a000_0000 }];
++            assert_eq!(
++                behind_bridges(&[port], 3, true, true, &mut taken, &DECLARED, 2 * MIB),
++                Some((0xfc_a000_0000, 0xfc_9000_0000))
++            );
++            assert_eq!(behind_bridges(&[port], 3, false, true, &mut taken, &DECLARED, 2 * MIB), None);
++            assert_eq!(behind_bridges(&[port], 3, true, false, &mut taken, &DECLARED, 2 * MIB), None);
++        }
++
++        /// Every bridge on the path has to forward the address: a port whose
++        /// window lies outside its parent's is offered nothing, and so is a
++        /// bus no bridge leads to directly or one whose bus numbers are absurd.
++        #[test]
++        fn an_address_one_bridge_on_the_path_does_not_forward_is_never_offered() {
++            let free = Window { start: 0xd000_0000, end: 0xd040_0000 };
++            let declared = [RootBridgeWindow { base: 0xd000_0000, length: 0x40_0000 }];
++            let parent = Bridge { secondary: 2, subordinate: 3, memory: Some(Window { start: 0xe000_0000, end: 0xe040_0000 }), prefetchable: None };
++            let child = Bridge { secondary: 3, subordinate: 3, memory: Some(free), prefetchable: None };
++            assert_eq!(behind_bridges(&[child], 3, false, false, &mut [], &declared, 2 * MIB), Some((0xd000_0000, 0xd000_0000)));
++            assert_eq!(behind_bridges(&[parent, child], 3, false, false, &mut [], &declared, 2 * MIB), None);
++            assert_eq!(behind_bridges(&[child], 4, false, false, &mut [], &declared, 2 * MIB), None);
++            let backwards = Bridge { secondary: 3, subordinate: 2, ..child };
++            assert!(!backwards.leads_to(3));
++            assert_eq!(behind_bridges(&[parent, backwards], 3, false, false, &mut [], &declared, 2 * MIB), None);
++        }
++    }
++
+ }
+diff --git a/kernel/src/drivers/pci.rs b/kernel/src/drivers/pci.rs
+index 750fd54ff..488e15904 100644
+--- a/kernel/src/drivers/pci.rs
++++ b/kernel/src/drivers/pci.rs
+@@ -442,17 +442,26 @@ impl PciDevice {
+     /// may hand out, and reading them costs the machine nothing — unlike
+     /// `bar_size`, which takes memory decode off for the length of its probe.
+     pub fn forwarded(&self) -> Vec<bridge::Window> {
++        self.bridge().map_or_else(Vec::new, |b| b.memory.into_iter().chain(b.prefetchable).collect())
++    }
++
++    /// This function as a bridge: the buses below it and the windows it
++    /// forwards to them, read and never probed; `None` for a function that is
++    /// not a bridge.
++    pub fn bridge(&self) -> Option<bridge::Bridge> {
+         if self.read_config_u8(HEADER_TYPE) & !MULTI_FUNCTION != bridge::HEADER_TYPE_BRIDGE {
+-            return Vec::new();
++            return None;
+         }
+-        let mut out = Vec::new();
+-        out.extend(bridge::window(self.read_config_u32(bridge::MEMORY_BASE)));
+-        out.extend(bridge::prefetch(
+-            self.read_config_u32(bridge::PREFETCH_BASE),
+-            self.read_config_u32(bridge::PREFETCH_BASE_UPPER),
+-            self.read_config_u32(bridge::PREFETCH_LIMIT_UPPER),
+-        ));
+-        out
++        Some(bridge::Bridge {
++            secondary: self.read_config_u8(bridge::SECONDARY_BUS),
++            subordinate: self.read_config_u8(bridge::SUBORDINATE_BUS),
++            memory: bridge::window(self.read_config_u32(bridge::MEMORY_BASE)),
++            prefetchable: bridge::prefetch(
++                self.read_config_u32(bridge::PREFETCH_BASE),
++                self.read_config_u32(bridge::PREFETCH_BASE_UPPER),
++                self.read_config_u32(bridge::PREFETCH_LIMIT_UPPER),
++            ),
++        })
+     }
+ 
+     pub fn capabilities(&self) -> CapabilityIter<'_> {
+diff --git a/kernel/src/pcidev/mod.rs b/kernel/src/pcidev/mod.rs
+index 23fe9220c..23fe6d5a8 100644
+--- a/kernel/src/pcidev/mod.rs
++++ b/kernel/src/pcidev/mod.rs
+@@ -33,7 +33,10 @@
+ //! window of the declaration [`Apertures`] holds: the address firmware put in
+ //! the BAR is held against those windows here, no other address is ever
+ //! offered ([`placement::reserve`]), and with no declaration held no function
+-//! is handed over.
++//! is handed over. Behind a bridge an address is offered only where every
++//! bridge on the path forwards it ([`placement::behind_bridges`]); where none
++//! of that is free the BAR stays where firmware put it and is mapped to
++//! nobody, since its page there is not its own.
+ //!
+ //! **Inside one, the function itself is the proof.** [`place_bar`] reads one
+ //! dword through the BAR where firmware put it, moves the BAR onto the
+@@ -127,7 +130,7 @@ use toyos_abi::boot::{MemoryMapEntry, RootBridgeWindow};
+ use toyos_abi::pci::{DeviceIrqRecord, PciFunctionInfo, BARS};
+ use toyos_abi::syscall::{PciId, RegWidth, SyscallError};
+ use toyos_dma::Register;
+-use toyos_pci::bridge::Window;
++use toyos_pci::bridge::{Bridge, Window};
+ use toyos_pci::{af, aperture, bar, express, msix, placement, pm, probe};
+ 
+ use crate::device::{Claim, ClaimError};
+@@ -363,6 +366,12 @@ struct Machine {
+     /// which is not the same claim as reaching the bus.
+     low: Vec<Window>,
+     high: Vec<Window>,
++    /// Every bridge on the bus, read in [`publish`]: what a function behind
++    /// one may be placed inside ([`placement::behind_bridges`]).
++    bridges: Vec<Bridge>,
++    /// Addresses behind a bridge a claim is probing right now, so a second
++    /// claim on the same bus is not offered one of them.
++    trying: Vec<Window>,
+     /// What this kernel holds of the memory the root bridges decode: the
+     /// necessary condition for any read this module issues.
+     apertures: Apertures,
+@@ -403,6 +412,8 @@ static MACHINE: Lock<Machine> = Lock::new(Machine {
+     kernel_driven: Vec::new(),
+     low: Vec::new(),
+     high: Vec::new(),
++    bridges: Vec::new(),
++    trying: Vec::new(),
+     apertures: Apertures::Unknown,
+     windows: Vec::new(),
+     resetting: Vec::new(),
+@@ -532,6 +543,7 @@ pub fn note_kernel_driver(pci: &PciDevice) {
+ /// driver mid-transfer must not meet that.
+ pub fn publish(devices: &[PciDevice], segment: u16, maps: &[MemoryMapEntry], firmware: &[RootBridgeWindow]) {
+     let mut decoded = Vec::new();
++    let bridges: Vec<Bridge> = devices.iter().filter_map(PciDevice::bridge).collect();
+     let mut taken: Vec<Window> =
+         maps.iter().map(|entry| Window { start: entry.start, end: entry.end }).collect();
+     for device in devices {
+@@ -624,6 +636,7 @@ pub fn publish(devices: &[PciDevice], segment: u16, maps: &[MemoryMapEntry], fir
+     machine.segment = segment;
+     machine.decoded = decoded;
+     machine.apertures = apertures;
++    machine.bridges = bridges;
+     machine.low = low;
+     machine.high = high;
+ }
+@@ -680,6 +693,9 @@ enum Refusal {
+     /// This machine offered the BAR no address of that width at all: no free
+     /// run holds a span-aligned one inside a window firmware declared.
+     NoRun { wide: bool },
++    /// The function is behind a bridge, and no 2 MiB the bridges on its path
++    /// forward to it is free, so the BAR stays where firmware put it.
++    NoRoutedRun(u8),
+     /// Every address this machine offered was tried and the function answered
+     /// at none of them.
+     NoPlacement { wide: bool, asked: usize },
+@@ -752,6 +768,12 @@ impl core::fmt::Display for Refusal {
+                  this bus's assigned BARs and its bridges' forwarded ranges and inside a window \
+                  firmware declared"
+             ),
++            Self::NoRoutedRun(i) => write!(
++                f,
++                "no 2 MiB the bridges above it forward is free for BAR {i}, so it stays where \
++                 firmware put it, and there it shares a 2 MiB page a process would be given \
++                 with whatever else decodes there"
++            ),
+             Self::NoPlacement { wide, asked } => write!(
+                 f,
+                 "its BAR was moved onto {asked} {}-bit address(es) inside the windows firmware \
+@@ -1014,7 +1036,8 @@ fn place_bars(
+             // is that window's loss and not the function's.
+             Err(why @ (Refusal::BarUnassigned(_)
+             | Refusal::BarUnrouted(_)
+-            | Refusal::BarReferenceEmpty(_))) => {
++            | Refusal::BarReferenceEmpty(_)
++            | Refusal::NoRoutedRun(_))) => {
+                 log!(
+                     "pcidev: PCI {:02x}:{:02x}.{} keeps BAR {index} where firmware put it and \
+                      hands it to nobody — {why}",
+@@ -1334,8 +1357,9 @@ fn probe_dword(at: u64, span: u64, offset: u64) -> u32 {
+     crate::mm::paging::map_mmio(at, span, MmioPolicy::Uncacheable).read_u32(offset)
+ }
+ 
+-/// Move BAR `index` onto a 2 MiB boundary inside a window firmware declared,
+-/// and answer where.
++/// Move BAR `index` onto a 2 MiB boundary inside a window firmware declared
++/// and, behind a bridge, inside what every bridge on its path forwards, and
++/// answer where.
+ ///
+ /// **Only an address inside a window firmware declared is ever read**, because
+ /// a load no bridge forwards does not come back on real hardware — the address
+@@ -1377,7 +1401,8 @@ fn place_bar(pci: &PciDevice, id: PciId, index: u8, size: u64, windows: &[RootBr
+     // A BAR firmware assigned no address has no such reference, and reading one
+     // at zero would take low RAM for the function's answer — so it is refused
+     // by name rather than settled against a number that is nothing's.
+-    let was = pci.memory_bar(index).map_err(|_| Refusal::BarUnplaceable(index))?.address();
++    let firmware = pci.memory_bar(index).map_err(|_| Refusal::BarUnplaceable(index))?;
++    let was = firmware.address();
+     if was == 0 {
+         return Err(Refusal::BarUnassigned(index));
+     }
+@@ -1392,17 +1417,17 @@ fn place_bar(pci: &PciDevice, id: PciId, index: u8, size: u64, windows: &[RootBr
+     }
+ 
+     let who = alloc::format!("PCI {:02x}:{:02x}.{}", pci.bus, pci.dev, pci.func);
++    let source = Source::of(pci.bus, wide, firmware.prefetchable());
+     let mut refused = [None; MAX_CANDIDATES];
+     let mut asked = 0usize;
+     while asked < MAX_CANDIDATES {
+-        let Some(candidate) = with_runs(wide, |runs| placement::reserve(runs, windows, span))
+-        else {
++        let Some(candidate) = source.take(windows, span) else {
+             break;
+         };
+-        let at = candidate.at;
++        let at = candidate.at();
+         let Ok(placed) = bar::placement(index, low, at, size) else {
+             refused[asked] = Some(candidate);
+-            give_back(wide, &refused, span);
++            give_back(&refused, span);
+             return Err(Refusal::BarUnplaceable(index));
+         };
+         pci.set_memory_decode(false);
+@@ -1416,7 +1441,7 @@ fn place_bar(pci: &PciDevice, id: PciId, index: u8, size: u64, windows: &[RootBr
+         if !matches!(pci.memory_bar(index), Ok(memory) if memory.address() == at) {
+             restore();
+             refused[asked] = Some(candidate);
+-            give_back(wide, &refused, span);
++            give_back(&refused, span);
+             return Err(Refusal::BarUnplaceable(index));
+         }
+         let after = probe_dword(at, span, reference);
+@@ -1427,7 +1452,7 @@ fn place_bar(pci: &PciDevice, id: PciId, index: u8, size: u64, windows: &[RootBr
+                 "pcidev: {who} BAR {index} ({size:#x} bytes) placed at {at:#x} — inside \
+                  firmware's mem {:#x}; its +{reference:#x} dword answers {after:#010x} there, \
+                  and answered {signature:#010x} from {was:#x}, where firmware put it",
+-                candidate.window
++                candidate.window()
+             );
+             return Ok(at);
+         }
+@@ -1441,8 +1466,84 @@ fn place_bar(pci: &PciDevice, id: PciId, index: u8, size: u64, windows: &[RootBr
+         refused[asked] = Some(candidate);
+         asked += 1;
+     }
+-    give_back(wide, &refused, span);
+-    Err(if asked == 0 { Refusal::NoRun { wide } } else { Refusal::NoPlacement { wide, asked } })
++    give_back(&refused, span);
++    Err(match (asked, source) {
++        (0, Source::Behind { .. }) => Refusal::NoRoutedRun(index),
++        (0, Source::Runs { .. }) => Refusal::NoRun { wide },
++        _ => Refusal::NoPlacement { wide, asked },
++    })
++}
++
++/// Where a BAR's candidate addresses come from: this machine's free runs for a
++/// function on a root bus, and the windows of the bridges on its path for one
++/// behind a bridge, which no root-level run lies in.
++#[derive(Clone, Copy)]
++enum Source {
++    Runs { wide: bool },
++    Behind { bus: u8, wide: bool, prefetchable: bool },
++}
++
++/// One address [`Source::take`] handed out, and where it goes back to.
++#[derive(Clone, Copy)]
++enum Candidate {
++    Run { wide: bool, reservation: placement::Reservation },
++    Behind { at: u64, window: u64 },
++}
++
++impl Candidate {
++    fn at(self) -> u64 {
++        match self {
++            Self::Run { reservation, .. } => reservation.at,
++            Self::Behind { at, .. } => at,
++        }
++    }
++
++    /// The base of the declared root window the address is inside.
++    fn window(self) -> u64 {
++        match self {
++            Self::Run { reservation, .. } => reservation.window,
++            Self::Behind { window, .. } => window,
++        }
++    }
++}
++
++impl Source {
++    fn of(bus: u8, wide: bool, prefetchable: bool) -> Self {
++        if MACHINE.lock().bridges.iter().any(|bridge| bridge.leads_to(bus)) {
++            Self::Behind { bus, wide, prefetchable }
++        } else {
++            Self::Runs { wide }
++        }
++    }
++
++    /// The next address to try, already out of reach of every other claim.
++    fn take(self, windows: &[RootBridgeWindow], span: u64) -> Option<Candidate> {
++        match self {
++            Self::Runs { wide } => with_runs(wide, |runs| placement::reserve(runs, windows, span))
++                .map(|reservation| Candidate::Run { wide, reservation }),
++            Self::Behind { bus, wide, prefetchable } => {
++                let mut machine = MACHINE.lock();
++                let mut taken: Vec<Window> = machine
++                    .decoded
++                    .iter()
++                    .map(|&(_, start, end)| Window { start, end })
++                    .chain(machine.windows.iter().map(|&(_, _, at, span)| Window { start: at, end: at + span }))
++                    .chain(machine.trying.iter().copied())
++                    .chain(
++                        machine
++                            .bridges
++                            .iter()
++                            .filter(|bridge| !bridge.leads_to(bus))
++                            .flat_map(|bridge| bridge.memory.into_iter().chain(bridge.prefetchable)),
++                    )
++                    .collect();
++                let (at, window) =
++                    placement::behind_bridges(&machine.bridges, bus, prefetchable, wide, &mut taken, windows, span)?;
++                machine.trying.push(Window { start: at, end: at + span });
++                Some(Candidate::Behind { at, window })
++            }
++        }
++    }
+ }
+ 
+ /// This machine's free runs of one width, under the lock that hands them out.
+@@ -1457,14 +1558,18 @@ fn with_runs<T>(wide: bool, f: impl FnOnce(&mut Vec<Window>) -> T) -> T {
+     f(if wide { &mut machine.high } else { &mut machine.low })
+ }
+ 
+-/// Put back every address a refused walk took, newest first: a run gives back
+-/// only the address it handed out last.
+-fn give_back(wide: bool, refused: &[Option<placement::Reservation>], span: u64) {
+-    with_runs(wide, |runs| {
+-        for candidate in refused.iter().rev().flatten() {
+-            placement::release(runs, *candidate, span);
++/// Put back every address a walk took and did not keep, newest first: a run
++/// gives back only the address it handed out last.
++fn give_back(refused: &[Option<Candidate>], span: u64) {
++    let mut machine = MACHINE.lock();
++    for candidate in refused.iter().rev().flatten() {
++        match *candidate {
++            Candidate::Run { wide, reservation } => {
++                placement::release(if wide { &mut machine.high } else { &mut machine.low }, reservation, span)
++            }
++            Candidate::Behind { at, .. } => machine.trying.retain(|tried| tried.start != at),
+         }
+-    });
++    }
+ }
+ 
+ /// Where this BAR was already put, if a claim before this one put it there.
+@@ -1500,7 +1605,9 @@ fn was_cut(pci: &PciDevice, index: u8) -> bool {
+ /// under [`with_runs`], which is what keeps a second claim from being offered
+ /// it.
+ fn cut(pci: &PciDevice, index: u8, at: u64, span: u64) {
+-    MACHINE.lock().windows.push((requester(pci), index, at, span));
++    let mut machine = MACHINE.lock();
++    machine.trying.retain(|tried| tried.start != at);
++    machine.windows.push((requester(pci), index, at, span));
+ }
+ 
+ /// Nothing else on this machine decodes inside the page that is about to be
