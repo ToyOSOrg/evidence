@@ -1,0 +1,18 @@
+# PR #922 quiet bench, head b12256569cc7639ac48a259d09eb7f9c38d057c0 (toyos-quiet-bench, pushed, tree clean).
+# Staged with `cargo test --test toyos-build -- --metal --metal-readback <dir> [--metal-host '<user>@<amd-bench>'] hda_tone hda_volume_step`
+# (hda_tone also selects hda_tone_resampled), exit 2 each (Staged); no machine was touched. Run each from <path>
+# One testcases boot per bench. Its other jobs (wake_storm_cost, wake_onto_busy, syscall_cost, spawn_cost, reclaim) open no stream.
+# AMD: replace the placeholder with the bench's account and quote the word.
+
+T14  sha256 fb1ed674159ce3094924577217d6e694b43d6a78de097bf9e6367978670ddeab
+  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check
+AMD  sha256 5a00c281660a974cbe26c5273d888b8b2ee6b8808b182facc6b8fb2b752b5f4d
+  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check --host '<user>@<amd-bench>'
+
+Judge (exit 0 green):
+  cargo test --test toyos-build -- --metal --metal-readback <path> hda_tone hda_volume_step
+  cargo test --test toyos-build -- --metal --metal-readback <path> --metal-host '<user>@<amd-bench>' hda_tone hda_volume_step
+
+Expect: all three rows GREEN and NO audible sound. Each tone job and volume_step print "master: position B of B, muted 1"
+after muting; volume_step also prints "position B-1 of B, muted 0" and then "position B of B, muted 0" between those mutes.
+A boot that is audible at all is a finding: stop and report it with the boot log.
