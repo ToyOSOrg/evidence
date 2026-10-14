@@ -1,0 +1,18 @@
+diff --git a/system/compositor/desktop/src/window.rs b/system/compositor/desktop/src/window.rs
+index b65cce8c1..c17e73ba0 100644
+--- a/system/compositor/desktop/src/window.rs
++++ b/system/compositor/desktop/src/window.rs
+@@ -203,11 +203,11 @@ impl<B> Buffers<B> {
+ 
+     /// The client presented, drawn into the buffer of `generation`.
+     pub fn presented(&mut self, generation: u32) -> Presented<B> {
+-        if generation == self.shown.0 {
++        if generation == self.shown.0 && self.given.is_none() {
+             return Presented::Shown;
+         }
+         match self.given.take() {
+-            Some(given) if given.0 == generation => {
++            Some(given) => {
+                 let old = core::mem::replace(&mut self.shown, given).1;
+                 Presented::Swapped { old, owed: core::mem::take(&mut self.owed) }
+             }

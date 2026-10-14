@@ -1,0 +1,15 @@
+diff --git a/sdk/window/src/scale.rs b/sdk/window/src/scale.rs
+index 61c9ef801..8401bf264 100644
+--- a/sdk/window/src/scale.rs
++++ b/sdk/window/src/scale.rs
+@@ -68,7 +68,9 @@ impl Scale {
+ /// `v * num / den`, rounded half away from zero, saturating at `i32`'s range:
+ /// the one rounding every conversion here makes. `den` is not zero.
+ pub const fn round_ratio(v: i32, num: u32, den: u32) -> i32 {
+-    let magnitude = (v.unsigned_abs() as u64 * num as u64 + den as u64 / 2) / den as u64;
++    let product = v.unsigned_abs() as u64 * num as u64;
++    let (q, r) = (product / den as u64, product % den as u64);
++    let magnitude = if 2 * r > den as u64 || (2 * r == den as u64 && q % 2 == 1) { q + 1 } else { q };
+     let magnitude = if magnitude > i32::MAX as u64 { i32::MAX } else { magnitude as i32 };
+     if v < 0 {
+         -magnitude

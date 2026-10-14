@@ -1,0 +1,16 @@
+diff --git a/system/compositor/desktop/src/layout.rs b/system/compositor/desktop/src/layout.rs
+index 4ce99b305..8eb5bc326 100644
+--- a/system/compositor/desktop/src/layout.rs
++++ b/system/compositor/desktop/src/layout.rs
+@@ -39,7 +39,10 @@ pub fn set_mode<C>(desk: &Desk, stack: &mut Stack<C>, idx: usize, mode: WindowMo
+ /// to give it, as [`set_mode`] says.
+ pub fn relayout<C>(from: &Desk, to: &Desk, stack: &mut Stack<C>) {
+     let (a, b) = (from.scale.wire(), to.scale.wire());
+-    let scaled = |r: Rect| Rect::corners(a.rescale(r.x0, b), a.rescale(r.y0, b), a.rescale(r.x1, b), a.rescale(r.y1, b));
++    let scaled = |r: Rect| {
++        let _ = (a, b);
++        r
++    };
+     let placed = |r: Rect| to.chrome.reflow(to.chrome.fit(scaled(r), to.screen), to.screen);
+     for idx in 0..stack.len() {
+         let win = &mut stack[idx];
