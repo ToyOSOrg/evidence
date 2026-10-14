@@ -1,0 +1,38 @@
+ToyOSOrg/ToyOS #932, crypto track stage 2: the ring comparator's tables on both benches.
+INDEX lists the pre-bench checks (host, image, QEMU, mutations, staging). Paths are masked as there;
+machine product and BIOS strings are replaced by the bench's name.
+
+Head measured: 9a318695e23a5118dfbaf7131db3c0d81979c6fd. One boot per bench of the staged cryptocase
+image (tests/images/testcases.toml; jobs ring_kat, crypto_parity, crypto_parity_unasserted, nothing else),
+run by the orchestrator on 2026-10-14:
+  the T14        image sha256 d33e8b454a68f43e088a8c1691d9761ccad9a0d18235f2f36705cd8cba5047bc
+                 Intel, CPUID.1.EAX 0x806c1; jobs ran 12.73 s -> 29.36 s of the boot (16.6 s of the 60 s list bound)
+  the AMD bench  image sha256 07985505e36e57e775ef755348f960d2842a27d8c715a0dc7b5464ff4e39a1d6
+                 AMD, CPUID.1.EAX 0x860f01; jobs ran 5.54 s -> 21.55 s (16.0 s)
+ring_kat exit 0 on both: ring's first run on ToyOS metal. crypto_instrument PASS on both; the stage 3 verdict
+(toyos_parity::Table::verdict, run here as the then-registered crypto_parity row) FAIL on both, as expected.
+
+ISA in that boot (bench-*/isa.log, the kernel's own cpu0 records): CR4.OSXSAVE set on both;
+  the T14       XCR0 0xe7: x87, SSE, AVX and AVX-512 state enabled
+  the AMD bench XCR0 0x7:  x87, SSE, AVX
+Both crates admit AVX only after CPUID.OSXSAVE and XGETBV (ring's cpuid setup; lib/crypto/src/arch/x86_64/avx2.rs),
+so their vector paths were open in this boot; which path each took is inferred from that code, not recorded.
+The ISA is therefore NOT SSE as the track issue then said: f7b497231 ("User programs use AVX to AVX-512 under
+XSAVE") had landed.
+
+bench-<b>/table.txt      the judge's table: per row ours, A, B (median ns/op), spread, ratio, verdict on the shipped
+                         [profile.toyos] build | ours and ratio of the same build with debug assertions off
+                         (decides nothing). 77 rows; ml-kem rows are ours beside RustCrypto ml-kem 0.3.2, excluded.
+bench-<b>/headline.txt   per primitive family: rows, median and worst ratio, verdict counts
+                           the T14: 68 fail, 3 remeasure (spread > 5%), 3 pass, 3 excluded
+                           the AMD bench: 73 fail, 1 pass, 3 excluded
+bench-<b>/judge.log      cargo test --test toyos-build -- --metal --metal-readback <dir> [--metal-host <bench>]
+                         crypto_instrument crypto_parity over the readback; exit 1 (crypto_parity red)
+bench-<b>/parity-lines.log  every line the three jobs printed, read off the boot's log partition: both builds'
+                         row lines, raw samples (21 per backend, ns/op) and end lines, so any row can be recomputed
+bench-<b>/isa.log        cpu0's control_regs and fpu records
+
+copybias-mac.rs/.log     throwaway, exploratory, development Mac (arm64, ARMv8 AES), not a bench: the open rows'
+                         restore copy against an open. The copy is 3-6.5% of ring's AES-128-GCM open+copy and
+                         1-1.7% of its ChaCha20-Poly1305 open+copy; removing it raises ours/ring by up to ~7% (AES-GCM)
+                         and ~2% (ChaCha20-Poly1305). A recorded bias toward 1 for stage 3; not measured on a bench.
