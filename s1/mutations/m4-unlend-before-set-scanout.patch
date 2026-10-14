@@ -1,0 +1,13 @@
+--- a/system/compositor/virtio-gpu/src/lib.rs
++++ b/system/compositor/virtio-gpu/src/lib.rs
+@@ -390,6 +390,10 @@
+         let whole = Rect::whole(new.mode.0, new.mode.1);
+         self.transfer(new.id, whole, new.mode.0)?;
+         self.settle()?;
++        if let Some(old) = self.scanout.take() {
++            self.unref(old.id)?;
++            self.claim.unlend(old.backing);
++        }
+         let mut set = [0; 6];
+         set[..4].copy_from_slice(&whole.words());
+         set[4..].copy_from_slice(&[SCANOUT, new.id]);

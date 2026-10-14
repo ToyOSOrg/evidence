@@ -1,0 +1,12 @@
+--- a/system/compositor/virtio-gpu/src/lib.rs
++++ b/system/compositor/virtio-gpu/src/lib.rs
+@@ -523,7 +523,8 @@
+         let fence = self.next_fence;
+         self.next_fence += 1;
+         let at = CONTROL_SLOT_AT + slot * CONTROL_SLOT_BYTES;
+-        let words = wire::header(command, FLAG_FENCE, fence).into_iter().chain(payload.iter().copied());
++        let flags = if command == Command::ResourceUnref { 0 } else { FLAG_FENCE };
++        let words = wire::header(command, flags, fence).into_iter().chain(payload.iter().copied());
+         let mut bytes = 0;
+         for (nth, word) in words.enumerate() {
+             self.mem.write32(at + 4 * nth, word);

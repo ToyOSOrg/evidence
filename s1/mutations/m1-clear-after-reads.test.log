@@ -1,0 +1,45 @@
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.25s
+     Running unittests src/lib.rs (target/debug/deps/toyos_virtio_gpu-09511d92f864d850)
+
+running 18 tests
+test tests::a_disabled_scanout_has_no_preferred_size_and_no_edid_is_asked_without_the_feature ... ok
+test tests::a_device_that_never_answers_is_refused_by_the_command_it_owes ... ok
+test tests::a_full_cursor_queue_waits_for_a_slot ... ok
+test tests::a_cursor_answer_is_read_only_at_a_headers_length ... ok
+test tests::a_flip_unlends_the_old_backing_only_after_set_scanout_and_its_unref ... ok
+test tests::a_lend_refused_declines_the_mode_before_the_device_hears_of_it ... ok
+test tests::a_present_transfers_every_rectangle_before_it_flushes_any ... ok
+test tests::a_present_wider_than_the_queue_waits_for_slots ... ok
+test tests::an_answer_shorter_than_its_structure_is_refused ... ok
+test tests::an_answer_without_the_fence_or_with_another_id_is_refused ... ok
+test tests::a_rectangle_outside_the_scanout_is_the_callers_mistake - should panic ... ok
+test tests::an_event_raised_while_a_frames_transfer_is_awaited_is_read_on_the_next_pass ... ok
+test tests::an_event_raised_during_the_reads_is_seen_on_the_next_wake ... FAILED
+test tests::any_other_error_answer_is_refused_by_name ... ok
+test tests::every_control_command_is_fenced_with_its_own_id ... ok
+test tests::out_of_memory_at_each_step_keeps_the_old_mode ... ok
+test tests::the_cursor_is_filled_and_fenced_before_it_is_shown ... ok
+test tests::the_output_is_read_after_the_events_are_cleared ... FAILED
+
+failures:
+
+---- tests::an_event_raised_during_the_reads_is_seen_on_the_next_wake stdout ----
+
+thread 'tests::an_event_raised_during_the_reads_is_seen_on_the_next_wake' (22508277) panicked at system/compositor/virtio-gpu/src/tests.rs:469:5:
+the event raised between the clear and the reads was lost
+
+---- tests::the_output_is_read_after_the_events_are_cleared stdout ----
+
+thread 'tests::the_output_is_read_after_the_events_are_cleared' (22508283) panicked at system/compositor/virtio-gpu/src/tests.rs:439:5:
+assertion `left == right` failed
+  left: [Command(256, 0), Command(266, 0), EventsRead, EventsClear(1)]
+ right: [EventsRead, EventsClear(1), Command(256, 0), Command(266, 0)]
+
+
+failures:
+    tests::an_event_raised_during_the_reads_is_seen_on_the_next_wake
+    tests::the_output_is_read_after_the_events_are_cleared
+
+test result: FAILED. 16 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-virtio-gpu --lib`
