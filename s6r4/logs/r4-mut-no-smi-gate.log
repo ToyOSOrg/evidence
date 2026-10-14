@@ -1,0 +1,65 @@
+2a47a6d8f3ae63ea4d048c5f85153457937ac03c
+mutation r4-no-smi-gate.patch applied
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.37s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-dce944c2c20572de)
+
+11:20:25 running 1 tests, 12 wide
+
+11:20:25   RUN   usbd_refused_without_smi_filter
+11:20:25   BUILD x86_64 usbd_spare of tests/guest/rust-tests, for usbd_refused_without_smi_filter
+11:20:28   BUILT x86_64 usbd_spare of tests/guest/rust-tests, for usbd_refused_without_smi_filter  (3s)
+11:20:28   BUILD x86_64 kernel boot-actuators,test-actuators, loader, ROOT of tests/images/testcases.toml, for usbd_refused_without_smi_filter
+11:20:41 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+11:20:41   BUILT x86_64 kernel boot-actuators,test-actuators, loader, ROOT of tests/images/testcases.toml, for usbd_refused_without_smi_filter  (14s)
+11:20:54 FAIL usbd_refused_without_smi_filter: `test_rs_usbd_spare unhanded` ended Some(101):
+[11.796 cpu1 kernel] spawn: /system/bin/test_rs_usbd_spare pid=10 (layout=1ms tls=7ms total=9ms)
+[11.809 cpu1 kernel] iommu: domain6 root=0xe1b000 mode=4 addresses from 0x10000000000 to 0x1000000000000
+[11.816 cpu1 kernel] iommu: amdvi irte source=00:10.0 vector=0x42 p=1 dst=0x0 delivers=0x42
+[11.818 cpu1 kernel] PCI 00:10.0: msi address=0xfee00000 data=0x00000042
+[11.819 cpu1 kernel] mmio: 0xc000010000+0x4000 PAT Uncacheable (MTRR UC (MTRRs disabled))
+[11.820 cpu1 kernel] mmio: 0xc000600000+0x200000 PAT Uncacheable (MTRR UC (MTRRs disabled))
+[11.820 cpu1 kernel] pcidev: PCI 00:10.0 BAR 0 (0x4000 bytes) placed at 0xc000600000 — inside firmware's mem 0xc000100000; its +0x0 dword answers 0x01000040 there, and answered 0x01000040 from 0xc000010000, where firmware put it
+[11.821 cpu1 kernel] iommu: 00:10.0 moves to domain6
+[11.821 cpu1 kernel] pcidev: PCI 00:10.0 [1b36:000d] handed over, vector 0x42
+[11.824 test-runner error pid=10] 
+[11.825 test-runner error pid=10] thread 'main' (1) panicked at src/bin/../usbd_spare.rs:285:18:
+[11.825 test-runner error pid=10] usbd_spare: the claim on pci:1b36:000d was granted, on a machine that would not hand it over
+[11.825 test-runner error pid=10] stack backtrace:
+[11.877 cpu1 kernel] iommu: amdvi irte source=00:10.0 vector=0x42 p=0 released
+[11.878 cpu1 kernel] pcidev: PCI 00:10.0 [1b36:000d] released; reset by nothing (Express: no function level reset advertised; AF: no capability; PM: no capability), so where it may still be aimed is kept for its next claim
+[11.884 cpu1 kernel] exit: test_rs_usbd_spare pid=10 code=101 cpu=87ms peak=4MB allocs=3 frees=0 syscalls=44 syscall_wall=39ms 1=2 6=1 9=2 10=7 13=2 14=3 21=1 50=1 51=1 63=2 72=1 73=1 91=2 99=2 102=4 105=4 106=5 111=3
+[11.868 test-runner error pid=10]    0:      0x10000087160 - _Unwind_Backtrace
+[11.870 test-runner error pid=10]    1:      0x1000006f963 - <<std[4ad1d524f21a220d]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[73b405bef30eeff1]::fmt::Display>::fmt
+[11.870 test-runner error pid=10]    2:      0x1000008b667 - core[73b405bef30eeff1]::fmt::write
+[11.870 test-runner error pid=10]    3:      0x100000738ab - <std[4ad1d524f21a220d]::sys::stdio::toyos::Stderr as core[73b405bef30eeff1]::io::write::Write>::write_fmt
+[11.870 test-runner error pid=10]    4:      0x1000004e563 - std[4ad1d524f21a220d]::panicking::default_hook::{closure#0}
+[11.871 test-runner error pid=10]    5:      0x1000006946e - std[4ad1d524f21a220d]::panicking::default_hook
+[11.871 test-runner error pid=10]    6:      0x10000069629 - std[4ad1d524f21a220d]::panicking::panic_with_hook
+[11.871 test-runner error pid=10]    7:      0x1000004e61d - std[4ad1d524f21a220d]::panicking::panic_handler::{closure#0}
+[11.871 test-runner error pid=10]    8:      0x100000469b9 - std[4ad1d524f21a220d]::sys::backtrace::__rust_end_short_backtrace::<std[4ad1d524f21a220d]::panicking::panic_handler::{closure#0}, !>
+[11.871 test-runner error pid=10]    9:      0x1000004ed88 - __rustc[d0c72ce299f394e5]::rust_begin_unwind
+[11.871 test-runner error pid=10]   10:      0x1000008bd8b - core[73b405bef30eeff1]::panicking::panic_fmt
+[11.871 test-runner error pid=10]   11:      0x1000002fddc - usbd_spare[5dbeabd7641d86bc]::usbd_spare::unhanded
+[11.871 test-runner error pid=10]   12:      0x10000035121 - usbd_spare[5dbeabd7641d86bc]::main
+[11.871 test-runner error pid=10]   13:      0x1000002cc86 - std[4ad1d524f21a220d]::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+[11.872 test-runner error pid=10]   14:      0x10000035260 - std[4ad1d524f21a220d]::rt::lang_start::<()>::{closure#0}
+[11.872 test-runner error pid=10]   15:      0x10000068916 - std[4ad1d524f21a220d]::rt::lang_start_internal
+[11.872 test-runner error pid=10]   16:      0x10000035241 - main
+[11.872 test-runner error pid=10]   17:      0x1000006d633 - std[4ad1d524f21a220d]::sys::pal::toyos::start_rust
+[11.874 test-runner error pid=10]   18:      0x1000003a0d2 - _start
+
+11:20:54   FAIL  usbd_refused_without_smi_filter  (13s)
+11:20:54   --- 1 guests, 1 of them not the shipping kernel, 1 kernel build(s): ["boot-actuators,test-actuators"]
+
+11:20:54 host: fastest boot 11820 ms against the reference 1424 ms — liveness ceilings paid at 8.00x
+11:20:54 host: 14 core(s); a guest wider than that waits vcpus/cores longer again
+11:20:54 failures:
+11:20:54     usbd_refused_without_smi_filter: `test_rs_usbd_spare unhanded` ended Some(101):
+
+11:20:54 test result: FAILED. 0 passed, 1 failed, 0 invalidated, 1 total (29.5s; workers: 17s building, 13s testing)
+11:20:54 [toyos] this red run's serial logs are kept at <worktree>/target/red-run-serial/toyos-tmp-5173-0
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `<worktree>/target/debug/deps/toyos_build-dce944c2c20572de usbd_refused_without_smi_filter` (exit status: 1)
+EXIT 1

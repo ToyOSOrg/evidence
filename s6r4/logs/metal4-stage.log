@@ -1,0 +1,43 @@
+2a47a6d8f3ae63ea4d048c5f85153457937ac03c
+       0
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.72s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-dce944c2c20572de)
+11:21:05   BUILD x86_64 binaries of tests/guest/rust-tests
+11:21:09 external deps changed: cleaning <worktree>/tests/guest/rust-tests/tls-dlopen-lib/target/x86_64-unknown-toyos
+11:21:09 external deps changed: cleaning <worktree>/tests/guest/rust-tests/tls-lib/target/x86_64-unknown-toyos
+11:21:09 external deps changed: cleaning <worktree>/tests/guest/rust-tests/tls-multi-crate/target/x86_64-unknown-toyos
+11:21:09 external deps changed: cleaning <worktree>/tests/guest/rust-tests/tls-cranelift/target/x86_64-unknown-toyos
+11:24:26   BUILT x86_64 binaries of tests/guest/rust-tests  (200s)
+11:24:26 [toyos] Compiling 138 C tests, and attempting 24 declared ones...
+11:24:37 [metal] 4 registration(s) and 0 shared member(s) over 3 boot(s)
+11:24:37   BUILD x86_64 kernel, loader, ROOT of <scratchpad>/agents/amdvi-s6/metal4/testcases/system-7825bf189afd61c4.toml
+11:24:47 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+11:24:48   BUILT x86_64 kernel, loader, ROOT of <scratchpad>/agents/amdvi-s6/metal4/testcases/system-7825bf189afd61c4.toml  (11s)
+11:24:48 [metal] testcases: 8 job(s) under a list bound of 60000 ms, armed with [] and a boot deadline of 120000 ms — <scratchpad>/agents/amdvi-s6/metal4/testcases/image.img
+11:24:48   BUILD x86_64 kernel boot-actuators,test-actuators, ROOT of <scratchpad>/agents/amdvi-s6/metal4/testcases-amd-no-remap/system-d04c5ff191ccdf8e.toml
+11:25:03 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+11:25:03   BUILT x86_64 kernel boot-actuators,test-actuators, ROOT of <scratchpad>/agents/amdvi-s6/metal4/testcases-amd-no-remap/system-d04c5ff191ccdf8e.toml  (15s)
+11:25:03 [metal] testcases-amd-no-remap: 1 job(s) under a list bound of 60000 ms, armed with ["iommu-no-remap", "xhci-leave=03:00.4"] and a boot deadline of 120000 ms — <scratchpad>/agents/amdvi-s6/metal4/testcases-amd-no-remap/image.img
+11:25:03   BUILD x86_64 ROOT of <scratchpad>/agents/amdvi-s6/metal4/testcases-amd-xhci-leave/system-bcd4d554320d1166.toml
+11:25:07 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+11:25:07   BUILT x86_64 ROOT of <scratchpad>/agents/amdvi-s6/metal4/testcases-amd-xhci-leave/system-bcd4d554320d1166.toml  (4s)
+11:25:07 [metal] testcases-amd-xhci-leave: 4 job(s) under a list bound of 60000 ms, armed with ["xhci-leave=03:00.4"] and a boot deadline of 120000 ms — <scratchpad>/agents/amdvi-s6/metal4/testcases-amd-xhci-leave/image.img
+# One boot per image. Each invocation is `cargo <words>` from this worktree.
+
+testcases
+  image: <scratchpad>/agents/amdvi-s6/metal4/testcases/image.img
+  cargo run -p toyos-metal -- --image <scratchpad>/agents/amdvi-s6/metal4/testcases/image.img --readback <scratchpad>/agents/amdvi-s6/metal4/testcases --fat32-check
+
+testcases-amd-no-remap
+  image: <scratchpad>/agents/amdvi-s6/metal4/testcases-amd-no-remap/image.img
+  cargo run -p toyos-metal -- --image <scratchpad>/agents/amdvi-s6/metal4/testcases-amd-no-remap/image.img --readback <scratchpad>/agents/amdvi-s6/metal4/testcases-amd-no-remap --fat32-check
+
+testcases-amd-xhci-leave
+  image: <scratchpad>/agents/amdvi-s6/metal4/testcases-amd-xhci-leave/image.img
+  cargo run -p toyos-metal -- --image <scratchpad>/agents/amdvi-s6/metal4/testcases-amd-xhci-leave/image.img --readback <scratchpad>/agents/amdvi-s6/metal4/testcases-amd-xhci-leave --fat32-check
+11:25:07 [metal] staged 3 image(s); <scratchpad>/agents/amdvi-s6/metal4/request.txt lists them. The machine was not touched, so this run establishes nothing about it.
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `<worktree>/target/debug/deps/toyos_build-dce944c2c20572de --metal --metal-readback <scratchpad>/agents/amdvi-s6/metal4 amdvi_usbd_drives_its_own_entry amdvi_claim_refused_without_remapping amdvi_remaps_the_stick_controller amdvi_translates_the_stick_controller` (exit status: 2)
+EXIT 2

@@ -1,0 +1,52 @@
+2a47a6d8f3ae63ea4d048c5f85153457937ac03c
+mutation r4-no-smi-gate.patch applied
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.64s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-dce944c2c20572de)
+
+11:20:07 running 1 tests, 12 wide
+
+11:20:07   RUN   usbd_refused_without_smi_filter
+11:20:07   BUILD x86_64 usbd_spare of tests/guest/rust-tests, for usbd_refused_without_smi_filter
+11:20:12   BUILT x86_64 usbd_spare of tests/guest/rust-tests, for usbd_refused_without_smi_filter  (5s)
+11:20:12   BUILD x86_64 kernel boot-actuators,test-actuators, loader, ROOT of tests/images/testcases.toml, for usbd_refused_without_smi_filter
+error: function `smi_filtered_everywhere` is never used
+  --> kernel/src/arch/x86_64/amdvi/interrupt.rs:54:8
+   |
+54 | pub fn smi_filtered_everywhere() -> bool {
+   |        ^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `-D dead-code` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[expect(dead_code)]` or `#[allow(dead_code)]`
+
+error: variant `SmiUnfiltered` is never constructed
+   --> kernel/src/iommu/mod.rs:328:5
+    |
+323 | pub enum NotRemapped {
+    |          ----------- variant in this enum
+...
+328 |     SmiUnfiltered,
+    |     ^^^^^^^^^^^^^
+    |
+    = note: `NotRemapped` has a derived impl for the trait `Clone`, but this is intentionally ignored during dead code analysis
+
+error: could not compile `kernel` (bin "kernel") due to 2 previous errors
+
+thread '<unnamed>' (21357455) panicked at build/build.rs:446:9:
+cargo build failed in <worktree>
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+11:20:17   FAIL  x86_64 kernel boot-actuators,test-actuators, loader, ROOT of tests/images/testcases.toml, for usbd_refused_without_smi_filter  (5s)
+11:20:17 FAIL usbd_refused_without_smi_filter: cargo build failed in <worktree>
+11:20:17   FAIL  usbd_refused_without_smi_filter  (2ms)
+11:20:17   --- 1 guests, 1 of them not the shipping kernel, 1 kernel build(s): ["boot-actuators,test-actuators"]
+
+11:20:17 host: 14 core(s); a guest wider than that waits vcpus/cores longer again
+11:20:17 failures:
+11:20:17     usbd_refused_without_smi_filter: cargo build failed in <worktree>
+
+11:20:17 test result: FAILED. 0 passed, 1 failed, 0 invalidated, 1 total (10.5s; workers: 10s building, 2ms testing)
+11:20:17 [toyos] this red run's serial logs are kept at <worktree>/target/red-run-serial/toyos-tmp-3412-0
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `<worktree>/target/debug/deps/toyos_build-dce944c2c20572de usbd_refused_without_smi_filter` (exit status: 1)
+EXIT 1
