@@ -34,3 +34,14 @@ AMD bench, s1/metal/amd/judge-vga.log: 2 passed, 0 failed, 2 boots
   leak_rollback_selftest  shared-debug device-mint PASS (refused=true installed=0)        PASS
 Readbacks: s1/metal/{t14,amd}/{metalcase,shared-debug}/ (boot.txt, verdict.txt, kernel.log,
 loader.log, the image's system toml). Runner manifests and logs: s1/metal/runner/m925-{t14,amd}.{txt,log}.
+
+Review round 1, head 1ab1d9917088c4bfeab285242c93b30914263d26 (main 2c3f61a3e, unchanged):
+r2/build-only-r2.log  cargo run -- --build-only                                exit 0
+r2/guest-r2.log       cargo test --test toyos-build -- --nocapture the_compositor_drives_the_virtio_gpu
+                      the_opening_exchange_with_qemus_agent_completes screen_fatal_halt_composited   exit 0, 3/3
+r2/ci-host-r2.log     cargo run -- --ci host                                   exit 0, 83 steps green
+toyos-virtio-gpu's lib.rs is unchanged since 883e496f7, so the m1..m5 controls stand; the guest row
+and the boots whose argv or kernel changed were rerun. No bench rerun: gop_edid_scale's image
+differs only by the deleted actuator and the compositor's refusal path, neither on its row's path,
+and the leak_rollback_selftest row is deleted, its earlier PASS having proved nothing (a one-handle
+mint into a full table passes with or without the rollback it was written to catch).
