@@ -1,0 +1,8 @@
+m1-lowest-from-guaranteed     kernel/pure/cpu.rs  let lowest = (capabilities >> 24) & 0xff;  =>  let lowest = (capabilities >> 8) & 0xff;
+m2-t14-model-dropped          kernel/pure/cpu.rs  0x8e, 0x9e, 0x66, 0xa5, 0xa6, 0x7e, 0x8c, 0x8d,  =>  0x8e, 0x9e, 0x66, 0xa5, 0xa6, 0x7e, 0x00, 0x8d,
+m3-milan-not-named            kernel/pure/xsave.rs  Vendor::Amd => (0x17..=0x19).contains(&id.family),  =>  Vendor::Amd => (0x17..=0x18).contains(&id.family),
+m4-aperf-any-vendor           kernel/pure/cpu.rs  let documented = matches!(facts.vendor, Vendor::Intel | Vendor::Amd);  =>  let documented = true;
+m5-smi-any-vendor             kernel/pure/cpu.rs  id.vendor == Vendor::Intel && id.family == 6 && SMI_COUNT_MODELS  =>  id.family == 6 && SMI_COUNT_MODELS
+m6-epp-bit-moved              kernel/pure/cpu.rs  const CPUID_6_EAX_HWP_EPP: u32 = 1 << 10;  =>  const CPUID_6_EAX_HWP_EPP: u32 = 1 << 9;
+m7-guest-counts-smis          kernel/pure/cpu.rs  && facts.cpuid_1_ecx & CPUID_1_ECX_HYPERVISOR == 0,  =>  ,
+m8-genoa-not-cleared          kernel/pure/xsave.rs  (0x17, 0x08, 0x2), (0x19, 0x11, 0x1)];  =>  (0x17, 0x08, 0x2), (0x17, 0x08, 0x2)];

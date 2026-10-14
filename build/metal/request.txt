@@ -1,0 +1,54 @@
+# PR #915, the build: base against head, the T14 and the AMD bench. Nothing here has touched a machine.
+#
+# Trees (both clean; keep them until every arm is judged):
+#   HEAD  <home>/Dev/jan/toyos-cpufacts       wt/toyos-cpufacts 49f786c180d1de3051ba6982c38c344e08e4815c (pushed)
+#   BASE  <home>/Dev/jan/toyos-cpufacts-base  detached 3ba4a4a2fc2495224d53d7918973f25a3344f304 = origin/main, the merge base:
+#         the whole change reverted, the negative control for the whole change.
+# Staged by <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/cpufacts/metal/stage.sh (output stage.out, every arm exit 2 = Verdict::Staged); each <arm>/request.txt is the
+# harness's own. Each arm is its own directory, so judging one never rebuilds another. Run each toyos-metal line as
+# `cargo <words>` from the tree its arm names; the AMD lines carry the harness's placeholder: substitute the bench
+# for '<user>@<amd-bench>' and quote it.
+#
+# The T14's shared-debug boots: the run word `counters` also takes the shared member `counters_silent`
+# (tests/common/metal.rs `select` matches by substring), which rides shared-debug; no word names the counters row
+# alone. It is one boot per arm, and it judges SYS_COUNTERS' stale path, which this change does not touch.
+
+######## T14 — one session, 4 boots ########
+ 1. BASE testcases     sha256 4965093c2c70145589b0385711df320d1abfb27cc517c6adbb5a9cab7abdf2b4    tree BASE
+    cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/cpufacts/metal/base-t14/testcases/image.img --readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/cpufacts/metal/base-t14/testcases --fat32-check
+ 2. BASE shared-debug  sha256 9e9660acbbbf9dd51c8c3ffef9346ce2d758dbb2b824a764772f4f01d7306a97    tree BASE
+    cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/cpufacts/metal/base-t14/shared-debug/image.img --readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/cpufacts/metal/base-t14/shared-debug --fat32-check
+ 3. HEAD testcases     sha256 04626b37666808cac52ca8643e5a1f0bbe1645db57f0674e2061fbc2c5a7f810    tree HEAD
+    cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/cpufacts/metal/head-t14/testcases/image.img --readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/cpufacts/metal/head-t14/testcases --fat32-check
+ 4. HEAD shared-debug  sha256 8e162de3245719518603f70faba8f94d87c57fd76825f9a4c93747f4e76904ce    tree HEAD
+    cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/cpufacts/metal/head-t14/shared-debug/image.img --readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/cpufacts/metal/head-t14/shared-debug --fat32-check
+Judge (exit 0 green, 1 red), each from its own tree:
+    BASE: cargo test --test toyos-build -- --metal --metal-readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/cpufacts/metal/base-t14 control_regs counters syscall_cost spawn_cost wake_storm_cost wake_onto_busy timer_calibration smp_roster_and_tsc_trail
+    HEAD: cargo test --test toyos-build -- --metal --metal-readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/cpufacts/metal/head-t14 control_regs counters syscall_cost spawn_cost wake_storm_cost wake_onto_busy timer_calibration smp_roster_and_tsc_trail
+
+######## AMD bench (Ryzen 7 4800U) — one session, 2 boots ########
+ 1. BASE testcases     sha256 1b515a8d4b652036e8e046eaa38ee2a5ca43e211869270a1f33596db47827beb    tree BASE
+    cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/cpufacts/metal/base-amd/testcases/image.img --readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/cpufacts/metal/base-amd/testcases --fat32-check --host '<user>@<amd-bench>'
+ 2. HEAD testcases     sha256 b2d1978349ff3aed8f2197dd170cc17b0cd77c8431fb1291d72a09a1b8dc4a6a    tree HEAD
+    cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/cpufacts/metal/head-amd/testcases/image.img --readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/cpufacts/metal/head-amd/testcases --fat32-check --host '<user>@<amd-bench>'
+Judge, each from its own tree:
+    BASE: cargo test --test toyos-build -- --metal --metal-readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/cpufacts/metal/base-amd --metal-host '<user>@<amd-bench>' control_regs syscall_cost spawn_cost wake_storm_cost wake_onto_busy timer_calibration
+    HEAD: cargo test --test toyos-build -- --metal --metal-readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/cpufacts/metal/head-amd --metal-host '<user>@<amd-bench>' control_regs syscall_cost spawn_cost wake_storm_cost wake_onto_busy timer_calibration
+
+######## What each arm should show (fixed before the run) ########
+T14, every CPU's `control_regs: cpuN pm_enable=1 …` line:
+    BASE  hwp_request=0x80002a04 epb=6, and a platform_info= field
+    HEAD  hwp_request=0x80002a01 epb=7, and no platform_info= field; hwp_request_pkg=0x8000ff01 on both
+    both  every judge above GREEN; `counters: cpuN reads smi=true aperf=true mperf=true …` on every CPU; save=xsaves
+AMD bench:
+    both  "control_regs: no performance request is declared: no HWP (CPUID.6:EAX[7])" (BASE) /
+          "… no HWP (CPUID.06H:EAX[7])" (HEAD); save=xsavec on every CPU; `counters: cpuN reads smi=false aperf=true
+          mperf=true …`; microcode "Amd signature 0x860f01 loads nothing: ToyOS has no Amd microcode loader"
+    both  every judge above GREEN
+A HEAD line that differs from BASE anywhere else in these fields is a finding for me.
+
+######## Reported side by side (the T14's change, minimum hint 4 -> 1 and EPB 6 -> 7, answers to these) ########
+For BASE and HEAD on each bench: every row's verdict; syscall_cost's and spawn_cost's printed numbers;
+wake_storm_cost's and wake_onto_busy's printed figures; on the T14, counters_on_metal's spin MHz against its held
+floor, each CPU's idle busy, and each CPU's kick lateness under `loaded`. Read, not judged against each other: one
+session per bench, base first.
