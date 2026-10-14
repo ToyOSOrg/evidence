@@ -1,0 +1,1758 @@
+diff --git a/build/build.rs b/build/build.rs
+index 98feaa26e..92557de4a 100644
+--- a/build/build.rs
++++ b/build/build.rs
+@@ -2673,6 +2673,8 @@ mod tests {
+         "default",
+         "flaws",
+         "loom",
++        // MEASUREMENT ONLY, never lands: netstack's cycle counts, no control.
++        "prof",
+         "rustc-dep-of-std",
+         "sign",
+         "std",
+@@ -3030,12 +3032,15 @@ mod tests {
+         "images/console.toml",
+         "tests/images/acpicase.toml",
+         "tests/images/clipboardcase.toml",
++        "tests/images/downloadcase.toml",
+         "tests/images/hostedclangcase.toml",
+         "tests/images/jobcase.toml",
+         "tests/images/latencycase.toml",
+         "tests/images/metalcase.toml",
+         "tests/images/metaldevicecase.toml",
+         "tests/images/netcase.toml",
++        // MEASUREMENT ONLY, never lands: `netperf_qemu`'s.
++        "tests/images/netperfcase.toml",
+         "tests/images/panelcase.toml",
+         "tests/images/proctreecase.toml",
+         "tests/images/testcases.toml",
+diff --git a/issues/acpi-hold-gives-up-at-a-time-counted-from-boot-whatever-its-runner-was-given.md b/issues/acpi-hold-gives-up-at-a-time-counted-from-boot-whatever-its-runner-was-given.md
+index fcf26f898..f60dc335b 100644
+--- a/issues/acpi-hold-gives-up-at-a-time-counted-from-boot-whatever-its-runner-was-given.md
++++ b/issues/acpi-hold-gives-up-at-a-time-counted-from-boot-whatever-its-runner-was-given.md
+@@ -36,5 +36,5 @@ The harness: `tests/guest/rust-tests/src/bin/acpi_hold.rs`, and
+ ## Exit
+ 
+ The hold is bounded from its own start, or by the bound its runner was given,
+-and a job added before it cannot red `acpi_server_events` over a line the log
++which the runner hands each job of a list in `toyos_tco::LIST_BOUND_ENV`, and a job added before it cannot red `acpi_server_events` over a line the log
+ holds.
+diff --git a/issues/the-host-cannot-reach-the-t14-while-it-runs-toyos.md b/issues/the-host-cannot-reach-the-t14-while-it-runs-toyos.md
+index e3b1b50b0..40af40e6a 100644
+--- a/issues/the-host-cannot-reach-the-t14-while-it-runs-toyos.md
++++ b/issues/the-host-cannot-reach-the-t14-while-it-runs-toyos.md
+@@ -4,7 +4,7 @@ kind: tooling
+ opened: 2026-10-08
+ ---
+ 
+-# The host cannot reach the T14 while it runs ToyOS, and no T14 row reads its wired card
++# The host cannot reach the T14 while it runs ToyOS
+ 
+ The development host reaches the T14 only while it runs Ubuntu. Under ToyOS no
+ connection the host opens to it arrives, so every row whose boot the host had
+@@ -64,11 +64,12 @@ tree holds a boot open on that event.
+ 
+ ## What stands in the meantime
+ 
+-No T14 row reads netstack on the I219, and none reads a message the card
++One T14 row reads netstack on the I219, `internet_download`, which judges one
++HTTPS download and no count of the card's; none reads a message the card
+ raised. `claim_reuses_its_remapping_entry` claims the function and gives it
+ back twice and takes no traffic. So the calls #763 moved onto a claim's
+-binding — the I219's interrupt records, its polls and its DMA grants, driven
+-at rate — have not been read on real hardware since they landed; under QEMU
++binding — the I219's interrupt records, its polls and its DMA grants — have
++carried that download on real hardware and been read by nothing else; under QEMU
+ `iommu_virtio_platform` and the suite's network tests drive the same `pcidev`
+ functions through virtio-net's claim.
+ 
+diff --git a/issues/the-lan-is-not-yet-production-grade.md b/issues/the-lan-is-not-yet-production-grade.md
+index 40b956a0d..a86ebc0c2 100644
+--- a/issues/the-lan-is-not-yet-production-grade.md
++++ b/issues/the-lan-is-not-yet-production-grade.md
+@@ -87,7 +87,8 @@ of real traffic with no error, leak or stall.
+ ## Standing
+ 
+ The bench tests that prove each exit run in the T14 suite on every change to
+-the path, not once. Today none does: no T14 row reads the wired card
++the path, not once. Today none does: the one T14 row that reads the wired
++card, `internet_download`, judges none of these exits
+ (`issues/the-host-cannot-reach-the-t14-while-it-runs-toyos.md`). The bench itself stays honest: the boot stick's first
+ command still sometimes goes unanswered on the USB2 half of its receptacle
+ (runs 84, 103, 104, 105), and everything above rests on the record it carries.
+diff --git a/kernel/src/arch/x86_64/idt/kick.rs b/kernel/src/arch/x86_64/idt/kick.rs
+index 0afa1e258..5336a141b 100644
+--- a/kernel/src/arch/x86_64/idt/kick.rs
++++ b/kernel/src/arch/x86_64/idt/kick.rs
+@@ -1,11 +1,13 @@
+ use super::device_irq::device_irq_entry;
+ 
+ extern "sysv64" fn kick_handler() {
++    let t0 = crate::counters::soft::now();
+     crate::arch::percpu::irq_took!(Kick);
+     crate::counters::serve_here();
+     crate::arch::smi_cmd::serve_here();
+     crate::preempt::set_need_resched();
+     crate::arch::apic::eoi();
++    crate::counters::soft::since(toyos_abi::counters::Counter::IrqCycles, t0);
+ }
+ 
+ device_irq_entry! {
+diff --git a/kernel/src/arch/x86_64/idt/timer.rs b/kernel/src/arch/x86_64/idt/timer.rs
+index 89f72eab2..21a7e0abe 100644
+--- a/kernel/src/arch/x86_64/idt/timer.rs
++++ b/kernel/src/arch/x86_64/idt/timer.rs
+@@ -87,6 +87,7 @@ extern "sysv64" fn ring0_tick(pc: u64) {
+ }
+ 
+ extern "sysv64" fn timer_handler() {
++    let t0 = crate::counters::soft::now();
+     // From Ring 3, so interrupts were open; `exit_to_user` opens them again.
+     #[cfg(feature = "mask-windows")]
+     {
+@@ -111,6 +112,7 @@ extern "sysv64" fn timer_handler() {
+         kind: TraceKind::TimerFire,
+     });
+     crate::arch::apic::eoi();
++    crate::counters::soft::since(toyos_abi::counters::Counter::IrqCycles, t0);
+ 
+     // The handler ends here: the pass that follows is the interrupted thread's.
+     #[cfg(feature = "mask-windows")]
+diff --git a/kernel/src/arch/x86_64/idt/user_dev.rs b/kernel/src/arch/x86_64/idt/user_dev.rs
+index ceea39e8e..88be95340 100644
+--- a/kernel/src/arch/x86_64/idt/user_dev.rs
++++ b/kernel/src/arch/x86_64/idt/user_dev.rs
+@@ -85,6 +85,7 @@ extern "sysv64" fn stubs() {
+ }
+ 
+ extern "sysv64" fn took(number: u64) {
++    let t0 = crate::counters::soft::now();
+     match HELD.owner(number as usize) {
+         Some(function) => {
+             crate::arch::percpu::irq_took!(UserDev);
+@@ -96,6 +97,7 @@ extern "sysv64" fn took(number: u64) {
+         None => super::unclaimed::count(FIRST + number as u8),
+     }
+     crate::arch::apic::eoi();
++    crate::counters::soft::since(toyos_abi::counters::Counter::IrqCycles, t0);
+ }
+ 
+ device_irq_entry! {
+diff --git a/kernel/src/counters.rs b/kernel/src/counters.rs
+index 6017190b9..9af96a37d 100644
+--- a/kernel/src/counters.rs
++++ b/kernel/src/counters.rs
+@@ -123,6 +123,20 @@ fn sample(me: usize) -> [u64; WORDS] {
+             Counter::EnergyPerfBias => hardware.envelope.as_ref().map(|e| e.energy_perf_bias),
+             Counter::FirmwareCalls => hardware.firmware.as_ref().map(|f| f.calls),
+             Counter::FirmwareNanos => hardware.firmware.as_ref().map(|f| f.nanos),
++            Counter::Switches
++            | Counter::Syscalls
++            | Counter::IdleExits
++            | Counter::IdleExitCycles
++            | Counter::IrqCycles
++            | Counter::InboxFires
++            | Counter::InboxLooks
++            | Counter::InboxRearms
++            | Counter::PipeLockSpinCycles
++            | Counter::PipeLockHoldCycles
++            | Counter::PipeCopyBytes
++            | Counter::PipeLockTakes
++            | Counter::PipeReadCopyCycles
++            | Counter::PipeWriteCopyCycles => Some(soft::get(me, counter)),
+         };
+         if let Some(value) = value {
+             words[1] |= 1 << counter as usize;
+@@ -212,6 +226,67 @@ fn record(cpu: usize, generation: Generation, rights: Rights) -> Record {
+     }
+ }
+ 
++/// MEASUREMENT ONLY: the kernel's own work, counted per CPU by software.
++pub mod soft {
++    use core::sync::atomic::{AtomicU64, Ordering::Relaxed};
++
++    use toyos_abi::counters::Counter;
++
++    use crate::arch::percpu;
++    use crate::scheduler::MAX_CPUS;
++
++    const FIRST: usize = Counter::Switches as usize;
++    const N: usize = Counter::COUNT - FIRST;
++
++    #[repr(align(64))]
++    struct Block {
++        counts: [AtomicU64; N],
++        /// The stamp the idle loop's last halt returned at, zero once spent.
++        woke: AtomicU64,
++    }
++
++    static BLOCKS: [Block; MAX_CPUS] =
++        [const { Block { counts: [const { AtomicU64::new(0) }; N], woke: AtomicU64::new(0) } }; MAX_CPUS];
++
++    fn here() -> &'static Block {
++        &BLOCKS[percpu::cpu_id() as usize]
++    }
++
++    #[inline]
++    pub fn now() -> u64 {
++        crate::arch::cpu::counter()
++    }
++
++    #[inline]
++    pub fn add(counter: Counter, n: u64) {
++        here().counts[counter as usize - FIRST].fetch_add(n, Relaxed);
++    }
++
++    /// Stamp ticks since `since`, added to `counter`.
++    #[inline]
++    pub fn since(counter: Counter, since: u64) {
++        add(counter, now().wrapping_sub(since));
++    }
++
++    pub(super) fn get(cpu: usize, counter: Counter) -> u64 {
++        BLOCKS[cpu].counts[counter as usize - FIRST].load(Relaxed)
++    }
++
++    /// The idle loop's halt returned.
++    pub fn woke() {
++        add(Counter::IdleExits, 1);
++        here().woke.store(now(), Relaxed);
++    }
++
++    /// The CPU left the idle loop's wake for a switch or another halt.
++    pub fn idle_left() {
++        let woke = here().woke.swap(0, Relaxed);
++        if woke != 0 {
++            since(Counter::IdleExitCycles, woke);
++        }
++    }
++}
++
+ /// `SYS_DEBUG`'s staging of a CPU that answers no round.
+ #[cfg(feature = "test-actuators")]
+ pub mod deaf {
+diff --git a/kernel/src/hw.rs b/kernel/src/hw.rs
+index 674c48b70..459fe6c42 100644
+--- a/kernel/src/hw.rs
++++ b/kernel/src/hw.rs
+@@ -84,7 +84,9 @@ impl Machine for KernelHw {
+         }
+         #[cfg(feature = "mask-windows")]
+         crate::windows::halting();
++        crate::counters::soft::idle_left();
+         self.halt();
++        crate::counters::soft::woke();
+         #[cfg(feature = "mask-windows")]
+         crate::windows::woken();
+         // **A CPU that is executing has a one-shot armed, and this is where
+@@ -116,6 +118,8 @@ static RUNNING_CTX: [AtomicU64; crate::sched::MAX_CPUS] =
+ 
+ /// This CPU is about to stand on `ctx`: `Hw::switch`'s last word before the stack moves.
+ pub(crate) fn note_running(ctx: *const KernelCtx) {
++    crate::counters::soft::add(toyos_abi::counters::Counter::Switches, 1);
++    crate::counters::soft::idle_left();
+     RUNNING_CTX[percpu::cpu_id() as usize].store(ctx as u64, Relaxed);
+ }
+ 
+diff --git a/kernel/src/inbox/mod.rs b/kernel/src/inbox/mod.rs
+index d542b06e5..a963ec430 100644
+--- a/kernel/src/inbox/mod.rs
++++ b/kernel/src/inbox/mod.rs
+@@ -171,7 +171,10 @@ pub struct PollEntry {
+ impl Ring for PollEntry {
+     fn fire(&self, how: Fire) {
+         match how {
+-            Fire::Ready => self.poll.fire(self.direction.raw()),
++            Fire::Ready => {
++                crate::counters::soft::add(toyos_abi::counters::Counter::InboxFires, 1);
++                self.poll.fire(self.direction.raw())
++            }
+             Fire::Gone => self.poll.end(),
+         }
+     }
+@@ -615,6 +618,7 @@ impl Submitter<Arc<Inbox>> for Arc<Inbox> {
+     }
+ 
+     fn look(&self, poll: &Arc<Poll>) -> Look {
++        crate::counters::soft::add(toyos_abi::counters::Counter::InboxLooks, 1);
+         let object = match resolve(poll.handle) {
+             Ok(object) => object,
+             // Closed since it was watched, which is no bug of the process's:
+@@ -635,6 +639,7 @@ impl Submitter<Arc<Inbox>> for Arc<Inbox> {
+         if now.any() {
+             return Look::Ready(now.result_flags());
+         }
++        crate::counters::soft::add(toyos_abi::counters::Counter::InboxRearms, 1);
+         let again = Poll::new(self.clone(), poll.user_data, poll.handle, poll.flags);
+         match arm(self, again, Some(poll), &object) {
+             Ok(()) => Look::Waits,
+diff --git a/kernel/src/pipe.rs b/kernel/src/pipe.rs
+index 396c50dcf..e46d1e9af 100644
+--- a/kernel/src/pipe.rs
++++ b/kernel/src/pipe.rs
+@@ -178,13 +178,29 @@ impl Pipe {
+ static PIPES: Lock<Option<IdMap<PipeId, Pipe>>> = Lock::new(None);
+ 
+ fn with_pipes<R>(f: impl FnOnce(&IdMap<PipeId, Pipe>) -> R) -> R {
++    use crate::counters::soft;
++    use toyos_abi::counters::Counter;
++    let t0 = soft::now();
+     let guard = PIPES.lock();
+-    f(guard.as_ref().expect("pipes not initialized"))
++    let t1 = soft::now();
++    soft::add(Counter::PipeLockSpinCycles, t1.wrapping_sub(t0));
++    soft::add(Counter::PipeLockTakes, 1);
++    let r = f(guard.as_ref().expect("pipes not initialized"));
++    soft::since(Counter::PipeLockHoldCycles, t1);
++    r
+ }
+ 
+ fn with_pipes_mut<R>(f: impl FnOnce(&mut IdMap<PipeId, Pipe>) -> R) -> R {
++    use crate::counters::soft;
++    use toyos_abi::counters::Counter;
++    let t0 = soft::now();
+     let mut guard = PIPES.lock();
+-    f(guard.as_mut().expect("pipes not initialized"))
++    let t1 = soft::now();
++    soft::add(Counter::PipeLockSpinCycles, t1.wrapping_sub(t0));
++    soft::add(Counter::PipeLockTakes, 1);
++    let r = f(guard.as_mut().expect("pipes not initialized"));
++    soft::since(Counter::PipeLockHoldCycles, t1);
++    r
+ }
+ 
+ pub fn init() {
+@@ -221,7 +237,13 @@ pub fn try_read(pipe_id: PipeId, buf: &mut UserBytesMut) -> Option<usize> {
+                 .as_mut()
+                 .expect("available() > 0 implies a ring")
+                 .ring
+-                .read(len, |off, src| buf.write_run(off, &src));
++                .read(len, |off, src| {
++                    let t = crate::counters::soft::now();
++                    let r = buf.write_run(off, &src);
++                    crate::counters::soft::since(toyos_abi::counters::Counter::PipeReadCopyCycles, t);
++                    r
++                });
++            crate::counters::soft::add(toyos_abi::counters::Counter::PipeCopyBytes, n as u64);
+             let boost = pipe.rt_boost_pending;
+             pipe.rt_boost_pending = false;
+             (Some(n), boost)
+@@ -255,7 +277,14 @@ pub fn try_write(pipe_id: PipeId, buf: &UserBytes) -> Option<PipeWrite> {
+             return Some(PipeWrite::NoMemory);
+         };
+         if backing.ring.space() > 0 {
+-            Some(PipeWrite::Wrote(backing.ring.write(buf.len(), |off, mut dst| buf.read_run(off, &mut dst))))
++            let n = backing.ring.write(buf.len(), |off, mut dst| {
++                let t = crate::counters::soft::now();
++                let r = buf.read_run(off, &mut dst);
++                crate::counters::soft::since(toyos_abi::counters::Counter::PipeWriteCopyCycles, t);
++                r
++            });
++            crate::counters::soft::add(toyos_abi::counters::Counter::PipeCopyBytes, n as u64);
++            Some(PipeWrite::Wrote(n))
+         } else {
+             None
+         }
+diff --git a/kernel/src/process.rs b/kernel/src/process.rs
+index 0b317cf1c..534b3a7bb 100644
+--- a/kernel/src/process.rs
++++ b/kernel/src/process.rs
+@@ -739,7 +739,12 @@ pub fn stats_of(
+     if let Some(stats) = object.final_stats() {
+         return Some(stats);
+     }
+-    let pid = object.pid();
++    stats_of_live(object.pid())
++}
++
++/// MEASUREMENT ONLY: accounting for a live process by its pid, the caller's own
++/// for `SYS_PROCESS_STATS` on [`toyos_abi::syscall::SELF_PROCESS`].
++pub fn stats_of_live(pid: Pid) -> Option<toyos_abi::syscall::ProcessStats> {
+     // The other two locks are taken after this one is dropped, so no ordering edge.
+     let (data_arc, cpu_ns, threads) = {
+         let guard = PROCESS_TABLE.lock();
+diff --git a/kernel/src/syscall/dispatch.rs b/kernel/src/syscall/dispatch.rs
+index 3a41a78b3..40b66b75a 100644
+--- a/kernel/src/syscall/dispatch.rs
++++ b/kernel/src/syscall/dispatch.rs
+@@ -77,6 +77,7 @@ pub(crate) fn syscall_dispatch(num: u64, a1: u64, a2: u64, a3: u64, a4: u64) ->
+     #[cfg(feature = "boot-actuators")]
+     task_probes();
+     let t0 = crate::clock::nanos_since_boot();
++    crate::counters::soft::add(toyos_abi::counters::Counter::Syscalls, 1);
+ 
+     process::with_current_data(|data| {
+         data.syscall_total += 1;
+diff --git a/kernel/src/syscall/proc.rs b/kernel/src/syscall/proc.rs
+index 3251510ea..dd52d1e56 100644
+--- a/kernel/src/syscall/proc.rs
++++ b/kernel/src/syscall/proc.rs
+@@ -202,6 +202,16 @@ pub(super) fn sys_process_stats(
+     h: RawHandle,
+     out: UserAddr,
+ ) -> u64 {
++    // MEASUREMENT ONLY: the caller's own accounting, by a handle no table holds.
++    if h == toyos_abi::syscall::SELF_PROCESS {
++        let Some(stats) = process::stats_of_live(process::current_process()) else {
++            return SyscallError::NotFound.to_u64();
++        };
++        return match ctx.copy_out(out, &stats) {
++            Ok(()) => 0,
++            Err(e) => e.to_u64(),
++        };
++    }
+     let object = match process::with_process_data(|data| {
+         data.handles.get::<crate::object::process::ProcessObject>(h, Rights::READ)
+     }) {
+diff --git a/lib/inspect/src/kernel.rs b/lib/inspect/src/kernel.rs
+index 646fecaff..250fc8435 100644
+--- a/lib/inspect/src/kernel.rs
++++ b/lib/inspect/src/kernel.rs
+@@ -59,7 +59,9 @@ mod tests {
+     use super::*;
+     use crate::check_path;
+ 
+-    fn record(cpu: u32, stale: bool, values: [Option<u64>; Counter::COUNT]) -> Record {
++    fn record(cpu: u32, stale: bool, first: [Option<u64>; 10]) -> Record {
++        let mut values = [None; Counter::COUNT];
++        values[..10].copy_from_slice(&first);
+         Record { cpu, hardware_id: cpu * 2, stale, values }
+     }
+ 
+@@ -67,7 +69,9 @@ mod tests {
+     /// calls on the boot processor, which makes them.
+     fn whole(cpu: u32) -> Record {
+         let (calls, nanos) = if cpu == 0 { (Some(1), Some(15_968)) } else { (None, None) };
+-        record(cpu, false, [Some(10), Some(4817), Some(100), Some(200), Some(3), Some(0x8000_2a04), Some(0x8000_ff01), Some(6), calls, nanos])
++        let mut r = record(cpu, false, [Some(10), Some(4817), Some(100), Some(200), Some(3), Some(0x8000_2a04), Some(0x8000_ff01), Some(6), calls, nanos]);
++        r.values[10..].fill(Some(1));
++        r
+     }
+ 
+     #[test]
+@@ -97,7 +101,9 @@ mod tests {
+     /// whose answer was not read says that alone.
+     #[test]
+     fn a_stale_cpu_says_so_and_an_unread_one_says_only_that() {
+-        let got = render(&[record(1, true, whole(1).values), record(2, true, [None; Counter::COUNT])]).unwrap();
++        let mut first = [None; 10];
++        first.copy_from_slice(&whole(1).values[..10]);
++        let got = render(&[record(1, true, first), record(2, true, [None; 10])]).unwrap();
+         assert_eq!(got["kernel.cpu.1.stale"], Value::Bool(true));
+         assert_eq!(got["kernel.cpu.1.mperf"], Value::U64(200));
+         assert_eq!(got.keys().filter(|p| p.starts_with("kernel.cpu.2.")).count(), 1);
+diff --git a/lib/tco/src/lib.rs b/lib/tco/src/lib.rs
+index d0b6e9c0a..b5c039a7d 100644
+--- a/lib/tco/src/lib.rs
++++ b/lib/tco/src/lib.rs
+@@ -126,11 +126,22 @@ pub const fn list_bound_ms(members_ms: u64) -> u64 {
+     JOB_BOUND_MS + members_ms
+ }
+ 
++/// The environment variable the test runner sets on each job of a list to the
++/// bound it gave that list, in milliseconds from boot: what a job that must
++/// end its own work inside the list reads.
++pub const LIST_BOUND_ENV: &str = "TOYOS_LIST_BOUND_MS";
++
+ /// The bound netstack gives this machine's first DHCP lease before it says it has
+ /// none and serves anyway, in milliseconds. The harness waits it out on a wire
+ /// with no server, so the two read one declaration.
+ pub const LEASE_BOUND_MS: u64 = 20_000;
+ 
++/// What netstack's line on a lease it took opens with, and its line on
++/// [`LEASE_BOUND_MS`] passing with none: netstack says them, and the harness
++/// and the jobs that wait on its lease read them.
++pub const LEASE_SAID: &str = "netstack: DHCP: lease ";
++pub const NO_LEASE_SAID: &str = "netstack: DHCP: no lease as ";
++
+ /// The bound a panicked kernel holds its panel for before it returns the
+ /// machine to firmware itself, in milliseconds. A minute is this project's
+ /// bound for every watchdog.
+diff --git a/sdk/abi/src/counters.rs b/sdk/abi/src/counters.rs
+index d9526c30a..686d189bf 100644
+--- a/sdk/abi/src/counters.rs
++++ b/sdk/abi/src/counters.rs
+@@ -50,10 +50,39 @@ pub enum Counter {
+     /// its return: the firmware's handler, where a write raises an interrupt
+     /// to it.
+     FirmwareNanos,
++    /// MEASUREMENT ONLY, the kernel's own work on this CPU, counted by software:
++    /// context switches onto any context, idle included.
++    Switches,
++    /// Syscalls entered.
++    Syscalls,
++    /// Halts the idle loop came back from.
++    IdleExits,
++    /// Stamp ticks from each halt's return to the next switch or halt.
++    IdleExitCycles,
++    /// Stamp ticks inside the timer, kick and claimed-device handlers.
++    IrqCycles,
++    /// Posts that reached an inbox poll.
++    InboxFires,
++    /// Looks an inbox's submitter took at a fired poll.
++    InboxLooks,
++    /// Polls a look found nothing for and armed again.
++    InboxRearms,
++    /// Stamp ticks spent taking the pipe table's lock.
++    PipeLockSpinCycles,
++    /// Stamp ticks the pipe table's lock was held.
++    PipeLockHoldCycles,
++    /// Bytes pipe reads and writes copied.
++    PipeCopyBytes,
++    /// Takes of the pipe table's lock.
++    PipeLockTakes,
++    /// Stamp ticks of a pipe read's copy out of the ring, under the lock.
++    PipeReadCopyCycles,
++    /// Stamp ticks of a pipe write's copy into the ring, under the lock.
++    PipeWriteCopyCycles,
+ }
+ 
+ impl Counter {
+-    pub const COUNT: usize = 10;
++    pub const COUNT: usize = 24;
+     pub const ALL: [Counter; Self::COUNT] = [
+         Self::Stamp,
+         Self::Smi,
+@@ -65,6 +94,20 @@ impl Counter {
+         Self::EnergyPerfBias,
+         Self::FirmwareCalls,
+         Self::FirmwareNanos,
++        Self::Switches,
++        Self::Syscalls,
++        Self::IdleExits,
++        Self::IdleExitCycles,
++        Self::IrqCycles,
++        Self::InboxFires,
++        Self::InboxLooks,
++        Self::InboxRearms,
++        Self::PipeLockSpinCycles,
++        Self::PipeLockHoldCycles,
++        Self::PipeCopyBytes,
++        Self::PipeLockTakes,
++        Self::PipeReadCopyCycles,
++        Self::PipeWriteCopyCycles,
+     ];
+ 
+     pub const fn name(self) -> &'static str {
+@@ -79,6 +122,20 @@ impl Counter {
+             Self::EnergyPerfBias => "energy_perf_bias",
+             Self::FirmwareCalls => "firmware_calls",
+             Self::FirmwareNanos => "firmware_nanos",
++            Self::Switches => "switches",
++            Self::Syscalls => "syscalls",
++            Self::IdleExits => "idle_exits",
++            Self::IdleExitCycles => "idle_exit_cycles",
++            Self::IrqCycles => "irq_cycles",
++            Self::InboxFires => "inbox_fires",
++            Self::InboxLooks => "inbox_looks",
++            Self::InboxRearms => "inbox_rearms",
++            Self::PipeLockSpinCycles => "pipe_lock_spin_cycles",
++            Self::PipeLockHoldCycles => "pipe_lock_hold_cycles",
++            Self::PipeCopyBytes => "pipe_copy_bytes",
++            Self::PipeLockTakes => "pipe_lock_takes",
++            Self::PipeReadCopyCycles => "pipe_read_copy_cycles",
++            Self::PipeWriteCopyCycles => "pipe_write_copy_cycles",
+         }
+     }
+ 
+@@ -91,7 +148,21 @@ impl Counter {
+             | Self::Kicks
+             | Self::HwpRequest
+             | Self::HwpRequestPkg
+-            | Self::EnergyPerfBias => Rights::COUNTERS.union(Rights::TRACE),
++            | Self::EnergyPerfBias
++            | Self::Switches
++            | Self::Syscalls
++            | Self::IdleExits
++            | Self::IdleExitCycles
++            | Self::IrqCycles
++            | Self::InboxFires
++            | Self::InboxLooks
++            | Self::InboxRearms
++            | Self::PipeLockSpinCycles
++            | Self::PipeLockHoldCycles
++            | Self::PipeCopyBytes
++            | Self::PipeLockTakes
++            | Self::PipeReadCopyCycles
++            | Self::PipeWriteCopyCycles => Rights::COUNTERS.union(Rights::TRACE),
+         }
+     }
+ }
+@@ -186,7 +257,9 @@ impl Record {
+ mod tests {
+     use super::*;
+ 
+-    fn record(stale: bool, values: [Option<u64>; Counter::COUNT]) -> Record {
++    fn record(stale: bool, first: [Option<u64>; 10]) -> Record {
++        let mut values = [None; Counter::COUNT];
++        values[..10].copy_from_slice(&first);
+         Record { cpu: 7, hardware_id: 0x0102_0304, stale, values }
+     }
+ 
+@@ -195,7 +268,7 @@ mod tests {
+         for r in [
+             record(false, [Some(1), Some(u64::from(u32::MAX)), Some(3), Some(u64::MAX), Some(0), Some(0x8000_2a04), Some(6), Some(0), Some(2), Some(31_936)]),
+             record(true, [Some(9), None, None, None, Some(4), None, Some(0x8000_ff01), None, Some(0), None]),
+-            record(true, [None; Counter::COUNT]),
++            record(true, [None; 10]),
+         ] {
+             assert_eq!(Record::decode(&r.encode()), Ok(r));
+         }
+@@ -211,7 +284,7 @@ mod tests {
+ 
+     #[test]
+     fn a_flag_no_counter_names_is_refused() {
+-        let mut raw = record(false, [Some(1); Counter::COUNT]).encode();
++        let mut raw = record(false, [Some(1); 10]).encode();
+         raw.0[8] |= 1 << 1;
+         assert_eq!(Record::decode(&raw), Err(Undecodable::Flags(1 << 1)));
+         let mut raw = RawRecord::EMPTY;
+diff --git a/sdk/abi/src/syscall.rs b/sdk/abi/src/syscall.rs
+index d5b500cfc..6be8d5845 100644
+--- a/sdk/abi/src/syscall.rs
++++ b/sdk/abi/src/syscall.rs
+@@ -2666,6 +2666,9 @@ crate::user_safe! {
+     }
+ }
+ 
++/// MEASUREMENT ONLY: the handle [`process_stats`] reads as the caller itself.
++pub const SELF_PROCESS: RawHandle = RawHandle(u32::MAX);
++
+ /// Read accounting for the process a `Process` handle names, alive or exited.
+ ///
+ /// Repeatable: the numbers are the object's, so sampling one does not spend it.
+diff --git a/tests/guest/rust-tests/Cargo.lock b/tests/guest/rust-tests/Cargo.lock
+index 45a830bbb..f9b1efa78 100644
+--- a/tests/guest/rust-tests/Cargo.lock
++++ b/tests/guest/rust-tests/Cargo.lock
+@@ -34,6 +34,12 @@ version = "1.5.1"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "f2032f911046de80f0a198e0901378627c33f59ea0ac00e363d481118bd70a53"
+ 
++[[package]]
++name = "base64"
++version = "0.23.1"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "ac07cdecf99051d9a5238b80f35af32cdeba5b336e55d957b318b50137e18da5"
++
+ [[package]]
+ name = "bitflags"
+ version = "2.13.1"
+@@ -201,6 +207,22 @@ version = "0.17.1"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "ed5909b6e89a2db4456e54cd5f673791d7eca6732202bbf2a9cc504fe2f9b84a"
+ 
++[[package]]
++name = "http"
++version = "1.5.0"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "918d3568bebf352712bc2ef3d46a8bcf1a75b373be6539de198e9105cbbf9ce0"
++dependencies = [
++ "bytes",
++ "itoa",
++]
++
++[[package]]
++name = "httparse"
++version = "1.10.1"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "6dbf3de79e51f3d586ab4cb9d5c3e2c14aa28ed23d180cf89b4df0454a69cc87"
++
+ [[package]]
+ name = "indexmap"
+ version = "2.14.0"
+@@ -211,6 +233,12 @@ dependencies = [
+  "hashbrown",
+ ]
+ 
++[[package]]
++name = "itoa"
++version = "1.0.18"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "8f42a60cbdf9a97f5d2305f08a87dc4e09308d1276d28c869c684d7777685682"
++
+ [[package]]
+ name = "jni"
+ version = "0.22.4"
+@@ -497,6 +525,12 @@ version = "1.21.4"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "9f7c3e4beb33f85d45ae3e3a1792185706c8e16d043238c593331cc7cd313b50"
+ 
++[[package]]
++name = "percent-encoding"
++version = "2.3.2"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "9b4f627cb1b25917193a259e49bdad08f671f8d9708acfd5fe0a8c1455d87220"
++
+ [[package]]
+ name = "pin-project-lite"
+ version = "0.2.17"
+@@ -558,6 +592,41 @@ dependencies = [
+  "semver",
+ ]
+ 
++[[package]]
++name = "rustls"
++version = "0.23.45"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "0d41d731c7d2f962d1ccc364cec258de3c0e93b38c2fb3ba97ac74513048d634"
++dependencies = [
++ "log",
++ "once_cell",
++ "ring",
++ "rustls-pki-types",
++ "rustls-webpki",
++ "subtle",
++ "zeroize",
++]
++
++[[package]]
++name = "rustls-pki-types"
++version = "1.15.1"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "2f4925028c7eb5d1fcdaf196971378ed9d2c1c4efc7dc5d011256f76c99c0a96"
++dependencies = [
++ "zeroize",
++]
++
++[[package]]
++name = "rustls-webpki"
++version = "0.103.15"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "f3c3cf1d8b1e7d4927e2d154c3fcb02979afb9939629c62cd9048d4f07b60ac2"
++dependencies = [
++ "ring",
++ "rustls-pki-types",
++ "untrusted",
++]
++
+ [[package]]
+ name = "rustversion"
+ version = "1.0.23"
+@@ -627,6 +696,12 @@ version = "0.4.12"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "0c790de23124f9ab44544d7ac05d60440adc586479ce501c1d6d7da3cd8c9cf5"
+ 
++[[package]]
++name = "subtle"
++version = "2.6.1"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "13c2bddecc57b384dee18652358fb23172facb8a2c51ccc10d74c157bdea3292"
++
+ [[package]]
+ name = "syn"
+ version = "2.0.119"
+@@ -792,6 +867,7 @@ dependencies = [
+  "logkeeper-api",
+  "memmap2",
+  "ring",
++ "rustls",
+  "toyos",
+  "toyos-abi",
+  "toyos-device-memory",
+@@ -803,6 +879,7 @@ dependencies = [
+  "toyos-tco",
+  "toyos-trace",
+  "toyos-window",
++ "ureq",
+ ]
+ 
+ [[package]]
+@@ -857,6 +934,40 @@ version = "0.9.0"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "8ecb6da28b8a351d773b68d5825ac39017e680750f980f3a1a85cd8dd28a47c1"
+ 
++[[package]]
++name = "ureq"
++version = "3.4.2"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "9a7ac20be9b7726e0bbdbf974c059676d9acb1cd414961f570a4e8231cacd7fc"
++dependencies = [
++ "base64",
++ "log",
++ "percent-encoding",
++ "rustls",
++ "rustls-pki-types",
++ "ureq-proto",
++ "utf8-zero",
++ "webpki-roots",
++]
++
++[[package]]
++name = "ureq-proto"
++version = "0.6.4"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "f86fd172ccca569e458f61b6bdd6220965a9ef36e672a6852953b51a0e1583be"
++dependencies = [
++ "base64",
++ "http",
++ "httparse",
++ "log",
++]
++
++[[package]]
++name = "utf8-zero"
++version = "0.8.1"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "b8c0a043c9540bae7c578c88f91dda8bd82e59ae27c21baca69c8b191aaf5a6e"
++
+ [[package]]
+ name = "walkdir"
+ version = "2.5.0"
+@@ -928,6 +1039,15 @@ dependencies = [
+  "wasm-bindgen",
+ ]
+ 
++[[package]]
++name = "webpki-roots"
++version = "1.0.9"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "7dcd9d09a39985f5344844e66b0c530a33843579125f23e21e9f0f220850f22a"
++dependencies = [
++ "rustls-pki-types",
++]
++
+ [[package]]
+ name = "winapi-util"
+ version = "0.1.11"
+@@ -1137,3 +1257,9 @@ checksum = "23b97319f7b8343df12cc98938e5c3eb436064524c8d2b4e30a1d3a36eecdf81"
+ dependencies = [
+  "memchr",
+ ]
++
++[[package]]
++name = "zeroize"
++version = "1.9.1"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "e13084392c5e4bc371903e2935a5eaeed24905a7511356b883835e18a78f6879"
+diff --git a/tests/guest/rust-tests/Cargo.toml b/tests/guest/rust-tests/Cargo.toml
+index 749b40cc1..90f4e6f06 100644
+--- a/tests/guest/rust-tests/Cargo.toml
++++ b/tests/guest/rust-tests/Cargo.toml
+@@ -28,8 +28,11 @@ toyos-pci = { path = "../../../kernel/pci" }
+ libloading = { git = "https://github.com/ToyOSOrg/rust_libloading", branch = "toyos-sdk-0.12" }
+ cpal = { git = "https://github.com/ToyOSOrg/cpal", branch = "toyos-0.18.0" }
+ memmap2 = "0.9"
+-# `ring`'s primitives, for `ring_kat`'s known answers.
++# MEASUREMENT ONLY: `https_download`'s client, `ureq` on `rustls`, and `ring`'s
++# primitives, for `ring_kat`'s known answers.
+ ring = "0.17"
++ureq = { version = "3", default-features = false, features = ["rustls"] }
++rustls = { version = "0.23", default-features = false }
+ 
+ # Outside the workspace, so it needs its own redirects: the forks
+ # above depend on ToyOS crates by version, and only a patch maps those to the
+diff --git a/tests/guest/rust-tests/src/bin/https_download.rs b/tests/guest/rust-tests/src/bin/https_download.rs
+new file mode 100644
+index 000000000..49d036a8c
+--- /dev/null
++++ b/tests/guest/rust-tests/src/bin/https_download.rs
+@@ -0,0 +1,330 @@
++//! How fast this machine downloads over HTTPS through ToyOS's own stack: one
++//! large public file ([`HOST`], [`PATH`]) with the client `https_get` builds,
++//! every byte hashed. The `internet_download` metal row runs it, holds a whole
++//! body to the file's pin and reports the rate, never judging it.
++//!
++//! It runs only in a job list, and its window is the bound the runner gave
++//! that list (`toyos_tco::LIST_BOUND_ENV`) less [`MARGIN_MS`]. Inside it, it
++//! waits for netstack's lease on the `log` port, since on the T14 it is the
++//! boot's first job; times [`PROBES`] TCP handshakes to the file's host; and
++//! reads the body until it ends or the window closes.
++//!
++//! It says one line and ends 0: `https_download: whole bytes=<n>
++//! sha256=<hex> <timing>` for a body read to its end, or `https_download: cut
++//! bytes=<n> <timing>` for what came inside the window, and `https_download:
++//! cut before the first byte of the body` for nothing. `<timing>` is
++//! `secs=<s> mbps=<rate> rtt_ms=[<each>] busy=<fraction> cpus=[<each>]`: the
++//! time from the first read of the body to the last and the rate over the
++//! bytes after the first; each handshake's time from `connect` called to
++//! returned, which is one round trip to the host and netstack's own time for a
++//! connect; and the busy fraction each CPU's MPERF ran of its stamp across the
++//! transfer (`busy=unread` where no CPU counts MPERF). An I/O or TLS error
++//! panics.
++
++use std::net::{TcpStream, ToSocketAddrs};
++use std::sync::mpsc;
++use std::sync::{Mutex, PoisonError};
++use std::time::{Duration, Instant};
++
++use toyos::endow::{Endowments, SYSCAP_LABEL};
++use toyos::syscap::SysCap;
++use toyos_abi::counters::{Counter, RawRecord, Record};
++use toyos_abi::syscall::{self, ProcessStats, SELF_PROCESS};
++use toyos_logstream::program_line;
++
++#[path = "../https_client.rs"]
++#[allow(dead_code)]
++mod https_client;
++#[path = "../netperf.rs"]
++mod netperf;
++#[path = "../netperf_table.rs"]
++#[allow(dead_code)]
++mod netperf_table;
++#[path = "../served_log.rs"]
++mod served_log;
++
++use netperf::{Machine, Snap};
++
++/// A release archive Rust's distribution server never rewrites; the row holds
++/// its length and SHA-256.
++const HOST: &str = "static.rust-lang.org";
++const PATH: &str = "/dist/2024-09-05/rust-1.81.0-x86_64-unknown-linux-gnu.tar.xz";
++const ROOTS: &str = "/system/etc/ssl/cert.pem";
++
++/// Handshakes timed before the transfer, one after another.
++const PROBES: usize = 5;
++
++/// MEASUREMENT ONLY: downloads of the file, one after another, each with the
++/// cadence's `K` netstack is told before it: a palindrome, so drift across the
++/// boot weighs every `K` alike. A netstack with no cadence refuses the word, and
++/// the label is then the run's place in the order.
++const K_ORDER: [u32; 6] = [32; 6];
++
++/// MEASUREMENT ONLY: one lookup of the file's host, timed: a round trip to
++/// the LAN's resolver, which netstack asks every time.
++fn lan_probe() -> f64 {
++    let at = Instant::now();
++    let _ = (HOST, 443).to_socket_addrs().unwrap_or_else(|e| panic!("look up {HOST}: {e}"));
++    at.elapsed().as_secs_f64() * 1e3
++}
++
++/// MEASUREMENT ONLY: min, median, 90th percentile and max of `ms`, and how many.
++fn spread(mut ms: Vec<f64>) -> String {
++    if ms.is_empty() {
++        return "none".into();
++    }
++    ms.sort_by(f64::total_cmp);
++    let at = |q: f64| ms[((ms.len() - 1) as f64 * q).round() as usize];
++    format!("{:.2}/{:.2}/{:.2}/{:.2} n={}", ms[0], at(0.5), at(0.9), ms[ms.len() - 1], ms.len())
++}
++
++/// The ceiling on netstack's word reaching this job: its own bound on saying
++/// it, and two of logkeeper's rounds at its write budget
++/// (`userland/logkeeper/src/policy.rs`, 5 s), since a served line is one the
++/// stick already holds.
++const LEASE_WAIT: Duration = Duration::from_millis(toyos_tco::LEASE_BOUND_MS + 10_000);
++
++/// What the window leaves the list's bound for the last line to reach the
++/// stick: one of logkeeper's rounds.
++const MARGIN_MS: u64 = 5_000;
++
++/// The transfer so far: its bytes, when its first read came, every CPU's
++/// counters then and how many bytes that read brought, and when its last came.
++struct Progress {
++    bytes: u64,
++    first: Option<(Instant, Vec<Record>, u64)>,
++    last: Option<Instant>,
++}
++
++/// MEASUREMENT ONLY: the idle window before anything of the job's runs.
++const IDLE_SECS: f64 = 2.0;
++
++/// MEASUREMENT ONLY: every CPU's counters summed, and this process's own
++/// accounting.
++struct Toy<'a>(&'a SysCap);
++
++impl Machine for Toy<'_> {
++    fn snap(&self) -> Snap {
++        let mut snap = Snap::new();
++        for r in round(self.0) {
++            for counter in Counter::ALL {
++                let Some(v) = r.get(counter) else { continue };
++                let key = match counter {
++                    Counter::Stamp | Counter::Aperf | Counter::Mperf => counter.name().to_string(),
++                    Counter::Smi
++                    | Counter::HwpRequest
++                    | Counter::HwpRequestPkg
++                    | Counter::EnergyPerfBias
++                    | Counter::FirmwareCalls
++                    | Counter::FirmwareNanos => continue,
++                    _ => format!("k.{}", counter.name()),
++                };
++                *snap.entry(key).or_default() += v;
++            }
++        }
++        let mut stats = ProcessStats::default();
++        syscall::process_stats(SELF_PROCESS, &mut stats).expect("the job reads its own accounting");
++        snap.insert("app.cpu_ns".into(), stats.cpu_ns);
++        snap.insert("app.syscalls".into(), stats.syscall_total);
++        snap.insert("app.syscall_ns".into(), stats.syscall_total_ns);
++        snap.insert("app.runq_ns".into(), stats.runqueue_wait_ns);
++        snap
++    }
++
++    fn tsc(&self) -> u64 {
++        // SAFETY: reads the time-stamp counter, which Ring 3 may.
++        unsafe { core::arch::x86_64::_rdtsc() }
++    }
++}
++
++fn main() {
++    // MEASUREMENT ONLY: `<url> <roots>` is the QEMU check's server, its lease
++    // already waited on and a window of ten minutes.
++    let args: Vec<String> = std::env::args().skip(1).collect();
++    let (url, roots) = match &args[..] {
++        [url, roots] => (url.clone(), roots.clone()),
++        _ => (format!("https://{HOST}{PATH}"), ROOTS.to_string()),
++    };
++    let window = if args.is_empty() {
++        let bound_ms: u64 = std::env::var(toyos_tco::LIST_BOUND_ENV)
++            .unwrap_or_else(|e| panic!("{}: {e}; this job runs only in a job list", toyos_tco::LIST_BOUND_ENV))
++            .parse()
++            .unwrap_or_else(|e| panic!("{}: {e}", toyos_tco::LIST_BOUND_ENV));
++        let since_boot_ms = toyos_abi::clock::nanos_since_boot() / 1_000_000;
++        Duration::from_millis(bound_ms.saturating_sub(MARGIN_MS).saturating_sub(since_boot_ms))
++    } else {
++        Duration::from_secs(600)
++    };
++    let cap: SysCap = Endowments::get().take(SYSCAP_LABEL).expect("test-runner endows a capability");
++    let progress = Mutex::new(Progress { bytes: 0, first: None, last: None });
++    let rtt = Mutex::new(String::from("unread"));
++    // Dropped as the body ends whole, or as this panics.
++    let (transferring, ended) = mpsc::channel::<()>();
++    std::thread::scope(|s| {
++        let (watched, rtt, cap) = (&progress, &rtt, &cap);
++        s.spawn(move || {
++            if ended.recv_timeout(window) == Err(mpsc::RecvTimeoutError::Timeout) {
++                let progress = watched.lock().unwrap_or_else(PoisonError::into_inner);
++                // The body ended whole while this waited for the lock.
++                if ended.try_recv() == Err(mpsc::TryRecvError::Disconnected) {
++                    return;
++                }
++                let rtt = rtt.lock().unwrap_or_else(PoisonError::into_inner);
++                println!("https_download: {}", report("cut", None, &progress, &rtt, cap));
++                std::process::exit(0);
++            }
++        });
++        let (host, port) = authority(&url);
++        if args.is_empty() {
++            leased();
++        }
++        *rtt.lock().unwrap_or_else(PoisonError::into_inner) = handshakes(&host, port);
++
++        // MEASUREMENT ONLY: the machine idle, the suite this client's offer
++        // gets, and what the job's own kernels cost on this CPU.
++        let machine = Toy(cap);
++        let cpus = syscall::cpu_count() as usize;
++        let idle = netperf::idle(&machine, cpus, IDLE_SECS);
++        println!("https_download: {idle}");
++        let pem = std::fs::read(&roots).unwrap_or_else(|e| panic!("read {roots}: {e}"));
++        let path = url.splitn(4, '/').nth(3).map_or("/".to_string(), |p| format!("/{p}"));
++        let suite = netperf::suite(&pem, &host, port, &path);
++        println!("https_download: {}", netperf::benches(&machine, &suite, &idle));
++
++        // MEASUREMENT ONLY: the LAN's round trip with nothing else moving.
++        let idle_lan: Vec<f64> = (0..10)
++            .map(|_| {
++                std::thread::sleep(Duration::from_millis(50));
++                lan_probe()
++            })
++            .collect();
++        println!("https_download: lan idle lan_ms={}", spread(idle_lan));
++
++        // MEASUREMENT ONLY: the file once per `K`, back to back.
++        for (index, k) in K_ORDER.into_iter().enumerate() {
++            let run = index + 1;
++            let _ = k;
++            *progress.lock().unwrap_or_else(PoisonError::into_inner) = Progress { bytes: 0, first: None, last: None };
++            let before = machine.snap();
++            let at = Instant::now();
++            // The LAN's round trip while the download moves, every 50 ms.
++            let moving = std::sync::atomic::AtomicBool::new(true);
++            let (fetched, lan) = std::thread::scope(|probes| {
++                let lan = probes.spawn(|| {
++                    let mut ms = Vec::new();
++                    while moving.load(std::sync::atomic::Ordering::Relaxed) {
++                        std::thread::sleep(Duration::from_millis(50));
++                        if progress.lock().unwrap_or_else(PoisonError::into_inner).first.is_some() {
++                            ms.push(lan_probe());
++                        }
++                    }
++                    ms
++                });
++                let fetched = netperf::fetch(https_client::config(&roots), &url, |bytes| {
++                    let mut progress = progress.lock().unwrap_or_else(PoisonError::into_inner);
++                    progress.bytes = bytes;
++                    progress.last = Some(Instant::now());
++                    if progress.first.is_none() {
++                        progress.first = Some((Instant::now(), round(cap), bytes));
++                    }
++                });
++                moving.store(false, std::sync::atomic::Ordering::Relaxed);
++                (fetched, lan.join().expect("the probe thread"))
++            });
++            let secs = at.elapsed().as_secs_f64();
++            println!("https_download: lan run={run} k={k} lan_ms={}", spread(lan));
++            let d = netperf::delta(&before, &machine.snap());
++            let progress = progress.lock().unwrap_or_else(PoisonError::into_inner);
++            let rtt = rtt.lock().unwrap_or_else(PoisonError::into_inner);
++            println!(
++                "https_download: {} tcp_ms={:.1} tls_ms={:.1} run={run} k={k}",
++                report("whole", Some(&fetched.sha256), &progress, &rtt, cap),
++                fetched.tcp_ms,
++                fetched.tls_ms
++            );
++            println!("https_download: perf run={run} k={k} bytes={} secs={secs:.3} {}", fetched.bytes, netperf::words(&d));
++        }
++        drop(transferring);
++    });
++}
++
++/// MEASUREMENT ONLY: `url`'s host and port.
++fn authority(url: &str) -> (String, u16) {
++    let rest = url.strip_prefix("https://").unwrap_or_else(|| panic!("{url} is no https URL"));
++    let authority = rest.split('/').next().unwrap_or(rest);
++    match authority.rsplit_once(':') {
++        Some((host, port)) => (host.to_string(), port.parse().unwrap_or_else(|e| panic!("{url}'s port: {e}"))),
++        None => (authority.to_string(), 443),
++    }
++}
++
++/// Wait for netstack to say it holds a lease; panics where it says it took
++/// none.
++fn leased() {
++    served_log::Log::open().until("netstack's word on its lease", LEASE_WAIT, |line| {
++        let Some(said) = program_line(line).filter(|said| said.tag == "netstack") else { return false };
++        assert!(!said.text.starts_with(toyos_tco::NO_LEASE_SAID), "{}", said.text);
++        said.text.starts_with(toyos_tco::LEASE_SAID)
++    });
++}
++
++/// [`PROBES`] handshakes with `host`'s first address, each closed as it is
++/// made, as the `rtt_ms` the module header gives.
++fn handshakes(host: &str, port: u16) -> String {
++    let addr = (host, port)
++        .to_socket_addrs()
++        .unwrap_or_else(|e| panic!("look up {host}: {e}"))
++        .next()
++        .unwrap_or_else(|| panic!("{host} has no address"));
++    let each: Vec<String> = (0..PROBES)
++        .map(|_| {
++            let at = Instant::now();
++            drop(TcpStream::connect(addr).unwrap_or_else(|e| panic!("connect to {host}: {e}")));
++            format!("{:.1}", at.elapsed().as_secs_f64() * 1e3)
++        })
++        .collect();
++    format!("[{}]", each.join(" "))
++}
++
++/// Every CPU's counters now.
++fn round(cap: &SysCap) -> Vec<Record> {
++    let mut raw = vec![RawRecord::EMPTY; syscall::cpu_count() as usize];
++    let n = cap.counters(&mut raw).expect("test-runner's capability reads the counters");
++    raw[..n].iter().map(|r| Record::decode(r).expect("a record that decodes")).collect()
++}
++
++/// `word`, then the transfer from its first byte to now in the words the
++/// module header gives them.
++fn report(word: &str, sha256: Option<&str>, progress: &Progress, rtt: &str, cap: &SysCap) -> String {
++    let (Some((at, before, first)), Some(last)) = (&progress.first, progress.last) else {
++        return format!("{word} before the first byte of the body");
++    };
++    let after = round(cap);
++    let secs = last.duration_since(*at).as_secs_f64();
++    let busy: Option<Vec<f64>> = before
++        .iter()
++        .zip(&after)
++        .map(|(a, b)| {
++            let ran = b.get(Counter::Mperf)? - a.get(Counter::Mperf)?;
++            let stamp = b.get(Counter::Stamp)? - a.get(Counter::Stamp)?;
++            Some(ran as f64 / stamp as f64)
++        })
++        .collect();
++    let mb = (progress.bytes - first) as f64 / 1e6;
++    let busy = match busy {
++        // MEASUREMENT ONLY: cpu_s, every CPU's busy fraction times the transfer's time, summed.
++        Some(each) => {
++            let cpu_s = each.iter().sum::<f64>() * secs;
++            format!(
++                "busy={:.3} cpus=[{}] cpu_s={cpu_s:.3} cpu_ms_per_mb={:.2}",
++                each.iter().sum::<f64>() / each.len() as f64,
++                each.iter().map(|b| format!("{b:.3}")).collect::<Vec<_>>().join(" "),
++                cpu_s * 1e3 / mb
++            )
++        }
++        None => "busy=unread".to_string(),
++    };
++    let mbps = mb * 8.0 / secs;
++    let sha256 = sha256.map(|hex| format!(" sha256={hex}")).unwrap_or_default();
++    format!("{word} bytes={}{sha256} secs={secs:.3} mbps={mbps:.1} rtt_ms={rtt} {busy}", progress.bytes)
++}
+diff --git a/tests/guest/rust-tests/src/https_client.rs b/tests/guest/rust-tests/src/https_client.rs
+new file mode 100644
+index 000000000..1fffd783d
+--- /dev/null
++++ b/tests/guest/rust-tests/src/https_client.rs
+@@ -0,0 +1,32 @@
++//! An HTTPS client as any Rust program writes one: `ureq` on `rustls` on
++//! `ring`, as published, trusting the authorities of one roots file and no
++//! others, and naming itself with the project's `User-Agent`.
++
++use ureq::tls::{PemItem, RootCerts, TlsConfig};
++
++/// Root `CLAUDE.md`'s: the only `User-Agent` ToyOS sends.
++const USER_AGENT: &str = "toyos-build (https://github.com/ToyOSOrg/ToyOS)";
++
++/// The agent that trusts the certificates of `roots`, a PEM file, and no
++/// others.
++pub fn agent(roots: &str) -> ureq::Agent {
++    config(roots).new_agent()
++}
++
++/// MEASUREMENT ONLY: [`agent`]'s configuration, for an agent of other parts.
++pub fn config(roots: &str) -> ureq::config::Config {
++    let pem = std::fs::read(roots).unwrap_or_else(|e| panic!("read {roots}: {e}"));
++    let certs: Vec<_> = ureq::tls::parse_pem(&pem)
++        .map(|item| match item.unwrap_or_else(|e| panic!("{roots}: {e}")) {
++            PemItem::Certificate(cert) => cert,
++            _ => panic!("{roots} holds a PEM block that is not a certificate"),
++        })
++        .collect();
++    let tls = TlsConfig::builder().root_certs(RootCerts::new_with_certs(&certs)).build();
++    ureq::Agent::config_builder().user_agent(USER_AGENT).tls_config(tls).build()
++}
++
++/// A digest as lower-case hex.
++pub fn hex(digest: ring::digest::Digest) -> String {
++    digest.as_ref().iter().map(|b| format!("{b:02x}")).collect()
++}
+diff --git a/tests/guest/rust-tests/src/netperf.rs b/tests/guest/rust-tests/src/netperf.rs
+new file mode 100644
+index 000000000..b2aa693e3
+--- /dev/null
++++ b/tests/guest/rust-tests/src/netperf.rs
+@@ -0,0 +1,213 @@
++//! MEASUREMENT ONLY, never lands: where a download's CPU goes, said the same
++//! way on ToyOS (`https_download`) and on Linux (`netperf_linux.rs`), and the
++//! per-MB table the `internet_download` judge and the Linux job both render
++//! from those words.
++//!
++//! A [`Snap`] is every counter a machine gives, summed over its CPUs, by name:
++//! `stamp`, `aperf` and `mperf` are the CPUs' own (TSC, `IA32_APERF`,
++//! `IA32_MPERF`); `app.*` is the job's own accounting; `k.*` is ToyOS's kernel
++//! counters and `lx.*` Linux's `/proc/stat`. The job says three kinds of line:
++//!
++//! ```text
++//! https_download: perf idle secs=<s> cpus=<n> tsc_hz=<hz> <delta words>
++//! https_download: bench suite=<suite> aead=<alg> <x>_aperf_per_b=<c> <x>_tsc_per_b=<c> ...
++//! https_download: perf run=<k> bytes=<n> secs=<s> <delta words>
++//! ```
++//!
++//! and netstack says `netstack: prof <words>` as each stream ends.
++
++use std::collections::BTreeMap;
++use std::hint::black_box;
++use std::io::Read;
++use std::sync::{Arc, Mutex};
++use std::time::{Duration, Instant};
++
++use ureq::unversioned::resolver::DefaultResolver;
++use ureq::unversioned::transport::{ConnectionDetails, Connector, RustlsConnector, TcpConnector, Transport};
++
++use crate::netperf_table::field;
++
++pub type Snap = BTreeMap<String, u64>;
++
++/// What a machine reads of itself.
++pub trait Machine {
++    fn snap(&self) -> Snap;
++    /// The CPU's free-running counter on the calling CPU.
++    fn tsc(&self) -> u64;
++}
++
++/// Every key both hold, `b - a`.
++pub fn delta(a: &Snap, b: &Snap) -> Snap {
++    a.iter().filter_map(|(k, va)| Some((k.clone(), b.get(k)?.wrapping_sub(*va)))).collect()
++}
++
++pub fn words(snap: &Snap) -> String {
++    snap.iter().map(|(k, v)| format!("{k}={v}")).collect::<Vec<_>>().join(" ")
++}
++
++/// The idle window: nothing of the job's runs for `secs`.
++pub fn idle(machine: &dyn Machine, cpus: usize, secs: f64) -> String {
++    let before = machine.snap();
++    let at = Instant::now();
++    // A window of nothing, measured: not a wait on any event.
++    std::thread::sleep(Duration::from_secs_f64(secs));
++    let after = machine.snap();
++    let secs = at.elapsed().as_secs_f64();
++    let d = delta(&before, &after);
++    let tsc_hz = d.get("stamp").map_or(0.0, |s| *s as f64 / cpus as f64 / secs);
++    format!("perf idle secs={secs:.3} cpus={cpus} tsc_hz={tsc_hz:.0} {}", words(&d))
++}
++
++/// One kernel, timed by the whole machine's APERF less the idle window's rate
++/// and by the calling CPU's own counter, per byte.
++fn bench(machine: &dyn Machine, idle_aperf_per_s: f64, mut each: impl FnMut() -> usize) -> (f64, f64) {
++    const LEAST: Duration = Duration::from_millis(300);
++    let before = machine.snap();
++    let at = Instant::now();
++    let t0 = machine.tsc();
++    let mut bytes = 0u64;
++    while at.elapsed() < LEAST {
++        for _ in 0..16 {
++            bytes += each() as u64;
++        }
++    }
++    let ticks = machine.tsc().wrapping_sub(t0);
++    let secs = at.elapsed().as_secs_f64();
++    let after = machine.snap();
++    let d = delta(&before, &after);
++    let aperf = d.get("aperf").map_or(f64::NAN, |a| *a as f64 - idle_aperf_per_s * secs);
++    (aperf / bytes as f64, ticks as f64 / bytes as f64)
++}
++
++/// The negotiated suite's AEAD sealing a TLS record's 16 KiB in place, SHA-256
++/// over the job's 64 KiB reads, and a 64 KiB copy.
++pub fn benches(machine: &dyn Machine, suite: &str, idle_line: &str) -> String {
++    let idle = field(idle_line, "aperf").unwrap_or(0.0) / field(idle_line, "secs").unwrap_or(1.0);
++    let (alg, name): (&'static ring::aead::Algorithm, &str) = if suite.contains("AES_128_GCM") {
++        (&ring::aead::AES_128_GCM, "aes128gcm")
++    } else if suite.contains("AES_256_GCM") {
++        (&ring::aead::AES_256_GCM, "aes256gcm")
++    } else if suite.contains("CHACHA20") {
++        (&ring::aead::CHACHA20_POLY1305, "chacha20poly1305")
++    } else {
++        panic!("no AEAD for suite {suite}")
++    };
++    let key = ring::aead::LessSafeKey::new(ring::aead::UnboundKey::new(alg, &[7u8; 32][..alg.key_len()]).unwrap());
++    let mut record = vec![0x5au8; 16 * 1024];
++    let mut n = 0u64;
++    let aead = bench(machine, idle, || {
++        n += 1;
++        let mut nonce = [0u8; 12];
++        nonce[4..].copy_from_slice(&n.to_be_bytes());
++        let tag = key
++            .seal_in_place_separate_tag(ring::aead::Nonce::assume_unique_for_key(nonce), ring::aead::Aad::empty(), &mut record)
++            .unwrap();
++        let _ = black_box(tag);
++        record.len()
++    });
++    let chunk = vec![0xa5u8; 64 * 1024];
++    let mut digest = ring::digest::Context::new(&ring::digest::SHA256);
++    let sha = bench(machine, idle, || {
++        digest.update(black_box(&chunk));
++        chunk.len()
++    });
++    black_box(digest.finish());
++    let mut to = vec![0u8; 64 * 1024];
++    let copy = bench(machine, idle, || {
++        black_box(&mut to).copy_from_slice(black_box(&chunk));
++        chunk.len()
++    });
++    format!(
++        "bench suite={suite} aead={name} aead_aperf_per_b={:.3} aead_tsc_per_b={:.3} sha_aperf_per_b={:.3} sha_tsc_per_b={:.3} \
++         memcpy_aperf_per_b={:.3} memcpy_tsc_per_b={:.3}",
++        aead.0, aead.1, sha.0, sha.1, copy.0, copy.1
++    )
++}
++
++/// The suite `host` at `port` negotiates with this client's offer: ureq's own
++/// rustls configuration on ring, trusting `roots`; a `HEAD` of `path` is read
++/// to its end, so the server ends the connection as it would any other.
++pub fn suite(roots: &[u8], host: &str, port: u16, path: &str) -> String {
++    use rustls::pki_types::{CertificateDer, ServerName};
++    let mut store = rustls::RootCertStore::empty();
++    for item in ureq::tls::parse_pem(roots) {
++        if let Ok(ureq::tls::PemItem::Certificate(cert)) = item {
++            store.add(CertificateDer::from(cert.der().to_vec())).ok();
++        }
++    }
++    let config = rustls::ClientConfig::builder_with_provider(Arc::new(rustls::crypto::ring::default_provider()))
++        .with_protocol_versions(rustls::ALL_VERSIONS)
++        .unwrap()
++        .with_root_certificates(store)
++        .with_no_client_auth();
++    let name = ServerName::try_from(host.to_string()).unwrap();
++    let mut conn = rustls::ClientConnection::new(Arc::new(config), name).unwrap();
++    let mut sock = std::net::TcpStream::connect((host, port)).unwrap_or_else(|e| panic!("connect to {host}: {e}"));
++    while conn.is_handshaking() {
++        conn.complete_io(&mut sock).unwrap_or_else(|e| panic!("handshake with {host}: {e}"));
++    }
++    let suite = format!("{:?}", conn.negotiated_cipher_suite().expect("a suite once the handshake is done").suite());
++    let mut stream = rustls::Stream::new(&mut conn, &mut sock);
++    let head = format!(
++        "HEAD {path} HTTP/1.1\r\nHost: {host}\r\nUser-Agent: toyos-build (https://github.com/ToyOSOrg/ToyOS)\r\nConnection: close\r\n\r\n"
++    );
++    std::io::Write::write_all(&mut stream, head.as_bytes()).unwrap_or_else(|e| panic!("HEAD {path}: {e}"));
++    let mut sink = Vec::new();
++    // The end of the answer, however the server ends it.
++    let _ = stream.read_to_end(&mut sink);
++    suite
++}
++
++/// A link of an agent's connector chain that passes its transport on and
++/// keeps when it did.
++#[derive(Clone, Debug, Default)]
++pub struct Mark(pub Arc<Mutex<Option<Instant>>>);
++
++impl<In: Transport> Connector<In> for Mark {
++    type Out = In;
++
++    fn connect(&self, _: &ConnectionDetails, chained: Option<In>) -> Result<Option<In>, ureq::Error> {
++        if chained.is_some() {
++            *self.0.lock().unwrap() = Some(Instant::now());
++        }
++        Ok(chained)
++    }
++}
++
++pub struct Fetched {
++    pub bytes: u64,
++    pub sha256: String,
++    pub tcp_ms: f64,
++    pub tls_ms: f64,
++}
++
++/// One GET of `url` on an agent of `config`, every 64 KiB read hashed, `each`
++/// told the bytes so far; the agent, and with it the connection, is gone on
++/// return.
++pub fn fetch(config: ureq::config::Config, url: &str, mut each: impl FnMut(u64)) -> Fetched {
++    let (tcp, tls) = (Mark::default(), Mark::default());
++    let connector = ().chain(TcpConnector::default()).chain(tcp.clone()).chain(RustlsConnector::default()).chain(tls.clone());
++    let agent = ureq::Agent::with_parts(config, connector, DefaultResolver::default());
++    let called = Instant::now();
++    let response = agent.get(url).call().unwrap_or_else(|e| panic!("GET {url}: {e}"));
++    let ready = |mark: &Mark| mark.0.lock().unwrap().map_or(-1.0, |at| at.duration_since(called).as_secs_f64() * 1e3);
++    let (tcp_ms, tls_ms) = (ready(&tcp), ready(&tls));
++    let mut body = response.into_body().into_reader();
++    let mut digest = ring::digest::Context::new(&ring::digest::SHA256);
++    let mut chunk = vec![0u8; 64 * 1024];
++    let mut bytes = 0u64;
++    loop {
++        let n = body.read(&mut chunk).unwrap_or_else(|e| panic!("the body of {url} after {bytes} bytes: {e}"));
++        if n == 0 {
++            break;
++        }
++        digest.update(&chunk[..n]);
++        bytes += n as u64;
++        each(bytes);
++    }
++    drop(body);
++    drop(agent);
++    let sha256 = digest.finish().as_ref().iter().map(|b| format!("{b:02x}")).collect();
++    Fetched { bytes, sha256, tcp_ms, tls_ms }
++}
++
+diff --git a/tests/guest/rust-tests/src/netperf_table.rs b/tests/guest/rust-tests/src/netperf_table.rs
+new file mode 100644
+index 000000000..b1c06b4cb
+--- /dev/null
++++ b/tests/guest/rust-tests/src/netperf_table.rs
+@@ -0,0 +1,133 @@
++//! MEASUREMENT ONLY, never lands: the per-MB table of `netperf.rs`'s lines,
++//! std alone, for the job on Linux and for the harness's judge.
++
++use std::fmt::Write as _;
++
++pub const PREFIX: &str = "https_download: ";
++
++/// A `key=value` word's value in `line`.
++pub fn field(line: &str, key: &str) -> Option<f64> {
++    line.split_whitespace().find_map(|w| w.strip_prefix(key)?.strip_prefix('=')?.parse().ok())
++}
++
++/// Copies between the socket and the job, in the job: ureq's read into
++/// rustls's deframer, rustls's plaintext into ureq's buffer, ureq's body into
++/// the job's chunk.
++const APP_COPIES: f64 = 3.0;
++
++/// The per-MB table of every `perf run` line in `log`, each row tagged `M`
++/// (a counter's difference over the bytes) or `D` (a bench, a subtraction or
++/// a model).
++pub fn table(log: &str) -> String {
++    let said = |key: &str| -> Vec<&str> {
++        log.lines().filter_map(|l| l.find(PREFIX).map(|at| &l[at + PREFIX.len()..])).filter(|l| l.starts_with(key)).collect()
++    };
++    // A download's stream ends after the bench, wherever its line lands
++    // against the job's own.
++    let benched = log.lines().position(|l| l.contains("https_download: bench ")).unwrap_or(0);
++    let profs: Vec<&str> = log
++        .lines()
++        .skip(benched)
++        .filter_map(|l| l.find("netstack: prof ").map(|at| &l[at + "netstack: prof ".len()..]))
++        .filter(|l| field(l, "pipe_w_bytes").unwrap_or(0.0) > 1e6)
++        .collect();
++    let mut out = String::new();
++    let Some(idle) = said("perf idle").first().copied() else {
++        return "netperf: no idle line, no table\n".into();
++    };
++    let bench = said("bench").first().copied().unwrap_or("");
++    let g = |line: &str, key: &str| field(line, key).unwrap_or(f64::NAN);
++    let (idle_s, tsc_hz, cpus) = (g(idle, "secs"), g(idle, "tsc_hz"), g(idle, "cpus"));
++    let _ = writeln!(out, "netperf: idle {idle_s:.3} s on {cpus} cpus, tsc {:.3} GHz", tsc_hz / 1e9);
++    let _ = writeln!(
++        out,
++        "netperf: idle rates: C0 {:.2} ms/s, {:.2} Mcyc/s aperf, eff {:.3} GHz",
++        g(idle, "mperf") / tsc_hz * 1e3 / idle_s,
++        g(idle, "aperf") / 1e6 / idle_s,
++        g(idle, "aperf") / g(idle, "mperf") * tsc_hz / 1e9
++    );
++    let _ = writeln!(out, "netperf: {bench}");
++    for (k, run) in said("perf run").iter().enumerate() {
++        let (bytes, secs) = (g(run, "bytes"), g(run, "secs"));
++        let mb = bytes / 1e6;
++        let ghz = g(run, "aperf") / g(run, "mperf") * tsc_hz / 1e9;
++        let row = |out: &mut String, tag: char, what: &str, value: f64, unit: &str| {
++            let _ = writeln!(out, "  {tag}  {what:<48} {value:>12.3} {unit}");
++        };
++        let _ = writeln!(out, "netperf: {run}");
++        let _ = writeln!(out, "netperf: run {} per MB ({mb:.2} MB in {secs:.3} s, {:.1} Mb/s)", g(run, "run"), mb * 8.0 / secs);
++        row(&mut out, 'M', "system C0 (sum mperf / tsc_hz)", g(run, "mperf") / tsc_hz * 1e3 / mb, "ms");
++        row(&mut out, 'M', "system cycles (sum aperf)", g(run, "aperf") / 1e6 / mb, "Mcyc");
++        row(&mut out, 'M', "system effective clock (aperf / mperf)", ghz, "GHz");
++        let idle_aperf = g(idle, "aperf") / idle_s * secs;
++        let idle_mperf = g(idle, "mperf") / idle_s * secs;
++        row(&mut out, 'D', "system C0 less the idle window's rate", (g(run, "mperf") - idle_mperf) / tsc_hz * 1e3 / mb, "ms");
++        let busy_mcyc = (g(run, "aperf") - idle_aperf) / 1e6 / mb;
++        row(&mut out, 'D', "system cycles less the idle window's rate", busy_mcyc, "Mcyc");
++        let app_ms = g(run, "app.cpu_ns") / 1e6 / mb;
++        row(&mut out, 'M', "app cpu (its own accounting)", app_ms, "ms");
++        let app_mcyc = app_ms * ghz;
++        row(&mut out, 'D', "app cycles (cpu x effective clock)", app_mcyc, "Mcyc");
++        if !g(run, "app.syscalls").is_nan() {
++            row(&mut out, 'M', "app syscalls", g(run, "app.syscalls") / mb, "/MB");
++            row(&mut out, 'M', "app time in syscalls (its waits included)", g(run, "app.syscall_ns") / 1e6 / mb, "ms");
++            row(&mut out, 'M', "app runqueue wait", g(run, "app.runq_ns") / 1e6 / mb, "ms");
++        }
++        let tls = g(bench, "aead_aperf_per_b");
++        let sha = g(bench, "sha_aperf_per_b");
++        let copy = g(bench, "memcpy_aperf_per_b") * APP_COPIES;
++        row(&mut out, 'D', "app TLS decrypt (aead bench x bytes)", tls, "Mcyc");
++        row(&mut out, 'D', "app SHA-256 (bench x bytes)", sha, "Mcyc");
++        row(&mut out, 'D', "app copies (3 x memcpy bench x bytes)", copy, "Mcyc");
++        let sys_mcyc = g(run, "app.syscall_ns") / 1e6 / mb * ghz;
++        if !sys_mcyc.is_nan() {
++            row(&mut out, 'D', "app syscalls (time x effective clock)", sys_mcyc, "Mcyc");
++            row(&mut out, 'D', "app rest (cycles less the four above)", app_mcyc - tls - sha - copy - sys_mcyc, "Mcyc");
++        } else {
++            row(&mut out, 'D', "app rest (cycles less the three above)", app_mcyc - tls - sha - copy, "Mcyc");
++        }
++        if let Some(prof) = profs.get(k) {
++            let ns_ms = g(prof, "cpu_ns") / 1e6 / mb;
++            row(&mut out, 'M', "netstack cpu (its own accounting)", ns_ms, "ms");
++            row(&mut out, 'D', "netstack cycles (cpu x effective clock)", ns_ms * ghz, "Mcyc");
++            row(&mut out, 'M', "netstack time in syscalls (its waits included)", g(prof, "syscall_ns") / 1e6 / mb, "ms");
++            for w in prof.split_whitespace() {
++                let Some((name, v)) = w.split_once('=') else { continue };
++                let Ok(v) = v.parse::<f64>() else { continue };
++                if name.starts_with("cy_") {
++                    row(&mut out, 'M', &format!("netstack {name} (tsc)"), v / tsc_hz * 1e3 / mb, "ms");
++                } else if !matches!(name, "cpu_ns" | "syscall_ns" | "runq_ns" | "wall_ns") {
++                    row(&mut out, 'M', &format!("netstack {name}"), v / mb, "/MB");
++                }
++            }
++            // Round 3: the ACK spacing and stretch the sender sees, and the cadence's interval.
++            let acks = g(prof, "ack_gap_n");
++            row(&mut out, 'D', "ack gap, mean (ack-moving segments)", g(prof, "ack_gap_ns") / acks / 1e3, "us");
++            row(&mut out, 'D', "bytes acknowledged per ack-moving segment", g(prof, "ack_bytes") / (g(prof, "ack_segs") - g(prof, "ack_zero")), "B");
++            row(&mut out, 'D', "cadence asked, mean", g(prof, "pace_ns") / g(prof, "paces") / 1e3, "us");
++            row(&mut out, 'D', "ITR applied, mean", g(prof, "itr_units") * 256.0 / g(prof, "paces") / 1e3, "us");
++            let kernel = busy_mcyc - app_mcyc - ns_ms * ghz;
++            row(&mut out, 'D', "kernel outside both tasks (busy less app, netstack)", kernel, "Mcyc");
++        } else {
++            row(&mut out, 'D', "kernel and every other task (busy less app)", busy_mcyc - app_mcyc, "Mcyc");
++        }
++        for w in run.split_whitespace() {
++            let Some((name, v)) = w.split_once('=') else { continue };
++            let Ok(v) = v.parse::<f64>() else { continue };
++            if let Some(name) = name.strip_prefix("k.") {
++                if name.ends_with("_cycles") {
++                    row(&mut out, 'M', &format!("kernel {name} (tsc)"), v / tsc_hz * 1e3 / mb, "ms");
++                } else {
++                    row(&mut out, 'M', &format!("kernel {name}"), v / mb, "/MB");
++                }
++            } else if let Some(name) = name.strip_prefix("lx.") {
++                if name.ends_with("_ms") {
++                    row(&mut out, 'M', &format!("linux {name}"), v / mb, "ms");
++                } else {
++                    row(&mut out, 'M', &format!("linux {name}"), v / mb, "/MB");
++                }
++            }
++        }
++    }
++    out
++}
+diff --git a/tests/guest/test-runner/src/main.rs b/tests/guest/test-runner/src/main.rs
+index 2efb1c5b9..2364fef16 100644
+--- a/tests/guest/test-runner/src/main.rs
++++ b/tests/guest/test-runner/src/main.rs
+@@ -90,7 +90,7 @@ fn main() {
+             }
+             *RUNNING.lock().expect("the deadline thread does not panic holding this") =
+                 job.clone();
+-            match run_one(job, &[], cap.as_ref()) {
++            match run_one(job, &[], Some(bound_ms), cap.as_ref()) {
+                 Ran::No => {
+                     give_the_machine_back(&format!("job {job:?} did not run"))
+                 }
+@@ -212,7 +212,7 @@ fn command(line: &str, cap: Option<&SysCap>) {
+     let mut words = name.split_whitespace();
+     let Some(name) = words.next() else { return };
+     let args: Vec<&str> = words.collect();
+-    run_one(name, &args, cap);
++    run_one(name, &args, None, cap);
+ }
+ 
+ enum Ran {
+@@ -221,8 +221,9 @@ enum Ran {
+     Spawned,
+ }
+ 
+-/// Run `/system/bin/<name>` between the host's markers.
+-fn run_one(name: &str, args: &[&str], cap: Option<&SysCap>) -> Ran {
++/// Run `/system/bin/<name>` between the host's markers, telling it the bound
++/// of the list it is in, where it is in one (`toyos_tco::LIST_BOUND_ENV`).
++fn run_one(name: &str, args: &[&str], list_bound_ms: Option<u64>, cap: Option<&SysCap>) -> Ran {
+     let path = format!("/system/bin/{name}");
+ 
+     println!("===TEST_START {name}===");
+@@ -231,6 +232,9 @@ fn run_one(name: &str, args: &[&str], cap: Option<&SysCap>) -> Ran {
+     // Piped stdin so the child does not consume the serial commands.
+     let mut command = Command::new(&path);
+     command.args(args).stdin(Stdio::piped());
++    if let Some(ms) = list_bound_ms {
++        command.env(toyos_tco::LIST_BOUND_ENV, ms.to_string());
++    }
+     // **A refused dup is an answer and not a failure — but only one
+     // refusal is.** `duplicate` needs `DUP` on the capability, which a
+     // manifest grants by name, so `PermissionDenied` says this cap is one
+diff --git a/tests/images/downloadcase.toml b/tests/images/downloadcase.toml
+new file mode 100644
+index 000000000..ead213477
+--- /dev/null
++++ b/tests/images/downloadcase.toml
+@@ -0,0 +1,43 @@
++# One HTTPS download through netstack, timed: `https_download`'s boot on the
++# T14, where the `internet_download` metal row reads its rate off the stick.
++
++[boot]
++start = ["logkeeper", "diskserver", "fileserver", "netstack", "test-runner"]
++
++# `log` is the port the job waits for netstack's lease on: on the T14 it is the
++# boot's first job.
++[programs.logkeeper]
++service = true
++syscap = ["logread"]
++serves = ["log"]
++
++# The T14's onboard I219, by vendor and device.
++[programs.netstack]
++service = true
++serves = ["netstack"]
++devices = ["pci:8086:15fc"]
++
++# `netstack` for the job's lookup and connection, `log` for netstack's word on
++# its lease; `counters` and `trace` for every CPU's MPERF and stamp either
++# side of the transfer, MPERF being answered only beside `trace`; `dup`
++# because the runner hands the job a duplicate.
++[programs.test-runner]
++receives = ["netstack", "log"]
++syscap = ["counters", "trace", "dup"]
++
++# The block service: the NVMe controller this machine's DATA is on, driven
++# from userland through its claim. Started again when it ends; the claim goes
++# back with the process and is minted again for the next.
++[programs.diskserver]
++service = true
++restart = true
++serves = ["block"]
++devices = ["pci:1b36:0010"]
++
++# The file servers: DATA, the log and the running slot's volume, one process
++# each, serving every program the directories of its role. Started again when
++# one ends, on the same ports.
++[programs.fileserver]
++restart = true
++roles = ["data", "log", "boot"]
++receives = ["block"]
+diff --git a/tests/toyos.rs b/tests/toyos.rs
+index 5a6868ba4..e37cc869d 100644
+--- a/tests/toyos.rs
++++ b/tests/toyos.rs
+@@ -2,6 +2,8 @@
+ extern crate toyos_build;
+ 
+ mod common;
++#[path = "guest/rust-tests/src/netperf_table.rs"]
++mod netperf_table;
+ 
+ use std::collections::{BTreeMap, BTreeSet};
+ use std::fs;
+@@ -151,6 +153,9 @@ const RUST_SKIP: &[&str] = &[
+     // Needs a launcher whose row lists `/apps`, which `tests/images/testcases.toml` does
+     // not give: the `app_view` metal row runs it on tests/images/proctreecase.toml.
+     "app_view",
++    // It downloads from the internet, inside a job list's bound alone: the
++    // `internet_download` metal row runs it.
++    "https_download",
+     // Fills /tmp to the VFS listing limit, so it needs a boot nothing else
+     // shares — every later `read_dir("/tmp")` in it would be refused.
+     // `readdir_bound` gives it one.
+@@ -1143,8 +1148,64 @@ const METAL: &[(&str, metal::Metal)] = &[
+             },
+         },
+     ),
++    // ---- one image: tests/images/downloadcase.toml, the internet download ----
++    (
++        // A public file over HTTPS through netstack on the I219, for as long as
++        // the list's bound leaves it: its rate is reported, never judged. A boot
++        // of its own, so the transfer has the machine alone.
++        "internet_download",
++        metal::Metal {
++            arms: &[metal::once("download", "tests/images/downloadcase.toml", &[], &["test_rs_https_download"])],
++            judge: |b| https_download_on_metal(b[0]),
++        },
++    ),
+ ];
+ 
++/// What `https_download` said of its transfer, printed as it said it: green
++/// for a job that ended 0 having read some of the body, and, where it read
++/// all of it, a body of the file's length and hash. Its busy fraction is
++/// read: the T14 counts MPERF on every CPU (`counters_on_metal`), so one it
++/// could not read is the job's defect.
++fn https_download_on_metal(back: &metal::Readback) -> Result<(), String> {
++    /// The job's file's length, and the SHA-256 its publisher states beside it
++    /// (`<url>.sha256`).
++    const DOWNLOAD_BYTES: &str = "170439044";
++    const DOWNLOAD_SHA256: &str = "1a9ee8caaa18a3e433fef93cea8a55dc1ebd478ed761b2fef69d4565f9d00e7f";
++    const SAID: &str = "https_download: ";
++    let log = back.log();
++    let said = log.text().lines().filter_map(|line| line.find(SAID).map(|at| line[at + SAID.len()..].trim())).find(|s| s.starts_with("whole ") || s.starts_with("cut "));
++    // MEASUREMENT ONLY: every run's line, and what netstack said of each connection it closed.
++    for line in log.text().lines() {
++        if let Some(at) = line.find(SAID) {
++            eprintln!("  [download] {}", line[at + SAID.len()..].trim());
++        }
++        if let Some(at) = line.find("netstack: tcp closed: ") {
++            eprintln!("  [tcp] {}", &line[at + "netstack: tcp closed: ".len()..]);
++        }
++        if let Some(at) = line.find("netstack: prof ") {
++            eprintln!("  [prof] {}", &line[at + "netstack: prof ".len()..]);
++        }
++    }
++    // MEASUREMENT ONLY: the per-MB table.
++    eprint!("{}", netperf_table::table(log.text()));
++    back.job_passed("test_rs_https_download")?;
++    let said = said.ok_or_else(|| format!("https_download exited 0 and said no line opening {SAID:?}"))?;
++    let field = |name: &str| said.split_whitespace().find_map(|word| word.strip_prefix(name)?.strip_prefix('='));
++    match said.split_whitespace().next() {
++        Some("whole") if field("bytes") == Some(DOWNLOAD_BYTES) && field("sha256") == Some(DOWNLOAD_SHA256) => {}
++        Some("whole") => {
++            return Err(format!("https_download's body is not {DOWNLOAD_BYTES} bytes hashing {DOWNLOAD_SHA256}: {said}"))
++        }
++        // A cut says its bytes only where the body's first read came.
++        Some("cut") if field("bytes").is_some() => {}
++        _ => return Err(format!("https_download read none of the body: {said}")),
++    }
++    if field("busy") == Some("unread") {
++        return Err(format!("https_download read no MPERF on the T14: {said}"));
++    }
++    Ok(())
++}
++
+ /// The plain `tests/images/testcases.toml` boot, which starts no ps2server, so
+ /// the one grantable row is free: the ports' job first, since its last holder
+ /// keeps them until it ends.

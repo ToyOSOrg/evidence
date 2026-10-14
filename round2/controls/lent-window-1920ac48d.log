@@ -1,0 +1,55 @@
+revision 0dcdbe24cb634e378b141465de82f3c55ef7336f
+ M system/netstack/shard/tcp/tests/common/net.rs
+ M system/netstack/shard/tcp/tests/net.rs
+   Compiling toyos-net-tcp v0.1.0 (<tree>/system/netstack/shard/tcp)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.66s
+     Running tests/net.rs (target/debug/deps/net-8fa0f1d30a404d98)
+
+running 1 test
+test a_lent_receive_ring_grows_the_window_as_a_read_does ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 19 filtered out; finished in 1.96s
+
+GREEN_EXIT=0
+diff --git a/system/netstack/shard/tcp/src/conn.rs b/system/netstack/shard/tcp/src/conn.rs
+index 0b9e181dc..72e8ddaeb 100644
+--- a/system/netstack/shard/tcp/src/conn.rs
++++ b/system/netstack/shard/tcp/src/conn.rs
+@@ -938,9 +938,8 @@ impl Sync {
+     /// The user read the `n` oldest bytes held out of the lent receive ring itself.
+     pub fn consume(&mut self, n: usize, now: Instant) -> usize {
+         let n = self.rx.consume(n);
+-        if n > 0 {
+-            self.rx.after_read(n, now, self.smss());
+-        }
++        // Control: a consume that grows nothing and owes no window update.
++        let _ = now;
+         n
+     }
+ 
+   Compiling toyos-net-tcp v0.1.0 (<tree>/system/netstack/shard/tcp)
+    Finished `test` profile [optimized + debuginfo] target(s) in 3.82s
+     Running tests/net.rs (target/debug/deps/net-8fa0f1d30a404d98)
+
+running 1 test
+test a_lent_receive_ring_grows_the_window_as_a_read_does ... FAILED
+
+failures:
+
+---- a_lent_receive_ring_grows_the_window_as_a_read_does stdout ----
+
+thread 'a_lent_receive_ring_grows_the_window_as_a_read_does' (18556022) panicked at system/netstack/shard/tcp/tests/net.rs:515:5:
+Peaks { flight: 1, window: 65535, unread: 0, shifts: Some((7, 7)) }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    a_lent_receive_ring_grows_the_window_as_a_read_does
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 19 filtered out; finished in 0.60s
+
+error: test failed, to rerun pass `-p toyos-net-tcp --test net`
+CONTROL_EXIT=101
+ M system/netstack/shard/tcp/tests/common/net.rs
+ M system/netstack/shard/tcp/tests/net.rs
+RESTORED

@@ -1,0 +1,16 @@
+diff --git a/system/netstack/shard/tcp/src/conn.rs b/system/netstack/shard/tcp/src/conn.rs
+index 0b9e181dc..72e8ddaeb 100644
+--- a/system/netstack/shard/tcp/src/conn.rs
++++ b/system/netstack/shard/tcp/src/conn.rs
+@@ -938,9 +938,8 @@ impl Sync {
+     /// The user read the `n` oldest bytes held out of the lent receive ring itself.
+     pub fn consume(&mut self, n: usize, now: Instant) -> usize {
+         let n = self.rx.consume(n);
+-        if n > 0 {
+-            self.rx.after_read(n, now, self.smss());
+-        }
++        // Control: a consume that grows nothing and owes no window update.
++        let _ = now;
+         n
+     }
+ 

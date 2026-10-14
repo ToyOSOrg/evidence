@@ -50,3 +50,20 @@ Stage 3 at c0e87be2e (the server-watch fix and review round 1) with main 6caaadf
 Correction to the `round1b/` entry above: the guest suite's 55 rows do not carry `stream_handles` (a shared-boot
 binary run on the T14's `testcases` boot and here through the debug boot). It was run separately at 0dcdbe24c:
 `round1b/stream_handles-qemu-0dcdbe24c.log` (`controls/guest.sh <tree> <dir> green`), exit_code Some(0), harness EXIT=0.
+
+## Review round 2 (`round2/`), head c5c69f12e3 (wt/toyos-netring-s3, main f0a987bc6 merged)
+
+- `metal/`: the round-1b T14 boots, run by the orchestrator, readbacks masked (`<ip>`, `<mac>`, `<guid>`,
+  `<serial>`, `<machine>`). `stage3-testcases/` and `stage3-judge.log`: `stream_handles` at 0dcdbe24c, passed.
+  `instrument-download/` and `instrument-judge.log`: `internet_download` from 4313cb0b0, row PASS but its one
+  run cut by the job's window at 101,985,020 of 170,439,044 bytes, 23.7 Mb/s, busy=0.007; no whole run, so
+  no `perf run=` line. The track's exit is not read by it.
+- `controls/lent-window-1920ac48d.log`: `controls/lent-window.sh` — `cargo test -p toyos-net-tcp --test net
+  a_lent_receive_ring` GREEN_EXIT=0, then under `consume-grows-nothing.patch` CONTROL_EXIT=101 (window
+  65,535), restored. The test ran at 1920ac48d's tree before commit (the log's status shows the test files
+  uncommitted); the commit is those files.
+- `gates/`: `cargo run -- --ci host` EXIT=0 (83 steps) and `cargo run -- --build-only` EXIT=0, at c5c69f12e.
+- `staging/`: the round-2 T14 request (two `internet_download` images, staged with `--metal-readback`, EXIT=2,
+  machine untouched): baseline `wt/toyos-netring-s3-baseline` f11ebeaf0 = main f0a987bc6 + `instrument-27.diff`
+  (`git diff 0dcdbe24c 4313cb0b0`), and stage 3 `wt/toyos-netring-s3-instrument` 81afbe6c6 = c5c69f12e + the
+  same diff. `git diff f11ebeaf0 81afbe6c6` equals `git diff f0a987bc6 c5c69f12e` file for file.

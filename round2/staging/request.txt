@@ -1,0 +1,18 @@
+# PR #905, round 2: two internet_download boots, one image each, measurement only (neither tree lands).
+# Staged with --metal-readback (EXIT=2, machine untouched). Both are main f0a987bc6 (with #917's I219 MSI)
+# under the same 27-file instrument; git diff f11ebeaf0 81afbe6c6 is exactly git diff f0a987bc6 c5c69f12e (stage 3).
+# Baseline red too: the slowdown is not stage 3's. Baseline whole and fast, stage 3 slow: stage 3 owns it.
+
+# 1. Baseline (row word: internet_download): main's pipe path.
+#    tree: <scratch>/baseline, wt/toyos-netring-s3-baseline at f11ebeaf0 (main f0a987bc6 + the instrument)
+baseline
+  image: <scratch>/metal/baseline/download/image.img
+  cargo run -p toyos-metal -- --image <scratch>/metal/baseline/download/image.img --readback <scratch>/metal/baseline/download --fat32-check
+
+# 2. Stage 3 (row word: internet_download): the fixed head under the same instrument.
+#    tree: <scratch>/instrument, wt/toyos-netring-s3-instrument at 81afbe6c6 (wt/toyos-netring-s3 c5c69f12e + the instrument)
+#    Exit: every run whole with matching bytes; pipe_copy_bytes < 0.01 per byte; C0, hold and spin per MB
+#    beside the scout's rows (C0 5.310 ms, H 0.2728 ms, P 0.0397 ms per MB, 785.95 Mb/s) and beside boot 1's.
+stage3
+  image: <scratch>/metal/instrument/download/image.img
+  cargo run -p toyos-metal -- --image <scratch>/metal/instrument/download/image.img --readback <scratch>/metal/instrument/download --fat32-check
