@@ -40,3 +40,13 @@ metal-stage-{t14,amd}-r2.log, request-{t14,amd}-r2.txt
                         cryptocase re-staged per bench (exit 2, nothing touched)
 Note on bench-*/parity-lines.log (9a318695e): samples there are printed at 0.1 ns, so rows at a few ns per
 operation do not recompute exactly (e.g. AMD unasserted chacha20-poly1305-openssh/key); 85cda28d3 prints them exactly.
+
+Review round 3, at d04394bef (symmetric ECDH oracle check; features.rs passes names through as tt):
+ci-host-r4.log          cargo run -- --ci host at d04394bef; exit 0, 86 steps green
+qemu-r3-crypto_instrument_prints_its_table.log
+                        the QEMU shape row; exit 0. Run on 9745b8159 plus the working-tree features.rs fix,
+                         which d04394bef is byte for byte (the amend changed only the commit message)
+mutations/m7-ours-ecdh-wrong.{patch,log}
+                        ours's agreed secret with one bit flipped before the check: crypto_parity panics
+                         "x25519: ours and ring agree on one secret", the QEMU row FAILs (exit 1), restored
+No metal rerun: round 2's tables stand; their ECDH rows predate this check (noted in the track issue).

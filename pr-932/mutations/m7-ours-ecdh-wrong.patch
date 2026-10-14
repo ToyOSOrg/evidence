@@ -1,0 +1,12 @@
+--- a/tests/guest/rust-tests/src/bin/crypto_parity.rs
++++ b/tests/guest/rust-tests/src/bin/crypto_parity.rs
+@@ -404,7 +404,8 @@
+     ) {
+         let key = agreement::EphemeralPrivateKey::generate(alg, &rand::SystemRandom::new()).expect("a key");
+         let ring_public = key.compute_public_key().expect("its public key");
+-        let ours_secret = agree(ring_public.as_ref());
++        let mut ours_secret = agree(ring_public.as_ref());
++        ours_secret[0] ^= 1;
+         let peer = agreement::UnparsedPublicKey::new(alg, &ours);
+         let ring_secret = agreement::agree_ephemeral(key, &peer, <[u8]>::to_vec).expect("ring agrees with ours");
+         assert_eq!(ours_secret, ring_secret, "{name}: ours and ring agree on one secret");
