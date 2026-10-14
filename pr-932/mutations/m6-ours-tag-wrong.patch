@@ -1,0 +1,12 @@
+--- a/tests/guest/rust-tests/src/bin/crypto_parity.rs
++++ b/tests/guest/rust-tests/src/bin/crypto_parity.rs
+@@ -153,7 +153,8 @@
+ /// Ours seals at sequence 0 what ring does.
+ fn seals_as_ring(alg: Tls, len: usize) {
+     let mut sealed = vec![0x70; len];
+-    let (nonce, tag) = alg.sealing().seal(&AAD, &mut sealed).expect("seal");
++    let (nonce, mut tag) = alg.sealing().seal(&AAD, &mut sealed).expect("seal");
++    tag[15] ^= 1;
+     assert_eq!(nonce, IV, "{} sequence 0's nonce", alg.name());
+     assert_eq!((sealed, tag), ring_sealed(&alg.ring(), len, false), "{} seals {len} B as ring", alg.name());
+ }

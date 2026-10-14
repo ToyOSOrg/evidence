@@ -27,3 +27,16 @@ request-t14.txt          one boot, cryptocase: 3 jobs under the 60000 ms list bo
 request-amd.txt
 
 ci-host-r2.log          cargo run -- --ci host at 2ecc3e81d (crypto_parity row unregistered, issue edits); exit 0, 86 steps green
+
+Review round 2, at 85cda28d3 (oracle checks, exact samples, ISA line):
+ci-host-r3.log          cargo run -- --ci host; exit 0, 86 steps green
+qemu-r2-crypto_instrument_prints_its_table.log
+                        the QEMU shape row; exit 0, 77 rows per build, each build's `parity: <build> isa` line
+                         (TCG's qemu64 guest admits avx,avx2)
+mutations/m6-ours-tag-wrong.{patch,log}
+                        ours's AES-GCM tag with one bit flipped before the oracle check: crypto_parity panics
+                         "aes-128-gcm seals 0 B as ring", the QEMU row FAILs (exit 1), restored
+metal-stage-{t14,amd}-r2.log, request-{t14,amd}-r2.txt
+                        cryptocase re-staged per bench (exit 2, nothing touched)
+Note on bench-*/parity-lines.log (9a318695e): samples there are printed at 0.1 ns, so rows at a few ns per
+operation do not recompute exactly (e.g. AMD unasserted chacha20-poly1305-openssh/key); 85cda28d3 prints them exactly.
