@@ -1,0 +1,45 @@
+   Compiling toyos-ssh v0.1.0 (/Users/jan/Dev/jan/toyos-crypto-s1/build/ssh)
+warning: unused variable: `signature`
+   --> build/ssh/src/auth.rs:122:29
+    |
+122 |                         let signature = ed25519_signature(signature)?;
+    |                             ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_signature`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `toyos-ssh` (lib) generated 1 warning (run `cargo fix --lib -p toyos-ssh` to apply 1 suggestion)
+warning: `toyos-ssh` (lib test) generated 1 warning (1 duplicate)
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.95s
+     Running unittests src/lib.rs (target/debug/deps/toyos_ssh-12df9ef74c28da3f)
+
+running 6 tests
+test base64::tests::rfc_4648_vectors ... ok
+test wire::tests::a_reader_refuses_by_the_fields_name ... ok
+test wire::tests::an_mpint_is_written_as_rfc_4251_spells_it ... ok
+test hostkey::tests::a_key_ssh_keygen_minted_reads ... ok
+test hostkey::tests::a_key_that_is_not_one_is_refused_by_name ... ok
+test hostkey::tests::rfc_8032_vectors ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/fuzz.rs (target/debug/deps/fuzz-7d25cfaacdcacbe7)
+
+running 2 tests
+test every_session_is_total_and_none_logs_in_without_a_right_signature ... FAILED
+test every_bent_recording_is_total_and_a_bend_before_the_login_prevents_it ... ok
+
+failures:
+
+---- every_session_is_total_and_none_logs_in_without_a_right_signature stdout ----
+
+thread 'every_session_is_total_and_none_logs_in_without_a_right_signature' (20897086) panicked at build/ssh/tests/fuzz.rs:282:13:
+iteration 25: authenticated without a right signature after [32, 00, 00, 00, 05, 74, 6f, 79, 6f, 73, 00, 00, 00, 0e, 73, 73, 68, 2d, 63, 6f, 6e, 6e, 65, 63, 74, 69, 6f, 6e, 00, 00, 00, 09, 70, 75, 62, 6c, 69, 63, 6b, 65, 79, 01, 00, 00, 00, 0b, 73, 73, 68, 2d, 65, 64, 32, 35, 35, 31, 39, 00, 00, 00, 33, 00, 00, 00, 0b, 73, 73, 68, 2d, 65, 64, 32, 35, 35, 31, 39, 00, 00, 00, 20, 8a, 88, e3, dd, 74, 09, f1, 95, fd, 52, db, 2d, 3c, ba, 5d, 72, ca, 67, 09, bf, 1d, 94, 12, 1b, f3, 74, 88, 01, b4, 0f, 6f, 5c, 00, 00, 00, 53, 00, 00, 00, 0b, 73, 73, 68, 2d, 65, 64, 32, 35, 35, 31, 39, 00, 00, 00, 40, 77, e4, 74, 95, 94, 7f, 33, dc, 84, e2, 3c, 67, e7, b5, cd, ff, 05, 4e, bd, cd, 9b, 09, 5e, 61, cb, e6, 8d, 34, eb, 2e, 0b, f8, 86, cf, dc, 4d, d5, a2, c0, 9a, 3b, 21, 85, 3c, 72, 5c, 08, 8c, 15, d0, 2d, 9b, ba, e6, 89, ae, 5a, 6d, 1b, 7f, 6c, cd, b0, 08]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    every_session_is_total_and_none_logs_in_without_a_right_signature
+
+test result: FAILED. 1 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 12.57s
+
+error: test failed, to rerun pass `-p toyos-ssh --test fuzz`

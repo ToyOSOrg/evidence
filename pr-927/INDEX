@@ -1,0 +1,24 @@
+ToyOSOrg/ToyOS #927, crypto track stage 1. Host: arm64 macOS (M4 Pro), rustc 1.98.1.
+
+ci-host-r1.log          cargo run -- --ci host at 8d1392a3e (ci-host-r1.rev); exit 0, 86 steps green
+ci-host-r0-0b20b1f57.log same at 0b20b1f57 before main's merge; exit 1: one red,
+                         build::tests::every_model_control_is_run (crypto features read as controls),
+                         fixed by 69d12c9bb
+build-x86_64.log        cargo run -- --build-only at 8d1392a3e; exit 0
+build-aarch64.log       cargo run -- --arch aarch64 --build-only at 8d1392a3e; exit 0
+                         (no image links lib/crypto; its AArch64 compile is the arm64 host runs)
+import-vs-frozen.diff   diff -ruN of lib/crypto at 4a88413bf against 2b3f92c0dc6a's src/ and tests/
+c1-<form>.log           cargo test -p toyos-crypto <form> at the import (before commit); exit 0 each
+c2-x86-<form>.log       same, --target x86_64-apple-darwin under Rosetta 2, at e3257a535; exit 0 each
+c2/c3-clippy-*.log      cargo clippy -p toyos-crypto --all-targets <form> -- <ADOPTED> -D warnings,
+                         arm64 and x86_64-apple-darwin; exit 0 each (c3 at d458ddc40's tree)
+c3-<form>.log           crate tests after the rsa oracle's replacement; exit 0 each
+c3-tree.log             cargo tree -p toyos-crypto --all-features -e normal,dev,build --target all: no rsa
+c3-tree-rsa-inverse.log cargo tree --workspace -i rsa: only russh's rsa 0.10.0-rc.17 (sshserver)
+c3-negctl-pss.log       mutate-pss.patch applied: rsa_reference_pkcs1_and_pss fails (exit 101), restored
+c4-gates.log            cargo test --lib -- sourcegate licence; exit 0
+c4-negctl-bytes.log     one byte appended to x25519_test.json: the committed-files gate reds (exit 101), restored
+c6-ssh.log              cargo test -p toyos-ssh --all-targets at 0b20b1f57's tree; exit 0 (replay 9/9)
+c6-negctl-auth.log      mutate-auth.patch: fuzz's no-login-without-a-right-signature fails (exit 101), restored
+c6-negctl-hostkey.log   mutate-hostkey.patch: a_key_that_is_not_one_is_refused_by_name fails (exit 101), restored
+main-nightly-host.log   main's nightly host job (run 38533374419): toyos-ssh fuzz 1.27 s on ring
