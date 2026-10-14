@@ -1,0 +1,1 @@
+ToyOS 229d3689269182e6726abe77b2a5e418bd424e79: `cargo run -- --build-only` (final-build.log) and `cargo run -- --ci host` (final-host.log), each EXIT=0 on its last line; the host suite's 77 steps all green.
