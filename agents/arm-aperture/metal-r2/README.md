@@ -1,6 +1,6 @@
 # #916 round 2 on metal: images built at `5dabb22b51ff01b93133df58218480233878ddb9`
 
-Run by the orchestrator after review round 1, on `main` `5b48a3d17` merged. Every file is whole, masked with the orchestrator's `mask.sh`: paths, serials, IPs, MACs, vendor, model and BIOS strings.
+Run by the orchestrator after review round 1, on `main` `5b48a3d17` merged. Every file is whole, masked with the orchestrator's `mask.sh` (paths, serials, IPs, MACs, vendor, model and BIOS strings), and the BIOS version suffix `mask.sh` leaves after `<bios>` in `boot.txt` masked by hand at the tip.
 
 | machine | boots | rows | result | CPU width / unit width → rule |
 |---|---|---|---|---|
