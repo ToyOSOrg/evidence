@@ -16,3 +16,7 @@ step-down to the least screen, and a 0 mm timing taken as a size; each turns its
 "cargo test exit 0" there is the exit of grep, not of cargo; the FAILED lines are cargo's.)
 
 s2-qemu.log: `cargo test --test toyos-build -- desktop_without_x2apic --nocapture` on metal-sim, exit 0.
+
+ci-host.log: `cargo run -- --ci host` at 56a8bfbb673be9cc360be43bad05c6b71d765253, exit 0, 77 steps all green.
+An earlier run at 6fd69e2b4 is not used: a mutation script restored sources with an older mtime, so cargo reused
+the mutated toyos-desktop test binary; the sources were touched and the suite rerun whole.
