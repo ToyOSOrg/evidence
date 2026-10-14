@@ -1,0 +1,56 @@
+Evidence for ToyOSOrg/ToyOS#933: the T14's first download after boot.
+
+## The instrument boot (`instrument/`)
+
+Image: wt/toyos-first-run-instrument at 817338be3adb764022f4364dd5839632b7e3518d
+(origin/main ca0b2472a + the internet_download row + probes; never lands),
+image SHA-256 c34147ca6a2fc79aa0234f6fe55ec259cc6835a4bb58d288d069191f41a4c375,
+staged with `cargo test --test toyos-build -- --metal --metal-readback <dir>
+internet_download` (`staging.log`, exit 2 = staged), booted on the T14 by the
+orchestrator (`manifest.txt`, `runner.log`: boot rc=0, judge EXIT=0).
+Masked: LAN/DNS addresses, MAC, stick serial, GUIDs, root id, machine
+product and BIOS; Fastly nodes appear only as 3-byte hashes.
+
+`download/kernel.log` carries:
+- `https_download: first-run-head` / `first-run run=<n>`: Fastly's x-cache,
+  x-cache-hits, age, node hash, time to headers, the boot-clock stamps of the
+  request and the first body byte, the body's MB per 250 ms, read waits.
+- `netstack: probe t_ms=<boot ms>` every 250 ms while traffic moved: pass,
+  message and frame counts, frames found by passes no message began, MAC
+  counts (wire_seen = every frame the MAC saw, missed), and TCP's receive
+  side (segments, out-of-order, old retransmitted text, ACKs, SACKs, window
+  offered and its least, capacity, most unread, RTT estimate).
+
+## Reading
+
+Every run's headers: `x_cache=HIT x_cache_hits=1`, a different node each run,
+head_ms 63-67, tcp 14-18 ms, tls 33-35 ms.
+
+Run 1 (request at boot 15562 ms, body at 15565 ms): 2.803 s, 486 Mb/s; runs 2-6
+1.573-1.688 s, 808-867 Mb/s. Its MB per 250 ms:
+`[9.8 21.8 29.3 29.4 29.0 10.6 0.0 11.9 18.1 0.0 4.2 6.3]` against run 2's
+`[12.9 29.6 29.4 29.4 29.4 29.4 10.5]`: line rate (29.4 MB per 250 ms) for
+1.25 s, then two pauses; max read wait 561 ms (runs 2-6: 20-22 ms).
+
+The probe lines across the pauses (cumulative counts):
+
+| t_ms | wire_seen | segs | ooo | old | acks | sacks | wnd | min_wnd | max_unread |
+|---|---|---|---|---|---|---|---|---|---|
+| 17056 | 92931 | 92866 | 1926 | 30 | 8379 | 947 | 4144384 | 4132992 | 75472 |
+| 17463 | 92940 | 92872 | 1926 | 30 | 8380 | 947 | 4185856 | 4185856 | 8407 |
+| 17713 | 113603 | 113536 | 1926 | 30 | 10072 | 947 | 4177152 | 4128768 | 79744 |
+| 17963 | 114039 | 113974 | 1926 | 30 | 10109 | 947 | 4187136 | 4175744 | 35600 |
+| 18279 | 114049 | 113982 | 1926 | 30 | 10110 | 947 | 4182912 | 4182912 | 11392 |
+
+In the first pause (about 400 ms) the I219 saw 9 frames on the wire, all
+taken (missed=0, overruns=0, starved=0); the window offered never fell below
+4.13 MB; nothing waited unread; no new out-of-order segment, no retransmission
+of text already held (old stays 30), no SACK. When the flow resumed it went
+straight back to line rate in order. The receiver had told the sender it could
+send 4 MB and had acknowledged everything that arrived: the sender stopped.
+Interrupt delivery was regular throughout: messages track passes, and frames
+found by passes no message began are 99 of 121586 over run 1.
+
+The early loss episode (ooo 1926, 947 SACK-carrying ACKs in the first 450 ms)
+is ordinary slow-start overshoot and recurs in run 2 (ooo +4021) without a
+pause.
