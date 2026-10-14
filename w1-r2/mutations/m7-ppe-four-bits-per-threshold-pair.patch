@@ -1,0 +1,13 @@
+diff --git a/lib/ieee80211/src/element/he.rs b/lib/ieee80211/src/element/he.rs
+index 9cee877ce..991d8aad6 100644
+--- a/lib/ieee80211/src/element/he.rs
++++ b/lib/ieee80211/src/element/he.rs
+@@ -42,7 +42,7 @@ fn ppe<'a>(r: &mut Reader<'a>) -> Result<&'a [u8], Refused> {
+     let &first = r.rest().first().ok_or(Refused::PpeThresholds)?;
+     let streams = u32::from(first & 0b111).saturating_add(1);
+     let sizes = (first >> 3 & 0x0F).count_ones();
+-    let bits = streams.saturating_mul(sizes).saturating_mul(6).saturating_add(7);
++    let bits = streams.saturating_mul(sizes).saturating_mul(4).saturating_add(7);
+     let octets = usize::try_from(bits.div_ceil(8)).map_err(|_| Refused::PpeThresholds)?;
+     r.take(octets).map_err(|_| Refused::PpeThresholds)
+ }

@@ -1,0 +1,119 @@
+head da6351833ee430e6bc92fb2345d993cd105098b3
+patch m4-amsdu-padding-to-two
+applied
+   Compiling toyos-ieee80211 v0.1.0 (/Users/USER/Dev/jan/toyos-wifi-w1/lib/ieee80211)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 1.63s
+build exit 0
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.20s
+     Running unittests src/lib.rs (target/debug/deps/toyos_ieee80211-af8bc05aa474f936)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/corpus.rs (target/debug/deps/corpus-79bf508f660cb77e)
+
+running 5 tests
+test a_captured_ccmp_frame_keeps_its_header_and_carries_an_ipv4_msdu ... ok
+test a_captured_association_response_carries_the_wmm_default_parameters ... ok
+test a_captured_to_ds_frame_with_ht_control_reaches_ethernet_as_a_broadcast_dhcp_request ... ok
+test a_captured_sae_beacon_reads_its_rsn_ht_and_vht_operation ... ok
+test every_capture_frame_reads_as_its_bytes_say_or_is_refused_by_name ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/fuzz.rs (target/debug/deps/fuzz-992277955cd95c98)
+
+running 2 tests
+test every_drawn_frame_is_read_or_refused_by_name_and_an_unbent_one_reads_back ... FAILED
+test the_reorder_window_passes_every_accepted_frame_up_once_and_in_order ... ok
+
+failures:
+
+---- every_drawn_frame_is_read_or_refused_by_name_and_an_unbent_one_reads_back stdout ----
+
+thread 'every_drawn_frame_is_read_or_refused_by_name_and_an_unbent_one_reads_back' (18625854) panicked at lib/ieee80211/tests/fuzz.rs:254:13:
+assertion `left == right` failed: iteration 30: an unbent data frame
+  left: None
+ right: Some([(Address([98, 216, 124, 119, 112, 2]), Address([212, 10, 186, 147, 30, 95]), 33079, [130, 37, 45, 153, 215, 236, 220, 219, 53, 64, 142, 237, 121, 225, 173, 72, 216, 234, 11, 64, 111, 47, 43, 162, 18, 198, 111, 73, 46, 226, 130, 68, 71, 144, 86, 228, 150, 25, 194, 23, 206, 51, 14]), (Address([118, 239, 169, 19, 90, 199]), Address([116, 25, 237, 21, 46, 165]), 33011, [238, 20, 48, 250, 141, 165, 66, 99, 162, 45, 93, 49, 4, 196, 88, 3, 135, 169, 94, 47, 148, 243, 138, 137, 201, 36, 245, 160, 196, 196, 201, 70, 193, 233, 234, 116, 190, 176, 193, 5, 210, 44, 90, 255, 53, 196, 218, 159, 241, 155, 233, 39, 235, 94, 31, 98, 198, 15, 203, 172]), (Address([202, 125, 188, 100, 3, 66]), Address([232, 23, 140, 94, 116, 192]), 2048, [151, 67, 70, 44, 99, 241, 126, 234, 87, 115, 83, 121, 219, 240, 34, 167, 159, 184, 199, 48, 153, 155, 211, 253, 26, 46, 3, 129, 50, 39]), (Address([214, 116, 255, 22, 126, 207]), Address([98, 136, 79, 1, 219, 221]), 34525, [104, 93, 138, 99, 23, 153, 241, 97, 139, 60, 241])])
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    every_drawn_frame_is_read_or_refused_by_name_and_an_unbent_one_reads_back
+
+test result: FAILED. 1 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+error: test failed, to rerun pass `-p toyos-ieee80211 --test fuzz`
+     Running tests/refusals.rs (target/debug/deps/refusals-e2d130003896df22)
+
+running 15 tests
+test a_bridge_tunnel_msdu_is_its_ethertype_on_ethernet ... ok
+test a_block_ack_transmitter_with_its_bandwidth_signaling_bit_is_the_individual_address ... ok
+test a_country_element_at_its_bounds_is_accepted ... ok
+test a_malformed_country_element_is_refused_whichever_rule_it_breaks ... ok
+test an_association_response_takes_aid_1_to_2007_with_its_two_high_bits_set ... ok
+test a_wmm_information_element_and_another_wmm_subtype_are_read_and_skipped ... ok
+test an_element_whose_length_runs_one_past_the_body_is_refused ... ok
+test an_he_block_ack_bitmap_is_as_long_as_its_fragment_number_says ... ok
+test an_he_capabilities_element_is_as_long_as_its_widths_and_ppe_thresholds_say ... ok
+test an_he_operation_element_is_as_long_as_its_present_bits_say ... ok
+test an_rsn_element_may_end_after_any_whole_field_and_not_inside_one ... ok
+test an_ssid_of_32_octets_and_a_tim_reaching_aid_2007_are_accepted ... ok
+test every_prefix_of_a_frame_is_refused_as_truncated_short_of_its_header ... ok
+test every_refusal_has_a_hostile_input_that_produces_it ... ok
+test llc_snap_refuses_a_length_and_tunnels_aarp_and_ipx ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/reorder.rs (target/debug/deps/reorder-d028f7e684490e6b)
+
+running 11 tests
+test a_frame_a_whole_window_past_passes_up_everything_held ... ok
+test a_frame_half_the_sequence_space_behind_is_old ... ok
+test a_frame_past_the_end_moves_the_window_to_end_at_it ... ok
+test a_hole_holds_the_frames_after_it_until_it_fills ... ok
+test a_release_at_or_behind_the_start_changes_nothing ... ok
+test a_release_passes_up_what_is_held_before_it_and_the_run_from_it ... ok
+test a_window_of_one_to_two_hundred_fifty_six_is_made_and_no_other ... ok
+test an_he_window_holds_two_hundred_fifty_six_frames_behind_a_hole ... ok
+test frames_in_order_pass_up_as_they_arrive ... ok
+test the_last_slot_of_the_window_moves_nothing ... ok
+test the_window_runs_across_the_end_of_the_sequence_space ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/translate.rs (target/debug/deps/translate-a3e8b8e1baa60434)
+
+running 4 tests
+test a_null_frame_carries_no_msdu ... ok
+test a_frame_without_the_amsdu_bit_is_one_msdu_between_its_header_addresses ... ok
+test an_ethernet_frame_sent_to_the_ap_reads_back_as_itself ... ok
+test an_amsdu_yields_each_subframe_with_its_own_addresses ... FAILED
+
+failures:
+
+---- an_amsdu_yields_each_subframe_with_its_own_addresses stdout ----
+
+thread 'an_amsdu_yields_each_subframe_with_its_own_addresses' (18626338) panicked at /Users/USER/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/core/src/ops/function.rs:166:5:
+called `Result::unwrap()` on an `Err` value: SubframeLength
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    an_amsdu_yields_each_subframe_with_its_own_addresses
+
+test result: FAILED. 3 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-ieee80211 --test translate`
+   Doc-tests toyos_ieee80211
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: 2 targets failed:
+    `-p toyos-ieee80211 --test fuzz`
+    `-p toyos-ieee80211 --test translate`
+test exit 101
+restored
