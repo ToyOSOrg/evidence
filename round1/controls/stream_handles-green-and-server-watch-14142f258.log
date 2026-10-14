@@ -1,0 +1,57 @@
+head 14142f258cbd30316a4006b1f6709daede8ab6e2
+=== green: git diff
+=== green result
+test: test_rs_stream_handles
+exit_code: Some(0)
+--- stdout ---
+  given out and taken back: one end; every spawn path refused, and the stream still serves
+  netstack's watch of a stream's connection: taken, and answered by the hang-up
+  a foreign handle: refused by name, nothing written
+  a stream as a file: refused by name
+a stream's handle reaches its one end in its own process and goes nowhere else
+=== green harness EXIT=0
+=== server-watch-other-end-gone: git diff
+diff --git a/sdk/toyos/src/net/stream.rs b/sdk/toyos/src/net/stream.rs
+index 0521c1a45..f9c90e59e 100644
+--- a/sdk/toyos/src/net/stream.rs
++++ b/sdk/toyos/src/net/stream.rs
+@@ -77,7 +77,8 @@ pub type Server = session::Server<RECEIVE_BYTES, SEND_BYTES, WORDS>;
+ /// What netstack watches a stream's connection for: the client's rings, and
+ /// its hang-up, which the connection reads as its end. A connection is no pipe
+ /// end, so the kernel refuses it `OTHER_END_GONE`.
+-pub const SERVER_WATCH: u32 = crate::poller::READABLE;
++// Control: the watch netstack made before, which asks the hang-up as OTHER_END_GONE.
++pub const SERVER_WATCH: u32 = crate::poller::READABLE | crate::poller::OTHER_END_GONE;
+ 
+ /// The receive ring's `end`: the peer's reset, or netstack's own.
+ pub const RESET: u32 = 2;
+=== server-watch-other-end-gone result
+test: test_rs_stream_handles
+exit_code: Some(101)
+--- stdout ---
+  given out and taken back: one end; every spawn path refused, and the stream still serves
+
+thread 'main' (1) panicked at src/bin/stream_handles.rs:98:5:
+the kernel answered netstack's watch [Err(NotSupported)]
+stack backtrace:
+   0:      0x1000007f220 - _Unwind_Backtrace
+   1:      0x10000063f93 - <<std[589d8706ff3f0e14]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[73b405bef30eeff1]::fmt::Display>::fmt
+   2:      0x10000083de7 - core[73b405bef30eeff1]::fmt::write
+   3:      0x1000006844b - <std[589d8706ff3f0e14]::sys::stdio::toyos::Stderr as core[73b405bef30eeff1]::io::write::Write>::write_fmt
+   4:      0x10000041733 - std[589d8706ff3f0e14]::panicking::default_hook::{closure#0}
+   5:      0x1000005d24e - std[589d8706ff3f0e14]::panicking::default_hook
+   6:      0x1000005d409 - std[589d8706ff3f0e14]::panicking::panic_with_hook
+   7:      0x100000417ed - std[589d8706ff3f0e14]::panicking::panic_handler::{closure#0}
+   8:      0x10000039a39 - std[589d8706ff3f0e14]::sys::backtrace::__rust_end_short_backtrace::<std[589d8706ff3f0e14]::panicking::panic_handler::{closure#0}, !>
+   9:      0x10000042118 - __rustc[d0c72ce299f394e5]::rust_begin_unwind
+  10:      0x1000008456b - core[73b405bef30eeff1]::panicking::panic_fmt
+  11:      0x100000284d8 - stream_handles[9fafb0e166ba4d84]::main
+  12:      0x10000025516 - std[589d8706ff3f0e14]::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  13:      0x100000259a0 - std[589d8706ff3f0e14]::rt::lang_start::<()>::{closure#0}
+  14:      0x1000005c686 - std[589d8706ff3f0e14]::rt::lang_start_internal
+  15:      0x1000002a101 - main
+  16:      0x10000061363 - std[589d8706ff3f0e14]::sys::pal::toyos::start_rust
+  17:      0x1000002c6ca - _start
+=== server-watch-other-end-gone harness EXIT=0
+=== restored
+=== restored EXIT=0

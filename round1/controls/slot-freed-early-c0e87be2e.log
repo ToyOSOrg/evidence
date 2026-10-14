@@ -1,0 +1,66 @@
+revision c0e87be2e335bc87bb99835dc13d422f60bddfc7
++(eval):1> cargo test -p toyos --lib net::stream
+   Compiling toyos v0.18.0 (<tree>/sdk/toyos)
+    Finished `test` profile [optimized + debuginfo] target(s) in 3.50s
+     Running unittests src/lib.rs (target/debug/deps/toyos-31e8fc7685d00d02)
+
+running 3 tests
+test net::stream::tests::a_handle_no_end_was_made_for_is_no_stream ... ok
+test net::stream::tests::past_the_bound_no_slot_is_reserved ... ok
+test net::stream::tests::an_end_goes_with_its_last_handle_and_its_last_call ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 66 filtered out; finished in 0.00s
+
++(eval):1> echo 'GREEN_EXIT=0'
+GREEN_EXIT=0
++(eval):1> git apply --check <scratch>/controls/slot-freed-early.patch
++(eval):1> git apply <scratch>/controls/slot-freed-early.patch
++(eval):1> git diff
+diff --git a/sdk/toyos/src/net/stream.rs b/sdk/toyos/src/net/stream.rs
+index 0521c1a45..a7a23ab2f 100644
+--- a/sdk/toyos/src/net/stream.rs
++++ b/sdk/toyos/src/net/stream.rs
+@@ -193,7 +193,8 @@ impl Table {
+     fn free_unused(&mut self, slot: usize) -> Option<End> {
+         let end = *self.end(slot);
+         (end.handles == 0 && end.calls == 0).then(|| {
+-            self.slots[slot] = Slot::Making;
++            // Control: the slot free before `free` clears its halves.
++            self.slots[slot] = Slot::Free;
+             end
+         })
+     }
++(eval):1> cargo test -p toyos --lib net::stream
+    Blocking waiting for file lock on package cache
+   Compiling toyos v0.18.0 (<tree>/sdk/toyos)
+    Finished `test` profile [optimized + debuginfo] target(s) in 4.25s
+     Running unittests src/lib.rs (target/debug/deps/toyos-31e8fc7685d00d02)
+
+running 3 tests
+test net::stream::tests::a_handle_no_end_was_made_for_is_no_stream ... ok
+test net::stream::tests::an_end_goes_with_its_last_handle_and_its_last_call ... FAILED
+test net::stream::tests::past_the_bound_no_slot_is_reserved ... ok
+
+failures:
+
+---- net::stream::tests::an_end_goes_with_its_last_handle_and_its_last_call stdout ----
+
+thread 'net::stream::tests::an_end_goes_with_its_last_handle_and_its_last_call' (13993830) panicked at sdk/toyos/src/net/stream.rs:758:9:
+assertion `left == right` failed: a freed slot is not taken before its halves are cleared
+  left: Some(0)
+ right: Some(1)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    net::stream::tests::an_end_goes_with_its_last_handle_and_its_last_call
+
+test result: FAILED. 2 passed; 1 failed; 0 ignored; 0 measured; 66 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos --lib`
++(eval):1> echo 'CONTROL_EXIT=101'
+CONTROL_EXIT=101
++(eval):1> git apply -R <scratch>/controls/slot-freed-early.patch
++(eval):1> git status --porcelain '--ignore-submodules=none'
++(eval):1> echo RESTORED
+RESTORED

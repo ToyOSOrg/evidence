@@ -1,0 +1,12 @@
+--- a/sdk/toyos/src/net/stream.rs
++++ b/sdk/toyos/src/net/stream.rs
+@@ -193,7 +193,8 @@ impl Table {
+     fn free_unused(&mut self, slot: usize) -> Option<End> {
+         let end = *self.end(slot);
+         (end.handles == 0 && end.calls == 0).then(|| {
+-            self.slots[slot] = Slot::Making;
++            // Control: the slot free before `free` clears its halves.
++            self.slots[slot] = Slot::Free;
+             end
+         })
+     }

@@ -1,0 +1,514 @@
+head 14142f258cbd30316a4006b1f6709daede8ab6e2
+Wed Oct 14 05:56:56 UTC 2026
+=== scratch diff over the head
+diff --git a/tests/images/netcase.toml b/tests/images/netcase.toml
+index a369635eb..f8663ca93 100644
+--- a/tests/images/netcase.toml
++++ b/tests/images/netcase.toml
+@@ -34,6 +34,7 @@ devices = ["pci:1af4:1059"]
+ syscap = ["rt"]
+ 
+ [programs.test-runner]
++receives = ["netstack"]
+ 
+ # The block service: the NVMe controller this machine's DATA is on, driven
+ # from userland through its claim. Started again when it ends; the claim goes
+diff --git a/tests/toyos.rs b/tests/toyos.rs
+index 3aa92da16..45d9199eb 100644
+--- a/tests/toyos.rs
++++ b/tests/toyos.rs
+@@ -67,6 +67,7 @@ const ACTUATOR_KERNEL: &[&str] = toyos_build::build::TEST_KERNEL;
+ 
+ // Rust helper binaries that are spawned by tests, not tests themselves.
+ const RUST_SKIP: &[&str] = &[
++    "netstack_streams",
+     // **Its exit code is a measurement, not a verdict**, and the shared block
+     // judges every member on `exit=0` alone — so it would red on every boot
+     // that measured anything. It also needs the real-time band, which only
+@@ -347,6 +348,7 @@ fn gop_edid_scale(loader: &str, log: &str, kernel: &str) -> Result<(), String> {
+ /// The tests whose machine shape *is* the test, each on a boot of its own.
+ /// `run_machine_test` dispatches them.
+ const MACHINE_TESTS: &[&str] = &[
++    "netstack_streams",
+     // Whether QEMU's virtio functions negotiated `VIRTIO_F_ACCESS_PLATFORM`
+     // behind its emulated VT-d unit and without one: no shipped machine has a
+     // virtio function, so only a QEMU machine can be asked.
+@@ -3719,6 +3721,7 @@ fn run_machine_test(name: &str, test_config: &Path) -> Result<(), String> {
+         "usb_keyboard_rollover" => usb_keyboard_rollover(test_config),
+         "vector_state_survives_a_switch" => vector_state_survives_a_switch(test_config),
+         "the_opening_exchange_with_qemus_agent_completes" => the_opening_exchange_with_qemus_agent_completes(),
++        "netstack_streams" => netstack_streams(),
+         other => Err(format!("unknown machine test {other}")),
+     }
+ }
+@@ -6569,3 +6572,65 @@ fn main() {
+     summary.lines().for_each(|line| eprintln!("{line}"));
+     run.exit(tally.exit_code());
+ }
++
++/// Evidence only (PR #905): std streams through netstack, connect, bulk both
++/// ways, close, and an accepted stream the guest hangs up.
++fn netstack_streams() -> Result<(), String> {
++    use std::io::Read;
++    use std::sync::mpsc;
++    const JOB: &str = "netstack_streams";
++    const LISTENER: u16 = 7010;
++    let echo = std::net::TcpListener::bind(("127.0.0.1", 0)).map_err(|e| format!("echo: {e}"))?;
++    let port = echo.local_addr().unwrap().port();
++    let bin = qemu::build_toyos_bin(qemu::SUITE_ARCH, &compile::repo_root().join("tests/guest/rust-tests"), JOB);
++    let options = BootOptions { qmp: true, profile: qemu::Profile::Headless, ..Default::default() };
++    let case = compile::repo_root().join("tests/images/netcase.toml");
++    let mut qemu = QemuInstance::boot_with_options(&case, &[], &[(JOB.to_string(), bin)], options);
++    let mut console = qemu.boot_log().to_string();
++    await_marker(&mut qemu, &mut console, "netstack: DHCP: lease ", "netstack's lease").map_err(|e| format!("{e}\n{console}"))?;
++    let mut monitor = qemu::QmpMonitor::open(qemu.qmp_socket());
++    let said = monitor.human(&format!("hostfwd_add net0 tcp:127.0.0.1:0-:{LISTENER}"));
++    if !said.trim().is_empty() {
++        return Err(format!("hostfwd: {said}"));
++    }
++    let table = monitor.human("info usernet");
++    let to_listener: u16 = table
++        .lines()
++        .map(|row| row.split_whitespace().collect::<Vec<_>>())
++        .find(|row| row.first() == Some(&"TCP[HOST_FORWARD]") && row.get(5) == Some(&LISTENER.to_string().as_str()))
++        .and_then(|row| row[3].parse().ok())
++        .ok_or_else(|| format!("no forward:\n{table}"))?;
++    let (tx, rx) = mpsc::channel();
++    thread::spawn(move || {
++        let (stream, _) = echo.accept().expect("the guest's bulk stream");
++        let mut back = stream.try_clone().unwrap();
++        let copied = std::io::copy(&mut &stream, &mut back);
++        drop(back);
++        drop(stream);
++        let answer = (|| -> Result<(u8, usize), String> {
++            let mut peer = std::net::TcpStream::connect(("127.0.0.1", to_listener)).map_err(|e| e.to_string())?;
++            peer.set_read_timeout(Some(Duration::from_secs(60))).unwrap();
++            peer.write_all(b"1").map_err(|e| e.to_string())?;
++            let mut a = [0u8; 1];
++            peer.read_exact(&mut a).map_err(|e| format!("answer: {e}"))?;
++            let mut rest = Vec::new();
++            let n = peer.read_to_end(&mut rest).map_err(|e| format!("end: {e}"))?;
++            Ok((a[0], n))
++        })();
++        tx.send((copied.map_err(|e| e.to_string()), answer)).unwrap();
++    });
++    let result = qemu.run_test(&format!("test_rs_{JOB} {port} {LISTENER}"), Duration::from_secs(240));
++    println!("guest said:\n{}", result.stdout);
++    if let Some(why) = &result.error {
++        return Err(format!("{why}\n{}", result.stdout));
++    }
++    if result.exit_code != Some(0) || !result.stdout.contains("netstack_streams: ok") {
++        return Err(format!("the job ended {:?}", result.exit_code));
++    }
++    let (copied, answer) = rx.recv_timeout(Duration::from_secs(60)).map_err(|e| format!("host side: {e}"))?;
++    println!("host: echoed {copied:?}; the dialled peer read {answer:?}");
++    match (copied, answer) {
++        (Ok(n), Ok((b'1', 0))) if n == 4 * 1024 * 1024 => Ok(()),
++        other => Err(format!("host side: {other:?}")),
++    }
++}
+   Compiling toyos-abi v0.16.0 (<tree>/sdk/abi)
+   Compiling toyos-manifest v0.1.0 (<tree>/lib/manifest)
+   Compiling toyos-symbols v0.1.0 (<tree>/lib/symbols)
+   Compiling toyos-logstream v0.1.0 (<tree>/lib/logstream)
+   Compiling toyos-input v0.1.0 (<tree>/lib/input)
+   Compiling toyos-bootmap v0.1.0 (<tree>/lib/bootmap)
+   Compiling kernel v0.1.0 (<tree>/kernel)
+   Compiling toyos-acpi v0.1.0 (<tree>/lib/acpi)
+   Compiling toyos-swap v0.1.0 (<tree>/lib/swap)
+   Compiling toyos-build v0.1.0 (<tree>)
+   Compiling toyos-userbound v0.1.0 (<tree>/lib/userbound)
+   Compiling toyos-metal v0.1.0 (<tree>/tests/metal)
+    Finished `test` profile [optimized + debuginfo] target(s) in 37.15s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-ddd1c80cd62279e4)
+
+05:57:34 running 1 tests, 12 wide
+
+05:57:34   RUN   netstack_streams
+05:57:34   BUILD x86_64 netstack_streams of tests/guest/rust-tests, for netstack_streams
+05:57:39 Building sysroot 207c9f28bf432339: ToyOS's std from <tree>/rust, the compiler ~/.cache/toyos/compilers/b8a2569d03a2539c/stage2, the freestanding libraries 005ac5c046aa82b7
+05:57:40 Building bootstrap
+05:57:40     Finished `dev` profile [unoptimized] target(s) in 0.35s
+05:57:45 WARNING: running build in stage 0. This might not work as expected.
+05:57:49 Building stage0 library artifacts{alloc, compiler_builtins, core, panic_abort, panic_unwind, proc_macro, rustc-std-workspace-core, std, std_detect, sysroot, test, unwind} (stage0:aarch64-apple-darwin -> stage0:x86_64-unknown-toyos)
+05:57:49    Compiling compiler_builtins v0.1.160 (<tree>/rust/library/compiler-builtins/compiler-builtins)
+05:57:49    Compiling core v0.0.0 (<tree>/rust/library/core)
+05:57:49    Compiling libc v0.2.189
+05:57:49    Compiling object v0.39.1
+05:57:49    Compiling std v0.0.0 (<tree>/rust/library/std)
+05:57:49    Compiling test v0.0.0 (<tree>/rust/library/test)
+05:58:18    Compiling rustc-std-workspace-core v1.99.0 (<tree>/rust/library/rustc-std-workspace-core)
+05:58:18    Compiling alloc v0.0.0 (<tree>/rust/library/alloc)
+05:58:18    Compiling toyos-untrusted v0.1.0 (<tree>/lib/untrusted)
+05:58:18    Compiling toyos-abi v0.16.0 (<tree>/sdk/abi)
+05:58:18    Compiling memchr v2.8.3
+05:58:18    Compiling adler2 v2.0.1
+05:58:18    Compiling cfg-if v1.0.4
+05:58:18    Compiling rustc-demangle v0.1.28
+05:58:18    Compiling panic_abort v0.0.0 (<tree>/rust/library/panic_abort)
+05:58:18    Compiling rustc-literal-escaper v0.0.8
+05:58:18    Compiling dlmalloc v0.2.14
+05:58:18    Compiling toyos-transport v0.1.0 (<tree>/lib/blockring/transport)
+05:58:19    Compiling toyos v0.18.0 (<tree>/sdk/toyos)
+05:58:23    Compiling rustc-std-workspace-alloc v1.99.0 (<tree>/rust/library/rustc-std-workspace-alloc)
+05:58:23    Compiling gimli v0.34.0
+05:58:23    Compiling std_detect v0.1.5 (<tree>/rust/library/std_detect)
+05:58:23    Compiling miniz_oxide v0.9.1
+05:58:23    Compiling hashbrown v0.17.1
+05:58:26    Compiling unwinding v0.2.10
+05:58:26    Compiling addr2line v0.27.1
+05:58:26    Compiling unwind v0.0.0 (<tree>/rust/library/unwind)
+05:58:27    Compiling panic_unwind v0.0.0 (<tree>/rust/library/panic_unwind)
+05:58:30 warning: function `exit` is never used
+05:58:30    --> library/std/src/sys/pal/../../../../../../sdk/std/sys/pal/os.rs:113:8
+05:58:30     |
+05:58:30 113 | pub fn exit(code: i32) -> ! {
+05:58:30     |        ^^^^
+05:58:30     |
+05:58:30     = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+05:58:30 warning: function `getpid` is never used
+05:58:30    --> library/std/src/sys/pal/../../../../../../sdk/std/sys/pal/os.rs:117:8
+05:58:30     |
+05:58:30 117 | pub fn getpid() -> u32 {
+05:58:30     |        ^^^^^^
+
+05:58:30 warning: field `eh_frame_hdr_size` is never read
+05:58:30    --> library/std/src/sys/pal/../../../../../../sdk/std/sys/pal/mod.rs:228:9
+05:58:30     |
+05:58:30 224 |     struct Module {
+05:58:30     |            ------ field in this struct
+05:58:30 ...
+05:58:30 228 |         eh_frame_hdr_size: usize,
+05:58:30     |         ^^^^^^^^^^^^^^^^^
+
+05:58:41 warning: `std` (lib) generated 3 warnings
+05:58:41    Compiling rustc-std-workspace-std v1.99.0 (<tree>/rust/library/rustc-std-workspace-std)
+05:58:41    Compiling proc_macro v0.0.0 (<tree>/rust/library/proc_macro)
+05:58:41    Compiling getopts v0.2.24
+05:58:43    Compiling sysroot v0.0.0 (<tree>/rust/library/sysroot)
+05:58:49     Finished `dist` profile [optimized + debuginfo] target(s) in 59.78s
+05:58:49 Building stage0 library artifacts{alloc, compiler_builtins, core, panic_abort, panic_unwind, proc_macro, rustc-std-workspace-core, std, std_detect, sysroot, test, unwind} (stage0:aarch64-apple-darwin -> stage0:aarch64-unknown-toyos)
+05:58:49    Compiling compiler_builtins v0.1.160 (<tree>/rust/library/compiler-builtins/compiler-builtins)
+05:58:49    Compiling core v0.0.0 (<tree>/rust/library/core)
+05:58:49    Compiling libc v0.2.189
+05:58:49    Compiling object v0.39.1
+05:58:49    Compiling std v0.0.0 (<tree>/rust/library/std)
+05:58:49    Compiling test v0.0.0 (<tree>/rust/library/test)
+05:59:10    Compiling rustc-std-workspace-core v1.99.0 (<tree>/rust/library/rustc-std-workspace-core)
+05:59:10    Compiling alloc v0.0.0 (<tree>/rust/library/alloc)
+05:59:10    Compiling toyos-untrusted v0.1.0 (<tree>/lib/untrusted)
+05:59:10    Compiling adler2 v2.0.1
+05:59:10    Compiling cfg-if v1.0.4
+05:59:10    Compiling toyos-abi v0.16.0 (<tree>/sdk/abi)
+05:59:10    Compiling memchr v2.8.3
+05:59:10    Compiling rustc-demangle v0.1.28
+05:59:10    Compiling panic_abort v0.0.0 (<tree>/rust/library/panic_abort)
+05:59:10    Compiling rustc-literal-escaper v0.0.8
+05:59:10    Compiling dlmalloc v0.2.14
+05:59:10    Compiling toyos-transport v0.1.0 (<tree>/lib/blockring/transport)
+05:59:11    Compiling toyos v0.18.0 (<tree>/sdk/toyos)
+05:59:14    Compiling rustc-std-workspace-alloc v1.99.0 (<tree>/rust/library/rustc-std-workspace-alloc)
+05:59:14    Compiling gimli v0.34.0
+05:59:14    Compiling hashbrown v0.17.1
+05:59:14    Compiling std_detect v0.1.5 (<tree>/rust/library/std_detect)
+05:59:14    Compiling miniz_oxide v0.9.1
+05:59:19    Compiling unwinding v0.2.10
+05:59:19    Compiling addr2line v0.27.1
+05:59:19    Compiling unwind v0.0.0 (<tree>/rust/library/unwind)
+05:59:19    Compiling panic_unwind v0.0.0 (<tree>/rust/library/panic_unwind)
+05:59:26 warning: function `exit` is never used
+05:59:26    --> library/std/src/sys/pal/../../../../../../sdk/std/sys/pal/os.rs:113:8
+05:59:26     |
+05:59:26 113 | pub fn exit(code: i32) -> ! {
+05:59:26     |        ^^^^
+05:59:26     |
+05:59:26     = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+05:59:26 warning: function `getpid` is never used
+05:59:26    --> library/std/src/sys/pal/../../../../../../sdk/std/sys/pal/os.rs:117:8
+05:59:26     |
+05:59:26 117 | pub fn getpid() -> u32 {
+05:59:26     |        ^^^^^^
+
+05:59:26 warning: field `eh_frame_hdr_size` is never read
+05:59:26    --> library/std/src/sys/pal/../../../../../../sdk/std/sys/pal/mod.rs:228:9
+05:59:26     |
+05:59:26 224 |     struct Module {
+05:59:26     |            ------ field in this struct
+05:59:26 ...
+05:59:26 228 |         eh_frame_hdr_size: usize,
+05:59:26     |         ^^^^^^^^^^^^^^^^^
+
+05:59:34 warning: `std` (lib) generated 3 warnings
+05:59:34    Compiling rustc-std-workspace-std v1.99.0 (<tree>/rust/library/rustc-std-workspace-std)
+05:59:34    Compiling proc_macro v0.0.0 (<tree>/rust/library/proc_macro)
+05:59:34    Compiling getopts v0.2.24
+05:59:35    Compiling sysroot v0.0.0 (<tree>/rust/library/sysroot)
+05:59:39     Finished `dist` profile [optimized + debuginfo] target(s) in 50.19s
+05:59:39 Build completed successfully in 0:01:59
+05:59:39 Checking that the compilers of ~/.cache/toyos/sysroots/207c9f28bf432339.partial keep a loop's last exit
+05:59:44 Building toyos-libc for sysroot...
+   Compiling toyos-untrusted v0.1.0 (<tree>/lib/untrusted)
+   Compiling cfg-if v1.0.4
+   Compiling toyos-abi v0.16.0 (<tree>/sdk/abi)
+   Compiling toyos-osrelease v0.1.0 (<tree>/sdk/osrelease)
+   Compiling toyos-elf v0.1.0 (<tree>/lib/elf)
+   Compiling dlmalloc v0.2.13
+   Compiling toyos-transport v0.1.0 (<tree>/lib/blockring/transport)
+   Compiling toyos v0.18.0 (<tree>/sdk/toyos)
+   Compiling toyos-libc v0.1.0 (<tree>/sdk/libc)
+    Finished `release` profile [optimized] target(s) in 2.41s
+05:59:49 Building toyos-libc for sysroot...
+   Compiling toyos-untrusted v0.1.0 (<tree>/lib/untrusted)
+   Compiling cfg-if v1.0.4
+   Compiling toyos-abi v0.16.0 (<tree>/sdk/abi)
+   Compiling toyos-osrelease v0.1.0 (<tree>/sdk/osrelease)
+   Compiling toyos-elf v0.1.0 (<tree>/lib/elf)
+   Compiling dlmalloc v0.2.13
+   Compiling toyos-transport v0.1.0 (<tree>/lib/blockring/transport)
+   Compiling toyos v0.18.0 (<tree>/sdk/toyos)
+   Compiling toyos-libc v0.1.0 (<tree>/sdk/libc)
+    Finished `release` profile [optimized] target(s) in 2.41s
+05:59:53 Building the C++ runtime for x86_64-unknown-toyos under <tree>/target/n2/172fb458445ac68d/bin/ninja
+06:00:10 Building the C++ runtime for aarch64-unknown-toyos under <tree>/target/n2/172fb458445ac68d/bin/ninja
+06:00:26 Removed sysroot ~/.cache/toyos/sysroots/dd1e808b5b4b423e: it is not among the 24 last used, or it was never whole
+06:00:26 external deps changed: cleaning <tree>/tests/guest/rust-tests/target/x86_64-unknown-toyos
+06:00:31   BUILT x86_64 netstack_streams of tests/guest/rust-tests, for netstack_streams  (178s)
+06:00:31   BUILD x86_64 kernel, loader, ROOT of tests/images/netcase.toml, for netstack_streams
+06:00:34 external deps changed: cleaning <tree>/target/x86_64-unknown-toyos
+06:01:27 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+06:01:27   BUILT x86_64 kernel, loader, ROOT of tests/images/netcase.toml, for netstack_streams  (56s)
+guest said:
+netstack_streams: 4194304 bytes went out and came back as sent, then the stream's end
+netstack_streams: accepted 10.0.2.2:54883, answered '1' and hung up
+netstack_streams: ok
+
+host: echoed Ok(4194304); the dialled peer read Ok((49, 0))
+06:01:38   PASS  netstack_streams  (10s)
+06:01:38   --- 1 guests, 0 of them not the shipping kernel, 1 kernel build(s): [""]
+
+06:01:38 host: fastest boot 8914 ms against the reference 1424 ms — liveness ceilings paid at 6.26x
+06:01:38 host: 14 core(s); a guest wider than that waits vcpus/cores longer again
+06:01:38 test result: ok. 1 passed, 1 total (244.0s; workers: 234s building, 10s testing)
+=== green EXIT=0
+diff --git a/sdk/toyos/src/net/stream.rs b/sdk/toyos/src/net/stream.rs
+index 0521c1a45..f9c90e59e 100644
+--- a/sdk/toyos/src/net/stream.rs
++++ b/sdk/toyos/src/net/stream.rs
+@@ -77,7 +77,8 @@ pub type Server = session::Server<RECEIVE_BYTES, SEND_BYTES, WORDS>;
+ /// What netstack watches a stream's connection for: the client's rings, and
+ /// its hang-up, which the connection reads as its end. A connection is no pipe
+ /// end, so the kernel refuses it `OTHER_END_GONE`.
+-pub const SERVER_WATCH: u32 = crate::poller::READABLE;
++// Control: the watch netstack made before, which asks the hang-up as OTHER_END_GONE.
++pub const SERVER_WATCH: u32 = crate::poller::READABLE | crate::poller::OTHER_END_GONE;
+ 
+ /// The receive ring's `end`: the peer's reset, or netstack's own.
+ pub const RESET: u32 = 2;
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.50s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-ddd1c80cd62279e4)
+
+06:01:38 running 1 tests, 12 wide
+
+06:01:38   RUN   netstack_streams
+06:01:38   BUILD x86_64 netstack_streams of tests/guest/rust-tests, for netstack_streams
+06:01:42 Building sysroot 57785c6c12224533: ToyOS's std from <tree>/rust, the compiler ~/.cache/toyos/compilers/b8a2569d03a2539c/stage2, the freestanding libraries 005ac5c046aa82b7
+06:01:42 Building bootstrap
+06:01:42     Finished `dev` profile [unoptimized] target(s) in 0.10s
+06:01:45 WARNING: running build in stage 0. This might not work as expected.
+06:01:46 Building stage0 library artifacts{alloc, compiler_builtins, core, panic_abort, panic_unwind, proc_macro, rustc-std-workspace-core, std, std_detect, sysroot, test, unwind} (stage0:aarch64-apple-darwin -> stage0:x86_64-unknown-toyos)
+06:01:46    Compiling compiler_builtins v0.1.160 (<tree>/rust/library/compiler-builtins/compiler-builtins)
+06:01:46    Compiling core v0.0.0 (<tree>/rust/library/core)
+06:01:46    Compiling libc v0.2.189
+06:01:46    Compiling object v0.39.1
+06:01:46    Compiling std v0.0.0 (<tree>/rust/library/std)
+06:01:46    Compiling test v0.0.0 (<tree>/rust/library/test)
+06:02:01    Compiling rustc-std-workspace-core v1.99.0 (<tree>/rust/library/rustc-std-workspace-core)
+06:02:01    Compiling alloc v0.0.0 (<tree>/rust/library/alloc)
+06:02:01    Compiling toyos-untrusted v0.1.0 (<tree>/lib/untrusted)
+06:02:01    Compiling memchr v2.8.3
+06:02:01    Compiling adler2 v2.0.1
+06:02:01    Compiling toyos-abi v0.16.0 (<tree>/sdk/abi)
+06:02:01    Compiling cfg-if v1.0.4
+06:02:01    Compiling panic_abort v0.0.0 (<tree>/rust/library/panic_abort)
+06:02:01    Compiling rustc-demangle v0.1.28
+06:02:01    Compiling rustc-literal-escaper v0.0.8
+06:02:01    Compiling dlmalloc v0.2.14
+06:02:01    Compiling toyos-transport v0.1.0 (<tree>/lib/blockring/transport)
+06:02:02    Compiling toyos v0.18.0 (<tree>/sdk/toyos)
+06:02:05    Compiling rustc-std-workspace-alloc v1.99.0 (<tree>/rust/library/rustc-std-workspace-alloc)
+06:02:05    Compiling gimli v0.34.0
+06:02:05    Compiling miniz_oxide v0.9.1
+06:02:05    Compiling hashbrown v0.17.1
+06:02:05    Compiling std_detect v0.1.5 (<tree>/rust/library/std_detect)
+06:02:07    Compiling unwinding v0.2.10
+06:02:07    Compiling addr2line v0.27.1
+06:02:08    Compiling unwind v0.0.0 (<tree>/rust/library/unwind)
+06:02:08    Compiling panic_unwind v0.0.0 (<tree>/rust/library/panic_unwind)
+06:02:12 warning: function `exit` is never used
+06:02:12    --> library/std/src/sys/pal/../../../../../../sdk/std/sys/pal/os.rs:113:8
+06:02:12     |
+06:02:12 113 | pub fn exit(code: i32) -> ! {
+06:02:12     |        ^^^^
+06:02:12     |
+06:02:12     = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+06:02:12 warning: function `getpid` is never used
+06:02:12    --> library/std/src/sys/pal/../../../../../../sdk/std/sys/pal/os.rs:117:8
+06:02:12     |
+06:02:12 117 | pub fn getpid() -> u32 {
+06:02:12     |        ^^^^^^
+
+06:02:12 warning: field `eh_frame_hdr_size` is never read
+06:02:12    --> library/std/src/sys/pal/../../../../../../sdk/std/sys/pal/mod.rs:228:9
+06:02:12     |
+06:02:12 224 |     struct Module {
+06:02:12     |            ------ field in this struct
+06:02:12 ...
+06:02:12 228 |         eh_frame_hdr_size: usize,
+06:02:12     |         ^^^^^^^^^^^^^^^^^
+
+06:02:22 warning: `std` (lib) generated 3 warnings
+06:02:22    Compiling rustc-std-workspace-std v1.99.0 (<tree>/rust/library/rustc-std-workspace-std)
+06:02:22    Compiling proc_macro v0.0.0 (<tree>/rust/library/proc_macro)
+06:02:22    Compiling getopts v0.2.24
+06:02:24    Compiling sysroot v0.0.0 (<tree>/rust/library/sysroot)
+06:02:28     Finished `dist` profile [optimized + debuginfo] target(s) in 42.55s
+06:02:28 Building stage0 library artifacts{alloc, compiler_builtins, core, panic_abort, panic_unwind, proc_macro, rustc-std-workspace-core, std, std_detect, sysroot, test, unwind} (stage0:aarch64-apple-darwin -> stage0:aarch64-unknown-toyos)
+06:02:28    Compiling compiler_builtins v0.1.160 (<tree>/rust/library/compiler-builtins/compiler-builtins)
+06:02:28    Compiling core v0.0.0 (<tree>/rust/library/core)
+06:02:28    Compiling libc v0.2.189
+06:02:28    Compiling object v0.39.1
+06:02:28    Compiling std v0.0.0 (<tree>/rust/library/std)
+06:02:28    Compiling test v0.0.0 (<tree>/rust/library/test)
+06:02:50    Compiling rustc-std-workspace-core v1.99.0 (<tree>/rust/library/rustc-std-workspace-core)
+06:02:50    Compiling alloc v0.0.0 (<tree>/rust/library/alloc)
+06:02:50    Compiling toyos-untrusted v0.1.0 (<tree>/lib/untrusted)
+06:02:50    Compiling toyos-abi v0.16.0 (<tree>/sdk/abi)
+06:02:50    Compiling cfg-if v1.0.4
+06:02:50    Compiling memchr v2.8.3
+06:02:50    Compiling adler2 v2.0.1
+06:02:50    Compiling panic_abort v0.0.0 (<tree>/rust/library/panic_abort)
+06:02:50    Compiling rustc-demangle v0.1.28
+06:02:50    Compiling rustc-literal-escaper v0.0.8
+06:02:50    Compiling dlmalloc v0.2.14
+06:02:50    Compiling toyos-transport v0.1.0 (<tree>/lib/blockring/transport)
+06:02:51    Compiling toyos v0.18.0 (<tree>/sdk/toyos)
+06:02:54    Compiling rustc-std-workspace-alloc v1.99.0 (<tree>/rust/library/rustc-std-workspace-alloc)
+06:02:55    Compiling gimli v0.34.0
+06:02:55    Compiling std_detect v0.1.5 (<tree>/rust/library/std_detect)
+06:02:55    Compiling hashbrown v0.17.1
+06:02:55    Compiling miniz_oxide v0.9.1
+06:03:00    Compiling unwinding v0.2.10
+06:03:00    Compiling addr2line v0.27.1
+06:03:00    Compiling unwind v0.0.0 (<tree>/rust/library/unwind)
+06:03:00    Compiling panic_unwind v0.0.0 (<tree>/rust/library/panic_unwind)
+06:03:05 warning: function `exit` is never used
+06:03:05    --> library/std/src/sys/pal/../../../../../../sdk/std/sys/pal/os.rs:113:8
+06:03:05     |
+06:03:05 113 | pub fn exit(code: i32) -> ! {
+06:03:05     |        ^^^^
+06:03:05     |
+06:03:05     = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+06:03:05 warning: function `getpid` is never used
+06:03:05    --> library/std/src/sys/pal/../../../../../../sdk/std/sys/pal/os.rs:117:8
+06:03:05     |
+06:03:05 117 | pub fn getpid() -> u32 {
+06:03:05     |        ^^^^^^
+
+06:03:05 warning: field `eh_frame_hdr_size` is never read
+06:03:05    --> library/std/src/sys/pal/../../../../../../sdk/std/sys/pal/mod.rs:228:9
+06:03:05     |
+06:03:05 224 |     struct Module {
+06:03:05     |            ------ field in this struct
+06:03:05 ...
+06:03:05 228 |         eh_frame_hdr_size: usize,
+06:03:05     |         ^^^^^^^^^^^^^^^^^
+
+06:03:17 warning: `std` (lib) generated 3 warnings
+06:03:17    Compiling rustc-std-workspace-std v1.99.0 (<tree>/rust/library/rustc-std-workspace-std)
+06:03:17    Compiling proc_macro v0.0.0 (<tree>/rust/library/proc_macro)
+06:03:17    Compiling getopts v0.2.24
+06:03:20    Compiling sysroot v0.0.0 (<tree>/rust/library/sysroot)
+06:03:26     Finished `dist` profile [optimized + debuginfo] target(s) in 57.89s
+06:03:26 Build completed successfully in 0:01:44
+06:03:27 Checking that the compilers of ~/.cache/toyos/sysroots/57785c6c12224533.partial keep a loop's last exit
+06:03:33 Building toyos-libc for sysroot...
+   Compiling toyos-untrusted v0.1.0 (<tree>/lib/untrusted)
+   Compiling cfg-if v1.0.4
+   Compiling toyos-abi v0.16.0 (<tree>/sdk/abi)
+   Compiling toyos-osrelease v0.1.0 (<tree>/sdk/osrelease)
+   Compiling toyos-elf v0.1.0 (<tree>/lib/elf)
+   Compiling dlmalloc v0.2.13
+   Compiling toyos-transport v0.1.0 (<tree>/lib/blockring/transport)
+   Compiling toyos v0.18.0 (<tree>/sdk/toyos)
+   Compiling toyos-libc v0.1.0 (<tree>/sdk/libc)
+    Finished `release` profile [optimized] target(s) in 4.39s
+06:03:42 Building toyos-libc for sysroot...
+   Compiling toyos-untrusted v0.1.0 (<tree>/lib/untrusted)
+   Compiling cfg-if v1.0.4
+   Compiling toyos-abi v0.16.0 (<tree>/sdk/abi)
+   Compiling toyos-elf v0.1.0 (<tree>/lib/elf)
+   Compiling toyos-osrelease v0.1.0 (<tree>/sdk/osrelease)
+   Compiling dlmalloc v0.2.13
+   Compiling toyos-transport v0.1.0 (<tree>/lib/blockring/transport)
+   Compiling toyos v0.18.0 (<tree>/sdk/toyos)
+   Compiling toyos-libc v0.1.0 (<tree>/sdk/libc)
+    Finished `release` profile [optimized] target(s) in 4.48s
+06:03:49 Building the C++ runtime for x86_64-unknown-toyos under <tree>/target/n2/172fb458445ac68d/bin/ninja
+06:04:25 Building the C++ runtime for aarch64-unknown-toyos under <tree>/target/n2/172fb458445ac68d/bin/ninja
+06:04:56 Removed sysroot ~/.cache/toyos/sysroots/a7f031afae9caf8d: it is not among the 24 last used, or it was never whole
+06:04:56 external deps changed: cleaning <tree>/tests/guest/rust-tests/target/x86_64-unknown-toyos
+06:05:05   BUILT x86_64 netstack_streams of tests/guest/rust-tests, for netstack_streams  (207s)
+06:05:05   BUILD x86_64 kernel, loader, ROOT of tests/images/netcase.toml, for netstack_streams
+06:05:10 external deps changed: cleaning <tree>/target/x86_64-unknown-toyos
+06:05:33 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+06:05:33   BUILT x86_64 kernel, loader, ROOT of tests/images/netcase.toml, for netstack_streams  (27s)
+guest said:
+netstack: closing a stream — the kernel refused the watch of its connection: NotSupported
+
+thread 'main' (1) panicked at src/bin/netstack_streams.rs:17:75:
+the echoing server: Custom { kind: ConnectionRefused, error: "netstack error" }
+stack backtrace:
+   0:      0x10000069a40 - _Unwind_Backtrace
+   1:      0x1000004e993 - <<std[589d8706ff3f0e14]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[73b405bef30eeff1]::fmt::Display>::fmt
+   2:      0x1000006e157 - core[73b405bef30eeff1]::fmt::write
+   3:      0x1000005265b - <std[589d8706ff3f0e14]::sys::stdio::toyos::Stderr as core[73b405bef30eeff1]::io::write::Write>::write_fmt
+   4:      0x10000033b53 - std[589d8706ff3f0e14]::panicking::default_hook::{closure#0}
+   5:      0x10000048bde - std[589d8706ff3f0e14]::panicking::default_hook
+   6:      0x10000048d99 - std[589d8706ff3f0e14]::panicking::panic_with_hook
+   7:      0x10000033c0d - std[589d8706ff3f0e14]::panicking::panic_handler::{closure#0}
+   8:      0x1000002c2a9 - std[589d8706ff3f0e14]::sys::backtrace::__rust_end_short_backtrace::<std[589d8706ff3f0e14]::panicking::panic_handler::{closure#0}, !>
+   9:      0x10000034378 - __rustc[d0c72ce299f394e5]::rust_begin_unwind
+  10:      0x1000006e87b - core[73b405bef30eeff1]::panicking::panic_fmt
+  11:      0x1000001eb87 - netstack_streams[5eb393f288f4f9ad]::bulk::{closure#0}
+  12:      0x1000001f646 - netstack_streams[5eb393f288f4f9ad]::main
+  13:      0x1000001dba6 - std[589d8706ff3f0e14]::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  14:      0x1000001fef0 - std[589d8706ff3f0e14]::rt::lang_start::<()>::{closure#0}
+  15:      0x100000483a6 - std[589d8706ff3f0e14]::rt::lang_start_internal
+  16:      0x1000001f8e1 - main
+  17:      0x1000004c933 - std[589d8706ff3f0e14]::sys::pal::toyos::start_rust
+  18:      0x10000020b56 - _start
+
+06:05:40 FAIL netstack_streams: the job ended Some(101)
+06:05:40   FAIL  netstack_streams  (8s)
+06:05:40   --- 1 guests, 0 of them not the shipping kernel, 1 kernel build(s): [""]
+
+06:05:40 host: fastest boot 7120 ms against the reference 1424 ms — liveness ceilings paid at 5.00x
+06:05:40 host: 14 core(s); a guest wider than that waits vcpus/cores longer again
+06:05:40 failures:
+06:05:40     netstack_streams: the job ended Some(101)
+
+06:05:40 test result: FAILED. 0 passed, 1 failed, 0 invalidated, 1 total (242.0s; workers: 234s building, 8s testing)
+06:05:40 [toyos] this red run's serial logs are kept at <tree>/target/red-run-serial/toyos-tmp-51821-0
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `<tree>/target/debug/deps/toyos_build-ddd1c80cd62279e4 netstack_streams` (exit status: 1)
+=== control EXIT=1
+ tests/images/netcase.toml |  1 +
+ tests/toyos.rs            | 65 +++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 66 insertions(+)
+=== restored

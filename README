@@ -1,1 +1,36 @@
 Evidence for ToyOSOrg/ToyOS pull requests: run logs, patches and measurements, one branch per pull request (pr-<N>), linked from the pull request by commit hash. Every branch is append-only.
+
+## Review round 1 (`round1/`), head 14142f258cbd30316a4006b1f6709daede8ab6e2
+
+Stage 3 at c0e87be2e (the server-watch fix and review round 1) with main 6caaadf8f merged.
+
+- `gates/host.log`: `cargo run -- --ci host` at 14142f258, EXIT=0, 83 steps.
+- `gates/build-only.log`: `cargo run -- --build-only` at 14142f258, EXIT=0.
+- `gates/instrument-build-only.log`: the same in the measurement-only tree
+  `wt/toyos-netring-s3-instrument` at 327685710 (14142f258 with the scout's
+  instrument merged; `git diff 14142f258 327685710` is the instrument's hunks
+  alone, identical but for offsets to `git diff 432df72ed 0de249252`). EXIT=0.
+- `netcheck/`: evidence only, never landing. `netstack_streams-scratch.patch`
+  over the head adds a guest job and a harness row on `tests/images/netcase.toml`
+  (QEMU, x86-64, virtio-net, user network; the image's test-runner given
+  `receives = ["netstack"]`). A std `TcpStream` connects through the real
+  netstack to a host echo server, writes 4 MiB while reading them back,
+  shuts its sending half and reads the end; a std `TcpListener` bound
+  before it accepts a host peer, answers its byte and drops the stream, and
+  the host peer reads the stream's end (the hang-up reached netstack through
+  a READABLE-only watch). `netcheck.sh` runs it green and then under
+  `controls/server-watch-other-end-gone.patch` (netstack's old watch flags):
+  `green-and-control-14142f258.log`, green EXIT=0, control EXIT=1 with
+  `netstack: closing a stream — the kernel refused the watch of its
+  connection: NotSupported`, the T14's red. The same green and control at
+  c0e87be2e: `green-c0e87be2e.log`, `control-c0e87be2e.log`.
+- `controls/stream_handles-green-and-server-watch-14142f258.log`:
+  `controls/guest.sh <tree> <dir> green server-watch-other-end-gone` —
+  stream_handles exit 0 with "netstack's watch of a stream's connection:
+  taken, and answered by the hang-up"; under the control exit 101, "the
+  kernel answered netstack's watch [Err(NotSupported)]".
+- `controls/slot-freed-early-c0e87be2e.log`: `cargo test -p toyos --lib
+  net::stream` EXIT=0, then under `slot-freed-early.patch` EXIT=101
+  (`an_end_goes_with_its_last_handle_and_its_last_call`: "a freed slot is not
+  taken before its halves are cleared"), restored. The merge of main touches
+  no file the test or the patch reads.

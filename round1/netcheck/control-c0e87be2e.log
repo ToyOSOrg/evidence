@@ -1,0 +1,228 @@
++(eval):1> git apply --check <scratch>/controls/server-watch-other-end-gone.patch
++(eval):1> git apply <scratch>/controls/server-watch-other-end-gone.patch
++(eval):1> git rev-parse HEAD
+c0e87be2e335bc87bb99835dc13d422f60bddfc7
++(eval):1> git diff -- sdk/toyos/src/net/stream.rs
+diff --git a/sdk/toyos/src/net/stream.rs b/sdk/toyos/src/net/stream.rs
+index 0521c1a45..f9c90e59e 100644
+--- a/sdk/toyos/src/net/stream.rs
++++ b/sdk/toyos/src/net/stream.rs
+@@ -77,7 +77,8 @@ pub type Server = session::Server<RECEIVE_BYTES, SEND_BYTES, WORDS>;
+ /// What netstack watches a stream's connection for: the client's rings, and
+ /// its hang-up, which the connection reads as its end. A connection is no pipe
+ /// end, so the kernel refuses it `OTHER_END_GONE`.
+-pub const SERVER_WATCH: u32 = crate::poller::READABLE;
++// Control: the watch netstack made before, which asks the hang-up as OTHER_END_GONE.
++pub const SERVER_WATCH: u32 = crate::poller::READABLE | crate::poller::OTHER_END_GONE;
+ 
+ /// The receive ring's `end`: the peer's reset, or netstack's own.
+ pub const RESET: u32 = 2;
++(eval):1> cargo test --test toyos-build -- netstack_streams
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.49s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-ddd1c80cd62279e4)
+
+01:09:40 running 1 tests, 12 wide
+
+01:09:40   RUN   netstack_streams
+01:09:40   BUILD x86_64 netstack_streams of tests/guest/rust-tests, for netstack_streams
+01:09:44 Building sysroot e71934b02ddb482c: ToyOS's std from <tree>/rust, the compiler ~/.cache/toyos/compilers/b8a2569d03a2539c/stage2, the freestanding libraries 005ac5c046aa82b7
+01:09:45 Building bootstrap
+01:09:45     Finished `dev` profile [unoptimized] target(s) in 0.24s
+01:09:49 WARNING: running build in stage 0. This might not work as expected.
+01:09:53 Building stage0 library artifacts{alloc, compiler_builtins, core, panic_abort, panic_unwind, proc_macro, rustc-std-workspace-core, std, std_detect, sysroot, test, unwind} (stage0:aarch64-apple-darwin -> stage0:x86_64-unknown-toyos)
+01:09:53    Compiling compiler_builtins v0.1.160 (<tree>/rust/library/compiler-builtins/compiler-builtins)
+01:09:53    Compiling core v0.0.0 (<tree>/rust/library/core)
+01:09:53    Compiling libc v0.2.189
+01:09:53    Compiling object v0.39.1
+01:09:53    Compiling std v0.0.0 (<tree>/rust/library/std)
+01:09:53    Compiling test v0.0.0 (<tree>/rust/library/test)
+01:10:28    Compiling rustc-std-workspace-core v1.99.0 (<tree>/rust/library/rustc-std-workspace-core)
+01:10:28    Compiling alloc v0.0.0 (<tree>/rust/library/alloc)
+01:10:28    Compiling toyos-untrusted v0.1.0 (<tree>/lib/untrusted)
+01:10:28    Compiling toyos-abi v0.16.0 (<tree>/sdk/abi)
+01:10:28    Compiling adler2 v2.0.1
+01:10:28    Compiling cfg-if v1.0.4
+01:10:28    Compiling memchr v2.8.3
+01:10:28    Compiling rustc-demangle v0.1.28
+01:10:28    Compiling panic_abort v0.0.0 (<tree>/rust/library/panic_abort)
+01:10:28    Compiling rustc-literal-escaper v0.0.8
+01:10:28    Compiling dlmalloc v0.2.14
+01:10:28    Compiling toyos-transport v0.1.0 (<tree>/lib/blockring/transport)
+01:10:29    Compiling toyos v0.18.0 (<tree>/sdk/toyos)
+01:10:34    Compiling rustc-std-workspace-alloc v1.99.0 (<tree>/rust/library/rustc-std-workspace-alloc)
+01:10:34    Compiling gimli v0.34.0
+01:10:34    Compiling std_detect v0.1.5 (<tree>/rust/library/std_detect)
+01:10:34    Compiling hashbrown v0.17.1
+01:10:34    Compiling miniz_oxide v0.9.1
+01:10:39    Compiling unwinding v0.2.10
+01:10:39    Compiling addr2line v0.27.1
+01:10:39    Compiling unwind v0.0.0 (<tree>/rust/library/unwind)
+01:10:39    Compiling panic_unwind v0.0.0 (<tree>/rust/library/panic_unwind)
+01:10:44 warning: function `exit` is never used
+01:10:44    --> library/std/src/sys/pal/../../../../../../sdk/std/sys/pal/os.rs:113:8
+01:10:44     |
+01:10:44 113 | pub fn exit(code: i32) -> ! {
+01:10:44     |        ^^^^
+01:10:44     |
+01:10:44     = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+01:10:44 warning: function `getpid` is never used
+01:10:44    --> library/std/src/sys/pal/../../../../../../sdk/std/sys/pal/os.rs:117:8
+01:10:44     |
+01:10:44 117 | pub fn getpid() -> u32 {
+01:10:44     |        ^^^^^^
+
+01:10:44 warning: field `eh_frame_hdr_size` is never read
+01:10:44    --> library/std/src/sys/pal/../../../../../../sdk/std/sys/pal/mod.rs:228:9
+01:10:44     |
+01:10:44 224 |     struct Module {
+01:10:44     |            ------ field in this struct
+01:10:44 ...
+01:10:44 228 |         eh_frame_hdr_size: usize,
+01:10:44     |         ^^^^^^^^^^^^^^^^^
+
+01:11:13 warning: `std` (lib) generated 3 warnings
+01:11:13    Compiling rustc-std-workspace-std v1.99.0 (<tree>/rust/library/rustc-std-workspace-std)
+01:11:13    Compiling proc_macro v0.0.0 (<tree>/rust/library/proc_macro)
+01:11:13    Compiling getopts v0.2.24
+01:11:24    Compiling sysroot v0.0.0 (<tree>/rust/library/sysroot)
+01:11:38     Finished `dist` profile [optimized + debuginfo] target(s) in 1m 44s
+01:11:38 Building stage0 library artifacts{alloc, compiler_builtins, core, panic_abort, panic_unwind, proc_macro, rustc-std-workspace-core, std, std_detect, sysroot, test, unwind} (stage0:aarch64-apple-darwin -> stage0:aarch64-unknown-toyos)
+01:11:38    Compiling compiler_builtins v0.1.160 (<tree>/rust/library/compiler-builtins/compiler-builtins)
+01:11:38    Compiling core v0.0.0 (<tree>/rust/library/core)
+01:11:38    Compiling libc v0.2.189
+01:11:38    Compiling object v0.39.1
+01:11:38    Compiling std v0.0.0 (<tree>/rust/library/std)
+01:11:38    Compiling test v0.0.0 (<tree>/rust/library/test)
+01:12:19    Compiling rustc-std-workspace-core v1.99.0 (<tree>/rust/library/rustc-std-workspace-core)
+01:12:19    Compiling alloc v0.0.0 (<tree>/rust/library/alloc)
+01:12:19    Compiling toyos-untrusted v0.1.0 (<tree>/lib/untrusted)
+01:12:19    Compiling cfg-if v1.0.4
+01:12:19    Compiling toyos-abi v0.16.0 (<tree>/sdk/abi)
+01:12:19    Compiling memchr v2.8.3
+01:12:19    Compiling adler2 v2.0.1
+01:12:19    Compiling rustc-demangle v0.1.28
+01:12:19    Compiling panic_abort v0.0.0 (<tree>/rust/library/panic_abort)
+01:12:19    Compiling rustc-literal-escaper v0.0.8
+01:12:19    Compiling dlmalloc v0.2.14
+01:12:19    Compiling toyos-transport v0.1.0 (<tree>/lib/blockring/transport)
+01:12:20    Compiling toyos v0.18.0 (<tree>/sdk/toyos)
+01:12:24    Compiling rustc-std-workspace-alloc v1.99.0 (<tree>/rust/library/rustc-std-workspace-alloc)
+01:12:24    Compiling gimli v0.34.0
+01:12:24    Compiling hashbrown v0.17.1
+01:12:24    Compiling std_detect v0.1.5 (<tree>/rust/library/std_detect)
+01:12:24    Compiling miniz_oxide v0.9.1
+01:12:27    Compiling unwinding v0.2.10
+01:12:27    Compiling addr2line v0.27.1
+01:12:27    Compiling unwind v0.0.0 (<tree>/rust/library/unwind)
+01:12:27    Compiling panic_unwind v0.0.0 (<tree>/rust/library/panic_unwind)
+01:12:31 warning: function `exit` is never used
+01:12:31    --> library/std/src/sys/pal/../../../../../../sdk/std/sys/pal/os.rs:113:8
+01:12:31     |
+01:12:31 113 | pub fn exit(code: i32) -> ! {
+01:12:31     |        ^^^^
+01:12:31     |
+01:12:31     = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+01:12:31 warning: function `getpid` is never used
+01:12:31    --> library/std/src/sys/pal/../../../../../../sdk/std/sys/pal/os.rs:117:8
+01:12:31     |
+01:12:31 117 | pub fn getpid() -> u32 {
+01:12:31     |        ^^^^^^
+
+01:12:31 warning: field `eh_frame_hdr_size` is never read
+01:12:31    --> library/std/src/sys/pal/../../../../../../sdk/std/sys/pal/mod.rs:228:9
+01:12:31     |
+01:12:31 224 |     struct Module {
+01:12:31     |            ------ field in this struct
+01:12:31 ...
+01:12:31 228 |         eh_frame_hdr_size: usize,
+01:12:31     |         ^^^^^^^^^^^^^^^^^
+
+01:12:41 warning: `std` (lib) generated 3 warnings
+01:12:41    Compiling rustc-std-workspace-std v1.99.0 (<tree>/rust/library/rustc-std-workspace-std)
+01:12:41    Compiling proc_macro v0.0.0 (<tree>/rust/library/proc_macro)
+01:12:41    Compiling getopts v0.2.24
+01:12:42    Compiling sysroot v0.0.0 (<tree>/rust/library/sysroot)
+01:12:48     Finished `dist` profile [optimized + debuginfo] target(s) in 1m 09s
+01:12:48 Build completed successfully in 0:03:02
+01:12:48 Checking that the compilers of ~/.cache/toyos/sysroots/e71934b02ddb482c.partial keep a loop's last exit
+01:12:53 Building toyos-libc for sysroot...
+   Compiling toyos-untrusted v0.1.0 (<tree>/lib/untrusted)
+   Compiling cfg-if v1.0.4
+   Compiling toyos-abi v0.16.0 (<tree>/sdk/abi)
+   Compiling toyos-osrelease v0.1.0 (<tree>/sdk/osrelease)
+   Compiling toyos-elf v0.1.0 (<tree>/lib/elf)
+   Compiling dlmalloc v0.2.13
+   Compiling toyos-transport v0.1.0 (<tree>/lib/blockring/transport)
+   Compiling toyos v0.18.0 (<tree>/sdk/toyos)
+   Compiling toyos-libc v0.1.0 (<tree>/sdk/libc)
+    Finished `release` profile [optimized] target(s) in 2.96s
+01:12:59 Building toyos-libc for sysroot...
+   Compiling toyos-untrusted v0.1.0 (<tree>/lib/untrusted)
+   Compiling toyos-abi v0.16.0 (<tree>/sdk/abi)
+   Compiling cfg-if v1.0.4
+   Compiling toyos-osrelease v0.1.0 (<tree>/sdk/osrelease)
+   Compiling toyos-elf v0.1.0 (<tree>/lib/elf)
+   Compiling dlmalloc v0.2.13
+   Compiling toyos-transport v0.1.0 (<tree>/lib/blockring/transport)
+   Compiling toyos v0.18.0 (<tree>/sdk/toyos)
+   Compiling toyos-libc v0.1.0 (<tree>/sdk/libc)
+    Finished `release` profile [optimized] target(s) in 3.12s
+01:13:04 Building the C++ runtime for x86_64-unknown-toyos under <tree>/target/n2/172fb458445ac68d/bin/ninja
+01:13:27 Building the C++ runtime for aarch64-unknown-toyos under <tree>/target/n2/172fb458445ac68d/bin/ninja
+01:13:48 Removed sysroot ~/.cache/toyos/sysroots/ffcf9eda0e55ddfd: it is not among the 24 last used, or it was never whole
+01:13:48 external deps changed: cleaning <tree>/tests/guest/rust-tests/target/x86_64-unknown-toyos
+01:13:55   BUILT x86_64 netstack_streams of tests/guest/rust-tests, for netstack_streams  (254s)
+01:13:55   BUILD x86_64 kernel, loader, ROOT of tests/images/netcase.toml, for netstack_streams
+01:13:58 external deps changed: cleaning <tree>/target/x86_64-unknown-toyos
+01:14:20 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+01:14:20   BUILT x86_64 kernel, loader, ROOT of tests/images/netcase.toml, for netstack_streams  (25s)
+guest said:
+netstack: closing a stream — the kernel refused the watch of its connection: NotSupported
+
+thread 'main' (1) panicked at src/bin/netstack_streams.rs:17:75:
+the echoing server: Custom { kind: ConnectionRefused, error: "netstack error" }
+stack backtrace:
+   0:      0x10000069a50 - _Unwind_Backtrace
+   1:      0x1000004e9a3 - <<std[589d8706ff3f0e14]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[73b405bef30eeff1]::fmt::Display>::fmt
+   2:      0x1000006e167 - core[73b405bef30eeff1]::fmt::write
+   3:      0x1000005266b - <std[589d8706ff3f0e14]::sys::stdio::toyos::Stderr as core[73b405bef30eeff1]::io::write::Write>::write_fmt
+   4:      0x10000033b63 - std[589d8706ff3f0e14]::panicking::default_hook::{closure#0}
+   5:      0x10000048bee - std[589d8706ff3f0e14]::panicking::default_hook
+   6:      0x10000048da9 - std[589d8706ff3f0e14]::panicking::panic_with_hook
+   7:      0x10000033c1d - std[589d8706ff3f0e14]::panicking::panic_handler::{closure#0}
+   8:      0x1000002c2b9 - std[589d8706ff3f0e14]::sys::backtrace::__rust_end_short_backtrace::<std[589d8706ff3f0e14]::panicking::panic_handler::{closure#0}, !>
+   9:      0x10000034388 - __rustc[d0c72ce299f394e5]::rust_begin_unwind
+  10:      0x1000006e88b - core[73b405bef30eeff1]::panicking::panic_fmt
+  11:      0x1000001dc77 - netstack_streams[bd69174fce9508b9]::bulk::{closure#0}
+  12:      0x1000001e736 - netstack_streams[bd69174fce9508b9]::main
+  13:      0x1000001e9e6 - std[589d8706ff3f0e14]::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  14:      0x1000001ed60 - std[589d8706ff3f0e14]::rt::lang_start::<()>::{closure#0}
+  15:      0x100000483b6 - std[589d8706ff3f0e14]::rt::lang_start_internal
+  16:      0x1000001e9d1 - main
+  17:      0x1000004c943 - std[589d8706ff3f0e14]::sys::pal::toyos::start_rust
+  18:      0x10000020b66 - _start
+
+01:14:26 FAIL netstack_streams: the job ended Some(101)
+01:14:26   FAIL  netstack_streams  (7s)
+01:14:26   --- 1 guests, 0 of them not the shipping kernel, 1 kernel build(s): [""]
+
+01:14:26 host: fastest boot 5892 ms against the reference 1424 ms — liveness ceilings paid at 4.14x
+01:14:26 host: 14 core(s); a guest wider than that waits vcpus/cores longer again
+01:14:26 failures:
+01:14:26     netstack_streams: the job ended Some(101)
+
+01:14:26 test result: FAILED. 0 passed, 1 failed, 0 invalidated, 1 total (285.8s; workers: 279s building, 7s testing)
+01:14:26 [toyos] this red run's serial logs are kept at <tree>/target/red-run-serial/toyos-tmp-3809-0
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `<tree>/target/debug/deps/toyos_build-ddd1c80cd62279e4 netstack_streams` (exit status: 1)
++(eval):1> echo 'CONTROL_EXIT=1'
+CONTROL_EXIT=1
++(eval):1> git apply -R <scratch>/controls/server-watch-other-end-gone.patch
++(eval):1> git diff --stat
+ tests/images/netcase.toml |  1 +
+ tests/toyos.rs            | 65 +++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 66 insertions(+)

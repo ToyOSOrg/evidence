@@ -1,0 +1,132 @@
+c0e87be2e335bc87bb99835dc13d422f60bddfc7
+diff --git a/tests/images/netcase.toml b/tests/images/netcase.toml
+index a369635eb..f8663ca93 100644
+--- a/tests/images/netcase.toml
++++ b/tests/images/netcase.toml
+@@ -34,6 +34,7 @@ devices = ["pci:1af4:1059"]
+ syscap = ["rt"]
+ 
+ [programs.test-runner]
++receives = ["netstack"]
+ 
+ # The block service: the NVMe controller this machine's DATA is on, driven
+ # from userland through its claim. Started again when it ends; the claim goes
+diff --git a/tests/toyos.rs b/tests/toyos.rs
+index 5fd8c8bad..eb4f88b07 100644
+--- a/tests/toyos.rs
++++ b/tests/toyos.rs
+@@ -67,6 +67,7 @@ const ACTUATOR_KERNEL: &[&str] = toyos_build::build::TEST_KERNEL;
+ 
+ // Rust helper binaries that are spawned by tests, not tests themselves.
+ const RUST_SKIP: &[&str] = &[
++    "netstack_streams",
+     // **Its exit code is a measurement, not a verdict**, and the shared block
+     // judges every member on `exit=0` alone — so it would red on every boot
+     // that measured anything. It also needs the real-time band, which only
+@@ -312,6 +313,7 @@ const SCREEN_TESTS: &[(&str, qemu::Profile)] = &[
+ /// The tests whose machine shape *is* the test, each on a boot of its own.
+ /// `run_machine_test` dispatches them.
+ const MACHINE_TESTS: &[&str] = &[
++    "netstack_streams",
+     // Whether QEMU's virtio functions negotiated `VIRTIO_F_ACCESS_PLATFORM`
+     // behind its emulated VT-d unit and without one: no shipped machine has a
+     // virtio function, so only a QEMU machine can be asked.
+@@ -3638,6 +3640,7 @@ fn run_machine_test(name: &str, test_config: &Path) -> Result<(), String> {
+         "usb_keyboard_rollover" => usb_keyboard_rollover(test_config),
+         "vector_state_survives_a_switch" => vector_state_survives_a_switch(test_config),
+         "the_opening_exchange_with_qemus_agent_completes" => the_opening_exchange_with_qemus_agent_completes(),
++        "netstack_streams" => netstack_streams(),
+         other => Err(format!("unknown machine test {other}")),
+     }
+ }
+@@ -6438,3 +6441,65 @@ fn main() {
+     summary.lines().for_each(|line| eprintln!("{line}"));
+     run.exit(tally.exit_code());
+ }
++
++/// Evidence only (PR #905): std streams through netstack, connect, bulk both
++/// ways, close, and an accepted stream the guest hangs up.
++fn netstack_streams() -> Result<(), String> {
++    use std::io::Read;
++    use std::sync::mpsc;
++    const JOB: &str = "netstack_streams";
++    const LISTENER: u16 = 7010;
++    let echo = std::net::TcpListener::bind(("127.0.0.1", 0)).map_err(|e| format!("echo: {e}"))?;
++    let port = echo.local_addr().unwrap().port();
++    let bin = qemu::build_toyos_bin(qemu::SUITE_ARCH, &compile::repo_root().join("tests/guest/rust-tests"), JOB);
++    let options = BootOptions { qmp: true, profile: qemu::Profile::Headless, ..Default::default() };
++    let case = compile::repo_root().join("tests/images/netcase.toml");
++    let mut qemu = QemuInstance::boot_with_options(&case, &[], &[(JOB.to_string(), bin)], options);
++    let mut console = qemu.boot_log().to_string();
++    await_marker(&mut qemu, &mut console, "netstack: DHCP: lease ", "netstack's lease").map_err(|e| format!("{e}\n{console}"))?;
++    let mut monitor = qemu::QmpMonitor::open(qemu.qmp_socket());
++    let said = monitor.human(&format!("hostfwd_add net0 tcp:127.0.0.1:0-:{LISTENER}"));
++    if !said.trim().is_empty() {
++        return Err(format!("hostfwd: {said}"));
++    }
++    let table = monitor.human("info usernet");
++    let to_listener: u16 = table
++        .lines()
++        .map(|row| row.split_whitespace().collect::<Vec<_>>())
++        .find(|row| row.first() == Some(&"TCP[HOST_FORWARD]") && row.get(5) == Some(&LISTENER.to_string().as_str()))
++        .and_then(|row| row[3].parse().ok())
++        .ok_or_else(|| format!("no forward:\n{table}"))?;
++    let (tx, rx) = mpsc::channel();
++    thread::spawn(move || {
++        let (stream, _) = echo.accept().expect("the guest's bulk stream");
++        let mut back = stream.try_clone().unwrap();
++        let copied = std::io::copy(&mut &stream, &mut back);
++        drop(back);
++        drop(stream);
++        let answer = (|| -> Result<(u8, usize), String> {
++            let mut peer = std::net::TcpStream::connect(("127.0.0.1", to_listener)).map_err(|e| e.to_string())?;
++            peer.set_read_timeout(Some(Duration::from_secs(60))).unwrap();
++            peer.write_all(b"1").map_err(|e| e.to_string())?;
++            let mut a = [0u8; 1];
++            peer.read_exact(&mut a).map_err(|e| format!("answer: {e}"))?;
++            let mut rest = Vec::new();
++            let n = peer.read_to_end(&mut rest).map_err(|e| format!("end: {e}"))?;
++            Ok((a[0], n))
++        })();
++        tx.send((copied.map_err(|e| e.to_string()), answer)).unwrap();
++    });
++    let result = qemu.run_test(&format!("test_rs_{JOB} {port} {LISTENER}"), Duration::from_secs(240));
++    println!("guest said:\n{}", result.stdout);
++    if let Some(why) = &result.error {
++        return Err(format!("{why}\n{}", result.stdout));
++    }
++    if result.exit_code != Some(0) || !result.stdout.contains("netstack_streams: ok") {
++        return Err(format!("the job ended {:?}", result.exit_code));
++    }
++    let (copied, answer) = rx.recv_timeout(Duration::from_secs(60)).map_err(|e| format!("host side: {e}"))?;
++    println!("host: echoed {copied:?}; the dialled peer read {answer:?}");
++    match (copied, answer) {
++        (Ok(n), Ok((b'1', 0))) if n == 4 * 1024 * 1024 => Ok(()),
++        other => Err(format!("host side: {other:?}")),
++    }
++}
+Wed Oct 14 01:09:03 UTC 2026
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.95s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-ddd1c80cd62279e4)
+
+01:09:04 running 1 tests, 12 wide
+
+01:09:04   RUN   netstack_streams
+01:09:04   BUILD x86_64 netstack_streams of tests/guest/rust-tests, for netstack_streams
+01:09:12   BUILT x86_64 netstack_streams of tests/guest/rust-tests, for netstack_streams  (7s)
+01:09:12   BUILD x86_64 kernel, loader, ROOT of tests/images/netcase.toml, for netstack_streams
+01:09:17 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+01:09:17   BUILT x86_64 kernel, loader, ROOT of tests/images/netcase.toml, for netstack_streams  (5s)
+guest said:
+netstack_streams: 4194304 bytes went out and came back as sent, then the stream's end
+netstack_streams: accepted 10.0.2.2:49271, answered '1' and hung up
+netstack_streams: ok
+
+host: echoed Ok(4194304); the dialled peer read Ok((49, 0))
+01:09:27   PASS  netstack_streams  (11s)
+01:09:27   --- 1 guests, 0 of them not the shipping kernel, 1 kernel build(s): [""]
+
+01:09:27 host: fastest boot 9579 ms against the reference 1424 ms — liveness ceilings paid at 6.73x
+01:09:27 host: 14 core(s); a guest wider than that waits vcpus/cores longer again
+01:09:27 test result: ok. 1 passed, 1 total (23.1s; workers: 12s building, 11s testing)
+EXIT=0
