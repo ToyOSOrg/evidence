@@ -25,3 +25,19 @@ Paths are masked: `<home>`, `<dev>`, `<scratch>`.
 - `metal/request-microcode-amd-flip.txt`: the AMD bench alone, staged with the uncommitted
   `metal/stage-microcode-amd-flip.patch` registering the control as a row.
 - `host/stage-*.log`: the staging runs, exit 2 (staged, by design).
+
+## Metal readings (booted by the orchestrator; machine identifiers masked)
+Every image built at `6d3d7a1e0`; the flip image at `6d3d7a1e0` plus `metal/stage-microcode-amd-flip.patch`.
+- `metal/t14-metalcase/`: the T14, `microcode` row. Loader `intel/06-8c-01/80, 112640 bytes`; all eight
+  CPUs `found 0xbe current 0xbe running 0xbe`; `Boot: complete (678ms)`; judge PASS (`judge-mc.log`).
+- `metal/amd-metalcase/`: the AMD bench, `microcode` row. Loader `amd/17-60-01, 3200 bytes`; even CPUs
+  `found 0x8600106 loaded 0x860010d`, odd (second threads) `found 0x860010d loaded 0x860010d`;
+  `Boot: complete (564ms)`; judge PASS.
+- `metal/amd-microcode-amd-flip/`: the AMD bench armed with `microcode-amd-flip`. All eight CPUs
+  `refused 0x860010d with #GP(0x0) running 0x8600106`; `Boot: complete (564ms)`; judge red on cpu0's
+  `refused`, as the control must be (`judge-flip.log`, exit 1).
+- `metal/m923-t14.log`, `metal/m923-amd.log`: the orchestrator's run logs (boot rc 0 each; judges 0, 0, 1).
+
+## Review round (head `72b5c1fb6`)
+- `host/ci-host-3.log`: `cargo run -- --ci host`, exit 0, 77 steps green.
+- `host/build-only-3.log`: `cargo run -- --build-only`, exit 0.
