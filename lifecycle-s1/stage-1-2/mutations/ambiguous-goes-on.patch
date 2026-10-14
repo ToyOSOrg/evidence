@@ -1,0 +1,11 @@
+--- a/system/supervisor/lifecycle/src/claims.rs
++++ b/system/supervisor/lifecycle/src/claims.rs
+@@ -46,7 +46,7 @@
+ /// functions refuses the start, and so does a claim the process before it
+ /// held, `owed`.
+ pub fn goes_on_without(entry: &str, missing: &Missing, owed: &[String]) -> bool {
+-    !matches!(missing, Missing::Unresolved(Unresolved::Ambiguous(_))) && !owed.iter().any(|held| held == entry)
++    (matches!(missing, Missing::Unresolved(Unresolved::Ambiguous(_))) || true) && !owed.iter().any(|held| held == entry)
+ }
+ 
+ #[cfg(test)]
