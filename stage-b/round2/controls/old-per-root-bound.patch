@@ -1,0 +1,13 @@
+diff --git a/system/acpiserver/src/apertures.rs b/system/acpiserver/src/apertures.rs
+index ef47c8959..92a84ca64 100644
+--- a/system/acpiserver/src/apertures.rs
++++ b/system/acpiserver/src/apertures.rs
+@@ -67,7 +67,7 @@ pub fn read<K: Kernel>(aml: &mut Aml<'_, K>, names: &Names, census: &mut Census)
+         let bytes: Vec<String> = crs.iter().map(|b| format!("{b:02x}")).collect();
+         println!("{OWN}{path}: {}", bytes.join(" "));
+         let mut windows = [RootBridgeWindow::default(); MAX_WINDOWS];
+-        let found = match toyos_acpi::root_bridge(&crs[..], 0, &mut windows[..room]) {
++        let found = match toyos_acpi::root_bridge(&crs[..], 0, &mut windows[..room.min(8)]) {
+             Ok(found) => found,
+             Err(why) => return Err(said(&path, &format!("a root bridge's _CRS is no list of windows: {why}"))),
+         };

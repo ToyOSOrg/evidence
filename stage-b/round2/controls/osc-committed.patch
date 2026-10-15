@@ -1,0 +1,14 @@
+diff --git a/system/acpiserver/src/osc.rs b/system/acpiserver/src/osc.rs
+index f9c954665..fb60108a2 100644
+--- a/system/acpiserver/src/osc.rs
++++ b/system/acpiserver/src/osc.rs
+@@ -170,7 +170,8 @@ pub fn query_root<K: Kernel>(aml: &mut Aml<'_, K>, path: &str) -> Result<u32, St
+         println!("{OWN}{path}'s query answered {}", status(query));
+         return Ok(0);
+     }
+-    Ok(offered & ROOT_CONTROL)
++    let [_, _, granted] = evaluate(aml, path, &HOST_BRIDGE, [0, ROOT_SUPPORT, offered & ROOT_CONTROL])?;
++    Ok(granted & offered & ROOT_CONTROL)
+ }
+ 
+ /// What the negotiation answered, for the line the server says.
