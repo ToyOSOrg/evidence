@@ -1,0 +1,11 @@
+--- a/kernel/pci/src/pages.rs
++++ b/kernel/pci/src/pages.rs
+@@ -64,7 +64,7 @@
+     }
+     let pages = Pages { at: base, bytes: bytes.div_ceil(PAGE) * PAGE };
+     pages.at.checked_add(pages.bytes).ok_or(Refused::Wraps)?;
+-    match others.into_iter().find(|&(_, start, end)| start < pages.end() && pages.at < end) {
++    match others.into_iter().find(|&(_, start, end)| start < base + bytes && pages.at < end) {
+         Some((with, start, end)) => Err(Refused::Shared { with, start, end }),
+         None => Ok(pages),
+     }
