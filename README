@@ -70,3 +70,35 @@ pause.
 The tcp change is not the cause of the first-run pause (the probe lines show
 the estimate at 17 ms from the first line on); it is the unbounded first sample
 the owner asked to be shown and fixed on its own.
+
+## The T14 pair (`pair/`), booted in this order
+
+1. `warmup/`: wt/toyos-first-run-instrument f260b64de (the instrument plus an
+   untimed, instrumented warm-up fetch), image SHA-256
+   51479436325ee9b9f320e1da8b6bd27571209ff2eac24ca6df9a0f40ee77f72d.
+2. `baseline/`: 817338be3 again, image SHA-256
+   c34147ca6a2fc79aa0234f6fe55ec259cc6835a4bb58d288d069191f41a4c375, booted right
+   after.
+
+Both boot rc=0, judge EXIT=0, verdict passed. `request.txt` is the request.
+
+Warm-up boot. The warm-up fetch met a node answering `x_cache=HIT x_cache_hits=1
+age=1`, an object fetched into the CDN a second earlier. Its body took 34.2 s of
+read waits, with 162 waits over 100 ms and the longest 699 ms. Its MB per 250 ms
+repeat a pause about every 2 s (`[10.0 0.0 0.0 0.1 0.1 0.5 2.0 1.9 5.4 0.0 0.0
+0.0 ...]`). The timed run 1 after it (node 33880b, age=36) took 1.780 s at
+765.9 Mb/s, with no wait over 20 ms (`[15.3 29.4 29.3 27.9 26.0 20.0 20.2 2.4]`).
+The warm-up spent the job's window, so its run 2 was cut after 1.25 s at line
+rate. The boot has no other whole timed run to compare run 1 against.
+
+Baseline boot (age=170 on run 1, so the CDN was still warm from the warm-up
+boot): run 1 took 1.574 s at 866.2 Mb/s, and runs 2-6 took 1.572-1.673 s at
+814.7-867.5 Mb/s. No first-run pause.
+
+So the pause follows the CDN's state, not the boot. A fetch that meets a freshly
+populated object pauses, wherever it falls in the boot; the next boot, minutes
+later, does not.
+
+Run 1 after the warm-up, at 765.9 Mb/s, sits 6% under the baseline boot's 814.7
+to 867.5 Mb/s. It is inside the spread of runs 2-6 across the earlier T14 boots
+(722-878 Mb/s over round 3's two boots and the 23:20 boot).

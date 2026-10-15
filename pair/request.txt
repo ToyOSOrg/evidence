@@ -1,0 +1,12 @@
+# Two boots on the T14, in this order, each from <worktree>.
+# Order matters: the CDN's state carries between boots. The fix boot comes first, so its
+# warm-up meets the CDN the way a boot's first fetch does; the baseline second.
+
+fix (warm-up): wt/toyos-first-run-instrument f260b64de, image sha256 51479436325ee9b9f320e1da8b6bd27571209ff2eac24ca6df9a0f40ee77f72d
+  cargo run -p toyos-metal -- --image <scratch>/agents/first-run/metal-warm/download/image.img --readback <scratch>/agents/first-run/metal-warm/download --fat32-check
+  judge: cargo test --test toyos-build -- --metal --metal-readback <scratch>/agents/first-run/metal-warm internet_download   (the worktree checked out at wt/toyos-first-run-instrument f260b64de; the judge is the same at both revisions)
+
+baseline: wt/toyos-first-run-instrument 817338be3, image sha256 c34147ca6a2fc79aa0234f6fe55ec259cc6835a4bb58d288d069191f41a4c375
+  (the 23:20 UTC boot's readback is kept beside it as 2320-* and kernel-2320.log)
+  cargo run -p toyos-metal -- --image <scratch>/agents/first-run/metal-instr/download/image.img --readback <scratch>/agents/first-run/metal-instr/download --fat32-check
+  judge: cargo test --test toyos-build -- --metal --metal-readback <scratch>/agents/first-run/metal-instr internet_download   (same checkout)
