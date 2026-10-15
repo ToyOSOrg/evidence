@@ -1,0 +1,52 @@
+   Compiling fileserver v0.0.0 (~/src/toyos-fserr/system/fileserver)
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.84s
+     Running unittests src/lib.rs (target/debug/deps/fileserver-283e24b999144c3d)
+
+running 9 tests
+test fat::tests::a_refused_read_is_an_error_and_never_zeros ... ok
+test fat::tests::a_partial_write_over_an_unreadable_block_writes_nothing ... ok
+test fat::tests::a_device_error_is_io_and_not_not_found ... FAILED
+test fat::tests::a_file_is_one_number_through_spellings_and_renames ... ok
+test fat::tests::a_read_only_volume_never_writes_its_disk ... ok
+test fat::tests::the_flush_stamps_its_even_second_and_not_the_write_s ... ok
+test fat::tests::an_unreadable_entry_is_io_and_not_undated ... FAILED
+test fat::tests::a_file_that_will_not_level_costs_only_its_own_file ... FAILED
+test fat::tests::an_append_stopped_with_any_writes_of_a_flush_on_the_disk_reads_back_the_last_sync ... ok
+
+failures:
+
+---- fat::tests::a_device_error_is_io_and_not_not_found stdout ----
+
+thread 'fat::tests::a_device_error_is_io_and_not_not_found' (40153153) panicked at system/fileserver/src/fat.rs:871:9:
+assertion `left == right` failed
+  left: NotFound
+ right: Io
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- fat::tests::an_unreadable_entry_is_io_and_not_undated stdout ----
+fileserver: FAT32 mounted, 34128896 bytes, 512-byte sectors, 512-byte clusters
+fileserver: metadata of 'a.txt': device I/O failed
+
+thread 'fat::tests::an_unreadable_entry_is_io_and_not_undated' (40153160) panicked at system/fileserver/src/fat.rs:658:9:
+assertion `left == right` failed
+  left: Err(NotFound)
+ right: Err(Io)
+
+---- fat::tests::a_file_that_will_not_level_costs_only_its_own_file stdout ----
+fileserver: FAT32 mounted, 34128896 bytes, 512-byte sectors, 512-byte clusters
+fileserver: the entry of 'a.txt': device I/O failed
+
+thread 'fat::tests::a_file_that_will_not_level_costs_only_its_own_file' (40153155) panicked at system/fileserver/src/fat.rs:630:9:
+assertion `left == right` failed: only the file that did not level is named
+  left: Ok([(1, NotFound)])
+ right: Ok([(1, Io)])
+
+
+failures:
+    fat::tests::a_device_error_is_io_and_not_not_found
+    fat::tests::a_file_that_will_not_level_costs_only_its_own_file
+    fat::tests::an_unreadable_entry_is_io_and_not_undated
+
+test result: FAILED. 6 passed; 3 failed; 0 ignored; 0 measured; 49 filtered out; finished in 0.09s
+
+error: test failed, to rerun pass `-p fileserver --lib`
