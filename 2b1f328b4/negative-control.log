@@ -1,0 +1,299 @@
+   Compiling toyos-libc-copies v0.1.0 ($WORKTREE/sdk/libc/arch)
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.82s
+     Running unittests src/lib.rs (target/debug/deps/toyos_libc_copies-85e35ae8604e5377)
+
+running 9 tests
+test printf_conversions::a_precision_past_the_exact_digits_is_zeros ... ok
+test printf_conversions::decimal_floats_round_the_exact_value ... ok
+test printf_conversions::hexadecimal_floats_are_exact ... ok
+test printf_conversions::the_plain_forms_drop_what_the_alternate_keeps ... ok
+test printf_conversions::zero_padding_follows_the_sign ... ok
+test printf_conversions::alternate_hexadecimal_takes_its_prefix_when_nonzero ... FAILED
+test printf_conversions::alternate_octal_leads_with_a_zero ... FAILED
+test printf_conversions::alternate_floats_keep_the_decimal_point ... FAILED
+test printf_conversions::star_arguments_are_read_in_order ... FAILED
+
+failures:
+
+---- printf_conversions::alternate_hexadecimal_takes_its_prefix_when_nonzero stdout ----
+
+thread 'printf_conversions::alternate_hexadecimal_takes_its_prefix_when_nonzero' (37418116) panicked at sdk/libc/arch/src/printf_conversions.rs:40:5:
+(directive, argument, C's, ours): [
+    (
+        "%#x",
+        U(
+            512,
+        ),
+        "0x200",
+        "200",
+    ),
+    (
+        "%#X",
+        U(
+            255,
+        ),
+        "0XFF",
+        "FF",
+    ),
+    (
+        "%#08x",
+        U(
+            255,
+        ),
+        "0x0000ff",
+        "000000ff",
+    ),
+    (
+        "%#.4x",
+        U(
+            255,
+        ),
+        "0x00ff",
+        "00ff",
+    ),
+    (
+        "%#10.4x",
+        U(
+            255,
+        ),
+        "    0x00ff",
+        "      00ff",
+    ),
+    (
+        "%#08.4x",
+        U(
+            255,
+        ),
+        "  0x00ff",
+        "    00ff",
+    ),
+    (
+        "%#-8x",
+        U(
+            255,
+        ),
+        "0xff    ",
+        "ff      ",
+    ),
+    (
+        "%#lx",
+        U(
+            18446744073709551615,
+        ),
+        "0xffffffffffffffff",
+        "ffffffffffffffff",
+    ),
+]
+
+---- printf_conversions::alternate_octal_leads_with_a_zero stdout ----
+
+thread 'printf_conversions::alternate_octal_leads_with_a_zero' (37418117) panicked at sdk/libc/arch/src/printf_conversions.rs:40:5:
+(directive, argument, C's, ours): [
+    (
+        "%#o",
+        U(
+            8,
+        ),
+        "010",
+        "10",
+    ),
+    (
+        "%#.0o",
+        U(
+            0,
+        ),
+        "0",
+        "",
+    ),
+    (
+        "%#5o",
+        U(
+            8,
+        ),
+        "  010",
+        "   10",
+    ),
+    (
+        "%#-5o",
+        U(
+            8,
+        ),
+        "010  ",
+        "10   ",
+    ),
+    (
+        "%#lo",
+        U(
+            18446744073709551615,
+        ),
+        "01777777777777777777777",
+        "1777777777777777777777",
+    ),
+]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- printf_conversions::alternate_floats_keep_the_decimal_point stdout ----
+
+thread 'printf_conversions::alternate_floats_keep_the_decimal_point' (37418115) panicked at sdk/libc/arch/src/printf_conversions.rs:40:5:
+(directive, argument, C's, ours): [
+    (
+        "%#.0f",
+        F(
+            3.0,
+        ),
+        "3.",
+        "3",
+    ),
+    (
+        "%#.0f",
+        F(
+            0.0,
+        ),
+        "0.",
+        "0",
+    ),
+    (
+        "%#.0F",
+        F(
+            -2.5,
+        ),
+        "-2.",
+        "-2",
+    ),
+    (
+        "%#08.0f",
+        F(
+            3.0,
+        ),
+        "0000003.",
+        "00000003",
+    ),
+    (
+        "%#.0e",
+        F(
+            3.0,
+        ),
+        "3.e+00",
+        "3e+00",
+    ),
+    (
+        "%#.0E",
+        F(
+            12345.0,
+        ),
+        "1.E+04",
+        "1E+04",
+    ),
+    (
+        "%#.0a",
+        F(
+            1.0,
+        ),
+        "0x1.p+0",
+        "0x1p+0",
+    ),
+    (
+        "%#a",
+        F(
+            1.0,
+        ),
+        "0x1.p+0",
+        "0x1p+0",
+    ),
+    (
+        "%#A",
+        F(
+            0.0,
+        ),
+        "0X0.P+0",
+        "0X0P+0",
+    ),
+    (
+        "%#g",
+        F(
+            1.0,
+        ),
+        "1.00000",
+        "1",
+    ),
+    (
+        "%#g",
+        F(
+            0.0,
+        ),
+        "0.00000",
+        "0",
+    ),
+    (
+        "%#.0g",
+        F(
+            3.0,
+        ),
+        "3.",
+        "3",
+    ),
+    (
+        "%#.3g",
+        F(
+            1.5,
+        ),
+        "1.50",
+        "1.5",
+    ),
+    (
+        "%#g",
+        F(
+            100000.0,
+        ),
+        "100000.",
+        "100000",
+    ),
+    (
+        "%#g",
+        F(
+            1000000.0,
+        ),
+        "1.00000e+06",
+        "1e+06",
+    ),
+    (
+        "%#g",
+        F(
+            0.0001,
+        ),
+        "0.000100000",
+        "0.0001",
+    ),
+    (
+        "%#G",
+        F(
+            1e-5,
+        ),
+        "1.00000E-05",
+        "1E-05",
+    ),
+    (
+        "%#.2g",
+        F(
+            0.5,
+        ),
+        "0.50",
+        "0.5",
+    ),
+]
+
+---- printf_conversions::star_arguments_are_read_in_order stdout ----
+
+thread 'printf_conversions::star_arguments_are_read_in_order' (37418120) panicked at sdk/libc/arch/src/printf_conversions.rs:211:5:
+assertion failed: spec.alt && spec.left && spec.plus && spec.space && spec.zero && spec.wide
+
+
+failures:
+    printf_conversions::alternate_floats_keep_the_decimal_point
+    printf_conversions::alternate_hexadecimal_takes_its_prefix_when_nonzero
+    printf_conversions::alternate_octal_leads_with_a_zero
+    printf_conversions::star_arguments_are_read_in_order
+
+test result: FAILED. 5 passed; 4 failed; 0 ignored; 0 measured; 68 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-libc-copies --lib`
