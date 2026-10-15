@@ -54,3 +54,19 @@ found by passes no message began are 99 of 121586 over run 1.
 The early loss episode (ooo 1926, 947 SACK-carrying ACKs in the first 450 ms)
 is ordinary slow-start overshoot and recurs in run 2 (ooo +4021) without a
 pause.
+
+## The tcp change (head defd00bfbd67d37a57f05809e284adba5eaa1416)
+
+- `host/host-defd00bfbd67d37a57f05809e284adba5eaa1416.log`: `cargo run -- --ci host`, EXIT=0, 86 steps green.
+- `host/host-75e4a1114-red.log`: the first version (seed for both samplers),
+  EXIT=1: `the_receive_window_grows_by_what_is_read_per_round_trip` offered
+  1,071,640 of 8,000,000 bytes without timestamps, since the least fill time
+  can never rise above a seed. Kept: it is why the seed is the timestamped
+  estimate's only. (The loom failures in it are the suite's own controls.)
+- `controls/control-unseeded.log`: at defd00bfbd67d37a57f05809e284adba5eaa1416, `cargo test --lib rx::` under
+  `control-unseeded.patch` (the seed ignored): EXIT=101,
+  `a_reply_the_peer_sat_on_does_not_set_the_round_trip` fails; restored.
+
+The tcp change is not the cause of the first-run pause (the probe lines show
+the estimate at 17 ms from the first line on); it is the unbounded first sample
+the owner asked to be shown and fixed on its own.
