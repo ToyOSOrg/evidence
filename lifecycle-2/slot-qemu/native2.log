@@ -1,0 +1,44 @@
+[  11.73] shell reached: True
+[  24.13] port vendor/device 0xc1b36
+[ 185.56] express@0x54 msi@None msix@72
+[ 210.36] msix ctl=0x0000 table=0x0
+[ 359.43] boot caps=0x0142 linkcap=0x00300604 linkctl=0x0000 linksta=0x0204 slotcap=0x001a007b slotctl=0x07c0 slotsta=0x0000 sec=1 mem=0x80108000 pref=0x1ff10001 below=0xffffffff bar0=0xffffffff
+[ 359.43] A: guest passive
+[ 359.43] {'return': {}}
+[ 509.43] A added caps=0x0142 linkcap=0x00300604 linkctl=0x0000 linksta=0x2204 slotcap=0x001a007b slotctl=0x07c0 slotsta=0x0049 sec=1 mem=0x80108000 pref=0x1ff10001 below=0xffffffff bar0=0xffffffff
+[ 509.43] present 1
+[ 509.43] EVENT DEVICE_DELETED {'device': 'e1', 'path': '/machine/peripheral/e1'}
+[ 509.43] {'return': {}}
+[ 660.65] A deleted caps=0x0142 linkcap=0x00300604 linkctl=0x0000 linksta=0x0204 slotcap=0x001a007b slotctl=0x07c0 slotsta=0x0008 sec=1 mem=0x80108000 pref=0x1ff10001 below=0xffffffff bar0=0xffffffff
+[ 660.65] present 0
+[ 660.65] B: guest enables HPIE|ABPE|PDCE|DLLSCE|CCIE, PIC on, power on
+[ 835.49] B armed caps=0x0142 linkcap=0x00300604 linkctl=0x0000 linksta=0x0204 slotcap=0x001a007b slotctl=0x01f9 slotsta=0x0018 sec=1 mem=0x80108000 pref=0x1ff10001 below=0xffffffff bar0=0xffffffff
+[ 996.90] B cleared caps=0x0142 linkcap=0x00300604 linkctl=0x0000 linksta=0x0204 slotcap=0x001a007b slotctl=0x01f9 slotsta=0x0018 sec=1 mem=0x80108000 pref=0x1ff10001 below=0xffffffff bar0=0xffffffff
+[ 996.90] {'return': {}}
+[1146.90] B added caps=0x0142 linkcap=0x00300604 linkctl=0x0000 linksta=0x2204 slotcap=0x001a007b slotctl=0x01f9 slotsta=0x0059 sec=1 mem=0x80108000 pref=0x1ff10001 below=0x11e81234 bar0=0x00000000
+[1146.90] present 1
+[1308.28] B added cleared caps=0x0142 linkcap=0x00300604 linkctl=0x0000 linksta=0x2204 slotcap=0x001a007b slotctl=0x01f9 slotsta=0x0059 sec=1 mem=0x80108000 pref=0x1ff10001 below=0x11e81234 bar0=0x00000000
+[1308.29] {'return': {}}
+[1458.32] B del asked caps=0x0142 linkcap=0x00300604 linkctl=0x0000 linksta=0x2204 slotcap=0x001a007b slotctl=0x01f9 slotsta=0x0059 sec=1 mem=0x80108000 pref=0x1ff10001 below=0x11e81234 bar0=0x00000000
+[1458.32] present 1
+[1613.20] B del +6s caps=0x0142 linkcap=0x00300604 linkctl=0x0000 linksta=0x2204 slotcap=0x001a007b slotctl=0x01f9 slotsta=0x0059 sec=1 mem=0x80108000 pref=0x1ff10001 below=0x11e81234 bar0=0x00000000
+[1613.20] present 1
+[1625.65] B: power off, PIC off
+[1801.33] B powered off caps=0x0142 linkcap=0x00300604 linkctl=0x0000 linksta=0x0204 slotcap=0x001a007b slotctl=0x07f9 slotsta=0x0019 sec=1 mem=0x80108000 pref=0x1ff10001 below=0xffffffff bar0=0xffffffff
+[1801.33] EVENT DEVICE_DELETED {'device': 'e2', 'path': '/machine/peripheral/e2'}
+[1801.33] present 0
+[1801.33] C: power on again, add e3
+Traceback (most recent call last):
+  File "$SCRATCH/scout/shell2.py", line 101, in <module>
+    pump(1); dump("C on")
+             ~~~~^^^^^^^^
+  File "$SCRATCH/scout/shell2.py", line 77, in dump
+    say(tag, f"caps={rd(*P,e+2,2):#06x} linkcap={rd(*P,e+0xc,4):#010x} linkctl={rd(*P,e+0x10,2):#06x} linksta={rd(*P,e+0x12,2):#06x} slotcap={rd(*P,e+0x14,4):#010x} slotctl={rd(*P,e+0x18,2):#06x} slotsta={rd(*P,e+0x1a,2):#06x} sec={rd(*P,0x19,1)} mem={rd(*P,0x20,4):#010x} pref={rd(*P,0x24,4):#010x} below={rd(1,0,0,0,4):#010x} bar0={rd(1,0,0,0x10,4):#010x}")
+                                                                                                                                                                              ~~^^^^^^^^^^^^^
+  File "$SCRATCH/scout/shell2.py", line 59, in rd
+    out = sh(f"mm {pa(b,dv,f,off):#x} -w {w} -pcie -n")
+  File "$SCRATCH/scout/shell2.py", line 50, in sh
+    ser.send(ch.encode()); time.sleep(0.005)
+    ~~~~~~~~^^^^^^^^^^^^^
+BrokenPipeError: [Errno 32] Broken pipe
+exit 143 (scout stopped by its runner after the B steps)

@@ -1,0 +1,11 @@
+--- a/kernel/src/main.rs
++++ b/kernel/src/main.rs
+@@ -469,7 +469,7 @@
+     // `_OSC`, so no bridge is declared and no slot armed, and each port says
+     // so: a slot is armed below a bridge whose declared `_OSC` granted native
+     // hot-plug.
+-    let declared: &[pcidev::HostBridge] = &[];
++    let declared: &[pcidev::HostBridge] = &[pcidev::HostBridge { segment: 0, buses: 0..=255, granted: Some(0x1f) }];
+     pcidev::arm_hot_plug(declared);
+     // Task-less half of the operation-nesting gate: this boot phase has no current task, so it establishes into the per-CPU slot.
+     #[cfg(feature = "boot-actuators")]
