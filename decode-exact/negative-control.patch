@@ -1,0 +1,8 @@
+408c408
+<     exactly::<T>(bytes.len())?;
+---
+>     if bytes.len() < core::mem::size_of::<T>() { return Err(IpcError::Malformed); }
+414c414
+<         core::ptr::copy_nonoverlapping(bytes.as_ptr(), val.as_mut_ptr() as *mut u8, bytes.len());
+---
+>         core::ptr::copy_nonoverlapping(bytes.as_ptr(), val.as_mut_ptr() as *mut u8, core::mem::size_of::<T>());
