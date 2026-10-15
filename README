@@ -102,3 +102,19 @@ later, does not.
 Run 1 after the warm-up, at 765.9 Mb/s, sits 6% under the baseline boot's 814.7
 to 867.5 Mb/s. It is inside the spread of runs 2-6 across the earlier T14 boots
 (722-878 Mb/s over round 3's two boots and the 23:20 boot).
+
+## The warm-up boot with the longer bound (`warm2/`)
+
+wt/toyos-first-run-instrument a2c57a74f: the warm-up fetch, plus 40 s on the
+row's list bound (100,000 ms; boot deadline 200,000 ms). Image SHA-256
+2cce78f15d99bf66198d741164888944009153fdf9a4c87da9103b3e1f587423. Boot and judge
+passed. Masked as above.
+
+The warm-up fetch met a warm CDN (`x_cache=HIT age=742`), with 1323 ms of read
+waits and no pause. Timed run 1 ran at 868.5 Mb/s; runs 2-6 at 814.4, 807.9,
+833.6, 854.1 and 822.9 Mb/s. Run 1 sits above the band of the boot's other runs,
+not below it.
+
+Read together with `pair/`: when the CDN was cold (`age=1`, 162 waits over
+100 ms), the warm-up took the cold fetch and the timed run after it ran at
+765.9 Mb/s. When the CDN was warm, there was no first-run effect at all.
