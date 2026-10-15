@@ -25,3 +25,11 @@
   at a6ab756ff, no patch: all four pass.
 
 Paths are masked: `$WORK` is the worktree's parent, `$SCRATCH` the job's scratch.
+- `q35-osc/`: the DSDT QEMU 11.1.1 builds for a q35 with one
+  `pcie-root-port`, dumped through QMP `pmemsave` from the address the FADT
+  names (RSDP from the UEFI shell's `dmem`), with
+  `acpi-pci-hotplug-with-bridge-support=off` and `=on`. The two differ in
+  `\_SB.PCI0._OSC`'s mask of the Control DWORD alone, `And(CDW3, 0x1F)` off
+  and `And(CDW3, 0x1E)` on: off, native hot-plug (bit 0) and capability
+  structure control (bit 4) are granted; on, native hot-plug is kept by the
+  firmware. A revision other than 1 is answered Unrecognized Revision.
