@@ -1,0 +1,25 @@
+PR #949: the virtio-gpu hardware cursor vanishing after a pointer move.
+Base 979d4c539 (origin/main); fix 0f55e287f (tree identical to the one every run used).
+Host: macOS arm64, QEMU 11.1.1 (Homebrew), x86-64 q35 guest under TCG.
+
+Probe (scratch, not ToyOS code): probe/wrap.sh replaces `cargo run`'s QEMU display with
+`-display dbus,p2p=yes` plus VNC, a second QMP socket and virtio_gpu traces; probe/dbuswatch.py
+attaches to QEMU's D-Bus display over QMP `getfd`/`add_client` and logs the console layer's
+CursorDefine and MouseSet(x, y, on) calls, the ones a UI such as cocoa consumes;
+probe/session.sh runs the owner's sequence (`cargo run -- --scale 4`, display resized to
+3456x2170 over VNC, `screen scale 2`, moves, `screen scale auto`, `screen scale 1`, moves).
+
+logs/dbus-base2.log, marks-base2.log, run-base2.log  base driver: every move turns MouseSet OFF.
+logs/dbus-fix2.log, marks-fix2.log, run-fix2.log     fixed driver: every move keeps it on.
+logs/run3-trace-vnc.log, vnc3c.log                   base: the device trace (UPDATE res 1, MOVE res 0) and
+                                                     VNC's alpha cursor (new 64x64 image, hot 5,5 at scale 2).
+logs/virtio-screendump-hw-cursor.txt                 QMP screendump holds no hardware cursor: 0 cursor
+                                                     pixels where MouseSet had it on (fix run, 1792,860).
+logs/run-gop.log, gop-cursorpix.txt                  GOP control (`--gop --scale 4`, then `screen scale 1.5`):
+                                                     the software cursor is on the screendump at the new pointer.
+logs/vgpu-test.log                                   cargo test -p toyos-virtio-gpu (fix), exit 0.
+logs/negctl.log, fix-lib.patch                       the lib.rs fix reverted with the new test kept: the test fails
+                                                     on the moves' resource 0, exit 101; restored afterwards.
+logs/qemu-rows.log                                   the_compositor_drives_the_virtio_gpu and
+                                                     a_window_is_drawn_at_the_scale_and_relaid_at_the_next, exit 0.
+logs/ci-host.log, build-only.log                     cargo run -- --ci host and --build-only, exit 0 (fix).
