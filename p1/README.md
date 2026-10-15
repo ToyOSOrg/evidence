@@ -11,3 +11,11 @@ three non-kernel files (tcp, issues) none of these checks' kernel or harness pat
 - logs/ci-host2.log (1a2caf737, red): kernelkeys row for the deleted HashMap and a clippy literal; fixed in 75cd78bcd.
 - mutations/: two negative controls, each applied with git apply, the crate's tests run (exit 101, the named test red), reverted, rerun (exit 0): page-share-only-the-bar (pages.rs checks only the BAR's bytes, not its whole last page) and aligned-window-a-whole-leaf (a 2 MiB-aligned short window becomes a 2 MiB leaf).
 - metal/: --metal-readback staging only (exit 2 = staged, machine untouched) for the T14 and AMD bench rows.
+
+## Bench round 1, at 5f4418f37 (run by the orchestrator)
+
+bench/t14 and bench/amd: readbacks (kernel/loader logs, verdicts; device serial numbers masked), judges (judge-p1.log, judge-p1a.log), manifests (m947-*.txt/.log). T14 3/3 PASS. AMD 2/3: amdvi_translates_the_stick_controller and msix_table_read_in_place PASS; the first claim behind a bridge on metal handed 03:00.4's BAR 0 over in place and usbd drove it; amdvi_usbd_drives_its_own_entry red because end_returns_claims selected 1022:1639 by id and the bench has two (fixed in dc185149c). Kernel survey line: AMD 14 memory BARs, T14 21, 0 sharing a 4 KiB page on either.
+
+## Round 3, at ecab33411 (review fixes, main c0b154791 merged)
+
+round3/: ci host exit 0 (86 green); build-only x86-64 and aarch64 exit 0; 11 QEMU claim rows exit 0 (r3-guests.log; r2-guests.log the spare rows after the end_returns_claims fix at e136dafeb). All four bench images re-staged (stage-*.log exit 2 = staged, untouched), because ecab33411 changes how every user unmap frees its leaf tables. q35-boots/: the q35 survey lines from boots at 75cd78bcd (the red run's kept serial; the survey code is unchanged since): 11 to 14 memory BARs per machine shape, 0 sharing.
