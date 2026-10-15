@@ -19,3 +19,7 @@ bench/t14 and bench/amd: readbacks (kernel/loader logs, verdicts; device serial 
 ## Round 3, at ecab33411 (review fixes, main c0b154791 merged)
 
 round3/: ci host exit 0 (86 green); build-only x86-64 and aarch64 exit 0; 11 QEMU claim rows exit 0 (r3-guests.log; r2-guests.log the spare rows after the end_returns_claims fix at e136dafeb). All four bench images re-staged (stage-*.log exit 2 = staged, untouched), because ecab33411 changes how every user unmap frees its leaf tables. q35-boots/: the q35 survey lines from boots at 75cd78bcd (the red run's kept serial; the survey code is unchanged since): 11 to 14 memory BARs per machine shape, 0 sharing.
+
+## Round 4, at 824e0478a6b7b75f354bfb7e3e130bf73316ee71 (main 80be9e85c, #944, merged)
+
+round4/: ci host exit 0 (86 green); build-only x86-64 and aarch64 exit 0; the 11 QEMU claim rows exit 0; all four bench images re-staged here (exit 2 = staged, untouched). Round 3's staging is superseded.
