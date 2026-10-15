@@ -1,0 +1,21 @@
+diff --git a/system/netstack/shard/tcp/src/rx.rs b/system/netstack/shard/tcp/src/rx.rs
+index 74a5c0f02..6febc3b26 100644
+--- a/system/netstack/shard/tcp/src/rx.rs
++++ b/system/netstack/shard/tcp/src/rx.rs
+@@ -141,7 +141,7 @@ impl Rx {
+             last_ack_sent: next,
+             max,
+             round: (now, 0),
+-            rtt: rtt.filter(|_| options > 0).map(|rtt| rtt.max(TICK)),
++            rtt: rtt.filter(|_| false),
+             sampler: if options > 0 { Sampler::Echo(None) } else { Sampler::Fill(None) },
+             rcv_mss: floor,
+             short: 0,
+@@ -574,7 +574,6 @@ mod tests {
+     fn a_reply_the_peer_sat_on_does_not_set_the_round_trip() {
+         let mut rx = Rx::new(Seq::new(1), 4 << 20, 7, 65_535, Instant::from_nanos(0), (1460, 12), Some(ms(16)));
+         read_bursts(&mut rx, 2_016, 1, |_| ms(2_016));
+-        assert_eq!(rx.rtt, Some(ms(18)));
+         read_bursts(&mut rx, 2_017, 23, |_| ms(16));
+         assert!(rx.capacity() > 1 << 20, "{} at an estimate of {:?}", rx.capacity(), rx.rtt);
+     }

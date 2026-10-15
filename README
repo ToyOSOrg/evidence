@@ -118,3 +118,31 @@ not below it.
 Read together with `pair/`: when the CDN was cold (`age=1`, 162 waits over
 100 ms), the warm-up took the cold fetch and the timed run after it ran at
 765.9 Mb/s. When the CDN was warm, there was no first-run effect at all.
+
+## Review round 1 (`round1/`), tcp change at a9d35c212bc3913ab5232791fd93d10944518853
+
+A note on the earlier `controls/control-unseeded.log`: it records revision
+3659ffa1c, but the patch's context line exists only from defd00bfb on. That
+run was 3659ffa1c with defd00bfb's one-line edit present uncommitted, so the
+patched line and the test were the same as at defd00bfb, and the result
+stands.
+
+Each control below was applied as a checked patch at a9d35c212, then
+`cargo test --lib rx::` was run in `system/netstack/shard/tcp`, then the patch
+was restored; each log ends with the tree clean.
+
+- `control-unseeded`: the seed ignored. EXIT=101.
+  `a_reply_the_peer_sat_on_does_not_set_the_round_trip` fails at its
+  `rtt == 18 ms` check (left 2.016 s).
+  `a_handshake_inside_one_tick_starts_the_estimate_at_a_tick` fails at
+  `rtt == 1 ms` (left None).
+- `control-unseeded-window`: the seed ignored and the 18 ms check removed.
+  EXIT=101. The window assertion fails on its own: 80,000 bytes at an
+  estimate of 122 ms after 24 ms of reads, against more than 1 MiB seeded.
+- `control-zero-seed`: the floor at one tick dropped and the `rtt == 1 ms`
+  check removed. EXIT=101. The test fails at `rtt > 10 ms` (left 0 ns).
+- `control-zero-seed-window`: the same, with the `rtt > 10 ms` check also
+  removed. EXIT=101. The window assertion fails on its own: 65,535 bytes at
+  an estimate of 0 ns.
+
+`host-<head>.log` is added with the head it ran at.

@@ -1,0 +1,21 @@
+diff --git a/system/netstack/shard/tcp/src/rx.rs b/system/netstack/shard/tcp/src/rx.rs
+index 74a5c0f02..74bb24c8f 100644
+--- a/system/netstack/shard/tcp/src/rx.rs
++++ b/system/netstack/shard/tcp/src/rx.rs
+@@ -141,7 +141,7 @@ impl Rx {
+             last_ack_sent: next,
+             max,
+             round: (now, 0),
+-            rtt: rtt.filter(|_| options > 0).map(|rtt| rtt.max(TICK)),
++            rtt: rtt.filter(|_| options > 0),
+             sampler: if options > 0 { Sampler::Echo(None) } else { Sampler::Fill(None) },
+             rcv_mss: floor,
+             short: 0,
+@@ -585,7 +585,6 @@ mod tests {
+     #[test]
+     fn a_handshake_inside_one_tick_starts_the_estimate_at_a_tick() {
+         let mut rx = Rx::new(Seq::new(1), 4 << 20, 7, 65_535, Instant::from_nanos(0), (1460, 12), Some(Duration::ZERO));
+-        assert_eq!(rx.rtt, Some(TICK));
+         read_bursts(&mut rx, 1, 200, |_| ms(16));
+         assert!(rx.rtt > Some(ms(10)), "{:?}", rx.rtt);
+         assert!(rx.capacity() > 1 << 20, "{} at an estimate of {:?}", rx.capacity(), rx.rtt);
