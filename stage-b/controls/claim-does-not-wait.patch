@@ -1,0 +1,16 @@
+diff --git a/kernel/src/pcidev/mod.rs b/kernel/src/pcidev/mod.rs
+index 60ae491c7..d5e84db9d 100644
+--- a/kernel/src/pcidev/mod.rs
++++ b/kernel/src/pcidev/mod.rs
+@@ -699,9 +699,8 @@ fn answered() -> Option<Result<aperture::Declaration<Vec<RootBridgeWindow>>, ape
+     let began = crate::clock::now();
+     let deadline = crate::time::Deadline::at(began + DECLARATION_DEADLINE);
+     let parkable = crate::scheduler::Parkable::at_entry();
+-    let waited = crate::watch::wait_until(&parkable, &DECLARATION, 0, kernel::sched::task::WaitClass::Other, deadline, || {
+-        MACHINE.lock().apertures.answer().is_some()
+-    });
++    let _ = (&parkable, deadline);
++    let waited: Result<(), crate::watch::Cancelled> = Ok(());
+     waited.ok()?;
+     if answer().is_none() {
+         withhold(aperture::Withheld::Unanswered);

@@ -1,0 +1,15 @@
+diff --git a/lib/acpi/src/resource.rs b/lib/acpi/src/resource.rs
+index aca772b03..e554bf2ca 100644
+--- a/lib/acpi/src/resource.rs
++++ b/lib/acpi/src/resource.rs
+@@ -223,9 +223,7 @@ pub fn memory_windows<P: Phys>(phys: P, at: u64, out: &mut [RootBridgeWindow]) -
+         if min.checked_add(length - 1) != Some(max) {
+             return Err(ResourceError::Inconsistent { min, max, length });
+         }
+-        if translation != 0 {
+-            return Err(ResourceError::Translated { min, offset: translation });
+-        }
++
+         if phys.byte(head + GENERAL_FLAGS as u64) & CONSUMER != 0 {
+             return Err(ResourceError::Consumed { min });
+         }

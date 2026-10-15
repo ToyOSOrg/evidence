@@ -1,0 +1,13 @@
+diff --git a/kernel/pci/src/aperture.rs b/kernel/pci/src/aperture.rs
+index eedf9fded..947b06d78 100644
+--- a/kernel/pci/src/aperture.rs
++++ b/kernel/pci/src/aperture.rs
+@@ -80,7 +80,7 @@ pub fn check<W: AsRef<[RootBridgeWindow]>>(windows: W, memory: &[(u64, u64)]) ->
+         if let Some(other) = list[..at].iter().find(|o| o.base < window.end() && window.base < o.end()) {
+             return Err(Refused::Overlap(*other, *window));
+         }
+-        if memory.iter().any(|&(start, end)| start < window.end() && window.base < end) {
++        if memory.iter().any(|&(start, end)| start < window.end() && window.base < end && false) {
+             return Err(Refused::Memory(*window));
+         }
+     }
