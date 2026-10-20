@@ -1,0 +1,11 @@
+--- a/build/cicache.rs
++++ b/build/cicache.rs
+@@ -286,7 +286,7 @@
+     let total = answer["total_count"].as_u64().ok_or_else(|| format!("a cache list without a total: {answer}"))?;
+     let entries = answer["actions_caches"].as_array().ok_or_else(|| format!("a cache list without entries: {answer}"))?;
+     let entries = entries.iter().map(|entry| match (entry["key"].as_str(), entry["ref"].as_str(), entry["size_in_bytes"].as_u64()) {
+-        (Some(key), Some(MAIN), Some(bytes)) => Ok((key.to_string(), bytes)),
++        (Some(key), Some(_), Some(bytes)) => Ok((key.to_string(), bytes)),
+         _ => Err(format!("the cache list of {MAIN} holds {entry}")),
+     });
+     Ok((total, entries.collect::<Result<_, _>>()?))

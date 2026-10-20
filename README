@@ -1,1 +1,17 @@
-Evidence for ToyOSOrg/ToyOS pull requests: run logs, patches and measurements, one branch per pull request (pr-<N>), linked from the pull request by commit hash. Every branch is append-only.
+Evidence for ToyOSOrg/ToyOS#964 (branch wt/toyos-hostcache, head 3cd5ba82e2fee22821aa5ee76582ce678fe9da30).
+Paths are masked as <worktree>, <scratch>, <tmp>, <home>. Host: the development machine (macOS, arm64).
+
+host-check/                 `cargo run -- --ci host` at the head: full log, exit 0, 87 steps green.
+negative-controls/          each mutation of build/cicache.rs as a patch, applied with `git apply --check`
+                            then `git apply`, built (`cargo test --lib --no-run`), tested (`cargo test --lib cicache`),
+                            reverted with `git apply -R` (mutate.sh). summary.txt: one line per run; its first
+                            m1 line is an attempt that did not build (type inference), replaced by the m1 patch
+                            here, which builds and fails the hard-link test. Run against the working tree before
+                            its last edit, which reformatted `cache_page`'s match and reworded one comment.
+live-cache-list/            `gh api repos/ToyOSOrg/ToyOS/actions/caches?per_page=100` (all scopes) and
+                            `...?ref=refs/heads/main&per_page=100` (main), and `cargo run -- --ci stored` at the
+                            head against the live list: ENTRY=host-sealed-Linux-X64-38533374419 (the last saved
+                            entry) green, ENTRY=host-sealed-Linux-X64-1 (no such entry) red, exits in
+                            stored-head-exits.txt.
+driver-target/measure.log   a cold driver build in its own target, its sizes, and what
+                            `cargo clean -p toyos-build` removes there, incremental state included.

@@ -1,0 +1,11 @@
+--- a/build/cicache.rs
++++ b/build/cicache.rs
+@@ -307,7 +307,7 @@
+         let largest = largest.ok_or_else(|| format!("main's caches hold no {prefix}* entry, which every toolchain job restores"))?;
+         layers = layers.saturating_add(largest);
+     }
+-    let needed = host.saturating_mul(2).saturating_add(layers);
++    let needed = host.saturating_add(layers);
+     let said = format!("{entry} stores {host} B; twice that and main's toolchain layers, {layers} B, need {needed} B");
+     if needed > REPOSITORY_LIMIT {
+         Err(format!("{said}, past the repository's {REPOSITORY_LIMIT} B: the next entry or a layer may be evicted"))

@@ -1,0 +1,11 @@
+--- a/build/cicache.rs
++++ b/build/cicache.rs
+@@ -309,7 +309,7 @@
+     }
+     let needed = host.saturating_mul(2).saturating_add(layers);
+     let said = format!("{entry} stores {host} B; twice that and main's toolchain layers, {layers} B, need {needed} B");
+-    if needed > REPOSITORY_LIMIT {
++    if needed >= REPOSITORY_LIMIT {
+         Err(format!("{said}, past the repository's {REPOSITORY_LIMIT} B: the next entry or a layer may be evicted"))
+     } else {
+         Ok(format!("{said} of the repository's {REPOSITORY_LIMIT} B"))

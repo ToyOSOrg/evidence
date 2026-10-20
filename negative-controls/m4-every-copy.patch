@@ -1,0 +1,11 @@
+--- a/build/cicache.rs
++++ b/build/cicache.rs
+@@ -303,7 +303,7 @@
+         .ok_or_else(|| format!("main's caches hold no {entry}: its save stored nothing"))?;
+     let mut layers = 0u64;
+     for prefix in crate::release::entry_prefixes() {
+-        let largest = main.iter().filter(|(key, _)| key.starts_with(&prefix)).map(|(_, bytes)| *bytes).max();
++        let largest = Some(main.iter().filter(|(key, _)| key.starts_with(&prefix)).map(|(_, bytes)| *bytes).sum::<u64>());
+         let largest = largest.ok_or_else(|| format!("main's caches hold no {prefix}* entry, which every toolchain job restores"))?;
+         layers = layers.saturating_add(largest);
+     }
