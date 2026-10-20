@@ -1,0 +1,97 @@
+tree 10b6bd5d4356f7cdbdf3f1e7c0644777bb3cbe9b + dirty:        0
+=== [blockring-reserved] diff
+63c63
+<         if reserved.iter().any(|&word| word != 0) {
+---
+>         if false && reserved.iter().any(|&word| word != 0) {
+test entry::tests::a_request_outside_its_bounds_is_refused_by_tag ... FAILED
+thread 'entry::tests::a_request_outside_its_bounds_is_refused_by_tag' (24331998) panicked at lib/blockring/src/entry.rs:187:13:
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 22 filtered out; finished in 0.00s
+error: test failed, to rerun pass `-p toyos-blockring --lib`
+[blockring-reserved] cargo test exit 101
+=== [inflight-seq] diff
+59c59
+<         if tag.wrapping_shr(Self::INDEX_BITS) != slot.seq {
+---
+>         if false && tag.wrapping_shr(Self::INDEX_BITS) != slot.seq {
+test inflight::tests::an_end_answers_every_tag_once_and_a_late_completion_nothing ... ok
+test inflight::tests::a_slot_refilled_past_sixteen_bits_refuses_its_first_tag ... FAILED
+test inflight::tests::a_tag_is_answered_once_and_its_slot_takes_a_new_one ... FAILED
+thread 'inflight::tests::a_slot_refilled_past_sixteen_bits_refuses_its_first_tag' (24332241) panicked at sdk/transport/src/inflight.rs:140:9:
+thread 'inflight::tests::a_tag_is_answered_once_and_its_slot_takes_a_new_one' (24332242) panicked at sdk/transport/src/inflight.rs:121:9:
+test result: FAILED. 1 passed; 2 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.00s
+error: test failed, to rerun pass `-p toyos-transport --lib`
+[inflight-seq] cargo test exit 101
+=== [virtio-written] diff
+361c361
+<         if len > chain.writable {
+---
+>         if false && len > chain.writable {
+test tests::more_bytes_than_the_chain_may_be_written_is_refused ... FAILED
+thread 'tests::more_bytes_than_the_chain_may_be_written_is_refused' (24332550) panicked at lib/virtio/src/tests.rs:783:9:
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 39 filtered out; finished in 0.00s
+error: test failed, to rerun pass `-p toyos-virtio --lib`
+[virtio-written] cargo test exit 101
+=== [virtio-head-narrowed] diff
+352c352
+<         let Some(first) = usize::try_from(id).ok().filter(|&first| first < self.slots.len()) else {
+---
+>         let Some(first) = usize::try_from(id as u16).ok().filter(|&first| first < self.slots.len()) else {
+test tests::a_head_past_the_table_is_refused ... FAILED
+thread 'tests::a_head_past_the_table_is_refused' (24334435) panicked at lib/virtio/src/tests.rs:731:9:
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 39 filtered out; finished in 0.00s
+error: test failed, to rerun pass `-p toyos-virtio --lib`
+[virtio-head-narrowed] cargo test exit 101
+=== [vdagent-port] diff
+85c85
+<     if id >= max_nr_ports {
+---
+>     if false && id >= max_nr_ports {
+test control::tests::a_short_buffer_is_refused ... ok
+test control::tests::a_port_name_decodes_without_its_name ... ok
+test control::tests::an_undefined_event_is_refused ... ok
+test control::tests::each_control_message_is_its_layout ... ok
+test encode::tests::a_long_clipboard_is_chunked_at_2048 ... ok
+test encode::tests::a_short_clipboard_is_one_chunk ... ok
+test stream::tests::a_chunk_for_another_port_is_skipped ... ok
+test stream::tests::a_chunk_over_2048_leaves_the_stream_unframed ... ok
+test encode::tests::the_largest_transmit_is_capabilities_and_a_whole_push ... ok
+test encode::tests::a_request_and_a_release_are_their_layouts ... ok
+test encode::tests::capabilities_are_request_0_with_by_demand_and_grab_serial ... ok
+test control::tests::a_port_id_at_max_nr_ports_is_refused ... FAILED
+test encode::tests::a_grab_carries_its_serial_and_utf8_text ... ok
+test stream::tests::a_declared_size_past_the_bound_is_counted_off_and_the_next_message_decodes ... ok
+test stream::tests::a_refusal_is_named_at_its_header_before_its_data_arrives ... ok
+test stream::tests::an_unknown_type_is_refused ... ok
+test stream::tests::another_protocol_is_refused_and_counted_off ... ok
+test stream::tests::each_type_is_held_to_its_size ... ok
+test stream::tests::a_kept_message_buffers_no_more_than_it_declares ... ok
+test stream::tests::a_message_at_the_bound_decodes ... ok
+[vdagent-port] cargo test exit 101
+=== [vdagent-maxdata] diff
+241c241
+<     let Some(len) = usize::try_from(size).ok().filter(|&n| n <= MAX_DATA) else {
+---
+>     let Some(len) = usize::try_from(size).ok().filter(|&n| n <= usize::MAX) else {
+test control::tests::a_port_id_at_max_nr_ports_is_refused ... ok
+test control::tests::a_port_name_decodes_without_its_name ... ok
+test control::tests::a_short_buffer_is_refused ... ok
+test control::tests::an_undefined_event_is_refused ... ok
+test control::tests::each_control_message_is_its_layout ... ok
+test encode::tests::a_grab_carries_its_serial_and_utf8_text ... ok
+test encode::tests::capabilities_are_request_0_with_by_demand_and_grab_serial ... ok
+test encode::tests::a_request_and_a_release_are_their_layouts ... ok
+test encode::tests::a_long_clipboard_is_chunked_at_2048 ... ok
+test stream::tests::a_chunk_for_another_port_is_skipped ... ok
+test stream::tests::a_chunk_over_2048_leaves_the_stream_unframed ... ok
+test stream::tests::another_protocol_is_refused_and_counted_off ... ok
+test stream::tests::a_refusal_is_named_at_its_header_before_its_data_arrives ... ok
+test stream::tests::an_unknown_type_is_refused ... ok
+test encode::tests::the_largest_transmit_is_capabilities_and_a_whole_push ... ok
+test encode::tests::a_short_clipboard_is_one_chunk ... ok
+test stream::tests::each_type_is_held_to_its_size ... ok
+test stream::tests::a_valid_stream_decodes_the_same_at_every_split_point ... ok
+test stream::tests::a_kept_message_buffers_no_more_than_it_declares ... ok
+test stream::tests::a_message_at_the_bound_decodes ... ok
+[vdagent-maxdata] cargo test exit 101
+EXIT=0

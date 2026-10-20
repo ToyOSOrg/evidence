@@ -1,0 +1,31 @@
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.27s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-18ba9974e73e748f)
+23:48:40   BUILD x86_64 binaries of tests/guest/rust-tests
+23:50:24   BUILT x86_64 binaries of tests/guest/rust-tests  (104s)
+23:50:24   BUILD x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests
+23:50:40   BUILT x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests  (16s)
+23:50:40 [toyos] Compiling 138 C tests, and attempting 24 declared ones...
+23:50:46 [metal] 2 registration(s) and 2 shared member(s) over 2 boot(s)
+23:50:46   BUILD x86_64 kernel boot-actuators,test-actuators, loader, ROOT of <scratch>/pr2/metal/shared-debug/system-92978789c8910ba5.toml
+23:51:05 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+23:51:05   BUILT x86_64 kernel boot-actuators,test-actuators, loader, ROOT of <scratch>/pr2/metal/shared-debug/system-92978789c8910ba5.toml  (19s)
+23:51:05 [metal] shared-debug: 1 job(s) under a list bound of 60000 ms, armed with ["pci-cap-selftest", "revoked-backing-selftest", "lapic-spurious-selftest", "unclaimed-vector-selftest", "xhci-xecp-selftest", "xhci-descriptor-selftest", "sysret-ss-probe", "sched-operation-nesting", "iommu-firmware-left"] and a boot deadline of 120000 ms — <scratch>/pr2/metal/shared-debug/image.img
+23:51:05   BUILD x86_64 kernel, ROOT of <scratch>/pr2/metal/testcases/system-a625eb127ba8636a.toml
+23:51:07 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+23:51:07   BUILT x86_64 kernel, ROOT of <scratch>/pr2/metal/testcases/system-a625eb127ba8636a.toml  (2s)
+23:51:08 [metal] testcases: 2 job(s) under a list bound of 60600 ms, armed with [] and a boot deadline of 121200 ms — <scratch>/pr2/metal/testcases/image.img
+# One boot per image. Each invocation is `cargo <words>` from this worktree.
+
+shared-debug
+  image: <scratch>/pr2/metal/shared-debug/image.img
+  cargo run -p toyos-metal -- --image <scratch>/pr2/metal/shared-debug/image.img --readback <scratch>/pr2/metal/shared-debug --fat32-check
+
+testcases
+  image: <scratch>/pr2/metal/testcases/image.img
+  cargo run -p toyos-metal -- --image <scratch>/pr2/metal/testcases/image.img --readback <scratch>/pr2/metal/testcases --fat32-check
+23:51:08 [metal] staged 2 image(s); <scratch>/pr2/metal/request.txt lists them. The machine was not touched, so this run establishes nothing about it.
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `<tree>/target/debug/deps/toyos_build-18ba9974e73e748f --metal --metal-readback <scratch>/pr2/metal pci_capability_walk trace_record_cost abuse_thread_name stream_handles` (exit status: 2)
+EXIT=2
