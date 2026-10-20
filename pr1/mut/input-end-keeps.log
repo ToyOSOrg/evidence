@@ -1,0 +1,40 @@
+HEAD 9b11608ab93e30e615e5bd697f3d5a29e6d6e6d9 + uncommitted PR-1 tree
+PATCH <scratch>/mut/input-end-keeps.patch
+--- a/lib/input/src/merge.rs
++++ b/lib/input/src/merge.rs
+@@ -111,7 +111,7 @@
+ 
+     /// Every device `slot` carried holds nothing: its source ended.
+     pub fn end(&mut self, slot: Slot) -> Delivered {
+-        self.slots[slot.0].end();
++        let _ = slot;
+         self.merge()
+     }
+ 
+COMMAND cargo test -p toyos-input --test input a_connections_end_releases
+   Compiling toyos-input v0.1.0 (<dev>/toyos-usbd/lib/input)
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.48s
+     Running tests/input.rs (target/debug/deps/input-3f209872bf8fb613)
+
+running 1 test
+test a_connections_end_releases_every_device_it_carried_and_a_gone_only_its_own_source ... FAILED
+
+failures:
+
+---- a_connections_end_releases_every_device_it_carried_and_a_gone_only_its_own_source stdout ----
+
+thread 'a_connections_end_releases_every_device_it_carried_and_a_gone_only_its_own_source' (22625934) panicked at lib/input/tests/input.rs:203:5:
+assertion `left == right` failed: every device left on the connection
+  left: []
+ right: [RawKeyEvent { keycode: 5, modifiers: 16 }]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    a_connections_end_releases_every_device_it_carried_and_a_gone_only_its_own_source
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 13 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-input --test input`
+EXIT 101
+RESTORED_CLEAN=yes

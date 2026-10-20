@@ -1,0 +1,42 @@
+HEAD 9b11608ab93e30e615e5bd697f3d5a29e6d6e6d9 + uncommitted PR-1 tree
+PATCH <scratch>/mut/blockservice-no-wait.patch
+--- a/system/diskserver/src/main.rs
++++ b/system/diskserver/src/main.rs
+@@ -153,7 +153,7 @@
+             return Some(Err(Refusal::NotGranted));
+         }
+         Some(match carrying[..] {
+-            [] if !self.settled() && !expired => return None,
++            [] if false && !self.settled() && !expired => return None,
+             [] => Err(self.absent()),
+             [one] if one.part.blocks.is_some() => Ok(*one),
+             [_] => Err(Refusal::Unusable),
+COMMAND cargo test -p diskserver --bin diskserver what_no_disk_offers_waits
+   Compiling toyos-blockring v0.1.0 (<dev>/toyos-usbd/lib/blockring)
+   Compiling toyos-blockserve v0.1.0 (<dev>/toyos-usbd/lib/blockserve)
+   Compiling diskserver v0.0.0 (<dev>/toyos-usbd/system/diskserver)
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.72s
+     Running unittests src/main.rs (target/debug/deps/diskserver-e4593b8c9df7dc93)
+
+running 1 test
+test tests::what_no_disk_offers_waits_for_every_driver_started_at_boot ... FAILED
+
+failures:
+
+---- tests::what_no_disk_offers_waits_for_every_driver_started_at_boot stdout ----
+
+thread 'tests::what_no_disk_offers_waits_for_every_driver_started_at_boot' (22626938) panicked at system/diskserver/src/main.rs:603:9:
+assertion `left == right` failed
+  left: Some(Err(Unusable))
+ right: None
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    tests::what_no_disk_offers_waits_for_every_driver_started_at_boot
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p diskserver --bin diskserver`
+EXIT 101
+RESTORED_CLEAN=yes

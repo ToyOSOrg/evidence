@@ -1,0 +1,38 @@
+HEAD 9b11608ab93e30e615e5bd697f3d5a29e6d6e6d9 + uncommitted PR-1 tree
+PATCH <scratch>/mut/scsi-deferred-as-current.patch
+--- a/lib/scsi/src/lib.rs
++++ b/lib/scsi/src/lib.rs
+@@ -132,7 +132,7 @@
+     /// ILLEGAL REQUEST / INVALID COMMAND OPERATION CODE about the current
+     /// command: an answer, not a failure, for a command SBC makes optional.
+     pub fn unimplemented(self) -> bool {
+-        !self.deferred && (self.key, self.asc, self.ascq) == (0x05, 0x20, 0x00)
++        (self.key, self.asc, self.ascq) == (0x05, 0x20, 0x00)
+     }
+ }
+ 
+COMMAND cargo test -p toyos-scsi sense_is_read_only
+   Compiling toyos-scsi v0.1.0 (<dev>/toyos-usbd/lib/scsi)
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.47s
+     Running unittests src/lib.rs (target/debug/deps/toyos_scsi-db89aa96a2906143)
+
+running 1 test
+test tests::sense_is_read_only_in_the_fixed_format_its_response_code_names ... FAILED
+
+failures:
+
+---- tests::sense_is_read_only_in_the_fixed_format_its_response_code_names stdout ----
+
+thread 'tests::sense_is_read_only_in_the_fixed_format_its_response_code_names' (22626523) panicked at lib/scsi/src/lib.rs:644:13:
+a deferred error is not about the command just sent
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    tests::sense_is_read_only_in_the_fixed_format_its_response_code_names
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 17 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-scsi --lib`
+EXIT 101
+RESTORED_CLEAN=yes

@@ -1,0 +1,12 @@
+--- a/system/nvme/src/nvme.rs
++++ b/system/nvme/src/nvme.rs
+@@ -215,7 +215,8 @@
+     /// Bring the controller up (§3.5.1): disable, program the admin queue,
+     /// enable, identify, and make the I/O queue pairs.
+     /// `info` is the claim's one description.
+-    pub fn open(dev: PciDev, info: &toyos_abi::pci::PciFunctionInfo) -> Result<Self, Refusal> {
++    pub fn open(dev: PciDev, _: &toyos_abi::pci::PciFunctionInfo) -> Result<Self, Refusal> {
++        let info = &dev.describe().map_err(|e| Refusal::Kernel("the claim's description", e))?;
+         let class = dev
+             .config_read(0x08, toyos_abi::syscall::RegWidth::U32)
+             .map_err(|e| Refusal::Kernel("the class code", e))?;

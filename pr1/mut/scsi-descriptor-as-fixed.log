@@ -1,0 +1,39 @@
+HEAD 9b11608ab93e30e615e5bd697f3d5a29e6d6e6d9 + uncommitted PR-1 tree
+PATCH <scratch>/mut/scsi-descriptor-as-fixed.patch
+--- a/lib/scsi/src/lib.rs
++++ b/lib/scsi/src/lib.rs
+@@ -120,6 +120,7 @@
+         let deferred = match response[0] & 0x7F {
+             0x70 => false,
+             0x71 => true,
++            0x72 | 0x73 => false,
+             other => return Err(SenseRefused::Format(other)),
+         };
+         // Byte 7 counts the bytes after it, so ASCQ at byte 13 needs six.
+COMMAND cargo test -p toyos-scsi sense_is_read_only
+   Compiling toyos-scsi v0.1.0 (<dev>/toyos-usbd/lib/scsi)
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.47s
+     Running unittests src/lib.rs (target/debug/deps/toyos_scsi-db89aa96a2906143)
+
+running 1 test
+test tests::sense_is_read_only_in_the_fixed_format_its_response_code_names ... FAILED
+
+failures:
+
+---- tests::sense_is_read_only_in_the_fixed_format_its_response_code_names stdout ----
+
+thread 'tests::sense_is_read_only_in_the_fixed_format_its_response_code_names' (22626365) panicked at lib/scsi/src/lib.rs:648:17:
+assertion `left == right` failed: 0x72
+  left: Ok(Sense { key: 5, asc: 32, ascq: 0, deferred: false })
+ right: Err(Format(114))
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    tests::sense_is_read_only_in_the_fixed_format_its_response_code_names
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 17 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-scsi --lib`
+EXIT 101
+RESTORED_CLEAN=yes

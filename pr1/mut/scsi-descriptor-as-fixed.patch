@@ -1,0 +1,10 @@
+--- a/lib/scsi/src/lib.rs
++++ b/lib/scsi/src/lib.rs
+@@ -120,6 +120,7 @@
+         let deferred = match response[0] & 0x7F {
+             0x70 => false,
+             0x71 => true,
++            0x72 | 0x73 => false,
+             other => return Err(SenseRefused::Format(other)),
+         };
+         // Byte 7 counts the bytes after it, so ASCQ at byte 13 needs six.
