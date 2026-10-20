@@ -27,3 +27,7 @@ round4/: ci host exit 0 (86 green); build-only x86-64 and aarch64 exit 0; the 11
 ## Round 5, at 4c72cf3f327d374b178ccad7f1a9428299a3b16b (main 0e6716fc0 merged; disable_msix and Msix::disabled deleted with their last callers)
 
 round5/: build-only x86-64 and aarch64 exit 0; the 11 QEMU claim rows exit 0; AMD testcases-amd-xhci-leave re-staged alone (exit 2 = staged, untouched). ci host exit 1, 85 of 86 green: the one red is build/llvm.rs the_caller_s_environment_reaches_neither_the_build_nor_the_key, which runs git under SDKROOT=/no/such.sdk and on this host the /usr/bin/git shim then fails to find the developer tools (r5-llvm-alone.log reproduces it alone). The branch does not touch build/llvm.rs or build/sysroot.rs and the same step was green at round 4, so the red is this host's, not P1's.
+
+## Round 6, at 33adc6b476322eaad3cd8ec6cd12ed72261bf51a (main ffd8bb970, #953, merged)
+
+round6/: ci host exit 0 (86 green); build-only x86-64 and aarch64 exit 0; 12 QEMU rows exit 0 (the 11 claim rows and #953's hda_plays_to_the_controller_that_reaches_an_output); all four bench images staged at this head (exit 2 = staged, untouched), the AMD testcases boot with hda_tone, hda_tone_resampled and hda_volume_step, whose controllers 03:00.1 and 03:00.6 sit behind 00:08.1.
