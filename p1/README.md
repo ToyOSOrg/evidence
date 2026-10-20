@@ -39,3 +39,7 @@ bench/round6/amd: the orchestrator's AMD readback and judge. HDA rows PASS (firs
 - amdvi_usbd_drives_its_own_entry: usbd_spare_vector expected usbd to settle, but the unit's refusal of the rewritten message puts the claim in refusal by design (iommu/fault.rs), so usbd ended on Io. The arm now expects that (round 7).
 
 round7/: the three spare rows exit 0 under QEMU; ci host exit 0 (86 green); AMD testcases-amd-xhci-leave re-staged (exit 2).
+
+## Bench round 7 (e00424828, run by the orchestrator)
+
+bench/round7/amd: one boot of testcases-amd-xhci-leave, amdvi_usbd_drives_its_own_entry PASS. With rounds 6 and 7: T14 3/3; AMD every row but amdvi_translates_the_stick_controller, red for the recorded, independent reason in issues/a-function-that-truncates-its-dma-addresses-faults-in-its-domain.md (03:00.1 truncates its DMA addresses).
