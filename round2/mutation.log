@@ -1,0 +1,33 @@
++(eval):8> git apply --check <jobs>/tmp/scratchpad/agents/no-running/mutation-typed-accepts-any.patch
++(eval):8> git apply <jobs>/tmp/scratchpad/agents/no-running/mutation-typed-accepts-any.patch
++(eval):8> cargo test -p toyos-update --lib policy::tests::a_partition_is_taken_only_of_its_sections_type
+   Compiling toyos-update v0.1.0 (<worktree>/lib/update)
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.43s
+     Running unittests src/lib.rs (target/debug/deps/toyos_update-2e0696a47fb5efe8)
+
+running 1 test
+test policy::tests::a_partition_is_taken_only_of_its_sections_type ... FAILED
+
+failures:
+
+---- policy::tests::a_partition_is_taken_only_of_its_sections_type stdout ----
+
+thread 'policy::tests::a_partition_is_taken_only_of_its_sections_type' (16249494) panicked at lib/update/src/policy.rs:164:9:
+assertion `left == right` failed
+  left: Ok(())
+ right: Err(Type("root"))
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    policy::tests::a_partition_is_taken_only_of_its_sections_type
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 50 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-update --lib`
++(eval):8> echo 'mutated test exit=101'
+mutated test exit=101
++(eval):8> git apply -R <jobs>/tmp/scratchpad/agents/no-running/mutation-typed-accepts-any.patch
++(eval):8> git diff --quiet -- lib/update/src/policy.rs <jobs>/tmp/scratchpad/agents/no-running
++(eval):8> git status --porcelain lib/update
+ M lib/update/src/policy.rs
