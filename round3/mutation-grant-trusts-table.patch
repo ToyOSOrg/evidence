@@ -1,0 +1,16 @@
+--- a/lib/update/src/slots.rs
++++ b/lib/update/src/slots.rs
+@@ -306,10 +306,12 @@
+     kinds: Kinds,
+ ) -> Result<(Which, Slot), NoIdle> {
+     let (idle, slot) = idle(table, &running.unique_guid)?;
++    let runs = table.slot(idle.other()).expect("`idle` found the running slot in the table");
++    let _ = volume;
+     for (part, guid, kind) in [("volume", slot.boot, kinds.boot), ("ROOT", slot.root, kinds.root)] {
+         let mut named = listed.iter().filter(|p| p.unique_guid == guid);
+         let why = match (named.next(), named.next()) {
+-            _ if guid == volume || guid == running.unique_guid => Some(Stray::Running),
++            _ if guid == runs.boot || guid == runs.root => Some(Stray::Running),
+             (None, _) => Some(Stray::Unlisted),
+             (Some(p), None) if p.device != running.device => Some(Stray::OtherDisk),
+             (Some(p), None) if p.type_guid != kind => Some(Stray::Type),
