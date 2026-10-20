@@ -1,0 +1,52 @@
+   Compiling kernel v0.1.0 (~/Dev/jan/toyos-sched-model/kernel)
+    Finished `test` profile [optimized + debuginfo] target(s) in 2.85s
+     Running unittests pure/lib.rs (target/debug/deps/kernel-a7ca71f2661cd543)
+
+running 1 test
+test sched::job_sched::checkpoint::the_simpler_design_follows_its_per_cpu_rule_and_bounds_every_wait ... FAILED
+
+failures:
+
+---- sched::job_sched::checkpoint::the_simpler_design_follows_its_per_cpu_rule_and_bounds_every_wait stdout ----
+flat4  m+1 single-thread jobs                         | simple: share gap 0.300 CPUs, wait   8.0 ms, migr/s    0.0, rule gap    0.0 ms, wait/budget 0.33 | cross: share gap 0.001 CPUs, wait  52.0 ms, migr/s   15.1, rule gap   52.0 ms, wait/budget 2.17
+flat4  {A,A}{A,B}{B}{B} per 4 CPUs                    | simple: share gap 0.500 CPUs, wait   8.0 ms, migr/s    0.0, rule gap    1.0 ms, wait/budget 0.33 | cross: share gap 0.001 CPUs, wait 9988.0 ms, migr/s    0.0, rule gap 4993.0 ms, wait/budget 416.17
+flat4  2m, m/2 and 1 threads from CPU 0               | simple: share gap 0.034 CPUs, wait  20.0 ms, migr/s    0.9, rule gap    3.9 ms, wait/budget 0.42 | cross: share gap 0.000 CPUs, wait  44.0 ms, migr/s    0.9, rule gap  339.9 ms, wait/budget 0.79
+flat4  single + build 1-16-1                          | simple: share gap 0.001 CPUs, wait  40.0 ms, migr/s    6.6, rule gap    9.9 ms, wait/budget 0.71 | cross: share gap 0.000 CPUs, wait  40.0 ms, migr/s    5.5, rule gap    2.8 ms, wait/budget 0.71
+flat4  2m + m hogs, churn every 10 ms                 | simple: share gap 0.014 CPUs, wait  44.5 ms, migr/s  174.1, rule gap   63.0 ms, wait/budget 0.83 | cross: share gap 0.000 CPUs, wait 140.0 ms, migr/s  176.8, rule gap   49.4 ms, wait/budget 4.12
+flat4  2m hogs + m duty 2/0.3 ms, churn every 10 ms   | simple: share gap 0.098 CPUs, wait  36.0 ms, migr/s  252.7, rule gap  149.8 ms, wait/budget 0.75 | cross: share gap 0.001 CPUs, wait  32.0 ms, migr/s  178.9, rule gap  402.1 ms, wait/budget 0.80
+flat4  2m hogs + m duty 2/0.3 ms, churn every 1 ms    | simple: share gap 0.190 CPUs, wait  44.5 ms, migr/s 1310.4, rule gap  629.7 ms, wait/budget 0.67 | cross: share gap 0.003 CPUs, wait  44.4 ms, migr/s 1323.2, rule gap 1328.7 ms, wait/budget 0.79
+flat4  m duty 1/0.1 ms + 2m hogs                      | simple: share gap 0.003 CPUs, wait  19.0 ms, migr/s    6.4, rule gap    4.4 ms, wait/budget 0.40 | cross: share gap 0.000 CPUs, wait  25.5 ms, migr/s   10.3, rule gap  269.0 ms, wait/budget 0.60
+flat4  m duty 1/(0.1 + i/1000) ms + 2m hogs           | simple: share gap 0.001 CPUs, wait  23.0 ms, migr/s    9.8, rule gap    5.7 ms, wait/budget 0.48 | cross: share gap 0.002 CPUs, wait 2192.0 ms, migr/s  102.1, rule gap  590.1 ms, wait/budget 37.36
+flat4  2m (weight 2) + 2m (weight 1)                  | simple: share gap 0.000 CPUs, wait  35.8 ms, migr/s    0.3, rule gap    2.7 ms, wait/budget 0.64 | cross: share gap 0.000 CPUs, wait  32.0 ms, migr/s    0.3, rule gap    2.4 ms, wait/budget 0.57
+t14    m+1 single-thread jobs                         | simple: share gap 0.389 CPUs, wait   8.0 ms, migr/s    0.0, rule gap    0.0 ms, wait/budget 0.33 | cross: share gap 0.004 CPUs, wait  68.0 ms, migr/s   18.5, rule gap  188.3 ms, wait/budget 2.83
+t14    {A,A}{A,B}{B}{B} per 4 CPUs                    | simple: share gap 0.002 CPUs, wait   8.0 ms, migr/s    0.2, rule gap    1.3 ms, wait/budget 0.33 | cross: share gap 0.000 CPUs, wait  24.0 ms, migr/s    0.2, rule gap   26.7 ms, wait/budget 1.00
+t14    2m, m/2 and 1 threads from CPU 0               | simple: share gap 0.102 CPUs, wait  24.0 ms, migr/s    1.9, rule gap    2.2 ms, wait/budget 0.50 | cross: share gap 0.001 CPUs, wait 10000.0 ms, migr/s    1.7, rule gap 3003.8 ms, wait/budget 29.76
+t14    single + build 1-16-1                          | simple: share gap 0.004 CPUs, wait  16.0 ms, migr/s    1.8, rule gap   32.5 ms, wait/budget 0.50 | cross: share gap 0.000 CPUs, wait  16.0 ms, migr/s    2.6, rule gap    3.2 ms, wait/budget 0.50
+t14    2m + m hogs, churn every 10 ms                 | simple: share gap 0.013 CPUs, wait  44.0 ms, migr/s  221.8, rule gap   84.0 ms, wait/budget 1.10 | cross: share gap 0.001 CPUs, wait  44.0 ms, migr/s  213.1, rule gap   42.3 ms, wait/budget 0.92
+t14    2m hogs + m duty 2/0.3 ms, churn every 10 ms   | simple: share gap 0.135 CPUs, wait  35.6 ms, migr/s  442.7, rule gap  192.3 ms, wait/budget 0.74 | cross: share gap 0.001 CPUs, wait  39.8 ms, migr/s  532.1, rule gap 1104.7 ms, wait/budget 0.80
+t14    2m hogs + m duty 2/0.3 ms, churn every 1 ms    | simple: share gap 0.282 CPUs, wait  47.6 ms, migr/s 2017.8, rule gap  815.7 ms, wait/budget 0.85 | cross: share gap 0.000 CPUs, wait  45.0 ms, migr/s 2011.8, rule gap 1938.7 ms, wait/budget 0.77
+t14    m duty 1/0.1 ms + 2m hogs                      | simple: share gap 0.026 CPUs, wait  30.0 ms, migr/s   98.1, rule gap   73.5 ms, wait/budget 0.70 | cross: share gap 0.000 CPUs, wait  28.0 ms, migr/s  281.1, rule gap  331.4 ms, wait/budget 0.70
+t14    m duty 1/(0.1 + i/1000) ms + 2m hogs           | simple: share gap 0.049 CPUs, wait  28.0 ms, migr/s  191.8, rule gap   86.5 ms, wait/budget 0.70 | cross: share gap 0.001 CPUs, wait  28.0 ms, migr/s  134.5, rule gap  197.9 ms, wait/budget 0.58
+t14    2m (weight 2) + 2m (weight 1)                  | simple: share gap 0.001 CPUs, wait  27.8 ms, migr/s    0.4, rule gap    5.5 ms, wait/budget 0.50 | cross: share gap 0.001 CPUs, wait  28.0 ms, migr/s    0.4, rule gap    6.8 ms, wait/budget 0.75
+amd    m+1 single-thread jobs                         | simple: share gap 0.441 CPUs, wait   8.0 ms, migr/s    0.0, rule gap    0.0 ms, wait/budget 0.33 | cross: share gap 0.003 CPUs, wait  68.0 ms, migr/s   19.3, rule gap  116.1 ms, wait/budget 2.83
+amd    {A,A}{A,B}{B}{B} per 4 CPUs                    | simple: share gap 2.000 CPUs, wait   8.0 ms, migr/s    0.0, rule gap    1.8 ms, wait/budget 0.33 | cross: share gap 0.002 CPUs, wait 9992.0 ms, migr/s    0.0, rule gap 19981.8 ms, wait/budget 416.33
+amd    2m, m/2 and 1 threads from CPU 0               | simple: share gap 0.305 CPUs, wait  28.0 ms, migr/s    3.7, rule gap   14.9 ms, wait/budget 0.60 | cross: share gap 0.001 CPUs, wait 10000.0 ms, migr/s    3.7, rule gap 3023.0 ms, wait/budget 15.24
+amd    single + build 1-16-1                          | simple: share gap 0.000 CPUs, wait   8.0 ms, migr/s    0.9, rule gap    0.0 ms, wait/budget 0.33 | cross: share gap 0.000 CPUs, wait   8.0 ms, migr/s    0.9, rule gap    0.0 ms, wait/budget 0.33
+amd    2m + m hogs, churn every 10 ms                 | simple: share gap 0.014 CPUs, wait  36.0 ms, migr/s  247.2, rule gap   73.4 ms, wait/budget 0.80 | cross: share gap 0.000 CPUs, wait  52.0 ms, migr/s  241.0, rule gap   75.0 ms, wait/budget 1.30
+amd    2m hogs + m duty 2/0.3 ms, churn every 10 ms   | simple: share gap 0.226 CPUs, wait  40.0 ms, migr/s  501.2, rule gap  163.1 ms, wait/budget 0.83 | cross: share gap 0.000 CPUs, wait  33.4 ms, migr/s  816.4, rule gap 1858.3 ms, wait/budget 0.70
+amd    2m hogs + m duty 2/0.3 ms, churn every 1 ms    | simple: share gap 0.344 CPUs, wait  53.5 ms, migr/s 2965.3, rule gap 1017.8 ms, wait/budget 0.92 | cross: share gap 0.000 CPUs, wait  51.7 ms, migr/s 2962.6, rule gap 2535.4 ms, wait/budget 1.02
+amd    m duty 1/0.1 ms + 2m hogs                      | simple: share gap 0.119 CPUs, wait  32.0 ms, migr/s  461.8, rule gap  138.5 ms, wait/budget 0.80 | cross: share gap 0.000 CPUs, wait  32.0 ms, migr/s  123.3, rule gap  567.7 ms, wait/budget 0.73
+amd    m duty 1/(0.1 + i/1000) ms + 2m hogs           | simple: share gap 0.106 CPUs, wait  32.0 ms, migr/s  341.2, rule gap  141.5 ms, wait/budget 0.70 | cross: share gap 0.000 CPUs, wait  28.0 ms, migr/s  455.6, rule gap  410.5 ms, wait/budget 0.70
+amd    2m (weight 2) + 2m (weight 1)                  | simple: share gap 0.002 CPUs, wait  40.0 ms, migr/s    1.2, rule gap   18.3 ms, wait/budget 0.71 | cross: share gap 0.001 CPUs, wait 108.0 ms, migr/s    1.1, rule gap    9.0 ms, wait/budget 1.93
+
+thread 'sched::job_sched::checkpoint::the_simpler_design_follows_its_per_cpu_rule_and_bounds_every_wait' (24639231) panicked at kernel/pure/sched/job_sched/checkpoint.rs:541:5:
+t14 2m + m hogs, churn every 10 ms: a wait reached 1.10 of its budget
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    sched::job_sched::checkpoint::the_simpler_design_follows_its_per_cpu_rule_and_bounds_every_wait
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 298 filtered out; finished in 36.27s
+
+error: test failed, to rerun pass `-p kernel --lib`
