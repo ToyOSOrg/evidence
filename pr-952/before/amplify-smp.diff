@@ -1,0 +1,26 @@
+--- <scratch>/before-amplified/smp.keep	2026-10-15 12:59:57
++++ kernel/loom/tests/smp_bringup.rs	2026-10-15 12:59:57
+@@ -57,6 +57,7 @@
+         committer.join().unwrap();
+         reader.join().unwrap();
+     });
++    std::thread::sleep(std::time::Duration::from_millis(50));
+     assert!(
+         SAW.load(SeqCst),
+         "no interleaving read the grown count, so the assertion never ran",
+@@ -66,6 +67,7 @@
+ /// A CPU that sees the machine released also sees it answering.
+ #[test]
+ fn a_released_machine_is_answering() {
++    std::thread::sleep(std::time::Duration::from_millis(10));
+     SAW.store(false, SeqCst);
+     loom::model(|| {
+         let r = Arc::new(Roster::new());
+@@ -94,6 +96,7 @@
+         release.join().unwrap();
+         initiator.join().unwrap();
+     });
++    std::thread::sleep(std::time::Duration::from_millis(50));
+     assert!(
+         SAW.load(SeqCst),
+         "no interleaving observed the release, so the assertion never ran",

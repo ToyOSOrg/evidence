@@ -1,0 +1,60 @@
+diff --git a/kernel/loom/tests/tlb_shootdown.rs b/kernel/loom/tests/tlb_shootdown.rs
+index d956e94e9..85883ca78 100644
+--- a/kernel/loom/tests/tlb_shootdown.rs
++++ b/kernel/loom/tests/tlb_shootdown.rs
+@@ -84,6 +84,7 @@ fn model(f: impl Fn() + Sync + Send + 'static) {
+ /// Without this, bounding the spins would make every assertion below skippable
+ /// and a broken protocol could pass by never being asked.
+ static ACKED: AtomicBool = AtomicBool::new(false);
++static START: std::sync::LazyLock<std::time::Instant> = std::sync::LazyLock::new(std::time::Instant::now);
+ 
+ struct Machine {
+     shootdown: Shootdown,
+@@ -143,6 +144,7 @@ impl Machine {
+         for _ in 0..POLLS {
+             if self.shootdown.served(1, generation) {
+                 ACKED.store(true, SeqCst);
++                eprintln!("ACK {:?} {:?}", std::thread::current().name(), START.elapsed());
+                 return Some(tlb.load(Relaxed));
+             }
+             loom::thread::yield_now();
+@@ -154,6 +156,7 @@ impl Machine {
+ /// An acknowledged shootdown means cpu 1 has re-walked since the unmap.
+ #[test]
+ fn an_acknowledged_flush_postdates_the_page_table_write() {
++    eprintln!("RESET {:?}", START.elapsed());
+     ACKED.store(false, SeqCst);
+     model(|| {
+         let m = Machine::new();
+@@ -188,6 +191,7 @@ fn an_acknowledged_flush_postdates_the_page_table_write() {
+ /// this model is what says so.
+ #[test]
+ fn one_serve_answers_two_concurrent_shootdowns() {
++    eprintln!("RESET {:?}", START.elapsed());
+     ACKED.store(false, SeqCst);
+     model(|| {
+         let m = Machine::new();
+@@ -299,6 +303,7 @@ fn a_nested_serve_is_not_undone_by_the_one_it_interrupted() {
+ /// issued, where a serve can owe it and still answer narrow.
+ #[test]
+ fn an_acknowledged_kernel_half_shootdown_dropped_the_global_translation() {
++    eprintln!("RESET {:?}", START.elapsed());
+     ACKED.store(false, SeqCst);
+     model(|| {
+         let m = Machine::new();
+@@ -329,6 +334,7 @@ fn an_acknowledged_kernel_half_shootdown_dropped_the_global_translation() {
+ /// either way, and the kernel-half initiator's global translation with it.
+ #[test]
+ fn one_serve_answering_a_user_half_and_a_kernel_half_shootdown_answers_wide() {
++    eprintln!("RESET {:?}", START.elapsed());
+     ACKED.store(false, SeqCst);
+     model(|| {
+         let m = Machine::new();
+@@ -367,6 +373,7 @@ fn one_serve_answering_a_user_half_and_a_kernel_half_shootdown_answers_wide() {
+ /// generation while the global translation is still held.
+ #[test]
+ fn a_serve_nested_in_an_unfinished_wide_one_answers_wide() {
++    eprintln!("RESET {:?}", START.elapsed());
+     ACKED.store(false, SeqCst);
+     model(|| {
+         let m = Machine::new();
