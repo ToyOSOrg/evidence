@@ -43,3 +43,9 @@ round7/: the three spare rows exit 0 under QEMU; ci host exit 0 (86 green); AMD 
 ## Bench round 7 (e00424828, run by the orchestrator)
 
 bench/round7/amd: one boot of testcases-amd-xhci-leave, amdvi_usbd_drives_its_own_entry PASS. With rounds 6 and 7: T14 3/3; AMD every row but amdvi_translates_the_stick_controller, red for the recorded, independent reason in issues/a-function-that-truncates-its-dma-addresses-faults-in-its-domain.md (03:00.1 truncates its DMA addresses).
+
+## Bench round 6, T14 (33adc6b47) and round 8 (77ed37aee93368c4f490f8c55162b1cdf1444f88)
+
+bench/round6/t14: the T14 readback and judge at 33adc6b47, 3/3 PASS (usbd_drives_the_type_c_controller, claim_reuses_its_remapping_entry, msix_table_read_in_place): the first T14 boots of ecab33411's leaf-table change (tables freed after the caller's shootdown). Device serials masked.
+
+round8/: review round 2. rejudge-amd-r7.log is the round-7 AMD readback judged again with the stricter amdvi_usbd (it now requires usbd's own `the claim refused its interrupt record (Io)` line): PASS, no machine touched. build-only x86-64 and aarch64 exit 0; four QEMU rows exit 0; ci host exit 0 (86 green).
