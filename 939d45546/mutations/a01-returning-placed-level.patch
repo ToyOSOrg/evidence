@@ -1,0 +1,16 @@
+diff --git a/kernel/pure/sched/job_sched.rs b/kernel/pure/sched/job_sched.rs
+index 78aca8746..2d29d14a4 100644
+--- a/kernel/pure/sched/job_sched.rs
++++ b/kernel/pure/sched/job_sched.rs
+@@ -644,9 +644,8 @@ impl JobSched {
+             let reference = others[0];
+             let mean = others.iter().map(|&s| lead(s, reference)).sum::<i64>() / others.len() as i64;
+             let job = self.job_mut(j);
+-            if lead(job.served, reference) < mean - bound {
+-                job.served = reference.wrapping_add((mean - bound) as u64);
+-            }
++            let _ = bound;
++            job.served = reference.wrapping_add(mean as u64);
+             job.returning = false;
+         }
+     }

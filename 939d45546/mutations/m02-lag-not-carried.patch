@@ -1,0 +1,14 @@
+diff --git a/kernel/pure/sched/job_sched.rs b/kernel/pure/sched/job_sched.rs
+index 78aca8746..51842bf23 100644
+--- a/kernel/pure/sched/job_sched.rs
++++ b/kernel/pure/sched/job_sched.rs
+@@ -528,7 +528,8 @@ impl JobSched {
+                 self.cpus[c].members.len() - 1
+             }
+         };
+-        let left = self.thread_mut(id).left.take();
++        let left: Option<Left> = None;
++        self.thread_mut(id).left = None;
+         let threads = &mut self.cpus[c].members[i].threads;
+         match left {
+             Some(left) => threads.rejoin(id, WEIGHT_UNIT, slice, left),

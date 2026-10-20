@@ -1,0 +1,13 @@
+diff --git a/kernel/pure/sched/job_sched.rs b/kernel/pure/sched/job_sched.rs
+index 78aca8746..df5a69655 100644
+--- a/kernel/pure/sched/job_sched.rs
++++ b/kernel/pure/sched/job_sched.rs
+@@ -794,7 +794,7 @@ impl JobSched {
+         self.thread_mut(run.tid).unblocked_rt = 0;
+         // The job's last runnable thread sleeps; a migration leaves and enters
+         // without one.
+-        if fair && self.job(job).runnable == 0 {
++        if fair && self.job(job).runnable == usize::MAX as u32 {
+             self.job_mut(job).returning = true;
+         }
+         run.tid

@@ -1,0 +1,8 @@
+Round-3 investigation for ToyOSOrg/ToyOS#956 (re-review 6302897458). Host-only; probes are the .rs files here,
+added temporarily beside kernel/pure/sched/job_sched/checkpoint.rs at each commit and removed after.
+round3-bisect.log: at a7eaa346e, 7286031da, c52feaa97, 6d5a22e2a, 939d45546:
+  BISECT = the dip scenario (4 duty 1/0.1 ms + 8 hogs, flat4, default params); APROBE = m+1 single-thread jobs, 20 ms run / 10 us sleep.
+round3-toggles.log: the dip scenario at 939d45546 as committed and with a7eaa346e's sequential leave/rejoin in place of assign_lags,
+  each without and with 1 us of difference between the sleepers.
+Not retained: the two attempts at "a job with no waiting thread accrues no deficit" (uncommitted intermediate code);
+  their sweep logs were overwritten by later runs. Figures quoted for them are as observed in-session.

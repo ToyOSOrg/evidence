@@ -1,0 +1,13 @@
+diff --git a/kernel/pure/sched/job_sched.rs b/kernel/pure/sched/job_sched.rs
+index 78aca8746..6a77a8acf 100644
+--- a/kernel/pure/sched/job_sched.rs
++++ b/kernel/pure/sched/job_sched.rs
+@@ -452,7 +452,7 @@ impl JobSched {
+             State::Queued { cpu, band: Band::Rt | Band::Spare } => {
+                 self.charge(cpu, now);
+                 self.thread_mut(id).granted = false;
+-                self.leave(cpu, id);
++                self.thread_mut(id).state = State::Blocked;
+                 self.fair_enter(cpu, id);
+                 self.rebind_current(cpu, id, Band::Fair);
+             }
