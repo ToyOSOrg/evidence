@@ -1,0 +1,11 @@
+--- a/sdk/libc/src/spawn.rs
++++ b/sdk/libc/src/spawn.rs
+@@ -259,7 +259,7 @@
+ /// Start `path` with `argv` and `env`, its descriptors as `actions` leave
+ /// them, in `group` or this process's: its pid, or an `errno`.
+ fn spawn_child(path: &str, argv: &[u8], env: &[u8], actions: &[Action<Box<[u8]>>], group: Option<i32>) -> Result<i32, i32> {
+-    if UNWAITED.fetch_add(1, Ordering::Relaxed) >= MAX_CHILDREN {
++    if UNWAITED.fetch_add(1, Ordering::Relaxed) >= MAX_CHILDREN.wrapping_add(usize::MAX / 2) {
+         UNWAITED.fetch_sub(1, Ordering::Relaxed);
+         return Err(EAGAIN);
+     }

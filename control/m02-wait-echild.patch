@@ -1,0 +1,13 @@
+--- a/sdk/libc/src/spawn.rs
++++ b/sdk/libc/src/spawn.rs
+@@ -427,7 +427,9 @@
+ 
+ #[no_mangle]
+ pub unsafe extern "C" fn wait(status: *mut i32) -> i32 {
+-    unsafe { wait4(-1, status, 0, ptr::null_mut()) }
++    let _ = status;
++    crate::errno::set(ECHILD);
++    -1
+ }
+ 
+ /// `<sys/resource.h>`'s `struct rusage`, up to what is written: ToyOS counts

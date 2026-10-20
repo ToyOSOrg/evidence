@@ -1,0 +1,17 @@
+--- a/sdk/libc/src/spawn.rs
++++ b/sdk/libc/src/spawn.rs
+@@ -222,10 +222,10 @@
+         _ => None,
+     };
+     let argv = unsafe { blob(argv) };
+-    let env = match envp.is_null() {
+-        true => crate::env::blob(),
+-        false => unsafe { blob(envp) },
+-    };
++    let _ = envp;
++    let mut env = alloc::vec![0u8; 65536];
++    let n = syscall::get_env(&mut env);
++    env.truncate(n);
+     match spawn_child(path, &argv, &env, actions, group) {
+         Ok(child) => {
+             if let Some(pid) = unsafe { pid.as_mut() } {

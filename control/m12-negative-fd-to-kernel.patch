@@ -1,0 +1,13 @@
+--- a/sdk/libc/src/posix_io.rs
++++ b/sdk/libc/src/posix_io.rs
+@@ -679,9 +679,7 @@
+         };
+         let poller = toyos::poller::Poller::new((n + watching.len()) as u32);
+         for (entry, fd, interest) in crate::pollreq::watches(&others) {
+-            if fd >= 0 {
+-                poller.watch_raw(toyos_abi::RawHandle(fd as u32), interest, entry as u64);
+-            }
++            poller.watch_raw(toyos_abi::RawHandle(fd as u32), interest, entry as u64);
+         }
+         for (k, (_, _, doorbell, _)) in watching.iter().enumerate() {
+             if let Ok(doorbell) = doorbell {

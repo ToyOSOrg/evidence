@@ -1,0 +1,11 @@
+--- a/sdk/libc/src/spawn.rs
++++ b/sdk/libc/src/spawn.rs
+@@ -484,7 +484,7 @@
+             let mut any = false;
+             for child in CHILDREN.lock().iter().filter(|c| names(pid, c)) {
+                 any = true;
+-                if sig == SIGKILL {
++                if sig == SIGKILL || sig == 0 {
+                     // `Ok` for one already ended, which is still unwaited.
+                     let _ = child.process.kill();
+                 }

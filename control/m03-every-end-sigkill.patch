@@ -1,0 +1,17 @@
+--- a/sdk/libc/src/spawnreq.rs
++++ b/sdk/libc/src/spawnreq.rs
+@@ -130,10 +130,9 @@
+     match end {
+         End::Exited(code) => (code & 0xff) << 8,
+         End::Killed => SIGKILL,
+-        End::Fault(Fault::Memory | Fault::Handle) => SIGSEGV,
+-        End::Fault(Fault::Alignment) => SIGBUS,
+-        End::Fault(Fault::Instruction) => SIGILL,
+-        End::Fault(Fault::Arithmetic) => SIGFPE,
+-        End::Fault(Fault::Trap) => SIGTRAP,
++        End::Fault(_) => {
++            let _ = (Fault::Memory, SIGSEGV, SIGBUS, SIGILL, SIGFPE, SIGTRAP);
++            SIGKILL
++        }
+     }
+ }

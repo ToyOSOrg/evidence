@@ -1,0 +1,11 @@
+--- a/sdk/libc/src/spawn.rs
++++ b/sdk/libc/src/spawn.rs
+@@ -377,7 +377,7 @@
+         // another thread closes the table's own.
+         let watched: Vec<(i32, RawHandle)> = {
+             let children = CHILDREN.lock();
+-            let named: Vec<&Child> = children.iter().filter(|c| names(pid, c)).collect();
++            let named: Vec<&Child> = children.iter().filter(|c| names(pid, c)).take(1).collect();
+             if named.is_empty() {
+                 return Err(ECHILD);
+             }

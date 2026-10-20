@@ -1,0 +1,11 @@
+--- a/sdk/libc/src/spawnreq.rs
++++ b/sdk/libc/src/spawnreq.rs
+@@ -90,7 +90,7 @@
+             Action::Open { fd, path, oflag, mode } => match open(path, *oflag, *mode) {
+                 Ok(handle) => {
+                     opened.push(handle);
+-                    table.insert(*fd, Entry { handle, cloexec: oflag & O_CLOEXEC != 0 });
++                    table.insert(*fd, Entry { handle, cloexec: oflag & O_CLOEXEC != 0 && false });
+                 }
+                 Err(errno) => return refuse(&mut opened, &mut close, errno),
+             },

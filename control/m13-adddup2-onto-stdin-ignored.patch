@@ -1,0 +1,13 @@
+--- a/sdk/libc/src/spawnreq.rs
++++ b/sdk/libc/src/spawnreq.rs
+@@ -106,7 +106,9 @@
+                     None if *fd > 2 && !closed.contains(fd) => *fd,
+                     None => return refuse(&mut opened, &mut close, EBADF),
+                 };
+-                table.insert(*newfd, Entry { handle: source, cloexec: false });
++                if *newfd != 0 {
++                    table.insert(*newfd, Entry { handle: source, cloexec: false });
++                }
+                 closed.remove(newfd);
+             }
+         }

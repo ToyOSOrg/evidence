@@ -1,0 +1,12 @@
+--- a/sdk/libc/src/posix_io.rs
++++ b/sdk/libc/src/posix_io.rs
+@@ -439,7 +439,8 @@
+         }
+         Command::GetFd => return CLOEXEC.lock().flags(raw_fd),
+         Command::SetFd(cloexec) => {
+-            CLOEXEC.lock().set(raw_fd, cloexec);
++            let _ = cloexec;
++            CLOEXEC.lock().flags(raw_fd);
+             return 0;
+         }
+         Command::Invalid => EINVAL,

@@ -1,0 +1,11 @@
+--- a/sdk/libc/src/spawn.rs
++++ b/sdk/libc/src/spawn.rs
+@@ -482,7 +482,7 @@
+     let refused = match (sig, pid == me) {
+         (0 | SIGKILL, false) => {
+             let mut any = false;
+-            for child in CHILDREN.lock().iter().filter(|c| names(pid, c)) {
++            for child in CHILDREN.lock().iter().filter(|c| names(pid, c) || pid < -1) {
+                 any = true;
+                 if sig == SIGKILL {
+                     // `Ok` for one already ended, which is still unwaited.
