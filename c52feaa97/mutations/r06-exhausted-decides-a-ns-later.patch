@@ -1,0 +1,13 @@
+diff --git a/kernel/pure/sched/job_sched.rs b/kernel/pure/sched/job_sched.rs
+index c82740e2a..befd6c116 100644
+--- a/kernel/pure/sched/job_sched.rs
++++ b/kernel/pure/sched/job_sched.rs
+@@ -930,7 +930,7 @@ impl JobSched {
+                 Band::Rt => {
+                     // Already exhausted by a charge another CPU's move made:
+                     // decide at once, so no execution goes past the allowance.
+-                    at(c.charged.after(c.allowance.remaining()));
++                    at(c.charged.after(c.allowance.remaining().max(1)));
+                     if c.rt.len() > 1 {
+                         at(run.turn.after(self.params.rt_quantum));
+                     }

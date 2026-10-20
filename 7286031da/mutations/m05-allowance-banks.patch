@@ -1,0 +1,13 @@
+diff --git a/kernel/pure/sched/rt.rs b/kernel/pure/sched/rt.rs
+index 4f3169d76..10ad4b5e1 100644
+--- a/kernel/pure/sched/rt.rs
++++ b/kernel/pure/sched/rt.rs
+@@ -36,7 +36,7 @@ impl Allowance {
+         let passed = now.since(self.boundary) / self.interval + 1;
+         self.boundary = self.boundary.after(passed * self.interval);
+         let refill = (passed as i64).saturating_mul(self.budget as i64);
+-        self.remaining = self.remaining.min(0).saturating_add(refill).min(self.budget as i64);
++        self.remaining = self.remaining.saturating_add(refill);
+     }
+ 
+     /// Realtime execution over `[from, to)`, split at every boundary it crosses.

@@ -1,0 +1,13 @@
+diff --git a/kernel/pure/sched/job_sched.rs b/kernel/pure/sched/job_sched.rs
+index 85de36520..2b0c59908 100644
+--- a/kernel/pure/sched/job_sched.rs
++++ b/kernel/pure/sched/job_sched.rs
+@@ -1096,7 +1096,7 @@ impl JobSched {
+             let (gain, loss) = self.winners_and_losers(change);
+             let &(behind_job, behind) = gain.iter().min_by_key(|g| g.1)?;
+             let gap = loss.iter().map(|&(_, l)| l - behind).min()?;
+-            let apart = loss.iter().all(|&(job, _)| !self.share_a_cpu(job, behind_job));
++            let apart = loss.iter().all(|&(job, _)| true || !self.share_a_cpu(job, behind_job));
+             (gap > self.params.move_lead as i64 && apart).then_some(gap)
+         };
+         let on = [self.representatives(a), self.representatives(b)];

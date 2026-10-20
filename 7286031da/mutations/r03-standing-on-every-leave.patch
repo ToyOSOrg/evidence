@@ -1,0 +1,15 @@
+diff --git a/kernel/pure/sched/job_sched.rs b/kernel/pure/sched/job_sched.rs
+index 85de36520..39856299b 100644
+--- a/kernel/pure/sched/job_sched.rs
++++ b/kernel/pure/sched/job_sched.rs
+@@ -546,6 +546,10 @@ impl JobSched {
+         left.lag = left.lag.clamp_ns(self.params.lag_bound);
+         self.thread_mut(id).left = Some(left);
+         self.job_mut(job).runnable -= 1;
++        if self.job(job).runnable == 0 && self.job(job).standing.is_none() {
++            let standing = self.standing_on(c, job).unwrap_or(0);
++            self.job_mut(job).standing = Some(standing);
++        }
+         if self.cpus[c].members[i].threads.is_empty() {
+             self.cpus[c].members.swap_remove(i);
+             let lag = self.cpus[c].groups.leave(job).lag.clamp_ns(self.params.lag_bound);

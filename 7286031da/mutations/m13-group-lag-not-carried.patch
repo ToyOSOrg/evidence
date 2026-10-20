@@ -1,0 +1,14 @@
+diff --git a/kernel/pure/sched/job_sched.rs b/kernel/pure/sched/job_sched.rs
+index 85de36520..3ca71bc87 100644
+--- a/kernel/pure/sched/job_sched.rs
++++ b/kernel/pure/sched/job_sched.rs
+@@ -522,7 +522,8 @@ impl JobSched {
+                 cpus.insert(at, cpu);
+                 self.cpus[c].members.push(Group { job, threads: Eevdf::new() });
+                 // Weight is set below, once the thread is counted here.
+-                self.cpus[c].groups.join(job, 1, slice, carried);
++                let _ = carried;
++                self.cpus[c].groups.join(job, 1, slice, Lag::ZERO);
+                 self.cpus[c].members.len() - 1
+             }
+         };

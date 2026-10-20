@@ -1,0 +1,12 @@
+diff --git a/kernel/pure/sched/job_sched.rs b/kernel/pure/sched/job_sched.rs
+index 85de36520..05c96af26 100644
+--- a/kernel/pure/sched/job_sched.rs
++++ b/kernel/pure/sched/job_sched.rs
+@@ -1029,6 +1029,7 @@ impl JobSched {
+         let jobs = self.jobs_on(a, b);
+         let Some(&first) = jobs.first() else { return };
+         self.restore_standings(&jobs);
++        if jobs.len() < usize::MAX { return; }
+         let reference = self.job(first).served;
+         let leader = jobs.iter().map(|&j| lead(self.job(j).served, reference)).max().unwrap();
+         let cap = self.params.lead_cap as i64;

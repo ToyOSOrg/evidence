@@ -1,0 +1,61 @@
+warning: unused `Result` that must be used
+   --> kernel/pure/sched/job_sched/tests.rs:397:17
+    |
+397 |                 s.revoke_rt(t, now);
+    |                 ^^^^^^^^^^^^^^^^^^^
+    |
+    = note: this `Result` may be an `Err` variant, which should be handled
+    = note: `#[warn(unused_must_use)]` (part of `#[warn(unused)]`) on by default
+help: use `let _ = ...` to ignore the resulting value
+    |
+397 |                 let _ = s.revoke_rt(t, now);
+    |                 +++++++
+
+warning: `kernel` (lib test) generated 1 warning
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.09s
+     Running unittests pure/lib.rs (target/debug/deps/kernel-a7ca71f2661cd543)
+
+running 1 test
+test sched::job_sched::checkpoint::cross_cpu_lag_bounds_every_scenario_on_every_shape ... flat4  m+1 single-thread jobs                         err@100ms   49.0 err@1000ms   45.0 err@8000ms   37.0  changes/s   16.9 migrations/s    16.9
+flat4  {A,A}{A,B}{B}{B} per 4 CPUs                    err@100ms    8.0 err@1000ms    8.0 err@8000ms    8.0  changes/s    0.0 migrations/s     0.0
+flat4  2m, m/2 and 1 threads from CPU 0               err@100ms    6.0 err@1000ms    4.2 err@8000ms    4.0  changes/s    0.0 migrations/s     0.7
+flat4  single + build 1-16-1                          err@100ms    0.0 err@1000ms    0.0 err@8000ms    0.0  changes/s    0.0 migrations/s     6.3
+flat4  2m + m hogs, churn every 10 ms                 err@100ms   16.0 err@1000ms   16.0 err@8000ms   12.0  changes/s    0.0 migrations/s   171.5
+flat4  2m hogs + m duty 2/0.3 ms, churn every 10 ms   err@100ms    9.5 err@1000ms   15.8 err@8000ms   39.1  changes/s    0.0 migrations/s   325.1
+flat4  2m hogs + m duty 2/0.3 ms, churn every 1 ms    err@100ms   10.2 err@1000ms   14.0 err@8000ms   26.6  changes/s    0.0 migrations/s  1316.9
+flat4  m duty 1/0.1 ms + 2m hogs                      err@100ms    6.2 err@1000ms   30.1 err@8000ms  205.1  changes/s    0.0 migrations/s     2.9
+flat4  2m (weight 2) + 2m (weight 1)                  err@100ms   10.7 err@1000ms   10.2 err@8000ms   13.3  changes/s    0.0 migrations/s     0.4
+t14    m+1 single-thread jobs                         err@100ms   57.9 err@1000ms   47.4 err@8000ms   47.1  changes/s   22.5 migrations/s    22.5
+t14    {A,A}{A,B}{B}{B} per 4 CPUs                    err@100ms    8.0 err@1000ms    8.0 err@8000ms    8.0  changes/s    0.0 migrations/s     0.2
+t14    2m, m/2 and 1 threads from CPU 0               err@100ms   10.2 err@1000ms   12.2 err@8000ms    8.2  changes/s    0.0 migrations/s     2.0
+t14    single + build 1-16-1                          err@100ms    0.0 err@1000ms    0.0 err@8000ms    0.0  changes/s    0.0 migrations/s     3.6
+t14    2m + m hogs, churn every 10 ms                 err@100ms   24.0 err@1000ms   27.0 err@8000ms   23.5  changes/s    0.0 migrations/s   226.0
+t14    2m hogs + m duty 2/0.3 ms, churn every 10 ms   err@100ms   14.4 err@1000ms   17.3 err@8000ms   23.0  changes/s    0.0 migrations/s   600.8
+t14    2m hogs + m duty 2/0.3 ms, churn every 1 ms    err@100ms   14.1 err@1000ms   15.8 err@8000ms   17.5  changes/s    0.0 migrations/s  2018.0
+t14    m duty 1/0.1 ms + 2m hogs                      err@100ms   10.8 err@1000ms   10.9 err@8000ms   15.0  changes/s    0.0 migrations/s    66.4
+t14    2m (weight 2) + 2m (weight 1)                  err@100ms   21.1 err@1000ms   26.7 err@8000ms   10.7  changes/s    0.0 migrations/s     0.6
+amd    m+1 single-thread jobs                         err@100ms   62.1 err@1000ms   46.4 err@8000ms   43.2  changes/s   25.6 migrations/s    25.6
+amd    {A,A}{A,B}{B}{B} per 4 CPUs                    err@100ms   16.0 err@1000ms   16.0 err@8000ms   16.0  changes/s    0.0 migrations/s     0.0
+amd    2m, m/2 and 1 threads from CPU 0               err@100ms   18.2 err@1000ms   20.0 err@8000ms   20.2  changes/s    0.0 migrations/s     4.9
+amd    single + build 1-16-1                          err@100ms    0.0 err@1000ms    0.0 err@8000ms    0.0  changes/s    0.0 migrations/s     0.9
+amd    2m + m hogs, churn every 10 ms                 err@100ms   44.0 err@1000ms   40.0 err@8000ms   35.7  changes/s    0.0 migrations/s   240.2
+amd    2m hogs + m duty 2/0.3 ms, churn every 10 ms   err@100ms   29.0 err@1000ms   29.6 err@8000ms   28.2  changes/s    0.0 migrations/s   878.5
+amd    2m hogs + m duty 2/0.3 ms, churn every 1 ms    err@100ms   26.1 err@1000ms   27.0 err@8000ms   24.3  changes/s    0.0 migrations/s  2983.9
+amd    m duty 1/0.1 ms + 2m hogs                      err@100ms   29.6 err@1000ms   38.7 err@8000ms   40.6  changes/s    0.0 migrations/s   341.0
+amd    2m (weight 2) + 2m (weight 1)                  err@100ms   51.2 err@1000ms   53.1 err@8000ms   46.4  changes/s    0.0 migrations/s     1.5
+worst error per unit of weight 205.1 ms against a ceiling of 120 ms
+
+thread 'sched::job_sched::checkpoint::cross_cpu_lag_bounds_every_scenario_on_every_shape' (20672899) panicked at kernel/pure/sched/job_sched/checkpoint.rs:314:5:
+flat4 m duty 1/0.1 ms + 2m hogs: job 0 205.1 ms over 8000 ms
+flat4 m duty 1/0.1 ms + 2m hogs: job 1 205.1 ms over 8000 ms
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+FAILED
+
+failures:
+
+failures:
+    sched::job_sched::checkpoint::cross_cpu_lag_bounds_every_scenario_on_every_shape
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 297 filtered out; finished in 4.29s
+
+error: test failed, to rerun pass `-p kernel --lib`

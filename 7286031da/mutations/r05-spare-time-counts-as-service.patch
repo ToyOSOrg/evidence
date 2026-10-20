@@ -1,0 +1,17 @@
+diff --git a/kernel/pure/sched/job_sched.rs b/kernel/pure/sched/job_sched.rs
+index 85de36520..f54f41f0e 100644
+--- a/kernel/pure/sched/job_sched.rs
++++ b/kernel/pure/sched/job_sched.rs
+@@ -732,7 +732,11 @@ impl JobSched {
+                 j.served = j.served.wrapping_add((scaled / j.weight as u128) as u64);
+                 j.served_rem = (scaled % j.weight as u128) as u64;
+             }
+-            Band::Spare => self.thread_mut(tid).spare_ns += ns,
++            Band::Spare => {
++                self.thread_mut(tid).spare_ns += ns;
++                let j = self.job_mut(job);
++                j.served = j.served.wrapping_add(ns);
++            }
+             Band::Rt => {
+                 self.cpus[c].allowance.charge(from, now);
+                 let runaway = self.params.runaway;
