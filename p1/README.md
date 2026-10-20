@@ -23,3 +23,7 @@ round3/: ci host exit 0 (86 green); build-only x86-64 and aarch64 exit 0; 11 QEM
 ## Round 4, at 824e0478a6b7b75f354bfb7e3e130bf73316ee71 (main 80be9e85c, #944, merged)
 
 round4/: ci host exit 0 (86 green); build-only x86-64 and aarch64 exit 0; the 11 QEMU claim rows exit 0; all four bench images re-staged here (exit 2 = staged, untouched). Round 3's staging is superseded.
+
+## Round 5, at 4c72cf3f327d374b178ccad7f1a9428299a3b16b (main 0e6716fc0 merged; disable_msix and Msix::disabled deleted with their last callers)
+
+round5/: build-only x86-64 and aarch64 exit 0; the 11 QEMU claim rows exit 0; AMD testcases-amd-xhci-leave re-staged alone (exit 2 = staged, untouched). ci host exit 1, 85 of 86 green: the one red is build/llvm.rs the_caller_s_environment_reaches_neither_the_build_nor_the_key, which runs git under SDKROOT=/no/such.sdk and on this host the /usr/bin/git shim then fails to find the developer tools (r5-llvm-alone.log reproduces it alone). The branch does not touch build/llvm.rs or build/sysroot.rs and the same step was green at round 4, so the red is this host's, not P1's.
