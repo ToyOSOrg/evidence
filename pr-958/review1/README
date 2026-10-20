@@ -1,0 +1,13 @@
+Review round 1 of #958 (comment 6301330042), head 1e6a536ba.
+
+host/        crate tests (arm64 host; Rosetta dispatched and portable), clippy in all three forms on both arches and the UEFI
+             targets, the QEMU row with the new 0..=1153 B sweep on the default TCG model and with ../exploratory/tcg-isa.patch,
+             and cargo run -- --ci host (exit 0, 86 steps green); rv-head.rev is the revision
+mutations/   m7: the vector ChaCha20 remainder's one-pair threshold widened (<= 128 -> <= 192), so a 129-192 B remainder gets
+             128 B of keystream; under QEMU's AVX2 model the sweep panics at crypto_parity.rs:640 and the row FAILs (exit 1);
+             reverted, tree clean. The review's own suggestion (< 128) leaves the output correct, so it would not bite.
+             m7-first-attempt-*.patch is an earlier attempt whose diff also carried uncommitted review edits; superseded
+disasm/      the inspection record, per-routine counts (final-inspection.txt, B4), the table-access scan and the call list at
+             1e6a536ba, from the guest binary the bench staging built; ../disasm/r11-inspection.txt is the file the r14
+             record cited
+staging/     the two cryptocase requests for this head (images T14 5babcef7..., AMD fda66eed...)

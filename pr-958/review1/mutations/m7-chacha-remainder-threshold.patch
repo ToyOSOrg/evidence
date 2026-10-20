@@ -1,0 +1,11 @@
+--- a/lib/crypto/src/arch/x86_64/chacha.rs
++++ b/lib/crypto/src/arch/x86_64/chacha.rs
+@@ -324,7 +324,7 @@
+             // The last blocks, up to 255 bytes, from one keystream batch.
+             if !rest.is_empty() {
+                 let mut stream = crate::secret::Secret([0u8; 256]);
+-                if rest.len() <= 128 {
++                if rest.len() <= 192 {
+                     pairs_of::<1>(&initial.0, counter, &mut stream.0, |_| {});
+                 } else {
+                     pairs_of::<2>(&initial.0, counter, &mut stream.0, |_| {});
