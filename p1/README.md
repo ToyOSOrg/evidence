@@ -31,3 +31,11 @@ round5/: build-only x86-64 and aarch64 exit 0; the 11 QEMU claim rows exit 0; AM
 ## Round 6, at 33adc6b476322eaad3cd8ec6cd12ed72261bf51a (main ffd8bb970, #953, merged)
 
 round6/: ci host exit 0 (86 green); build-only x86-64 and aarch64 exit 0; 12 QEMU rows exit 0 (the 11 claim rows and #953's hda_plays_to_the_controller_that_reaches_an_output); all four bench images staged at this head (exit 2 = staged, untouched), the AMD testcases boot with hda_tone, hda_tone_resampled and hda_volume_step, whose controllers 03:00.1 and 03:00.6 sit behind 00:08.1.
+
+## Bench round 6 (33adc6b47) and round 7 (e00424828ca0464d1f7d3fa26cb012aaac974258)
+
+bench/round6/amd: the orchestrator's AMD readback and judge. HDA rows PASS (first AMD audio, controllers behind 00:08.1 now in place). Two reds:
+- amdvi_translates_the_stick_controller: 03:00.1 (1002:1637, the GPU's HDMI audio) DMA-faults at 0x10000000/0x10000400/0x10000410 while its grant is at 0x400010000000: the device drops address bits above its real width although GCAP 0x4001 advertises 64OK and the hda driver writes both base halves. 03:00.6 at the same domain base works. Not P1's defect; routed to the orchestrator.
+- amdvi_usbd_drives_its_own_entry: usbd_spare_vector expected usbd to settle, but the unit's refusal of the rewritten message puts the claim in refusal by design (iommu/fault.rs), so usbd ended on Io. The arm now expects that (round 7).
+
+round7/: the three spare rows exit 0 under QEMU; ci host exit 0 (86 green); AMD testcases-amd-xhci-leave re-staged (exit 2).
