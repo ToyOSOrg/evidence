@@ -1,0 +1,11 @@
+--- a/kernel/src/process.rs
++++ b/kernel/src/process.rs
+@@ -1702,7 +1702,7 @@
+ 
+ fn kill(pid: Pid) {
+     let mut owed = Vec::new();
+-    for sched in claim(pid, End::Killed, None, &mut owed) {
++    for sched in claim(pid, End::Exited(137), None, &mut owed) {
+         scheduler::post_retire(&sched);
+     }
+     walk(owed);

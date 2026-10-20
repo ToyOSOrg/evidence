@@ -1,0 +1,11 @@
+--- a/kernel/src/arch/aarch64/trap.rs
++++ b/kernel/src/arch/aarch64/trap.rs
+@@ -349,7 +349,7 @@
+     user_report(frame);
+     percpu::set_fault_state(CpuFaultState::Normal);
+     crate::panic::forget();
+-    crate::syscall::fault_process(fault_of(frame.esr));
++    crate::syscall::fault_process({ let _ = fault_of(frame.esr); Fault::Memory });
+ }
+ 
+ /// The `<signal.h>` class an EL0 exception nothing serves ends its process as,
