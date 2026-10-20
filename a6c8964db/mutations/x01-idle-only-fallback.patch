@@ -1,0 +1,19 @@
+diff --git a/kernel/pure/sched/job_sched.rs b/kernel/pure/sched/job_sched.rs
+index 1b2f3aa0e..73417e9d9 100644
+--- a/kernel/pure/sched/job_sched.rs
++++ b/kernel/pure/sched/job_sched.rs
+@@ -644,7 +644,13 @@ impl JobSched {
+         let c = &self.cpus[cpu.0 as usize];
+         let job = c.groups.pick()?;
+         let group = c.members.iter().find(|g| g.job == job).expect("a queued group has members");
+-        Some(group.threads.pick().expect("a group has a thread"))
++        let t = group.threads.pick().expect("a group has a thread");
++        if self.thread(t).granted {
++            if let Some(o) = c.members.iter().flat_map(|g| g.threads.keys()).find(|&x| !self.thread(x).granted) {
++                return Some(o);
++            }
++        }
++        Some(t)
+     }
+ 
+     /// Decide what `cpu` runs from `now`.

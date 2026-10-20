@@ -1,0 +1,14 @@
+diff --git a/kernel/pure/sched/job_sched.rs b/kernel/pure/sched/job_sched.rs
+index 1b2f3aa0e..cd3a87da2 100644
+--- a/kernel/pure/sched/job_sched.rs
++++ b/kernel/pure/sched/job_sched.rs
+@@ -413,7 +413,8 @@ impl JobSched {
+         let i = match self.group_index(cpu, job) {
+             Some(i) => i,
+             None => {
+-                let carried = core::mem::take(&mut self.job_mut(job).carried);
++                let _ = core::mem::take(&mut self.job_mut(job).carried);
++                let carried = Lag::ZERO;
+                 self.cpus[c].members.push(Group { job, threads: Eevdf::new() });
+                 // Weight is set below, once the thread is counted here.
+                 self.cpus[c].groups.join(job, 1, slice, carried);

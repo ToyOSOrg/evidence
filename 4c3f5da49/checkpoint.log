@@ -1,0 +1,97 @@
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.50s
+     Running unittests pure/lib.rs (target/debug/deps/kernel-a7ca71f2661cd543)
+
+running 12 tests
+test sched::job_sched::checkpoint::a_runaway_owner_is_revoked ... one realtime spinner per CPU, revocable
+  over 1/2/4/20 intervals: ordinary floor [0, 0, 500, 8500] us, realtime peak [3500, 7000, 14000, 70000] us
+  CPUs: ordinary jobs 0.617 0.616, workers realtime 0.301, workers ordinary 2.466; owners revoked 4/4
+ok
+test sched::job_sched::checkpoint::a_single_thread_job_keeps_one_cpu_beside_a_build_going_1_16_1 ... single + build 1-16-1, flat4: t=10000ms migrations=66 switches=3889
+  job  weight   CPUs(got)  CPUs(fluid)  err@10ms  err@100ms  err@1000ms  err@4000ms  err@8000ms
+    0    1.00       1.000        1.000      0.00      0.00      0.00      0.00      0.00
+    1    1.00       2.000        2.000      0.00      0.00      0.00      0.00      0.00
+
+single + build 1-16-1, t14: t=10000ms migrations=39 switches=8893
+  job  weight   CPUs(got)  CPUs(fluid)  err@10ms  err@100ms  err@1000ms  err@4000ms  err@8000ms
+    0    1.00       1.000        1.000      0.00      0.00      0.00      0.00      0.00
+    1    1.00       4.000        4.000      0.00      0.00      0.00      0.00      0.00
+
+single + build 1-16-1, amd: t=10000ms migrations=9 switches=1401
+  job  weight   CPUs(got)  CPUs(fluid)  err@10ms  err@100ms  err@1000ms  err@4000ms  err@8000ms
+    0    1.00       1.000        1.000      0.00      0.00      0.00      0.00      0.00
+    1    1.00       8.000        8.000      0.00      0.00      0.00      0.00      0.00
+
+single + build 1-16-1, flat16: t=10000ms migrations=9 switches=1401
+  job  weight   CPUs(got)  CPUs(fluid)  err@10ms  err@100ms  err@1000ms  err@4000ms  err@8000ms
+    0    1.00       1.000        1.000      0.00      0.00      0.00      0.00      0.00
+    1    1.00       8.000        8.000      0.00      0.00      0.00      0.00      0.00
+
+ok
+test sched::job_sched::checkpoint::aggregate_overload_drops_audio_and_revokes_nobody ... four 1.2 ms / 5.333 ms callbacks per CPU
+  over 1/2/4/20 intervals: ordinary floor [0, 400, 1515, 11327] us, realtime peak [3500, 7000, 14000, 70000] us
+  CPUs: ordinary jobs 0.374 0.356, workers realtime 2.696, workers ordinary 0.575; owners revoked 0/16
+ok
+test sched::job_sched::checkpoint::audio_below_the_ceiling_meets_every_period ... two 1.2 ms / 5.333 ms callbacks per CPU
+  over 1/2/4/20 intervals: ordinary floor [2600, 5200, 10400, 54400] us, realtime peak [2400, 4800, 9600, 45600] us
+  CPUs: ordinary jobs 1.099 1.101, workers realtime 1.800, workers ordinary 0.000; owners revoked 0/8
+ok
+test sched::job_sched::checkpoint::counterexample_a_fair_and_an_unfair_placement_have_the_same_loads ... A3 B3 on 4 CPUs from {A,A} {A,B} {B} {B}: t=10000ms migrations=0 switches=5005
+  job  weight   CPUs(got)  CPUs(fluid)  err@10ms  err@100ms  err@1000ms  err@4000ms  err@8000ms
+    0    1.00       1.500        2.000      6.25     52.00    500.25   2000.25   4000.25
+    1    1.00       2.500        2.000      6.25     52.00    500.25   2000.25   4000.25
+
+ok
+test sched::job_sched::checkpoint::counterexample_three_single_thread_jobs_on_two_cpus ... 3 single-thread jobs on 2 CPUs: t=10000ms migrations=0 switches=2502
+  job  weight   CPUs(got)  CPUs(fluid)  err@10ms  err@100ms  err@1000ms  err@4000ms  err@8000ms
+    0    1.00       1.000        0.667      3.33     33.33    333.33   1333.33   2666.67
+    1    1.00       0.500        0.667      2.67     18.67    166.67    666.67   1333.33
+    2    1.00       0.500        0.667      2.67     18.67    166.67    666.67   1333.33
+
+ok
+test sched::job_sched::checkpoint::migration_churn_is_measured ... A8 hogs, B4 Hog, churn every 1 ms: t=10000ms migrations=12248 switches=8752
+  job  weight   CPUs(got)  CPUs(fluid)  err@10ms  err@100ms  err@1000ms  err@4000ms  err@8000ms
+    0    1.00       2.014        2.000     12.00     20.00     43.50    103.75    147.50
+    1    1.00       1.986        2.000     12.00     20.00     43.50    103.75    147.50
+
+A8 hogs, B4 Duty { run: 2000000, sleep: 300000 }, churn every 1 ms: t=10000ms migrations=13088 switches=19034
+  job  weight   CPUs(got)  CPUs(fluid)  err@10ms  err@100ms  err@1000ms  err@4000ms  err@8000ms
+    0    1.00       2.165        2.001     10.30     31.85    199.10    700.60   1343.70
+    1    1.00       1.835        1.999     10.30     31.85    199.10    700.60   1343.70
+
+ok
+test sched::job_sched::checkpoint::short_sleeps_keep_their_share ... S4 duty 1 ms / 0.1 ms beside H8 hogs on 4: t=10000ms migrations=18 switches=35943
+  job  weight   CPUs(got)  CPUs(fluid)  err@10ms  err@100ms  err@1000ms  err@4000ms  err@8000ms
+    0    1.00       1.999        2.000      5.90      6.05      6.05      6.05      6.05
+    1    1.00       2.001        2.000      5.90      6.05      6.05      6.05      6.05
+
+ok
+test sched::job_sched::checkpoint::the_ceiling_bounds_realtime_on_every_cpu ... one never-revoked realtime spinner per CPU: spinners
+  over 1/2/4/20 intervals: ordinary floor [0, 0, 500, 8500] us, realtime peak [3500, 7000, 14000, 70000] us
+  CPUs: ordinary jobs 0.200 0.200, workers realtime 2.800, workers ordinary 0.800; owners revoked 0/4
+one never-revoked realtime spinner per CPU: hopping spinners
+  over 1/2/4/20 intervals: ordinary floor [0, 0, 0, 8500] us, realtime peak [3500, 7000, 14000, 70000] us
+  CPUs: ordinary jobs 0.369 0.398, workers realtime 2.508, workers ordinary 0.725; owners revoked 0/4
+one never-revoked realtime spinner per CPU: 200 us overruns
+  over 1/2/4/20 intervals: ordinary floor [0, 0, 700, 8700] us, realtime peak [3700, 7200, 14200, 70200] us
+  CPUs: ordinary jobs 0.200 0.200, workers realtime 2.800, workers ordinary 0.800; owners revoked 0/4
+ok
+test sched::job_sched::checkpoint::the_fallback_gives_a_spinner_its_jobs_share_of_the_remainder ... fallback under never-revoked spinners
+  over 1/2/4/20 intervals: ordinary floor [0, 0, 500, 8500] us, realtime peak [3500, 7000, 14000, 70000] us
+  CPUs: ordinary jobs 0.200 0.200, workers realtime 2.800, workers ordinary 0.800; owners revoked 0/4
+ok
+test sched::job_sched::checkpoint::uneven_placement_is_measured ... A8 B2 C1, all from CPU 0: t=10000ms migrations=6 switches=5674
+  job  weight   CPUs(got)  CPUs(fluid)  err@10ms  err@100ms  err@1000ms  err@4000ms  err@8000ms
+    0    1.00       1.534        1.500      6.75     13.75     43.75    143.75    275.75
+    1    1.00       1.466        1.500      4.75      9.75     39.75    139.75    271.75
+    2    1.00       1.000        1.000      4.00      4.00      4.00      4.00      4.00
+
+ok
+test sched::job_sched::checkpoint::weighted_builds_split_by_weight ... A8 (weight 2) beside B8 (weight 1) on 4: t=10000ms migrations=4 switches=10423
+  job  weight   CPUs(got)  CPUs(fluid)  err@10ms  err@100ms  err@1000ms  err@4000ms  err@8000ms
+    0    2.00       2.666        2.667      8.17      9.92      9.92      9.92      6.92
+    1    1.00       1.334        1.333      8.17      9.92      9.92      9.92      6.92
+
+ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 278 filtered out; finished in 0.36s
+
