@@ -1,0 +1,13 @@
+diff --git a/kernel/pure/sched/job_sched.rs b/kernel/pure/sched/job_sched.rs
+index 55260a4cd..36d2f8eeb 100644
+--- a/kernel/pure/sched/job_sched.rs
++++ b/kernel/pure/sched/job_sched.rs
+@@ -403,7 +403,7 @@ impl JobSched {
+     /// Move a queued worker between bands on one CPU; a running one keeps
+     /// running in its new band.
+     fn rt_to_fair(&mut self, cpu: CpuId, id: ThreadId) {
+-        self.rt_leave(cpu, id);
++        self.thread_mut(id).state = State::Blocked;
+         self.fair_enter(cpu, id);
+         self.rebind_current(cpu, id, Band::Fair);
+     }

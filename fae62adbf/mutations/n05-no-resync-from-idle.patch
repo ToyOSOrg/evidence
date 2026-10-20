@@ -1,0 +1,13 @@
+diff --git a/kernel/pure/sched/job_sched.rs b/kernel/pure/sched/job_sched.rs
+index 55260a4cd..e0c2ffa74 100644
+--- a/kernel/pure/sched/job_sched.rs
++++ b/kernel/pure/sched/job_sched.rs
+@@ -458,7 +458,7 @@ impl JobSched {
+             if let Some(reference) = reference {
+                 let floor = reference.saturating_sub(self.params.lead_cap as u128);
+                 let j = self.job_mut(job);
+-                j.served = j.served.max(floor);
++                j.served = j.served.max(floor.min(0));
+             }
+         }
+         self.job_mut(job).runnable += 1;

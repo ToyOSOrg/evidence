@@ -1,0 +1,13 @@
+diff --git a/kernel/pure/sched/job_sched.rs b/kernel/pure/sched/job_sched.rs
+index 55260a4cd..1b122d59c 100644
+--- a/kernel/pure/sched/job_sched.rs
++++ b/kernel/pure/sched/job_sched.rs
+@@ -377,6 +377,8 @@ impl JobSched {
+             return Ok(());
+         }
+         self.thread_mut(id).granted = true;
++        self.thread_mut(id).demoted_until = Nanos::ZERO;
++        self.thread_mut(id).unblocked_rt = 0;
+         if let State::Queued { cpu, band: Band::Fair } = self.thread(id).state {
+             self.charge(cpu, now);
+             if self.rt_eligible(id, cpu, now) {

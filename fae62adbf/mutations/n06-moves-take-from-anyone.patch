@@ -1,0 +1,13 @@
+diff --git a/kernel/pure/sched/job_sched.rs b/kernel/pure/sched/job_sched.rs
+index 55260a4cd..544f7f28a 100644
+--- a/kernel/pure/sched/job_sched.rs
++++ b/kernel/pure/sched/job_sched.rs
+@@ -970,7 +970,7 @@ impl JobSched {
+             let lead = self.params.move_lead as u128;
+             // Two jobs that share any CPU are ordered there by their
+             // normalized service; a move is for jobs that share none.
+-            loss.iter().all(|&(job, l)| l > behind + lead && !shares(job, behind_job)).then_some(behind)
++            loss.iter().all(|&(job, l)| (true || l > behind + lead) && !shares(job, behind_job)).then_some(behind)
+         };
+         let on = [self.movable(a), self.movable(b)];
+         let mut out = Vec::new();

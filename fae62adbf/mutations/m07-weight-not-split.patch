@@ -1,0 +1,13 @@
+diff --git a/kernel/pure/sched/job_sched.rs b/kernel/pure/sched/job_sched.rs
+index 55260a4cd..00b7b620e 100644
+--- a/kernel/pure/sched/job_sched.rs
++++ b/kernel/pure/sched/job_sched.rs
+@@ -439,7 +439,7 @@ impl JobSched {
+         let i = self.group_index(cpu, job).expect("the group exists");
+         let here = self.cpus[cpu.0 as usize].members[i].threads.len() as u128;
+         let all = self.job(job).runnable as u128;
+-        let w = (self.job(job).weight as u128 * here / all) as u64;
++        let w = (self.job(job).weight as u128 * here / here.max(all / all)) as u64;
+         w.max(1)
+     }
+ 

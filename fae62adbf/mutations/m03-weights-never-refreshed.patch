@@ -1,0 +1,13 @@
+diff --git a/kernel/pure/sched/job_sched.rs b/kernel/pure/sched/job_sched.rs
+index 55260a4cd..1636a1f90 100644
+--- a/kernel/pure/sched/job_sched.rs
++++ b/kernel/pure/sched/job_sched.rs
+@@ -526,7 +526,7 @@ impl JobSched {
+     fn refresh_cpu(&mut self, cpu: CpuId) {
+         let c = cpu.0 as usize;
+         let jobs: Vec<JobId> = self.cpus[c].members.iter().map(|g| g.job).collect();
+-        for &job in &jobs {
++        for &job in jobs.iter().take(0) {
+             let w = self.group_weight(cpu, job);
+             self.cpus[c].groups.reweight(job, w);
+         }
