@@ -1,0 +1,12 @@
+--- a/system/diskserver/src/main.rs
++++ b/system/diskserver/src/main.rs
+@@ -161,9 +161,6 @@
+     /// every other waits and is judged against every offer.
+     fn open(&self, guid: [u8; 16], grant: Option<Grant>, expired: bool) -> Option<Result<Offered, Refusal>> {
+         let Some(grant) = grant else { return Some(Err(Refusal::NotGranted)) };
+-        if !self.settled() && !expired {
+-            return None;
+-        }
+         let carrying: Vec<&Offered> = self.offered.iter().filter(|o| o.part.unique == guid && guid != [0; 16]).collect();
+         // A partition no disk offers has no type: only a unique grant naming
+         // it reaches it, to be told why it is not there.

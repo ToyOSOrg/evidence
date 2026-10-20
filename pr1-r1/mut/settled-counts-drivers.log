@@ -1,0 +1,45 @@
+HEAD 649e0cbe31e02b6ba7c7b6adf8065db49bec34df + uncommitted PR-1 tree
+PATCH <scratch>/mut-r1/settled-counts-drivers.patch
+--- a/system/diskserver/src/main.rs
++++ b/system/diskserver/src/main.rs
+@@ -109,7 +109,7 @@
+     /// started before this service has settled, and no driver is between an
+     /// end and its next settling.
+     fn settled(&self) -> bool {
+-        self.expected.iter().all(|d| self.fates.contains_key(d)) && !self.fates.values().any(|f| *f == Fate::Ended)
++        self.fates.len() >= self.expected.len() && !self.fates.values().any(|f| *f == Fate::Ended)
+     }
+ 
+     /// The drivers whose controllers' partitions cannot be said absent: those
+COMMAND cargo test -p diskserver --bin diskserver
+   Compiling diskserver v0.0.0 (<dev>/toyos-usbd/system/diskserver)
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.36s
+     Running unittests src/main.rs (target/debug/deps/diskserver-e4593b8c9df7dc93)
+
+running 8 tests
+test tests::a_driver_that_ended_is_awaited_until_it_settles_again_under_either_grant ... ok
+test tests::a_guid_a_late_disk_also_carries_is_never_routed_to_the_first ... ok
+test tests::an_open_reaches_only_what_its_grant_admits ... ok
+test tests::an_unusable_or_undriven_controller_is_refused_and_an_absent_one_lists_nothing ... ok
+test tests::a_partition_on_two_disks_or_unserved_is_unusable ... ok
+test tests::a_listing_names_only_what_its_grant_admits ... ok
+test tests::nothing_is_answered_until_every_driver_started_before_the_service_has_settled ... ok
+test tests::a_late_driver_never_stands_in_for_one_started_before_the_service ... FAILED
+
+failures:
+
+---- tests::a_late_driver_never_stands_in_for_one_started_before_the_service stdout ----
+
+thread 'tests::a_late_driver_never_stands_in_for_one_started_before_the_service' (23372119) panicked at system/diskserver/src/main.rs:710:9:
+a late driver counted for the stick's
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    tests::a_late_driver_never_stands_in_for_one_started_before_the_service
+
+test result: FAILED. 7 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p diskserver --bin diskserver`
+EXIT 101
+RESTORED_CLEAN=yes

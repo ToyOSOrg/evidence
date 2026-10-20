@@ -1,0 +1,67 @@
+HEAD 649e0cbe31e02b6ba7c7b6adf8065db49bec34df + uncommitted PR-1 tree
+PATCH <scratch>/mut-r1/open-waits-only-unoffered-under-a-unique-grant.patch
+--- a/system/diskserver/src/main.rs
++++ b/system/diskserver/src/main.rs
+@@ -161,10 +161,10 @@
+     /// every other waits and is judged against every offer.
+     fn open(&self, guid: [u8; 16], grant: Option<Grant>, expired: bool) -> Option<Result<Offered, Refusal>> {
+         let Some(grant) = grant else { return Some(Err(Refusal::NotGranted)) };
+-        if !self.settled() && !expired {
++        let carrying: Vec<&Offered> = self.offered.iter().filter(|o| o.part.unique == guid && guid != [0; 16]).collect();
++        if carrying.is_empty() && grant.admits(guid, [0; 16]) && !self.settled() && !expired {
+             return None;
+         }
+-        let carrying: Vec<&Offered> = self.offered.iter().filter(|o| o.part.unique == guid && guid != [0; 16]).collect();
+         // A partition no disk offers has no type: only a unique grant naming
+         // it reaches it, to be told why it is not there.
+         let kind = carrying.first().map_or([0; 16], |o| o.part.kind);
+COMMAND cargo test -p diskserver --bin diskserver
+   Compiling diskserver v0.0.0 (<dev>/toyos-usbd/system/diskserver)
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.44s
+     Running unittests src/main.rs (target/debug/deps/diskserver-e4593b8c9df7dc93)
+
+running 8 tests
+test tests::a_late_driver_never_stands_in_for_one_started_before_the_service ... ok
+test tests::a_partition_on_two_disks_or_unserved_is_unusable ... ok
+test tests::a_listing_names_only_what_its_grant_admits ... ok
+test tests::an_unusable_or_undriven_controller_is_refused_and_an_absent_one_lists_nothing ... ok
+test tests::a_driver_that_ended_is_awaited_until_it_settles_again_under_either_grant ... FAILED
+test tests::a_guid_a_late_disk_also_carries_is_never_routed_to_the_first ... FAILED
+test tests::an_open_reaches_only_what_its_grant_admits ... ok
+test tests::nothing_is_answered_until_every_driver_started_before_the_service_has_settled ... FAILED
+
+failures:
+
+---- tests::a_driver_that_ended_is_awaited_until_it_settles_again_under_either_grant stdout ----
+
+thread 'tests::a_driver_that_ended_is_awaited_until_it_settles_again_under_either_grant' (23371711) panicked at system/diskserver/src/main.rs:693:9:
+assertion `left == right` failed: a type grant waits for the offer
+  left: Some(Err(NotGranted))
+ right: None
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- tests::a_guid_a_late_disk_also_carries_is_never_routed_to_the_first stdout ----
+
+thread 'tests::a_guid_a_late_disk_also_carries_is_never_routed_to_the_first' (23371712) panicked at system/diskserver/src/main.rs:678:9:
+assertion `left == right` failed
+  left: Some(Ok(Offered { disk: 0, part: Part { unique: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], kind: [16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16], blocks: Some(100) } }))
+ right: None
+
+---- tests::nothing_is_answered_until_every_driver_started_before_the_service_has_settled stdout ----
+
+thread 'tests::nothing_is_answered_until_every_driver_started_before_the_service_has_settled' (23371718) panicked at system/diskserver/src/main.rs:657:9:
+assertion `left == right` failed: offered, and another disk may carry it too
+  left: Some(Ok(Offered { disk: 0, part: Part { unique: [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3], kind: [48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48], blocks: Some(100) } }))
+ right: None
+
+
+failures:
+    tests::a_driver_that_ended_is_awaited_until_it_settles_again_under_either_grant
+    tests::a_guid_a_late_disk_also_carries_is_never_routed_to_the_first
+    tests::nothing_is_answered_until_every_driver_started_before_the_service_has_settled
+
+test result: FAILED. 5 passed; 3 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p diskserver --bin diskserver`
+EXIT 101
+RESTORED_CLEAN=yes

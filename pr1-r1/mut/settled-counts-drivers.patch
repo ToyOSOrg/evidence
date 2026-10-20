@@ -1,0 +1,11 @@
+--- a/system/diskserver/src/main.rs
++++ b/system/diskserver/src/main.rs
+@@ -109,7 +109,7 @@
+     /// started before this service has settled, and no driver is between an
+     /// end and its next settling.
+     fn settled(&self) -> bool {
+-        self.expected.iter().all(|d| self.fates.contains_key(d)) && !self.fates.values().any(|f| *f == Fate::Ended)
++        self.fates.len() >= self.expected.len() && !self.fates.values().any(|f| *f == Fate::Ended)
+     }
+ 
+     /// The drivers whose controllers' partitions cannot be said absent: those
