@@ -1,0 +1,13 @@
+diff --git a/system/hda/driver/src/controller.rs b/system/hda/driver/src/controller.rs
+index 7ef21fc82..662e4c686 100644
+--- a/system/hda/driver/src/controller.rs
++++ b/system/hda/driver/src/controller.rs
+@@ -421,7 +421,7 @@ impl<R: Registers, M: DmaBuffers> Link<R, M> {
+         regs.write16(RINTCNT, regs.read16(RINTCNT) & 0xFF00 | 1);
+         regs.write8(RIRBSTS, RIRBSTS_OIS | RIRBSTS_RINTFL);
+ 
+-        regs.write8(RIRBCTL, regs.read8(RIRBCTL) & !0b111 | RIRBCTL_DMAEN | RIRBCTL_RINTCTL);
++        regs.write8(RIRBCTL, regs.read8(RIRBCTL) & !0b111 | RIRBCTL_DMAEN | RIRBCTL_RINTCTL & 0);
+         regs.write8(CORBCTL, regs.read8(CORBCTL) & !0b11 | CORBCTL_RUN);
+         if !settles(|| regs.read8(CORBCTL) & CORBCTL_RUN != 0 && regs.read8(RIRBCTL) & RIRBCTL_DMAEN != 0) {
+             return Err(Refusal::StillRunning);
