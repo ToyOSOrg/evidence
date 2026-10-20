@@ -1,0 +1,13 @@
+diff --git a/lib/crypto/src/poly1305.rs b/lib/crypto/src/poly1305.rs
+index 21b3798cc..6c715a68c 100644
+--- a/lib/crypto/src/poly1305.rs
++++ b/lib/crypto/src/poly1305.rs
+@@ -38,7 +38,7 @@ pub(crate) fn multiply([h0, h1, h2]: [u64; 3], [r0, r1, s1]: [u64; 3]) -> [u64;
+         .wrapping_add(t0 >> 64);
+     let t2 = h2.wrapping_mul(r0).wrapping_add((t1 >> 64) as u64);
+     // t2·2^128 = (t2 >> 2)·2^130 + (t2 & 3)·2^128, and 2^130 ≡ 5.
+-    let carry = (t2 >> 2).wrapping_mul(5);
++    let carry = (t2 >> 2).wrapping_mul(4);
+     let sum = u128::from(low(t0)).wrapping_add(u128::from(carry));
+     let h0 = low(sum);
+     let sum = u128::from(low(t1)).wrapping_add(sum >> 64);

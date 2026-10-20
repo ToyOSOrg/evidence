@@ -1,0 +1,41 @@
+--- a/tests/guest/rust-tests/src/bin/crypto_parity.rs
++++ b/tests/guest/rust-tests/src/bin/crypto_parity.rs
+@@ -612,6 +612,29 @@
+     ));
+ }
+ 
++/// Exploratory: seal at sizes around the short paths' thresholds, to fit
++/// fixed per-message cost against per-block cost. Not committed.
++fn sweep_rows(alg: Tls, rows: &mut Vec<Box<dyn Row>>) {
++    let name = alg.name();
++    for len in [1usize, 16, 32, 48, 63, 65, 128, 129, 192, 193] {
++        seals_as_ring(alg, len);
++        let mut key = alg.sealing();
++        let mut buf = vec![0x70; len];
++        rows.push(trio(
++            format!("{name}/sweep/{len}"),
++            move || keep(key.seal(&AAD, &mut buf).expect("seal")),
++            move || {
++                let (key, mut buf, mut sequence) = (alg.ring(), vec![0x70; len], 0);
++                move || {
++                    let tag = key.seal_in_place_separate_tag(nonce(sequence), aead::Aad::from(AAD), &mut buf);
++                    keep(tag.expect("seal"));
++                    sequence += 1;
++                }
++            },
++        ));
++    }
++}
++
+ fn main() {
+     let build = if cfg!(debug_assertions) { Build::Asserted } else { Build::Unasserted };
+     println!("{}", IsaLine(build, &features::detected()));
+@@ -619,6 +642,8 @@
+     for alg in [Tls::Aes128, Tls::Aes256, Tls::ChaCha] {
+         tls_rows(alg, &mut rows);
+     }
++    sweep_rows(Tls::ChaCha, &mut rows);
++    sweep_rows(Tls::Aes128, &mut rows);
+     ssh_rows(&mut rows);
+     hash_rows(&mut rows);
+     agreement_rows(&mut rows);

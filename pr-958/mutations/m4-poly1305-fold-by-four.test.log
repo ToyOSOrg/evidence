@@ -1,0 +1,206 @@
+   Compiling toyos-crypto v0.1.0 (<path>
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.29s
+     Running unittests src/lib.rs (<path>
+
+running 29 tests
+test block::tests::partial_blocks_match_bytewise_assembly_for_every_length_and_offset ... ok
+test keccak::tests::fips202_empty ... ok
+test aead::tests::nonce_sequence_exhaustion_is_terminal ... ok
+test chacha::tests::exhausted_counter_refuses_before_mutating_any_batch ... ok
+test block::tests::xor_takes_the_stream_from_its_start_for_every_length ... ok
+test chacha::tests::independent_blocks_match_one_at_a_time ... ok
+test hash::tests::dispatched_compression_matches_the_portable_rounds ... ok
+test hash::tests::length_refusals_leave_state_unchanged ... ok
+test chacha::tests::dispatched_streams_preserve_counter_carries_and_batch_tails ... ok
+test poly1305::tests::rfc8439_section_2_5_2 ... FAILED
+test aes::tests::fips197_portable_matches_instruction_path ... ok
+test rustls_provider::tests::hybrid_wire_exchange_matches_independent_kem_and_curve_oracles ... ok
+test gcm::tests::dispatched_ghash_matches_the_bitwise_multiply ... ok
+test rustls_provider::tests::key_exchange_propagates_entropy_failure ... ok
+test mlkem::tests::nist_expanded_keygen_secret_matches ... ok
+test poly1305::tests::matches_fiat_crypto_on_seeded_and_extreme_inputs ... FAILED
+test rustls_provider::tests::certificate_cross_hash_ecdsa_uses_sec1_digest_width ... ok
+test rustls_provider::tests::transcript_forks_keep_their_own_prefix_and_key_schedule_matches_ring ... ok
+test rustls_provider::verify::tests::rsa_der_refuses_noncanonical_integers_lengths_and_trailing_bytes ... ok
+test test_arithmetic::scalar25519_reduction_and_signing_arithmetic_match_integer_oracle ... ok
+test test_arithmetic::field25519_carries_and_noncanonical_inputs_match_integer_oracle ... ok
+test test_arithmetic::nist_montgomery_domains_and_carries_match_integer_oracle ... ok
+test rustls_provider::tests::default_hybrid_offer_retries_with_classical_ring_server ... FAILED
+test rustls_provider::tests::hybrid_tls13_handshakes_interoperate_with_independent_server_primitives ... FAILED
+test rustls_provider::tests::tls12_ecdsa_client_interoperates_with_ring_for_every_cipher_and_group ... FAILED
+test rustls_provider::tests::rsa_authenticated_tls12_and_tls13_interoperate_with_ring ... FAILED
+test gcm::tests::counters_continue_across_the_stitched_and_tail_paths ... ok
+test rustls_provider::tests::record_adapters_interoperate_and_refuse_reused_sequences ... FAILED
+test rustls_provider::tests::tls13_client_interoperates_with_ring_for_every_cipher_group_and_ec_certificate ... FAILED
+
+failures:
+
+---- poly1305::tests::rfc8439_section_2_5_2 stdout ----
+
+thread 'poly1305::tests::rfc8439_section_2_5_2' (19926835) panicked at lib/crypto/src/poly1305.rs:247:9:
+assertion `left == right` failed
+  left: [87, 33, 249, 249, 2, 34, 147, 20, 77, 53, 223, 47, 60, 65, 222, 12]
+ right: [168, 6, 29, 193, 48, 81, 54, 198, 194, 43, 139, 175, 12, 1, 39, 169]
+
+---- poly1305::tests::matches_fiat_crypto_on_seeded_and_extreme_inputs stdout ----
+
+thread 'poly1305::tests::matches_fiat_crypto_on_seeded_and_extreme_inputs' (19926834) panicked at lib/crypto/src/poly1305.rs:235:13:
+assertion `left == right` failed: case 0, 170 bytes
+  left: [215, 54, 217, 59, 78, 235, 236, 59, 235, 39, 136, 49, 102, 150, 54, 63]
+ right: [24, 20, 188, 84, 6, 34, 58, 70, 180, 134, 166, 190, 246, 184, 248, 199]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- rustls_provider::tests::default_hybrid_offer_retries_with_classical_ring_server stdout ----
+
+thread 'rustls_provider::tests::default_hybrid_offer_retries_with_classical_ring_server' (19926837) panicked at lib/crypto/src/rustls_provider/tests.rs:210:38:
+called `Result::unwrap()` on an `Err` value: DecryptError
+
+---- rustls_provider::tests::hybrid_tls13_handshakes_interoperate_with_independent_server_primitives stdout ----
+
+thread 'rustls_provider::tests::hybrid_tls13_handshakes_interoperate_with_independent_server_primitives' (19926838) panicked at lib/crypto/src/rustls_provider/tests.rs:210:38:
+called `Result::unwrap()` on an `Err` value: DecryptError
+
+---- rustls_provider::tests::tls12_ecdsa_client_interoperates_with_ring_for_every_cipher_and_group stdout ----
+
+thread 'rustls_provider::tests::tls12_ecdsa_client_interoperates_with_ring_for_every_cipher_and_group' (19926843) panicked at lib/crypto/src/rustls_provider/tests.rs:206:38:
+called `Result::unwrap()` on an `Err` value: DecryptError
+
+---- rustls_provider::tests::rsa_authenticated_tls12_and_tls13_interoperate_with_ring stdout ----
+
+thread 'rustls_provider::tests::rsa_authenticated_tls12_and_tls13_interoperate_with_ring' (19926842) panicked at lib/crypto/src/rustls_provider/tests.rs:210:38:
+called `Result::unwrap()` on an `Err` value: DecryptError
+
+---- rustls_provider::tests::record_adapters_interoperate_and_refuse_reused_sequences stdout ----
+
+thread 'rustls_provider::tests::record_adapters_interoperate_and_refuse_reused_sequences' (19926841) panicked at lib/crypto/src/rustls_provider/tests.rs:101:13:
+assertion `left == right` failed
+  left: [252, 204, 193, 135, 242, 193, 217, 134, 123, 42, 131, 99, 145, 38, 155, 117, 245]
+ right: [252, 134, 125, 230, 168, 235, 187, 167, 193, 175, 104, 16, 229, 163, 255, 141, 35]
+
+---- rustls_provider::tests::tls13_client_interoperates_with_ring_for_every_cipher_group_and_ec_certificate stdout ----
+
+thread 'rustls_provider::tests::tls13_client_interoperates_with_ring_for_every_cipher_group_and_ec_certificate' (19926844) panicked at lib/crypto/src/rustls_provider/tests.rs:210:38:
+called `Result::unwrap()` on an `Err` value: DecryptError
+
+
+failures:
+    poly1305::tests::matches_fiat_crypto_on_seeded_and_extreme_inputs
+    poly1305::tests::rfc8439_section_2_5_2
+    rustls_provider::tests::default_hybrid_offer_retries_with_classical_ring_server
+    rustls_provider::tests::hybrid_tls13_handshakes_interoperate_with_independent_server_primitives
+    rustls_provider::tests::record_adapters_interoperate_and_refuse_reused_sequences
+    rustls_provider::tests::rsa_authenticated_tls12_and_tls13_interoperate_with_ring
+    rustls_provider::tests::tls12_ecdsa_client_interoperates_with_ring_for_every_cipher_and_group
+    rustls_provider::tests::tls13_client_interoperates_with_ring_for_every_cipher_group_and_ec_certificate
+
+test result: FAILED. 21 passed; 8 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.17s
+
+error: test failed, to rerun pass `-p toyos-crypto --lib`
+     Running tests/differential.rs (<path>
+
+running 10 tests
+test openssh_construction_matches_independent_primitives ... FAILED
+test sha2_streaming_boundaries ... ok
+test aead_all_algorithms_and_partial_blocks ... FAILED
+test mlkem_reference_keygen_encapsulation_and_implicit_rejection ... ok
+test wpa2_pmk_and_rfc3394_unwrap ... ok
+test ed25519_reference_verification ... ok
+test rsa_reference_pkcs1_and_pss ... ok
+test nist_curve_boundary_scalars ... ok
+test x25519_reference_keys_and_shared_secrets ... ok
+test nist_curves_reference_ecdh_and_ecdsa ... ok
+
+failures:
+
+---- openssh_construction_matches_independent_primitives stdout ----
+
+thread 'openssh_construction_matches_independent_primitives' (19926969) panicked at lib/crypto/tests/differential.rs:297:9:
+assertion `left == right` failed
+  left: [159, 252, 88, 251, 59, 36, 188, 5, 148, 102, 112, 179, 227, 196, 8, 32]
+ right: [73, 2, 106, 254, 59, 36, 188, 5, 148, 102, 112, 179, 227, 196, 8, 32]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- aead_all_algorithms_and_partial_blocks stdout ----
+
+thread 'aead_all_algorithms_and_partial_blocks' (19926964) panicked at lib/crypto/tests/differential.rs:82:17:
+assertion `left == right` failed
+  left: [186, 103, 254, 215, 74, 21, 232, 65, 107, 71, 60, 215, 9, 140, 173, 126]
+ right: [111, 238, 207, 219, 86, 17, 194, 68, 107, 71, 60, 215, 9, 140, 173, 126]
+
+
+failures:
+    aead_all_algorithms_and_partial_blocks
+    openssh_construction_matches_independent_primitives
+
+test result: FAILED. 8 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+
+error: test failed, to rerun pass `-p toyos-crypto --test differential`
+     Running tests/vectors.rs (<path>
+
+running 8 tests
+test fips_sha2_abc_and_empty ... ok
+test rfc4231_hmac_sha256 ... ok
+test rfc5869_case_one_and_output_bound ... ok
+test nist_gcm_zero_key_zero_block ... ok
+test rfc8439_aead_and_authenticated_refusal ... FAILED
+test rfc7748_x25519 ... ok
+test malformed_public_boundaries ... ok
+test rfc8032_empty_and_strict_rejection ... ok
+
+failures:
+
+---- rfc8439_aead_and_authenticated_refusal stdout ----
+
+thread 'rfc8439_aead_and_authenticated_refusal' (19927102) panicked at lib/crypto/tests/vectors.rs:71:5:
+assertion `left == right` failed
+  left: [112, 221, 134, 12, 139, 253, 45, 246, 71, 50, 111, 21, 249, 48, 168, 176]
+ right: [26, 225, 11, 89, 79, 9, 226, 106, 126, 144, 46, 203, 208, 96, 6, 145]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    rfc8439_aead_and_authenticated_refusal
+
+test result: FAILED. 7 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-crypto --test vectors`
+     Running tests/wycheproof.rs (<path>
+
+running 7 tests
+test wycheproof_hmac_and_hkdf ... ok
+test nist_mlkem768_kats ... ok
+test wycheproof_aead ... FAILED
+test wycheproof_rsa ... ok
+test wycheproof_x25519 ... ok
+test wycheproof_ed25519 ... ok
+test wycheproof_ecdsa ... ok
+
+failures:
+
+---- wycheproof_aead stdout ----
+aes_gcm_test.json: 133 cases; 183 outside fixed 96-bit nonce/128-bit tag/AES-128-or-256 contract
+
+thread 'wycheproof_aead' (19927216) panicked at lib/crypto/tests/wycheproof.rs:54:17:
+assertion `left == right` failed: chacha20_poly1305_test.json tcId 1
+  left: false
+ right: true
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    wycheproof_aead
+
+test result: FAILED. 6 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.95s
+
+error: test failed, to rerun pass `-p toyos-crypto --test wycheproof`
+   Doc-tests toyos_crypto
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: 4 targets failed:
+    `-p toyos-crypto --lib`
+    `-p toyos-crypto --test differential`
+    `-p toyos-crypto --test vectors`
+    `-p toyos-crypto --test wycheproof`

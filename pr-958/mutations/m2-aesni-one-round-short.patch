@@ -1,0 +1,13 @@
+diff --git a/lib/crypto/src/arch/x86_64/aesni.rs b/lib/crypto/src/arch/x86_64/aesni.rs
+index 409e5c68b..a91c67cd6 100644
+--- a/lib/crypto/src/arch/x86_64/aesni.rs
++++ b/lib/crypto/src/arch/x86_64/aesni.rs
+@@ -150,7 +150,7 @@ fn encrypt_n<const R: usize, const N: usize>(k: &[__m128i; 15], base: __m128i, f
+     for j in 0..N {
+         s[j] = counter(base, first.wrapping_add(j as u32));
+     }
+-    for r in 1..R {
++    for r in 1..R - 1 {
+         for j in 0..N {
+             s[j] = _mm_aesenc_si128(s[j], k[r]);
+         }
