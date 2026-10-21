@@ -61,3 +61,11 @@ Head 28ef305a28882d6049315f4a3186b5506b8d583b. Paths under `logs/r2/`.
 | metal3-t14.log | `--metal --metal-readback <dir> process_tree launch_toctou` | 28ef305a2 | staged (exit 2 by design) |
 
 **Boot to complete on the T14.** Back to back, the same `latencycase` row gives base 6f4d8dbdb 670 ms and head 110877546 671 ms, equal stage by stage (subsystems 78 and 78 ms, storage 486 and 487 ms). The osbench probe's 693 ms against benchcase's 182 ms record comes from its base: the probe's kernel still enumerates USB (`Boot: storage ready (486ms)`), which #971 removed. The main boot that set the 182 ms record has no such stage.
+
+## Rebased onto origin/main ff6b4fdff (after audit batches #982 and #986)
+
+Head c219045adb1e09caec957fdaafd41758bf718aa4. Code is the reviewed head's plus main's `build/sourcegate.rs`. Only issue records changed: the audit's split of the busy-CPU wake record is followed, and the PR's edit is carried into both halves.
+
+| log | what | revision | result |
+|---|---|---|---|
+| logs/r2/ci-host-r3.log | `cargo run -- --ci host` | c219045ad | exit 0, 87 steps green |
