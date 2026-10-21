@@ -1,0 +1,15 @@
+--- a/sdk/toyos/src/fd.rs
++++ b/sdk/toyos/src/fd.rs
+@@ -143,8 +143,10 @@
+     pub fn dup(&mut self, fd: Fd, floor: Fd, inheritable: bool) -> Result<Fd, Error> {
+         let entry = self.entry(fd)?;
+         let new = self.lowest_free(floor)?;
+-        self.objects[entry.object as usize].as_mut().expect("named").refs += 1;
+-        self.fds[new] = Some(Entry { object: entry.object, inheritable });
++        let object = self.objects[entry.object as usize].expect("named").object;
++        let slot = self.objects.iter().position(Option::is_none).ok_or(Error::Full)?;
++        self.objects[slot] = Some(Held { object, refs: 1 });
++        self.fds[new] = Some(Entry { object: slot as u16, inheritable });
+         Ok(new as Fd)
+     }
+ 

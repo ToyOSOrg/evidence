@@ -1,0 +1,11 @@
+--- a/sdk/toyos/src/fd.rs
++++ b/sdk/toyos/src/fd.rs
+@@ -313,7 +313,7 @@
+ /// label, and for a number past the table.
+ pub fn endowed_fd(label: &str) -> Option<Fd> {
+     let n: Fd = label.strip_prefix(toyos_abi::syscall::FD_PREFIX)?.parse().ok()?;
+-    (0..MAX_FDS as Fd).contains(&n).then_some(n)
++    (n >= 0).then_some(n)
+ }
+ 
+ /// The table itself, in the copy that owns it.

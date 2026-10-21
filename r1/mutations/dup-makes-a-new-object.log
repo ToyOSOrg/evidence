@@ -1,0 +1,30 @@
+   Compiling toyos v0.18.0 (~/Dev/<user>/toyos-fd/sdk/toyos)
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.71s
+     Running unittests src/lib.rs (target/debug/deps/toyos-757a17a5e3c64085)
+
+running 7 tests
+test fd::tests::a_close_during_a_call_releases_the_object_when_the_call_is_done ... ok
+test fd::tests::an_fd_label_names_its_number_and_no_other_label_names_one ... ok
+test fd::tests::the_c_words_round_trip_every_refusal ... ok
+test fd::tests::replace_keeps_the_number_and_the_flag_and_releases_the_old_object ... ok
+test fd::tests::descriptors_are_numbered_lowest_free_from_the_floor ... ok
+test fd::tests::dup2_displaces_what_the_target_named_and_onto_itself_changes_nothing ... ok
+test fd::tests::an_object_goes_with_its_last_descriptor_and_flags_are_per_descriptor ... FAILED
+
+failures:
+
+---- fd::tests::an_object_goes_with_its_last_descriptor_and_flags_are_per_descriptor stdout ----
+
+thread 'fd::tests::an_object_goes_with_its_last_descriptor_and_flags_are_per_descriptor' (38764340) panicked at sdk/toyos/src/fd.rs:471:9:
+assertion `left == right` failed: released while a dup named it
+  left: Ok(Some(7))
+ right: Ok(None)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    fd::tests::an_object_goes_with_its_last_descriptor_and_flags_are_per_descriptor
+
+test result: FAILED. 6 passed; 1 failed; 0 ignored; 0 measured; 102 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos --lib`

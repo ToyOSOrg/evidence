@@ -1,0 +1,11 @@
+--- a/sdk/toyos/src/fd.rs
++++ b/sdk/toyos/src/fd.rs
+@@ -116,7 +116,7 @@
+ 
+     fn lowest_free(&self, floor: Fd) -> Result<usize, Error> {
+         let floor = usize::try_from(floor).map_err(|_| Error::Full)?;
+-        (floor..N).find(|&i| self.fds[i].is_none()).ok_or(Error::Full)
++        (floor..N).rev().find(|&i| self.fds[i].is_none()).ok_or(Error::Full)
+     }
+ 
+     /// A reference fewer on `object`: the object, once none is left.
