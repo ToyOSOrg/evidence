@@ -1,0 +1,40 @@
+   Compiling toyos-libc-copies v0.1.0 (~/Dev/<user>/toyos-fd-served/sdk/libc/arch)
+    Finished `test` profile [optimized + debuginfo] target(s) in 2.24s
+     Running unittests src/lib.rs (target/debug/deps/toyos_libc_copies-6057f576526e32c8)
+
+running 17 tests
+test path_resolution::a_link_before_the_last_name_is_not_followed ... ok
+test path_resolution::a_file_passed_through_as_a_directory_is_enotdir ... ok
+test path_resolution::a_name_that_is_not_there_is_enoent ... ok
+test path_resolution::a_relative_path_is_read_against_the_working_directory ... ok
+test path_resolution::a_kernel_refusal_is_its_errno ... ok
+test path_resolution::a_served_link_before_the_last_name_is_followed_and_dot_dot_after_it_is_its_parent ... ok
+test path_resolution::a_relative_link_is_read_against_its_mount_not_its_directory ... ok
+test path_resolution::a_link_target_that_fills_the_buffer_is_enametoolong ... ok
+test path_resolution::a_path_or_an_answer_past_path_max_is_enametoolong ... ok
+test path_resolution::a_served_link_out_to_the_kernel_is_resolved_by_the_kernel ... FAILED
+test path_resolution::a_loop_of_links_is_eloop ... ok
+test path_resolution::a_served_link_is_read_against_its_own_directory ... ok
+test path_resolution::a_served_loop_is_eloop_and_a_missing_name_enoent_or_enotdir ... ok
+test path_resolution::dot_dot_is_read_off_the_text_before_any_name_is_looked_up ... ok
+test path_resolution::path_max_is_limits_h_s ... ok
+test path_resolution::the_last_names_links_are_followed_to_the_file ... ok
+test path_resolution::a_chain_of_max_links_is_followed_and_one_more_is_eloop ... ok
+
+failures:
+
+---- path_resolution::a_served_link_out_to_the_kernel_is_resolved_by_the_kernel stdout ----
+
+thread 'path_resolution::a_served_link_out_to_the_kernel_is_resolved_by_the_kernel' (46200096) panicked at sdk/libc/arch/src/path_resolution.rs:270:5:
+assertion `left == right` failed
+  left: Err(2)
+ right: Ok("/tmp/d/f")
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    path_resolution::a_served_link_out_to_the_kernel_is_resolved_by_the_kernel
+
+test result: FAILED. 16 passed; 1 failed; 0 ignored; 0 measured; 75 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-libc-copies --lib`
