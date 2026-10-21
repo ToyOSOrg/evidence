@@ -7,3 +7,5 @@
 - `metal/`: the T14 request as staged. Not run by the implementer.
 
 Round 2 (review fixes): host at the head 801871833; image and guest rows at 36570e1b1; std probe red before the is_ebadf fix; m14 (stdio by slot number) red; the T14 requests re-staged, and a main baseline for tlb_shootdown_waits; the T14 readings at 3efa38eb7.
+
+Round 2 on the T14, at 36570e1b1 (this stack; #957 rows included): 268 passed, 3 failed. The failures are tlb_shootdown_waits, which also fails on main (#966), and the two AMD-only amdvi rows. Readbacks without the images.
