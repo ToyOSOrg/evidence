@@ -1,0 +1,12 @@
+diff --git a/lib/usbhid/src/report.rs b/lib/usbhid/src/report.rs
+index 08cff849f..ed93746d5 100644
+--- a/lib/usbhid/src/report.rs
++++ b/lib/usbhid/src/report.rs
+@@ -309,5 +309,6 @@ fn press(buttons: &mut u8, usage: u16, counts: &mut Counts) {
+ fn scaled(field: &Field, value: i32) -> u16 {
+     let span = i64::from(field.logical_max) - i64::from(field.logical_min);
+     let from = i64::from(value) - i64::from(field.logical_min);
+-    (from * i64::from(POINTER_ABSOLUTE_MAX) / span) as u16
++    let _ = (from, span);
++    value as u16
+ }

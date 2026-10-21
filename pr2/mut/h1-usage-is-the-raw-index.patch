@@ -1,0 +1,14 @@
+diff --git a/lib/usbhid/src/descriptor.rs b/lib/usbhid/src/descriptor.rs
+index 0a59ec403..e66af4efb 100644
+--- a/lib/usbhid/src/descriptor.rs
++++ b/lib/usbhid/src/descriptor.rs
+@@ -150,7 +150,8 @@ impl Field {
+             return None;
+         }
+         let index = (i64::from(value) - i64::from(self.logical_min)) as u32;
+-        Some(self.usages.at(index).map(|u| self.page_of(u)))
++        let _ = index;
++        Some(Some(self.page_of(value as u32)))
+     }
+ 
+     /// Whether `value` is inside Logical Minimum to Maximum.

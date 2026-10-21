@@ -1,0 +1,26 @@
+$ cargo test -p toyos-usbhid a_report_id_spanning_two_collections
+EXIT=101
+
+running 1 test
+test tests::a_report_id_spanning_two_collections_refuses_the_interface ... FAILED
+
+failures:
+
+---- tests::a_report_id_spanning_two_collections_refuses_the_interface stdout ----
+
+thread 'tests::a_report_id_spanning_two_collections_refuses_the_interface' (26300813) panicked at lib/usbhid/src/tests.rs:427:5:
+assertion `left == right` failed
+  left: Ok(Interface { collections: [Collection { page: 1, usage: 6, reports: [1], fields: [Field { report: 1, bit: 0, size: 8, count: 1, data: true, variable: false, relative: false, page: 7, usages: Range { first: 0, last: 101 }, logical_min: 0, logical_max: 101 }], bound: Ok(Keyboard) }, Collection { page: 1, usage: 2, reports: [1], fields: [Field { report: 1, bit: 8, size: 8, count: 1, data: true, variable: true, relative: true, page: 1, usages: Listed([48]), logical_min: -127, logical_max: 127 }], bound: Ok(Pointer) }], numbered: true })
+ right: Err(SpansCollections { id: 1 })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    tests::a_report_id_spanning_two_collections_refuses_the_interface
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 24 filtered out; finished in 0.00s
+
+   Compiling toyos-usbhid v0.1.0 (<dev>/toyos-usbd/lib/usbhid)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.25s
+     Running unittests src/lib.rs (target/debug/deps/toyos_usbhid-4da1b033b3b14ce5)
+error: test failed, to rerun pass `-p toyos-usbhid --lib`

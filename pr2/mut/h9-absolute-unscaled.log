@@ -1,0 +1,35 @@
+$ cargo test -p toyos-usbhid an_absolute_axis_is_scaled
+EXIT=101
+
+running 1 test
+test tests::an_absolute_axis_is_scaled_onto_the_records_range ... FAILED
+
+failures:
+
+---- tests::an_absolute_axis_is_scaled_onto_the_records_range stdout ----
+
+thread 'tests::an_absolute_axis_is_scaled_onto_the_records_range' (26301626) panicked at lib/usbhid/src/tests.rs:458:5:
+assertion `left == right` failed
+  left: Pointer { buttons: 0, scroll: 0, motion: Absolute { x: 65436, y: 100 } }
+ right: Pointer { buttons: 0, scroll: 0, motion: Absolute { x: 0, y: 32767 } }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    tests::an_absolute_axis_is_scaled_onto_the_records_range
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 24 filtered out; finished in 0.00s
+
+   Compiling toyos-usbhid v0.1.0 (<dev>/toyos-usbd/lib/usbhid)
+warning: unused import: `toyos_abi::input::POINTER_ABSOLUTE_MAX`
+  --> lib/usbhid/src/report.rs:31:5
+   |
+31 | use toyos_abi::input::POINTER_ABSOLUTE_MAX;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: `toyos-usbhid` (lib test) generated 1 warning (run `cargo fix --lib -p toyos-usbhid --tests` to apply 1 suggestion)
+    Finished `test` profile [optimized + debuginfo] target(s) in 2.07s
+     Running unittests src/lib.rs (target/debug/deps/toyos_usbhid-4da1b033b3b14ce5)
+error: test failed, to rerun pass `-p toyos-usbhid --lib`

@@ -1,0 +1,14 @@
+diff --git a/lib/usbhid/src/descriptor.rs b/lib/usbhid/src/descriptor.rs
+index 0a59ec403..afbf174a6 100644
+--- a/lib/usbhid/src/descriptor.rs
++++ b/lib/usbhid/src/descriptor.rs
+@@ -421,6 +421,9 @@ pub fn parse(bytes: &[u8]) -> Result<Interface, Refused> {
+             None => bind(collection, &lengths, numbered),
+         };
+     }
++    if collections.iter().any(|c| c.bound.is_err()) {
++        return Err(Refused::Unnumbered);
++    }
+     Ok(Interface { collections, numbered })
+ }
+ 

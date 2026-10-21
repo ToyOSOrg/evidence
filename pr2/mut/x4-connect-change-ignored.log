@@ -1,0 +1,33 @@
+$ cargo test -p toyos-xhci --lib no_sequence_breaks_an_invariant
+EXIT=101
+
+running 1 test
+test tests::no_sequence_breaks_an_invariant ... FAILED
+
+failures:
+
+---- tests::no_sequence_breaks_an_invariant stdout ----
+
+thread 'tests::no_sequence_breaks_an_invariant' (26258345) panicked at system/usbd/xhci/src/tests.rs:471:13:
+assertion `left == right` failed: seed 149: [
+    "firmware did not claim the controller (USBLEGSUP 0x00000401)",
+    "USBLEGCTLSTS 0x00000000 -> 0xe0000000 (SMI generation off)",
+    "USB 2.0 on ports 1..=1",
+    "a No-Op command completed",
+    "port 1 Hot reset",
+    "port 1: given up on: ResetNeverFinished (PORTSC 0x000202a1)",
+]
+  left: false
+ right: true
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    tests::no_sequence_breaks_an_invariant
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 97 filtered out; finished in 0.76s
+
+   Compiling toyos-xhci v0.1.0 (<dev>/toyos-usbd/system/usbd/xhci)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.79s
+     Running unittests src/lib.rs (target/debug/deps/toyos_xhci-e14ac5329015fbd7)
+error: test failed, to rerun pass `-p toyos-xhci --lib`

@@ -1,0 +1,19 @@
+diff --git a/system/usbd/xhci/src/input.rs b/system/usbd/xhci/src/input.rs
+index 64ab931ec..0c6054704 100644
+--- a/system/usbd/xhci/src/input.rs
++++ b/system/usbd/xhci/src/input.rs
+@@ -202,13 +202,8 @@ impl Inputs {
+             self.last_open = None;
+         }
+         if !self.connected {
+-            if self.devices.values().all(|d| d.gone) {
+-                // Nobody bound: what the last connection owed it ended with it.
+-                self.devices.clear();
+-                return;
+-            }
+             let due = self.last_open.is_none_or(|at| now >= at.saturating_add(REOPEN_NS));
+-            if !self.asked || !due {
++            if !due {
+                 return;
+             }
+             self.asked = false;

@@ -1,0 +1,16 @@
+diff --git a/system/usbd/xhci/src/hc.rs b/system/usbd/xhci/src/hc.rs
+index 71db3c756..87dd157e1 100644
+--- a/system/usbd/xhci/src/hc.rs
++++ b/system/usbd/xhci/src/hc.rs
+@@ -544,6 +544,11 @@ impl<R: Registers, D: DmaBuffers> Hc<R, D> {
+             self.dma.observe();
+             let param = self.dma.read64(at);
+             let status = self.dma.read32(at + 8);
++            if (control >> 10) & 0x3f == EVENT_TRANSFER
++                && self.held.borrow().values().any(|op| op.dci >= 2 && op.slot != (control >> 24) as u8 && op.done.is_none())
++            {
++                break;
++            }
+             head += 1;
+             if head == RING_TRBS {
+                 head = 0;

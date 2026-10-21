@@ -1,0 +1,20 @@
+diff --git a/lib/usbhid/src/descriptor.rs b/lib/usbhid/src/descriptor.rs
+index 0a59ec403..a04cb3a83 100644
+--- a/lib/usbhid/src/descriptor.rs
++++ b/lib/usbhid/src/descriptor.rs
+@@ -146,11 +146,12 @@ impl Field {
+     /// `Some(None)` for an index past the field's usage list, and otherwise
+     /// the usage at index `value - Logical Minimum`.
+     pub fn selected(&self, value: i32) -> Option<Option<(u16, u16)>> {
+-        if !self.holds(value) {
++        let index = (i64::from(value) - i64::from(self.logical_min)) as u32;
++        let usage = self.usages.at(index);
++        if usage.is_none_or(|u| !self.holds(u as i32)) {
+             return None;
+         }
+-        let index = (i64::from(value) - i64::from(self.logical_min)) as u32;
+-        Some(self.usages.at(index).map(|u| self.page_of(u)))
++        Some(usage.map(|u| self.page_of(u)))
+     }
+ 
+     /// Whether `value` is inside Logical Minimum to Maximum.

@@ -1,0 +1,38 @@
+diff --git a/system/usbd/xhci/src/hc.rs b/system/usbd/xhci/src/hc.rs
+index 71db3c756..93d5c0c29 100644
+--- a/system/usbd/xhci/src/hc.rs
++++ b/system/usbd/xhci/src/hc.rs
+@@ -529,10 +529,15 @@ impl<R: Registers, D: DmaBuffers> Hc<R, D> {
+         page + index * self.context_bytes
+     }
+ 
+-    /// Take every event the ring holds, and tell the controller so: one ERDP
+-    /// write per drain, which clears Event Handler Busy, and Interrupt Pending
+-    /// with it (§4.17.2). Answers whether there was any.
++    /// Take the events the ring holds, at most one ring's worth, and tell the
++    /// controller so: Interrupt Pending cleared before the drain, and one ERDP
++    /// write after it, which clears Event Handler Busy (§4.17.2, §5.5.2.3.3). Answers
++    /// whether there was any; [`Self::event_waiting`] says whether more came.
+     pub fn take_events(&self) -> bool {
++        // Interrupt Pending first: an event the controller writes after this
++        // sets it again and interrupts, where one cleared after the drain
++        // would be an event no interrupt announces (§4.17.2).
++        self.regs.write32(self.rt + IR0_IMAN, IMAN_IP_IE);
+         let mut took = false;
+         let (mut head, mut cycle) = self.event.get();
+         for _ in 0..RING_TRBS {
+@@ -553,11 +558,13 @@ impl<R: Registers, D: DmaBuffers> Hc<R, D> {
+             self.dispatch(control, param, status);
+         }
+         self.event.set((head, cycle));
++        // Every drain ends Event Handler Busy, one that found nothing too: an
++        // interrupt raised for an event an earlier drain already took leaves
++        // it set, and while it is set no event raises another (§4.17.2).
+         if took {
+             let erdp = self.dma.device_addr(OFF_EVENT_RING + head * 16) | ERDP_EHB;
+             self.regs.write32(self.rt + IR0_ERDP, erdp as u32);
+             self.regs.write32(self.rt + IR0_ERDP + 4, (erdp >> 32) as u32);
+-            self.regs.write32(self.rt + IR0_IMAN, IMAN_IP_IE);
+         }
+         took
+     }

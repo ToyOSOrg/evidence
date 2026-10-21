@@ -1,0 +1,13 @@
+diff --git a/lib/usbhid/src/report.rs b/lib/usbhid/src/report.rs
+index 08cff849f..f7d98cd21 100644
+--- a/lib/usbhid/src/report.rs
++++ b/lib/usbhid/src/report.rs
+@@ -191,7 +191,7 @@ fn read_keys(fields: &[&Field], body: &[u8], held: Usages, counts: &mut Counts)
+     let mut rolled = false;
+     let mut reserved = 0;
+     let mut unlisted = 0;
+-    for field in fields.iter().filter(|f| f.data && f.keys()) {
++    for field in fields.iter().filter(|f| f.data && f.keys() && !(f.variable && f.count > 8)) {
+         if field.variable {
+             for i in 0..field.count {
+                 let (Some((KEYS, usage)), Some(value)) = (field.control(i), field.value(body, i)) else { continue };

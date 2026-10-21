@@ -1,0 +1,13 @@
+diff --git a/system/usbd/xhci/src/usb.rs b/system/usbd/xhci/src/usb.rs
+index 602a25f8a..b1a578c50 100644
+--- a/system/usbd/xhci/src/usb.rs
++++ b/system/usbd/xhci/src/usb.rs
+@@ -265,7 +265,7 @@ impl<R: Registers, D: DmaBuffers, C: Host, T> Usb<R, D, C, T> {
+             return Ok(None);
+         }
+         if after == Some(Reset::Hot) && self.hc.protocols.of(p) != Some(Protocol::Usb3) {
+-            exec::sleep_until(&self.wake, self.wake.now() + RESET_RECOVERY_NS).await;
++            let _ = RESET_RECOVERY_NS;
+         }
+         let speed = portsc.speed();
+         let Some(packet) = initial_ep0_packet(speed) else {

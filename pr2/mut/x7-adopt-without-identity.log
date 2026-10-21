@@ -1,0 +1,45 @@
+$ cargo test -p toyos-xhci --lib a_different_stick_after_the_port_reset_ends_the_disk_that_left
+EXIT=101
+
+running 1 test
+test tests::a_different_stick_after_the_port_reset_ends_the_disk_that_left ... FAILED
+
+failures:
+
+---- tests::a_different_stick_after_the_port_reset_ends_the_disk_that_left stdout ----
+
+thread 'tests::a_different_stick_after_the_port_reset_ends_the_disk_that_left' (26260096) panicked at system/usbd/xhci/src/tests.rs:582:5:
+assertion `left == right` failed
+  left: [((1, 1), true)]
+ right: [((1, 1), false)]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    tests::a_different_stick_after_the_port_reset_ends_the_disk_that_left
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 97 filtered out; finished in 0.01s
+
+   Compiling toyos-xhci v0.1.0 (<dev>/toyos-usbd/system/usbd/xhci)
+warning: unused variable: `identity`
+   --> system/usbd/xhci/src/msc.rs:325:69
+    |
+325 | fn adopt<R: Registers, D: DmaBuffers, C: Host, T>(disks: &Disks<T>, identity: &Identity, usb: &Usb<R, D, C, T>) -> Option<u32> {
+    |                                                                     ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_identity`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: field `identity` is never read
+  --> system/usbd/xhci/src/msc.rs:89:5
+   |
+88 | struct Disk {
+   |        ---- field in this struct
+89 |     identity: Identity,
+   |     ^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `toyos-xhci` (lib test) generated 2 warnings (run `cargo fix --lib -p toyos-xhci --tests` to apply 1 suggestion)
+    Finished `test` profile [optimized + debuginfo] target(s) in 2.80s
+     Running unittests src/lib.rs (target/debug/deps/toyos_xhci-e14ac5329015fbd7)
+error: test failed, to rerun pass `-p toyos-xhci --lib`

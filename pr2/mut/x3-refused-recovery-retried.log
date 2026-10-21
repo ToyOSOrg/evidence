@@ -1,0 +1,33 @@
+$ cargo test -p toyos-xhci --lib a_recovery_the_controller_refuses_lets_the_device_go
+EXIT=101
+
+running 1 test
+test tests::a_recovery_the_controller_refuses_lets_the_device_go ... FAILED
+
+failures:
+
+---- tests::a_recovery_the_controller_refuses_lets_the_device_go stdout ----
+
+thread 'tests::a_recovery_the_controller_refuses_lets_the_device_go' (26257937) panicked at system/usbd/xhci/src/tests.rs:428:5:
+[
+    "firmware did not claim the controller (USBLEGSUP 0x00000401)",
+    "USBLEGCTLSTS 0x00000000 -> 0xe0000000 (SMI generation off)",
+    "USB 2.0 on ports 1..=1",
+    "port 1 found connected (PORTSC 0x000202a1); Hot resetting it",
+    "a No-Op command completed",
+    "port 1: 1209:0001 at high speed on slot 1: interface 0: Hid",
+    "port 1 interface 0: collection 0: a Keyboard",
+    "slot 1 endpoint 3: Reset Endpoint from Halted: Event { code: 19, moved: 0, slot: 1 }",
+]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    tests::a_recovery_the_controller_refuses_lets_the_device_go
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 97 filtered out; finished in 0.00s
+
+   Compiling toyos-xhci v0.1.0 (<dev>/toyos-usbd/system/usbd/xhci)
+    Finished `test` profile [optimized + debuginfo] target(s) in 2.73s
+     Running unittests src/lib.rs (target/debug/deps/toyos_xhci-e14ac5329015fbd7)
+error: test failed, to rerun pass `-p toyos-xhci --lib`

@@ -1,0 +1,13 @@
+diff --git a/system/usbd/xhci/src/msc.rs b/system/usbd/xhci/src/msc.rs
+index cb295bbf5..a12a5fe4a 100644
+--- a/system/usbd/xhci/src/msc.rs
++++ b/system/usbd/xhci/src/msc.rs
+@@ -324,7 +324,7 @@ pub async fn serve<R: Registers, D: DmaBuffers, C: Host, T>(
+ /// told of a reset if it may have lost writes it reported.
+ fn adopt<R: Registers, D: DmaBuffers, C: Host, T>(disks: &Disks<T>, identity: &Identity, usb: &Usb<R, D, C, T>) -> Option<u32> {
+     let mut all = disks.disks.borrow_mut();
+-    let (&disk, d) = all.iter_mut().find(|(_, d)| d.away.is_some() && identity::same(&d.identity, identity).is_ok())?;
++    let (&disk, d) = all.iter_mut().find(|(_, d)| d.away.is_some())?;
+     d.away = None;
+     let lost = d.debt.losses() > 0;
+     if lost {

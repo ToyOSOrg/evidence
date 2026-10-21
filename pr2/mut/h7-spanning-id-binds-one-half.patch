@@ -1,0 +1,15 @@
+diff --git a/lib/usbhid/src/descriptor.rs b/lib/usbhid/src/descriptor.rs
+index 0a59ec403..bf7f3e656 100644
+--- a/lib/usbhid/src/descriptor.rs
++++ b/lib/usbhid/src/descriptor.rs
+@@ -411,9 +411,7 @@ pub fn parse(bytes: &[u8]) -> Result<Interface, Refused> {
+     }
+     for (i, collection) in collections.iter().enumerate() {
+         let shared = collection.reports.iter().find(|id| collections[i + 1..].iter().any(|c| c.reports.contains(id)));
+-        if let Some(&id) = shared {
+-            return Err(Refused::SpansCollections { id });
+-        }
++        let _ = shared;
+     }
+     for (collection, flaw) in collections.iter_mut().zip(flaws) {
+         collection.bound = match flaw {

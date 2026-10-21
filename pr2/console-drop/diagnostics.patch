@@ -1,0 +1,437 @@
+diff --git a/kernel/src/log/console.rs b/kernel/src/log/console.rs
+index eb84241f1..202fea349 100644
+--- a/kernel/src/log/console.rs
++++ b/kernel/src/log/console.rs
+@@ -723,3 +723,30 @@ mod staged {
+         }
+     }
+ }
++
++// DIAG (temporary): every 3 s, tee every committed record since the last tee
++// straight to the 16550, and say whether the wire owes records.
++static DIAG_NEXT: AtomicU64 = AtomicU64::new(0);
++static DIAG_FROM: AtomicU64 = AtomicU64::new(0);
++pub fn diag_tee(now_ns: u64) {
++    let next = DIAG_NEXT.load(Ordering::Relaxed);
++    if now_ns < next || now_ns < 20_000_000_000 {
++        return;
++    }
++    if DIAG_NEXT.compare_exchange(next, now_ns + 3_000_000_000, Ordering::AcqRel, Ordering::Relaxed).is_err() {
++        return;
++    }
++    let to = super::read::newest_committed();
++    let from = DIAG_FROM.load(Ordering::Relaxed);
++    let mut uart = serial::panic_registers();
++    uart.write(b"[diag] pending=");
++    uart.write(if DRAINED.any_pending() { b"y" } else { b"n" });
++    uart.write(b" queue=");
++    uart.hex(QUEUE.try_lock().map_or(u64::MAX, |q| q.len as u64));
++    uart.write(b" now=");
++    uart.hex(now_ns);
++    uart.write(b"\n");
++    let mut sink = Raw { uart: &mut uart };
++    super::read::snapshot_committed(super::LogStamp::since_zero(from), to, &mut sink);
++    DIAG_FROM.store(to.nanos().saturating_add(1), Ordering::Relaxed);
++}
+diff --git a/kernel/src/sched/driver.rs b/kernel/src/sched/driver.rs
+index ccadc694b..b2193eaf7 100644
+--- a/kernel/src/sched/driver.rs
++++ b/kernel/src/sched/driver.rs
+@@ -507,6 +507,7 @@ pub fn pass(dispose: Dispose) {
+     crate::object::drain_zero_handles();
+     let now = HW.now();
+     crate::arch::watchdog::feed(now.0);
++    crate::log::console::diag_tee(now.0);
+     #[cfg(feature = "heap-sweep")]
+     maybe_sweep(now);
+     #[cfg(feature = "pass-spin")]
+diff --git a/lib/blockserve/src/sessions.rs b/lib/blockserve/src/sessions.rs
+index 820801d14..63a5fbf24 100644
+--- a/lib/blockserve/src/sessions.rs
++++ b/lib/blockserve/src/sessions.rs
+@@ -338,6 +338,10 @@ impl Sessions {
+         self.retire(dev);
+     }
+ 
++    pub fn debug_inflight(&self) -> usize {
++        self.sessions.values().map(|s| s.state.inflight().len()).sum()
++    }
++
+     pub fn losses(&self) -> u64 {
+         self.losses
+     }
+diff --git a/system/diskserver/src/session.rs b/system/diskserver/src/session.rs
+index ea30d0b01..a58d9db28 100644
+--- a/system/diskserver/src/session.rs
++++ b/system/diskserver/src/session.rs
+@@ -274,7 +274,12 @@ impl Session {
+                 return waited;
+             };
+             self.poller.watch(conn, READABLE, 0);
+-            self.poller.wait(1, u64::MAX, |_| {});
++            let mut woke = false;
++            self.poller.wait(1, 30_000_000_000, |_| woke = true);
++            if !woke {
++                let wire = self.client.on_the_wire().count();
++                std::process::exit(200 + (self.pending.len().min(20) as i32) * 0 + wire.min(50) as i32);
++            }
+             if !self.take_doorbells() {
+                 // What the server posted before it went is real: read it
+                 // before the rest is answered refused.
+diff --git a/system/logkeeper/src/main.rs b/system/logkeeper/src/main.rs
+index 2dedc6fcd..433bcd0bd 100644
+--- a/system/logkeeper/src/main.rs
++++ b/system/logkeeper/src/main.rs
+@@ -78,6 +78,13 @@ mod serve;
+ mod store;
+ 
+ use std::sync::Arc;
++pub static DBG_PHASE: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
++pub static DBG_STAMP: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
++pub static DBG_HELD: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
++pub static DBG: [std::sync::atomic::AtomicU64; 12] = [const { std::sync::atomic::AtomicU64::new(0) }; 12];
++pub fn dbg_add(i: usize, v: u64) { DBG[i].fetch_add(v, std::sync::atomic::Ordering::SeqCst); }
++pub fn dbg_set(i: usize, v: u64) { DBG[i].store(v, std::sync::atomic::Ordering::SeqCst); }
++pub fn dbg(phase: u64) { DBG_PHASE.store(phase, std::sync::atomic::Ordering::SeqCst); DBG_STAMP.store(toyos_abi::clock::stamp_ns(), std::sync::atomic::Ordering::SeqCst); }
+ use std::time::{Duration, Instant};
+ 
+ use toyos::endow::{self, Endowments, SYSCAP_LABEL};
+@@ -184,6 +191,28 @@ fn main() {
+         hub,
+         stopping: None,
+     };
++    dbg(0);
++    let raw_console = toyos::AsHandle::as_handle(&log.console);
++    std::thread::spawn(move || { let mut held_was = 0u64; let mut held_since = 0u64; let mut tick = 0u64; loop {
++        std::thread::sleep(Duration::from_secs(2));
++        tick += 1;
++        if toyos_abi::clock::stamp_ns() > 40_000_000_000 && tick % 3 == 0 {
++            let names = ["rounds","lines_read","prog_lines_written","console_bytes","refused","suppressed","waiting","held","origins","tr_pos","tr_head","tr_refusedword"];
++            let mut m = String::from("[dbg-lk]");
++            for (i, n) in names.iter().enumerate() { m.push_str(&format!(" {n}={}", DBG[i].load(std::sync::atomic::Ordering::SeqCst))); }
++            m.push_str(&format!(" phase={}\n", DBG_PHASE.load(std::sync::atomic::Ordering::SeqCst)));
++            let _ = toyos_abi::syscall::write_nonblock(raw_console, m.as_bytes());
++        }
++        let at = DBG_STAMP.load(std::sync::atomic::Ordering::SeqCst);
++        if toyos_abi::clock::stamp_ns().saturating_sub(at) > 20_000_000_000 {
++            std::process::exit(50 + DBG_PHASE.load(std::sync::atomic::Ordering::SeqCst) as i32);
++        }
++        let held = DBG_HELD.load(std::sync::atomic::Ordering::SeqCst);
++        if held == 0 || held != held_was { held_was = held; held_since = toyos_abi::clock::stamp_ns(); }
++        else if toyos_abi::clock::stamp_ns().saturating_sub(held_since) > 20_000_000_000 {
++            std::process::exit(100 + (held / 1024).min(100) as i32);
++        }
++    }});
+     log.run(&published);
+ }
+ 
+@@ -248,6 +277,7 @@ impl Log {
+                 (Some(_), true) => inspect::State::Degraded,
+                 (Some(_), false) => inspect::State::Writing,
+             };
++            dbg(6);
+             published.publish(self.volume.as_ref(), state, self.tail.lost());
+ 
+             // **Armed before anything is read**, in the shape every reader of
+@@ -263,6 +293,7 @@ impl Log {
+                 poller.watch(&origin.alive, READABLE, ORIGIN_BASE + i as u64);
+             }
+             let mut spent = false;
++            dbg(8);
+             poller.wait(0, 0, |token| {
+                 spent = true;
+                 if token >= ORIGIN_BASE {
+@@ -270,7 +301,12 @@ impl Log {
+                 }
+             });
+ 
++            dbg(4);
++            dbg_add(0, 1);
++            dbg_set(6, self.waiting.len() as u64);
++            dbg_set(8, self.origins.len() as u64);
+             let flush = self.from_supervisor();
++            dbg(5);
+             let asked = toyos_abi::clock::stamp_ns();
+             let mut read_any = self.round(&mut ended, flush).is_some();
+             if flush {
+@@ -282,7 +318,9 @@ impl Log {
+                 self.flushed();
+                 read_any = true;
+             }
++            dbg(3);
+             self.feed_console();
++            dbg(9);
+ 
+             cadence = if read_any { POLL_QUICK } else { (cadence * 2).min(POLL_SLOW) };
+             if spent || read_any {
+@@ -290,6 +328,7 @@ impl Log {
+             }
+             // Nothing new: park until the kernel posts, the supervisor speaks, a program
+             // ends, the console has room, or the cadence comes round.
++            dbg(7);
+             poller.wait(1, cadence.as_nanos() as u64, |token| {
+                 if token >= ORIGIN_BASE {
+                     ended.push((token - ORIGIN_BASE) as usize);
+@@ -364,7 +403,12 @@ impl Log {
+         let mut read: Vec<Said> = Vec::new();
+         let mut notes: Vec<String> = Vec::new();
+         for (i, origin) in self.origins.iter_mut().enumerate() {
++            let before = read.len();
+             let counted = origin.read(i, cut, &mut read);
++            dbg_add(1, (read.len() - before) as u64);
++            dbg_add(4, counted.refused + counted.refused_lanes);
++            dbg_add(5, counted.suppressed);
++            if origin.tag == "test-runner" { let (p, h, r) = origin.dbg_positions(); dbg_set(9, p); dbg_set(10, h); dbg_set(11, r); }
+             // The machine stops after a flush: a line begun is said as far as it got.
+             if all {
+                 origin.say_held(&mut read);
+@@ -519,6 +563,7 @@ impl Log {
+                     };
+                     file.push_str(&format!("{line}\n"));
+                     line.stamp = "";
++                    dbg_add(2, 1);
+                     let console = format!("{line}\n");
+                     self.console_line(console.as_bytes());
+                 }
+@@ -570,11 +615,14 @@ impl Log {
+             match self.console.write_nonblock(&self.console_held) {
+                 Ok(0) | Err(SyscallError::WouldBlock) => break,
+                 Ok(n) => {
++                    dbg_add(3, n as u64);
+                     self.console_held.drain(..n);
+                 }
+                 Err(e) => panic!("logkeeper: its console refused a write: {e:?}"),
+             }
+         }
++        DBG_HELD.store(self.console_held.len() as u64, std::sync::atomic::Ordering::SeqCst);
++        dbg_set(7, self.console_held.len() as u64);
+         if self.console_unshown > 0 && self.console_held.len() < CONSOLE_BYTES / 2 {
+             toyos::warn!(
+                 "logkeeper: {} line(s) went unshown on the console: it is slower than the log, and \
+@@ -590,8 +638,10 @@ impl Log {
+     fn to_volume(&mut self, text: &[u8], sync: bool) {
+         let Some(v) = self.volume.as_mut() else { return };
+         let began = Instant::now();
++        dbg(1);
+         let mut refused = v.write(text).err().map(|e| (Step::Append, e.to_string()));
+         if refused.is_none() && sync {
++            dbg(2);
+             refused = self.sync().err();
+         }
+         // A volume that answered, and took longer than a log is worth doing it.
+diff --git a/system/logkeeper/src/origin.rs b/system/logkeeper/src/origin.rs
+index d6e7045af..bd3e3e82f 100644
+--- a/system/logkeeper/src/origin.rs
++++ b/system/logkeeper/src/origin.rs
+@@ -159,6 +159,7 @@ pub struct Origin {
+     own: Limit,
+     children: Limit,
+     joins: Joins,
++    dbg_stuck: Option<(u64, u64)>,
+ }
+ 
+ impl Origin {
+@@ -184,6 +185,7 @@ impl Origin {
+             own: Limit::new(ALLOWANCE, ALLOWANCE_WINDOW_NS),
+             children: Limit::new(ALLOWANCE, ALLOWANCE_WINDOW_NS),
+             joins: Joins::default(),
++            dbg_stuck: None,
+         })
+     }
+ 
+@@ -209,6 +211,28 @@ impl Origin {
+             left -= 1;
+         }
+         counted.refused += self.shared.refused(&self.ring);
++        {
++            use toyos::log::ring::Shared as _;
++            use toyos::log::ring::Slots as _;
++            let pos = self.shared.position();
++            let head = self.ring.head().load(core::sync::atomic::Ordering::Acquire);
++            if left > 0 && head > pos {
++                let now = toyos_abi::clock::stamp_ns();
++                match self.dbg_stuck {
++                    Some((p, at)) if p == pos => {
++                        if now.saturating_sub(at) > 20_000_000_000 {
++                            let slot = (pos % self.ring.slots()) as usize;
++                            let word = self.ring.published(slot).load(core::sync::atomic::Ordering::Acquire);
++                            let base = if word == 0 { 150 } else if word < pos + 1 { 200 } else { 250 };
++                            std::process::exit(base + (head - pos).min(49) as i32);
++                        }
++                    }
++                    _ => self.dbg_stuck = Some((pos, now)),
++                }
++            } else {
++                self.dbg_stuck = None;
++            }
++        }
+         counted.ahead = clamp_ahead(&mut bodies, toyos_abi::clock::stamp_ns());
+         for body in bodies {
+             let limit = if body.pid == self.pid { &self.own } else { &self.children };
+@@ -224,6 +248,11 @@ impl Origin {
+         counted
+     }
+ 
++    pub fn dbg_positions(&self) -> (u64, u64, u64) {
++        use toyos::log::ring::Slots as _;
++        (self.shared.position(), self.ring.head().load(core::sync::atomic::Ordering::Acquire), self.ring.refused().load(core::sync::atomic::Ordering::Acquire))
++    }
++
+     /// Everything its writers left, once none is left to write: the records a
+     /// lane or the shared ring still holds, every line held for its end, and a
+     /// count of the positions taken and never published, and of the stamps
+diff --git a/system/usbd/src/main.rs b/system/usbd/src/main.rs
+index da1bf4d93..762825fb2 100644
+--- a/system/usbd/src/main.rs
++++ b/system/usbd/src/main.rs
+@@ -218,6 +218,9 @@ fn serve(name: &str, dev: &PciDev, usb: &Driver, acceptor: Option<toyos::port::A
+     let mut ready: Vec<u64> = Vec::new();
+     let mut wakes = Wakes::default();
+     let mut wake_at;
++    let mut last_progress = Instant::now();
++    let mut answers_seen = 0u64;
++    let mut seen = 0u64;
+     loop {
+         // The driver's turn: every task run.
+         wake_at = tasks.run(&usb.wake).unwrap_or_else(|Dead(why)| panic!("{name}: {why}; nothing drives the controller from here"));
+@@ -232,6 +235,7 @@ fn serve(name: &str, dev: &PciDev, usb: &Driver, acceptor: Option<toyos::port::A
+                     disks.insert(disk, sessions);
+                 }
+                 Event::Answered { disk, token: (session, tag), write, ok, status } => {
++                    answers_seen += 1;
+                     disks.get_mut(&disk).expect("an answer for an offered disk").answered(Request { session, tag, write }, ok, status);
+                 }
+                 Event::Reset { disk } => {
+@@ -280,6 +284,19 @@ fn serve(name: &str, dev: &PciDev, usb: &Driver, acceptor: Option<toyos::port::A
+             sessions.retire(&mut port);
+         }
+         usb.input.borrow_mut().flush(&mut input, usb.wake.now());
++        {
++            if seen != answers_seen || ready.iter().any(|t| *t >= TOKEN_SESSION) {
++                seen = answers_seen;
++                last_progress = Instant::now();
++            }
++            let queued = usb.disks.debug_queued();
++            let inflight: usize = disks.values().map(|s| s.debug_inflight()).sum();
++            if (queued > 0 || inflight > 0) && last_progress.elapsed() > Duration::from_secs(30) {
++                let code = if queued > 0 { 100 + queued.min(50) } else { 160 + inflight.min(50) };
++                let code = code + if usb.disks.debug_away() { 1000 } else { 0 };
++                std::process::exit(code as i32);
++            }
++        }
+ 
+         // inspect's clients.
+         if let (true, Some(acceptor)) = (ready.contains(&TOKEN_ACCEPT), &acceptor) {
+@@ -330,7 +347,7 @@ fn serve(name: &str, dev: &PciDev, usb: &Driver, acceptor: Option<toyos::port::A
+             poller.watch(&p.conn, READABLE, TOKEN_PENDING + u64::from(p.conn.as_handle().0));
+         }
+         let now = usb.wake.now();
+-        let mut timeout = wake_at.map_or(u64::MAX, |at| at.saturating_sub(now));
++        let mut timeout = wake_at.map_or(u64::MAX, |at| at.saturating_sub(now)).min(5_000_000_000);
+         if let Some(first) = pending.iter().map(|p| p.since).min() {
+             timeout = timeout.min(HANDSHAKE_TIMEOUT.saturating_sub(first.elapsed()).as_nanos() as u64);
+         }
+diff --git a/system/usbd/xhci/src/msc.rs b/system/usbd/xhci/src/msc.rs
+index cb295bbf5..465522036 100644
+--- a/system/usbd/xhci/src/msc.rs
++++ b/system/usbd/xhci/src/msc.rs
+@@ -158,6 +158,14 @@ impl<T> Disks<T> {
+         self.submitted.set(self.submitted.get() + 1);
+     }
+ 
++    pub fn debug_queued(&self) -> usize {
++        self.disks.borrow().values().map(|d| d.work.len()).sum()
++    }
++
++    pub fn debug_away(&self) -> bool {
++        self.disks.borrow().values().any(|d| d.away.is_some())
++    }
++
+     /// How many pieces of work were ever queued: a caller that queued some
+     /// runs the driver before it waits.
+     pub fn submitted(&self) -> u64 {
+diff --git a/tests/common/qemu.rs b/tests/common/qemu.rs
+index ec7cff8ac..2cb76ff91 100644
+--- a/tests/common/qemu.rs
++++ b/tests/common/qemu.rs
+@@ -2540,8 +2540,11 @@ fn spawn_and_wait_ready(mut qemu: Command, options: BootOptions, files: Files) -
+         // consumer below still gets whole lines and nothing else.
+         let mut pending: Vec<u8> = Vec::new();
+         let mut chunk = [0u8; 4096];
++        let _ = std::fs::create_dir_all("<home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/usbd/pr2/tee");
++        let mut tee = std::fs::File::create(format!("<home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/usbd/pr2/tee/{}-{}.log", std::process::id(), seq)).ok();
+         loop {
+             let read = reader.read(&mut chunk).unwrap_or(0);
++            if let Some(t) = tee.as_mut() { let _ = std::io::Write::write_all(t, &chunk[..read]); }
+             if read == 0 {
+                 // EOF, and whatever has no newline behind it is the last line —
+                 // which is what `lines` hands over here too.
+diff --git a/tests/guest/test-runner/src/main.rs b/tests/guest/test-runner/src/main.rs
+index 2efb1c5b9..edb7f1577 100644
+--- a/tests/guest/test-runner/src/main.rs
++++ b/tests/guest/test-runner/src/main.rs
+@@ -104,6 +104,7 @@ fn main() {
+         std::process::exit(0);
+     }
+ 
++    dbg_watch();
+     let stdin = io::stdin();
+     for line in stdin.lock().lines() {
+         let Ok(line) = line else { break };
+@@ -192,8 +193,14 @@ fn fatal(why: &str) -> ! {
+     std::process::exit(1);
+ }
+ 
++static DBG_PHASE: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
++static DBG_AT: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
++fn dbg(p: u64) { DBG_AT.store(toyos_abi::clock::stamp_ns(), std::sync::atomic::Ordering::SeqCst); DBG_PHASE.store(p, std::sync::atomic::Ordering::SeqCst); }
++fn dbg_watch() { std::thread::spawn(|| loop { std::thread::sleep(std::time::Duration::from_secs(1)); let p = DBG_PHASE.load(std::sync::atomic::Ordering::SeqCst); let el = toyos_abi::clock::stamp_ns().saturating_sub(DBG_AT.load(std::sync::atomic::Ordering::SeqCst)); if p == 1 && el > 60_000_000_000 { std::process::exit(81); } if p == 2 && el > 30_000_000_000 { std::process::exit(82); } if p == 3 && el > 30_000_000_000 { std::process::exit(83); } }); }
++
+ /// One command line off stdin. The only parser in this program.
+ fn command(line: &str, cap: Option<&SysCap>) {
++    dbg(0);
+     let cmd = line.trim();
+     if cmd.is_empty() {
+         return;
+@@ -288,7 +295,9 @@ fn run_one(name: &str, args: &[&str], cap: Option<&SysCap>) -> Ran {
+                      deadline has nothing to end it with"
+                 )),
+             }
++            dbg(1);
+             let outcome = child.wait();
++            dbg(3);
+             drop(claim_the_job());
+             match outcome {
+                 Ok(status) => {
+@@ -308,5 +317,6 @@ fn run_one(name: &str, args: &[&str], cap: Option<&SysCap>) -> Ran {
+         }
+     };
+     let _ = io::stdout().flush();
++    dbg(2);
+     ran
+ }
+diff --git a/tests/images/testcases.toml b/tests/images/testcases.toml
+index 51070fdfc..d57d2fc72 100644
+--- a/tests/images/testcases.toml
++++ b/tests/images/testcases.toml
+@@ -110,7 +110,7 @@ receives = ["disk"]
+ # one a machine has and starts its own usbd on it, holding the claim, its
+ # `usb` port and its process.
+ [programs.usbd]
+-drives = ["pci:0c:03:30/1033:0194", "pci:0c:03:30/8086:a0ed", "pci:0c:03:30/1022:1639@03:00.3"]
++drives = ["pci:0c:03:30/8086:a0ed", "pci:0c:03:30/1022:1639@03:00.3"]
+ receives = ["disk"]
+ 
+ # The file servers: DATA, the log and the boot volume, one process
+diff --git a/tests/toyos.rs b/tests/toyos.rs
+index 248c867d8..b3823a7c7 100644
+--- a/tests/toyos.rs
++++ b/tests/toyos.rs
+@@ -4558,6 +4558,7 @@ fn crypto_instrument_prints_its_table(test_config: &Path) -> Result<(), String>
+     let mut said = String::new();
+     for job in CRYPTO_JOBS {
+         let result = qemu.run_test(job, Duration::from_secs(CRYPTO_JOB_CEILING_SECS));
++        std::fs::write(format!("<home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/usbd/pr2/crypto-serial-{job}.log"), &result.serial).ok();
+         if let Some(why) = &result.error {
+             return Err(format!("{job}: {why}\nthe job said:\n{}", result.stdout));
+         }

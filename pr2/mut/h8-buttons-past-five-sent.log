@@ -1,0 +1,35 @@
+$ cargo test -p toyos-usbhid a_button_past_the_fifth
+EXIT=101
+
+running 1 test
+test tests::a_button_past_the_fifth_is_counted_and_the_rest_delivered ... FAILED
+
+failures:
+
+---- tests::a_button_past_the_fifth_is_counted_and_the_rest_delivered stdout ----
+
+thread 'tests::a_button_past_the_fifth_is_counted_and_the_rest_delivered' (26301328) panicked at lib/usbhid/src/tests.rs:442:5:
+assertion `left == right` failed
+  left: Pointer { buttons: 33, scroll: 0, motion: Relative { dx: 3, dy: -3 } }
+ right: Pointer { buttons: 1, scroll: 0, motion: Relative { dx: 3, dy: -3 } }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    tests::a_button_past_the_fifth_is_counted_and_the_rest_delivered
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 24 filtered out; finished in 0.00s
+
+   Compiling toyos-usbhid v0.1.0 (<dev>/toyos-usbd/lib/usbhid)
+warning: unused import: `BUTTONS`
+  --> lib/usbhid/src/report.rs:33:33
+   |
+33 | use toyos_input::wire::{Motion, BUTTONS};
+   |                                 ^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: `toyos-usbhid` (lib test) generated 1 warning (run `cargo fix --lib -p toyos-usbhid --tests` to apply 1 suggestion)
+    Finished `test` profile [optimized + debuginfo] target(s) in 2.08s
+     Running unittests src/lib.rs (target/debug/deps/toyos_usbhid-4da1b033b3b14ce5)
+error: test failed, to rerun pass `-p toyos-usbhid --lib`

@@ -1,0 +1,17 @@
+diff --git a/system/usbd/xhci/src/hid.rs b/system/usbd/xhci/src/hid.rs
+index 0951c5924..dcbfd07e3 100644
+--- a/system/usbd/xhci/src/hid.rs
++++ b/system/usbd/xhci/src/hid.rs
+@@ -156,10 +156,8 @@ async fn read_reports<R: Registers, D: DmaBuffers, C: Host, T>(
+                 add(&usb.hid, &mut counted, hid.counts);
+             }
+             Done::Event { code, .. } => {
+-                if dev.restart(dci, None).await?.is_err() {
+-                    say(format_args!("its endpoint ended with code {code} and would not run again; it is let go of"));
+-                    return Ok(());
+-                }
++                let _ = dev.restart(dci, None).await?;
++                let _ = code;
+             }
+         }
+     }

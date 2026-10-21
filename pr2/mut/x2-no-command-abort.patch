@@ -1,0 +1,13 @@
+diff --git a/system/usbd/xhci/src/hc.rs b/system/usbd/xhci/src/hc.rs
+index 71db3c756..ca473c8c5 100644
+--- a/system/usbd/xhci/src/hc.rs
++++ b/system/usbd/xhci/src/hc.rs
+@@ -689,7 +689,7 @@ impl<R: Registers, D: DmaBuffers> Hc<R, D> {
+         self.dma.publish();
+         self.regs.write32(self.db, 0);
+         let mut op = Op { hc: self, id: Some(self.hold(0, 0, alloc::vec![(at, 0)], false)) };
+-        let deadline = wake.now() + COMMAND_NS;
++        let deadline = Nanos::MAX;
+         let done = match op.answer(wake, deadline).await {
+             Some(done) => done,
+             None => {
