@@ -11,3 +11,6 @@ Every check ran at the committed head `7c60bc1bde26b4443ed1800516e37653297393d9`
 | guest-bar.log | `cargo test --test toyos-build -- bar_map_again` | 0 (1/1) |
 | guest-first-run-red.log | the first QEMU run, before the two C tests moved to EBADF: `libc_children` red on `spawn_cloexec` and `spawn_signaled`'s handle arm | 1 |
 | metal-staging/ | `--metal --metal-readback` of 16 shared-boot binaries | 2 = staged, 3 images, not run |
+
+## Metal readbacks (run by the coordinator on the T14, LENOVO 20W0003AMZ, BIOS N34ET71W 1.71)
+Text only, `<serial>` masked. `metal-run/judge-f3.log`: 17 passed, 0 failed, 3 boots, at `7c60bc1bd`.
