@@ -1,0 +1,16 @@
+diff --git a/system/pkg/src/main.rs b/system/pkg/src/main.rs
+index a6858a90f..ea5611e9e 100644
+--- a/system/pkg/src/main.rs
++++ b/system/pkg/src/main.rs
+@@ -144,9 +144,8 @@ fn unpack(file: &Path, plan: &Plan, root: &Path) -> Result<(), String> {
+     let mut tar = archive::Reader::new(gunzip(&mut hashed));
+     let mut buf = vec![0u8; CHUNK];
+     for want in &plan.entries {
+-        if tar.next_entry()?.as_ref() != Some(want) {
+-            return Err(changed());
+-        }
++        let got = tar.next_entry()?.ok_or_else(changed)?;
++        let want = &got;
+         let dest = root.join(&want.path);
+         let parent = || match dest.parent() {
+             Some(up) => fs::create_dir_all(up),

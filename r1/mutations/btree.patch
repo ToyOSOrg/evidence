@@ -1,0 +1,32 @@
+diff --git a/lib/bcachefs/src/btree.rs b/lib/bcachefs/src/btree.rs
+index d1edd8fa5..c90ca1eda 100644
+--- a/lib/bcachefs/src/btree.rs
++++ b/lib/bcachefs/src/btree.rs
+@@ -587,10 +587,7 @@ fn insert_recursive(
+             // A key below every child's goes to the first, whose key comes
+             // down to it: a sibling split off that child keyed below the old
+             // one is still after it.
+-            let lowered = entry.key < child.key;
+-            if lowered {
+-                child.key = entry.key;
+-            }
++            let lowered = false;
+             let deeper = depth.descend(block)?;
+ 
+             let Placed { at, split } = insert_recursive(io, alloc, child_block, deeper, entry)?;
+@@ -598,8 +595,13 @@ fn insert_recursive(
+                 return Ok(Placed { at: block, split });
+             }
+             children[idx].block = at;
+-            // The siblings hold the keys of `idx` past those it kept, in order.
+-            children.splice(idx + 1..idx + 1, split);
++            for sibling in split {
++                let pos = match children.binary_search_by(|c| c.key.cmp(&sibling.key)) {
++                    Ok(i) => i + 1,
++                    Err(i) => i,
++                };
++                children.insert(pos, sibling);
++            }
+             write_or_split(io, alloc, block, Node::Interior { level, children })
+         }
+     }

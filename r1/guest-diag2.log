@@ -1,0 +1,85 @@
+   Compiling bcachefs v0.1.0 (~/Dev/<user>/toyos-pkg/lib/bcachefs)
+   Compiling toyos-build v0.1.0 (~/Dev/<user>/toyos-pkg)
+   Compiling toyos-metal v0.1.0 (~/Dev/<user>/toyos-pkg/tests/metal)
+    Finished `test` profile [optimized + debuginfo] target(s) in 2.82s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-18ba9974e73e748f)
+
+04:21:16 running 1 tests, 12 wide
+
+04:21:16   RUN   hosted_clang_hello
+04:21:27   [hosted_clang_hello] the host's hello.o: 1384 bytes, sha256 34e7639153e48b0b2d4f9b928a9c5c5b3c5daa5bf368669f4ba0de5462945b22
+04:21:27   [hosted_clang_hello] the host's a.out: 1907744 bytes, sha256 71fd0c5d7de53be7b63161173f19746c56c5ea652909a1f029c31bca8aadc9f3
+04:21:27   [hosted_clang_hello] the package: clang-v22.1.8-toyos-x86_64.tar.gz, 130809456f131ce1f3db06fb05e682b8435aa384abd101230ae072f83cf5b64a  clang-v22.1.8-toyos-x86_64.tar.gz
+04:21:27   BUILD x86_64 hosted_clang_hello (toyos) of tests/guest/rust-tests, for hosted_clang_hello
+04:21:30   BUILT x86_64 hosted_clang_hello (toyos) of tests/guest/rust-tests, for hosted_clang_hello  (3s)
+04:21:30   BUILD x86_64 kernel, loader, ROOT of tests/images/hostedclangcase.toml, for hosted_clang_hello
+04:21:37 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+04:21:38   BUILT x86_64 kernel, loader, ROOT of tests/images/hostedclangcase.toml, for hosted_clang_hello  (7s)
+04:22:30 FAIL hosted_clang_hello: the job ended Some(101):
+hosted_clang_hello: pkg install: pkg: verified clang-v22.1.8-toyos-x86_64.tar.gz against SHA256SUMS (130809456f131ce1f3db06fb05e682b8435aa384abd101230ae072f83cf5b64a)
+hosted_clang_hello: pkg install: pkg: installed clang 22.1.8 at /apps/clang (279248896 bytes), launching /apps/clang/bin/clang
+hosted_clang_hello: pkg install ended 0
+DIAG status ExitStatus(ExitStatus(Exited(1)))
+DIAG stderr clang version 22.1.8-rust-dev (https://github.com/ToyOSOrg/llvm-project.git b7420fe534bf063b78a61c18fe6fb2bbcf4340e0)
+Target: x86_64-unknown-toyos
+Thread model: posix
+InstalledDir: 
+ (in-process)
+ "" -cc1 -triple x86_64-unknown-toyos -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name hello.c -mrelocation-model pic -pic-level 2 -pic-is-pie -mframe-pointer=all -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -target-cpu x86-64 -tune-cpu generic -debugger-tuning=gdb -fdebug-compilation-dir=/system/share/hosted-clang/src -v -fcoverage-compilation-dir=/system/share/hosted-clang/src -resource-dir /apps/clang/lib/clang/22 -isysroot /apps/clang/sysroot -internal-isystem /apps/clang/lib/clang/22/include -internal-externc-isystem /apps/clang/sysroot/include -ferror-limit 19 -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -faddrsig -fdwarf2-cfi-asm -o /tmp/hosted_clang_hello/hello.o -x c hello.c
+clang -cc1 version 22.1.8-rust-dev based upon LLVM 22.1.8-rust-dev default target x86_64-unknown-toyos
+ignoring nonexistent directory "/apps/clang/lib/clang/22/include"
+ignoring nonexistent directory "/apps/clang/sysroot/include"
+#include "..." search starts here:
+End of search list.
+hello.c:1:10: fatal error: 'stdio.h' file not found
+    1 | #include <stdio.h>
+      |          ^~~~~~~~~
+1 error generated.
+
+DIAG std sees /apps/clang/sysroot/include: Ok(0)
+DIAG std sees /apps/clang/sysroot/include/stdio.h: Ok(2073)
+DIAG std sees /apps/clang/lib/clang/22/include/stddef.h: Ok(5053)
+
+thread 'main' (1) panicked at src/bin/hosted_clang_hello.rs:74:5:
+clang -c ended ExitStatus(ExitStatus(Exited(1))):
+hello.c:1:10: fatal error: 'stdio.h' file not found
+    1 | #include <stdio.h>
+      |          ^~~~~~~~~
+1 error generated.
+
+stack backtrace:
+   0:      0x10000071230 - _Unwind_Backtrace
+   1:      0x10000058523 - <<std[e348379a9a401309]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[73b405bef30eeff1]::fmt::Display>::fmt
+   2:      0x10000075537 - core[73b405bef30eeff1]::fmt::write
+   3:      0x1000005c34b - <std[e348379a9a401309]::sys::stdio::toyos::Stderr as core[73b405bef30eeff1]::io::write::Write>::write_fmt
+   4:      0x100000360b3 - std[e348379a9a401309]::panicking::default_hook::{closure#0}
+   5:      0x10000051c5e - std[e348379a9a401309]::panicking::default_hook
+   6:      0x10000051e19 - std[e348379a9a401309]::panicking::panic_with_hook
+   7:      0x1000003616d - std[e348379a9a401309]::panicking::panic_handler::{closure#0}
+   8:      0x1000002e4a9 - std[e348379a9a401309]::sys::backtrace::__rust_end_short_backtrace::<std[e348379a9a401309]::panicking::panic_handler::{closure#0}, !>
+   9:      0x10000036a08 - __rustc[d0c72ce299f394e5]::rust_begin_unwind
+  10:      0x10000075c5b - core[73b405bef30eeff1]::panicking::panic_fmt
+  11:      0x1000001f7c7 - hosted_clang_hello[975c5fc9b25df7c9]::run
+  12:      0x1000001ffe0 - hosted_clang_hello[975c5fc9b25df7c9]::main
+  13:      0x10000021186 - std[e348379a9a401309]::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  14:      0x1000001e590 - std[e348379a9a401309]::rt::lang_start::<()>::{closure#0}
+  15:      0x10000051106 - std[e348379a9a401309]::rt::lang_start_internal
+  16:      0x10000021171 - main
+  17:      0x10000055d83 - std[e348379a9a401309]::sys::pal::toyos::start_rust
+  18:      0x10000021236 - _start
+
+04:22:30   FAIL  hosted_clang_hello  (63s)
+04:22:30   --- 1 guests, 0 of them not the shipping kernel, 1 kernel build(s): [""]
+
+04:22:30 host: fastest boot 6647 ms against the reference 1424 ms — liveness ceilings paid at 4.67x
+04:22:30 host: 14 core(s); a guest wider than that waits vcpus/cores longer again
+04:22:30 failures:
+04:22:30     hosted_clang_hello: the job ended Some(101):
+
+04:22:30 test result: FAILED. 0 passed, 1 failed, 0 invalidated, 1 total (73.3s; workers: 10s building, 63s testing)
+04:22:30 [toyos] this red run's serial logs are kept at ~/Dev/<user>/toyos-pkg/target/red-run-serial/toyos-tmp-27410-0
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `~/Dev/<user>/toyos-pkg/target/debug/deps/toyos_build-18ba9974e73e748f hosted_clang_hello` (exit status: 1)
+exit 1

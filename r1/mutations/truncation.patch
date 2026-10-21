@@ -1,0 +1,21 @@
+diff --git a/system/pkg/src/archive.rs b/system/pkg/src/archive.rs
+index b7cd77b47..290566410 100644
+--- a/system/pkg/src/archive.rs
++++ b/system/pkg/src/archive.rs
+@@ -78,10 +78,12 @@ impl<R: Read> Reader<R> {
+         self.left = 0;
+         self.pad = 0;
+         let mut header = [0u8; BLOCK];
+-        self.inner.read_exact(&mut header).map_err(|e| match e.kind() {
+-            std::io::ErrorKind::UnexpectedEof => String::from("tar: the archive ends inside a header"),
+-            _ => format!("tar: {e}"),
+-        })?;
++        if let Err(e) = self.inner.read_exact(&mut header) {
++            if e.kind() == std::io::ErrorKind::UnexpectedEof {
++                return Ok(None);
++            }
++            return Err(format!("tar: {e}"));
++        }
+         if header.iter().all(|&b| b == 0) {
+             return Ok(None);
+         }
