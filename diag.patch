@@ -1,0 +1,57 @@
+diff --git a/kernel/src/arch/x86_64/tlb.rs b/kernel/src/arch/x86_64/tlb.rs
+index a8311567a..499672d26 100644
+--- a/kernel/src/arch/x86_64/tlb.rs
++++ b/kernel/src/arch/x86_64/tlb.rs
+@@ -223,6 +223,9 @@ mod delay {
+ 
+ /// Expires rather than latches, so a panicked test can't leave it armed
+ /// forever.
++#[cfg(feature = "test-actuators")]
++static DIAG_INITIATOR: AtomicU64 = AtomicU64::new(0);
++
+ #[cfg(feature = "test-actuators")]
+ const ARM_WINDOW_NANOS: u64 = 2_000_000_000;
+ 
+@@ -252,6 +255,9 @@ fn stage_ack_delay(by: Answerer) {
+         delay::EVERY => by == Answerer::Asked,
+         target => target == percpu::cpu_id(),
+     };
++    if by == Answerer::Initiator && delay::TARGET.load(Ordering::Relaxed) == percpu::cpu_id() {
++        DIAG_INITIATOR.fetch_add(1, Ordering::Relaxed);
++    }
+     if !held {
+         return;
+     }
+@@ -276,16 +282,30 @@ fn stage_ack_delay(by: Answerer) {
+ pub fn debug_arm_ack_delay(nanos: u64) -> u64 {
+     delay::NANOS.store(nanos, Ordering::Relaxed);
+     let mut least = u64::MAX;
++    let mut diag = [(u32::MAX, 0u64, 0u64, [0u64; Origin::COUNT]); crate::shootdown::MAX_CPUS];
++    let mut armer = 0;
+     crate::sched::driver::preempt_off(|_| {
+         let me = percpu::cpu_id();
+-        for cpu in (0..smp::cpu_count()).filter(|cpu| *cpu != me) {
++        armer = me;
++        for (slot, cpu) in (0..smp::cpu_count()).filter(|cpu| *cpu != me).enumerate() {
+             delay::TARGET.store(cpu, Ordering::Relaxed);
++            DIAG_INITIATOR.store(0, Ordering::Relaxed);
++            let before: [u64; Origin::COUNT] = core::array::from_fn(|i| ISSUED[i].load(Ordering::Relaxed));
+             open_arm_window();
+             let began = crate::clock::nanos_since_boot();
+             shootdown(Origin::Staged, Half::User);
+-            least = least.min(crate::clock::nanos_since_boot().saturating_sub(began));
++            let took = crate::clock::nanos_since_boot().saturating_sub(began);
++            least = least.min(took);
++            let issued = core::array::from_fn(|i| ISSUED[i].load(Ordering::Relaxed) - before[i]);
++            diag[slot] = (cpu, took, DIAG_INITIATOR.load(Ordering::Relaxed), issued);
+         }
+     });
++    for (cpu, took, initiator, issued) in diag.iter().filter(|d| d.0 != u32::MAX) {
++        crate::log!(
++            "tlb-diag: armer=cpu{armer} held=cpu{cpu} took={took}ns held_cpu_initiator_answers={initiator} issued_meanwhile={:?} ({:?})",
++            issued, Origin::NAMES,
++        );
++    }
+     delay::TARGET.store(delay::EVERY, Ordering::Relaxed);
+     open_arm_window();
+     // A machine with one CPU has no other to hold back and `shootdown` takes

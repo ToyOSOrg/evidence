@@ -1,0 +1,49 @@
+diff --git a/tests/guest/rust-tests/src/bin/tlb_shootdown_waits.rs b/tests/guest/rust-tests/src/bin/tlb_shootdown_waits.rs
+index 71b04e28c..a1a43798f 100644
+--- a/tests/guest/rust-tests/src/bin/tlb_shootdown_waits.rs
++++ b/tests/guest/rust-tests/src/bin/tlb_shootdown_waits.rs
+@@ -114,6 +114,44 @@ fn main() {
+          local-flush return — the stage measures a wait and this machine has none",
+     );
+ 
++    // PROBE (never lands): every other CPU busy issuing shootdowns of its own
++    // while the sweep holds it, then the ordinary stages with the helpers gone.
++    {
++        use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
++        use std::sync::Arc;
++        let stop = Arc::new(AtomicBool::new(false));
++        let started = Arc::new(AtomicU32::new(0));
++        let helpers: Vec<_> = (1..cpus)
++            .map(|_| {
++                let (stop, started) = (stop.clone(), started.clone());
++                std::thread::spawn(move || {
++                    let mut rounds = 0u64;
++                    let mut counted = false;
++                    while !stop.load(Ordering::Relaxed) {
++                        let p = map(4096);
++                        unsafe { p.write_volatile(1) };
++                        unsafe { syscall::munmap(p, 4096) }.expect("helper munmap");
++                        rounds += 1;
++                        if !counted {
++                            counted = true;
++                            started.fetch_add(1, Ordering::Relaxed);
++                        }
++                    }
++                    rounds
++                })
++            })
++            .collect();
++        while started.load(Ordering::Relaxed) < cpus - 1 {
++            std::hint::spin_loop();
++        }
++        let least = debug(ARM, DELAY_NANOS);
++        stop.store(true, Ordering::Relaxed);
++        let rounds: Vec<u64> = helpers.into_iter().map(|h| h.join().unwrap()).collect();
++        disarm();
++        println!("probe: with {} helpers unmapping (rounds {rounds:?}), the sweep's least was {least}ns", cpus - 1);
++        assert!(least >= FLOOR_NANOS, "probe: the sweep's least was {least}ns with every other CPU issuing shootdowns of its own");
++    }
++
+     // 1. `munmap`, which is the syscall the stage exists for: the pages go back
+     //    to the PMM behind the flush.
+     let mut judged = false;

@@ -1,0 +1,13 @@
+diff --git a/kernel/src/arch/x86_64/tlb.rs b/kernel/src/arch/x86_64/tlb.rs
+index 499672d26..1a67b1957 100644
+--- a/kernel/src/arch/x86_64/tlb.rs
++++ b/kernel/src/arch/x86_64/tlb.rs
+@@ -253,7 +253,7 @@ fn stage_ack_delay(by: Answerer) {
+     }
+     let held = match delay::TARGET.load(Ordering::Relaxed) {
+         delay::EVERY => by == Answerer::Asked,
+-        target => target == percpu::cpu_id(),
++        target => target == percpu::cpu_id() && by == Answerer::Asked,
+     };
+     if by == Answerer::Initiator && delay::TARGET.load(Ordering::Relaxed) == percpu::cpu_id() {
+         DIAG_INITIATOR.fetch_add(1, Ordering::Relaxed);
