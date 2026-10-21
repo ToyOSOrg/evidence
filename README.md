@@ -1,8 +1,16 @@
 # Evidence for ToyOS PR #967
 
 `tlb_shootdown_waits` on metal, `shared-debug` boot. Each directory holds the boot's lines from
-`===TEST_START test_rs_tlb_shootdown_waits===` to its `===TEST_END`, the machine model and firmware
-(`machine.txt`) and the boot's verdict. Main's two red boots (fec5fdd02, 36570e1b1) are on `pr-966`
+`===TEST_START test_rs_tlb_shootdown_waits===` to its `===TEST_END` (`tlb_shootdown_waits.log`),
+the machine model and firmware (`machine.txt`), and two verdicts:
+
+- `judge-verdict.txt` — **the test's verdict**: the `[metal] the tests` lines of the judging run
+  (`cargo test --test toyos-build -- --metal --metal-readback <dir> tlb_shootdown_waits`), PASS or FAIL.
+- `toyos-metal-loop-verdict.txt` — the boot loop's own verdict on the *boot* (`READBACK_VERDICT`,
+  `tests/metal/src/lib.rs`): `passed` means the loop flashed, booted and read the stick back without
+  a refusal (disk identity, partitions, FAT32 check, ...). It says nothing about any test, and reads
+  `passed` for probe-control, whose test exited 101. Published first as `verdict.txt` at 6f6bbae1a;
+  renamed here so it is not read as the test's. Main's two red boots (fec5fdd02, 36570e1b1) are on `pr-966`
 at f68ff74f0.
 
 Patches (never landed; each applies on the one before, the first on the fix commit 85e651d9c,
