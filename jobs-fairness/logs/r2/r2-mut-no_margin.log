@@ -1,0 +1,39 @@
+   Compiling kernel v0.1.0 (<worktree>/kernel)
+   Compiling kernel-sim v0.1.0 (<worktree>/kernel/sim)
+    Finished `release` profile [optimized] target(s) in 3.08s
+     Running tests/policy.rs (target/release/deps/policy-e6f56540dca1c941)
+
+running 5 tests
+test a_push_on_surplus_reaches_every_cpu_the_pull_path_left_asleep ... FAILED
+test a_bounded_re_arm_reaches_every_cpu_the_pull_path_left_asleep ... FAILED
+test the_balance_path_drains_the_cpu_an_adversary_loaded ... FAILED
+test the_two_cures_are_priced_against_the_pull_path ... ok
+test without_the_balance_path_a_lopsided_machine_stays_lopsided ... ok
+
+failures:
+
+---- a_push_on_surplus_reaches_every_cpu_the_pull_path_left_asleep stdout ----
+
+thread 'a_push_on_surplus_reaches_every_cpu_the_pull_path_left_asleep' (42182229) panicked at kernel/sim/tests/policy.rs:684:5:
+Pull at 2 cpus and 8 threads: 21 moves after the first exit, against 8 exits that could each open one imbalance
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- a_bounded_re_arm_reaches_every_cpu_the_pull_path_left_asleep stdout ----
+
+thread 'a_bounded_re_arm_reaches_every_cpu_the_pull_path_left_asleep' (42182228) panicked at kernel/sim/tests/policy.rs:684:5:
+Pull at 2 cpus and 8 threads: 21 moves after the first exit, against 8 exits that could each open one imbalance
+
+---- the_balance_path_drains_the_cpu_an_adversary_loaded stdout ----
+
+thread 'the_balance_path_drains_the_cpu_an_adversary_loaded' (42182230) panicked at kernel/sim/tests/policy.rs:684:5:
+the shipped policy at 2 cpus and 8 threads: 21 moves after the first exit, against 8 exits that could each open one imbalance
+
+
+failures:
+    a_bounded_re_arm_reaches_every_cpu_the_pull_path_left_asleep
+    a_push_on_surplus_reaches_every_cpu_the_pull_path_left_asleep
+    the_balance_path_drains_the_cpu_an_adversary_loaded
+
+test result: FAILED. 2 passed; 3 failed; 0 ignored; 0 measured; 10 filtered out; finished in 1.90s
+
+error: test failed, to rerun pass `-p kernel-sim --test policy`

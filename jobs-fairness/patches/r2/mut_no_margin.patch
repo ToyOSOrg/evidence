@@ -1,0 +1,13 @@
+diff --git a/kernel/pure/sched/queue.rs b/kernel/pure/sched/queue.rs
+index 9782f4101..5fbac3835 100644
+--- a/kernel/pure/sched/queue.rs
++++ b/kernel/pure/sched/queue.rs
+@@ -281,7 +281,7 @@ impl<X: SchedPayload> RunQueue<X> {
+             .filter_map(|(&jk, group)| {
+                 let key = group.ready.keys().rev().copied().find(|&key| Some(key) != loaded)?;
+                 let w = group.job.thread_weight() as i128;
+-                (asking == 0 || w + w / 4 <= diff).then_some(((diff - 2 * w).abs(), jk, key))
++                (asking == 0 || w <= diff).then_some(((diff - 2 * w).abs(), jk, key))
+             })
+             .min()
+             .map(|(_, jk, key)| (jk, key))?;
