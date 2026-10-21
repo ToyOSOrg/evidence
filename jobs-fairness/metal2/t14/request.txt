@@ -1,0 +1,19 @@
+# T14 (8 CPUs). Each invocation is `cargo <words>` run from the tree its block names.
+# Boot head latencycase and base latencycase back to back, isolated, for the tail comparison.
+
+## head: wt/toyos-jobs at 110877546de6c68e599ae61fb81617e481ae3de3, from <worktree>
+## judges latency_wake (latencycase), job_fairness, wake_onto_busy, wake_storm_cost (testcases)
+latencycase
+  image: <scratch>/metal2/t14/head/latencycase/image.img
+  cargo run -p toyos-metal -- --image <scratch>/metal2/t14/head/latencycase/image.img --readback <scratch>/metal2/t14/head/latencycase --fat32-check
+
+## base: origin/main 6f4d8dbdbca1452c0faa3eead53104d9d0d47fa4 (PR base, detached; no probe commit), from <base-worktree>
+## judges latency_wake (latencycase), the same row as head
+latencycase
+  image: <scratch>/metal2/t14/base/latencycase/image.img
+  cargo run -p toyos-metal -- --image <scratch>/metal2/t14/base/latencycase/image.img --readback <scratch>/metal2/t14/base/latencycase --fat32-check
+
+## head, continued
+testcases
+  image: <scratch>/metal2/t14/head/testcases/image.img
+  cargo run -p toyos-metal -- --image <scratch>/metal2/t14/head/testcases/image.img --readback <scratch>/metal2/t14/head/testcases --fat32-check

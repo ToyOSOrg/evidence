@@ -29,3 +29,15 @@ Boots `latencycase` and `testcases`, judging `job_fairness` and `latency_wake`. 
 |---|---|---|---|
 | LENOVO 20W0003AMZ (T14), BIOS N34ET71W 1.71, 8 CPUs | metal/t14/judge-jt.log | PASS: 0.333/0.333/0.333, ran 23,997 of 24,000 ms | PASS: p50 4 us, p99 16 us, p99.9 2419 us, max 4418 us |
 | LENOVO 82A2 (AMD), BIOS DMCN38WW, 16 CPUs | metal/amd/judge-ja.log | PASS: 0.333/0.333/0.333, ran 47,996 of 48,000 ms | PASS: p50 4 us, p99 4 us, max 6 us |
+
+## Metal round 2, at 110877546 and its base (run by the orchestrator, isolated)
+
+`metal2/`. Head images come from `wt/toyos-jobs` at 110877546de6c68e599ae61fb81617e481ae3de3. The base image comes from origin/main 6f4d8dbdbca1452c0faa3eead53104d9d0d47fa4, the PR's base, as a detached worktree with no probe commit. On the T14 the head and base `latencycase` boots ran back to back.
+
+| bench | judge | job_fairness | latency_wake | wake_onto_busy | wake_storm_cost |
+|---|---|---|---|---|---|
+| T14, head | metal2/t14/head/judge-th.log | PASS 0.333/0.334/0.333 | PASS p99 16 us, p99.9 2466 us, max 4465 us | PASS p99 7 us, max 32 us | PASS |
+| T14, base | metal2/t14/base/judge-tb.log | | PASS p99 16 us, p99.9 2529 us, max 4527 us | | |
+| AMD, head | metal2/amd/head/judge-j2.log | PASS 0.333/0.333/0.333 | PASS p99 4 us, max 6 us | PASS p99 28 us, max 301 us | PASS |
+
+The T14's tail is the base's, within its spread: it is not a regression from this change.
