@@ -1,0 +1,566 @@
+From c8acfbc07d593d3e904ac7e56d7b61a1bec328fb Mon Sep 17 00:00:00 2001
+From: japabu <japa.busse@gmail.com>
+Date: Wed, 21 Oct 2026 01:28:10 +0200
+Subject: [PATCH] dma_reach: an investigation probe of the address bits each
+ HDA function carries
+
+Not for landing. The AMD bench's HDMI audio function 03:00.1 faulted at its
+ring addresses with bit 46 dropped. This probe measures, on a boot armed
+`claim-floor=40000000` so a claim's grants sit below 4 GiB, which bits of a
+device address each HD Audio function carries to the unit: its upper base
+registers' read-back, the codec link and an output stream at the grant, the
+same aimed with one bit above it set from 63 down until one reaches nothing,
+and two patterns over bits 32 to 47. The unit's DMA FAULT records name the
+address each failing step issued.
+
+`claim-floor=` is a test-kernel valued actuator; `dma_reach_qemu_smoke`
+checked the protocol on QEMU's ich9-intel-hda behind VT-d.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ kernel/src/actuator.rs                      |  27 ++
+ kernel/src/iommu/window.rs                  |  10 +
+ tests/guest/rust-tests/Cargo.lock           |   8 +
+ tests/guest/rust-tests/Cargo.toml           |   2 +
+ tests/guest/rust-tests/src/bin/dma_reach.rs | 278 ++++++++++++++++++++
+ tests/images/dmareachcase.toml              |  29 ++
+ tests/metal/src/lib.rs                      |   4 +
+ tests/toyos.rs                              |  46 ++++
+ 8 files changed, 404 insertions(+)
+ create mode 100644 tests/guest/rust-tests/src/bin/dma_reach.rs
+ create mode 100644 tests/images/dmareachcase.toml
+
+diff --git a/kernel/src/actuator.rs b/kernel/src/actuator.rs
+index 9f50e51ac..118d16637 100644
+--- a/kernel/src/actuator.rs
++++ b/kernel/src/actuator.rs
+@@ -219,6 +219,12 @@ actuators! {
+     /// claim: `drivers::xhci` never touches it. Read through [`xhci_left`];
+     /// judged by `usbd_drives_the_spare`.
+     xhci_leave = "xhci-leave=";
++
++    /// Start every domain a claim makes at `claim-floor=<hex>`, under the
++    /// first declared window above it, with no above-memory rule: the
++    /// `dma_reach` probe's, to put a claim's grants where a narrow function
++    /// reaches. Read through [`claim_floor`].
++    claim_floor_armed = "claim-floor=";
+ }
+ 
+ #[cfg(feature = "boot-actuators")]
+@@ -280,6 +286,13 @@ fn take_value(name: &str, value: &str) {
+             });
+             XHCI_LEFT.store(u64::from(at), Ordering::Relaxed);
+         }
++        "claim-floor=" => {
++            let floor = u64::from_str_radix(value.trim_start_matches("0x"), 16)
++                .ok()
++                .filter(|floor| floor % crate::mm::PAGE_2M == 0 && *floor != 0)
++                .unwrap_or_else(|| panic!("boot parameter {name}{value}: not a nonzero 2 MiB boundary in hex"));
++            CLAIM_FLOOR.store(floor, Ordering::Relaxed);
++        }
+         _ => panic!("boot parameter {name}{value}: this kernel declares no such valued actuator"),
+     }
+ }
+@@ -312,6 +325,20 @@ pub const fn xhci_left() -> Option<u16> {
+     None
+ }
+ 
++#[cfg(feature = "boot-actuators")]
++static CLAIM_FLOOR: AtomicU64 = AtomicU64::new(0);
++
++/// Where `claim-floor=` starts a claim's domain, if it is armed.
++#[cfg(feature = "boot-actuators")]
++pub fn claim_floor() -> Option<u64> {
++    claim_floor_armed().then(|| CLAIM_FLOOR.load(Ordering::Relaxed))
++}
++
++#[cfg(not(feature = "boot-actuators"))]
++pub const fn claim_floor() -> Option<u64> {
++    None
++}
++
+ #[cfg(feature = "boot-actuators")]
+ fn arm(armed: &mut [u64; ARM_WORDS], name: &str) {
+     let (word, bit) = at(index_of(name));
+diff --git a/kernel/src/iommu/window.rs b/kernel/src/iommu/window.rs
+index 4392aeec9..715eee8ff 100644
+--- a/kernel/src/iommu/window.rs
++++ b/kernel/src/iommu/window.rs
+@@ -66,6 +66,16 @@ impl Window {
+     /// `room` bytes of it handed out first; refused where it would start at or
+     /// below memory or hold less than that, and at least one leaf.
+     pub fn new(translatable: u8, reserved: Option<&[(u64, u64)]>, room: u64) -> Result<(Self, Iova), IommuError> {
++        // The `dma_reach` probe's: only a claim's domain asks for room.
++        if let (Some(floor), true) = (crate::actuator::claim_floor(), room != 0) {
++            let ceiling = ceiling(translatable, floor, reserved.ok_or(IommuError::Undeclared { translatable, cpu: 0 })?);
++            log!("iommu: claim-floor= starts a claim's domain at {floor:#x}, under {ceiling:#x}");
++            let mut window = Self::starting_at(floor, ceiling);
++            return match window.reserve(room) {
++                Some(first) if ceiling > floor => Ok((window, first)),
++                _ => Err(IommuError::NoRoom { floor, ceiling, room }),
++            };
++        }
+         let (floor, ceiling) = bounds(translatable, crate::arch::cpu::physical_address_bits(), reserved)?;
+         let top = crate::mm::pmm::top();
+         if floor <= top {
+diff --git a/tests/guest/rust-tests/Cargo.lock b/tests/guest/rust-tests/Cargo.lock
+index 3602c06f7..a9daecdcd 100644
+--- a/tests/guest/rust-tests/Cargo.lock
++++ b/tests/guest/rust-tests/Cargo.lock
+@@ -909,6 +909,13 @@ version = "0.1.0"
+ name = "toyos-font"
+ version = "0.2.0"
+ 
++[[package]]
++name = "toyos-hda"
++version = "0.1.0"
++dependencies = [
++ "toyos-device-memory",
++]
++
+ [[package]]
+ name = "toyos-i219"
+ version = "0.1.0"
+@@ -972,6 +979,7 @@ dependencies = [
+  "toyos-abi",
+  "toyos-crypto",
+  "toyos-device-memory",
++ "toyos-hda",
+  "toyos-i219",
+  "toyos-inspect",
+  "toyos-logstream",
+diff --git a/tests/guest/rust-tests/Cargo.toml b/tests/guest/rust-tests/Cargo.toml
+index 1985c02d0..8b79a71a6 100644
+--- a/tests/guest/rust-tests/Cargo.toml
++++ b/tests/guest/rust-tests/Cargo.toml
+@@ -24,6 +24,8 @@ toyos-trace = { path = "../../../lib/trace" }
+ toyos-i219 = { path = "../../../system/netstack/i219" }
+ toyos-device-memory = { path = "../../../lib/device-memory" }
+ toyos-pci-claim = { path = "../../../lib/pci-claim" }
++# The HD Audio controller's reset, link and stream, for the `dma_reach` probe.
++toyos-hda = { path = "../../../system/hda/driver" }
+ toyos-pci = { path = "../../../kernel/pci" }
+ libloading = { git = "https://github.com/ToyOSOrg/rust_libloading", branch = "toyos-sdk-0.12" }
+ cpal = { git = "https://github.com/ToyOSOrg/cpal", branch = "toyos-0.18.0" }
+diff --git a/tests/guest/rust-tests/src/bin/dma_reach.rs b/tests/guest/rust-tests/src/bin/dma_reach.rs
+new file mode 100644
+index 000000000..93caafd89
+--- /dev/null
++++ b/tests/guest/rust-tests/src/bin/dma_reach.rs
+@@ -0,0 +1,278 @@
++//! Investigation probe, not a regression test: which device-address bits each
++//! HD Audio function of the AMD bench carries to the unit. Run on a boot armed
++//! `claim-floor=`, so a claim's grants sit below 4 GiB.
++//!
++//! Per function, each step on a claim of its own unless it reached nothing:
++//! the upper base registers written all-ones and read back; the codec link and
++//! an output stream at the grant; then the link aimed at the grant with one
++//! bit `k` above it set, from 63 down, until a step reaches nothing; the same
++//! for the stream; then two patterns over bits 32 to 47. A step that reaches
++//! nothing faults at the unit, whose `DMA FAULT` record names the address the
++//! function issued, and the claim refuses from then on. Every reading is
++//! printed; the exit is only whether the protocol ran.
++
++use std::time::{Duration, Instant};
++
++use toyos::endow::Endowments;
++use toyos::syscap::SysCap;
++use toyos::PciDev;
++use toyos_abi::inventory::{Pci, RawRecord, Record};
++use toyos_abi::syscall::{SyscallError, SYSCAP_LABEL};
++use toyos_device_memory::{DmaBuffers, Registers};
++use toyos_hda::controller::{self, Link, Stream, CODEC_DETECT_MICROS};
++use toyos_hda::probe;
++use toyos_hda::verb::{
++    Address, Node, Verb, GET_PARAMETER, PARAM_VENDOR_ID, SET_CONVERTER_FORMAT, SET_CONVERTER_STREAM, SET_POWER_STATE,
++};
++use toyos_pci_claim::{Bar, Grant};
++
++/// Every HD Audio function (class 04, subclass 03), the GPU's (vendor 1002)
++/// last: the bench's analogue function, which reaches the shipping layout,
++/// is the control.
++fn functions(cap: &SysCap) -> Vec<Pci> {
++    let records: Vec<Record> = cap.records(|n| vec![RawRecord::EMPTY; n]).expect("dma_reach: the inventory");
++    let mut hda: Vec<Pci> = records
++        .into_iter()
++        .filter_map(|record| match record {
++            Record::Pci(pci) if pci.class == 0x04 && pci.subclass == 0x03 => Some(pci),
++            _ => None,
++        })
++        .collect();
++    hda.sort_by_key(|pci| pci.vendor == 0x1002);
++    hda
++}
++
++const CORBUBASE: usize = 0x44;
++const RIRBUBASE: usize = 0x54;
++const DPLBASE: usize = 0x70;
++const DPUBASE: usize = 0x74;
++const SD_BASE: usize = 0x80;
++const SD_STRIDE: usize = 0x20;
++const SD_LPIB: usize = 0x04;
++const SD_STS: usize = 0x03;
++const SD_BDPU: usize = 0x1C;
++
++/// CORB, RIRB and BDL in the first page; the stream's cyclic buffer after
++/// it, and the position words after that (§3.3.32).
++const RING_AT: usize = 0x1000;
++const POSITIONS: usize = 0x2000;
++const BYTES: u64 = 0x3000;
++/// 48 kHz, two channels, 16 bits (HDA 1.0a §3.7.1).
++const FORMAT: u16 = 0x0011;
++/// The ring is 4 KiB, 21 ms at 192 kB/s: a stream that reaches its buffer has
++/// gone round it many times within this.
++const STREAM_BOUND: Duration = Duration::from_millis(500);
++
++/// A grant the device is told is at its own address with `alias` set.
++#[derive(Clone, Copy)]
++struct Aliased {
++    grant: Grant,
++    alias: u64,
++}
++
++impl DmaBuffers for Aliased {
++    fn bytes(&self) -> usize {
++        self.grant.bytes()
++    }
++    fn device_addr(&self, at: usize) -> u64 {
++        self.grant.device_addr(at) | self.alias
++    }
++    fn read16(&self, at: usize) -> u16 {
++        self.grant.read16(at)
++    }
++    fn read32(&self, at: usize) -> u32 {
++        self.grant.read32(at)
++    }
++    fn read64(&self, at: usize) -> u64 {
++        self.grant.read64(at)
++    }
++    fn write16(&self, at: usize, value: u16) {
++        self.grant.write16(at, value)
++    }
++    fn write32(&self, at: usize, value: u32) {
++        self.grant.write32(at, value)
++    }
++    fn write64(&self, at: usize, value: u64) {
++        self.grant.write64(at, value)
++    }
++    fn publish(&self) {
++        self.grant.publish()
++    }
++    fn observe(&self) {
++        self.grant.observe()
++    }
++}
++
++/// One claim, its registers and a grant.
++/// The mappings go before the claim, in field order.
++struct Held {
++    _keep: (toyos::shm::SharedMemory, toyos::DmaRegion),
++    dev: PciDev,
++    bar: Bar,
++    grant: Grant,
++}
++
++fn hold(cap: &SysCap, id: &Pci) -> Held {
++    let dev: PciDev = cap.claim_function(id.arrival).unwrap_or_else(|why| panic!("dma_reach: claim on {}: {why:?}", name(id)));
++    let info = toyos_pci_claim::describe(&dev).expect("dma_reach: describe");
++    let (bar, mapping) = Bar::map(&dev, 0, info.bar_bytes[0]).expect("dma_reach: BAR 0");
++    let (grant, region) = Grant::alloc(&dev, BYTES).expect("dma_reach: grant");
++    grant.window().zero();
++    Held { _keep: (mapping, region), dev, bar, grant }
++}
++
++fn name(pci: &Pci) -> String {
++    format!("{:02x}:{:02x}.{} [{:04x}:{:04x}]", pci.at.bus, pci.at.dev, pci.at.func, pci.vendor, pci.device)
++}
++
++fn try_reset(bar: &Bar) -> Result<controller::Reset, String> {
++    controller::reset(bar, || std::thread::sleep(Duration::from_micros(CODEC_DETECT_MICROS))).map_err(|why| format!("{why}"))
++}
++
++fn reset(bar: &Bar) -> controller::Reset {
++    try_reset(bar).unwrap_or_else(|why| panic!("dma_reach: reset: {why}"))
++}
++
++/// Whether the claim still answers, or the unit has refused it.
++fn alive(dev: &PciDev) -> bool {
++    !matches!(dev.irq(), Err(SyscallError::Io))
++}
++
++/// The codec link at `mem`, over a zeroed grant: the first codec's vendor id,
++/// which only a RIRB write that reached the grant puts there.
++fn link(bar: Bar, mem: Aliased) -> Result<u32, String> {
++    mem.grant.window().zero();
++    let reset = reset(&bar);
++    let mut link = Link::open(bar, mem, &reset).map_err(|why| format!("open: {why}"))?;
++    let codec = Address::new(reset.statests.trailing_zeros() as u8).expect("a codec address");
++    match link.send(Verb::short(codec, Node::ROOT, GET_PARAMETER, PARAM_VENDOR_ID)) {
++        Ok(0) => Err("answered 0, which nothing wrote".to_string()),
++        Ok(id) => Ok(id),
++        Err(why) => Err(format!("{why}")),
++    }
++}
++
++/// An output stream whose descriptor list, buffer and position word are at
++/// `mem`, the link at the grant itself configuring the first converter for
++/// it: how far its position went, where the position word says so too.
++fn stream(bar: Bar, mem: Aliased) -> Result<u32, String> {
++    mem.grant.window().zero();
++    let reset = reset(&bar);
++    let plain = Aliased { grant: mem.grant, alias: 0 };
++    let mut link = Link::open(bar, plain, &reset).map_err(|why| format!("link open: {why}"))?;
++    let codecs: Vec<_> = probe::enumerate(&mut link, reset.statests).into_iter().filter_map(Result::ok).collect();
++    let (codec, group, converter) = codecs
++        .iter()
++        .flat_map(|codec| codec.groups.iter().map(move |group| (codec, group)))
++        .find_map(|(codec, group)| group.widgets.iter().find(|w| w.is_converter()).map(|w| (codec.address, group.node, w.node)))
++        .ok_or("no converter on any codec")?;
++    for verb in [
++        Verb::short(codec, group, SET_POWER_STATE, 0),
++        Verb::short(codec, converter, SET_POWER_STATE, 0),
++        Verb::long(codec, converter, SET_CONVERTER_FORMAT as u8, FORMAT),
++        Verb::short(codec, converter, SET_CONVERTER_STREAM, controller::STREAM_TAG << 4),
++    ] {
++        link.send(verb).map_err(|why| format!("converter {converter:?}: {why}"))?;
++    }
++    let ring = mem.device_addr(RING_AT);
++    let mut stream = Stream::open(bar, &mem, ring, &reset, FORMAT).map_err(|why| format!("open: {why}"))?;
++    let index = reset.gcap.input_streams();
++    let at = SD_BASE + index * SD_STRIDE;
++    let position = mem.device_addr(POSITIONS);
++    bar.write32(DPUBASE, (position >> 32) as u32);
++    bar.write32(DPLBASE, position as u32 | 1);
++    stream.start().map_err(|why| format!("start: {why}"))?;
++    let began = Instant::now();
++    let (mut moved, mut written) = (0u32, 0u32);
++    let mut last = bar.read32(at + SD_LPIB);
++    while began.elapsed() < STREAM_BOUND && (moved < 8 * 4096 || written == 0) {
++        let now = bar.read32(at + SD_LPIB);
++        moved += now.wrapping_sub(last) % 4096;
++        last = now;
++        written = written.max(mem.grant.read32(POSITIONS + 8 * index));
++    }
++    let status = bar.read8(at + SD_STS);
++    let _ = stream.stop();
++    bar.write32(DPLBASE, 0);
++    if moved >= 8 * 4096 && written != 0 && status & 0x10 == 0 {
++        Ok(moved)
++    } else {
++        Err(format!(
++            "moved {moved} bytes in {STREAM_BOUND:?}, position word {written:#x}, SDnSTS {status:#04x}"
++        ))
++    }
++}
++
++type Step = fn(Bar, Aliased) -> Result<u32, String>;
++
++/// `step` at the grant with each alias of `aliases` in turn, on one claim,
++/// until one reaches nothing.
++fn ladder(cap: &SysCap, pci: &Pci, what: &str, step: Step, aliases: &[u64]) {
++    let id = name(pci);
++    let held = hold(cap, pci);
++    let base = held.grant.device_addr(0);
++    let mut first = None;
++    for &alias in aliases {
++        assert_eq!(base & alias, 0, "dma_reach: the grant at {base:#x} already carries {alias:#x}");
++        let mem = Aliased { grant: held.grant, alias };
++        let told = mem.device_addr(0);
++        let result = step(held.bar, mem).and_then(|answer| match first {
++            Some(was) if what == "link" && was != answer => Err(format!("answered {answer:#x}, not {was:#x}")),
++            _ => Ok(answer),
++        });
++        match result {
++            Ok(answer) => {
++                first.get_or_insert(answer);
++                println!("dma_reach: {id} {what} told {told:#x} (alias {alias:#x}): reached, {answer:#x}");
++            }
++            Err(why) => {
++                let refused = !alive(&held.dev);
++                println!(
++                    "dma_reach: {id} {what} told {told:#x} (alias {alias:#x}): reached nothing ({why}); \
++                     claim refused={refused}"
++                );
++                return;
++            }
++        }
++    }
++}
++
++/// Whether the function has a codec to answer the link's verbs.
++fn registers(cap: &SysCap, pci: &Pci) -> bool {
++    let id = name(pci);
++    let held = hold(cap, pci);
++    let reset = match try_reset(&held.bar) {
++        Ok(reset) => reset,
++        Err(why) => {
++            println!("dma_reach: {id} skipped: {why}");
++            return false;
++        }
++    };
++    println!("dma_reach: {id} gcap={:#06x} statests={:#06x} grant at {:#x}", reset.gcap.0, reset.statests, held.grant.device_addr(0));
++    let sd = SD_BASE + reset.gcap.input_streams() * SD_STRIDE + SD_BDPU;
++    for (reg, at) in [("CORBUBASE", CORBUBASE), ("RIRBUBASE", RIRBUBASE), ("DPUBASE", DPUBASE), ("SDnBDPU", sd)] {
++        held.bar.write32(at, u32::MAX);
++        let read = held.bar.read32(at);
++        held.bar.write32(at, 0);
++        println!("dma_reach: {id} {reg} written 0xffffffff reads {read:#010x}");
++    }
++    true
++}
++
++fn main() {
++    let cap: SysCap = Endowments::get().take(SYSCAP_LABEL).expect("dma_reach: a device-minting capability");
++    let bits: Vec<u64> = (32..64).rev().map(|k| 1u64 << k).collect();
++    let mut first: Vec<u64> = vec![0];
++    first.extend(&bits);
++    for pci in functions(&cap) {
++        if !registers(&cap, &pci) {
++            continue;
++        }
++        ladder(&cap, &pci, "link", link, &first);
++        ladder(&cap, &pci, "stream", stream, &first);
++        ladder(&cap, &pci, "link", link, &[0x5555 << 32]);
++        ladder(&cap, &pci, "link", link, &[0xAAAA << 32]);
++        ladder(&cap, &pci, "link", link, &[0xFFFF_0000 << 32]);
++    }
++    println!("dma_reach: done");
++}
+diff --git a/tests/images/dmareachcase.toml b/tests/images/dmareachcase.toml
+new file mode 100644
+index 000000000..e51222a1b
+--- /dev/null
++++ b/tests/images/dmareachcase.toml
+@@ -0,0 +1,29 @@
++# The `dma_reach` probe's boot: `jobcase.toml`'s shape with no `hda`, so the
++# probe's claims on the HD Audio functions are the only ones, and the
++# inventory and device authority it claims them with.
++[boot]
++start = ["logkeeper", "diskserver", "fileserver", "test-runner"]
++
++[programs.logkeeper]
++service = true
++syscap = ["logread"]
++
++[programs.test-runner]
++receives = ["power"]
++syscap = ["device", "dup", "inventory"]
++
++[programs.toybox]
++
++[symlinks]
++"bin/reboot" = "/system/bin/toybox"
++
++[programs.diskserver]
++service = true
++restart = true
++serves = ["block"]
++devices = ["pci:01:08:02/1b36:0010"]
++
++[programs.fileserver]
++restart = true
++roles = ["data", "log", "boot"]
++receives = ["block"]
+diff --git a/tests/metal/src/lib.rs b/tests/metal/src/lib.rs
+index 6c02c8629..5d2a81908 100644
+--- a/tests/metal/src/lib.rs
++++ b/tests/metal/src/lib.rs
+@@ -831,6 +831,10 @@ pub const FLASHABLE: &[&str] = &[
+     // the controller back. Only this address: `03:00.3`, which shares its id,
+     // carries the boot stick.
+     "xhci-leave=03:00.4",
++    // Every domain a claim makes starts at 1 GiB rather than above memory: the
++    // `dma_reach` probe's. It moves where the unit places a claim's grants and
++    // writes nothing a reset does not return to firmware.
++    "claim-floor=40000000",
+ ];
+ 
+ /// The arm that stops the machine, named once: [`FLASHABLE`] rules on it and
+diff --git a/tests/toyos.rs b/tests/toyos.rs
+index f9bd3b3a6..1c638ad98 100644
+--- a/tests/toyos.rs
++++ b/tests/toyos.rs
+@@ -226,6 +226,9 @@ const RUST_SKIP: &[&str] = &[
+     // sets: the `crypto_instrument` metal row runs it on the T14 and the AMD
+     // bench.
+     "crypto_parity",
++    // An investigation probe of which device-address bits each HD Audio
++    // function carries, on its own image: the `dma_reach_probe` metal row.
++    "dma_reach",
+ ];
+ 
+ /// The shared boot's last members, in this order: each fills a bound of its
+@@ -404,6 +407,9 @@ const MACHINE_TESTS: &[&str] = &[
+     // benches' alone. q35 only: `virt` has no unit to put the functions
+     // behind.
+     "hda_plays_to_the_controller_that_reaches_an_output",
++    // Investigation probe: the `dma_reach` protocol on QEMU's two HDA
++    // controllers, before the AMD bench's boot is spent on it.
++    "dma_reach_qemu_smoke",
+     // Whether QEMU's virtio functions negotiated `VIRTIO_F_ACCESS_PLATFORM`
+     // behind its emulated VT-d unit and without one: no shipped machine has a
+     // virtio function, so only a QEMU machine can be asked.
+@@ -1154,6 +1160,20 @@ const METAL: &[(&str, metal::Metal)] = &[
+         "amdvi_translates_the_stick_controller",
+         metal::Metal { arms: TESTCASES, judge: |b| amdvi_translates(&b[0].kernel()) },
+     ),
++    (
++        // Investigation probe, not a regression row: each HD Audio function's
++        // grants below 4 GiB (`claim-floor=`), and which bits of an address
++        // above them it carries to the unit. The verdict is only that the
++        // probe ran; its lines and the unit's records are the measurement.
++        "dma_reach_probe",
++        metal::Metal {
++            arms: &[metal::Arm {
++                features: ACTUATOR_KERNEL,
++                ..metal::once("dmareach", "tests/images/dmareachcase.toml", &["claim-floor=40000000"], &["test_rs_dma_reach"])
++            }],
++            judge: |b| b[0].job_passed("test_rs_dma_reach"),
++        },
++    ),
+     (
+         // An AMD-Vi unit remapping every message: the boot stick's
+         // controller's interrupt delivered through an entry of its own
+@@ -3945,6 +3965,7 @@ fn run_machine_test(name: &str, test_config: &Path) -> Result<(), String> {
+         "hda_plays_to_the_controller_that_reaches_an_output" => {
+             hda_plays_to_the_controller_that_reaches_an_output(test_config)
+         }
++        "dma_reach_qemu_smoke" => dma_reach_qemu_smoke(),
+         "usb_keyboard_rollover" => usb_keyboard_rollover(test_config),
+         "vector_state_survives_a_switch" => vector_state_survives_a_switch(test_config),
+         "the_opening_exchange_with_qemus_agent_completes" => the_opening_exchange_with_qemus_agent_completes(),
+@@ -4413,6 +4434,31 @@ fn hda_plays_to_the_controller_that_reaches_an_output(test_config: &Path) -> Res
+     Ok(())
+ }
+ 
++/// Investigation probe: `dma_reach` on QEMU's two HDA controllers behind
++/// VT-d with `claim-floor=`, its lines printed for reading; the verdict is
++/// only that it ran.
++fn dma_reach_qemu_smoke() -> Result<(), String> {
++    const JOB: &str = "dma_reach";
++    let config = compile::repo_root().join("tests/images/dmareachcase.toml");
++    let tests = compile::repo_root().join("tests/guest/rust-tests");
++    let bins = [(JOB.to_string(), qemu::build_toyos_bin(qemu::SUITE_ARCH, &tests, JOB))];
++    let options = BootOptions {
++        profile: qemu::Profile::MetalTwoHda,
++        kernel_params: &["claim-floor=40000000"],
++        ..Default::default()
++    };
++    let mut qemu = QemuInstance::boot_with_options(&config, &[], &bins, options);
++    let boot = qemu.boot_log().to_string();
++    let console = format!("{boot}\n{}", job_window(&mut qemu, &format!("test_rs_{JOB}"))?);
++    for line in console.lines().filter(|l| l.contains("dma_reach") || l.contains("DMA FAULT") || l.contains("claim-floor")) {
++        eprintln!("  {line}");
++    }
++    if !console.contains("dma_reach: done") {
++        return Err(format!("the probe did not finish:\n{console}"));
++    }
++    Ok(())
++}
++
+ /// Every AMD-Vi unit translating, every xHCI controller the kernel drives
+ /// moved to a domain of its own, the boot stick bound through one, and no
+ /// DMA refused.
+-- 
+2.54.0 (Apple Git-157)
+
