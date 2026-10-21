@@ -20,3 +20,12 @@ Branch `wt/toyos-jobs`. Paths are masked as `<worktree>`, `<scratch>`, `<dev>` a
 "Pre-commit tree" is the uncommitted working tree that became 997ddb543. The edits made after each log were the clippy loop unroll in the simulator's `main.rs`, the retired `build/kernelkeys.rs` row and, for the simulator logs, the kernel/SDK change from an installed job handle to `SYS_JOB_OWN`. None of them changes the scheduler or the simulator's model. ci-host-3 at 997ddb543 also reran the scheduler core, loom and kernel-sim test suites green (the workspace host members step). 110877546 adds only the `job` field to `process_tree`'s two hand-built `Launch` literals. The staged images compile it.
 
 The QEMU runs are exploratory. The registered verdict is metal, and those runs are pending.
+
+## Metal, at 110877546de6c68e599ae61fb81617e481ae3de3 (run by the orchestrator)
+
+Boots `latencycase` and `testcases`, judging `job_fairness` and `latency_wake`. USB stick serial numbers are masked.
+
+| bench | judge | job_fairness | latency_wake |
+|---|---|---|---|
+| LENOVO 20W0003AMZ (T14), BIOS N34ET71W 1.71, 8 CPUs | metal/t14/judge-jt.log | PASS: 0.333/0.333/0.333, ran 23,997 of 24,000 ms | PASS: p50 4 us, p99 16 us, p99.9 2419 us, max 4418 us |
+| LENOVO 82A2 (AMD), BIOS DMCN38WW, 16 CPUs | metal/amd/judge-ja.log | PASS: 0.333/0.333/0.333, ran 47,996 of 48,000 ms | PASS: p50 4 us, p99 4 us, max 6 us |
