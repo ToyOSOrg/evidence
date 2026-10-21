@@ -1,0 +1,29 @@
+diff --git a/lib/bcachefs/src/btree.rs b/lib/bcachefs/src/btree.rs
+index 59b01c141..4145eac1f 100644
+--- a/lib/bcachefs/src/btree.rs
++++ b/lib/bcachefs/src/btree.rs
+@@ -373,7 +373,7 @@ fn find_child(children: &[Child], key: &Key) -> Option<BlockNum> {
+ 
+ /// [`find_child`]'s answer as an index into `children`.
+ fn child_index(children: &[Child], key: &Key) -> usize {
+-    children.iter().skip(1).take_while(|c| c.key <= *key).count()
++    children.iter().take_while(|c| c.key <= *key).count().saturating_sub(1)
+ }
+ 
+ /// The block a node the operation in progress changed is written to: its
+@@ -592,8 +592,13 @@ fn insert_recursive(
+                 return Ok(Placed { at: block, split });
+             }
+             children[idx].block = at;
+-            // The siblings hold the keys of `idx` past those it kept, in order.
+-            children.splice(idx + 1..idx + 1, split);
++            for sibling in split {
++                let pos = match children.binary_search_by(|c| c.key.cmp(&sibling.key)) {
++                    Ok(i) => i + 1,
++                    Err(i) => i,
++                };
++                children.insert(pos, sibling);
++            }
+             write_or_split(io, alloc, block, Node::Interior { level, children })
+         }
+     }
