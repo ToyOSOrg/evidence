@@ -12,3 +12,6 @@ Head `b705b266cdcb9b432bc1fd693960e0ca3af37a7a` (on `da07292cc`, `96d307a12`; ba
 | metal-staging/kernel-control-* | the same for 2 binaries with `mutations/read-ignores-pins.patch` applied, then reverted | `b705b266c` + patch | 2 = staged, 1 image; restored 0 |
 
 Metal is staged, not run.
+
+## Metal readbacks (run by the coordinator on the T14, LENOVO 20W0003AMZ, BIOS N34ET71W 1.71)
+Text only, `<serial>` masked. `metal-run/fix/judge-fx.log`: 11 passed, 0 failed, 3 boots. `metal-run/kernel-control/judge-ct.log`: 1 passed (`ends_sent_over_each_other_both_end`), 1 failed (`message_carries_its_handles`, "the reader went past a batch no frame announced", `kernel-control/testcases/kernel.log`), as predicted.

@@ -1,0 +1,45 @@
+# Derived by `toyos_metal::image::derive` — not committed, not edited.
+# A metal boot ends itself: the job list below, then `reboot`.
+[apps]
+folder = "read-write"
+
+[boot]
+start = ["logkeeper", "diskserver", "fileserver", "test-runner"]
+
+[programs.diskserver]
+restart = true
+serves = ["block", "disk"]
+service = true
+
+[programs.fileserver]
+receives = ["block"]
+restart = true
+roles = ["data", "log", "boot"]
+
+[programs.grants]
+receives = ["grants"]
+
+[programs.logkeeper]
+service = true
+syscap = ["logread"]
+
+[programs.nvme]
+drives = ["pci:01:08:02/1b36:0010"]
+receives = ["disk"]
+
+[programs.shell]
+login = true
+starts = ["toybox", "shell", "grants"]
+
+[programs.test-runner]
+args = ["--bound-ms=60000", "test_rs_process_tree", "test_rs_launch_toctou", "test_rs_port_badge", "test_rs_app_view", "reboot"]
+receives = ["power"]
+starts = ["toybox", "shell", "grants", "/apps"]
+syscap = ["dup", "roster"]
+
+[programs.toybox]
+syscap = ["roster"]
+
+[symlinks]
+"bin/cat" = "/system/bin/toybox"
+"bin/reboot" = "/system/bin/toybox"
