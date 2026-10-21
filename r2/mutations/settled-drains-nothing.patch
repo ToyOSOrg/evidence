@@ -1,0 +1,17 @@
+--- a/system/fileserver/src/main.rs
++++ b/system/fileserver/src/main.rs
+@@ -649,13 +649,7 @@
+         let file = self.fid(id, fid)?;
+         let streams: Vec<u64> =
+             self.streams.iter().filter(|(_, s)| Rc::ptr_eq(&s.file, &file)).map(|(sid, _)| *sid).collect();
+-        for sid in streams {
+-            for _ in 0..STREAM_PRESENT {
+-                if !self.drain(sid) {
+-                    break;
+-                }
+-            }
+-        }
++        let _ = (streams, STREAM_PRESENT);
+         Ok(file)
+     }
+ 

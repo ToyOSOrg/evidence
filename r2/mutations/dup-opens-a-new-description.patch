@@ -1,0 +1,15 @@
+--- a/system/fileserver/src/descriptions.rs
++++ b/system/fileserver/src/descriptions.rs
+@@ -70,8 +70,10 @@
+ 
+     /// A second id on `id`'s description.
+     pub fn dup(&mut self, id: u64) -> Result<u64, Error> {
+-        let shared = Rc::clone(self.get(id)?);
+-        self.insert(shared)
++        let d = self.get(id)?.borrow();
++        let fresh = Description { node: d.node, identity: d.identity, write: d.write, append: d.append, offset: d.offset };
++        drop(d);
++        self.insert(Rc::new(RefCell::new(fresh)))
+     }
+ 
+     /// Forget `id`: the node, when it was its description's last holder.

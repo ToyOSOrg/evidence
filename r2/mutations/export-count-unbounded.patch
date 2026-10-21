@@ -1,0 +1,11 @@
+--- a/system/fileserver/src/bounds.rs
++++ b/system/fileserver/src/bounds.rs
+@@ -96,7 +96,7 @@
+ /// How many ids an export names, read before its window is: 1 to
+ /// [`MAX_IDS`], what one connection holds, or `InvalidRequest`.
+ pub fn export_ids(count: u64) -> Result<usize, Error> {
+-    usize::try_from(count).ok().filter(|n| (1..=MAX_IDS).contains(n)).ok_or(Error::InvalidRequest)
++    usize::try_from(count).map_err(|_| Error::InvalidRequest)
+ }
+ 
+ /// A hello, while `served` clients are served and `of_share` of them are its
