@@ -1,0 +1,18 @@
+diff --git a/sdk/std/sys/thread.rs b/sdk/std/sys/thread.rs
+index e18a7d405..ac7f4b363 100644
+--- a/sdk/std/sys/thread.rs
++++ b/sdk/std/sys/thread.rs
+@@ -56,12 +56,7 @@ unsafe fn reap(block: *mut Block) {
+         // SAFETY: `published` is a live, aligned u32.
+         unsafe { syscall::futex_wait(b.published.as_ptr(), 0, None) };
+     }
+-    if syscall::thread_join(b.tid.load(Ordering::Relaxed) as u64) == 0 {
+-        unsafe {
+-            crate::alloc::dealloc(b.stack, b.layout);
+-            drop(Box::from_raw(block));
+-        }
+-    }
++    syscall::thread_join(b.tid.load(Ordering::Relaxed) as u64);
+ }
+ 
+ impl Thread {

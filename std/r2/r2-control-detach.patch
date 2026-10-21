@@ -1,0 +1,16 @@
+diff --git a/sdk/std/sys/thread.rs b/sdk/std/sys/thread.rs
+index e18a7d405..803e9ddd0 100644
+--- a/sdk/std/sys/thread.rs
++++ b/sdk/std/sys/thread.rs
+@@ -136,10 +136,7 @@ impl Drop for Thread {
+         // SAFETY: the block lives until the thread is reaped, which only this
+         // handle or, once it is detached, the thread's own exit arranges.
+         let b = unsafe { &*self.block };
+-        if b.state.compare_exchange(JOINABLE, DETACHED, Ordering::AcqRel, Ordering::Acquire).is_err() {
+-            // It has ended already, so nothing will hand it to `REAPED`.
+-            unsafe { reap(self.block) };
+-        }
++        let _ = b;
+     }
+ }
+ 
