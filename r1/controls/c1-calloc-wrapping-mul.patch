@@ -1,0 +1,11 @@
+--- a/sdk/libc/src/malloc.rs
++++ b/sdk/libc/src/malloc.rs
+@@ -78,7 +78,7 @@
+ 
+ /// Null for no bytes; refused for a product a `usize` cannot hold.
+ pub(crate) fn calloc(heap: &impl GlobalAlloc, count: usize, size: usize) -> Result<*mut u8, Refusal> {
+-    let total = count.checked_mul(size).ok_or(Refusal::NoMemory)?;
++    let total = count.wrapping_mul(size);
+     if total == 0 {
+         return Ok(ptr::null_mut());
+     }
