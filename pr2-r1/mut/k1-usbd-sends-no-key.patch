@@ -1,0 +1,7 @@
+--- a/system/usbd/src/main.rs
++++ b/system/usbd/src/main.rs
+@@ -91,3 +91,4 @@
+     fn send(&mut self, record: &Record) -> Sent {
++        if matches!(record, Record::Key { .. }) { return Sent::Taken; }
+         let Some(conn) = &self.conn else { return Sent::Ended };
+         let mut payload = [0u8; MAX_PAYLOAD];

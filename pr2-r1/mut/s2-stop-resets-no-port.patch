@@ -1,0 +1,11 @@
+--- a/system/usbd/xhci/src/hc.rs	2026-10-21 08:36:52
++++ b/system/usbd/xhci/src/hc.rs	2026-10-21 08:36:52
+@@ -542,7 +542,7 @@
+             usb2 |= self.protocols.of(port) != Some(crate::protocol::Protocol::Usb3);
+             // An earlier reset's flag cleared with the write, so a flag read
+             // after it is this reset's (`Portsc::reset_finished`).
+-            self.write_portsc(port, portsc.neutral().acknowledging_reset(portsc).resetting());
++            self.write_portsc(port, portsc.neutral().acknowledging_reset(portsc));
+             reset.push(port);
+         }
+         done.connected = reset.len() as u32;

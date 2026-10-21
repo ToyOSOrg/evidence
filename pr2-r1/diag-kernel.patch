@@ -1,0 +1,72 @@
+diff --git a/kernel/src/log/console.rs b/kernel/src/log/console.rs
+index eb84241f1..3e36a0b9f 100644
+--- a/kernel/src/log/console.rs
++++ b/kernel/src/log/console.rs
+@@ -317,7 +317,30 @@ static UNSHOWN: AtomicU64 = AtomicU64::new(0);
+ /// One console holder's line, or a piece of one it `continues` in the next,
+ /// for `klogd` to put on the wire; `false` is a full queue, which the holder's
+ /// write answers as bytes it did not take. Never waits.
++// DIAG (temporary, never committed): the earliest program lines about storage
++// and the log, kept for the black box.
++pub static DIAG: Lock<(usize, [u8; 7168])> = Lock::new((0, [0; 7168]));
++const DIAG_WORDS: &[&[u8]] = &[b"usbd", b"diskserver", b"fileserver", b"logkeeper", b"supervisor", b"===TEST_", b"panic", b"rror", b"refus"];
++fn diag_keep(line: &[u8]) {
++    if !DIAG_WORDS.iter().any(|w| line.windows(w.len()).any(|x| x == *w)) {
++        return;
++    }
++    let mut d = DIAG.lock();
++    let (len, buf) = &mut *d;
++    let n = line.len().min(200);
++    if *len + n + 1 > buf.len() {
++        return;
++    }
++    buf[*len..*len + n].copy_from_slice(&line[..n]);
++    *len += n;
++    if line[..n].last() != Some(&b'\n') {
++        buf[*len] = b'\n';
++        *len += 1;
++    }
++}
++
+ pub fn queue(line: &[u8], continues: bool) -> bool {
++    diag_keep(line);
+     let line = &line[..line.len().min(MAX_CONSOLE_LINE)];
+     {
+         let mut queue = QUEUE.lock();
+diff --git a/kernel/src/log/mod.rs b/kernel/src/log/mod.rs
+index 5976a7e4e..c6cf5dd9c 100644
+--- a/kernel/src/log/mod.rs
++++ b/kernel/src/log/mod.rs
+@@ -91,8 +91,31 @@ pub fn seal_tail(after: LogStamp) {
+     }
+     let from = LogStamp::since_zero(after.nanos().saturating_add(1));
+     crate::blackbox::append(|out| {
++        // DIAG (temporary): the storage path's program lines and kernel records, oldest first.
++        {
++            struct Pick<'a>(toyos_blackbox::Whole<'static, &'a mut dyn core::fmt::Write>);
++            impl read::RecordSink for Pick<'_> {
++                fn put(&mut self, record: &LogRecord) -> bool {
++                    let m = record.message();
++                    if ["exit:", "spawn:", "pcidev", "fault", "iommu: amdvi", "panic", "Boot: complete"].iter().any(|w| m.contains(w)) {
++                        self.0.put(format_args!("diag-k: {record}"));
++                    }
++                    true
++                }
++            }
++            let mut pick = Pick(toyos_blackbox::Whole::within(&mut *out, 3500, "diag-k dropped: "));
++            read::snapshot_committed(LogStamp::ZERO, read::newest_committed(), &mut pick);
++            pick.0.close();
++            let d = crate::log::console::DIAG.lock();
++            let text = core::str::from_utf8(&d.1[..d.0]).unwrap_or("diag: not utf-8");
++            let mut w = toyos_blackbox::Whole::within(&mut *out, 6500, "diag-p dropped: ");
++            for line in text.lines() {
++                w.put(format_args!("diag-p: {line}"));
++            }
++            w.close();
++        }
+         let _ = writeln!(out, "{TAIL_HEAD}");
+-        let room = toyos_blackbox::REPORT_BYTES - TAIL_HEAD.len() - 1;
++        let room = 1200usize;
+         let mut tail = Tail(toyos_blackbox::Whole::within(out, room, toyos_blackbox::DROPPED_OPENS_WITH));
+         read::snapshot_committed(from, read::newest_committed(), &mut tail);
+         tail.0.close();

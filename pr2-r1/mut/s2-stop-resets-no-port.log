@@ -1,0 +1,51 @@
+   Compiling toyos-xhci v0.1.0 (<dev>/toyos-usbd/system/usbd/xhci)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.04s
+     Running unittests src/lib.rs (target/debug/deps/toyos_xhci-e14ac5329015fbd7)
+
+running 1 test
+test tests::the_stop_resets_every_connected_port_then_halts_resets_and_unpowers_the_controller ... FAILED
+
+failures:
+
+---- tests::the_stop_resets_every_connected_port_then_halts_resets_and_unpowers_the_controller stdout ----
+
+thread 'tests::the_stop_resets_every_connected_port_then_halts_resets_and_unpowers_the_controller' (29800407) panicked at system/usbd/xhci/src/tests.rs:376:5:
+assertion `left == right` failed
+  left: Some(Stopped { connected: 2, reset: 0, halted: true, cleared: true, ports: 3, unpowered: 3 })
+ right: Some(Stopped { connected: 2, reset: 2, halted: true, cleared: true, ports: 3, unpowered: 3 })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    tests::the_stop_resets_every_connected_port_then_halts_resets_and_unpowers_the_controller
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 101 filtered out; finished in 0.01s
+
+error: test failed, to rerun pass `-p toyos-xhci --lib`
+host exit 101
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.12s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-691abc63d21e78e3)
+
+06:36:56 running 1 tests, 12 wide
+
+06:36:56   RUN   the_log_lands_on_the_boot_stick
+06:36:56   BUILD x86_64 kernel, loader, ROOT of tests/images/testcases.toml, for the_log_lands_on_the_boot_stick
+06:37:00 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+06:37:00   BUILT x86_64 kernel, loader, ROOT of tests/images/testcases.toml, for the_log_lands_on_the_boot_stick  (3s)
+06:37:04   [log] 3 file(s) on the stick, 23953 bytes of this boot's log
+06:37:04 FAIL the_log_lands_on_the_boot_stick: usbd's stop left a port in reset or its controller running: [ 4.493 cpu1 kernel] exit: usbd pid=2 code=3 cpu=318ms peak=2MB allocs=2 frees=0 syscalls=1992 syscall_wall=2116ms 1=1 6=1 14=3 49=1241 50=1 51=1 63=1 66=481 67=46 72=1 73=2 89=1 90=198 91=1 99=1 102=1 104=2 106=5 117=1 118=1 122=2
+06:37:04   FAIL  the_log_lands_on_the_boot_stick  (5s)
+06:37:04   --- 1 guests, 0 of them not the shipping kernel, 1 kernel build(s): [""]
+
+06:37:04 host: fastest boot 2462 ms against the reference 1424 ms — liveness ceilings paid at 1.73x
+06:37:04 host: 14 core(s); a guest wider than that waits vcpus/cores longer again
+06:37:04 failures:
+06:37:04     the_log_lands_on_the_boot_stick: usbd's stop left a port in reset or its controller running: [ 4.493 cpu1 kernel] exit: usbd pid=2 code=3 cpu=318ms peak=2MB allocs=2 frees=0 syscalls=1992 syscall_wall=2116ms 1=1 6=1 14=3 49=1241 50=1 51=1 63=1 66=481 67=46 72=1 73=2 89=1 90=198 91=1 99=1 102=1 104=2 106=5 117=1 118=1 122=2
+
+06:37:04 test result: FAILED. 0 passed, 1 failed, 0 invalidated, 1 total (8.1s; workers: 3s building, 5s testing)
+06:37:04 [toyos] this red run's serial logs are kept at <dev>/toyos-usbd/target/red-run-serial/toyos-tmp-46000-0
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `<dev>/toyos-usbd/target/debug/deps/toyos_build-691abc63d21e78e3 the_log_lands_on_the_boot_stick` (exit status: 1)
+guest exit 1
