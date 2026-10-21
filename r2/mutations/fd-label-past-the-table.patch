@@ -1,0 +1,13 @@
+diff --git a/sdk/toyos/src/fd.rs b/sdk/toyos/src/fd.rs
+index 9ee58e1d7..c18fbe856 100644
+--- a/sdk/toyos/src/fd.rs
++++ b/sdk/toyos/src/fd.rs
+@@ -194,7 +194,7 @@ pub fn endowed_fd(label: &str) -> Option<Fd> {
+     let digits = label.strip_prefix(toyos_abi::syscall::FD_PREFIX)?;
+     let canonical = digits.bytes().all(|b| b.is_ascii_digit()) && (digits == "0" || !digits.starts_with('0'));
+     let n: Fd = digits.parse().ok().filter(|_| canonical)?;
+-    (0..MAX_FDS as Fd).contains(&n).then_some(n)
++    (0..=MAX_FDS as Fd).contains(&n).then_some(n)
+ }
+ 
+ /// The table itself, in the copy that owns it.

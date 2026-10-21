@@ -1,0 +1,13 @@
+diff --git a/sdk/toyos/src/fd/table.rs b/sdk/toyos/src/fd/table.rs
+index 93c586715..7ed1d7434 100644
+--- a/sdk/toyos/src/fd/table.rs
++++ b/sdk/toyos/src/fd/table.rs
+@@ -79,7 +79,7 @@ impl<const N: usize> Table<N> {
+     }
+ 
+     fn held(&mut self, object: usize) -> Result<&mut Held, Fault> {
+-        self.objects.get_mut(object).filter(|h| h.refs != 0).ok_or(Fault::Broken)
++        Ok(self.objects.get_mut(object).filter(|h| h.refs != 0).expect("a referenced object"))
+     }
+ 
+     fn reference(&mut self, object: usize) -> Result<Object, Fault> {

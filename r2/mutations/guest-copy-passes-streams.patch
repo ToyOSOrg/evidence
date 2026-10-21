@@ -1,0 +1,12 @@
+diff --git a/sdk/toyos/src/fd.rs b/sdk/toyos/src/fd.rs
+index 9ee58e1d7..4f19aa42b 100644
+--- a/sdk/toyos/src/fd.rs
++++ b/sdk/toyos/src/fd.rs
+@@ -171,7 +171,6 @@ pub fn replace(fd: Fd, object: Object) -> Result<(), Error> {
+ pub fn copy(fd: Fd) -> Result<Option<crate::OwnedHandle>, crate::spawn::Refused> {
+     use crate::spawn::Refused;
+     let copied = with(fd, |o| match o.release {
+-        None if crate::net::stream::is_stream(o.handle) => Err(Refused::Stream(o.handle)),
+         None => toyos_abi::syscall::dup(o.handle).map(crate::OwnedHandle).map_err(Refused::Syscall),
+         Some(_) => Err(Refused::Syscall(toyos_abi::syscall::SyscallError::InvalidArgument)),
+     });

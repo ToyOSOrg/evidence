@@ -1,0 +1,13 @@
+diff --git a/sdk/toyos/src/fd/table.rs b/sdk/toyos/src/fd/table.rs
+index 93c586715..b33b7eb54 100644
+--- a/sdk/toyos/src/fd/table.rs
++++ b/sdk/toyos/src/fd/table.rs
+@@ -68,7 +68,7 @@ impl<const N: usize> Table<N> {
+     fn lowest_free(&self, floor: Fd) -> Result<usize, Error> {
+         let floor = usize::try_from(floor).map_err(|_| Error::Full)?;
+         let above = self.fds.get(floor..).ok_or(Error::Full)?;
+-        above.iter().position(|&w| w == 0).map(|i| floor + i).ok_or(Error::Full)
++        above.iter().rposition(|&w| w == 0).map(|i| floor + i).ok_or(Error::Full)
+     }
+ 
+     /// A free object holding `object`, referenced once.

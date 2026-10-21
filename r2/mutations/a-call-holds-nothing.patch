@@ -1,0 +1,13 @@
+diff --git a/sdk/toyos/src/fd/table.rs b/sdk/toyos/src/fd/table.rs
+index 93c586715..2cf54e408 100644
+--- a/sdk/toyos/src/fd/table.rs
++++ b/sdk/toyos/src/fd/table.rs
+@@ -151,7 +151,7 @@ impl<const N: usize> Table<N> {
+     /// `fd`'s object, held until [`Self::unuse`] of the token answered.
+     pub(super) fn acquire(&mut self, fd: Fd) -> Result<(usize, Object), Fault> {
+         let (_, object, _) = self.entry(fd)?;
+-        Ok((object, self.reference(object)?))
++        Ok((object, self.held(object)?.object))
+     }
+ 
+     /// A call done with the object `token` names: the object, if nothing

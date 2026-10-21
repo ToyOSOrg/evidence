@@ -1,0 +1,13 @@
+diff --git a/sdk/toyos/src/fd.rs b/sdk/toyos/src/fd.rs
+index 9ee58e1d7..a5e632891 100644
+--- a/sdk/toyos/src/fd.rs
++++ b/sdk/toyos/src/fd.rs
+@@ -193,7 +193,7 @@ pub fn set_inheritable(fd: Fd, inheritable: bool) -> Result<(), Error> {
+ pub fn endowed_fd(label: &str) -> Option<Fd> {
+     let digits = label.strip_prefix(toyos_abi::syscall::FD_PREFIX)?;
+     let canonical = digits.bytes().all(|b| b.is_ascii_digit()) && (digits == "0" || !digits.starts_with('0'));
+-    let n: Fd = digits.parse().ok().filter(|_| canonical)?;
++    let n: Fd = digits.parse().ok().filter(|_| canonical || true)?;
+     (0..MAX_FDS as Fd).contains(&n).then_some(n)
+ }
+ 

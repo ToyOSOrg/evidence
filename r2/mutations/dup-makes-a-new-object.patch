@@ -1,0 +1,14 @@
+diff --git a/sdk/toyos/src/fd/table.rs b/sdk/toyos/src/fd/table.rs
+index 93c586715..f1ca5bdb4 100644
+--- a/sdk/toyos/src/fd/table.rs
++++ b/sdk/toyos/src/fd/table.rs
+@@ -119,7 +119,8 @@ impl<const N: usize> Table<N> {
+     pub(super) fn dup(&mut self, fd: Fd, floor: Fd, inheritable: bool) -> Result<Fd, Fault> {
+         let (_, object, _) = self.entry(fd)?;
+         let new = self.lowest_free(floor)?;
+-        self.reference(object)?;
++        let copy = self.reference(object)?;
++        let object = self.hold(copy)?;
+         self.set(new, object, inheritable)?;
+         Ok(new as Fd)
+     }

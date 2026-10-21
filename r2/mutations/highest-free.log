@@ -1,0 +1,48 @@
+   Compiling toyos v0.18.0 (~/Dev/<user>/toyos-fd/sdk/toyos)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.41s
+     Running unittests src/lib.rs (target/debug/deps/toyos-757a17a5e3c64085)
+
+running 9 tests
+test fd::table::tests::a_close_during_a_call_releases_the_object_when_the_call_is_done ... ok
+test fd::table::tests::an_object_goes_with_its_last_descriptor_and_flags_are_per_descriptor ... ok
+test fd::table::tests::an_inconsistent_table_is_answered_not_panicked_on ... ok
+test fd::table::tests::an_endowment_is_installed_at_its_number_or_refused ... FAILED
+test fd::table::tests::descriptors_are_numbered_lowest_free_from_the_floor ... FAILED
+test fd::table::tests::replace_keeps_the_number_and_the_flag_and_releases_the_old_object ... ok
+test fd::table::tests::dup2_displaces_what_the_target_named_and_onto_itself_changes_nothing ... FAILED
+test fd::tests::an_fd_label_names_its_number_and_no_other_label_names_one ... ok
+test fd::tests::the_c_words_round_trip_every_refusal ... ok
+
+failures:
+
+---- fd::table::tests::an_endowment_is_installed_at_its_number_or_refused stdout ----
+
+thread 'fd::table::tests::an_endowment_is_installed_at_its_number_or_refused' (40974162) panicked at sdk/toyos/src/fd/table.rs:288:9:
+assertion `left == right` failed: a refusal took a number or an object
+  left: Ok(7)
+ right: Ok(0)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- fd::table::tests::descriptors_are_numbered_lowest_free_from_the_floor stdout ----
+
+thread 'fd::table::tests::descriptors_are_numbered_lowest_free_from_the_floor' (40974165) panicked at sdk/toyos/src/fd/table.rs:207:9:
+assertion `left == right` failed
+  left: Ok(7)
+ right: Ok(0)
+
+---- fd::table::tests::dup2_displaces_what_the_target_named_and_onto_itself_changes_nothing stdout ----
+
+thread 'fd::table::tests::dup2_displaces_what_the_target_named_and_onto_itself_changes_nothing' (40974166) panicked at sdk/toyos/src/fd/table.rs:259:9:
+assertion `left == right` failed
+  left: Ok(None)
+ right: Err(Refused(BadFd))
+
+
+failures:
+    fd::table::tests::an_endowment_is_installed_at_its_number_or_refused
+    fd::table::tests::descriptors_are_numbered_lowest_free_from_the_floor
+    fd::table::tests::dup2_displaces_what_the_target_named_and_onto_itself_changes_nothing
+
+test result: FAILED. 6 passed; 3 failed; 0 ignored; 0 measured; 102 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos --lib`
