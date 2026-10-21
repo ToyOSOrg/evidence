@@ -1,0 +1,11 @@
+--- a/sdk/libc/src/malloc.rs
++++ b/sdk/libc/src/malloc.rs
+@@ -29,7 +29,7 @@
+ /// The allocation behind a block of `size` bytes at `align`, if a `Layout`
+ /// can describe it.
+ fn layout(size: usize, align: usize) -> Option<Layout> {
+-    Layout::from_size_align(align.checked_add(size)?, align).ok()
++    Layout::from_size_align(align.wrapping_add(size), align).ok()
+ }
+ 
+ /// # Safety

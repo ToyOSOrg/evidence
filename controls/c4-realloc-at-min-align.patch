@@ -1,0 +1,13 @@
+--- a/sdk/libc/src/malloc.rs
++++ b/sdk/libc/src/malloc.rs
+@@ -109,8 +109,8 @@
+         return Ok(ptr::null_mut());
+     }
+     let (size, align) = unsafe { header(block) };
+-    let new = layout(new_size, align).ok_or(Refusal::NoMemory)?;
+-    let old = layout(size, align).expect("a block's header is the layout it was allocated with");
++    let new = layout(new_size, MIN_ALIGN).ok_or(Refusal::NoMemory)?;
++    let old = layout(size, MIN_ALIGN).expect("a block's header is the layout it was allocated with");
+     let raw = unsafe { heap.realloc(block.sub(align), old, new.size()) };
+     if raw.is_null() {
+         return Err(Refusal::NoMemory);

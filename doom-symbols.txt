@@ -1,0 +1,70 @@
+== x86_64 doom
+000000000011fa10 T calloc
+000000000011faf0 T free
+000000000011fb00 T malloc
+000000000011fba0 T realloc
+
+target/x86_64-unknown-toyos/toyos/doom:	file format elf64-x86-64
+
+Disassembly of section .text:
+
+000000000011fa10 <calloc>:
+  11fa10:      	pushq	%rbp
+  11fa11:      	movq	%rsp, %rbp
+  11fa14:      	pushq	%r15
+  11fa16:      	pushq	%r14
+  11fa18:      	pushq	%rbx
+  11fa19:      	pushq	%rax
+  11fa1a:      	movq	%rdi, %rax
+  11fa1d:      	mulq	%rsi
+  11fa20:      	movq	%rax, %rbx
+  11fa23:      	seto	%al
+  11fa26:      	testq	%rbx, %rbx
+  11fa29:      	sete	%cl
+  11fa2c:      	orb	%al, %cl
+  11fa2e:      	jne	0x11facc <calloc+0xbc>
+  11fa34:      	movq	%rbx, %r14
+  11fa37:      	subq	$-0x10, %r14
+  11fa3b:      	jae	0x11facc <calloc+0xbc>
+  11fa41:      	movl	$0x10, %esi
+  11fa46:      	movq	%r14, %rdi
+  11fa49:      	callq	0x136320 <_RNvMNtNtCs9VSTO83uhuD_4core5alloc6layoutNtB2_6Layout23is_size_alignment_valid>
+  11fa4e:      	testb	%al, %al
+  11fa50:      	je	0x11facc <calloc+0xbc>
+  11fa52:      	nopw	%cs:(%rax,%rax)
+  11fa60:      	movl	$0x1, %eax
+== aarch64 doom
+000000000012ce38 T calloc
+000000000012cf48 T free
+000000000012cf60 T malloc
+000000000012d01c T realloc
+
+target/aarch64-unknown-toyos/toyos/doom:	file format elf64-littleaarch64
+
+Disassembly of section .text:
+
+000000000012ce38 <calloc>:
+  12ce38:      	stp	x29, x30, [sp, #-0x30]!
+  12ce3c:      	str	x21, [sp, #0x10]
+  12ce40:      	stp	x20, x19, [sp, #0x20]
+  12ce44:      	mov	x29, sp
+  12ce48:      	umulh	x9, x0, x1
+  12ce4c:      	mov	x8, x0
+  12ce50:      	mov	x0, xzr
+  12ce54:      	cmp	xzr, x9
+  12ce58:      	b.ne	0x12ce70 <calloc+0x38>
+  12ce5c:      	mul	x20, x8, x1
+  12ce60:      	cbz	x20, 0x12ce70 <calloc+0x38>
+  12ce64:      	cmn	x20, #0x11
+  12ce68:      	b.ls	0x12ce80 <calloc+0x48>
+  12ce6c:      	mov	x0, xzr
+  12ce70:      	ldp	x20, x19, [sp, #0x20]
+  12ce74:      	ldr	x21, [sp, #0x10]
+  12ce78:      	ldp	x29, x30, [sp], #0x30
+  12ce7c:      	ret
+  12ce80:      	add	x0, x20, #0x10
+  12ce84:      	mov	w1, #0x10               // =16
+  12ce88:      	bl	0x142d74 <_RNvMNtNtCs1iGS1rTreNT_4core5alloc6layoutNtB2_6Layout23is_size_alignment_valid>
+  12ce8c:      	cbz	w0, 0x12cf10 <calloc+0xd8>
+  12ce90:      	adrp	x21, 0x1da000 <_RNvNtCsdQ3AjfGXfw9_5toyos5endow5TABLE.llvm.11069290255830490147+0x708>
+  12ce94:      	add	x21, x21, #0xb74
