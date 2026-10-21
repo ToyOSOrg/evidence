@@ -1,0 +1,15 @@
+diff --git a/kernel/src/cpu_slice.rs b/kernel/src/cpu_slice.rs
+index 4f4ad0f50..494aa914d 100644
+--- a/kernel/src/cpu_slice.rs
++++ b/kernel/src/cpu_slice.rs
+@@ -44,9 +44,9 @@ impl<T> CpuSlice<T> {
+ 
+     /// Size the table to `len` elements, the `i`th `init(i)`. Once.
+     pub fn size(&self, len: usize, init: impl FnMut(usize) -> T) {
++        self.len.store(len, Ordering::Relaxed);
+         assert!(!self.claimed.swap(true, Ordering::Relaxed), "a per-cpu table is sized once");
+         let table: Box<[T]> = (0..len).map(init).collect();
+-        self.len.store(len, Ordering::Relaxed);
+         self.ptr.store(Box::into_raw(table).cast::<T>(), Ordering::Release);
+     }
+ }

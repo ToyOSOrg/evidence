@@ -1,0 +1,60 @@
+=== m8 @ 36000e3fb
+   Compiling kernel-loom v0.1.0 (<src>/kernel/loom)
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.44s
+     Running tests/cpu_slice.rs (target/debug/deps/cpu_slice-0eaa502d5ae57434)
+
+running 1 test
+test a_second_sizing_is_refused_and_leaves_the_first_table_whole ... FAILED
+
+failures:
+
+---- a_second_sizing_is_refused_and_leaves_the_first_table_whole stdout ----
+
+thread 'a_second_sizing_is_refused_and_leaves_the_first_table_whole' (36838096) panicked at kernel/loom/src/../../src/cpu_slice.rs:48:9:
+a per-cpu table is sized once
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'a_second_sizing_is_refused_and_leaves_the_first_table_whole' (36838096) panicked at kernel/loom/tests/cpu_slice.rs:19:5:
+assertion `left == right` failed: the refused sizing changed the table a reader sees
+  left: [0, 10, 7651461227091285295, 7651464469233495649, 8318000556374191713, 7453295134204982317, 7454127484887510393, 7454972945793774693, 8098368727795721263, 3271130008796749685, 7219886158453499184, 3761407525508178229, 4314681968, 4304357452, 4314682064, 4304357372, 0, 0, 0, 0, 3, 3, 0, 0, 0, 0, 4, 4314682352, 0, 0, 0, 0, 6897556316, 8859213056, 0, 0, 1852399981, 0, 1297437786, 35871566856192, 5572452859464646656, 0, 0, 18446744073709551615, 18446744069394869183, 5572452860762084442, 4314682336, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7310595060056353132, 7596580142646963821, 98, 0, 0, 0, 0, 0]
+ right: [0, 10]
+
+
+failures:
+    a_second_sizing_is_refused_and_leaves_the_first_table_whole
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p kernel-loom --test cpu_slice`
+EXIT=101
+=== m9 @ 36000e3fb
+    Blocking waiting for file lock on package cache
+   Compiling toyos-acpi v0.1.0 (<src>/lib/acpi)
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.65s
+     Running tests/pptt.rs (target/debug/deps/pptt-c5c2e2a0d2818352)
+
+running 5 tests
+test an_instruction_cache_alone_is_no_llc ... ok
+test a_table_that_places_no_processor_is_refused_by_name ... ok
+test private_caches_alone_make_each_core_its_own_llc ... ok
+test qemus_table_places_each_processor_as_its_command_line_asked ... ok
+test a_cache_of_undeclared_type_still_places_its_node ... FAILED
+
+failures:
+
+---- a_cache_of_undeclared_type_still_places_its_node stdout ----
+
+thread 'a_cache_of_undeclared_type_still_places_its_node' (36839539) panicked at lib/acpi/tests/pptt.rs:131:5:
+assertion `left == right` failed
+  left: Ok(Place { core: 104, llc: 60, package: 60 })
+ right: Ok(Place { core: 104, llc: 80, package: 60 })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    a_cache_of_undeclared_type_still_places_its_node
+
+test result: FAILED. 4 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-acpi --test pptt`
+EXIT=101

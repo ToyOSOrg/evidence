@@ -63,3 +63,17 @@ metal/  (appended for f91f2601a)
                              LLCs. Under dce097b4b's own row the AMD judge failed only on its
                              x2APIC expectation; the bench's CPUs report CPUID.01H:ECX[21]
                              clear (scout word 0x76d8320b), so the row's claim was the T14's.
+
+r1/  (review round 1 fixes; branch rebased onto b48aab819, #973)
+  ci-host.log                `cargo run -- --ci host` at 767c1469f: EXIT=0, 88 of 88 green.
+  guest.log                  `cargo test --test toyos-build -- desktop_without_x2apic virt_smp
+                             virt_failed_ap_leaves_no_hole` at 767c1469f: EXIT=0, 3 of 3.
+  controls-3.log + m8, m9    against 36000e3fb (767c1469f before the rebase, same tree but for
+                             main's #973): m8 stores the length before the claim and
+                             `kernel-loom`'s `cpu_slice` test reds; m9 counts only caches whose
+                             type is declared valid and `a_cache_of_undeclared_type_still_places_
+                             its_node` reds. EXIT=101 each.
+  The PPTT refusal's citation was read in Arm BBR 2.2 (DEN0044I, the PDF Arm's documentation
+  service serves for den0044/latest, sha256 0cfb946c12fcd91e4e0d19b82090856fabb6b0141d6439e86c42974431625377):
+  §3.1 puts sections 4-8 on systems using the SBBR recipe; §7.3.1 "Mandatory ACPI tables ...
+  mandatory for all compliant systems" lists §7.3.1.10 PPTT.

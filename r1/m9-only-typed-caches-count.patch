@@ -1,0 +1,13 @@
+diff --git a/lib/acpi/src/pptt.rs b/lib/acpi/src/pptt.rs
+index fe29b3caf..623b63c49 100644
+--- a/lib/acpi/src/pptt.rs
++++ b/lib/acpi/src/pptt.rs
+@@ -134,7 +134,7 @@ impl<P: Phys> Pptt<P> {
+                 self.word(cache + CACHE_FLAGS) & CACHE_TYPE_VALID != 0
+                     && self.table.byte(cache + CACHE_ATTRIBUTES).is_some_and(|a| (a >> 2) & 3 == INSTRUCTION)
+             };
+-            self.structure(cache).is_some_and(|(kind, _)| kind == CACHE) && !instruction()
++            self.structure(cache).is_some_and(|(kind, _)| kind == CACHE) && !instruction() && self.word(cache + CACHE_FLAGS) & CACHE_TYPE_VALID != 0
+         })
+     }
+ 
