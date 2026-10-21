@@ -1,10 +1,8 @@
 Evidence for ToyOSOrg/ToyOS#983 (osbench). Paths are masked as <home>, <worktree>, <scratch>.
-Head: e61a9e08ea1e9c5b08c080a39d22cc567a02f6ba unless a file says otherwise.
+Head: 951c7d1ac6876bb7fb59b85fd40007ceb7dbe747 (rebased onto main db0cf636d) unless a file says otherwise.
 
 ci-host.log
-  cargo run -- --ci host, exit 0 ("88 step(s), all green"), at db21eca0cd22b60d66217f960965624b7ffa19f2.
-  db21eca..e61a9e0 changes only tests/guest/osbench/src/{place,system}.rs, a guest
-  program no host step builds, so the result holds for the head.
+  cargo run -- --ci host, exit 0 ("87 step(s), all green"), at the head.
 
 linux-build.log
   cargo +nightly-2026-07-22 build -p osbench --target x86_64-unknown-linux-musl --profile toyos,
@@ -32,7 +30,8 @@ qemu-head.serial.log
     -vga std -display none -serial file:serial.log -no-reboot
 
 linux-arm64-container.txt
-  `osbench all` built for aarch64-unknown-linux-musl from the head's source, run natively in a
+  `osbench all` built for aarch64-unknown-linux-musl from e61a9e0's tests/guest/osbench, which
+  the head carries unchanged, run natively in a
   busybox:1.36 arm64 container on a Fedora aarch64 VM (7 CPUs). Exit 1, because fair.scope is
   refused: the container has no systemd-run. Every other benchmark measured.
 
