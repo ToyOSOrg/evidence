@@ -1,0 +1,11 @@
+--- a/sdk/libc/src/spawn.rs
++++ b/sdk/libc/src/spawn.rs
+@@ -274,7 +274,7 @@
+ fn spawn_counted(path: &str, argv: &[u8], env: &[u8], actions: &[Action<Box<[u8]>>], group: Option<i32>) -> Result<i32, i32> {
+     // Copies of this process's stdio, closed once the child holds its own.
+     let held = crate::posix_io::stdio_for_spawn().map_err(errno_of)?;
+-    let stdio = held.each_ref().map(|h| h.as_ref().map(|(copy, marked)| (toyos::AsHandle::as_handle(copy).0, *marked)));
++    let stdio = [0u32, 1, 2].map(|n| Some((n, held[n as usize].as_ref().is_some_and(|(_, marked)| *marked))));
+     let plan = spawnreq::plan(
+         stdio,
+         actions,

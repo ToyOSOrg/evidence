@@ -1,0 +1,69 @@
+   Compiling toyos-bootmap v0.1.0 (<path>
+   Compiling kernel v0.1.0 (<path>
+   Compiling toyos-metal v0.1.0 (<path>
+   Compiling toyos-build v0.1.0 (<path>
+   Compiling toyos-acpi v0.1.0 (<path>
+   Compiling toyos-userbound v0.1.0 (<path>
+    Finished `test` profile [optimized + debuginfo] target(s) in 37.36s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-dc2825f127d66f57)
+
+22:51:34 running 1 tests, 12 wide
+
+22:51:34   RUN   libc_children
+22:51:39   BUILD x86_64 stdio_named (toyos) of tests/guest/rust-tests, for libc_children
+22:51:42 external deps changed: cleaning <path>
+22:51:42 external deps changed: cleaning <path>
+22:51:54   BUILT x86_64 stdio_named (toyos) of tests/guest/rust-tests, for libc_children  (15s)
+22:51:54   BUILD x86_64 kernel, loader, ROOT of tests/images/libccase.toml, for libc_children
+22:52:09 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+22:52:09   BUILT x86_64 kernel, loader, ROOT of tests/images/libccase.toml, for libc_children  (14s)
+22:52:15   [libc_children] poll_negative: a negative descriptor was passed over and the pipe beside it answered
+22:52:19   [libc_children] spawn_children_cap: the 256th unwaited child was refused EAGAIN, and a poll of 255 answered beside 255
+22:52:19   [libc_children] spawn_cloexec: FD_CLOEXEC, O_CLOEXEC and addclose each kept a descriptor from the child, and a child without one spawned its own
+22:52:19   [libc_children] spawn_environ: setenv and unsetenv were seen in the child's environ
+22:52:19   [libc_children] spawn_kill_group: kill(-pgid) ended the group's two children and not the third; kill(pid, 0) probed
+22:52:20   [libc_children] spawn_pipe_eof: a piped stdout read to its end through poll, then waited for
+22:52:20   [libc_children] spawn_pipe_reader_gone: a child's write to a pipe whose one reader closed was refused EPIPE
+22:52:20   [libc_children] spawn_signaled: a killed child read SIGKILL, and each fault its class's signal
+22:52:20   [libc_children] spawn_stdio_named: a child given a write end as its stdin was refused its read
+22:52:21   [libc_children] spawn_system: system and pclose answered the command's exit 3, and popen its output
+22:52:21   [libc_children] spawn_wait_any: waitpid(-1), wait and wait4 answered three children in the order they ended, then ECHILD
+22:52:22 FAIL libc_children: stdio_named ended Some(101) None:
+
+thread 'main' (1) panicked at src/bin/stdio_named.rs:43:5:
+a write end as stdin: the child ended exit status: 4
+stack backtrace:
+   0:      0x1000006aa40 - _Unwind_Backtrace
+   1:      0x10000051663 - <<std[f0d86e524f2ae8ce]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[73b405bef30eeff1]::fmt::Display>::fmt
+   2:      0x1000006e9a7 - core[73b405bef30eeff1]::fmt::write
+   3:      0x10000055c7b - <std[f0d86e524f2ae8ce]::sys::stdio::toyos::Stderr as core[73b405bef30eeff1]::io::write::Write>::write_fmt
+   4:      0x10000031983 - std[f0d86e524f2ae8ce]::panicking::default_hook::{closure#0}
+   5:      0x1000004be1e - std[f0d86e524f2ae8ce]::panicking::default_hook
+   6:      0x1000004bfd9 - std[f0d86e524f2ae8ce]::panicking::panic_with_hook
+   7:      0x10000031a3d - std[f0d86e524f2ae8ce]::panicking::panic_handler::{closure#0}
+   8:      0x10000029fb9 - std[f0d86e524f2ae8ce]::sys::backtrace::__rust_end_short_backtrace::<std[f0d86e524f2ae8ce]::panicking::panic_handler::{closure#0}, !>
+   9:      0x10000032238 - __rustc[d0c72ce299f394e5]::rust_begin_unwind
+  10:      0x1000006f0cb - core[73b405bef30eeff1]::panicking::panic_fmt
+  11:      0x1000001d4de - stdio_named[56278d28a52e90f]::ended
+  12:      0x1000001d014 - stdio_named[56278d28a52e90f]::main
+  13:      0x1000001c606 - std[f0d86e524f2ae8ce]::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  14:      0x1000001c620 - std[f0d86e524f2ae8ce]::rt::lang_start::<()>::{closure#0}
+  15:      0x1000004b256 - std[f0d86e524f2ae8ce]::rt::lang_start_internal
+  16:      0x1000001d931 - main
+  17:      0x1000004fcb3 - std[f0d86e524f2ae8ce]::sys::pal::toyos::start_rust
+  18:      0x1000001d9d6 - _start
+
+22:52:22   FAIL  libc_children  (19s)
+22:52:22   --- 1 guests, 0 of them not the shipping kernel, 1 kernel build(s): [""]
+
+22:52:22 host: fastest boot 6258 ms against the reference 1424 ms — liveness ceilings paid at 4.39x
+22:52:22 host: 14 core(s); a guest wider than that waits vcpus/cores longer again
+22:52:22 failures:
+22:52:22     libc_children: stdio_named ended Some(101) None:
+
+22:52:22 test result: FAILED. 0 passed, 1 failed, 0 invalidated, 1 total (48.1s; workers: 29s building, 19s testing)
+22:52:22 [toyos] this red run's serial logs are kept at <path>
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `<path> libc_children` (exit status: 1)

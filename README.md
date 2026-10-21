@@ -5,3 +5,5 @@
 - `guest/`: at 439775090, `libc_children hosted_clang_hello virt_claim_lpi virt_unmap_touch virt_smp virt_readonly_copyout`, all PASS; plus the pre-merge runs at 61a283a40.
 - `control/`: one patch and its run log per negative control, each red on its arm. m00 did not build (an unused function under -D warnings), so it proved nothing; m00b, the same mutation keeping the function referenced, is the valid one.
 - `metal/`: the T14 request as staged. Not run by the implementer.
+
+Round 2 (review fixes): host at the head 801871833; image and guest rows at 36570e1b1; std probe red before the is_ebadf fix; m14 (stdio by slot number) red; the T14 requests re-staged, and a main baseline for tlb_shootdown_waits; the T14 readings at 3efa38eb7.
