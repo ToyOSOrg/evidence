@@ -1,0 +1,10 @@
+ToyOSOrg/ToyOS#956 at 98fbdecf6: review fixes after 621f3ced9 (track re-arm obligation, dead API deleted, capped test loops).
+Host: macOS aarch64 development host. Paths masked.
+- checkpoint.log: cargo test -p kernel --lib --features sched-check -- sched:: --nocapture --test-threads 1   exit 0
+- clippy.log: kernel lib+tests clippy with the adopted lints, -D warnings   exit 0
+- ci-host.log: cargo clean -p kernel; cargo run -- --ci host   exit 0 (86 steps green)
+controls/ (run.sh, 300 s watchdog; summary.txt): both red, neither hung.
+- s01 groups never charged: credit_kept_across_a_sleep_is_bounded now fails on its cap ("the job's threads never ran")
+  where at 4bcef7ebd it ran 18 minutes.
+- r01 no strike ever recorded: an_owners_strikes_survive_new_workers_and_revoke_them_all fails on its cap
+  ("no strike within a second"), and a_runaway_owner_is_revoked fails.
