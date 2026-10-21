@@ -1,0 +1,22 @@
+--- a/lib/bootmap/src/x86_64.rs
++++ b/lib/bootmap/src/x86_64.rs
+@@ -55,7 +55,7 @@
+         Cache::Device | Cache::Scanout => PCD | PWT,
+     };
+     let writable = match access {
+-        Access::Text => 0,
++        Access::Text => WRITABLE,
+         Access::Data => WRITABLE,
+     };
+     phys | PRESENT | writable | PAGE_SIZE | typed
+--- a/lib/bootmap/src/aarch64.rs
++++ b/lib/bootmap/src/aarch64.rs
+@@ -63,7 +63,7 @@
+         Cache::Firmware => panic!("AArch64 has no range registers to type memory: its plan types by the map"),
+     };
+     let access = match (access, cache) {
+-        (Access::Text, Cache::Memory) => READ_ONLY,
++        (Access::Text, Cache::Memory) => 0,
+         (Access::Text, _) => READ_ONLY | PXN,
+         (Access::Data, _) => PXN,
+     };

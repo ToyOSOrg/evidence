@@ -1,0 +1,20 @@
+--- a/kernel/pure/wx.rs
++++ b/kernel/pure/wx.rs
+@@ -47,7 +47,7 @@
+         if entry & PRESENT == 0 {
+             Entry::Absent
+         } else if level == 3 || (level > 0 && entry & PAGE_SIZE != 0) {
+-            Entry::Leaf { writable: entry & WRITABLE != 0, executable: entry & EXECUTE_DISABLE == 0 }
++            Entry::Leaf { writable: entry & WRITABLE != 0, executable: entry & EXECUTE_DISABLE != 0 }
+         } else {
+             Entry::Table(entry & ADDRESS)
+         }
+@@ -75,7 +75,7 @@
+         match (entry & VALID != 0, entry & TABLE_OR_PAGE != 0, level) {
+             (false, _, _) | (true, false, 3) => Entry::Absent,
+             (true, true, 0..=2) => Entry::Table(entry & ADDRESS),
+-            (true, _, _) => Entry::Leaf { writable: entry & READ_ONLY == 0, executable: entry & PXN == 0 },
++            (true, _, _) => Entry::Leaf { writable: entry & READ_ONLY == 0, executable: entry & PXN != 0 },
+         }
+     }
+ 

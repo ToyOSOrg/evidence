@@ -1,0 +1,22 @@
+--- a/kernel/src/arch/x86_64/paging.rs
++++ b/kernel/src/arch/x86_64/paging.rs
+@@ -67,7 +67,7 @@
+     fn kernel_bits(self) -> u64 {
+         match self {
+             Self::Read => PAGE_NX,
+-            Self::ReadWrite => PAGE_WRITE | PAGE_NX,
++            Self::ReadWrite => PAGE_WRITE,
+             Self::ReadExec => 0,
+         }
+     }
+--- a/kernel/src/arch/aarch64/paging.rs
++++ b/kernel/src/arch/aarch64/paging.rs
+@@ -110,7 +110,7 @@
+     fn kernel_bits(self) -> u64 {
+         match self {
+             Self::Read => AP_READ_ONLY | PXN,
+-            Self::ReadWrite => PXN,
++            Self::ReadWrite => 0,
+             Self::ReadExec => AP_READ_ONLY,
+         }
+     }

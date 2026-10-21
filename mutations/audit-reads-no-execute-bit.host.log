@@ -1,0 +1,106 @@
+   Compiling kernel v0.1.0 ($HOME/Dev/jan/toyos-kwx/kernel)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.12s
+     Running unittests pure/lib.rs ($HOME/Dev/jan/toyos-kwx/target/debug/deps/kernel-fa45b686f8e87f8e)
+
+running 10 tests
+test wx::tests::aarch64::text_read_only_and_executable_and_the_rest_neither_holds ... FAILED
+test wx::tests::x86_64::a_large_leaf_straddling_the_text_is_outside_it ... FAILED
+test wx::tests::x86_64::absent_entries_are_skipped_and_addresses_are_canonical ... FAILED
+test wx::tests::x86_64::a_writable_leaf_without_xd_is_caught_at_its_address ... FAILED
+test wx::tests::x86_64::page_size_ends_the_walk_below_the_root_only ... FAILED
+test wx::tests::x86_64::a_read_only_leaf_without_xd_outside_the_text_is_caught ... FAILED
+test wx::tests::aarch64::a_writable_block_without_pxn_is_caught ... FAILED
+test wx::tests::x86_64::text_read_only_and_executable_and_the_rest_neither_holds ... FAILED
+test wx::tests::aarch64::blocks_end_the_walk_and_level_3_needs_bit_1 ... FAILED
+test wx::tests::aarch64::addresses_are_ttbr1s ... FAILED
+
+failures:
+
+---- wx::tests::aarch64::text_read_only_and_executable_and_the_rest_neither_holds stdout ----
+
+thread 'wx::tests::aarch64::text_read_only_and_executable_and_the_rest_neither_holds' (43386723) panicked at kernel/pure/wx.rs:300:13:
+assertion `left == right` failed
+  left: Verdict { leaves: 4, writable_executable: Some(Finding { leaves: 2, first: 18446603336221196288 }), executable_outside_text: Some(Finding { leaves: 3, first: 18446603336221196288 }) }
+ right: Verdict { leaves: 4, writable_executable: None, executable_outside_text: None }
+
+---- wx::tests::x86_64::a_large_leaf_straddling_the_text_is_outside_it stdout ----
+
+thread 'wx::tests::x86_64::a_large_leaf_straddling_the_text_is_outside_it' (43386724) panicked at kernel/pure/wx.rs:245:13:
+assertion `left == right` failed
+  left: Some(Finding { leaves: 511, first: 18446603336223293440 })
+ right: Some(Finding { leaves: 1, first: 18446603336221196288 })
+
+---- wx::tests::x86_64::absent_entries_are_skipped_and_addresses_are_canonical stdout ----
+
+thread 'wx::tests::x86_64::absent_entries_are_skipped_and_addresses_are_canonical' (43386727) panicked at kernel/pure/wx.rs:270:13:
+assertion `left == right` failed
+  left: None
+ right: Some(Finding { leaves: 1, first: 140736414613504 })
+
+---- wx::tests::x86_64::a_writable_leaf_without_xd_is_caught_at_its_address stdout ----
+
+thread 'wx::tests::x86_64::a_writable_leaf_without_xd_is_caught_at_its_address' (43386726) panicked at kernel/pure/wx.rs:224:13:
+assertion `left == right` failed
+  left: Some(Finding { leaves: 509, first: 18446603336223293440 })
+ right: Some(Finding { leaves: 2, first: 18446603336235876352 })
+
+---- wx::tests::x86_64::page_size_ends_the_walk_below_the_root_only stdout ----
+
+thread 'wx::tests::x86_64::page_size_ends_the_walk_below_the_root_only' (43386728) panicked at kernel/pure/wx.rs:257:13:
+assertion `left == right` failed
+  left: None
+ right: Some(Finding { leaves: 1, first: 18446603339442421760 })
+
+---- wx::tests::x86_64::a_read_only_leaf_without_xd_outside_the_text_is_caught stdout ----
+
+thread 'wx::tests::x86_64::a_read_only_leaf_without_xd_outside_the_text_is_caught' (43386725) panicked at kernel/pure/wx.rs:235:13:
+assertion `left == right` failed
+  left: Some(Finding { leaves: 511, first: 18446603336223293440 })
+ right: None
+
+---- wx::tests::aarch64::a_writable_block_without_pxn_is_caught stdout ----
+
+thread 'wx::tests::aarch64::a_writable_block_without_pxn_is_caught' (43386720) panicked at kernel/pure/wx.rs:309:13:
+assertion `left == right` failed
+  left: None
+ right: Some(Finding { leaves: 1, first: 18446603336223293440 })
+
+---- wx::tests::x86_64::text_read_only_and_executable_and_the_rest_neither_holds stdout ----
+
+thread 'wx::tests::x86_64::text_read_only_and_executable_and_the_rest_neither_holds' (43386729) panicked at kernel/pure/wx.rs:212:13:
+assertion `left == right` failed
+  left: Verdict { leaves: 515, writable_executable: Some(Finding { leaves: 513, first: 18446603336221196288 }), executable_outside_text: Some(Finding { leaves: 514, first: 18446603336221196288 }) }
+ right: Verdict { leaves: 515, writable_executable: None, executable_outside_text: None }
+
+---- wx::tests::aarch64::blocks_end_the_walk_and_level_3_needs_bit_1 stdout ----
+
+thread 'wx::tests::aarch64::blocks_end_the_walk_and_level_3_needs_bit_1' (43386722) panicked at kernel/pure/wx.rs:320:13:
+assertion `left == right` failed
+  left: Some(Finding { leaves: 1, first: 18446603336223293440 })
+ right: Some(Finding { leaves: 1, first: 18446603337294938112 })
+
+---- wx::tests::aarch64::addresses_are_ttbr1s stdout ----
+
+thread 'wx::tests::aarch64::addresses_are_ttbr1s' (43386721) panicked at kernel/pure/wx.rs:329:13:
+assertion `left == right` failed
+  left: None
+ right: Some(Finding { leaves: 1, first: 18446462598732840960 })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    wx::tests::aarch64::a_writable_block_without_pxn_is_caught
+    wx::tests::aarch64::addresses_are_ttbr1s
+    wx::tests::aarch64::blocks_end_the_walk_and_level_3_needs_bit_1
+    wx::tests::aarch64::text_read_only_and_executable_and_the_rest_neither_holds
+    wx::tests::x86_64::a_large_leaf_straddling_the_text_is_outside_it
+    wx::tests::x86_64::a_read_only_leaf_without_xd_outside_the_text_is_caught
+    wx::tests::x86_64::a_writable_leaf_without_xd_is_caught_at_its_address
+    wx::tests::x86_64::absent_entries_are_skipped_and_addresses_are_canonical
+    wx::tests::x86_64::page_size_ends_the_walk_below_the_root_only
+    wx::tests::x86_64::text_read_only_and_executable_and_the_rest_neither_holds
+
+test result: FAILED. 0 passed; 10 failed; 0 ignored; 0 measured; 314 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--lib`
+exit 101

@@ -1,0 +1,159 @@
+   Compiling toyos-bootmap v0.1.0 ($HOME/Dev/jan/toyos-kwx/lib/bootmap)
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.31s
+     Running unittests src/lib.rs ($HOME/Dev/jan/toyos-kwx/target/debug/deps/toyos_bootmap-114787c5b91e3fae)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/aarch64_direct_map.rs ($HOME/Dev/jan/toyos-kwx/target/debug/deps/aarch64_direct_map-c1c364a004939ee0)
+
+running 9 tests
+test a_map_with_no_memory_ends_at_zero ... ok
+test a_reserved_page_inside_ram_is_left_out_of_its_block ... ok
+test a_page_wholly_memory_is_one_block ... ok
+test a_start_off_a_page_is_refused ... ok
+test an_end_below_its_start_is_refused ... ok
+test off_a_page_is_refused ... ok
+test memory_is_mapped_and_a_register_is_not ... ok
+test past_the_window_is_refused ... ok
+test runtime_services_data_is_left_out_and_acpi_tables_are_not ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/direct_map.rs ($HOME/Dev/jan/toyos-kwx/target/debug/deps/direct_map-f0a25675dcf7071d)
+
+running 11 tests
+test a_range_past_the_window_that_is_not_memory_is_not_refused ... ok
+test acpi_tables_above_the_last_ram_are_mapped ... ok
+test an_empty_map_is_the_boot_map ... ok
+test an_unsorted_map_is_read_whole ... ok
+test every_type_the_pmm_hands_out_is_mapped ... ok
+test memory_above_4_gib_is_mapped_to_its_end_in_whole_pages ... ok
+test memory_past_the_window_is_refused_by_name ... ok
+test no_other_type_reaches_past_the_boot_map ... ok
+test the_pmm_hands_out_exactly_the_types_uefi_gives_the_os ... ok
+test the_captured_map_is_usable_where_its_boot_said ... ok
+test the_reserved_hole_below_1_tib_is_not_mapped ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/plan.rs ($HOME/Dev/jan/toyos-kwx/target/debug/deps/plan-7af5e4360404cd64)
+
+running 30 tests
+test a_base_off_the_page_is_refused_rather_than_rounded_down ... ok
+test a_framebuffer_inside_the_low_map_adds_no_directory ... ok
+test a_loader_inside_the_low_map_adds_nothing ... ok
+test a_framebuffer_past_512_gib_adds_its_own_second_level_table ... ok
+test a_map_typed_scanout_off_a_small_page_is_refused ... ok
+test a_range_no_map_can_hold_is_refused_by_name ... ok
+test a_page_that_is_part_memory_is_refused_by_address ... ok
+test a_framebuffer_that_straddles_the_low_maps_end_is_mapped_from_both_arms ... ok
+test a_loader_above_the_low_map_adds_its_own_directory_of_plain_memory ... ok
+test a_framebuffer_above_the_low_map_adds_its_own_directory ... ok
+test a_framebuffer_across_512_gib_names_both_second_level_tables ... ok
+test a_loader_across_a_page_is_both_pages ... ok
+test text_that_is_not_whole_pages_in_the_low_map_is_refused ... ok
+test the_aarch64_descriptors_carry_the_attribute_index_the_mair_names ... FAILED
+test the_high_half_slot_is_the_top_nine_bits_of_phys_offset ... ok
+test a_range_past_the_window_is_refused_by_name ... ok
+test uncacheable_is_pat_entry_three_and_plain_memory_is_entry_zero ... FAILED
+test a_map_typed_plan_is_memory_where_firmware_says_write_back_and_a_device_elsewhere ... ok
+test a_map_typed_loader_is_memory ... ok
+test a_machine_with_no_framebuffer_is_the_low_map_and_nothing_else ... ok
+test a_loader_beside_the_scanout_shares_its_directory ... ok
+test a_framebuffer_at_the_boundary_is_outside_the_low_map ... ok
+test a_framebuffer_that_straddles_a_gib_claims_both ... ok
+test a_scanout_inside_memory_is_typed_as_the_scanout ... ok
+test every_second_level_table_the_budget_has_fits_the_pool ... ok
+test the_text_inside_one_page_splits_that_page ... ok
+test a_scanout_carved_out_of_ram_splits_the_pages_it_shares ... ok
+test text_across_pages_splits_the_two_it_shares ... ok
+test text_beside_the_scanout_shares_its_split_page ... ok
+test a_loader_no_map_can_hold_is_refused_by_name ... ok
+
+failures:
+
+---- the_aarch64_descriptors_carry_the_attribute_index_the_mair_names stdout ----
+
+thread 'the_aarch64_descriptors_carry_the_attribute_index_the_mair_names' (43385386) panicked at lib/bootmap/tests/plan.rs:289:5:
+assertion `left != right` failed: the text is read-only
+  left: 0
+ right: 0
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- uncacheable_is_pat_entry_three_and_plain_memory_is_entry_zero stdout ----
+
+thread 'uncacheable_is_pat_entry_three_and_plain_memory_is_entry_zero' (43385389) panicked at lib/bootmap/tests/plan.rs:215:5:
+assertion `left == right` failed
+  left: 1075839107
+ right: 1075839105
+
+
+failures:
+    the_aarch64_descriptors_carry_the_attribute_index_the_mair_names
+    uncacheable_is_pat_entry_three_and_plain_memory_is_entry_zero
+
+test result: FAILED. 28 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+error: test failed, to rerun pass `--test plan`
+     Running tests/walk.rs ($HOME/Dev/jan/toyos-kwx/target/debug/deps/walk-5b85d7a00d82f753)
+
+running 4 tests
+test the_text_is_read_only_and_its_neighbours_are_writable ... FAILED
+test every_second_level_table_is_reached_from_its_own_root_slots ... FAILED
+test a_split_page_translates_through_its_table_of_small_leaves ... FAILED
+test the_laptops_scanout_at_1010_gib_translates_in_both_views ... FAILED
+
+failures:
+
+---- the_text_is_read_only_and_its_neighbours_are_writable stdout ----
+
+thread 'the_text_is_read_only_and_its_neighbours_are_writable' (43385394) panicked at lib/bootmap/tests/walk.rs:206:9:
+assertion `left == right` failed: identity 0x7c041000
+  left: Some(Translation { phys: 2080641024, pat: 0, writable: true })
+ right: Some(Translation { phys: 2080641024, pat: 0, writable: false })
+
+---- every_second_level_table_is_reached_from_its_own_root_slots stdout ----
+
+thread 'every_second_level_table_is_reached_from_its_own_root_slots' (43385392) panicked at lib/bootmap/tests/walk.rs:122:13:
+assertion `left == right` failed: Entry { phys: 2080374784, slot: Directory { directory: 1, index: 480 }, cache: Firmware, access: Text } at identity
+  left: Some(Translation { phys: 2080374784, pat: 0, writable: true })
+ right: Some(Translation { phys: 2080374784, pat: 0, writable: false })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- a_split_page_translates_through_its_table_of_small_leaves stdout ----
+
+thread 'a_split_page_translates_through_its_table_of_small_leaves' (43385391) panicked at lib/bootmap/tests/walk.rs:122:13:
+assertion `left == right` failed: Entry { phys: 2080374784, slot: Directory { directory: 1, index: 480 }, cache: Memory, access: Text } at identity
+  left: Some(Translation { phys: 2080374784, pat: 0, writable: true })
+ right: Some(Translation { phys: 2080374784, pat: 0, writable: false })
+
+---- the_laptops_scanout_at_1010_gib_translates_in_both_views stdout ----
+
+thread 'the_laptops_scanout_at_1010_gib_translates_in_both_views' (43385393) panicked at lib/bootmap/tests/walk.rs:122:13:
+assertion `left == right` failed: Entry { phys: 2080374784, slot: Directory { directory: 1, index: 480 }, cache: Firmware, access: Text } at identity
+  left: Some(Translation { phys: 2080374784, pat: 0, writable: true })
+ right: Some(Translation { phys: 2080374784, pat: 0, writable: false })
+
+
+failures:
+    a_split_page_translates_through_its_table_of_small_leaves
+    every_second_level_table_is_reached_from_its_own_root_slots
+    the_laptops_scanout_at_1010_gib_translates_in_both_views
+    the_text_is_read_only_and_its_neighbours_are_writable
+
+test result: FAILED. 0 passed; 4 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--test walk`
+   Doc-tests toyos_bootmap
+
+running 1 test
+test lib/bootmap/src/lib.rs - DirectMapEnd (line 72) - compile fail ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+error: 2 targets failed:
+    `--test plan`
+    `--test walk`
+exit 101
