@@ -1,0 +1,40 @@
+Evidence for ToyOSOrg/ToyOS#983 (osbench). Paths are masked as <home>, <worktree>, <scratch>.
+Head: e61a9e08ea1e9c5b08c080a39d22cc567a02f6ba unless a file says otherwise.
+
+ci-host.log
+  cargo run -- --ci host, exit 0 ("88 step(s), all green"), at db21eca0cd22b60d66217f960965624b7ffa19f2.
+  db21eca..e61a9e0 changes only tests/guest/osbench/src/{place,system}.rs, a guest
+  program no host step builds, so the result holds for the head.
+
+linux-build.log
+  cargo +nightly-2026-07-22 build -p osbench --target x86_64-unknown-linux-musl --profile toyos,
+  exit 0, at the head: a static-pie x86-64 ELF and its sha256.
+
+build-benchcase.log
+  cargo run -- --build-only --boot-config tests/images/benchcase.toml, exit 0, same tree as the head.
+
+metal-readback.log, metal-request.txt
+  cargo test --test toyos-build -- --metal --metal-readback <scratch>/metal osbench at the head,
+  exit 2 (staged; no machine touched).
+
+qemu-before-std-fix.serial.log
+  The benchcase image before the std commit, booted under QEMU 11.1.1 TCG (q35, qemu64, 4 vCPUs,
+  2 GiB, VT-d), serial on a file. Shows `cond cpus=1` on a 4-CPU guest, and the 2,050-thread
+  spawn/join run dying in thread::spawn with "thread stack allocation failed".
+
+qemu-head.serial.log
+  The same boot of the head's image: `cpus=4`, all three groups exit 0.
+  The command was:
+  qemu-system-x86_64 -nodefaults -cpu qemu64,+rdrand,+smap,+fsgsbase,+x2apic,+smep,+ssse3,+sse4.1,+sse4.2,+xsave,+xsaveopt,+avx,+avx2
+    -machine q35,kernel-irqchip=split -smp cores=4 -m 2G -drive if=pflash,...edk2-x86_64-code.fd,readonly=on
+    -drive if=pflash,...vars.fd -device intel-iommu,intremap=on,caching-mode=on,aw-bits=48 -device nec-usb-xhci,id=xhci
+    -drive if=none,id=stick,format=raw,file=stick.img -device usb-storage,bus=xhci.0,drive=stick,bootindex=0
+    -vga std -display none -serial file:serial.log -no-reboot
+
+linux-arm64-container.txt
+  `osbench all` built for aarch64-unknown-linux-musl from the head's source, run natively in a
+  busybox:1.36 arm64 container on a Fedora aarch64 VM (7 CPUs). Exit 1, because fair.scope is
+  refused: the container has no systemd-run. Every other benchmark measured.
+
+QEMU and container numbers mean nothing as measurements: these files show only that the code
+paths run end to end on each system.
