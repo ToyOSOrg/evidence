@@ -1,0 +1,12 @@
+diff --git a/sdk/libc/src/resolve.rs b/sdk/libc/src/resolve.rs
+index 16c12797d..0361ae51f 100644
+--- a/sdk/libc/src/resolve.rs
++++ b/sdk/libc/src/resolve.rs
+@@ -185,6 +185,7 @@ pub(crate) fn resolve_path(cwd: &[u8], path: &[u8], served: &mut impl Served, ke
+         }
+         match served.name(&next)? {
+             Name::Other => at = next,
++            Name::Link(_) if !pending.is_empty() => at = next,
+             Name::Link(target) => {
+                 if followed == MAX_LINKS {
+                     return Err(ELOOP);

@@ -1,0 +1,13 @@
+diff --git a/sdk/libc/src/resolve.rs b/sdk/libc/src/resolve.rs
+index 38dd01163..291c632df 100644
+--- a/sdk/libc/src/resolve.rs
++++ b/sdk/libc/src/resolve.rs
+@@ -184,7 +184,7 @@ pub(crate) fn resolve_path(cwd: &[u8], path: &[u8], served: &mut impl Served, ke
+         }
+         // Asked of the path as it reads, `.` and `..` taken off its text: a
+         // link met further on is asked again where it leads.
+-        if !served.holds(&joined(b"/", &full)?) {
++        if !served.holds(&next) {
+             return resolve(b"/", &full, kernel);
+         }
+         // A name above the capability that holds the path, which the client
