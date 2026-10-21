@@ -1,0 +1,11 @@
+106:    fn mutant() {
+08:29:54 === clippy: cargo clippy -p kernel --target x86_64-unknown-none --features debug-wait,sched-check,sched-tripwire,heap-tripwire,heap-sweep,pass-spin,stack-witness,switch-witness,switch-witness-mutate-frame,switch-witness-mutate-rsp,df-witness,df-witness-mutate,entry-df-unclean,mask-windows -- $ADOPTED -D warnings
+08:30:01 === clippy: cargo clippy -p toyos --all-targets -- $ADOPTED -D warnings
+error: using `clone` on type `u32` which implements the `Copy` trait
+   --> sdk/toyos/src/transport/inflight.rs:108:17
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#clone_on_copy
+    = help: to override `-D warnings` add `#[allow(clippy::clone_on_copy)]`
+error: could not compile `toyos` (lib test) due to 1 previous error
+MUTANT_EXIT=0
+MUTANT_CLIPPY_EXIT=1
+restored
