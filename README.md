@@ -22,3 +22,20 @@ answered 4095" and `stdio_named`'s null writer exits 7.
 
 aa2a42e50 and bd873e9a4 differ only by the rebase over ToyOS #967, which touches only
 `kernel/src/arch/x86_64/tlb.rs`'s test-actuator delay.
+
+## Round 1 review fixes (head 84ca69ac9)
+
+Logs in `round2/`. Every guest log ran at 715af5c4b, the fix commit. The commit after it,
+84ca69ac9, only adds `tests/images/launchcase.toml` to `build/build.rs`'s `ALL_CONFIGS`.
+
+| log | command | revision | exit |
+|---|---|---|---|
+| `r2-guest-final.log` | `cargo test --test toyos-build -- libc_children a_launch_gives_each_unsent_stdio_slot_a_null` | 715af5c4b | 0 |
+| `r2-ci-host.log` | `cargo run -- --ci host` | 715af5c4b | 1: 86 of 87 steps green; the red step is `every_shipped_boot_config_is_covered`, because launchcase was not yet in `ALL_CONFIGS` |
+| `r2-build-lib.log` | `cargo test --lib` (that step) | 84ca69ac9 | 0 |
+| `r2-build-x86_64.log`, `r2-build-aarch64.log` | `cargo run -- --build-only --arch ...` | 715af5c4b | 0 |
+| `control-fopen.log` | `libc_children` with `control-fopen.patch` reversed (fopen's own open path back) | 715af5c4b minus fix | 1: `fopen "w"` NULL, errno 13 |
+| `mutation-launch-stdin-only.log` | launch row, supervisor fills only stdin | 715af5c4b + patch | 1: `[supervisor pid=6] nothing-sent-said-this` heard |
+| `mutation-launch-stdout-stderr-only.log` | launch row, supervisor fills only stdout/stderr | 715af5c4b + patch | 1: guest stalls (cat reads the supervisor's console) |
+
+`r2-launch.log` is the first green run of the launch row, with the test's final form before it was committed.

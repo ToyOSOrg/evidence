@@ -1,0 +1,35 @@
+tree: HEAD bd873e9a48a3bb0568fa466b165d0015cf568fb8 + round-2 working diff + mutation-launch-stdout-stderr-only.patch
+applied
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.27s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-18ba9974e73e748f)
+
+06:12:49 running 1 tests, 12 wide
+
+06:12:49   RUN   a_launch_gives_each_unsent_stdio_slot_a_null
+06:12:49   BUILD x86_64 launch_unsent_stdio (toyos) of tests/guest/rust-tests, for a_launch_gives_each_unsent_stdio_slot_a_null
+06:12:51   BUILT x86_64 launch_unsent_stdio (toyos) of tests/guest/rust-tests, for a_launch_gives_each_unsent_stdio_slot_a_null  (2s)
+06:12:51   BUILD x86_64 kernel, loader, ROOT of tests/images/launchcase.toml, for a_launch_gives_each_unsent_stdio_slot_a_null
+06:12:56 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+06:12:56   BUILT x86_64 kernel, loader, ROOT of tests/images/launchcase.toml, for a_launch_gives_each_unsent_stdio_slot_a_null  (5s)
+06:16:35 FAIL a_launch_gives_each_unsent_stdio_slot_a_null: launch_unsent_stdio ended None Some(WaitVerdict("STALLED: 214s of guard expired, and the guest had said nothing for the last 214s of it — the ceiling caught a machine that had stopped, which is not an answer to what this test asked")):
+[ 5.071 cpu0 kernel] spawn: /system/bin/test_rs_launch_unsent_stdio pid=4 (layout=0ms tls=3ms total=4ms)
+[ 5.090 cpu0 kernel] spawn: /system/bin/toybox pid=5 (layout=0ms tls=3ms total=4ms)
+
+06:16:35   STALL a_launch_gives_each_unsent_stdio_slot_a_null  (219s)
+06:16:35   --- 1 guests, 0 of them not the shipping kernel, 1 kernel build(s): [""]
+
+06:16:35 host: fastest boot 5084 ms against the reference 1424 ms — liveness ceilings paid at 3.57x
+06:16:35 host: 14 core(s); a guest wider than that waits vcpus/cores longer again
+06:16:35 failures:
+06:16:35     a_launch_gives_each_unsent_stdio_slot_a_null: launch_unsent_stdio ended None Some(WaitVerdict("STALLED: 214s of guard expired, and the guest had said nothing for the last 214s of it — the ceiling caught a machine that had stopped, which is not an answer to what this test asked")):
+
+06:16:35 1 of those reds are the ceiling: a_launch_gives_each_unsent_stdio_slot_a_null
+
+06:16:35 test result: FAILED. 0 passed, 1 failed, 0 invalidated, 1 total (226.2s; workers: 7s building, 219s testing)
+06:16:35 [toyos] this red run's serial logs are kept at <home>/toyos-null/target/red-run-serial/toyos-tmp-3129-0
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `<home>/toyos-null/target/debug/deps/toyos_build-18ba9974e73e748f a_launch_gives_each_unsent_stdio_slot_a_null` (exit status: 1)
+exit 1
+restored
