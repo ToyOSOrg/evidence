@@ -1,0 +1,41 @@
+Evidence for ToyOSOrg/ToyOS#989 (osbench round 2). Paths are masked as <home>, <worktree>, <scratch>, <tmp>,
+and a USB serial number as <masked>.
+
+Head: e5573b7fe (on #983's b232ee4dc). "The WIP tree" is 531578617, whose tree is the head's but for one
+doc-comment line in tests/guest/osbench/src/work.rs.
+
+ci-host.log
+  cargo run -- --ci host at the WIP tree, exit 0 ("87 step(s), all green").
+
+build-benchcase.log
+  cargo run -- --build-only --boot-config tests/images/benchcase.toml at the head, exit 0.
+
+linux-build.log, linux-binary.sha256
+  cargo +nightly-2026-07-22 build -p osbench --target x86_64-unknown-linux-musl --profile toyos at the
+  head, exit 0, and the sha256 of the static-pie binary handed to the Linux runs.
+
+metal-stage-{t14,amd}-{1,2,3}.log, metal-request-*.txt
+  cargo test --test toyos-build -- --metal --metal-readback <scratch>/metal-<bench>-<n> osbench at the
+  head, exit 2 each (staged; no machine touched): 13 jobs, list bound 300000 ms, boot deadline 600000 ms.
+
+qemu-head.serial.log, qemu-command.txt
+  The benchcase image of the WIP tree with the runner's bound raised to 3,000,000 ms (a scratch config
+  under tests/images/, not committed), booted under QEMU TCG (q35, qemu64, 4 vCPUs, 4 GiB, intel-iommu,
+  the stick on xHCI), serial on a file. Every group exits 0 but files, whose fs.served.seq_* refused
+  when the DATA file server ran out of memory (see the issue the PR files); the list took 612 s.
+
+linux-amd64-container-all.txt
+  osbench all, x86-64 musl build before the warm-up change, in an amd64 ubuntu:24.04 container under
+  emulation on an arm64 VM: every group ran; the placement and fair.scope refusals are the container's
+  (the emulated CPU number is always 0; no systemd-run or systemd-analyze).
+
+linux-amd64-container-head.txt
+  The head's binary there, files and system: exit 0.
+
+codegen.txt
+  llvm-objdump of chunk_rate in the head's ToyOS and Linux binaries: the same 3,125-step
+  multiply-add loop in both; and the ToyOS binary's C-named symbols (posix_spawn and waitpid from libc,
+  memcpy and its neighbours from compiler-builtins).
+
+QEMU and container numbers mean nothing as measurements: these files show only that the code paths run
+end to end on each system.
