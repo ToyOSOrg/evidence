@@ -1,0 +1,15 @@
+diff --git a/kernel/pure/sched/job_sched.rs b/kernel/pure/sched/job_sched.rs
+index f0266fc84..7d67bcf48 100644
+--- a/kernel/pure/sched/job_sched.rs
++++ b/kernel/pure/sched/job_sched.rs
+@@ -706,7 +706,9 @@ impl JobSched {
+         if self.cpus[c].allowance.exhausted() {
+             let boundary = self.cpus[c].allowance.boundary();
+             while let Some(&id) = self.cpus[c].rt.front() {
+-                self.rt_leave(cpu, id);
++                self.cpus[c].rt.pop_front();
++                self.cpus[c].spare.push_back(id);
++                self.thread_mut(id).state = State::Blocked;
+                 self.thread_mut(id).demoted_until = boundary;
+                 self.spare_enter(cpu, id);
+             }

@@ -1,0 +1,14 @@
+diff --git a/kernel/pure/sched/job_sched.rs b/kernel/pure/sched/job_sched.rs
+index f0266fc84..60da567ef 100644
+--- a/kernel/pure/sched/job_sched.rs
++++ b/kernel/pure/sched/job_sched.rs
+@@ -441,7 +441,8 @@ impl JobSched {
+         let slice = self.thread(id).slice;
+         self.job_mut(job).runnable += 1;
+         let c = cpu.0 as usize;
+-        let carried = core::mem::take(&mut self.thread_mut(id).group_lag);
++        let _ = core::mem::take(&mut self.thread_mut(id).group_lag);
++        let carried = Lag::ZERO;
+         let i = match self.group_index(cpu, job) {
+             Some(i) => {
+                 if carried != Lag::ZERO {

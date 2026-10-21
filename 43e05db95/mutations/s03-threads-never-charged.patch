@@ -1,0 +1,13 @@
+diff --git a/kernel/pure/sched/job_sched.rs b/kernel/pure/sched/job_sched.rs
+index f0266fc84..5f327e0e4 100644
+--- a/kernel/pure/sched/job_sched.rs
++++ b/kernel/pure/sched/job_sched.rs
+@@ -582,7 +582,7 @@ impl JobSched {
+             Band::Fair => {
+                 let i = self.group_index(cpu, job).expect("the running thread's group");
+                 self.cpus[c].groups.charge(job, ns);
+-                self.cpus[c].members[i].threads.charge(tid, ns);
++                let _ = i;
+                 self.thread_mut(tid).fair_ns += ns;
+             }
+             Band::Spare => self.thread_mut(tid).spare_ns += ns,

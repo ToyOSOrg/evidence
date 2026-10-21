@@ -1,0 +1,13 @@
+diff --git a/kernel/pure/sched/eevdf.rs b/kernel/pure/sched/eevdf.rs
+index 90877df56..45e94987b 100644
+--- a/kernel/pure/sched/eevdf.rs
++++ b/kernel/pure/sched/eevdf.rs
+@@ -254,7 +254,7 @@ impl<K: Copy + Eq> Eevdf<K> {
+             .filter(|e| (e.vd, e.seq) < (r.vd, r.seq))
+             .map(|e| {
+                 let behind = mul(self.total, e.v - self.base) - self.sum;
+-                ((behind.max(0) + (1 << VSHIFT) - 1) >> VSHIFT) as u64
++                (behind.max(0) >> VSHIFT) as u64
+             })
+             .min()
+     }

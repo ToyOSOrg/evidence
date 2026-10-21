@@ -1,0 +1,13 @@
+diff --git a/kernel/pure/sched/job_sched.rs b/kernel/pure/sched/job_sched.rs
+index f0266fc84..dccc32039 100644
+--- a/kernel/pure/sched/job_sched.rs
++++ b/kernel/pure/sched/job_sched.rs
+@@ -777,7 +777,7 @@ impl JobSched {
+                     let left = c.groups.request_left_ns(job).min(group.threads.request_left_ns(run.tid));
+                     at(c.charged.after(left));
+                     if let Some(ns) = c.groups.overtaken_in(job) {
+-                        at(c.charged.after(ns).max(run.since.after(self.params.min_slice)));
++                        at(c.charged.after(ns));
+                     }
+                 }
+                 Band::Rt => {

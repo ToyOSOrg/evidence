@@ -1,0 +1,30 @@
+ToyOSOrg/ToyOS#956 at 43e05db95 (621f3ced9 changes one figure in an issue file; toyos-checks rerun there: toyos-checks-head.log, exit 0).
+Owner decision J1: per-CPU job-group EEVDF is the model's only design; the compositor-miss fix.
+
+Host: Apple M-series macOS, aarch64 (development host, not a ToyOS bench). Paths masked.
+
+Checks (exit codes in exits.txt and below):
+- checkpoint.log: cargo test -p kernel --lib --features sched-check -- sched:: --nocapture --test-threads 1   exit 0
+- clippy.log: cargo clippy -p kernel --lib --tests --features sched-check -- -W clippy::checked_conversions
+  -W clippy::default_trait_access -W clippy::manual_midpoint -W clippy::redundant_clone
+  -W clippy::unchecked_time_subtraction -W clippy::unnecessary_semicolon -D warnings   exit 0
+- ci-host.log: cargo clean -p kernel; cargo run -- --ci host   exit 0 (86 steps green)
+- build-only.log: cargo run -- --build-only   exit 0
+- cargo-test-lib.log: cargo test --lib   exit 0
+- toyos-checks.log: cargo test --test toyos-checks   exit 0
+
+mutations/: 19 negative controls, each a checked patch applied, built, tested and reverted by run.sh
+(make.py generates the patches; baseline.log is the unmutated run, exit 0). All 19 are red; summary.txt.
+- d01 no eligibility decision: the desktop test (compositor misses a frame) and the latency-request unit test.
+- d02 overtaken_in rounds down; d03 no min_slice floor on the eligibility decision.
+- m01-m13, s01-s03: the model's earlier controls, regenerated where the code moved.
+
+at-4bcef7ebd/: the same set one commit earlier, when the eligibility decision was also taken within groups.
+- d04 (decision between groups only) was green there: thread-level decisions improved no latency and cost
+  switches (361-417 vs 226-293 per CPU per second), so 43e05db95 adopts it. Its log is the measurement.
+- s01 there did not finish: credit_kept_across_a_sleep_is_bounded ran over 18 minutes and was killed by hand
+  (5 other tests had already failed). At 43e05db95 the runner has a 300 s watchdog and s01 completes red.
+
+before-decision-fix/: desktop-mix lines (both former designs, T14 and AMD, with/without latency requests) on
+cbb47dc51 plus the uncommitted decision fix (desk-overtake.txt, then with both levels) and with the fix
+removed (desk-no-overtake.txt): missed frames and switches per CPU per second. Intermediate code, labelled so.
