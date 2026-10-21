@@ -1,0 +1,13 @@
+diff --git a/kernel/src/loader/start.rs b/kernel/src/loader/start.rs
+index 7427bd97a..33013d20c 100644
+--- a/kernel/src/loader/start.rs
++++ b/kernel/src/loader/start.rs
+@@ -174,7 +174,7 @@ impl PendingHandles {
+         // Minted while `own` is held, and `own` goes into a table no thread reaches until the child lands: another thread of the caller closing this handle never closes the object's last.
+         let held = ops::install(&mut data.handles, own.object().clone())
+             .expect("a caller's table with verified room refused its child");
+-        let job = endowed_job.unwrap_or_else(|| data.job.clone());
++        let _ = endowed_job; let job = crate::object::job::new_job();
+         drop(data);
+         endow_self(&mut table, &mut entries, &mut labels, own);
+         Ok((table, Endowments::new(entries, labels), job, held))

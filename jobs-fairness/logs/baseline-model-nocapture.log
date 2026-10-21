@@ -1,0 +1,124 @@
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.10s
+     Running unittests pure/lib.rs (target/debug/deps/kernel-fa45b686f8e87f8e)
+
+running 26 tests
+test sched::job_sched::checkpoint::a_desktop_beside_a_build_runs_every_interactive_wake_within_a_frame ... t14  plain            | compositor p50 0.07 p99 0.53 max 0.81 ms | ui p50 0.41 p99 2.11 max 3.50 ms | editor p50 0.07 p99 0.59 max 0.91 ms | share gaps (CPUs, 1st/2nd half): compositor -0.015/-0.016 of 0.11 (-14.2%) browser -0.044/-0.043 of 3.16 (-1.4%) editor -0.002/-0.002 of 0.01 (-15.4%) build +0.061/+0.061 of 4.72 (+1.3%) | compositor frames missed 0, worst completion 1.61 ms | migr/s 791.6 switch/s/cpu 226
+t14  latency requests | compositor p50 0.00 p99 0.22 max 0.39 ms | ui p50 0.00 p99 0.47 max 0.57 ms | editor p50 0.00 p99 0.24 max 0.25 ms | share gaps (CPUs, 1st/2nd half): compositor -0.015/-0.015 of 0.11 (-13.2%) browser -0.058/-0.057 of 3.16 (-1.8%) editor -0.002/-0.002 of 0.01 (-16.6%) build +0.075/+0.073 of 4.72 (+1.5%) | compositor frames missed 0, worst completion 1.30 ms | migr/s 742.3 switch/s/cpu 293
+amd  plain            | compositor p50 0.00 p99 0.04 max 0.22 ms | ui p50 0.00 p99 0.25 max 0.50 ms | editor p50 0.00 p99 0.25 max 0.31 ms | share gaps (CPUs, 1st/2nd half): compositor -0.000/-0.000 of 0.10 (-0.2%) browser -0.000/-0.001 of 3.13 (-0.0%) editor -0.001/-0.001 of 0.01 (-7.3%) build +0.002/+0.002 of 12.77 (+0.0%) | compositor frames missed 0, worst completion 1.02 ms | migr/s 959.7 switch/s/cpu 244
+amd  latency requests | compositor p50 0.00 p99 0.01 max 0.19 ms | ui p50 0.00 p99 0.16 max 0.41 ms | editor p50 0.00 p99 0.20 max 0.25 ms | share gaps (CPUs, 1st/2nd half): compositor -0.029/-0.029 of 0.12 (-23.2%) browser -0.016/-0.016 of 3.14 (-0.5%) editor -0.003/-0.003 of 0.01 (-23.7%) build +0.047/+0.048 of 12.72 (+0.4%) | compositor frames missed 0, worst completion 1.30 ms | migr/s 1020.1 switch/s/cpu 267
+ok
+test sched::job_sched::checkpoint::a_runaway_owner_is_revoked ... one realtime spinner per CPU, revocable
+  over 1/2/4/20 intervals: ordinary floor [1000, 2000, 4500, 28500] us, realtime peak [3500, 7000, 14000, 70000] us; longest realtime run 3500 us
+  CPUs: ordinary jobs 0.658 0.657, workers realtime 0.301, ordinary 2.384, spare 0.000; owners revoked 4/4
+ok
+test sched::job_sched::checkpoint::a_single_thread_job_keeps_one_cpu_beside_a_build_going_1_16_1 ... single + build 1-16-1, flat4: t=10000ms migrations=66 switches=3889
+  job  weight   CPUs(got)  CPUs(fluid)  err@10ms  err@100ms  err@1000ms  err@4000ms  err@8000ms
+    0    1.00       1.000        1.000      0.00      0.00      0.00      0.00      0.00
+    1    1.00       2.000        2.000      0.00      0.00      0.00      0.00      0.00
+
+single + build 1-16-1, t14: t=10000ms migrations=39 switches=8893
+  job  weight   CPUs(got)  CPUs(fluid)  err@10ms  err@100ms  err@1000ms  err@4000ms  err@8000ms
+    0    1.00       1.000        1.000      0.00      0.00      0.00      0.00      0.00
+    1    1.00       4.000        4.000      0.00      0.00      0.00      0.00      0.00
+
+single + build 1-16-1, amd: t=10000ms migrations=9 switches=1401
+  job  weight   CPUs(got)  CPUs(fluid)  err@10ms  err@100ms  err@1000ms  err@4000ms  err@8000ms
+    0    1.00       1.000        1.000      0.00      0.00      0.00      0.00      0.00
+    1    1.00       8.000        8.000      0.00      0.00      0.00      0.00      0.00
+
+single + build 1-16-1, flat16: t=10000ms migrations=9 switches=1401
+  job  weight   CPUs(got)  CPUs(fluid)  err@10ms  err@100ms  err@1000ms  err@4000ms  err@8000ms
+    0    1.00       1.000        1.000      0.00      0.00      0.00      0.00      0.00
+    1    1.00       8.000        8.000      0.00      0.00      0.00      0.00      0.00
+
+ok
+test sched::job_sched::checkpoint::aggregate_overload_drops_audio_and_revokes_nobody ... four 1.2 ms / 5.333 ms callbacks per CPU
+  over 1/2/4/20 intervals: ordinary floor [1500, 3000, 6000, 35600] us, realtime peak [3500, 7000, 14000, 64400] us; longest realtime run 4800 us
+  CPUs: ordinary jobs 0.754 0.753, workers realtime 2.494, ordinary 0.000, spare 0.000; owners revoked 0/16
+ok
+test sched::job_sched::checkpoint::audio_below_the_ceiling_meets_every_period ... two 1.2 ms / 5.333 ms callbacks per CPU
+  over 1/2/4/20 intervals: ordinary floor [2600, 5200, 10400, 54400] us, realtime peak [2400, 4800, 9600, 45600] us; longest realtime run 2400 us
+  CPUs: ordinary jobs 1.100 1.100, workers realtime 1.800, ordinary 0.000, spare 0.000; owners revoked 0/8
+ok
+test sched::job_sched::checkpoint::counterexample_runaway_detection_misses_brief_blocks_and_replaced_threads ... 1 µs block every 40 ms of work: realtime share 0.700, strikes 0, revoked false
+worker replaced every 40 ms: realtime share 0.700, strikes 0, revoked false
+ok
+test sched::job_sched::checkpoint::each_job_follows_the_per_cpu_rule_and_every_wait_is_bounded ... flat4  m+1 single-thread jobs                         | share gap 0.300 CPUs, wait   4.0 ms, migr/s    0.0, rule gap    0.0 ms, entitled while waiting 0.10 of ceiling
+flat4  {A,A}{A,B}{B}{B} per 4 CPUs                    | share gap 0.500 CPUs, wait   4.0 ms, migr/s    0.0, rule gap    0.1 ms, entitled while waiting 0.10 of ceiling
+flat4  2m, m/2 and 1 threads from CPU 0               | share gap 0.034 CPUs, wait  18.7 ms, migr/s    0.6, rule gap    1.7 ms, entitled while waiting 0.16 of ceiling
+flat4  single + build 1-16-1                          | share gap 0.000 CPUs, wait  20.0 ms, migr/s    6.3, rule gap    3.2 ms, entitled while waiting 0.17 of ceiling
+flat4  2m + m hogs, churn every 10 ms                 | share gap 0.004 CPUs, wait  32.0 ms, migr/s  178.8, rule gap   16.2 ms, entitled while waiting 0.42 of ceiling
+flat4  2m hogs + m duty 2/0.3 ms, churn every 10 ms   | share gap 0.071 CPUs, wait  26.2 ms, migr/s  265.9, rule gap    9.4 ms, entitled while waiting 0.33 of ceiling
+flat4  2m hogs + m duty 2/0.3 ms, churn every 1 ms    | share gap 0.119 CPUs, wait  31.3 ms, migr/s 1327.4, rule gap   69.8 ms, entitled while waiting 0.40 of ceiling
+flat4  m duty 1/0.1 ms + 2m hogs                      | share gap 0.007 CPUs, wait  15.8 ms, migr/s   12.0, rule gap    1.2 ms, entitled while waiting 0.19 of ceiling
+flat4  m duty 1/(0.1 + i/1000) ms + 2m hogs           | share gap 0.000 CPUs, wait  15.0 ms, migr/s    1.6, rule gap    1.1 ms, entitled while waiting 0.18 of ceiling
+flat4  2m (weight 2) + 2m (weight 1)                  | share gap 0.000 CPUs, wait  16.0 ms, migr/s    0.4, rule gap    3.7 ms, entitled while waiting 0.27 of ceiling
+t14    m+1 single-thread jobs                         | share gap 0.389 CPUs, wait   4.0 ms, migr/s    0.0, rule gap    0.0 ms, entitled while waiting 0.10 of ceiling
+t14    {A,A}{A,B}{B}{B} per 4 CPUs                    | share gap 0.002 CPUs, wait   4.0 ms, migr/s    0.2, rule gap    2.7 ms, entitled while waiting 0.10 of ceiling
+t14    2m, m/2 and 1 threads from CPU 0               | share gap 0.301 CPUs, wait  21.8 ms, migr/s    1.4, rule gap    1.6 ms, entitled while waiting 0.22 of ceiling
+t14    single + build 1-16-1                          | share gap 0.000 CPUs, wait  12.0 ms, migr/s    3.6, rule gap    0.4 ms, entitled while waiting 0.20 of ceiling
+t14    2m + m hogs, churn every 10 ms                 | share gap 0.001 CPUs, wait  28.0 ms, migr/s  230.1, rule gap   32.2 ms, entitled while waiting 0.35 of ceiling
+t14    2m hogs + m duty 2/0.3 ms, churn every 10 ms   | share gap 0.105 CPUs, wait  21.3 ms, migr/s  410.7, rule gap    1.6 ms, entitled while waiting 0.27 of ceiling
+t14    2m hogs + m duty 2/0.3 ms, churn every 1 ms    | share gap 0.178 CPUs, wait  36.9 ms, migr/s 2090.4, rule gap   68.9 ms, entitled while waiting 0.48 of ceiling
+t14    m duty 1/0.1 ms + 2m hogs                      | share gap 0.009 CPUs, wait  24.9 ms, migr/s   31.6, rule gap   13.0 ms, entitled while waiting 0.31 of ceiling
+t14    m duty 1/(0.1 + i/1000) ms + 2m hogs           | share gap 0.047 CPUs, wait  20.0 ms, migr/s   31.8, rule gap    5.8 ms, entitled while waiting 0.24 of ceiling
+t14    2m (weight 2) + 2m (weight 1)                  | share gap 0.001 CPUs, wait  16.0 ms, migr/s    0.6, rule gap    6.3 ms, entitled while waiting 0.14 of ceiling
+amd    m+1 single-thread jobs                         | share gap 0.441 CPUs, wait   4.0 ms, migr/s    0.0, rule gap    0.0 ms, entitled while waiting 0.10 of ceiling
+amd    {A,A}{A,B}{B}{B} per 4 CPUs                    | share gap 2.000 CPUs, wait   4.0 ms, migr/s    0.0, rule gap    0.1 ms, entitled while waiting 0.10 of ceiling
+amd    2m, m/2 and 1 threads from CPU 0               | share gap 0.302 CPUs, wait  22.7 ms, migr/s    3.4, rule gap    4.3 ms, entitled while waiting 0.28 of ceiling
+amd    single + build 1-16-1                          | share gap 0.000 CPUs, wait   4.0 ms, migr/s    0.9, rule gap    0.0 ms, entitled while waiting 0.10 of ceiling
+amd    2m + m hogs, churn every 10 ms                 | share gap 0.001 CPUs, wait  32.0 ms, migr/s  248.0, rule gap   22.4 ms, entitled while waiting 0.40 of ceiling
+amd    2m hogs + m duty 2/0.3 ms, churn every 10 ms   | share gap 0.166 CPUs, wait  25.7 ms, migr/s  561.7, rule gap   44.4 ms, entitled while waiting 0.34 of ceiling
+amd    2m hogs + m duty 2/0.3 ms, churn every 1 ms    | share gap 0.222 CPUs, wait  35.5 ms, migr/s 3091.9, rule gap  140.9 ms, entitled while waiting 0.40 of ceiling
+amd    m duty 1/0.1 ms + 2m hogs                      | share gap 0.091 CPUs, wait  23.5 ms, migr/s  285.1, rule gap   55.9 ms, entitled while waiting 0.30 of ceiling
+amd    m duty 1/(0.1 + i/1000) ms + 2m hogs           | share gap 0.114 CPUs, wait  20.8 ms, migr/s  229.1, rule gap   33.3 ms, entitled while waiting 0.25 of ceiling
+amd    2m (weight 2) + 2m (weight 1)                  | share gap 0.001 CPUs, wait  25.1 ms, migr/s    1.5, rule gap   13.5 ms, entitled while waiting 0.26 of ceiling
+ok
+test sched::job_sched::checkpoint::ordinary_work_gets_every_intervals_remainder ... J2: spinners
+  over 1/2/4/20 intervals: ordinary floor [1500, 3000, 6000, 30000] us, realtime peak [3500, 7000, 14000, 70000] us; longest realtime run 3500 us
+  CPUs: ordinary jobs 0.600 0.600, workers realtime 2.800, ordinary 0.000, spare 0.000; owners revoked 0/4
+J2: moved spinners
+  over 1/2/4/20 intervals: ordinary floor [1500, 3000, 6000, 30000] us, realtime peak [3500, 7000, 14000, 70000] us; longest realtime run 7000 us
+  CPUs: ordinary jobs 0.930 1.042, workers realtime 2.028, ordinary 0.000, spare 0.000; owners revoked 0/4
+J2: spinners overrunning 200 us
+  over 1/2/4/20 intervals: ordinary floor [1300, 2800, 5800, 29800] us, realtime peak [3700, 7200, 14200, 70200] us; longest realtime run 3700 us
+  CPUs: ordinary jobs 0.600 0.600, workers realtime 2.800, ordinary 0.000, spare 0.000; owners revoked 0/4
+J2: four 1.2 ms / 5.333 ms callbacks per CPU
+  over 1/2/4/20 intervals: ordinary floor [1500, 3000, 6000, 35600] us, realtime peak [3500, 7000, 14000, 64400] us; longest realtime run 4800 us
+  CPUs: ordinary jobs 0.754 0.753, workers realtime 2.494, ordinary 0.000, spare 0.000; owners revoked 0/16
+ok
+test sched::job_sched::checkpoint::the_ceiling_bounds_realtime_on_every_cpu ... one never-revoked realtime spinner per CPU: spinners
+  over 1/2/4/20 intervals: ordinary floor [1500, 3000, 6000, 30000] us, realtime peak [3500, 7000, 14000, 70000] us; longest realtime run 3500 us
+  CPUs: ordinary jobs 0.600 0.600, workers realtime 2.800, ordinary 0.000, spare 0.000; owners revoked 0/4
+one never-revoked realtime spinner per CPU: hopping spinners
+  over 1/2/4/20 intervals: ordinary floor [1500, 3000, 6000, 30000] us, realtime peak [3500, 7000, 14000, 70000] us; longest realtime run 7000 us
+  CPUs: ordinary jobs 0.930 1.042, workers realtime 2.028, ordinary 0.000, spare 0.000; owners revoked 0/4
+one never-revoked realtime spinner per CPU: 200 us overruns
+  over 1/2/4/20 intervals: ordinary floor [1300, 2800, 5800, 29800] us, realtime peak [3700, 7200, 14200, 70200] us; longest realtime run 3700 us
+  CPUs: ordinary jobs 0.600 0.600, workers realtime 2.800, ordinary 0.000, spare 0.000; owners revoked 0/4
+ok
+test sched::job_sched::checkpoint::weighted_builds_split_by_weight ... A8 (weight 2) beside B8 (weight 1) on 4: t=10000ms migrations=4 switches=17907
+  job  weight   CPUs(got)  CPUs(fluid)  err@10ms  err@100ms  err@1000ms  err@4000ms  err@8000ms
+    0    2.00       2.667        2.667      3.82      6.60      5.45      5.45      5.71
+    1    1.00       1.333        1.333      3.82      6.60      5.45      5.45      5.71
+
+ok
+test sched::job_sched::tests::a_dissolved_groups_lag_goes_with_its_last_thread ... ok
+test sched::job_sched::tests::a_helper_buys_no_entitlement ... ok
+test sched::job_sched::tests::a_job_owner_lives_exactly_as_long_as_its_references ... ok
+test sched::job_sched::tests::a_jobs_group_weights_sum_to_its_weight ... ok
+test sched::job_sched::tests::a_latency_request_changes_order_not_share ... ok
+test sched::job_sched::tests::a_reused_thread_slot_inherits_no_grant ... ok
+test sched::job_sched::tests::a_threads_lag_follows_it_across_migration ... ok
+test sched::job_sched::tests::an_allowance_exhausted_by_another_cpus_move_is_a_decision_now ... ok
+test sched::job_sched::tests::an_ordinary_wake_preempts_only_after_the_minimum_run ... ok
+test sched::job_sched::tests::an_owners_strikes_survive_new_workers_and_revoke_them_all ... ok
+test sched::job_sched::tests::credit_kept_across_a_sleep_is_bounded ... ok
+test sched::job_sched::tests::every_runnable_thread_is_in_exactly_one_queue ... ok
+test sched::job_sched::tests::exhaustion_demotes_until_the_boundary_wherever_the_worker_goes ... ok
+test sched::job_sched::tests::neither_a_new_grant_nor_a_wake_resets_demotion_or_the_runaway_count ... ok
+test sched::job_sched::tests::revoking_an_exited_worker_is_refused_not_a_panic ... ok
+test sched::job_sched::tests::spare_time_is_charged_to_the_thread_alone_and_yields_to_ordinary_work ... ok
+
+test result: ok. 26 passed; 0 failed; 0 ignored; 0 measured; 281 filtered out; finished in 10.87s
+
