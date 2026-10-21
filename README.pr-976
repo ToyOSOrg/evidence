@@ -51,3 +51,15 @@ pptt/
                              `virt`'s RAM (lib/acpi/fixtures/qemu-11.1.1-virt-pptt/SOURCE) and
                              decoded its structures by hand from ACPI 6.5 §5.2.30, apart from
                              the decoder under test.
+
+metal/  (appended for f91f2601a)
+  rejudge-amd.log, rejudge-t14.log
+                             the orchestrator's readbacks of dce097b4b's staged images,
+                             re-judged with no machine touched by `cargo test --test
+                             toyos-build -- --metal --metal-readback <dir> topology_readback
+                             smp_roster_and_tsc_trail trace_read counters_read inbox_log_post
+                             disk_backtrace` at dce097b4b plus the row fix committed as
+                             f91f2601a: EXIT=0 on each, AMD `SMP: 16 of 16`, 8 cores in 2
+                             LLCs. Under dce097b4b's own row the AMD judge failed only on its
+                             x2APIC expectation; the bench's CPUs report CPUID.01H:ECX[21]
+                             clear (scout word 0x76d8320b), so the row's claim was the T14's.
