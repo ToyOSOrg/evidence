@@ -1,0 +1,44 @@
+   Compiling kernel v0.1.0 (<home>/Dev/jan/toyos-dma-limit/kernel)
+    Finished `test` profile [optimized + debuginfo] target(s) in 3.38s
+     Running unittests pure/lib.rs (target/debug/deps/kernel-2115fc0ca3d17c08)
+
+running 7 tests
+test iova::tests::a_limit_is_32_to_64_bits ... ok
+test iova::tests::a_reserved_range_is_skipped_by_whole_leaves ... ok
+test iova::tests::only_what_was_handed_out_whole_is_room ... ok
+test iova::tests::addresses_go_lowest_first_from_the_first_leaf ... ok
+test iova::tests::a_function_that_drops_its_upper_bits_reaches_only_its_own_grant ... FAILED
+test iova::tests::the_amd_benchs_layout ... FAILED
+test iova::tests::every_grant_is_the_lowest_allowed_run_below_its_limit ... FAILED
+
+failures:
+
+---- iova::tests::a_function_that_drops_its_upper_bits_reaches_only_its_own_grant stdout ----
+
+thread 'iova::tests::a_function_that_drops_its_upper_bits_reaches_only_its_own_grant' (31599428) panicked at kernel/pure/iova.rs:175:13:
+the grant 0x10000000000..0x10000200000 ends above the function's limit
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- iova::tests::the_amd_benchs_layout stdout ----
+
+thread 'iova::tests::the_amd_benchs_layout' (31599434) panicked at kernel/pure/iova.rs:263:9:
+assertion `left == right` failed
+  left: 16384
+ right: 1576
+
+---- iova::tests::every_grant_is_the_lowest_allowed_run_below_its_limit stdout ----
+
+thread 'iova::tests::every_grant_is_the_lowest_allowed_run_below_its_limit' (31599432) panicked at kernel/pure/iova.rs:212:17:
+assertion `left == right` failed: reserve(0x2600000) under Limit(4294967296) with [(ed06136, 1d55ac22), (16f28f2cf, 18c7fd55a), (1b1c8ab15, 1d22fbd12)]
+  left: Some(4372561920)
+ right: None
+
+
+failures:
+    iova::tests::a_function_that_drops_its_upper_bits_reaches_only_its_own_grant
+    iova::tests::every_grant_is_the_lowest_allowed_run_below_its_limit
+    iova::tests::the_amd_benchs_layout
+
+test result: FAILED. 4 passed; 3 failed; 0 ignored; 0 measured; 247 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p kernel --lib`
