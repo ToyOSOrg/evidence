@@ -1,0 +1,17 @@
+diff --git a/lib/update/src/image.rs b/lib/update/src/image.rs
+index 321531cb5..04f29a93d 100644
+--- a/lib/update/src/image.rs
++++ b/lib/update/src/image.rs
+@@ -163,11 +163,7 @@ impl Header {
+             section.len = len;
+             section.sha256.copy_from_slice(&bytes[at + NAME_BYTES + 8..at + ENTRY_BYTES]);
+         }
+-        for program in [2, 3] {
+-            if sections[program].len == 0 {
+-                return Err(Malformed::Empty(program));
+-            }
+-        }
++
+         let root = sections[4].len;
+         if root == 0 || !root.is_multiple_of(ROOT_BLOCK) {
+             return Err(Malformed::RootNotBlocks(root));

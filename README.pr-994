@@ -1,0 +1,21 @@
+Evidence for ToyOSOrg/ToyOS#994. Paths are masked: $WORKTREE is the
+assignment's worktree, $SCRATCH its scratch directory, $HOME and $TMPDIR the
+host's. Each directory is one head of the branch.
+
+head-ff9b4b1c5/
+  final-ci-host.log      cargo run -- --ci host, exit 0
+  final-build-only.log   cargo run -- --build-only (x86_64), exit 0
+  final-qemu.log         cargo test --test toyos-build -- console_image_boots
+                         virt_user_mode virt_smp nvme_disk_boots
+                         a_launch_gives_each_unsent_stdio_slot_a_null
+                         the_log_lands_on_the_boot_stick a_bent_supervisor
+                         a_spawn_from_an_image libc_children; exit 1, the one
+                         red libc_children (posix_spawn of /system/bin by path)
+  controls/              each <name>.patch applied to the head, built, run
+                         (control-*.log), and reversed
+  measure/               QEMU x86_64 testcases boot, toybox free: base
+                         b9e4c5862 (measure-base.log), the handoff before the
+                         shm fix (measure-branch-8.log, 2 MiB a spawn) and
+                         after it (measure-branch-weak.log); add_measure.py is
+                         the uncommitted test the runs used
+  metal/request.txt      the metal readbacks staged, not run

@@ -1,0 +1,13 @@
+diff --git a/lib/rootimage/src/handoff.rs b/lib/rootimage/src/handoff.rs
+index 306be2e5d..43f5e2b53 100644
+--- a/lib/rootimage/src/handoff.rs
++++ b/lib/rootimage/src/handoff.rs
+@@ -38,7 +38,7 @@ pub fn held(
+ /// do. An empty extent shares nothing.
+ pub fn overlapping(extents: &[core::ops::Range<u64>]) -> Option<(usize, usize)> {
+     let shares = |a: &core::ops::Range<u64>, b: &core::ops::Range<u64>| {
+-        !a.is_empty() && !b.is_empty() && a.start < b.end && b.start < a.end
++        !a.is_empty() && !b.is_empty() && a.start < b.start && b.start < a.end
+     };
+     (0..extents.len()).find_map(|i| (i + 1..extents.len()).find(|&j| shares(&extents[i], &extents[j])).map(|j| (i, j)))
+ }

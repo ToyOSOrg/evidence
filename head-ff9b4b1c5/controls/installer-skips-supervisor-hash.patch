@@ -1,0 +1,13 @@
+diff --git a/system/update/src/install/mod.rs b/system/update/src/install/mod.rs
+index d38f6f154..272181dd9 100644
+--- a/system/update/src/install/mod.rs
++++ b/system/update/src/install/mod.rs
+@@ -89,7 +89,7 @@ pub fn install(
+ 
+     let kernel = take(input, header.kernel().len, header.kernel().sha256, "kernel")?;
+     let cmdline = take(input, header.cmdline().len, header.cmdline().sha256, "cmdline")?;
+-    let supervisor = take(input, header.supervisor().len, header.supervisor().sha256, "supervisor")?;
++    let supervisor = take(input, header.supervisor().len, toyos_update::sha256(&[]), "supervisor").or_else(|_| Ok::<_, String>(Vec::new()))?;
+     let fileserver = take(input, header.fileserver().len, header.fileserver().sha256, "fileserver")?;
+     let streamed = Instant::now();
+     stream_root(input, &mut *root.disk, header.root().len, header.root().sha256)?;

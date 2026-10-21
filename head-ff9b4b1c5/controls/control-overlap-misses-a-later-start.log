@@ -1,0 +1,58 @@
+   Compiling toyos-rootimage v0.1.0 ($WORKTREE/lib/rootimage)
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.59s
+     Running unittests src/lib.rs (target/debug/deps/toyos_rootimage-bc7ec56e0c787578)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/chunk.rs (target/debug/deps/chunk-79c4a0c5816dfff2)
+
+running 12 tests
+test a_chunk_larger_than_the_extent_is_one_request_of_the_extent ... ok
+test a_granularity_dividing_the_bound_leaves_it_alone ... ok
+test a_granularity_past_the_bound_is_not_taken ... ok
+test an_odd_granularity_rounds_the_bound_down_to_a_common_multiple ... ok
+test a_bound_off_the_alignment_is_refused - should panic ... ok
+test a_chunk_off_the_block_is_refused - should panic ... ok
+test no_granularity_is_the_bound ... ok
+test four_kib_blocks_advance_the_lba_by_their_own_size ... ok
+test a_failing_last_partial_chunk_names_its_own_length ... ok
+test a_failing_chunk_is_named_by_its_first_lba_and_nothing_after_it_is_asked ... ok
+test the_last_chunk_is_whatever_is_left ... ok
+test an_exact_multiple_is_whole_chunks ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/handoff.rs (target/debug/deps/handoff-e82d58596fcaa2ea)
+
+running 10 tests
+test a_length_that_is_not_whole_blocks_is_refused ... ok
+test an_extent_ending_one_page_past_the_descriptor_is_refused ... ok
+test a_start_that_is_not_block_aligned_is_refused ... ok
+test an_extent_inside_a_descriptor_of_another_type_is_refused ... ok
+test an_extent_starting_one_page_before_the_descriptor_is_refused ... ok
+test an_extent_inside_one_descriptor_is_held ... ok
+test an_extent_straddling_two_adjacent_descriptors_of_the_type_is_refused ... ok
+test an_extent_whose_end_overflows_is_refused ... ok
+test the_whole_descriptor_is_held ... ok
+test extents_that_share_a_byte_are_named ... FAILED
+
+failures:
+
+---- extents_that_share_a_byte_are_named stdout ----
+
+thread 'extents_that_share_a_byte_are_named' (50240979) panicked at lib/rootimage/tests/handoff.rs:76:5:
+assertion `left == right` failed: the same extent twice
+  left: None
+ right: Some((0, 1))
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    extents_that_share_a_byte_are_named
+
+test result: FAILED. 9 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-rootimage --test handoff`
+exit 101

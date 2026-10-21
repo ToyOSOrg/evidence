@@ -1,0 +1,76 @@
+   Compiling toyos-update v0.1.0 ($WORKTREE/lib/update)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.23s
+     Running unittests src/lib.rs (target/debug/deps/toyos_update-2e0696a47fb5efe8)
+
+running 52 tests
+test floor::tests::a_runtime_variable_that_stays_is_refused ... ok
+test floor::tests::a_floor_is_named_for_its_key_and_scope ... ok
+test floor::tests::a_loader_deletes_the_stale_floors_of_its_scope_and_never_the_owners ... ok
+test floor::tests::only_the_loaders_own_variable_is_a_floor_and_nothing_else_is_none ... ok
+test policy::tests::a_boot_tries_the_marked_slot_first_and_the_other_only_if_there_is_one ... ok
+test floor::tests::only_not_found_is_no_variable ... ok
+test policy::tests::an_update_must_be_newer_than_what_runs ... ok
+test policy::tests::the_floor_admits_its_own_version_and_above_and_only_rises ... ok
+test policy::tests::every_word_is_one_parameter_token ... ok
+test image::tests::two_programs_swapped_are_refused ... ok
+test image::tests::an_image_splits_into_exactly_its_sections ... ok
+test record::tests::a_hang_kills_only_an_unproven_image ... ok
+test image::tests::a_header_reads_back_as_it_was_written ... ok
+test record::tests::a_record_reads_back_and_anothers_is_refused ... ok
+test image::tests::a_bent_header_is_refused_by_name ... FAILED
+test record::tests::how_a_boot_ended_is_what_it_is_recorded_as ... ok
+test record::tests::the_first_write_credits_no_image ... ok
+test repo::tests::a_line_that_is_not_an_ed25519_public_line_is_refused ... ok
+test repo::tests::a_public_line_reads_back_as_its_key ... ok
+test repo::tests::a_document_that_is_not_the_format_is_refused_by_line ... ok
+test repo::tests::a_root_its_own_root_key_did_not_sign_is_refused ... ok
+test repo::tests::a_repository_the_renderer_writes_is_one_the_client_accepts ... ok
+test repo::tests::a_time_is_one_that_exists_and_reads_back ... ok
+test repo::tests::a_machines_root_at_the_images_version_with_other_bytes_is_refused ... ok
+test repo::tests::an_archive_past_its_length_or_not_its_hash_is_refused ... ok
+test repo::tests::base64_has_one_spelling ... ok
+test repo::tests::a_machines_newer_root_holds_though_the_mirror_withholds_it ... ok
+test repo::tests::a_document_past_its_cap_is_refused_unread ... ok
+test repo::tests::the_ceremonys_root_is_self_signed ... ok
+test repo::tests::targets_not_matching_the_timestamp_are_refused ... ok
+test repo::tests::a_signature_in_another_namespace_is_refused ... ok
+test repo::tests::a_duplicated_signature_does_not_meet_a_threshold ... ok
+test repo::tests::a_root_at_the_last_version_is_refused ... ok
+test sig::tests::a_seed_text_reads_back_as_its_seed ... ok
+test sig::tests::a_text_not_in_the_seed_texts_form_is_refused ... ok
+test sig::tests::the_message_is_sshsigs_signed_data ... ok
+test slots::tests::a_grant_claims_only_an_idle_slot_on_the_running_disk ... ok
+test slots::tests::a_table_cannot_name_the_booted_volume_idle ... ok
+test slots::tests::a_table_reads_back_and_a_bent_one_is_refused ... ok
+test slots::tests::moving_the_mark_is_atomic_against_a_torn_copy ... ok
+test slots::tests::the_checksum_is_crc32 ... ok
+test slots::tests::the_idle_slot_is_the_one_whose_root_the_kernel_does_not_hold ... ok
+test repo::tests::the_ceremonys_root_accepts_what_the_signing_key_signs ... ok
+test repo::tests::a_role_version_below_the_held_one_is_refused ... ok
+test repo::tests::the_ceremonys_root_refuses_a_timestamp_the_root_key_signs ... ok
+test sig::tests::rfc_8032_vectors_verify_and_a_flipped_bit_does_not ... ok
+test repo::tests::a_root_not_signed_by_the_previous_threshold_is_refused ... ok
+test repo::tests::a_lower_sequence_or_a_reissued_one_is_refused ... ok
+test repo::tests::a_rotated_root_is_walked_and_drops_the_old_keys_floors ... ok
+test repo::tests::the_same_version_with_other_bytes_is_refused ... ok
+test repo::tests::expired_metadata_is_refused_with_both_times ... ok
+test repo::tests::a_chain_past_the_walk_bound_is_refused ... ok
+
+failures:
+
+---- image::tests::a_bent_header_is_refused_by_name stdout ----
+
+thread 'image::tests::a_bent_header_is_refused_by_name' (50242290) panicked at lib/update/src/image.rs:334:13:
+assertion `left == right` failed
+  left: Ok(Header { version: 7, sections: [Section { len: 11, sha256: [223, 13, 42, 29, 175, 104, 46, 94, 228, 6, 148, 138, 241, 171, 125, 164, 24, 189, 86, 149, 148, 127, 45, 72, 252, 21, 254, 240, 164, 131, 97, 159] }, Section { len: 6, sha256: [48, 242, 93, 55, 208, 80, 235, 56, 90, 67, 117, 43, 162, 79, 237, 179, 147, 85, 61, 107, 202, 110, 178, 151, 224, 5, 136, 21, 219, 209, 138, 254] }, Section { len: 0, sha256: [19, 248, 250, 3, 196, 17, 72, 118, 163, 66, 90, 9, 18, 93, 58, 33, 197, 184, 182, 31, 144, 244, 129, 154, 67, 182, 197, 34, 192, 218, 19, 3] }, Section { len: 15, sha256: [172, 15, 8, 200, 25, 244, 59, 234, 250, 54, 21, 124, 249, 129, 49, 60, 105, 76, 192, 223, 148, 179, 239, 177, 105, 8, 231, 233, 194, 65, 187, 205] }, Section { len: 8192, sha256: [26, 230, 43, 49, 16, 20, 27, 244, 58, 246, 167, 161, 72, 117, 68, 42, 250, 234, 132, 96, 18, 43, 129, 78, 54, 70, 111, 235, 243, 156, 166, 84] }] })
+ right: Err(Empty(2))
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    image::tests::a_bent_header_is_refused_by_name
+
+test result: FAILED. 51 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+error: test failed, to rerun pass `-p toyos-update --lib`
+exit 101
