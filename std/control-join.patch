@@ -1,0 +1,18 @@
+diff --git a/sdk/std/sys/thread.rs b/sdk/std/sys/thread.rs
+index cd48686e5..d57a6db20 100644
+--- a/sdk/std/sys/thread.rs
++++ b/sdk/std/sys/thread.rs
+@@ -56,11 +56,8 @@ impl Thread {
+     }
+ 
+     pub fn join(self) {
+-        if syscall::thread_join(self.tid as u64) == 0 {
+-            // SAFETY: the join answered, so the thread has exited and nothing
+-            // runs on its stack again.
+-            unsafe { crate::alloc::dealloc(self.stack, self.stack_layout) };
+-        }
++        let _ = (self.stack, self.stack_layout);
++        syscall::thread_join(self.tid as u64);
+     }
+ }
+ 

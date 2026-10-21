@@ -1,0 +1,43 @@
+diff --git a/sdk/std/sys/thread.rs b/sdk/std/sys/thread.rs
+index b19a3f53c..cd48686e5 100644
+--- a/sdk/std/sys/thread.rs
++++ b/sdk/std/sys/thread.rs
+@@ -8,6 +8,8 @@ use crate::time::Duration;
+ 
+ pub struct Thread {
+     tid: u32,
++    stack: *mut u8,
++    stack_layout: crate::alloc::Layout,
+ }
+ 
+ unsafe impl Send for Thread {}
+@@ -50,11 +52,15 @@ impl Thread {
+             return Err(io::const_error!(io::ErrorKind::Uncategorized, "thread spawn failed"));
+         }
+ 
+-        Ok(Thread { tid: tid as u32 })
++        Ok(Thread { tid: tid as u32, stack: stack_base, stack_layout: layout })
+     }
+ 
+     pub fn join(self) {
+-        syscall::thread_join(self.tid as u64);
++        if syscall::thread_join(self.tid as u64) == 0 {
++            // SAFETY: the join answered, so the thread has exited and nothing
++            // runs on its stack again.
++            unsafe { crate::alloc::dealloc(self.stack, self.stack_layout) };
++        }
+     }
+ }
+ 
+@@ -74,9 +80,8 @@ extern "C" fn thread_trampoline(data: u64) {
+ }
+ 
+ pub fn available_parallelism() -> io::Result<NonZero<usize>> {
+-    // ToyOS runs on QEMU with a known number of CPUs, but we don't expose
+-    // a syscall for this yet. Return 1 for now.
+-    Ok(unsafe { NonZero::new_unchecked(1) })
++    NonZero::new(syscall::cpu_count() as usize)
++        .ok_or(io::const_error!(io::ErrorKind::NotFound, "the kernel counts no CPU"))
+ }
+ 
+ pub fn current_os_id() -> Option<u64> {
