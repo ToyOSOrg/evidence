@@ -14,3 +14,9 @@ Host: macOS on Apple silicon, 14 cores; x86_64 guests under QEMU TCG. Paths mask
 | metal/control-*.{log,txt}, release-closes-nothing.patch, stage.sh | the same with `FrameRx::release` closing nothing, applied and reverted in `stage.sh` | e4b868d7d + patch | 2 = staged; restored 0 |
 
 Metal is staged, not run: no verdict about the machine is in this round.
+
+## Metal readbacks (run by the coordinator on the T14, LENOVO 20W0003AMZ, BIOS N34ET71W 1.71)
+Text files only (images omitted); a USB stick's serial number masked as `<serial>`.
+- `metal-run/fix/`: images staged at tree e4b868d7d. `judge-fx.log`: 11 passed, 0 failed, 3 boots (`testcases`, `shared-debug`, `proctreecase`).
+- `metal-run/control/`: the `FrameRx::release` closes-nothing image. `judge-ct.log`: 1 passed (`message_carries_its_handles`), 1 failed: `ends_sent_over_each_other_both_end` exited 101, panicking "two ends sent over each other kept each other open" at the 10 s ceiling (`control/testcases/kernel.log`), as predicted.
+- `verdict.txt` in each image directory records the boot's completion; the tests' verdicts are the judge logs.
