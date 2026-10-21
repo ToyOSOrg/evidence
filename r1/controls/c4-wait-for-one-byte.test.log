@@ -1,0 +1,46 @@
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.10s
+     Running unittests pure/lib.rs (target/debug/deps/kernel-a7ca71f2661cd543)
+
+running 12 tests
+test pipe::tests::an_end_whose_other_end_is_held_is_not_told_it_is_gone ... ok
+test pipe::tests::an_end_with_a_second_holder_outlives_the_first ... ok
+test pipe::tests::an_end_dropped_with_the_ring_neither_empty_nor_full_is_gone ... ok
+test pipe::tests::an_empty_write_waits_for_nothing ... ok
+test pipe::tests::the_last_holder_of_the_pipe_ends_it ... ok
+test pipe::tests::readable_and_writable_say_nothing_of_the_other_end ... ok
+test pipe::tests::a_small_pipe_write_lands_whole_or_waits ... ok
+test pipe::tests::a_reader_leaving_answers_a_waiting_writer ... FAILED
+test pipe::tests::a_refused_nonblocking_write_is_answered_by_readiness ... FAILED
+test pipe::tests::a_waiting_writer_wakes_exactly_when_its_write_lands ... FAILED
+test pipe::tests::competing_partial_writes_tear_in_the_same_run ... ok
+test pipe::tests::competing_small_writes_never_interleave_while_the_reader_lags ... ok
+
+failures:
+
+---- pipe::tests::a_reader_leaving_answers_a_waiting_writer stdout ----
+
+thread 'pipe::tests::a_reader_leaving_answers_a_waiting_writer' (37592480) panicked at kernel/pure/pipe.rs:325:9:
+assertion failed: !pipe.wakes(40, Landing::Pipe)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- pipe::tests::a_refused_nonblocking_write_is_answered_by_readiness stdout ----
+
+thread 'pipe::tests::a_refused_nonblocking_write_is_answered_by_readiness' (37592481) panicked at kernel/pure/pipe.rs:296:13:
+writable with less room than a whole write
+
+---- pipe::tests::a_waiting_writer_wakes_exactly_when_its_write_lands stdout ----
+
+thread 'pipe::tests::a_waiting_writer_wakes_exactly_when_its_write_lands' (37592483) panicked at kernel/pure/pipe.rs:346:21:
+assertion `left == right` failed: Whole, 2 bytes, 1 free: woken true, lands false
+  left: true
+ right: false
+
+
+failures:
+    pipe::tests::a_reader_leaving_answers_a_waiting_writer
+    pipe::tests::a_refused_nonblocking_write_is_answered_by_readiness
+    pipe::tests::a_waiting_writer_wakes_exactly_when_its_write_lands
+
+test result: FAILED. 9 passed; 3 failed; 0 ignored; 0 measured; 297 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p kernel --lib`
