@@ -1,0 +1,53 @@
+Evidence for ToyOSOrg/ToyOS#976 (scheduler stage 2: topology and roster).
+
+Home and source paths are written <src>, <dev>, <scratch>, <session> and
+$TMPDIR; nothing else is changed or dropped. Revisions are ToyOS commits on
+branch wt/toyos-topology-2, base d5713917d (#974).
+
+host/
+  ci-host.log                `cargo run -- --ci host` at dce097b4b: EXIT=0, 88 of 88 green.
+  ci-host-cap-lift-red.log   the same at b34e6fb63: EXIT=1, clippy red (len_without_is_empty,
+                             chunks_exact_to_as_chunks); fixed in dce097b4b.
+  ci-host-part1-red.log      the same at f51c3b45e (part 1 before amend): EXIT=1, the new PPTT
+                             fixture undeclared in build/licence.rs; fixed in 4ee067034.
+  build-lib-part1.log        `cargo test --lib` (the build system's step) at 4ee067034: EXIT=0.
+
+guest/
+  guest.log                  `cargo test --test toyos-build -- desktop_without_x2apic virt_smp
+                             virt_failed_ap_leaves_no_hole` at dce097b4b: EXIT=0, 3 of 3.
+  guest-virt-part1.log       `... -- virt_failed_ap_leaves_no_hole virt_smp` at 4ee067034: EXIT=0.
+  guest-x86-part1.log        `... -- desktop_without_x2apic` at 4ee067034: EXIT=0.
+
+boots/  manual `cargo run -- [--arch aarch64] --smp N --console-boot`, stopped by hand once
+        `Boot: complete` was read
+  x86-tcg-16-red.log, -blackbox.txt, -registers.txt
+                             on the uncommitted tree before b34e6fb63, whose trace table was
+                             one allocation: the kernel
+                             printed nothing; QMP `info registers -a` put CPU0 in
+                             `hold_the_panel` with every AP in firmware, and the black box page
+                             (`pmemsave 0x8000000`) says `GlobalAlloc: 4195328 bytes exceeds
+                             MAX_HEAP_ALLOC (2093056)`.
+  x86-tcg-16.log             the tree committed as b34e6fb63: SMP 16 of 16, 15 APs join.
+  aarch64-hvf-12.log         the same tree: SMP 12 of 12 through the PPTT.
+  x86-tcg-4-part1.log, aarch64-hvf-4-part1.log
+                             part 1 before commit: the first `topo:` lines on each architecture.
+
+controls/
+  controls.log + m1..m5 patches   against f51c3b45e (part 1); each applied with `git apply`,
+                             its test run, the patch reverted: all EXIT=101, each red on the
+                             claim it mutates. None of the files they touch changed after.
+  controls-2.log + m6, m7    against dce097b4b: EXIT=101 each.
+
+metal-staging/
+  stage-t14.log, stage-amd.log, request-*.txt
+                             `cargo test --test toyos-build -- --metal --metal-readback <dir>
+                             topology_readback smp_roster_and_tsc_trail trace_read counters_read
+                             inbox_log_post disk_backtrace` at dce097b4b: EXIT=2 (staged, one boot
+                             each, no machine touched).
+
+pptt/
+  find_table.py, dump_pptt.py, dump.txt
+                             scratch tools that found the PPTT in the `pmemsave` of QEMU 11.1.1
+                             `virt`'s RAM (lib/acpi/fixtures/qemu-11.1.1-virt-pptt/SOURCE) and
+                             decoded its structures by hand from ACPI 6.5 §5.2.30, apart from
+                             the decoder under test.

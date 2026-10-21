@@ -1,0 +1,13 @@
+diff --git a/kernel/pure/sched/cpu.rs b/kernel/pure/sched/cpu.rs
+index 3af8f0e6a..0e2c2280e 100644
+--- a/kernel/pure/sched/cpu.rs
++++ b/kernel/pure/sched/cpu.rs
+@@ -2163,7 +2163,7 @@ impl<H: Hw, P: PreemptGuard> SchedPass<'_, '_, H, P, Disposed> {
+     fn best_victim(&self) -> Option<CpuId> {
+         let cpus = self.env.cpus;
+         let me = self.cpu.id;
+-        STEAL_RINGS.into_iter().find_map(|(inner, outer)| {
++        [(None, Level::Machine)].into_iter().find_map(|(inner, outer)| {
+                 let (victim, surplus) = cpus
+                     .topology()
+                     .ring(me, inner, outer, 0)

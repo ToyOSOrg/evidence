@@ -1,0 +1,66 @@
+=== m6-walk-stops-at-a-hole @ dce097b4b: cargo test -p kernel-loom --no-default-features --test log_cursor
+   Compiling kernel-loom v0.1.0 (<src>/kernel/loom)
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.49s
+     Running tests/log_cursor.rs (target/debug/deps/log_cursor-223926e38c938d7e)
+
+running 4 tests
+test a_cursor_ahead_of_a_shard_is_refused ... ok
+test a_cursors_loss_claim_is_not_read ... ok
+test reads_of_one_record_take_the_merge_in_order ... ok
+test an_offline_cpus_shard_is_read_beside_the_online_ones ... FAILED
+
+failures:
+
+---- an_offline_cpus_shard_is_read_beside_the_online_ones stdout ----
+
+thread 'an_offline_cpus_shard_is_read_beside_the_online_ones' (36498311) panicked at kernel/loom/tests/log_cursor.rs:118:5:
+assertion `left == right` failed
+  left: 3
+ right: 5
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    an_offline_cpus_shard_is_read_beside_the_online_ones
+
+test result: FAILED. 3 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p kernel-loom --test log_cursor`
+EXIT=101
+=== m7-merge-takes-the-first-ring @ dce097b4b: cargo test -p kernel-loom --no-default-features --test log_cursor
+   Compiling kernel-loom v0.1.0 (<src>/kernel/loom)
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.53s
+     Running tests/log_cursor.rs (target/debug/deps/log_cursor-223926e38c938d7e)
+
+running 4 tests
+test a_cursor_ahead_of_a_shard_is_refused ... ok
+test a_cursors_loss_claim_is_not_read ... ok
+test an_offline_cpus_shard_is_read_beside_the_online_ones ... FAILED
+test reads_of_one_record_take_the_merge_in_order ... FAILED
+
+failures:
+
+---- an_offline_cpus_shard_is_read_beside_the_online_ones stdout ----
+
+thread 'an_offline_cpus_shard_is_read_beside_the_online_ones' (36498544) panicked at kernel/loom/tests/log_cursor.rs:119:5:
+assertion `left == right` failed
+  left: [10, 30, 50, 20, 40]
+ right: [10, 20, 30, 40, 50]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- reads_of_one_record_take_the_merge_in_order stdout ----
+
+thread 'reads_of_one_record_take_the_merge_in_order' (36498545) panicked at kernel/loom/tests/log_cursor.rs:146:5:
+assertion `left == right` failed
+  left: [0, 3, 6, 9, 1, 4, 7, 10, 2, 5, 8, 11]
+ right: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+
+
+failures:
+    an_offline_cpus_shard_is_read_beside_the_online_ones
+    reads_of_one_record_take_the_merge_in_order
+
+test result: FAILED. 2 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p kernel-loom --test log_cursor`
+EXIT=101

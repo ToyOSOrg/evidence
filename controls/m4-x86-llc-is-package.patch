@@ -1,0 +1,13 @@
+diff --git a/kernel/pure/cpu.rs b/kernel/pure/cpu.rs
+index 698f1772b..40620a01b 100644
+--- a/kernel/pure/cpu.rs
++++ b/kernel/pure/cpu.rs
+@@ -270,7 +270,7 @@ pub fn topology_keys(levels: &[[u32; 4]], caches: &[[u32; 4]]) -> Result<CpuKeys
+         .take_while(|q| cache_type(q) != 0)
+         .filter(|q| matches!(cache_type(q), 1 | 3))
+         .max_by_key(|q| (q[0] >> 5) & 7)
+-        .map_or(package_shift, |q| (((q[0] >> 14) & 0xfff) + 1).next_power_of_two().trailing_zeros());
++        .map_or(package_shift, |_| package_shift);
+     if !(smt_shift..=package_shift).contains(&llc_shift) {
+         return Err(TopologyRefusal::CacheOutsidePackage { smt_shift, llc_shift, package_shift });
+     }

@@ -1,0 +1,254 @@
+=== m1-idle-near-ignores-smt @ f51c3b45e: cargo test -p kernel --lib sched::cpu::tests::an_idle_cpu_is_chosen_near
+   Compiling toyos-abi v0.16.0 (<src>/sdk/abi)
+   Compiling kernel v0.1.0 (<src>/kernel)
+    Finished `test` profile [optimized + debuginfo] target(s) in 6.38s
+     Running unittests pure/lib.rs (target/debug/deps/kernel-fa45b686f8e87f8e)
+
+running 1 test
+test sched::cpu::tests::an_idle_cpu_is_chosen_near_and_on_a_free_core_first ... FAILED
+
+failures:
+
+---- sched::cpu::tests::an_idle_cpu_is_chosen_near_and_on_a_free_core_first stdout ----
+
+thread 'sched::cpu::tests::an_idle_cpu_is_chosen_near_and_on_a_free_core_first' (34776545) panicked at kernel/pure/sched/cpu.rs:4178:9:
+assertion `left == right` failed: core {2, 6} is free
+  left: Some(CpuId(4))
+ right: Some(CpuId(2))
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    sched::cpu::tests::an_idle_cpu_is_chosen_near_and_on_a_free_core_first
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 302 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p kernel --lib`
+EXIT=101
+=== m2-steal-ignores-distance @ f51c3b45e: cargo test -p kernel --lib sched::cpu::tests::a_steal_probe_asks
+   Compiling kernel v0.1.0 (<src>/kernel)
+warning: constant `STEAL_RINGS` is never used
+    --> kernel/pure/sched/cpu.rs:2387:7
+     |
+2387 | const STEAL_RINGS: [(Option<Level>, Level); 4] = [
+     |       ^^^^^^^^^^^
+     |
+     = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `kernel` (lib test) generated 1 warning
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.68s
+     Running unittests pure/lib.rs (target/debug/deps/kernel-fa45b686f8e87f8e)
+
+running 1 test
+
+thread 'sched::cpu::tests::a_steal_probe_asks_the_nearest_surplus_first' (34776890) panicked at kernel/pure/sched/cpu.rs:4227:13:
+assertion `left == right` failed: the probe's victim
+  left: [1]
+ right: [4]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'sched::cpu::tests::a_steal_probe_asks_the_nearest_surplus_first' (34776890) panicked at kernel/pure/sched/mailbox.rs:178:9:
+mailbox node dropped with a message in flight
+stack backtrace:
+   0:        0x100f738c4 - std[5d97c59e5e5fafcc]::backtrace_rs::backtrace::libunwind::trace
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/../../backtrace/src/backtrace/libunwind.rs:117:9
+   1:        0x100f738c4 - std[5d97c59e5e5fafcc]::backtrace_rs::backtrace::trace_unsynchronized::<std[5d97c59e5e5fafcc]::sys::backtrace::_print_fmt::{closure#1}>
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/../../backtrace/src/backtrace/mod.rs:66:14
+   2:        0x100f738c4 - std[5d97c59e5e5fafcc]::sys::backtrace::_print_fmt
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/sys/backtrace.rs:74:9
+   3:        0x100f738c4 - <<std[5d97c59e5e5fafcc]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[663bb9e1522ba5ef]::fmt::Display>::fmt
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/sys/backtrace.rs:44:26
+   4:        0x100f84b00 - <core[663bb9e1522ba5ef]::fmt::rt::Argument>::fmt
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/fmt/rt.rs:152:76
+   5:        0x100f84b00 - core[663bb9e1522ba5ef]::fmt::write
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/fmt/mod.rs:1687:22
+   6:        0x100f76fb4 - std[5d97c59e5e5fafcc]::io::default_write_fmt::<alloc[cc4db322bb1ac55d]::vec::Vec<u8>>
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/io/mod.rs:626:11
+   7:        0x100f76fb4 - <alloc[cc4db322bb1ac55d]::vec::Vec<u8> as std[5d97c59e5e5fafcc]::io::Write>::write_fmt
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/io/mod.rs:1730:13
+   8:        0x100f5ad14 - <std[5d97c59e5e5fafcc]::sys::backtrace::BacktraceLock>::print
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/sys/backtrace.rs:47:25
+   9:        0x100f5ad14 - std[5d97c59e5e5fafcc]::panicking::default_hook::{closure#0}
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/panicking.rs:292:27
+  10:        0x100f6d330 - std[5d97c59e5e5fafcc]::panicking::default_hook
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/panicking.rs:316:9
+  11:        0x100f21ae0 - <alloc[cc4db322bb1ac55d]::boxed::Box<dyn for<'a, 'b> core[663bb9e1522ba5ef]::ops::function::Fn<(&'a std[5d97c59e5e5fafcc]::panic::PanicHookInfo<'b>,), Output = ()> + core[663bb9e1522ba5ef]::marker::Sync + core[663bb9e1522ba5ef]::marker::Send> as core[663bb9e1522ba5ef]::ops::function::Fn<(&std[5d97c59e5e5fafcc]::panic::PanicHookInfo,)>>::call
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/alloc/src/boxed.rs:2333:9
+  12:        0x100f21ae0 - test[4aa3eea2f4983582]::test_main_inner::<test[4aa3eea2f4983582]::test_main_static::{closure#0}>::{closure#0}
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/test/src/lib.rs:155:21
+  13:        0x100f6d6e8 - <alloc[cc4db322bb1ac55d]::boxed::Box<dyn for<'a, 'b> core[663bb9e1522ba5ef]::ops::function::Fn<(&'a std[5d97c59e5e5fafcc]::panic::PanicHookInfo<'b>,), Output = ()> + core[663bb9e1522ba5ef]::marker::Sync + core[663bb9e1522ba5ef]::marker::Send> as core[663bb9e1522ba5ef]::ops::function::Fn<(&std[5d97c59e5e5fafcc]::panic::PanicHookInfo,)>>::call
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/alloc/src/boxed.rs:2333:9
+  14:        0x100f6d6e8 - std[5d97c59e5e5fafcc]::panicking::panic_with_hook
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/panicking.rs:823:13
+  15:        0x100f5adc8 - std[5d97c59e5e5fafcc]::panicking::panic_handler::{closure#0}
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/panicking.rs:681:13
+  16:        0x100f523c0 - std[5d97c59e5e5fafcc]::sys::backtrace::__rust_end_short_backtrace::<std[5d97c59e5e5fafcc]::panicking::panic_handler::{closure#0}, !>
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/sys/backtrace.rs:182:18
+  17:        0x100f5b2d4 - __rustc[100742bb89c490cb]::rust_begin_unwind
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/panicking.rs:679:5
+  18:        0x100f93d9c - core[663bb9e1522ba5ef]::panicking::panic_fmt
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/panicking.rs:80:14
+  19:        0x100ef3244 - <kernel[7e7ee56c826b8b43]::sched::mailbox::MailboxNode<kernel[7e7ee56c826b8b43]::sched::msg::Msg<kernel[7e7ee56c826b8b43]::sched::cpu::tests::TestPayload>> as core[663bb9e1522ba5ef]::ops::drop::Drop>::drop
+                               at <src>/kernel/pure/sched/mailbox.rs:178:9
+  20:        0x100ef3244 - core[663bb9e1522ba5ef]::ptr::drop_glue::<kernel[7e7ee56c826b8b43]::sched::mailbox::MailboxNode<kernel[7e7ee56c826b8b43]::sched::msg::Msg<kernel[7e7ee56c826b8b43]::sched::cpu::tests::TestPayload>>>
+                               at ~/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/core/src/ptr/mod.rs:823:1
+  21:        0x100ef3244 - core[663bb9e1522ba5ef]::ptr::drop_glue::<kernel[7e7ee56c826b8b43]::sched::cpu::CpuSched<kernel[7e7ee56c826b8b43]::sched::cpu::tests::TestPayload>>
+                               at ~/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/core/src/ptr/mod.rs:823:1
+  22:        0x100ef7ec4 - core[663bb9e1522ba5ef]::ptr::drop_glue::<[kernel[7e7ee56c826b8b43]::sched::cpu::CpuSched<kernel[7e7ee56c826b8b43]::sched::cpu::tests::TestPayload>]>
+                               at ~/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/core/src/ptr/mod.rs:823:1
+  23:        0x100ef7ec4 - core[663bb9e1522ba5ef]::ptr::drop_in_place::<[kernel[7e7ee56c826b8b43]::sched::cpu::CpuSched<kernel[7e7ee56c826b8b43]::sched::cpu::tests::TestPayload>]>
+                               at ~/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/core/src/ptr/mod.rs:818:14
+  24:        0x100ef7ec4 - <*mut [kernel[7e7ee56c826b8b43]::sched::cpu::CpuSched<kernel[7e7ee56c826b8b43]::sched::cpu::tests::TestPayload>]>::drop_in_place
+                               at ~/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/core/src/ptr/mut_ptr.rs:1382:18
+  25:        0x100ef7ec4 - <alloc[cc4db322bb1ac55d]::vec::Vec<kernel[7e7ee56c826b8b43]::sched::cpu::CpuSched<kernel[7e7ee56c826b8b43]::sched::cpu::tests::TestPayload>> as core[663bb9e1522ba5ef]::ops::drop::Drop>::drop
+                               at ~/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/alloc/src/vec/mod.rs:4303:52
+  26:        0x100ef7ec4 - core[663bb9e1522ba5ef]::ptr::drop_glue::<alloc[cc4db322bb1ac55d]::vec::Vec<kernel[7e7ee56c826b8b43]::sched::cpu::CpuSched<kernel[7e7ee56c826b8b43]::sched::cpu::tests::TestPayload>>>
+                               at ~/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/core/src/ptr/mod.rs:823:1
+  27:        0x100ef7ec4 - core[663bb9e1522ba5ef]::ptr::drop_glue::<kernel[7e7ee56c826b8b43]::sched::cpu::tests::World>
+                               at ~/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/core/src/ptr/mod.rs:823:1
+  28:        0x100ecbce0 - kernel[7e7ee56c826b8b43]::sched::cpu::tests::a_steal_probe_asks_the_nearest_surplus_first
+                               at <src>/kernel/pure/sched/cpu.rs:4229:9
+  29:        0x100ec5394 - kernel[7e7ee56c826b8b43]::sched::cpu::tests::a_steal_probe_asks_the_nearest_surplus_first::{closure#0}
+                               at <src>/kernel/pure/sched/cpu.rs:4216:54
+  30:        0x100ec5394 - <kernel[7e7ee56c826b8b43]::sched::cpu::tests::a_steal_probe_asks_the_nearest_surplus_first::{closure#0} as core[663bb9e1522ba5ef]::ops::function::FnOnce<()>>::call_once
+                               at ~/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/core/src/ops/function.rs:250:5
+  31:        0x100f16d8c - <fn() -> core[663bb9e1522ba5ef]::result::Result<(), alloc[cc4db322bb1ac55d]::string::String> as core[663bb9e1522ba5ef]::ops::function::FnOnce<()>>::call_once
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/ops/function.rs:250:5
+  32:        0x100f16d8c - test[4aa3eea2f4983582]::__rust_begin_short_backtrace::<core[663bb9e1522ba5ef]::result::Result<(), alloc[cc4db322bb1ac55d]::string::String>, fn() -> core[663bb9e1522ba5ef]::result::Result<(), alloc[cc4db322bb1ac55d]::string::String>>
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/test/src/lib.rs:724:18
+  33:        0x100f220c0 - test[4aa3eea2f4983582]::run_test_in_process::{closure#0}
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/test/src/lib.rs:747:74
+  34:        0x100f220c0 - <core[663bb9e1522ba5ef]::panic::unwind_safe::AssertUnwindSafe<test[4aa3eea2f4983582]::run_test_in_process::{closure#0}> as core[663bb9e1522ba5ef]::ops::function::FnOnce<()>>::call_once
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/panic/unwind_safe.rs:275:9
+  35:        0x100f220c0 - std[5d97c59e5e5fafcc]::panicking::catch_unwind::do_call::<core[663bb9e1522ba5ef]::panic::unwind_safe::AssertUnwindSafe<test[4aa3eea2f4983582]::run_test_in_process::{closure#0}>, core[663bb9e1522ba5ef]::result::Result<(), alloc[cc4db322bb1ac55d]::string::String>>
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/panicking.rs:576:43
+  36:        0x100f220c0 - std[5d97c59e5e5fafcc]::panicking::catch_unwind::<core[663bb9e1522ba5ef]::result::Result<(), alloc[cc4db322bb1ac55d]::string::String>, core[663bb9e1522ba5ef]::panic::unwind_safe::AssertUnwindSafe<test[4aa3eea2f4983582]::run_test_in_process::{closure#0}>>
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/panicking.rs:544:19
+  37:        0x100f220c0 - std[5d97c59e5e5fafcc]::panic::catch_unwind::<core[663bb9e1522ba5ef]::panic::unwind_safe::AssertUnwindSafe<test[4aa3eea2f4983582]::run_test_in_process::{closure#0}>, core[663bb9e1522ba5ef]::result::Result<(), alloc[cc4db322bb1ac55d]::string::String>>
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/panic.rs:359:14
+  38:        0x100f220c0 - test[4aa3eea2f4983582]::run_test_in_process
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/test/src/lib.rs:747:27
+  39:        0x100f220c0 - test[4aa3eea2f4983582]::run_test::{closure#0}
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/test/src/lib.rs:668:43
+  40:        0x100f1cfa0 - test[4aa3eea2f4983582]::run_test::{closure#1}
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/test/src/lib.rs:698:41
+  41:        0x100f1cfa0 - std[5d97c59e5e5fafcc]::sys::backtrace::__rust_begin_short_backtrace::<test[4aa3eea2f4983582]::run_test::{closure#1}, ()>
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/sys/backtrace.rs:166:18
+  42:        0x100f24588 - std[5d97c59e5e5fafcc]::thread::lifecycle::spawn_unchecked::<test[4aa3eea2f4983582]::run_test::{closure#1}, ()>::{closure#1}::{closure#0}
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/thread/lifecycle.rs:70:13
+  43:        0x100f24588 - <core[663bb9e1522ba5ef]::panic::unwind_safe::AssertUnwindSafe<std[5d97c59e5e5fafcc]::thread::lifecycle::spawn_unchecked<test[4aa3eea2f4983582]::run_test::{closure#1}, ()>::{closure#1}::{closure#0}> as core[663bb9e1522ba5ef]::ops::function::FnOnce<()>>::call_once
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/panic/unwind_safe.rs:275:9
+  44:        0x100f24588 - std[5d97c59e5e5fafcc]::panicking::catch_unwind::do_call::<core[663bb9e1522ba5ef]::panic::unwind_safe::AssertUnwindSafe<std[5d97c59e5e5fafcc]::thread::lifecycle::spawn_unchecked<test[4aa3eea2f4983582]::run_test::{closure#1}, ()>::{closure#1}::{closure#0}>, ()>
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/panicking.rs:576:43
+  45:        0x100f24588 - std[5d97c59e5e5fafcc]::panicking::catch_unwind::<(), core[663bb9e1522ba5ef]::panic::unwind_safe::AssertUnwindSafe<std[5d97c59e5e5fafcc]::thread::lifecycle::spawn_unchecked<test[4aa3eea2f4983582]::run_test::{closure#1}, ()>::{closure#1}::{closure#0}>>
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/panicking.rs:544:19
+  46:        0x100f24588 - std[5d97c59e5e5fafcc]::panic::catch_unwind::<core[663bb9e1522ba5ef]::panic::unwind_safe::AssertUnwindSafe<std[5d97c59e5e5fafcc]::thread::lifecycle::spawn_unchecked<test[4aa3eea2f4983582]::run_test::{closure#1}, ()>::{closure#1}::{closure#0}>, ()>
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/panic.rs:359:14
+  47:        0x100f24588 - std[5d97c59e5e5fafcc]::thread::lifecycle::spawn_unchecked::<test[4aa3eea2f4983582]::run_test::{closure#1}, ()>::{closure#1}
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/thread/lifecycle.rs:68:26
+  48:        0x100f24588 - <std[5d97c59e5e5fafcc]::thread::lifecycle::spawn_unchecked<test[4aa3eea2f4983582]::run_test::{closure#1}, ()>::{closure#1} as core[663bb9e1522ba5ef]::ops::function::FnOnce<()>>::call_once::{shim:vtable#0}
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/ops/function.rs:250:5
+  49:        0x100f73218 - <alloc[cc4db322bb1ac55d]::boxed::Box<dyn core[663bb9e1522ba5ef]::ops::function::FnOnce<(), Output = ()> + core[663bb9e1522ba5ef]::marker::Send> as core[663bb9e1522ba5ef]::ops::function::FnOnce<()>>::call_once
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/alloc/src/boxed.rs:2319:9
+  50:        0x100f73218 - <std[5d97c59e5e5fafcc]::sys::thread::unix::Thread>::new::thread_start
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/sys/thread/unix.rs:123:17
+  51:        0x19b685d00 - __pthread_exit
+
+thread 'sched::cpu::tests::a_steal_probe_asks_the_nearest_surplus_first' (34776890) panicked at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/panicking.rs:233:5:
+panic in a destructor during cleanup
+thread caused non-unwinding panic. aborting.
+error: test failed, to rerun pass `-p kernel --lib`
+
+Caused by:
+  process didn't exit successfully: `<src>/target/debug/deps/kernel-fa45b686f8e87f8e 'sched::cpu::tests::a_steal_probe_asks'` (signal: 6, SIGABRT: process abort signal)
+EXIT=101
+=== m3-pptt-ignores-threads @ f51c3b45e: cargo test -p toyos-acpi --test pptt qemus_table
+   Compiling toyos-bootmap v0.1.0 (<src>/lib/bootmap)
+   Compiling toyos-acpi v0.1.0 (<src>/lib/acpi)
+warning: constant `THREAD` is never used
+  --> lib/acpi/src/pptt.rs:25:7
+   |
+25 | const THREAD: u32 = 1 << 2;
+   |       ^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `toyos-acpi` (lib) generated 1 warning
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.58s
+     Running tests/pptt.rs (target/debug/deps/pptt-c5c2e2a0d2818352)
+
+running 1 test
+test qemus_table_places_each_processor_as_its_command_line_asked ... FAILED
+
+failures:
+
+---- qemus_table_places_each_processor_as_its_command_line_asked stdout ----
+
+thread 'qemus_table_places_each_processor_as_its_command_line_asked' (34777219) panicked at lib/acpi/tests/pptt.rs:29:13:
+assertion `left == right` failed: core of 0 and 1
+  left: false
+ right: true
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    qemus_table_places_each_processor_as_its_command_line_asked
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-acpi --test pptt`
+EXIT=101
+=== m4-x86-llc-is-package @ f51c3b45e: cargo test -p kernel-sim --release --test topology a_benchs_shape
+   Compiling toyos-abi v0.16.0 (<src>/sdk/abi)
+   Compiling kernel v0.1.0 (<src>/kernel)
+   Compiling kernel-sim v0.1.0 (<src>/kernel/sim)
+    Finished `release` profile [optimized] target(s) in 2.53s
+     Running tests/topology.rs (target/release/deps/topology-d49f0921bd17e870)
+
+running 1 test
+test a_benchs_shape_is_what_its_scout_read ... FAILED
+
+failures:
+
+---- a_benchs_shape_is_what_its_scout_read stdout ----
+
+thread 'a_benchs_shape_is_what_its_scout_read' (34777719) panicked at kernel/sim/tests/topology.rs:111:13:
+assertion `left == right` failed: amd-bench: cpu8
+  left: CpuKeys { core: 4, llc: 1, package: 0 }
+ right: CpuKeys { core: 4, llc: 0, package: 0 }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    a_benchs_shape_is_what_its_scout_read
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p kernel-sim --test topology`
+EXIT=101
+=== m5-spawn-ignores-idleness @ f51c3b45e: cargo test -p kernel --lib sched::cpu::tests::a_spawn_goes
+   Compiling kernel v0.1.0 (<src>/kernel)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.74s
+     Running unittests pure/lib.rs (target/debug/deps/kernel-fa45b686f8e87f8e)
+
+running 1 test
+test sched::cpu::tests::a_spawn_goes_to_a_free_core_before_a_busy_cores_thread ... FAILED
+
+failures:
+
+---- sched::cpu::tests::a_spawn_goes_to_a_free_core_before_a_busy_cores_thread stdout ----
+
+thread 'sched::cpu::tests::a_spawn_goes_to_a_free_core_before_a_busy_cores_thread' (34778128) panicked at kernel/pure/sched/cpu.rs:4205:9:
+assertion `left == right` failed: 4's sibling runs; 5's core is free
+  left: CpuId(4)
+ right: CpuId(5)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    sched::cpu::tests::a_spawn_goes_to_a_free_core_before_a_busy_cores_thread
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 302 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p kernel --lib`
+EXIT=101
