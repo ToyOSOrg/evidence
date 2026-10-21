@@ -1,0 +1,14 @@
+diff --git a/kernel/pure/message.rs b/kernel/pure/message.rs
+index e02d3f7b3..777dad05c 100644
+--- a/kernel/pure/message.rs
++++ b/kernel/pure/message.rs
+@@ -60,9 +60,6 @@ impl<B> Batches<B> {
+     /// Whether a message of `len` bytes, carrying a batch or not, may be
+     /// pinned here, `cap` batches at most.
+     pub fn admit(&self, len: usize, carries: bool, cap: usize) -> Result<(), Refused> {
+-        if carries && len == 0 {
+-            return Err(Refused::Empty);
+-        }
+         if carries && self.pinned.len() >= cap {
+             return Err(Refused::QueueFull);
+         }

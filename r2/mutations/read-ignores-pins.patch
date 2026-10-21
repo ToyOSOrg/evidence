@@ -1,0 +1,14 @@
+--- a/kernel/src/object/service.rs	2026-10-21 13:01:40
++++ b/kernel/src/object/service.rs	2026-10-21 13:01:40
+@@ -64,7 +64,10 @@
+     fn read(&self, rx: PipeId, buf: &mut UserBytesMut) -> Option<Result<usize, AtBatch>> {
+         let guard = self.0.lock();
+         pipe::try_read_within(rx, buf, |read, available| match guard.as_ref() {
+-            Some(batches) => batches.window(read, available),
++            Some(batches) => {
++                let _ = (batches, read);
++                Window::Bytes(available)
++            }
+             None => Window::Bytes(available),
+         })
+     }

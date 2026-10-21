@@ -1,0 +1,32 @@
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.08s
+     Running unittests pure/lib.rs (target/debug/deps/kernel-a7ca71f2661cd543)
+
+running 4 tests
+test message::tests::a_refused_send_leaves_nothing_behind ... ok
+test message::tests::a_batch_pinned_before_the_last_is_a_caller_bug - should panic ... ok
+test message::tests::a_batch_is_taken_only_where_its_bytes_end_and_no_read_crosses_it ... FAILED
+test message::tests::every_batch_arrives_between_its_own_bytes_and_the_next_messages ... FAILED
+
+failures:
+
+---- message::tests::a_batch_is_taken_only_where_its_bytes_end_and_no_read_crosses_it stdout ----
+
+thread 'message::tests::a_batch_is_taken_only_where_its_bytes_end_and_no_read_crosses_it' (34543055) panicked at kernel/pure/message.rs:175:9:
+assertion `left == right` failed: a read crossed the batch
+  left: [0, 1, 2, 3, 4, 5, 6, 7]
+ right: [0, 1, 2, 3, 4]
+
+---- message::tests::every_batch_arrives_between_its_own_bytes_and_the_next_messages stdout ----
+
+thread 'message::tests::every_batch_arrives_between_its_own_bytes_and_the_next_messages' (34543058) panicked at kernel/pure/message.rs:240:29:
+byte 57 was read past a batch pinned at 57
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    message::tests::a_batch_is_taken_only_where_its_bytes_end_and_no_read_crosses_it
+    message::tests::every_batch_arrives_between_its_own_bytes_and_the_next_messages
+
+test result: FAILED. 2 passed; 2 failed; 0 ignored; 0 measured; 250 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p kernel --lib`

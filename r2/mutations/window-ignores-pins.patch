@@ -1,0 +1,14 @@
+diff --git a/kernel/pure/message.rs b/kernel/pure/message.rs
+index e02d3f7b3..d12881b6c 100644
+--- a/kernel/pure/message.rs
++++ b/kernel/pure/message.rs
+@@ -83,6 +83,9 @@ impl<B> Batches<B> {
+ 
+     /// What a read at `read` may take of the `available` bytes the stream holds.
+     pub fn window(&self, read: u64, available: usize) -> Window {
++        let _ = read;
++        return Window::Bytes(available);
++        #[allow(unreachable_code)]
+         match self.pinned.front() {
+             Some((at, _)) if *at == read => Window::AtBatch,
+             Some((at, _)) => {
