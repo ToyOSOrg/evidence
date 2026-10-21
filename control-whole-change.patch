@@ -1,0 +1,456 @@
+diff --git a/kernel/src/object/mod.rs b/kernel/src/object/mod.rs
+index 98b2759e5..47f597626 100644
+--- a/kernel/src/object/mod.rs
++++ b/kernel/src/object/mod.rs
+@@ -21,6 +21,7 @@ pub mod file;
+ pub mod handle;
+ pub mod inbox;
+ pub mod namespace;
++pub mod null;
+ pub mod ops;
+ pub mod pipe;
+ pub mod port;
+@@ -252,6 +253,7 @@ kobject! {
+     immediate SysCap => syscap::SysCap,
+     // The last handle's loss is the loss of the *ability to wait*, not proof the process should stop.
+     immediate Process => process::ProcessObject,
++    immediate Null => null::NullObject,
+ }
+ 
+ /// Objects whose last handle has gone, waiting for release with nothing held;
+diff --git a/kernel/src/object/null.rs b/kernel/src/object/null.rs
+new file mode 100644
+index 000000000..5662c347c
+--- /dev/null
++++ b/kernel/src/object/null.rs
+@@ -0,0 +1,18 @@
++//! The null object: every read answers end of file, every write takes all it
++//! is given, and both directions are always ready. It names nothing, so it
++//! carries no authority and holds no state; `SYS_NULL` mints one per call.
++
++use alloc::sync::Arc;
++
++use super::{KObjectVariant, ObjectCore};
++
++pub struct NullObject {
++    /// Visible to `object`, where `kobject!` generates this type's `core()`.
++    pub(super) core: ObjectCore,
++}
++
++impl NullObject {
++    pub fn new() -> Arc<Self> {
++        Arc::new(Self { core: Self::new_core() })
++    }
++}
+diff --git a/kernel/src/object/ops.rs b/kernel/src/object/ops.rs
+index dc1ebf9f9..7dd2f6ecc 100644
+--- a/kernel/src/object/ops.rs
++++ b/kernel/src/object/ops.rs
+@@ -59,6 +59,7 @@ pub fn initial_rights(object: &KObjectRef) -> Rights {
+         KObjectRef::Namespace(_) => Rights::DUP.union(Rights::TRANSFER).union(Rights::READ),
+         // A spawner gets everything a child handle offers: exit code, kill, and accounting.
+         KObjectRef::Process(_) => BASE.union(Rights::READ).union(Rights::MANAGE),
++        KObjectRef::Null(_) => BASE.union(Rights::READ).union(Rights::WRITE),
+     }
+ }
+ 
+@@ -223,7 +224,7 @@ pub fn pipe_read(object: &KObjectRef) -> Option<(PipeId, WaitClass)> {
+         | KObjectRef::Console(_) | KObjectRef::Acceptor(_) | KObjectRef::Inbox(_)
+         | KObjectRef::SysCap(_)
+         | KObjectRef::Connector(_) | KObjectRef::Namespace(_)
+-        | KObjectRef::SharedMem(_) | KObjectRef::Process(_) => None,
++        | KObjectRef::SharedMem(_) | KObjectRef::Process(_) | KObjectRef::Null(_) => None,
+     }
+ }
+ 
+@@ -236,7 +237,7 @@ pub fn pipe_write(object: &KObjectRef) -> Option<(PipeId, WaitClass)> {
+         | KObjectRef::Console(_) | KObjectRef::Acceptor(_) | KObjectRef::Inbox(_)
+         | KObjectRef::SysCap(_)
+         | KObjectRef::Connector(_) | KObjectRef::Namespace(_)
+-        | KObjectRef::SharedMem(_) | KObjectRef::Process(_) => None,
++        | KObjectRef::SharedMem(_) | KObjectRef::Process(_) | KObjectRef::Null(_) => None,
+     }
+ }
+ 
+@@ -292,7 +293,7 @@ pub fn read_watch(object: &KObjectRef) -> Option<WatchRef> {
+         KObjectRef::SysCap(_) => Some(WatchRef::Static(&crate::log::user::WATCH)),
+         KObjectRef::PipeWrite(_) | KObjectRef::File(_) | KObjectRef::Inbox(_)
+         | KObjectRef::Connector(_) | KObjectRef::Namespace(_)
+-        | KObjectRef::SharedMem(_) => None,
++        | KObjectRef::SharedMem(_) | KObjectRef::Null(_) => None,
+     }
+ }
+ 
+@@ -306,7 +307,7 @@ pub fn write_watch(object: &KObjectRef) -> Option<WatchRef> {
+         | KObjectRef::Acceptor(_) | KObjectRef::Inbox(_)
+         | KObjectRef::SysCap(_)
+         | KObjectRef::Connector(_) | KObjectRef::Namespace(_)
+-        | KObjectRef::SharedMem(_) | KObjectRef::Process(_) => None,
++        | KObjectRef::SharedMem(_) | KObjectRef::Process(_) | KObjectRef::Null(_) => None,
+     }
+ }
+ 
+@@ -319,7 +320,7 @@ pub fn pipe_end_watch(object: &KObjectRef) -> Option<WatchRef> {
+         KObjectRef::Connection(_) | KObjectRef::Acceptor(_) | KObjectRef::Process(_)
+         | KObjectRef::Console(_) | KObjectRef::Device(_) | KObjectRef::SysCap(_)
+         | KObjectRef::File(_) | KObjectRef::Inbox(_) | KObjectRef::Connector(_)
+-        | KObjectRef::Namespace(_) | KObjectRef::SharedMem(_) => None,
++        | KObjectRef::Namespace(_) | KObjectRef::SharedMem(_) | KObjectRef::Null(_) => None,
+     }
+ }
+ 
+@@ -332,7 +333,7 @@ pub fn other_end_gone(object: &KObjectRef) -> bool {
+         KObjectRef::Connection(_) | KObjectRef::Acceptor(_) | KObjectRef::Process(_)
+         | KObjectRef::Console(_) | KObjectRef::Device(_) | KObjectRef::SysCap(_)
+         | KObjectRef::File(_) | KObjectRef::Inbox(_) | KObjectRef::Connector(_)
+-        | KObjectRef::Namespace(_) | KObjectRef::SharedMem(_) => false,
++        | KObjectRef::Namespace(_) | KObjectRef::SharedMem(_) | KObjectRef::Null(_) => false,
+     }
+ }
+ 
+@@ -349,6 +350,8 @@ fn close_ends_polls(object: &KObjectRef) -> bool {
+         KObjectRef::SysCap(_) => false,
+         KObjectRef::Console(_) => false,
+         KObjectRef::Process(_) => false,
++        // It has no watch: every poll on it answered as it was asked.
++        KObjectRef::Null(_) => false,
+         KObjectRef::Device(d) => match d.class() {
+             device_registry::DeviceType::Keyboard
+             | device_registry::DeviceType::PciFunction
+@@ -532,6 +535,7 @@ pub fn try_read(object: &KObjectRef, buf: &mut UserBytesMut) -> Option<u64> {
+             }
+             Some(count as u64)
+         }
++        KObjectRef::Null(_) => Some(0),
+         KObjectRef::PipeWrite(_) | KObjectRef::Acceptor(_) | KObjectRef::Inbox(_)
+         | KObjectRef::SysCap(_)
+         | KObjectRef::Connector(_) | KObjectRef::Namespace(_)
+@@ -592,6 +596,7 @@ pub fn try_write(object: &KObjectRef, buf: &UserBytes) -> Option<u64> {
+         // a short count is a writer ahead of the console, told so.
+         KObjectRef::Console(c) => Some(c.write(buf) as u64),
+         KObjectRef::Device(d) => Some(write_device(d, buf)),
++        KObjectRef::Null(_) => Some(buf.len() as u64),
+         KObjectRef::PipeRead(_) | KObjectRef::Acceptor(_)
+         | KObjectRef::Inbox(_) | KObjectRef::SharedMem(_) | KObjectRef::SysCap(_)
+         | KObjectRef::Connector(_) | KObjectRef::Namespace(_)
+@@ -652,6 +657,7 @@ pub fn fstat(object: &KObjectRef) -> Stat {
+         }
+         KObjectRef::Connection(_) => plain(FileType::Socket),
+         KObjectRef::Console(_) => plain(FileType::Serial),
++        KObjectRef::Null(_) => plain(FileType::Null),
+         KObjectRef::Acceptor(_) => plain(FileType::Pipe),
+         KObjectRef::SharedMem(m) => Stat {
+             // The verdict `pcidev::dma_map` lends a device by: a receiver judges a peer's region on it before mapping.
+@@ -807,7 +813,7 @@ pub fn has_data(object: &KObjectRef) -> bool {
+         KObjectRef::Console(_) => serial::has_data(),
+         KObjectRef::Acceptor(a) => a.has_pending(),
+         KObjectRef::Process(p) => p.finished(),
+-        KObjectRef::File(_) => true,
++        KObjectRef::File(_) | KObjectRef::Null(_) => true,
+         KObjectRef::Device(d) => match d.class() {
+             device_registry::DeviceType::Keyboard => keyboard::has_data(),
+             device_registry::DeviceType::Mouse => mouse::has_data(),
+@@ -839,7 +845,7 @@ pub fn read_posts_are_readiness(object: &KObjectRef) -> bool {
+         KObjectRef::PipeRead(_) | KObjectRef::PipeWrite(_) | KObjectRef::Connection(_)
+         | KObjectRef::Acceptor(_) | KObjectRef::File(_) | KObjectRef::Device(_)
+         | KObjectRef::Inbox(_) | KObjectRef::Connector(_) | KObjectRef::Namespace(_)
+-        | KObjectRef::SharedMem(_) | KObjectRef::Process(_) => false,
++        | KObjectRef::SharedMem(_) | KObjectRef::Process(_) | KObjectRef::Null(_) => false,
+     }
+ }
+ 
+@@ -847,7 +853,7 @@ pub fn has_space(object: &KObjectRef) -> bool {
+     match object {
+         KObjectRef::PipeWrite(w) => pipe::has_space(w.id()),
+         KObjectRef::Connection(c) => pipe::has_space(c.tx()),
+-        KObjectRef::File(_) => true,
++        KObjectRef::File(_) | KObjectRef::Null(_) => true,
+         KObjectRef::Console(_) => crate::log::console::has_room(),
+         KObjectRef::PipeRead(_) | KObjectRef::Device(_) | KObjectRef::Acceptor(_)
+         | KObjectRef::Inbox(_) | KObjectRef::SysCap(_)
+@@ -871,7 +877,7 @@ pub fn mark_tty(object: &KObjectRef) -> u64 {
+         | KObjectRef::Console(_) | KObjectRef::Acceptor(_) | KObjectRef::Inbox(_)
+         | KObjectRef::SysCap(_) | KObjectRef::SharedMem(_)
+         | KObjectRef::Connector(_) | KObjectRef::Namespace(_)
+-        | KObjectRef::Process(_) => SyscallError::InvalidArgument.to_u64(),
++        | KObjectRef::Process(_) | KObjectRef::Null(_) => SyscallError::InvalidArgument.to_u64(),
+     }
+ }
+ 
+diff --git a/kernel/src/syscall/dispatch.rs b/kernel/src/syscall/dispatch.rs
+index 2eb2f0dd4..62d692174 100644
+--- a/kernel/src/syscall/dispatch.rs
++++ b/kernel/src/syscall/dispatch.rs
+@@ -32,7 +32,7 @@ use super::fs::{
+ };
+ use super::handles::{sys_close, sys_dup2, sys_handle_dup, sys_handle_dup_slot, with_object, with_object_ref};
+ use super::io::{
+-    sys_random, sys_read, sys_read_nonblock, sys_write, sys_write_nonblock,
++    sys_null, sys_random, sys_read, sys_read_nonblock, sys_write, sys_write_nonblock,
+ };
+ use super::ipc::{
+     sys_accept, sys_handle_recv, sys_handle_send, sys_inbox_setup,
+@@ -290,6 +290,7 @@ pub(crate) fn syscall_dispatch(num: u64, a1: u64, a2: u64, a3: u64, a4: u64) ->
+         SYS_HANDLE_DUP => sys_handle_dup(RawHandle(a1 as u32), a2),
+         SYS_HANDLE_DUP_AT => sys_dup2(RawHandle(a1 as u32), a2),
+         SYS_HANDLE_DUP_SLOT => sys_handle_dup_slot(a1),
++        SYS_NULL => sys_null(a1),
+         SYS_GETPID => process::current_process().raw() as u64,
+         SYS_RENAME => {
+             let old = match ctx.user_str(UserAddr::new(a1), a2) { Ok(s) => s, Err(e) => return e.to_u64() };
+diff --git a/kernel/src/syscall/io.rs b/kernel/src/syscall/io.rs
+index c07f6dab3..bdd95b4b8 100644
+--- a/kernel/src/syscall/io.rs
++++ b/kernel/src/syscall/io.rs
+@@ -240,6 +240,24 @@ pub(super) fn sys_write_nonblock(h: RawHandle, buf: &UserBytes) -> u64 {
+     }
+ }
+ 
++/// A fresh null handle carrying `want`, which may name no right the null
++/// object's own handle lacks.
++pub(super) fn sys_null(want: u64) -> u64 {
++    let object = KObjectRef::Null(crate::object::null::NullObject::new());
++    let full = ops::initial_rights(&object);
++    let Some(rights) = u32::try_from(want).ok().and_then(Rights::from_bits) else {
++        return SyscallError::InvalidArgument.to_u64();
++    };
++    if !full.contains(rights) {
++        return SyscallError::InvalidArgument.to_u64();
++    }
++    let entry = crate::object::HandleEntry::new(object, rights);
++    match process::with_process_data(|data| data.handles.install(entry)) {
++        Ok(h) => h.0 as u64,
++        Err(_) => SyscallError::ResourceExhausted.to_u64(),
++    }
++}
++
+ pub(super) fn sys_random(out: &mut UserBytesMut) -> u64 {
+     crate::random::fill_user(out);
+     0
+diff --git a/sdk/abi/src/handle.rs b/sdk/abi/src/handle.rs
+index 019f5ecd1..3676402f9 100644
+--- a/sdk/abi/src/handle.rs
++++ b/sdk/abi/src/handle.rs
+@@ -75,10 +75,11 @@ pub enum ObjectKind {
+     Console = 10,
+     SysCap = 11,
+     Process = 12,
++    Null = 13,
+ }
+ 
+ impl ObjectKind {
+-    pub const ALL: [ObjectKind; 13] = [
++    pub const ALL: [ObjectKind; 14] = [
+         Self::PipeRead,
+         Self::PipeWrite,
+         Self::Connection,
+@@ -92,6 +93,7 @@ impl ObjectKind {
+         Self::Console,
+         Self::SysCap,
+         Self::Process,
++        Self::Null,
+     ];
+ 
+     pub const fn from_word(word: u32) -> Option<Self> {
+diff --git a/sdk/abi/src/syscall.rs b/sdk/abi/src/syscall.rs
+index 78435edf2..c9a968c6e 100644
+--- a/sdk/abi/src/syscall.rs
++++ b/sdk/abi/src/syscall.rs
+@@ -286,6 +286,9 @@ pub const SYS_ACPI: u64 = 128;
+ /// for an empty slot: how a spawn hands on a stdio slot it may have been
+ /// started without. See [`dup_slot`].
+ pub const SYS_HANDLE_DUP_SLOT: u64 = 129;
++/// A fresh null handle: every read answers end of file and every write takes
++/// all it is given. See [`null`].
++pub const SYS_NULL: u64 = 130;
+ 
+ /// Bins in the per-process syscall profile — one for every number this ABI
+ /// issues, and one at the end for every number it does not.
+@@ -293,13 +296,13 @@ pub const SYS_HANDLE_DUP_SLOT: u64 = 129;
+ /// **The profile's parts sum to its total, and that is the whole requirement.**
+ /// A bin array narrower than the ABI reaches drops calls out of the line while
+ /// the total goes on counting them.
+-pub const SYSCALL_PROFILE_BINS: usize = 131;
++pub const SYSCALL_PROFILE_BINS: usize = 132;
+ 
+ /// Where a number this ABI does not issue is counted. Merging is a degradation
+ /// a reader can see in the line; dropping is one nobody can.
+ pub const SYSCALL_PROFILE_OTHER: usize = SYSCALL_PROFILE_BINS - 1;
+ 
+-const _: () = assert!(SYS_HANDLE_DUP_SLOT < SYSCALL_PROFILE_OTHER as u64);
++const _: () = assert!(SYS_NULL < SYSCALL_PROFILE_OTHER as u64);
+ 
+ pub const WNOHANG: u64 = 1;
+ 
+@@ -564,6 +567,8 @@ pub enum FileType {
+     /// Any other shared-memory region, such as a device's registers; `size`
+     /// is its length. A peer's buffer is never one.
+     DeviceMemory = 13,
++    /// A [null](null) handle: a character device to POSIX.
++    Null = 14,
+ }
+ 
+ impl FileType {
+@@ -582,6 +587,7 @@ impl FileType {
+             11 => Some(Self::Directory),
+             12 => Some(Self::Symlink),
+             13 => Some(Self::DeviceMemory),
++            14 => Some(Self::Null),
+             _ => None,
+         }
+     }
+@@ -2106,6 +2112,15 @@ pub fn dup_slot(slot: u16) -> Result<RawHandle, SyscallError> {
+     check(syscall(SYS_HANDLE_DUP_SLOT, slot as u64, 0, 0, 0)).map(|v| RawHandle(v as u32))
+ }
+ 
++/// A fresh null handle carrying `rights`: a read answers 0 bytes, a write of
++/// n bytes answers n, and a poll is ready at once in either direction. It
++/// names nothing and so carries no authority; `rights` may be any subset of
++/// `READ | WRITE | DUP | TRANSFER | WAIT`, and anything else is refused
++/// `InvalidArgument`.
++pub fn null(rights: Rights) -> Result<RawHandle, SyscallError> {
++    check(syscall(SYS_NULL, rights.bits() as u64, 0, 0, 0)).map(|v| RawHandle(v as u32))
++}
++
+ /// Get the current process ID.
+ pub fn getpid() -> Pid {
+     Pid(syscall(SYS_GETPID, 0, 0, 0, 0) as u32)
+diff --git a/sdk/libc/src/posix_io.rs b/sdk/libc/src/posix_io.rs
+index e2345db97..2ce556301 100644
+--- a/sdk/libc/src/posix_io.rs
++++ b/sdk/libc/src/posix_io.rs
+@@ -6,7 +6,7 @@ use alloc::boxed::Box;
+ use alloc::vec::Vec;
+ use core::ptr;
+ 
+-use toyos_abi::RawHandle;
++use toyos_abi::{RawHandle, Rights};
+ use toyos_abi::syscall::{self, OpenFlags, SeekFrom};
+ 
+ use crate::errcode::EINVAL;
+@@ -78,17 +78,35 @@ pub unsafe extern "C" fn open(path: *const u8, flags: i32, mode: u32) -> i32 {
+ /// `open`'s file, as a handle of this process's: what a spawn's `addopen`
+ /// opens too.
+ pub(crate) fn open_handle(path: &[u8], flags: i32, _mode: u32) -> Result<RawHandle, syscall::SyscallError> {
+-    let mut oflags = OpenFlags(0);
+-
+     let access = flags & 3;
+-    if access == O_RDONLY || access == O_RDWR { oflags |= OpenFlags::READ; }
+-    if access == O_WRONLY || access == O_RDWR { oflags |= OpenFlags::WRITE; }
++    let readable = access == O_RDONLY || access == O_RDWR;
++    let writable = access == O_WRONLY || access == O_RDWR;
++    if path == DEV_NULL {
++        return syscall::null(null_rights(readable, writable));
++    }
++
++    let mut oflags = OpenFlags(0);
++    if readable { oflags |= OpenFlags::READ; }
++    if writable { oflags |= OpenFlags::WRITE; }
+     if flags & O_CREAT != 0 { oflags |= OpenFlags::CREATE; }
+     if flags & O_TRUNC != 0 { oflags |= OpenFlags::TRUNCATE; }
+     if flags & O_APPEND != 0 { oflags |= OpenFlags::APPEND; }
+     syscall::open(path, oflags)
+ }
+ 
++/// POSIX's null device, which libc answers with a kernel null handle: the
++/// name is libc's, and no filesystem holds it.
++const DEV_NULL: &[u8] = b"/dev/null";
++
++/// What a null handle opened for `readable` and `writable` may do: that, and
++/// what every descriptor may (`dup`, a spawn's stdio, `poll`).
++fn null_rights(readable: bool, writable: bool) -> Rights {
++    let mut rights = Rights::DUP.union(Rights::TRANSFER).union(Rights::WAIT);
++    if readable { rights = rights.union(Rights::READ); }
++    if writable { rights = rights.union(Rights::WRITE); }
++    rights
++}
++
+ #[no_mangle]
+ pub unsafe extern "C" fn creat(path: *const u8, mode: u32) -> i32 {
+     unsafe { open(path, O_WRONLY | O_CREAT | O_TRUNC, mode) }
+@@ -165,6 +183,7 @@ unsafe fn answered(answer: Result<syscall::Stat, syscall::SyscallError>, buf: *m
+             syscall::FileType::Tty => S_IFCHR | 0o644,
+             syscall::FileType::Keyboard => S_IFCHR | 0o444,
+             syscall::FileType::Serial => S_IFCHR | 0o644,
++            syscall::FileType::Null => S_IFCHR | 0o666,
+             _ => 0o644,
+         };
+     }
+diff --git a/sdk/std/sys/process.rs b/sdk/std/sys/process.rs
+index 010cee57a..c8da510fa 100644
+--- a/sdk/std/sys/process.rs
++++ b/sdk/std/sys/process.rs
+@@ -272,7 +272,8 @@ impl Command {
+         // The pipes a file server appends a served file from; held until the
+         // child has its own copies.
+         let mut streams: Vec<toyos::Pipe> = Vec::new();
+-        // Copies of this process's own stdio, held until the child has its own.
++        // Copies of this process's own stdio and fresh null handles, held
++        // until the child has its own.
+         let mut inherited: Vec<toyos::OwnedHandle> = Vec::new();
+         let mut stdin_pipe: Option<Pipe> = None;
+         let mut stdout_pipe: Option<Pipe> = None;
+@@ -280,6 +281,10 @@ impl Command {
+         for (pipe, stdio, slot, is_input) in
+             [(&mut stdin_pipe, stdin, 0, true), (&mut stdout_pipe, stdout, 1, false), (&mut stderr_pipe, stderr, 2, false)]
+         {
++            // A slot `inherit_handle` names is that handle's.
++            if self.extra_slots.iter().any(|&[child, _]| child == slot) {
++                continue;
++            }
+             Self::setup_slot(&mut slot_map, &mut child_pipes, &mut streams, &mut inherited, pipe, stdio, slot, is_input)?;
+         }
+         let stdio = slot_map.len();
+@@ -380,7 +385,14 @@ impl Command {
+             Stdio::InheritPipe(pipe) => slot_map.push([child_slot, pipe.raw_fd() as u32]),
+             Stdio::ParentStdout => inherit(1, slot_map, inherited)?,
+             Stdio::ParentStderr => inherit(2, slot_map, inherited)?,
+-            Stdio::Null => {}
++            Stdio::Null => {
++                use toyos_abi::handle::Rights;
++                let direction = if is_input { Rights::READ } else { Rights::WRITE };
++                let null = toyos::null(direction.union(Rights::DUP).union(Rights::TRANSFER).union(Rights::WAIT))
++                    .map_err(crate::sys::to_io_error)?;
++                slot_map.push([child_slot, toyos::AsHandle::as_handle(&null).0]);
++                inherited.push(null);
++            }
+         }
+         Ok(())
+     }
+diff --git a/sdk/toyos/src/lib.rs b/sdk/toyos/src/lib.rs
+index a1d0047cf..785701781 100644
+--- a/sdk/toyos/src/lib.rs
++++ b/sdk/toyos/src/lib.rs
+@@ -66,6 +66,11 @@ pub fn pipe_pair() -> Result<(Pipe, Pipe), toyos_abi::syscall::SyscallError> {
+     Ok((Pipe(OwnedHandle(ends.read)), Pipe(OwnedHandle(ends.write))))
+ }
+ 
++/// A fresh null handle carrying `rights` ([`toyos_abi::syscall::null`]).
++pub fn null(rights: toyos_abi::handle::Rights) -> Result<OwnedHandle, toyos_abi::syscall::SyscallError> {
++    toyos_abi::syscall::null(rights).map(OwnedHandle)
++}
++
+ /// One owned handle, closed when it drops.
+ ///
+ /// `!Copy` and `!Clone`, so a handle cannot be closed twice and cannot be
+diff --git a/system/supervisor/src/main.rs b/system/supervisor/src/main.rs
+index 5e35fa253..95e1ca6bb 100644
+--- a/system/supervisor/src/main.rs
++++ b/system/supervisor/src/main.rs
+@@ -90,7 +90,7 @@ use std::cell::{Cell, RefCell};
+ use std::collections::BTreeMap;
+ use std::os::toyos::process::{ChildExt, CommandExt};
+ use std::path::Path;
+-use std::process::{Child, Command, Stdio};
++use std::process::{Child, Command};
+ use std::rc::Rc;
+ use std::time::{Duration, Instant};
+ 
+@@ -2667,7 +2667,6 @@ fn start<'a>(
+     let log: &mut Log = match output {
+         Output::Boot(log) => {
+             let own = ring.insert(new_ring()).as_handle();
+-            command.stdin(Stdio::null()).stdout(Stdio::null()).stderr(Stdio::null());
+             command.inherit_handle(0, log.stdin.0);
+             command.inherit_handle(1, own.0);
+             command.inherit_handle(2, own.0);

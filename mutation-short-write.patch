@@ -1,0 +1,11 @@
+--- a/kernel/src/object/ops.rs
++++ b/kernel/src/object/ops.rs
+@@ -596,7 +596,7 @@
+         // a short count is a writer ahead of the console, told so.
+         KObjectRef::Console(c) => Some(c.write(buf) as u64),
+         KObjectRef::Device(d) => Some(write_device(d, buf)),
+-        KObjectRef::Null(_) => Some(buf.len() as u64),
++        KObjectRef::Null(_) => Some(buf.len().saturating_sub(1) as u64),
+         KObjectRef::PipeRead(_) | KObjectRef::Acceptor(_)
+         | KObjectRef::Inbox(_) | KObjectRef::SharedMem(_) | KObjectRef::SysCap(_)
+         | KObjectRef::Connector(_) | KObjectRef::Namespace(_)
