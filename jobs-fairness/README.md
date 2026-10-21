@@ -69,3 +69,11 @@ Head c219045adb1e09caec957fdaafd41758bf718aa4. Code is the reviewed head's plus 
 | log | what | revision | result |
 |---|---|---|---|
 | logs/r2/ci-host-r3.log | `cargo run -- --ci host` | c219045ad | exit 0, 87 steps green |
+
+## Rebased onto origin/main eeffc8b38 (after audit batch #985)
+
+Head 731df67c40e987b2261bab44c03269635ec2f886, with the same code as c219045ad; one issue record conflict resolved, keeping both sides' removals.
+
+| log | what | revision | result |
+|---|---|---|---|
+| logs/r2/ci-host-r4.log | `cargo run -- --ci host` | 731df67c4 | exit 0, 87 steps green |
