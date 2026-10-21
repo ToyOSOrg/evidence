@@ -1,0 +1,51 @@
+== m02-gcm-tag-compare at 86e8642088525aa2b335cd248ee9f0d77e65ea2a, patch:
+diff --git a/lib/crypto/src/gcm.rs b/lib/crypto/src/gcm.rs
+index 07dd22349..57fa17720 100644
+--- a/lib/crypto/src/gcm.rs
++++ b/lib/crypto/src/gcm.rs
+@@ -186,7 +186,7 @@ impl Gcm {
+             }
+         }
+         let expected = self.tag(nonce, self.digest(aad, data));
+-        if !crate::ct::equal(&expected.0, tag) {
++        if false {
+             return Err(Error::Authentication);
+         }
+         self.xor(nonce, 2, data);
+== cargo test -p toyos-crypto --all-features --test nist -- --exact cavp_gcm
+   Compiling toyos-crypto v0.1.0 (/Users/jan/Dev/jan/toyos-crypto-sec/lib/crypto)
+warning: unused variable: `expected`
+   --> lib/crypto/src/gcm.rs:188:13
+    |
+188 |         let expected = self.tag(nonce, self.digest(aad, data));
+    |             ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_expected`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `toyos-crypto` (lib) generated 1 warning (run `cargo fix --lib -p toyos-crypto` to apply 1 suggestion)
+    Finished `test` profile [optimized + debuginfo] target(s) in 4.03s
+     Running tests/nist.rs (target/debug/deps/nist-0e8dda6af52d77df)
+
+running 1 test
+test cavp_gcm ... FAILED
+
+failures:
+
+---- cavp_gcm stdout ----
+gcm/gcmEncryptExtIV128.rsp: 7875 cases; 2625 valid and 0 invalid agreed; acceptable 0 accepted, 0 refused; outside the interface: {"IV not 96 bits": 5250}
+gcm/gcmEncryptExtIV256.rsp: 7875 cases; 2625 valid and 0 invalid agreed; acceptable 0 accepted, 0 refused; outside the interface: {"IV not 96 bits": 5250}
+
+thread 'cavp_gcm' (50717034) panicked at lib/crypto/tests/nist.rs:27:49:
+no PT in {"AAD": "", "CT": "", "Count": "1", "FAIL": "", "IV": "907763b19b9b4ab6bd4f0281", "Key": "a49a5e26a2f8cb63d05546c2a62f5343", "Tag": "a2be08210d8c470a8df6e8fbd79ec5cf"}
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    cavp_gcm
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 4 filtered out; finished in 3.35s
+
+error: test failed, to rerun pass `-p toyos-crypto --test nist`
+error: 1 target failed:
+    `-p toyos-crypto --test nist`
+== exit 101

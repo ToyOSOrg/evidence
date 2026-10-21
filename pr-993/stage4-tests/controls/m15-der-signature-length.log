@@ -1,0 +1,305 @@
+== m15-der-signature-length at 063e7c7e25f7334afefec0eb018ed04dc39dff2c, patch:
+diff --git a/lib/crypto/src/nist.rs b/lib/crypto/src/nist.rs
+index 6e44d94b0..dbaad769f 100644
+--- a/lib/crypto/src/nist.rs
++++ b/lib/crypto/src/nist.rs
+@@ -208,7 +208,7 @@ impl<const N: usize> Curve<N> {
+ }
+ fn der<const N: usize>(input: &[u8]) -> Result<([u8; 48], [u8; 48]), Error> {
+     // A two-integer P-384 signature is below 128 bytes: long lengths are invalid.
+-    if input.len() < 6 || input[0] != 0x30 || input[1] as usize != input.len() - 2 {
++    if input.len() < 6 || input[0] != 0x30 || input[1] as usize > input.len() - 2 {
+         return Err(Error::InvalidEncoding);
+     }
+     let mut cursor = 2;
+== cargo test -p toyos-crypto --all-features
+   Compiling toyos-crypto v0.1.0 (/Users/jan/Dev/jan/toyos-crypto-sec/lib/crypto)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.56s
+     Running unittests src/lib.rs (target/debug/deps/toyos_crypto-59eaf0671bb3f3ed)
+
+running 37 tests
+test block::tests::partial_blocks_match_bytewise_assembly_for_every_length_and_offset ... ok
+test chacha::tests::exhausted_counter_refuses_before_mutating_any_batch ... ok
+test chacha::tests::independent_blocks_match_one_at_a_time ... ok
+test aes::tests::fips197_portable_matches_instruction_path ... ok
+test ct::tests::masks_selection_and_equality_over_their_whole_range ... ok
+test block::tests::xor_takes_the_stream_from_its_start_for_every_length ... ok
+test chacha::tests::dispatched_streams_preserve_counter_carries_and_batch_tails ... ok
+test hash::tests::length_refusals_leave_state_unchanged ... ok
+test hash::tests::dispatched_compression_matches_the_portable_rounds ... ok
+test mlkem::tests::compression_rounds_as_fips_203_for_every_input ... ok
+test aead::tests::nonce_sequence_exhaustion_is_terminal ... ok
+test keccak::tests::fips202_empty ... ok
+test mlkem::tests::reduction_modulo_q_is_exact_over_its_whole_input_range ... ok
+test poly1305::tests::rfc8439_section_2_5_2 ... ok
+test rustls_provider::tests::key_exchange_propagates_entropy_failure ... ok
+test gcm::tests::dispatched_ghash_matches_the_bitwise_multiply ... ok
+test mlkem::tests::nist_expanded_keygen_secret_matches ... ok
+test rustls_provider::tests::hybrid_wire_exchange_matches_independent_kem_and_curve_oracles ... ok
+test rustls_provider::tests::transcript_forks_keep_their_own_prefix_and_key_schedule_matches_ring ... ok
+test rustls_provider::verify::tests::rsa_der_refuses_noncanonical_integers_lengths_and_trailing_bytes ... ok
+test rustls_provider::tests::certificate_cross_hash_ecdsa_uses_sec1_digest_width ... ok
+test secret::tests::a_dropped_secret_leaves_zeros ... ok
+test secret::tests::erase_zeroes_every_byte_of_every_shape ... ok
+test secret::tests::wipes_zero_their_slices ... ok
+test test_arithmetic::field25519_negation_and_small_constants_match_integers ... ok
+test test_arithmetic::nist_validity_is_below_the_modulus ... ok
+test rustls_provider::tests::hybrid_tls13_handshakes_interoperate_with_independent_server_primitives ... ok
+test rustls_provider::tests::default_hybrid_offer_retries_with_classical_ring_server ... ok
+test rustls_provider::tests::tls12_ecdsa_client_interoperates_with_ring_for_every_cipher_and_group ... ok
+test test_arithmetic::field25519_matches_integers ... ok
+test gcm::tests::counters_continue_across_the_stitched_and_tail_paths ... ok
+test test_arithmetic::nist_fields_and_orders_match_integers ... ok
+test test_arithmetic::scalar25519_matches_integers ... ok
+test rustls_provider::tests::rsa_authenticated_tls12_and_tls13_interoperate_with_ring ... ok
+test poly1305::tests::matches_integers_on_seeded_and_extreme_inputs ... ok
+test rustls_provider::tests::tls13_client_interoperates_with_ring_for_every_cipher_group_and_ec_certificate ... ok
+test rustls_provider::tests::record_adapters_interoperate_and_refuse_reused_sequences ... ok
+
+test result: ok. 37 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.18s
+
+     Running tests/differential.rs (target/debug/deps/differential-65c4b28b16792bba)
+
+running 16 tests
+test openssh_construction_matches_independent_primitives ... ok
+test sha2_streaming_boundaries ... ok
+test seeded_sha2_against_ring ... ok
+test wpa2_pmk_and_rfc3394_unwrap ... ok
+test seeded_openssh_against_rustcrypto ... ok
+test nist_curve_boundary_scalars ... ok
+test seeded_wpa2_against_ring ... ok
+test seeded_x25519_against_dalek ... ok
+test seeded_mlkem768_against_rustcrypto ... ok
+test seeded_hmac_and_hkdf_against_ring ... ok
+test seeded_rsa_against_ring ... ok
+test seeded_aead_against_ring_and_rustcrypto ... ok
+test aead_all_algorithms_and_partial_blocks ... ok
+test seeded_ed25519_against_ring_and_dalek ... ok
+test seeded_p256_against_rustcrypto_and_ring ... FAILED
+test seeded_p384_against_rustcrypto_and_ring ... FAILED
+
+failures:
+
+---- seeded_p256_against_rustcrypto_and_ring stdout ----
+
+thread '<unnamed>' (48794589) panicked at lib/crypto/tests/differential.rs:518:48:
+assertion `left == right` failed: case 549, change 1: [30, 04, 02, 20, 3f, 9a, d3, 84, 84, 35, f5, e3, 75, 82, d1, 29, 13, 34, 75, 8c, f9, 8b, ab, 88, 94, 98, 7b, ab, 54, e8, 38, b2, 1d, 75, 83, 96, 02, 20, 31, 6c, 80, 3b, ef, bc, 7c, b6, 72, 39, 08, e3, e5, ac, b0, d1, 75, f1, fc, 05, 62, f2, 5c, 2b, 11, a8, 52, 10, 75, 3c, ab, ab]
+  left: true
+ right: false
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread '<unnamed>' (48794595) panicked at lib/crypto/tests/differential.rs:518:48:
+assertion `left == right` failed: case 1717, change 1: [30, 44, 02, 21, 00, ec, ed, 86, bb, 4e, f8, 57, 52, b3, 21, d1, 73, 20, 56, a1, 03, 23, 8c, 94, 68, 5a, 84, 9f, fd, eb, 57, 68, 3e, 35, f0, 13, 01, 02, 20, 5a, ec, 05, 62, 1e, 5f, f4, 37, 64, 5d, 05, 5a, 95, 49, 91, bc, e7, 39, fa, 5c, e8, 88, d6, d4, 9e, 44, 4f, a1, 56, 87, cb, 0f]
+  left: true
+ right: false
+
+thread '<unnamed>' (48794587) panicked at lib/crypto/tests/differential.rs:518:48:
+assertion `left == right` failed: case 3557, change 1: [30, 44, 02, 20, 20, c4, 02, 8d, 2c, 30, c2, b7, d1, 5f, f0, 1e, e7, 0b, a7, df, b6, 45, 65, 39, 89, d9, 0c, 14, 20, da, 4f, 84, a6, 5c, 3d, 58, 02, 21, 00, 97, 62, 3d, d5, b2, 35, dc, 4b, 17, 1c, dd, b9, 68, 4f, 70, 0c, f8, 07, 61, f2, b2, c1, 6b, 74, f9, 18, 29, 1f, ac, 2e, 68, 17]
+  left: true
+ right: false
+
+thread '<unnamed>' (48794597) panicked at lib/crypto/tests/differential.rs:518:48:
+assertion `left == right` failed: case 4981, change 1: [30, 40, 02, 20, 1f, fb, 92, 09, 24, 6f, a7, d0, 0a, 6a, 5e, 9a, e5, 3f, 2e, 6e, b4, cd, 2a, 97, 33, 26, e6, bd, 11, 1b, 7e, 68, 81, 7b, 6a, 7d, 02, 20, 3e, 5a, bd, 39, 72, 4d, 25, 64, 53, 8b, e0, 31, 6b, 6c, c1, 85, c6, 4e, 25, ad, d6, 7d, 61, fd, 53, e5, e1, cc, 52, 77, ec, 10]
+  left: true
+ right: false
+
+thread '<unnamed>' (48794593) panicked at lib/crypto/tests/differential.rs:518:48:
+assertion `left == right` failed: case 5481, change 1: [30, 44, 02, 21, 00, b8, 5e, e0, 87, 41, 90, 0b, ee, 79, 83, a8, 0e, ab, fd, 3d, 78, 9a, 46, d2, 48, 00, f6, 4f, 7f, 8e, 69, 40, 64, a4, 43, 99, 82, 02, 21, 00, fd, a9, 3a, d5, 3a, 61, 1f, 94, 31, c7, 72, 0e, e3, 09, 03, 3d, cd, 57, d9, 0e, d1, 61, 8b, b5, 22, 6f, 3e, 5f, a8, a8, 5f, 08]
+  left: true
+ right: false
+
+thread 'seeded_p256_against_rustcrypto_and_ring' (48794467) panicked at lib/crypto/tests/support/mod.rs:139:5:
+a scoped thread panicked
+
+---- seeded_p384_against_rustcrypto_and_ring stdout ----
+
+thread '<unnamed>' (48794535) panicked at lib/crypto/tests/differential.rs:523:48:
+assertion `left == right` failed: case 317, change 1: [30, 24, 02, 30, 20, 9f, 7b, 53, 06, 07, e3, d1, dd, d3, 42, 0b, 67, d7, c9, 37, 5f, cc, c5, 70, fd, a3, 1e, 5d, e1, 68, 11, 13, d1, ed, 91, 7f, fc, d6, e8, 4b, 6b, 5d, ac, 4f, b3, 5b, 60, 7f, ee, e2, 8c, 4f, 02, 30, 05, 89, 9e, e0, c1, 3e, 06, ac, 5c, f5, 45, 16, de, 75, 19, 31, b7, 87, 68, 0a, 4d, 5f, fb, bd, be, 43, c6, 40, 5e, f2, 66, 1c, df, 9b, ed, b1, 7d, 0c, a4, af, 26, ce, 5a, ce, 62, d2, 11, 54]
+  left: true
+ right: false
+
+thread '<unnamed>' (48794541) panicked at lib/crypto/tests/differential.rs:523:48:
+assertion `left == right` failed: case 3973, change 1: [30, 46, 02, 31, 00, fd, b9, d4, 45, 32, ac, c1, 29, e6, f1, 45, 6e, 69, da, 7d, 1a, 13, c5, f3, c3, d8, 9e, f2, 18, 77, 3c, a4, e3, 36, 76, ce, 81, 3f, 77, b1, 34, 40, e8, 35, c0, 6e, 41, 57, d3, bd, ee, 9f, b7, 02, 31, 00, de, 89, 16, b4, 9f, a1, 5d, c3, 3c, a3, 2d, e5, 7e, ab, 70, 1d, ea, dd, 62, 12, e9, 3e, 3a, ae, 64, 33, 95, fe, 2e, 07, 4e, 4a, db, 7a, 58, 6a, fc, 2b, ae, 10, 56, 4d, c8, de, 4d, 7d, 15, 96]
+  left: true
+ right: false
+
+thread '<unnamed>' (48794529) panicked at lib/crypto/tests/differential.rs:523:48:
+assertion `left == right` failed: case 8925, change 1: [30, 25, 02, 30, 34, 28, af, 53, e6, 49, c3, 9f, 37, f4, cd, 5a, c0, 3a, d2, 26, 4b, fe, 1a, 59, ce, 03, b4, 51, 06, e9, d5, b4, f4, 5d, 9c, 76, 49, c9, 93, 3d, f7, 73, 97, bf, fa, 9e, da, 48, 9a, e9, ad, a9, 02, 31, 00, f9, 3b, 99, c0, a1, fd, f3, 23, 07, 6e, 25, e9, bc, 82, a8, f4, f2, 9a, 95, 75, 6a, b8, ef, 3d, 98, 4a, 55, 89, ec, bc, ae, 01, 44, 52, f8, 3b, 7f, 51, 48, c6, 25, ab, e1, 9b, 1a, e4, 2a, 17]
+  left: true
+ right: false
+
+thread 'seeded_p384_against_rustcrypto_and_ring' (48794468) panicked at lib/crypto/tests/support/mod.rs:139:5:
+a scoped thread panicked
+
+
+failures:
+    seeded_p256_against_rustcrypto_and_ring
+    seeded_p384_against_rustcrypto_and_ring
+
+test result: FAILED. 14 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 34.41s
+
+error: test failed, to rerun pass `-p toyos-crypto --test differential`
+     Running tests/fuzz.rs (target/debug/deps/fuzz-26716012b733c78b)
+
+running 9 tests
+test ed25519_encodings ... ok
+test mlkem_encapsulation_keys ... ok
+test provider::records ... ok
+test der_signatures ... FAILED
+test mlkem_ciphertexts ... ok
+test provider::rsa_public_key_der ... ok
+test rsa_components ... ok
+test sec1_points ... ok
+test provider::key_shares ... ok
+
+failures:
+
+---- der_signatures stdout ----
+
+thread '<unnamed>' (48817846) panicked at lib/crypto/tests/fuzz.rs:206:9:
+assertion `left == right` failed: case 182: [30, 44, 02, 20, 7a, 09, 2d, d6, 2e, e6, 07, 6b, 6b, e6, 80, 87, df, 71, 76, d5, 0c, cf, 49, 7d, 17, f0, b4, 69, 2a, 58, 5d, f5, da, 3f, fc, bc, 02, 21, 00, e1, db, dd, 9f, bc, 8b, 66, 36, f1, b5, 47, 9f, 9a, a1, 47, e0, a1, 71, a3, 8e, 00, 9d, 19, b8, c8, 0f, 6c, 7c, c5, 7b, 19, 51] Ok(())
+  left: true
+ right: false
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread '<unnamed>' (48817936) panicked at lib/crypto/tests/fuzz.rs:206:9:
+assertion `left == right` failed: case 82: [30, 44, 02, 21, 00, 97, 06, 8a, 43, 25, ae, bd, 71, 2d, 78, ee, da, f2, da, 09, fa, 7c, 04, 40, ae, 19, 0d, 90, c4, ac, 30, 50, 9b, af, 82, 64, 6c, 02, 20, 06, c4, 3d, ea, 52, e2, 2d, 66, d7, d7, a0, 98, 78, b9, 4c, 5a, 52, 92, bf, d5, 42, 40, 98, ff, 75, d5, 3f, 0f, 2d, c8, e4, 7a] Ok(())
+  left: true
+ right: false
+
+thread '<unnamed>' (48817905) panicked at lib/crypto/tests/fuzz.rs:206:9:
+assertion `left == right` failed: case 116: [30, 44, 02, 20, 32, 38, 74, 7f, 39, e4, 1a, d1, 4c, d5, a6, 99, a9, 0c, 59, 89, b2, 0a, a1, 50, 36, aa, 47, 0f, 29, 0e, 92, 24, 7f, a0, 9c, fd, 02, 21, 00, 94, 5b, b4, 5e, c5, 91, 03, 26, 84, be, f6, a2, c3, 3c, 02, af, c7, e1, a0, 45, 8a, 08, 25, ea, d4, 21, 7b, 7e, a6, 09, 3c, bc] Ok(())
+  left: true
+ right: false
+
+thread '<unnamed>' (48817904) panicked at lib/crypto/tests/fuzz.rs:206:9:
+assertion `left == right` failed: case 143: [30, 43, 02, 20, 75, 96, 5e, a0, 33, 67, ce, e7, 0e, e0, 96, a2, db, cf, 92, e2, 30, 50, eb, c6, fa, 56, e0, 42, bf, 81, 41, 91, ce, 47, dd, f5, 02, 20, 1e, 0a, d7, 6c, 4b, c5, 50, f1, da, 84, 9f, d8, a9, 96, 96, ed, 30, 48, d0, ec, 49, 1e, 5e, 1b, 9b, 1f, b3, 54, a7, 48, f1, 1e] Ok(())
+  left: true
+ right: false
+
+thread '<unnamed>' (48817910) panicked at lib/crypto/tests/fuzz.rs:206:9:
+assertion `left == right` failed: case 415: [30, 44, 02, 21, 00, a3, cd, 91, 38, f7, da, ff, 49, d6, 5e, b9, cb, 8d, 23, c9, 0c, f8, ee, 54, 92, e9, d4, 85, 36, 30, b6, 2c, b5, ef, f0, e0, 0c, 02, 20, 5a, 16, 1e, f3, 52, 23, 59, aa, 1f, b5, b4, c0, d2, a3, 0f, 9e, 87, 1f, 85, 2b, ff, e3, 1c, fc, 36, 47, dd, b7, ca, ce, b6, 0a] Ok(())
+  left: true
+ right: false
+
+thread '<unnamed>' (48817909) panicked at lib/crypto/tests/fuzz.rs:206:9:
+assertion `left == right` failed: case 120: [30, 45, 02, 21, 00, be, a2, a9, 1d, a5, ca, 7f, 7b, ed, 3c, a5, 99, 12, 50, 87, 21, 48, 0a, a7, d0, ce, 2f, 25, 83, d9, 87, 4a, 85, 2d, 90, 91, 84, 02, 21, 00, f8, bf, d5, 88, 72, 24, a4, 54, 5b, 6b, 38, 43, 3a, 85, 93, ad, b7, 30, be, a5, b4, 52, bf, 99, cc, 3c, d4, 72, b0, b1, 42, 31] Ok(())
+  left: true
+ right: false
+
+thread '<unnamed>' (48817907) panicked at lib/crypto/tests/fuzz.rs:206:9:
+assertion `left == right` failed: case 104: [30, 44, 02, 20, 3a, 59, c0, 08, df, ae, c9, f2, 21, 58, 02, ca, ff, e1, 14, 1f, bc, bf, a1, 6d, 00, b7, f8, f4, 74, d4, d6, c6, 15, fb, 6d, 46, 02, 21, 00, e6, b3, b6, 4b, 6a, 5b, d1, a0, d7, 93, a9, 9d, 3f, 9e, 1f, cf, f8, a7, 05, 14, 8c, bc, 3d, 60, 6c, 3a, dd, 09, 29, 4d, e7, 44] Ok(())
+  left: true
+ right: false
+
+thread '<unnamed>' (48817851) panicked at lib/crypto/tests/fuzz.rs:206:9:
+assertion `left == right` failed: case 113: [30, 43, 02, 20, 26, 4d, 6b, e4, f8, 9d, e8, 05, c4, 96, 94, 22, 6b, b5, 1c, 6f, 52, 2e, 92, 7b, 78, 16, af, b3, 05, e9, d4, c8, ff, 72, 74, e0, 02, 20, 12, ab, 4c, 81, 7c, d8, 93, 48, ff, c9, 1c, e3, fd, 74, 40, a3, 68, 74, 9f, 97, 55, a2, f0, 5d, ee, 68, 5e, 30, 18, a4, 5b, 0a] Ok(())
+  left: true
+ right: false
+
+thread '<unnamed>' (48817908) panicked at lib/crypto/tests/fuzz.rs:206:9:
+assertion `left == right` failed: case 105: [30, 44, 02, 21, 00, cf, e4, 6e, ed, c4, dc, 88, 02, 20, 7d, 37, b1, 22, 77, 0d, 6a, db, 6c, fc, 7f, fb, c2, e4, 31, 28, 8f, 3b, 3b, df, d5, 85, 43, 02, 20, 5b, 01, 36, 92, 15, 91, 68, 19, f6, 0e, 03, 45, 40, 2f, 5a, 90, c5, 9e, e3, a2, 4c, 31, 26, 25, 1f, 96, 2f, 9f, 64, 4a, 2a, 4e] Ok(())
+  left: true
+ right: false
+
+thread '<unnamed>' (48817934) panicked at lib/crypto/tests/fuzz.rs:206:9:
+assertion `left == right` failed: case 654: [30, 44, 02, 21, 00, 96, a9, 62, df, 41, 3f, 16, 14, 34, 39, 6f, 3c, c4, dd, 58, 1d, 26, 05, 12, 5d, 9b, c4, 8b, 6f, fd, 2e, 9c, 7e, e0, 62, c7, 3d, 02, 20, 13, 9d, b6, cf, 4e, c6, 87, 1e, 84, 01, 76, 11, a1, ee, bf, 04, a7, 9e, a6, 6e, 23, 44, af, df, 85, 55, 7f, 4b, fb, 8c, 40, f7] Ok(())
+  left: true
+ right: false
+
+thread '<unnamed>' (48817906) panicked at lib/crypto/tests/fuzz.rs:206:9:
+assertion `left == right` failed: case 495: [30, 44, 02, 21, 00, e2, 4a, d0, 3c, 17, 31, 1f, f5, 68, ba, 3b, 1b, f8, ba, 47, 95, 1a, aa, 23, f4, 68, 4c, de, ca, 6b, e2, ba, ff, 6b, 8a, 3f, 21, 02, 20, 53, b4, 76, aa, b0, d0, c3, fe, fe, 4d, 59, ae, 96, 4d, 31, ee, fc, 4e, 39, 9f, ad, 2d, d0, 64, 8a, 9a, 81, d4, 78, 31, 5d, 84] Ok(())
+  left: true
+ right: false
+
+thread '<unnamed>' (48817903) panicked at lib/crypto/tests/fuzz.rs:206:9:
+assertion `left == right` failed: case 702: [30, 44, 02, 21, 00, 93, 97, de, 7c, 1c, a2, 0d, ca, 53, 91, fb, 5a, 0e, 62, 40, 01, 4f, c1, 1e, ab, 1d, e7, 34, 73, 39, 8a, 60, 10, 7a, f7, 7b, 33, 02, 20, 5a, f2, 49, 32, d4, 47, 93, 40, 16, 81, 7e, 04, 2d, 28, d1, 42, 1f, 59, a0, ef, 5e, cc, 3b, c9, 4d, 48, b5, 4f, 85, b2, f1, f3] Ok(())
+  left: true
+ right: false
+
+thread '<unnamed>' (48817935) panicked at lib/crypto/tests/fuzz.rs:206:9:
+assertion `left == right` failed: case 1243: [30, 43, 02, 20, 18, 36, 86, 5b, 63, 53, 51, dd, 29, 61, 19, e1, 28, e0, 64, d9, c8, ef, 74, 7b, 13, 5e, 94, 81, f6, 13, b8, 90, 76, 38, 18, 7e, 02, 20, 32, 90, 13, de, 42, 47, 20, 28, 45, de, c5, a4, 0c, 17, f6, b7, c8, 92, 6b, e5, 12, 94, 80, 53, 30, a4, 15, c0, 01, 98, 45, 6c] Ok(())
+  left: true
+ right: false
+
+thread '<unnamed>' (48817937) panicked at lib/crypto/tests/fuzz.rs:206:9:
+assertion `left == right` failed: case 2253: [30, 45, 02, 21, 00, fe, 0a, 93, cd, 87, 13, d7, c2, b1, 6c, 89, 80, c5, bc, f2, ec, 59, 68, ec, 99, 68, d3, 22, 57, cc, ad, 84, 82, 11, bc, 93, 2c, 02, 21, 00, ed, 29, ba, 47, cb, 80, b6, 92, ff, 55, bf, b4, 5c, 9a, 4e, 7c, f5, e1, 64, 9c, 22, 84, ad, 31, 0d, 54, a8, b3, 73, 01, 5d, 70] Ok(())
+  left: true
+ right: false
+
+thread 'der_signatures' (48817831) panicked at lib/crypto/tests/support/mod.rs:139:5:
+a scoped thread panicked
+
+
+failures:
+    der_signatures
+
+test result: FAILED. 8 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.48s
+
+error: test failed, to rerun pass `-p toyos-crypto --test fuzz`
+     Running tests/nist.rs (target/debug/deps/nist-0e8dda6af52d77df)
+
+running 5 tests
+test acvp_hmac ... ok
+test acvp_mlkem768 ... ok
+test cavp_ecdsa ... ok
+test cavp_shavs ... ok
+test cavp_gcm ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.40s
+
+     Running tests/vectors.rs (target/debug/deps/vectors-f7c9ac2663ee23c6)
+
+running 8 tests
+test rfc4231_hmac_sha256 ... ok
+test fips_sha2_abc_and_empty ... ok
+test rfc5869_case_one_and_output_bound ... ok
+test nist_gcm_zero_key_zero_block ... ok
+test rfc8439_aead_and_authenticated_refusal ... ok
+test rfc7748_x25519 ... ok
+test malformed_public_boundaries ... ok
+test rfc8032_empty_and_strict_rejection ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/wycheproof.rs (target/debug/deps/wycheproof-62ef046a7757f434)
+
+running 11 tests
+test aes_gmac ... ok
+test hmac_and_hkdf ... ok
+test ed25519 ... ok
+test ecdsa_der ... FAILED
+test aead ... ok
+test x25519 ... ok
+test mlkem768 ... ok
+test wpa2_hmac_sha1_pbkdf2_and_key_unwrap ... ok
+test rsa_pss ... ok
+test ecdh_sec1 ... ok
+test rsa_pkcs1 ... ok
+
+failures:
+
+---- ecdsa_der stdout ----
+
+thread 'ecdsa_der' (48820690) panicked at lib/crypto/tests/support/mod.rs:222:17:
+ecdsa_secp256r1_sha256_test.json tcId 11 ["InvalidEncoding"]: invalid and accepted
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    ecdsa_der
+
+test result: FAILED. 10 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 8.11s
+
+error: test failed, to rerun pass `-p toyos-crypto --test wycheproof`
+   Doc-tests toyos_crypto
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: 3 targets failed:
+    `-p toyos-crypto --test differential`
+    `-p toyos-crypto --test fuzz`
+    `-p toyos-crypto --test wycheproof`
+== exit 101

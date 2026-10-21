@@ -1,0 +1,13 @@
+diff --git a/lib/crypto/src/secret.rs b/lib/crypto/src/secret.rs
+index 27d8ea995..3ad07a9b0 100644
+--- a/lib/crypto/src/secret.rs
++++ b/lib/crypto/src/secret.rs
+@@ -45,7 +45,7 @@ pub(crate) fn erase<T: Zeroable, const N: usize>(array: &mut [T; N]) {
+         // zero bytes are a valid `T`.
+         unsafe { core::ptr::write_volatile(base.add(16 * i).cast::<[u8; 16]>(), [0; 16]) };
+     }
+-    for i in bytes / 16 * 16..bytes {
++    for i in bytes / 16 * 16..=bytes {
+         // As above, one byte.
+         unsafe { core::ptr::write_volatile(base.add(i), 0) };
+     }

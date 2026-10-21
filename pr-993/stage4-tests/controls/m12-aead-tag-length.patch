@@ -1,0 +1,14 @@
+diff --git a/lib/crypto/src/aead.rs b/lib/crypto/src/aead.rs
+index 570e5edb3..6528beca9 100644
+--- a/lib/crypto/src/aead.rs
++++ b/lib/crypto/src/aead.rs
+@@ -145,9 +145,6 @@ impl OpeningKey {
+         ciphertext: &mut [u8],
+         tag: &[u8],
+     ) -> Result<(), Error> {
+-        if tag.len() != 16 {
+-            return Err(Error::Length);
+-        }
+         match &self.key {
+             Key::ChaCha(key) => chacha_open(&key.0, nonce, aad, ciphertext, tag),
+             Key::Gcm(key) => key.open(nonce, aad, ciphertext, tag),

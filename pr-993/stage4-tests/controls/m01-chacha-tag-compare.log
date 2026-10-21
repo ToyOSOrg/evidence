@@ -1,0 +1,327 @@
+== m01-chacha-tag-compare at 063e7c7e25f7334afefec0eb018ed04dc39dff2c, patch:
+diff --git a/lib/crypto/src/aead.rs b/lib/crypto/src/aead.rs
+index 570e5edb3..4d68e9678 100644
+--- a/lib/crypto/src/aead.rs
++++ b/lib/crypto/src/aead.rs
+@@ -220,7 +220,7 @@ fn chacha_open(
+         let mut mac = chacha_mac(mac_key.try_into().unwrap(), aad);
+         mac.update_padded(data);
+         let expected = chacha_finish(mac, aad.len(), data.len());
+-        if crate::ct::equal(&expected.0, tag) { Ok(()) } else { Err(Error::Authentication) }
++        if true { Ok(()) } else { Err(Error::Authentication) }
+     };
+     if short(data.len()) {
+         let mut stream = Secret([0u8; 256]);
+== cargo test -p toyos-crypto --all-features
+   Compiling toyos-crypto v0.1.0 (/Users/jan/Dev/jan/toyos-crypto-sec/lib/crypto)
+warning: unused variable: `expected`
+   --> lib/crypto/src/aead.rs:222:13
+    |
+222 |         let expected = chacha_finish(mac, aad.len(), data.len());
+    |             ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_expected`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `tag`
+   --> lib/crypto/src/aead.rs:216:5
+    |
+216 |     tag: &[u8],
+    |     ^^^ help: if this is intentional, prefix it with an underscore: `_tag`
+
+warning: `toyos-crypto` (lib) generated 2 warnings (run `cargo fix --lib -p toyos-crypto` to apply 2 suggestions)
+warning: `toyos-crypto` (lib test) generated 2 warnings (2 duplicates)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.72s
+     Running unittests src/lib.rs (target/debug/deps/toyos_crypto-59eaf0671bb3f3ed)
+
+running 37 tests
+test chacha::tests::exhausted_counter_refuses_before_mutating_any_batch ... ok
+test aead::tests::nonce_sequence_exhaustion_is_terminal ... ok
+test ct::tests::masks_selection_and_equality_over_their_whole_range ... ok
+test block::tests::xor_takes_the_stream_from_its_start_for_every_length ... ok
+test chacha::tests::dispatched_streams_preserve_counter_carries_and_batch_tails ... ok
+test block::tests::partial_blocks_match_bytewise_assembly_for_every_length_and_offset ... ok
+test hash::tests::dispatched_compression_matches_the_portable_rounds ... ok
+test chacha::tests::independent_blocks_match_one_at_a_time ... ok
+test hash::tests::length_refusals_leave_state_unchanged ... ok
+test keccak::tests::fips202_empty ... ok
+test mlkem::tests::compression_rounds_as_fips_203_for_every_input ... ok
+test aes::tests::fips197_portable_matches_instruction_path ... ok
+test mlkem::tests::reduction_modulo_q_is_exact_over_its_whole_input_range ... ok
+test poly1305::tests::rfc8439_section_2_5_2 ... ok
+test rustls_provider::tests::key_exchange_propagates_entropy_failure ... ok
+test rustls_provider::tests::transcript_forks_keep_their_own_prefix_and_key_schedule_matches_ring ... ok
+test rustls_provider::tests::certificate_cross_hash_ecdsa_uses_sec1_digest_width ... ok
+test secret::tests::a_dropped_secret_leaves_zeros ... ok
+test mlkem::tests::nist_expanded_keygen_secret_matches ... ok
+test gcm::tests::dispatched_ghash_matches_the_bitwise_multiply ... ok
+test rustls_provider::verify::tests::rsa_der_refuses_noncanonical_integers_lengths_and_trailing_bytes ... ok
+test rustls_provider::tests::hybrid_tls13_handshakes_interoperate_with_independent_server_primitives ... ok
+test rustls_provider::tests::hybrid_wire_exchange_matches_independent_kem_and_curve_oracles ... ok
+test secret::tests::erase_zeroes_every_byte_of_every_shape ... ok
+test secret::tests::wipes_zero_their_slices ... ok
+test test_arithmetic::field25519_negation_and_small_constants_match_integers ... ok
+test test_arithmetic::nist_validity_is_below_the_modulus ... ok
+test rustls_provider::tests::default_hybrid_offer_retries_with_classical_ring_server ... ok
+test test_arithmetic::field25519_matches_integers ... ok
+test rustls_provider::tests::tls12_ecdsa_client_interoperates_with_ring_for_every_cipher_and_group ... ok
+test gcm::tests::counters_continue_across_the_stitched_and_tail_paths ... ok
+test test_arithmetic::nist_fields_and_orders_match_integers ... ok
+test test_arithmetic::scalar25519_matches_integers ... ok
+test rustls_provider::tests::rsa_authenticated_tls12_and_tls13_interoperate_with_ring ... ok
+test poly1305::tests::matches_integers_on_seeded_and_extreme_inputs ... ok
+test rustls_provider::tests::record_adapters_interoperate_and_refuse_reused_sequences ... FAILED
+test rustls_provider::tests::tls13_client_interoperates_with_ring_for_every_cipher_group_and_ec_certificate ... ok
+
+failures:
+
+---- rustls_provider::tests::record_adapters_interoperate_and_refuse_reused_sequences stdout ----
+
+thread 'rustls_provider::tests::record_adapters_interoperate_and_refuse_reused_sequences' (48553707) panicked at lib/crypto/src/rustls_provider/tests.rs:123:13:
+assertion failed: open.decrypt(InboundOpaqueMessage::new(encrypted.typ, encrypted.version,
+            &mut payload), seq as u64).is_err()
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    rustls_provider::tests::record_adapters_interoperate_and_refuse_reused_sequences
+
+test result: FAILED. 36 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.29s
+
+error: test failed, to rerun pass `-p toyos-crypto --lib`
+     Running tests/differential.rs (target/debug/deps/differential-65c4b28b16792bba)
+
+running 16 tests
+test openssh_construction_matches_independent_primitives ... ok
+test aead_all_algorithms_and_partial_blocks ... FAILED
+test sha2_streaming_boundaries ... ok
+test seeded_aead_against_ring_and_rustcrypto ... FAILED
+test seeded_openssh_against_rustcrypto ... ok
+test seeded_sha2_against_ring ... ok
+test wpa2_pmk_and_rfc3394_unwrap ... ok
+test nist_curve_boundary_scalars ... ok
+test seeded_wpa2_against_ring ... ok
+test seeded_x25519_against_dalek ... ok
+test seeded_mlkem768_against_rustcrypto ... ok
+test seeded_hmac_and_hkdf_against_ring ... ok
+test seeded_rsa_against_ring ... ok
+test seeded_ed25519_against_ring_and_dalek ... ok
+test seeded_p256_against_rustcrypto_and_ring ... ok
+test seeded_p384_against_rustcrypto_and_ring ... ok
+
+failures:
+
+---- aead_all_algorithms_and_partial_blocks stdout ----
+
+thread 'aead_all_algorithms_and_partial_blocks' (48553974) panicked at lib/crypto/tests/differential.rs:93:21:
+assertion failed: opener.open(&nonce, aad, &mut ciphertext, &bad).is_err()
+
+---- seeded_aead_against_ring_and_rustcrypto stdout ----
+
+thread '<unnamed>' (48554008) panicked at lib/crypto/tests/differential.rs:360:9:
+case 35: a changed record opened
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread '<unnamed>' (48553991) panicked at lib/crypto/tests/differential.rs:360:9:
+case 14: a changed record opened
+
+thread '<unnamed>' (48553996) panicked at lib/crypto/tests/differential.rs:360:9:
+case 2: a changed record opened
+
+thread '<unnamed>' (48554004) panicked at lib/crypto/tests/differential.rs:360:9:
+case 5: a changed record opened
+
+thread '<unnamed>' (48554010) panicked at lib/crypto/tests/differential.rs:360:9:
+case 8: a changed record opened
+
+thread '<unnamed>' (48554016) panicked at lib/crypto/tests/differential.rs:360:9:
+case 11: a changed record opened
+
+thread '<unnamed>' (48554018) panicked at lib/crypto/tests/differential.rs:360:9:
+case 26: a changed record opened
+
+thread '<unnamed>' (48554019) panicked at lib/crypto/tests/differential.rs:360:9:
+case 41: a changed record opened
+
+thread '<unnamed>' (48554012) panicked at lib/crypto/tests/differential.rs:360:9:
+case 23: a changed record opened
+
+thread '<unnamed>' (48554014) panicked at lib/crypto/tests/differential.rs:360:9:
+case 38: a changed record opened
+
+thread '<unnamed>' (48553993) panicked at lib/crypto/tests/differential.rs:360:9:
+case 29: a changed record opened
+
+thread '<unnamed>' (48554002) panicked at lib/crypto/tests/differential.rs:360:9:
+case 32: a changed record opened
+
+thread '<unnamed>' (48553999) panicked at lib/crypto/tests/differential.rs:360:9:
+case 17: a changed record opened
+
+thread '<unnamed>' (48554006) panicked at lib/crypto/tests/differential.rs:360:9:
+case 20: a changed record opened
+
+thread 'seeded_aead_against_ring_and_rustcrypto' (48553977) panicked at lib/crypto/tests/support/mod.rs:139:5:
+a scoped thread panicked
+
+
+failures:
+    aead_all_algorithms_and_partial_blocks
+    seeded_aead_against_ring_and_rustcrypto
+
+test result: FAILED. 14 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 33.99s
+
+error: test failed, to rerun pass `-p toyos-crypto --test differential`
+     Running tests/fuzz.rs (target/debug/deps/fuzz-26716012b733c78b)
+
+running 9 tests
+test provider::records ... FAILED
+test ed25519_encodings ... ok
+test mlkem_encapsulation_keys ... ok
+test provider::rsa_public_key_der ... ok
+test mlkem_ciphertexts ... ok
+test sec1_points ... ok
+test rsa_components ... ok
+test provider::key_shares ... ok
+test der_signatures ... ok
+
+failures:
+
+---- provider::records stdout ----
+
+thread '<unnamed>' (48581787) panicked at lib/crypto/tests/fuzz.rs:557:21:
+case 11, TLS13_CHACHA20_POLY1305_SHA256: a changed record opened
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread '<unnamed>' (48581788) panicked at lib/crypto/tests/fuzz.rs:557:21:
+case 26, TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256: a changed record opened
+
+thread '<unnamed>' (48581784) panicked at lib/crypto/tests/fuzz.rs:557:21:
+case 8, TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256: a changed record opened
+
+thread '<unnamed>' (48581778) panicked at lib/crypto/tests/fuzz.rs:557:21:
+case 86, TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256: a changed record opened
+
+thread '<unnamed>' (48581779) panicked at lib/crypto/tests/fuzz.rs:557:21:
+case 17, TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256: a changed record opened
+
+thread '<unnamed>' (48581783) panicked at lib/crypto/tests/fuzz.rs:557:21:
+case 119, TLS13_CHACHA20_POLY1305_SHA256: a changed record opened
+
+thread '<unnamed>' (48581782) panicked at lib/crypto/tests/fuzz.rs:557:21:
+case 146, TLS13_CHACHA20_POLY1305_SHA256: a changed record opened
+
+thread '<unnamed>' (48581781) panicked at lib/crypto/tests/fuzz.rs:557:21:
+case 89, TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256: a changed record opened
+
+thread '<unnamed>' (48581786) panicked at lib/crypto/tests/fuzz.rs:557:21:
+case 80, TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256: a changed record opened
+
+thread '<unnamed>' (48581789) panicked at lib/crypto/tests/fuzz.rs:557:21:
+case 41, TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256: a changed record opened
+
+thread '<unnamed>' (48581780) panicked at lib/crypto/tests/fuzz.rs:557:21:
+case 32, TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256: a changed record opened
+
+thread '<unnamed>' (48581776) panicked at lib/crypto/tests/fuzz.rs:557:21:
+case 14, TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256: a changed record opened
+
+thread '<unnamed>' (48581785) panicked at lib/crypto/tests/fuzz.rs:557:21:
+case 149, TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256: a changed record opened
+
+thread '<unnamed>' (48581777) panicked at lib/crypto/tests/fuzz.rs:557:21:
+case 29, TLS13_CHACHA20_POLY1305_SHA256: a changed record opened
+
+thread 'provider::records' (48581717) panicked at lib/crypto/tests/support/mod.rs:139:5:
+a scoped thread panicked
+
+
+failures:
+    provider::records
+
+test result: FAILED. 8 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.97s
+
+error: test failed, to rerun pass `-p toyos-crypto --test fuzz`
+     Running tests/nist.rs (target/debug/deps/nist-0e8dda6af52d77df)
+
+running 5 tests
+test acvp_hmac ... ok
+test acvp_mlkem768 ... ok
+test cavp_shavs ... ok
+test cavp_ecdsa ... ok
+test cavp_gcm ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.36s
+
+     Running tests/vectors.rs (target/debug/deps/vectors-f7c9ac2663ee23c6)
+
+running 8 tests
+test fips_sha2_abc_and_empty ... ok
+test nist_gcm_zero_key_zero_block ... ok
+test rfc4231_hmac_sha256 ... ok
+test rfc5869_case_one_and_output_bound ... ok
+test rfc8439_aead_and_authenticated_refusal ... FAILED
+test malformed_public_boundaries ... ok
+test rfc7748_x25519 ... ok
+test rfc8032_empty_and_strict_rejection ... ok
+
+failures:
+
+---- rfc8439_aead_and_authenticated_refusal stdout ----
+
+thread 'rfc8439_aead_and_authenticated_refusal' (48586898) panicked at lib/crypto/tests/vectors.rs:82:5:
+assertion `left == right` failed
+  left: Ok(())
+ right: Err(Authentication)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    rfc8439_aead_and_authenticated_refusal
+
+test result: FAILED. 7 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-crypto --test vectors`
+     Running tests/wycheproof.rs (target/debug/deps/wycheproof-62ef046a7757f434)
+
+running 11 tests
+test aes_gmac ... ok
+test hmac_and_hkdf ... ok
+test ed25519 ... ok
+test aead ... FAILED
+test mlkem768 ... ok
+test x25519 ... ok
+test wpa2_hmac_sha1_pbkdf2_and_key_unwrap ... ok
+test rsa_pss ... ok
+test ecdh_sec1 ... ok
+test rsa_pkcs1 ... ok
+test ecdsa_der ... ok
+
+failures:
+
+---- aead stdout ----
+aes_gcm_test.json: 316 cases; 79 valid and 54 invalid agreed; acceptable 0 accepted, 0 refused; outside the interface: {"AES-192": 103, "nonce not 12 bytes": 80}
+
+thread 'aead' (48587257) panicked at lib/crypto/tests/support/mod.rs:222:17:
+chacha20_poly1305_test.json tcId 146 ["ModifiedTag"]: invalid and accepted
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    aead
+
+test result: FAILED. 10 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 13.53s
+
+error: test failed, to rerun pass `-p toyos-crypto --test wycheproof`
+   Doc-tests toyos_crypto
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: 5 targets failed:
+    `-p toyos-crypto --lib`
+    `-p toyos-crypto --test differential`
+    `-p toyos-crypto --test fuzz`
+    `-p toyos-crypto --test vectors`
+    `-p toyos-crypto --test wycheproof`
+== exit 101

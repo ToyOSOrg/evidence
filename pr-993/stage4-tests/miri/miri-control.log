@@ -1,0 +1,53 @@
+diff --git a/lib/crypto/src/secret.rs b/lib/crypto/src/secret.rs
+index 27d8ea995..3ad07a9b0 100644
+--- a/lib/crypto/src/secret.rs
++++ b/lib/crypto/src/secret.rs
+@@ -45,7 +45,7 @@ pub(crate) fn erase<T: Zeroable, const N: usize>(array: &mut [T; N]) {
+         // zero bytes are a valid `T`.
+         unsafe { core::ptr::write_volatile(base.add(16 * i).cast::<[u8; 16]>(), [0; 16]) };
+     }
+-    for i in bytes / 16 * 16..bytes {
++    for i in bytes / 16 * 16..=bytes {
+         // As above, one byte.
+         unsafe { core::ptr::write_volatile(base.add(i), 0) };
+     }
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.44s
+     Running unittests src/lib.rs (target/miri/aarch64-apple-darwin/debug/build/toyos-crypto/63f5b95a96126124/out/toyos_crypto-63f5b95a96126124)
+warning: Miri does not support optimizations: the opt-level is ignored. The only effect of selecting a Cargo profile that enables optimizations (such as --release) is to apply its remaining settings, such as whether debug assertions and overflow checks are enabled.
+
+
+running 1 test
+test secret::tests::erase_zeroes_every_byte_of_every_shape ... error: Undefined Behavior: memory access failed: attempting to access 1 byte, but got alloc60862 which is at or beyond the end of the allocation of size 0 bytes
+  --> lib/crypto/src/secret.rs:50:18
+   |
+50 |         unsafe { core::ptr::write_volatile(base.add(i), 0) };
+   |                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Undefined Behavior occurred here
+   |
+   = help: this indicates a bug in the program: it performed an invalid operation, and caused Undefined Behavior
+   = help: see https://doc.rust-lang.org/nightly/reference/behavior-considered-undefined.html for further information
+help: alloc60862 was allocated here:
+  --> lib/crypto/src/secret.rs:70:13
+   |
+70 |         let mut array = value;
+   |             ^^^^^^^^^
+   = note: this is on thread `secret::tests::erase_zeroes_every_byte_of_every_shape`
+   = note: stack backtrace:
+           0: secret::erase::<u8, 0>
+               at lib/crypto/src/secret.rs:50:18: 50:59
+           1: secret::tests::wiped::<u8, 0>
+               at lib/crypto/src/secret.rs:71:9: 71:26
+           2: secret::tests::erase_zeroes_every_byte_of_every_shape
+               at lib/crypto/src/secret.rs:81:9: 81:27
+           3: secret::tests::erase_zeroes_every_byte_of_every_shape::{closure#0}
+               at lib/crypto/src/secret.rs:80:48: 80:48
+
+note: some details are omitted, run with `MIRIFLAGS=-Zmiri-backtrace=full` for a verbose backtrace
+
+error: aborting due to 1 previous error; 1 warning emitted
+
+error: test failed, to rerun pass `-p toyos-crypto --lib`
+
+Caused by:
+  process didn't exit successfully: `/Users/jan/.rustup/toolchains/nightly-2026-09-25-aarch64-apple-darwin/bin/cargo-miri runner /Users/jan/Dev/jan/toyos-crypto-sec/target/miri/aarch64-apple-darwin/debug/build/toyos-crypto/63f5b95a96126124/out/toyos_crypto-63f5b95a96126124 'secret::tests::erase'` (exit status: 1)
+note: test exited abnormally; to see the full output pass --no-capture to the harness.
+exit 1

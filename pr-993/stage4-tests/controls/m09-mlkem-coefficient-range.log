@@ -1,0 +1,342 @@
+== m09-mlkem-coefficient-range at 063e7c7e25f7334afefec0eb018ed04dc39dff2c, patch:
+diff --git a/lib/crypto/src/mlkem.rs b/lib/crypto/src/mlkem.rs
+index 7edab208c..87480fc11 100644
+--- a/lib/crypto/src/mlkem.rs
++++ b/lib/crypto/src/mlkem.rs
+@@ -194,7 +194,7 @@ impl EncapsulationKey {
+         }
+         for chunk in input[..1152].as_chunks::<384>().0 {
+             let p = Poly::decode(12, chunk);
+-            if p.0.iter().any(|&x| u32::from(x) >= Q) {
++            if false {
+                 return Err(Error::InvalidKey);
+             }
+         }
+== cargo test -p toyos-crypto --all-features
+   Compiling toyos-crypto v0.1.0 (/Users/jan/Dev/jan/toyos-crypto-sec/lib/crypto)
+warning: unused variable: `p`
+   --> lib/crypto/src/mlkem.rs:196:17
+    |
+196 |             let p = Poly::decode(12, chunk);
+    |                 ^ help: if this is intentional, prefix it with an underscore: `_p`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `toyos-crypto` (lib) generated 1 warning (run `cargo fix --lib -p toyos-crypto` to apply 1 suggestion)
+warning: `toyos-crypto` (lib test) generated 1 warning (1 duplicate)
+    Finished `test` profile [optimized + debuginfo] target(s) in 3.88s
+     Running unittests src/lib.rs (target/debug/deps/toyos_crypto-59eaf0671bb3f3ed)
+
+running 37 tests
+test aead::tests::nonce_sequence_exhaustion_is_terminal ... ok
+test aes::tests::fips197_portable_matches_instruction_path ... ok
+test block::tests::partial_blocks_match_bytewise_assembly_for_every_length_and_offset ... ok
+test block::tests::xor_takes_the_stream_from_its_start_for_every_length ... ok
+test chacha::tests::exhausted_counter_refuses_before_mutating_any_batch ... ok
+test chacha::tests::independent_blocks_match_one_at_a_time ... ok
+test ct::tests::masks_selection_and_equality_over_their_whole_range ... ok
+test chacha::tests::dispatched_streams_preserve_counter_carries_and_batch_tails ... ok
+test hash::tests::dispatched_compression_matches_the_portable_rounds ... ok
+test hash::tests::length_refusals_leave_state_unchanged ... ok
+test keccak::tests::fips202_empty ... ok
+test mlkem::tests::compression_rounds_as_fips_203_for_every_input ... ok
+test mlkem::tests::reduction_modulo_q_is_exact_over_its_whole_input_range ... ok
+test poly1305::tests::rfc8439_section_2_5_2 ... ok
+test gcm::tests::dispatched_ghash_matches_the_bitwise_multiply ... ok
+test rustls_provider::tests::key_exchange_propagates_entropy_failure ... ok
+test mlkem::tests::nist_expanded_keygen_secret_matches ... ok
+test rustls_provider::tests::transcript_forks_keep_their_own_prefix_and_key_schedule_matches_ring ... ok
+test rustls_provider::tests::hybrid_wire_exchange_matches_independent_kem_and_curve_oracles ... FAILED
+test secret::tests::a_dropped_secret_leaves_zeros ... ok
+test secret::tests::wipes_zero_their_slices ... ok
+test secret::tests::erase_zeroes_every_byte_of_every_shape ... ok
+test rustls_provider::verify::tests::rsa_der_refuses_noncanonical_integers_lengths_and_trailing_bytes ... ok
+test rustls_provider::tests::default_hybrid_offer_retries_with_classical_ring_server ... ok
+test test_arithmetic::field25519_negation_and_small_constants_match_integers ... ok
+test test_arithmetic::nist_validity_is_below_the_modulus ... ok
+test rustls_provider::tests::certificate_cross_hash_ecdsa_uses_sec1_digest_width ... ok
+test rustls_provider::tests::hybrid_tls13_handshakes_interoperate_with_independent_server_primitives ... ok
+test test_arithmetic::field25519_matches_integers ... ok
+test rustls_provider::tests::tls12_ecdsa_client_interoperates_with_ring_for_every_cipher_and_group ... ok
+test test_arithmetic::scalar25519_matches_integers ... ok
+test rustls_provider::tests::rsa_authenticated_tls12_and_tls13_interoperate_with_ring ... ok
+test gcm::tests::counters_continue_across_the_stitched_and_tail_paths ... ok
+test test_arithmetic::nist_fields_and_orders_match_integers ... ok
+test poly1305::tests::matches_integers_on_seeded_and_extreme_inputs ... ok
+test rustls_provider::tests::record_adapters_interoperate_and_refuse_reused_sequences ... ok
+test rustls_provider::tests::tls13_client_interoperates_with_ring_for_every_cipher_group_and_ec_certificate ... ok
+
+failures:
+
+---- rustls_provider::tests::hybrid_wire_exchange_matches_independent_kem_and_curve_oracles stdout ----
+
+thread 'rustls_provider::tests::hybrid_wire_exchange_matches_independent_kem_and_curve_oracles' (48730283) panicked at lib/crypto/src/rustls_provider/tests.rs:452:5:
+assertion failed: group.start_and_complete(&invalid).is_err()
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    rustls_provider::tests::hybrid_wire_exchange_matches_independent_kem_and_curve_oracles
+
+test result: FAILED. 36 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.46s
+
+error: test failed, to rerun pass `-p toyos-crypto --lib`
+     Running tests/differential.rs (target/debug/deps/differential-65c4b28b16792bba)
+
+running 16 tests
+test openssh_construction_matches_independent_primitives ... ok
+test sha2_streaming_boundaries ... ok
+test wpa2_pmk_and_rfc3394_unwrap ... ok
+test seeded_sha2_against_ring ... ok
+test seeded_openssh_against_rustcrypto ... ok
+test nist_curve_boundary_scalars ... ok
+test seeded_wpa2_against_ring ... ok
+test seeded_x25519_against_dalek ... ok
+test seeded_mlkem768_against_rustcrypto ... ok
+test seeded_hmac_and_hkdf_against_ring ... ok
+test seeded_rsa_against_ring ... ok
+test seeded_aead_against_ring_and_rustcrypto ... ok
+test aead_all_algorithms_and_partial_blocks ... ok
+test seeded_ed25519_against_ring_and_dalek ... ok
+test seeded_p256_against_rustcrypto_and_ring ... ok
+test seeded_p384_against_rustcrypto_and_ring ... ok
+
+test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 21.66s
+
+     Running tests/fuzz.rs (target/debug/deps/fuzz-26716012b733c78b)
+
+running 9 tests
+test mlkem_encapsulation_keys ... FAILED
+test ed25519_encodings ... ok
+test provider::records ... ok
+test provider::rsa_public_key_der ... ok
+test mlkem_ciphertexts ... ok
+test sec1_points ... ok
+test rsa_components ... ok
+test provider::key_shares ... FAILED
+test der_signatures ... ok
+
+failures:
+
+---- mlkem_encapsulation_keys stdout ----
+
+thread '<unnamed>' (48735154) panicked at lib/crypto/tests/fuzz.rs:323:9:
+assertion `left == right` failed: case 1
+  left: true
+ right: false
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread '<unnamed>' (48735158) panicked at lib/crypto/tests/fuzz.rs:323:9:
+assertion `left == right` failed: case 3
+  left: true
+ right: false
+
+thread '<unnamed>' (48735166) panicked at lib/crypto/tests/fuzz.rs:323:9:
+assertion `left == right` failed: case 6
+  left: true
+ right: false
+
+thread '<unnamed>' (48735163) panicked at lib/crypto/tests/fuzz.rs:323:9:
+assertion `left == right` failed: case 47
+  left: true
+ right: false
+
+thread '<unnamed>' (48735170) panicked at lib/crypto/tests/fuzz.rs:323:9:
+assertion `left == right` failed: case 8
+  left: true
+ right: false
+
+thread '<unnamed>' (48735172) panicked at lib/crypto/tests/fuzz.rs:323:9:
+assertion `left == right` failed: case 9
+  left: true
+ right: false
+
+thread '<unnamed>' (48735168) panicked at lib/crypto/tests/fuzz.rs:323:9:
+assertion `left == right` failed: case 63
+  left: true
+ right: false
+
+thread '<unnamed>' (48735160) panicked at lib/crypto/tests/fuzz.rs:323:9:
+assertion `left == right` failed: case 88
+  left: true
+ right: false
+
+thread '<unnamed>' (48735155) panicked at lib/crypto/tests/fuzz.rs:323:9:
+assertion `left == right` failed: case 30
+  left: true
+ right: false
+
+thread '<unnamed>' (48735151) panicked at lib/crypto/tests/fuzz.rs:323:9:
+assertion `left == right` failed: case 14
+  left: true
+ right: false
+
+thread '<unnamed>' (48735178) panicked at lib/crypto/tests/fuzz.rs:323:9:
+assertion `left == right` failed: case 11
+  left: true
+ right: false
+
+thread '<unnamed>' (48735248) panicked at lib/crypto/tests/fuzz.rs:323:9:
+assertion `left == right` failed: case 13
+  left: true
+ right: false
+
+thread '<unnamed>' (48735176) panicked at lib/crypto/tests/fuzz.rs:323:9:
+assertion `left == right` failed: case 52
+  left: true
+ right: false
+
+thread '<unnamed>' (48735245) panicked at lib/crypto/tests/fuzz.rs:323:9:
+assertion `left == right` failed: case 54
+  left: true
+ right: false
+
+thread 'mlkem_encapsulation_keys' (48735130) panicked at lib/crypto/tests/support/mod.rs:139:5:
+a scoped thread panicked
+
+---- provider::key_shares stdout ----
+
+thread '<unnamed>' (48735175) panicked at lib/crypto/tests/fuzz.rs:450:25:
+assertion `left == right` failed: case 296, X25519MLKEM768
+  left: true
+ right: false
+
+thread '<unnamed>' (48735169) panicked at lib/crypto/tests/fuzz.rs:450:25:
+assertion `left == right` failed: case 84, X25519MLKEM768
+  left: true
+ right: false
+
+thread '<unnamed>' (48735190) panicked at lib/crypto/tests/fuzz.rs:450:25:
+assertion `left == right` failed: case 484, X25519MLKEM768
+  left: true
+ right: false
+
+thread '<unnamed>' (48735180) panicked at lib/crypto/tests/fuzz.rs:450:25:
+assertion `left == right` failed: case 396, X25519MLKEM768
+  left: true
+ right: false
+
+thread '<unnamed>' (48735195) panicked at lib/crypto/tests/fuzz.rs:450:25:
+assertion `left == right` failed: case 612, X25519MLKEM768
+  left: true
+ right: false
+
+thread '<unnamed>' (48735184) panicked at lib/crypto/tests/fuzz.rs:450:25:
+assertion `left == right` failed: case 916, X25519MLKEM768
+  left: true
+ right: false
+
+thread '<unnamed>' (48735198) panicked at lib/crypto/tests/fuzz.rs:450:25:
+assertion `left == right` failed: case 1328, X25519MLKEM768
+  left: true
+ right: false
+
+thread 'provider::key_shares' (48735131) panicked at lib/crypto/tests/support/mod.rs:139:5:
+a scoped thread panicked
+
+
+failures:
+    mlkem_encapsulation_keys
+    provider::key_shares
+
+test result: FAILED. 7 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.00s
+
+error: test failed, to rerun pass `-p toyos-crypto --test fuzz`
+     Running tests/nist.rs (target/debug/deps/nist-0e8dda6af52d77df)
+
+running 5 tests
+test acvp_hmac ... ok
+test acvp_mlkem768 ... FAILED
+test cavp_shavs ... ok
+test cavp_ecdsa ... ok
+test cavp_gcm ... ok
+
+failures:
+
+---- acvp_mlkem768 stdout ----
+nist-mlkem-keygen.json: 75 cases; 25 valid and 0 invalid agreed; acceptable 0 accepted, 0 refused; outside the interface: {"not ML-KEM-768": 50}
+
+thread 'acvp_mlkem768' (48735579) panicked at lib/crypto/tests/support/mod.rs:222:17:
+tcId 166 "noisy linear system values too large": invalid and accepted
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    acvp_mlkem768
+
+test result: FAILED. 4 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.55s
+
+error: test failed, to rerun pass `-p toyos-crypto --test nist`
+     Running tests/vectors.rs (target/debug/deps/vectors-f7c9ac2663ee23c6)
+
+running 8 tests
+test rfc4231_hmac_sha256 ... ok
+test rfc5869_case_one_and_output_bound ... ok
+test fips_sha2_abc_and_empty ... ok
+test nist_gcm_zero_key_zero_block ... ok
+test rfc8439_aead_and_authenticated_refusal ... ok
+test rfc7748_x25519 ... ok
+test malformed_public_boundaries ... FAILED
+test rfc8032_empty_and_strict_rejection ... ok
+
+failures:
+
+---- malformed_public_boundaries stdout ----
+
+thread 'malformed_public_boundaries' (48735736) panicked at lib/crypto/tests/vectors.rs:184:5:
+assertion failed: toyos_crypto::mlkem::EncapsulationKey::from_bytes(&pk).is_err()
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    malformed_public_boundaries
+
+test result: FAILED. 7 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-crypto --test vectors`
+     Running tests/wycheproof.rs (target/debug/deps/wycheproof-62ef046a7757f434)
+
+running 11 tests
+test aes_gmac ... ok
+test hmac_and_hkdf ... ok
+test ed25519 ... ok
+test mlkem768 ... FAILED
+test aead ... ok
+test x25519 ... ok
+test wpa2_hmac_sha1_pbkdf2_and_key_unwrap ... ok
+test rsa_pss ... ok
+test ecdh_sec1 ... ok
+test rsa_pkcs1 ... ok
+test ecdsa_der ... ok
+
+failures:
+
+---- mlkem768 stdout ----
+mlkem_768_keygen_seed_test.json: 100 cases; 100 valid and 0 invalid agreed; acceptable 0 accepted, 0 refused; outside the interface: {}
+
+thread 'mlkem768' (48735799) panicked at lib/crypto/tests/wycheproof.rs:471:13:
+assertion `left == right` failed: mlkem_768_encaps_test.json tcId 2 ["ModulusOverflow"]
+  left: ([233, 2, 216, 123, 95, 43, 16, 223, 248, 184, 124, 127, 120, 134, 252, 73, 50, 152, 198, 209, 135, 78, 106, 47, 89, 97, 233, 163, 132, 216, 46, 101, 62, 148, 193, 249, 215, 10, 154, 111, 30, 12, 134, 9, 218, 119, 28, 122, 158, 89, 146, 224, 239, 68, 166, 117, 100, 50, 163, 75, 134, 24, 230, 221, 79, 6, 153, 76, 120, 241, 69, 17, 8, 62, 158, 224, 46, 197, 27, 57, 138, 38, 224, 56, 139, 221, 250, 143, 61, 163, 16, 139, 111, 208, 73, 203, 108, 86, 86, 228, 197, 195, 65, 151, 75, 129, 26, 144, 156, 96, 84, 239, 119, 233, 116, 28, 164, 186, 156, 88, 50, 60, 37, 139, 237, 28, 124, 165, 179, 197, 79, 243, 216, 64, 206, 114, 14, 17, 150, 136, 170, 176, 59, 182, 141, 66, 30, 226, 190, 98, 192, 247, 74, 59, 71, 135, 86, 100, 173, 24, 156, 151, 11, 43, 236, 32, 66, 14, 181, 48, 227, 172, 43, 98, 241, 144, 110, 231, 230, 107, 77, 208, 158, 239, 219, 209, 142, 230, 248, 162, 10, 197, 211, 61, 236, 167, 159, 250, 74, 131, 231, 63, 172, 211, 38, 64, 170, 99, 8, 125, 64, 221, 26, 78, 116, 104, 133, 254, 147, 22, 0, 149, 36, 12, 153, 11, 94, 184, 76, 28, 5, 39, 54, 107, 235, 42, 247, 211, 25, 254, 4, 49, 243, 123, 55, 211, 42, 19, 52, 148, 193, 76, 38, 66, 46, 10, 244, 112, 57, 206, 112, 110, 234, 1, 103, 188, 200, 253, 90, 127, 233, 52, 245, 188, 62, 232, 252, 146, 118, 39, 107, 54, 99, 12, 204, 55, 54, 64, 41, 78, 84, 189, 228, 250, 185, 20, 206, 186, 54, 48, 150, 183, 127, 248, 164, 86, 89, 194, 21, 100, 188, 213, 187, 121, 49, 229, 67, 209, 151, 143, 19, 201, 129, 215, 67, 199, 163, 150, 163, 178, 219, 93, 48, 175, 131, 229, 230, 26, 145, 16, 11, 177, 177, 176, 243, 223, 8, 173, 80, 11, 82, 97, 37, 78, 226, 69, 42, 141, 37, 12, 184, 61, 182, 156, 86, 70, 18, 126, 199, 6, 167, 192, 88, 193, 227, 108, 78, 93, 131, 35, 137, 227, 232, 150, 217, 160, 116, 126, 24, 64, 237, 124, 6, 205, 11, 129, 114, 101, 62, 160, 13, 110, 77, 106, 39, 18, 2, 135, 144, 121, 219, 177, 142, 93, 19, 245, 192, 83, 239, 28, 252, 200, 2, 151, 59, 142, 68, 126, 110, 91, 174, 11, 154, 254, 118, 122, 184, 38, 124, 14, 33, 133, 39, 69, 47, 167, 199, 192, 148, 40, 36, 42, 0, 58, 247, 26, 0, 203, 100, 71, 150, 255, 124, 70, 51, 10, 53, 54, 43, 202, 57, 188, 156, 39, 229, 104, 250, 187, 150, 198, 245, 83, 9, 186, 247, 9, 12, 168, 4, 95, 202, 13, 189, 117, 75, 153, 213, 146, 145, 179, 254, 44, 100, 202, 75, 213, 57, 142, 63, 114, 66, 199, 56, 148, 119, 66, 86, 65, 209, 215, 221, 44, 159, 226, 59, 123, 27, 180, 19, 25, 22, 125, 212, 169, 217, 119, 62, 93, 34, 133, 39, 67, 87, 180, 69, 93, 45, 141, 201, 81, 161, 165, 30, 202, 211, 219, 229, 9, 104, 123, 250, 39, 79, 12, 214, 248, 180, 243, 151, 215, 252, 24, 72, 112, 216, 201, 206, 232, 2, 171, 15, 36, 13, 82, 95, 224, 127, 238, 210, 191, 11, 63, 224, 73, 62, 75, 1, 85, 30, 248, 70, 113, 154, 125, 16, 15, 196, 178, 86, 30, 75, 127, 51, 108, 236, 233, 154, 55, 92, 92, 22, 116, 35, 251, 95, 180, 51, 120, 9, 31, 224, 43, 209, 203, 175, 233, 211, 154, 97, 115, 87, 223, 32, 36, 231, 224, 124, 184, 124, 67, 129, 160, 144, 171, 179, 95, 179, 146, 152, 185, 138, 51, 236, 52, 171, 74, 187, 129, 198, 154, 199, 90, 50, 73, 44, 228, 232, 25, 118, 26, 120, 130, 58, 242, 4, 132, 48, 88, 250, 140, 178, 130, 81, 214, 114, 164, 72, 88, 150, 232, 245, 44, 130, 101, 209, 170, 40, 93, 145, 229, 208, 99, 107, 28, 22, 38, 14, 136, 239, 102, 240, 185, 249, 124, 41, 95, 234, 197, 41, 241, 18, 156, 24, 18, 5, 178, 218, 170, 210, 125, 2, 161, 98, 27, 55, 39, 204, 121, 65, 134, 79, 111, 93, 201, 226, 60, 108, 128, 142, 16, 124, 113, 23, 95, 122, 84, 42, 90, 23, 61, 109, 235, 24, 66, 214, 218, 65, 183, 240, 114, 21, 21, 213, 84, 37, 68, 57, 81, 79, 21, 135, 123, 25, 187, 60, 86, 144, 139, 188, 190, 112, 168, 239, 134, 105, 51, 26, 143, 129, 246, 246, 126, 119, 188, 193, 51, 21, 57, 198, 66, 204, 135, 250, 237, 158, 243, 1, 26, 228, 44, 181, 144, 166, 59, 25, 255, 6, 219, 206, 160, 217, 81, 188, 75, 154, 23, 72, 119, 173, 237, 12, 94, 63, 19, 113, 51, 119, 36, 127, 131, 223, 6, 205, 113, 243, 156, 86, 204, 173, 27, 3, 239, 135, 158, 23, 33, 253, 146, 167, 251, 33, 65, 203, 91, 210, 238, 109, 39, 241, 175, 195, 149, 138, 225, 191, 89, 121, 36, 13, 233, 237, 64, 82, 152, 225, 240, 250, 115, 46, 6, 66, 20, 143, 54, 150, 94, 144, 171, 199, 219, 236, 162, 132, 75, 51, 50, 41, 145, 252, 197, 184, 150, 165, 102, 14, 112, 236, 107, 251, 99, 48, 250, 31, 74, 249, 77, 205, 9, 41, 136, 26, 209, 167, 59, 191, 197, 242, 118, 183, 157, 179, 103, 171, 247, 106, 184, 144, 139, 197, 176, 105, 191, 81, 160, 248, 57, 25, 64, 34, 45, 172, 234, 207, 121, 240, 187, 249, 158, 45, 218, 154, 67, 89, 211, 82, 220, 245, 25, 108, 254, 171, 128, 97, 83, 37, 131, 167, 120, 153, 138, 145, 219, 27, 90, 76, 200, 159, 13, 229, 53, 11, 170, 9, 200, 90, 111, 100, 102, 50, 224, 77, 247, 15, 35, 56, 85, 49, 75, 145, 100, 197, 148, 65, 216, 147, 159, 201, 204, 177, 167, 33, 110, 241, 101, 229, 116, 108, 4, 52, 222, 206, 55, 61, 226, 70, 191, 96, 133, 169, 56, 15, 63, 208, 217, 206, 42, 108, 19, 33, 198, 39, 31, 210, 111, 56, 254, 21, 2], [207, 58, 48, 31, 177, 154, 12, 94, 139, 122, 72, 190, 39, 194, 245, 34, 189, 175, 105, 219, 154, 55, 25, 251, 221, 28, 187, 4, 22, 95, 1, 249])
+ right: ([], [])
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    mlkem768
+
+test result: FAILED. 10 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.92s
+
+error: test failed, to rerun pass `-p toyos-crypto --test wycheproof`
+   Doc-tests toyos_crypto
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: 5 targets failed:
+    `-p toyos-crypto --lib`
+    `-p toyos-crypto --test fuzz`
+    `-p toyos-crypto --test nist`
+    `-p toyos-crypto --test vectors`
+    `-p toyos-crypto --test wycheproof`
+== exit 101

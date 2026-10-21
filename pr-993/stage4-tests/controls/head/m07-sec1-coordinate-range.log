@@ -1,0 +1,110 @@
+== m07-sec1-coordinate-range at 86e8642088525aa2b335cd248ee9f0d77e65ea2a, patch:
+diff --git a/lib/crypto/src/nist.rs b/lib/crypto/src/nist.rs
+index 6e44d94b0..2358a3294 100644
+--- a/lib/crypto/src/nist.rs
++++ b/lib/crypto/src/nist.rs
+@@ -129,7 +129,7 @@ impl<const N: usize> Curve<N> {
+         }
+         let x = Mod::from_be(&encoded[1..1 + N * 8]);
+         let y = Mod::from_be(&encoded[1 + N * 8..]);
+-        if self.p.valid(&x) & self.p.valid(&y) != 1 {
++        if false {
+             return Err(Error::InvalidPoint);
+         }
+         let x = self.p.encode_raw(&x);
+== cargo test -p toyos-crypto --all-features --test fuzz -- --exact sec1_points
+   Compiling toyos-crypto v0.1.0 (/Users/jan/Dev/jan/toyos-crypto-sec/lib/crypto)
+    Finished `test` profile [optimized + debuginfo] target(s) in 3.99s
+     Running tests/fuzz.rs (target/debug/deps/fuzz-26716012b733c78b)
+
+running 1 test
+test sec1_points ... FAILED
+
+failures:
+
+---- sec1_points stdout ----
+
+thread '<unnamed>' (50721057) panicked at lib/crypto/tests/fuzz.rs:119:9:
+assertion `left == right` failed: case 86: [04, ff, ff, ff, ff, 00, 00, 00, 01, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, 66, 48, 5c, 78, 0e, 2f, 83, d7, 24, 33, bd, 5d, 84, a0, 6b, b6, 54, 1c, 2a, f3, 1d, ae, 87, 17, 28, bf, 85, 6a, 17, 4f, 93, f4]
+  left: true
+ right: false
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread '<unnamed>' (50721064) panicked at lib/crypto/tests/fuzz.rs:119:9:
+assertion `left == right` failed: case 79: [04, ff, ff, ff, ff, 00, 00, 00, 01, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, 66, 48, 5c, 78, 0e, 2f, 83, d7, 24, 33, bd, 5d, 84, a0, 6b, b6, 54, 1c, 2a, f3, 1d, ae, 87, 17, 28, bf, 85, 6a, 17, 4f, 93, f4]
+  left: true
+ right: false
+
+thread '<unnamed>' (50721062) panicked at lib/crypto/tests/fuzz.rs:119:9:
+assertion `left == right` failed: case 35: [04, ff, ff, ff, ff, 00, 00, 00, 01, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, 66, 48, 5c, 78, 0e, 2f, 83, d7, 24, 33, bd, 5d, 84, a0, 6b, b6, 54, 1c, 2a, f3, 1d, ae, 87, 17, 28, bf, 85, 6a, 17, 4f, 93, f4]
+  left: true
+ right: false
+
+thread '<unnamed>' (50721063) panicked at lib/crypto/tests/fuzz.rs:119:9:
+assertion `left == right` failed: case 218: [04, ff, ff, ff, ff, 00, 00, 00, 01, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, 66, 48, 5c, 78, 0e, 2f, 83, d7, 24, 33, bd, 5d, 84, a0, 6b, b6, 54, 1c, 2a, f3, 1d, ae, 87, 17, 28, bf, 85, 6a, 17, 4f, 93, f4]
+  left: true
+ right: false
+
+thread '<unnamed>' (50721059) panicked at lib/crypto/tests/fuzz.rs:119:9:
+assertion `left == right` failed: case 340: [04, ff, ff, ff, ff, 00, 00, 00, 01, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, 66, 48, 5c, 78, 0e, 2f, 83, d7, 24, 33, bd, 5d, 84, a0, 6b, b6, 54, 1c, 2a, f3, 1d, ae, 87, 17, 28, bf, 85, 6a, 17, 4f, 93, f4]
+  left: true
+ right: false
+
+thread '<unnamed>' (50721068) panicked at lib/crypto/tests/fuzz.rs:119:9:
+assertion `left == right` failed: case 111: [04, ff, ff, ff, ff, 00, 00, 00, 01, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, 66, 48, 5c, 78, 0e, 2f, 83, d7, 24, 33, bd, 5d, 84, a0, 6b, b6, 54, 1c, 2a, f3, 1d, ae, 87, 17, 28, bf, 85, 6a, 17, 4f, 93, f4]
+  left: true
+ right: false
+
+thread '<unnamed>' (50721066) panicked at lib/crypto/tests/fuzz.rs:119:9:
+assertion `left == right` failed: case 137: [04, ff, ff, ff, ff, 00, 00, 00, 01, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, 66, 48, 5c, 78, 0e, 2f, 83, d7, 24, 33, bd, 5d, 84, a0, 6b, b6, 54, 1c, 2a, f3, 1d, ae, 87, 17, 28, bf, 85, 6a, 17, 4f, 93, f4]
+  left: true
+ right: false
+
+thread '<unnamed>' (50721067) panicked at lib/crypto/tests/fuzz.rs:119:9:
+assertion `left == right` failed: case 124: [04, ff, ff, ff, ff, 00, 00, 00, 01, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, 66, 48, 5c, 78, 0e, 2f, 83, d7, 24, 33, bd, 5d, 84, a0, 6b, b6, 54, 1c, 2a, f3, 1d, ae, 87, 17, 28, bf, 85, 6a, 17, 4f, 93, f4]
+  left: true
+ right: false
+
+thread '<unnamed>' (50721061) panicked at lib/crypto/tests/fuzz.rs:119:9:
+assertion `left == right` failed: case 384: [04, ff, ff, ff, ff, 00, 00, 00, 01, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, 66, 48, 5c, 78, 0e, 2f, 83, d7, 24, 33, bd, 5d, 84, a0, 6b, b6, 54, 1c, 2a, f3, 1d, ae, 87, 17, 28, bf, 85, 6a, 17, 4f, 93, f4]
+  left: true
+ right: false
+
+thread '<unnamed>' (50721055) panicked at lib/crypto/tests/fuzz.rs:119:9:
+assertion `left == right` failed: case 602: [04, ff, ff, ff, ff, 00, 00, 00, 01, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, 66, 48, 5c, 78, 0e, 2f, 83, d7, 24, 33, bd, 5d, 84, a0, 6b, b6, 54, 1c, 2a, f3, 1d, ae, 87, 17, 28, bf, 85, 6a, 17, 4f, 93, f4]
+  left: true
+ right: false
+
+thread '<unnamed>' (50721058) panicked at lib/crypto/tests/fuzz.rs:119:9:
+assertion `left == right` failed: case 241: [04, ff, ff, ff, ff, 00, 00, 00, 01, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, 66, 48, 5c, 78, 0e, 2f, 83, d7, 24, 33, bd, 5d, 84, a0, 6b, b6, 54, 1c, 2a, f3, 1d, ae, 87, 17, 28, bf, 85, 6a, 17, 4f, 93, f4]
+  left: true
+ right: false
+
+thread '<unnamed>' (50721060) panicked at lib/crypto/tests/fuzz.rs:119:9:
+assertion `left == right` failed: case 481: [04, ff, ff, ff, ff, 00, 00, 00, 01, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, 66, 48, 5c, 78, 0e, 2f, 83, d7, 24, 33, bd, 5d, 84, a0, 6b, b6, 54, 1c, 2a, f3, 1d, ae, 87, 17, 28, bf, 85, 6a, 17, 4f, 93, f4]
+  left: true
+ right: false
+
+thread '<unnamed>' (50721056) panicked at lib/crypto/tests/fuzz.rs:119:9:
+assertion `left == right` failed: case 449: [04, ff, ff, ff, ff, 00, 00, 00, 01, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, 66, 48, 5c, 78, 0e, 2f, 83, d7, 24, 33, bd, 5d, 84, a0, 6b, b6, 54, 1c, 2a, f3, 1d, ae, 87, 17, 28, bf, 85, 6a, 17, 4f, 93, f4]
+  left: true
+ right: false
+
+thread '<unnamed>' (50721065) panicked at lib/crypto/tests/fuzz.rs:119:9:
+assertion `left == right` failed: case 668: [04, ff, ff, ff, ff, 00, 00, 00, 01, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, 66, 48, 5c, 78, 0e, 2f, 83, d7, 24, 33, bd, 5d, 84, a0, 6b, b6, 54, 1c, 2a, f3, 1d, ae, 87, 17, 28, bf, 85, 6a, 17, 4f, 93, f4]
+  left: true
+ right: false
+
+thread 'sec1_points' (50721054) panicked at lib/crypto/tests/support/mod.rs:139:5:
+a scoped thread panicked
+
+
+failures:
+    sec1_points
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.02s
+
+error: test failed, to rerun pass `-p toyos-crypto --test fuzz`
+error: 1 target failed:
+    `-p toyos-crypto --test fuzz`
+== exit 101

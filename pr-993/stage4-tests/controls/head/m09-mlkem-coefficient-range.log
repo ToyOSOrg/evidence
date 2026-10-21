@@ -1,0 +1,119 @@
+== m09-mlkem-coefficient-range at 86e8642088525aa2b335cd248ee9f0d77e65ea2a, patch:
+diff --git a/lib/crypto/src/mlkem.rs b/lib/crypto/src/mlkem.rs
+index 7edab208c..87480fc11 100644
+--- a/lib/crypto/src/mlkem.rs
++++ b/lib/crypto/src/mlkem.rs
+@@ -194,7 +194,7 @@ impl EncapsulationKey {
+         }
+         for chunk in input[..1152].as_chunks::<384>().0 {
+             let p = Poly::decode(12, chunk);
+-            if p.0.iter().any(|&x| u32::from(x) >= Q) {
++            if false {
+                 return Err(Error::InvalidKey);
+             }
+         }
+== cargo test -p toyos-crypto --all-features --test fuzz -- --exact mlkem_encapsulation_keys
+   Compiling toyos-crypto v0.1.0 (/Users/jan/Dev/jan/toyos-crypto-sec/lib/crypto)
+warning: unused variable: `p`
+   --> lib/crypto/src/mlkem.rs:196:17
+    |
+196 |             let p = Poly::decode(12, chunk);
+    |                 ^ help: if this is intentional, prefix it with an underscore: `_p`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `toyos-crypto` (lib) generated 1 warning (run `cargo fix --lib -p toyos-crypto` to apply 1 suggestion)
+    Finished `test` profile [optimized + debuginfo] target(s) in 4.02s
+     Running tests/fuzz.rs (target/debug/deps/fuzz-26716012b733c78b)
+
+running 1 test
+test mlkem_encapsulation_keys ... FAILED
+
+failures:
+
+---- mlkem_encapsulation_keys stdout ----
+
+thread '<unnamed>' (50723006) panicked at lib/crypto/tests/fuzz.rs:361:9:
+assertion `left == right` failed: case 6
+  left: true
+ right: false
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread '<unnamed>' (50723000) panicked at lib/crypto/tests/fuzz.rs:361:9:
+assertion `left == right` failed: case 14
+  left: true
+ right: false
+
+thread '<unnamed>' (50723009) panicked at lib/crypto/tests/fuzz.rs:361:9:
+assertion `left == right` failed: case 9
+  left: true
+ right: false
+
+thread '<unnamed>' (50723011) panicked at lib/crypto/tests/fuzz.rs:361:9:
+assertion `left == right` failed: case 11
+  left: true
+ right: false
+
+thread '<unnamed>' (50723001) panicked at lib/crypto/tests/fuzz.rs:361:9:
+assertion `left == right` failed: case 1
+  left: true
+ right: false
+
+thread '<unnamed>' (50723003) panicked at lib/crypto/tests/fuzz.rs:361:9:
+assertion `left == right` failed: case 3
+  left: true
+ right: false
+
+thread '<unnamed>' (50723013) panicked at lib/crypto/tests/fuzz.rs:361:9:
+assertion `left == right` failed: case 13
+  left: true
+ right: false
+
+thread '<unnamed>' (50723008) panicked at lib/crypto/tests/fuzz.rs:361:9:
+assertion `left == right` failed: case 8
+  left: true
+ right: false
+
+thread '<unnamed>' (50723010) panicked at lib/crypto/tests/fuzz.rs:361:9:
+assertion `left == right` failed: case 52
+  left: true
+ right: false
+
+thread '<unnamed>' (50723005) panicked at lib/crypto/tests/fuzz.rs:361:9:
+assertion `left == right` failed: case 47
+  left: true
+ right: false
+
+thread '<unnamed>' (50723002) panicked at lib/crypto/tests/fuzz.rs:361:9:
+assertion `left == right` failed: case 30
+  left: true
+ right: false
+
+thread '<unnamed>' (50723012) panicked at lib/crypto/tests/fuzz.rs:361:9:
+assertion `left == right` failed: case 54
+  left: true
+ right: false
+
+thread '<unnamed>' (50723007) panicked at lib/crypto/tests/fuzz.rs:361:9:
+assertion `left == right` failed: case 63
+  left: true
+ right: false
+
+thread '<unnamed>' (50723004) panicked at lib/crypto/tests/fuzz.rs:361:9:
+assertion `left == right` failed: case 88
+  left: true
+ right: false
+
+thread 'mlkem_encapsulation_keys' (50722999) panicked at lib/crypto/tests/support/mod.rs:139:5:
+a scoped thread panicked
+
+
+failures:
+    mlkem_encapsulation_keys
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-crypto --test fuzz`
+error: 1 target failed:
+    `-p toyos-crypto --test fuzz`
+== exit 101

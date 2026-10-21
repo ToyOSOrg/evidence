@@ -1,0 +1,326 @@
+== m02-gcm-tag-compare at 063e7c7e25f7334afefec0eb018ed04dc39dff2c, patch:
+diff --git a/lib/crypto/src/gcm.rs b/lib/crypto/src/gcm.rs
+index 07dd22349..57fa17720 100644
+--- a/lib/crypto/src/gcm.rs
++++ b/lib/crypto/src/gcm.rs
+@@ -186,7 +186,7 @@ impl Gcm {
+             }
+         }
+         let expected = self.tag(nonce, self.digest(aad, data));
+-        if !crate::ct::equal(&expected.0, tag) {
++        if false {
+             return Err(Error::Authentication);
+         }
+         self.xor(nonce, 2, data);
+== cargo test -p toyos-crypto --all-features
+   Compiling toyos-crypto v0.1.0 (/Users/jan/Dev/jan/toyos-crypto-sec/lib/crypto)
+warning: unused variable: `expected`
+   --> lib/crypto/src/gcm.rs:188:13
+    |
+188 |         let expected = self.tag(nonce, self.digest(aad, data));
+    |             ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_expected`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `toyos-crypto` (lib) generated 1 warning (run `cargo fix --lib -p toyos-crypto` to apply 1 suggestion)
+warning: `toyos-crypto` (lib test) generated 1 warning (1 duplicate)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.29s
+     Running unittests src/lib.rs (target/debug/deps/toyos_crypto-59eaf0671bb3f3ed)
+
+running 37 tests
+test block::tests::partial_blocks_match_bytewise_assembly_for_every_length_and_offset ... ok
+test aead::tests::nonce_sequence_exhaustion_is_terminal ... ok
+test aes::tests::fips197_portable_matches_instruction_path ... ok
+test chacha::tests::independent_blocks_match_one_at_a_time ... ok
+test ct::tests::masks_selection_and_equality_over_their_whole_range ... ok
+test block::tests::xor_takes_the_stream_from_its_start_for_every_length ... ok
+test hash::tests::length_refusals_leave_state_unchanged ... ok
+test keccak::tests::fips202_empty ... ok
+test hash::tests::dispatched_compression_matches_the_portable_rounds ... ok
+test chacha::tests::dispatched_streams_preserve_counter_carries_and_batch_tails ... ok
+test chacha::tests::exhausted_counter_refuses_before_mutating_any_batch ... ok
+test mlkem::tests::compression_rounds_as_fips_203_for_every_input ... ok
+test mlkem::tests::reduction_modulo_q_is_exact_over_its_whole_input_range ... ok
+test poly1305::tests::rfc8439_section_2_5_2 ... ok
+test gcm::tests::dispatched_ghash_matches_the_bitwise_multiply ... ok
+test rustls_provider::tests::record_adapters_interoperate_and_refuse_reused_sequences ... FAILED
+test rustls_provider::verify::tests::rsa_der_refuses_noncanonical_integers_lengths_and_trailing_bytes ... ok
+test rustls_provider::tests::key_exchange_propagates_entropy_failure ... ok
+test rustls_provider::tests::transcript_forks_keep_their_own_prefix_and_key_schedule_matches_ring ... ok
+test rustls_provider::tests::hybrid_wire_exchange_matches_independent_kem_and_curve_oracles ... ok
+test mlkem::tests::nist_expanded_keygen_secret_matches ... ok
+test rustls_provider::tests::certificate_cross_hash_ecdsa_uses_sec1_digest_width ... ok
+test secret::tests::a_dropped_secret_leaves_zeros ... ok
+test secret::tests::erase_zeroes_every_byte_of_every_shape ... ok
+test secret::tests::wipes_zero_their_slices ... ok
+test test_arithmetic::field25519_negation_and_small_constants_match_integers ... ok
+test test_arithmetic::nist_validity_is_below_the_modulus ... ok
+test rustls_provider::tests::hybrid_tls13_handshakes_interoperate_with_independent_server_primitives ... ok
+test rustls_provider::tests::default_hybrid_offer_retries_with_classical_ring_server ... ok
+test test_arithmetic::field25519_matches_integers ... ok
+test gcm::tests::counters_continue_across_the_stitched_and_tail_paths ... ok
+test rustls_provider::tests::tls12_ecdsa_client_interoperates_with_ring_for_every_cipher_and_group ... ok
+test test_arithmetic::nist_fields_and_orders_match_integers ... ok
+test test_arithmetic::scalar25519_matches_integers ... ok
+test rustls_provider::tests::rsa_authenticated_tls12_and_tls13_interoperate_with_ring ... ok
+test poly1305::tests::matches_integers_on_seeded_and_extreme_inputs ... ok
+test rustls_provider::tests::tls13_client_interoperates_with_ring_for_every_cipher_group_and_ec_certificate ... ok
+
+failures:
+
+---- rustls_provider::tests::record_adapters_interoperate_and_refuse_reused_sequences stdout ----
+
+thread 'rustls_provider::tests::record_adapters_interoperate_and_refuse_reused_sequences' (48607439) panicked at lib/crypto/src/rustls_provider/tests.rs:123:13:
+assertion failed: open.decrypt(InboundOpaqueMessage::new(encrypted.typ, encrypted.version,
+            &mut payload), seq as u64).is_err()
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    rustls_provider::tests::record_adapters_interoperate_and_refuse_reused_sequences
+
+test result: FAILED. 36 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s
+
+error: test failed, to rerun pass `-p toyos-crypto --lib`
+     Running tests/differential.rs (target/debug/deps/differential-65c4b28b16792bba)
+
+running 16 tests
+test aead_all_algorithms_and_partial_blocks ... FAILED
+test openssh_construction_matches_independent_primitives ... ok
+test sha2_streaming_boundaries ... ok
+test wpa2_pmk_and_rfc3394_unwrap ... ok
+test seeded_aead_against_ring_and_rustcrypto ... FAILED
+test seeded_openssh_against_rustcrypto ... ok
+test seeded_sha2_against_ring ... ok
+test nist_curve_boundary_scalars ... ok
+test seeded_wpa2_against_ring ... ok
+test seeded_x25519_against_dalek ... ok
+test seeded_mlkem768_against_rustcrypto ... ok
+test seeded_hmac_and_hkdf_against_ring ... ok
+test seeded_rsa_against_ring ... ok
+test seeded_ed25519_against_ring_and_dalek ... ok
+test seeded_p256_against_rustcrypto_and_ring ... ok
+test seeded_p384_against_rustcrypto_and_ring ... ok
+
+failures:
+
+---- aead_all_algorithms_and_partial_blocks stdout ----
+
+thread 'aead_all_algorithms_and_partial_blocks' (48607524) panicked at lib/crypto/tests/differential.rs:93:21:
+assertion failed: opener.open(&nonce, aad, &mut ciphertext, &bad).is_err()
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- seeded_aead_against_ring_and_rustcrypto stdout ----
+
+thread '<unnamed>' (48607541) panicked at lib/crypto/tests/differential.rs:360:9:
+case 1: a changed record opened
+
+thread '<unnamed>' (48607536) panicked at lib/crypto/tests/differential.rs:360:9:
+case 0: a changed record opened
+
+thread '<unnamed>' (48607542) panicked at lib/crypto/tests/differential.rs:360:9:
+case 16: a changed record opened
+
+thread '<unnamed>' (48607544) panicked at lib/crypto/tests/differential.rs:360:9:
+case 3: a changed record opened
+
+thread '<unnamed>' (48607547) panicked at lib/crypto/tests/differential.rs:360:9:
+case 4: a changed record opened
+
+thread '<unnamed>' (48607550) panicked at lib/crypto/tests/differential.rs:360:9:
+case 19: a changed record opened
+
+thread '<unnamed>' (48607554) panicked at lib/crypto/tests/differential.rs:360:9:
+case 6: a changed record opened
+
+thread '<unnamed>' (48607670) panicked at lib/crypto/tests/differential.rs:360:9:
+case 9: a changed record opened
+
+thread '<unnamed>' (48607674) panicked at lib/crypto/tests/differential.rs:360:9:
+case 13: a changed record opened
+
+thread '<unnamed>' (48607673) panicked at lib/crypto/tests/differential.rs:360:9:
+case 12: a changed record opened
+
+thread '<unnamed>' (48607669) panicked at lib/crypto/tests/differential.rs:360:9:
+case 22: a changed record opened
+
+thread '<unnamed>' (48607672) panicked at lib/crypto/tests/differential.rs:360:9:
+case 25: a changed record opened
+
+thread '<unnamed>' (48607668) panicked at lib/crypto/tests/differential.rs:360:9:
+case 7: a changed record opened
+
+thread '<unnamed>' (48607671) panicked at lib/crypto/tests/differential.rs:360:9:
+case 10: a changed record opened
+
+thread 'seeded_aead_against_ring_and_rustcrypto' (48607527) panicked at lib/crypto/tests/support/mod.rs:139:5:
+a scoped thread panicked
+
+
+failures:
+    aead_all_algorithms_and_partial_blocks
+    seeded_aead_against_ring_and_rustcrypto
+
+test result: FAILED. 14 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 21.26s
+
+error: test failed, to rerun pass `-p toyos-crypto --test differential`
+     Running tests/fuzz.rs (target/debug/deps/fuzz-26716012b733c78b)
+
+running 9 tests
+test provider::records ... FAILED
+test ed25519_encodings ... ok
+test mlkem_encapsulation_keys ... ok
+test mlkem_ciphertexts ... ok
+test provider::rsa_public_key_der ... ok
+test rsa_components ... ok
+test sec1_points ... ok
+test provider::key_shares ... ok
+test der_signatures ... ok
+
+failures:
+
+---- provider::records stdout ----
+
+thread '<unnamed>' (48612142) panicked at lib/crypto/tests/fuzz.rs:557:21:
+case 7, TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384: a changed record opened
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread '<unnamed>' (48612139) panicked at lib/crypto/tests/fuzz.rs:557:21:
+case 76, TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384: a changed record opened
+
+thread '<unnamed>' (48612136) panicked at lib/crypto/tests/fuzz.rs:557:21:
+case 19, TLS13_AES_256_GCM_SHA384: a changed record opened
+
+thread '<unnamed>' (48612124) panicked at lib/crypto/tests/fuzz.rs:557:21:
+case 57, TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256: a changed record opened
+
+thread '<unnamed>' (48612127) panicked at lib/crypto/tests/fuzz.rs:557:21:
+case 16, TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384: a changed record opened
+
+thread '<unnamed>' (48612153) panicked at lib/crypto/tests/fuzz.rs:557:21:
+case 12, TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256: a changed record opened
+
+thread '<unnamed>' (48612151) panicked at lib/crypto/tests/fuzz.rs:557:21:
+case 39, TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256: a changed record opened
+
+thread '<unnamed>' (48612154) panicked at lib/crypto/tests/fuzz.rs:557:21:
+case 27, TLS13_AES_128_GCM_SHA256: a changed record opened
+
+thread '<unnamed>' (48612149) panicked at lib/crypto/tests/fuzz.rs:557:21:
+case 10, TLS13_AES_256_GCM_SHA384: a changed record opened
+
+thread '<unnamed>' (48612121) panicked at lib/crypto/tests/fuzz.rs:557:21:
+case 0, TLS13_AES_128_GCM_SHA256: a changed record opened
+
+thread '<unnamed>' (48612133) panicked at lib/crypto/tests/fuzz.rs:557:21:
+case 60, TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256: a changed record opened
+
+thread '<unnamed>' (48612145) panicked at lib/crypto/tests/fuzz.rs:557:21:
+case 64, TLS13_AES_256_GCM_SHA384: a changed record opened
+
+thread '<unnamed>' (48612147) panicked at lib/crypto/tests/fuzz.rs:557:21:
+case 9, TLS13_AES_128_GCM_SHA256: a changed record opened
+
+thread '<unnamed>' (48612130) panicked at lib/crypto/tests/fuzz.rs:557:21:
+case 31, TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384: a changed record opened
+
+thread 'provider::records' (48612083) panicked at lib/crypto/tests/support/mod.rs:139:5:
+a scoped thread panicked
+
+
+failures:
+    provider::records
+
+test result: FAILED. 8 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.88s
+
+error: test failed, to rerun pass `-p toyos-crypto --test fuzz`
+     Running tests/nist.rs (target/debug/deps/nist-0e8dda6af52d77df)
+
+running 5 tests
+test acvp_hmac ... ok
+test acvp_mlkem768 ... ok
+test cavp_shavs ... ok
+test cavp_ecdsa ... ok
+test cavp_gcm ... FAILED
+
+failures:
+
+---- cavp_gcm stdout ----
+gcm/gcmEncryptExtIV128.rsp: 7875 cases; 2625 valid and 0 invalid agreed; acceptable 0 accepted, 0 refused; outside the interface: {"IV not 96 bits": 5250}
+gcm/gcmEncryptExtIV256.rsp: 7875 cases; 2625 valid and 0 invalid agreed; acceptable 0 accepted, 0 refused; outside the interface: {"IV not 96 bits": 5250}
+
+thread 'cavp_gcm' (48612771) panicked at lib/crypto/tests/nist.rs:27:49:
+no PT in {"AAD": "", "CT": "", "Count": "1", "FAIL": "", "IV": "907763b19b9b4ab6bd4f0281", "Key": "a49a5e26a2f8cb63d05546c2a62f5343", "Tag": "a2be08210d8c470a8df6e8fbd79ec5cf"}
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    cavp_gcm
+
+test result: FAILED. 4 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.33s
+
+error: test failed, to rerun pass `-p toyos-crypto --test nist`
+     Running tests/vectors.rs (target/debug/deps/vectors-f7c9ac2663ee23c6)
+
+running 8 tests
+test fips_sha2_abc_and_empty ... ok
+test rfc8439_aead_and_authenticated_refusal ... ok
+test malformed_public_boundaries ... ok
+test nist_gcm_zero_key_zero_block ... ok
+test rfc4231_hmac_sha256 ... ok
+test rfc5869_case_one_and_output_bound ... ok
+test rfc7748_x25519 ... ok
+test rfc8032_empty_and_strict_rejection ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/wycheproof.rs (target/debug/deps/wycheproof-62ef046a7757f434)
+
+running 11 tests
+test aes_gmac ... FAILED
+test aead ... FAILED
+test hmac_and_hkdf ... ok
+test ed25519 ... ok
+test x25519 ... ok
+test mlkem768 ... ok
+test wpa2_hmac_sha1_pbkdf2_and_key_unwrap ... ok
+test rsa_pss ... ok
+test ecdh_sec1 ... ok
+test rsa_pkcs1 ... ok
+test ecdsa_der ... ok
+
+failures:
+
+---- aes_gmac stdout ----
+
+thread 'aes_gmac' (48614038) panicked at lib/crypto/tests/support/mod.rs:222:17:
+aes_gmac_test.json tcId 14 ["ModifiedTag"]: invalid and accepted
+
+---- aead stdout ----
+
+thread 'aead' (48614037) panicked at lib/crypto/tests/support/mod.rs:222:17:
+aes_gcm_test.json tcId 41 ["ModifiedTag"]: invalid and accepted
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    aead
+    aes_gmac
+
+test result: FAILED. 9 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 6.80s
+
+error: test failed, to rerun pass `-p toyos-crypto --test wycheproof`
+   Doc-tests toyos_crypto
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: 5 targets failed:
+    `-p toyos-crypto --lib`
+    `-p toyos-crypto --test differential`
+    `-p toyos-crypto --test fuzz`
+    `-p toyos-crypto --test nist`
+    `-p toyos-crypto --test wycheproof`
+== exit 101

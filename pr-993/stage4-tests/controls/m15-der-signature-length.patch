@@ -1,0 +1,13 @@
+diff --git a/lib/crypto/src/nist.rs b/lib/crypto/src/nist.rs
+index 6e44d94b0..dbaad769f 100644
+--- a/lib/crypto/src/nist.rs
++++ b/lib/crypto/src/nist.rs
+@@ -208,7 +208,7 @@ impl<const N: usize> Curve<N> {
+ }
+ fn der<const N: usize>(input: &[u8]) -> Result<([u8; 48], [u8; 48]), Error> {
+     // A two-integer P-384 signature is below 128 bytes: long lengths are invalid.
+-    if input.len() < 6 || input[0] != 0x30 || input[1] as usize != input.len() - 2 {
++    if input.len() < 6 || input[0] != 0x30 || input[1] as usize > input.len() - 2 {
+         return Err(Error::InvalidEncoding);
+     }
+     let mut cursor = 2;
