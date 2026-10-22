@@ -1,0 +1,24 @@
+40,54c40,42
+<         within(lba, out.len(), self.disk.blocks())?;
+<         let mut unheld = Vec::new();
+<         {
+<             let dirty = self.dirty.borrow();
+<             let mut run: Option<(usize, usize)> = None;
+<             for (k, out) in out.iter_mut().enumerate() {
+<                 match dirty.get(&(lba + k as u64)) {
+<                     Some(held) => {
+<                         *out = **held;
+<                         unheld.extend(run.take());
+<                     }
+<                     None => run = Some(run.map_or((k, k + 1), |(from, _)| (from, k + 1))),
+<                 }
+<             }
+<             unheld.extend(run);
+---
+>         self.disk.read(lba, out).await?;
+>         for (block, data) in self.dirty.borrow().range(lba..lba + out.len() as u64) {
+>             out[(block - lba) as usize] = **data;
+56,58d43
+<         for (from, to) in unheld {
+<             self.disk.read(lba + from as u64, &mut out[from..to]).await?;
+<         }
