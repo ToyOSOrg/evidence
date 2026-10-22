@@ -58,3 +58,5 @@ Head c4e95d536, on main 18a38738b. The method follows RFC 10042 §2
   holds this one.
 
 - (#PR2 above is #1026.)
+
+- `ci-host-rebased.log`: `cargo run -- --ci host` at aa65c1f3d, the rebased head. Exit 0, 101 steps green.
