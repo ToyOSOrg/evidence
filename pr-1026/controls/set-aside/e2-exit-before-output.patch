@@ -1,0 +1,11 @@
+--- a/system/sshserver/src/connection.rs	2026-10-22 22:12:57
++++ b/system/sshserver/src/connection.rs	2026-10-22 22:12:57
+@@ -343,7 +343,7 @@
+     /// Say how the program ended once all its output is out.
+     fn finish(&mut self, channel: ChannelId) {
+         let Some(running) = self.channels.get(&channel) else { return };
+-        if let (0, true, Some(status)) = (running.streams, running.output.is_empty(), running.status) {
++        if let (0, Some(status)) = (running.streams, running.status) {
+             self.channels.remove(&channel);
+             let _ = self.server.exit(channel, status);
+         }

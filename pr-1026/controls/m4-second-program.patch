@@ -1,0 +1,11 @@
+--- a/lib/ssh/src/connection.rs	2026-10-22 22:11:56
++++ b/lib/ssh/src/connection.rs	2026-10-22 22:11:56
+@@ -284,7 +284,7 @@
+     /// A `CHANNEL_REQUEST` of type `request`, its fields in `r`: the event it
+     /// makes, if any, or why it is refused.
+     fn request(&mut self, id: ChannelId, request: &str, mut r: Reader<'_>) -> Result<Result<Option<Event>, Declined>, Refusal> {
+-        if self.started {
++        if self.started && request == "nothing" {
+             return Ok(Err(Declined::Request(request.to_string())));
+         }
+         let event = match request {

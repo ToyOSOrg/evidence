@@ -1,0 +1,1 @@
+sftp -v -b sftp.batch -P 22742 -F /dev/null -o IdentityAgent=none -o IdentitiesOnly=yes -o UserKnownHostsFile=known_hosts -o HostKeyAlias=toyos-test -o StrictHostKeyChecking=yes -o BatchMode=yes -i user_ed25519 toyos@127.0.0.1

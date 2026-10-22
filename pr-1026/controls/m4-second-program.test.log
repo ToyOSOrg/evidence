@@ -1,0 +1,129 @@
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.09s
+     Running unittests src/main.rs (target/debug/deps/sshserver-138a4c1aadfe36b5)
+
+running 21 tests
+test command::tests::a_bare_name_resolves_under_system_bin ... ok
+test command::tests::a_line_that_names_nothing_is_refused ... ok
+test command::tests::a_bare_command_is_its_words ... ok
+test command::tests::metacharacters_are_ordinary_bytes ... ok
+test command::tests::a_shell_command_reaches_the_shell_whole ... ok
+test command::tests::quotes_hold_a_word_together ... ok
+test connection::tests::a_terminal_gets_a_carriage_return_before_every_line_feed ... ok
+test command::tests::backslash_escapes_one_character ... ok
+test command::tests::an_unfinished_quote_is_refused ... ok
+test sftp::tests::a_handle_nobody_opened_is_refused ... ok
+test sftp::tests::a_file_that_is_not_there_is_no_such_file ... ok
+test sftp::tests::a_request_before_init_ends_the_session ... ok
+test sftp::tests::a_request_outside_the_profile_is_refused_by_name ... ok
+test sftp::tests::a_second_init_ends_the_session ... ok
+test sftp::tests::a_truncated_request_is_a_bad_message_and_not_a_panic ... ok
+test sftp::tests::an_oversized_length_ends_the_session ... ok
+test sftp::tests::framing_waits_for_a_whole_packet ... ok
+test tests::the_unauthenticated_are_capped ... ok
+test sftp::tests::the_profile_moves_a_file_and_lists_it ... ok
+test sftp::tests::a_listing_longer_than_one_reply_continues_where_it_left_off ... ok
+test sftp::tests::a_directory_past_the_ceiling_is_refused_by_name ... ok
+
+test result: ok. 21 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.76s
+
+     Running unittests src/lib.rs (target/debug/deps/toyos_ssh-8817e319dd51d9dd)
+
+running 12 tests
+test authorized_keys::tests::a_key_listed_with_options_authorizes_nothing ... ok
+test authorized_keys::tests::every_line_is_read_on_its_own ... ok
+test base64::tests::rfc_4648_vectors ... ok
+test wire::tests::a_reader_refuses_by_the_fields_name ... ok
+test hostkey::tests::a_key_ssh_keygen_minted_reads ... ok
+test authorized_keys::tests::a_blob_that_is_not_its_lines_key_is_refused ... ok
+test authorized_keys::tests::the_comment_is_not_part_of_the_key ... ok
+test authorized_keys::tests::a_listed_key_authorizes_and_no_other ... ok
+test wire::tests::an_mpint_is_written_as_rfc_4251_spells_it ... ok
+test authorized_keys::tests::a_file_that_names_nobody_authorizes_nobody ... ok
+test hostkey::tests::rfc_8032_vectors ... ok
+test hostkey::tests::a_key_that_is_not_one_is_refused_by_name ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/fuzz.rs (target/debug/deps/fuzz-a33b8b5e6e25c92b)
+
+running 2 tests
+test every_bent_recording_is_total_and_a_bend_before_the_login_prevents_it ... ok
+test every_session_is_total_and_none_logs_in_without_a_right_signature ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.35s
+
+     Running tests/refusals.rs (target/debug/deps/refusals-2849c3baf842334a)
+
+running 17 tests
+test a_listed_key_is_asked_to_sign_and_its_signature_logs_in ... ok
+test a_signature_over_anything_else_is_refused ... ok
+test a_re_exchange_holds_output_until_its_newkeys ... ok
+test an_identification_line_is_held_to_rfc_4253 ... ok
+test an_unlisted_key_is_refused_at_the_offer_and_signed ... ok
+test every_other_method_is_refused_by_name ... ok
+test a_closed_channel_is_gone ... ok
+test a_channel_serves_one_program_and_nothing_else ... FAILED
+test a_tampered_sealed_packet_is_refused_in_silence ... ok
+test the_first_exchange_is_held_to_its_rules ... ok
+test six_failures_end_the_session ... ok
+test nothing_but_authentication_is_taken_before_it ... ok
+test a_packet_is_held_to_its_caps ... ok
+test the_authorizer_is_asked_again_with_the_signature ... ok
+test an_rsa_key_is_refused_by_name ... ok
+test the_windows_bound_both_sides ... ok
+test a_channel_message_is_held_to_its_channel ... ok
+
+failures:
+
+---- a_channel_serves_one_program_and_nothing_else stdout ----
+
+thread 'a_channel_serves_one_program_and_nothing_else' (16891168) panicked at lib/ssh/tests/refusals.rs:377:9:
+assertion `left == right` failed: a shell after the shell
+  left: [[99, 0, 0, 0, 7]]
+ right: [[100, 0, 0, 0, 7]]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    a_channel_serves_one_program_and_nothing_else
+
+test result: FAILED. 16 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+error: test failed, to rerun pass `-p toyos-ssh --test refusals`
+     Running tests/replay.rs (target/debug/deps/replay-dffc6a7e041ac3af)
+
+running 14 tests
+test a_replay_under_another_seed_does_not_open ... ok
+test the_keys_derived_from_a_recorded_exchange_open_what_openssh_sealed ... ok
+test a_key_the_server_does_not_name_is_refused_at_the_offer ... ok
+test an_exec_openssh_ran_replays ... ok
+test openssh_holding_only_an_rsa_key_offers_none ... ok
+test a_terrapin_injection_into_the_first_exchange_is_refused ... ok
+test a_forwarding_channel_is_refused_by_name ... ok
+test an_exec_over_the_classical_exchange_replays ... ok
+test a_shell_with_a_terminal_replays ... ok
+test an_sftp_session_replays ... ok
+test an_exec_fed_stdin_replays ... ok
+test two_channels_at_once_replay ... ok
+test openssh_negotiated_the_hybrid ... ok
+test a_session_the_client_rekeyed_three_times_replays ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/vectors.rs (target/debug/deps/vectors-318ea6c70053082a)
+
+running 3 tests
+test rfc_7748_section_6_1 ... ok
+test a_client_key_that_makes_a_zero_secret_is_refused ... ok
+test a_hybrid_init_is_held_to_its_length_and_its_key_check ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests toyos_ssh
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: 1 target failed:
+    `-p toyos-ssh --test refusals`

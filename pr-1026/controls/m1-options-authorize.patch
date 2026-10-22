@@ -1,0 +1,11 @@
+--- a/lib/ssh/src/authorized_keys.rs	2026-10-22 22:11:56
++++ b/lib/ssh/src/authorized_keys.rs	2026-10-22 22:11:56
+@@ -55,7 +55,7 @@
+     let kind = fields.next().expect("a line that is not blank has a field");
+     if !KEY_TYPES.contains(&kind) {
+         return match fields.any(|field| KEY_TYPES.contains(&field)) {
+-            true => Entry::Restricted,
++            true => return entry(line.splitn(2, char::is_whitespace).nth(1).unwrap_or_default().trim()),
+             false => Entry::Unreadable("a line naming no key type"),
+         };
+     }

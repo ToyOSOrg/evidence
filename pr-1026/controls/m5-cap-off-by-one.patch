@@ -1,0 +1,11 @@
+--- a/system/sshserver/src/main.rs	2026-10-22 22:11:56
++++ b/system/sshserver/src/main.rs	2026-10-22 22:11:56
+@@ -115,7 +115,7 @@
+ impl Unauthenticated {
+     fn take(count: &Arc<AtomicUsize>) -> Option<Self> {
+         let place = Self(count.clone());
+-        (count.fetch_add(1, Ordering::AcqRel) < UNAUTHENTICATED_CAP).then_some(place)
++        (count.fetch_add(1, Ordering::AcqRel) <= UNAUTHENTICATED_CAP).then_some(place)
+     }
+ }
+ 
