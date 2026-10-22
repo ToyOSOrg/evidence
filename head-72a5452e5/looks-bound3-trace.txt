@@ -1,0 +1,30 @@
+TRACE server rings Rings { connection: false, bell: false }
+TRACE h1 drain Connection -> Nothing
+TRACE h1 gate wait on holder 1
+TRACE h1 wait Connection
+TRACE h0 ring server
+TRACE h0 read -> Ok([10])
+TRACE server publishes C
+TRACE server rings Rings { connection: true, bell: false }
+TRACE server finishes
+TRACE server rings Rings { connection: false, bell: false }
+TRACE server serve wait
+TRACE server answer_rings rang=true
+TRACE server rung -> Rings { connection: false, bell: false }
+TRACE server rings Rings { connection: false, bell: false }
+TRACE server serve wait
+TRACE h1 woke Connection
+TRACE h1 ring server
+TRACE h1 read -> Ok([11])
+TRACE h0 drain Connection -> Rung
+TRACE h0 gate wait on holder 2
+TRACE h0 wait Connection
+TRACE server answer_rings rang=false
+TRACE server serve wait
+TRACE h1 ring server
+TRACE h1 read -> Ok([12])
+TRACE h1 read -> Ok([])
+TRACE server answer_rings rang=false
+TRACE server serve wait
+deadlock; threads = [(Id(0), Blocked(Location(None))), (Id(1), Blocked(Location(None))), (Id(2), Terminated)]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
