@@ -1,0 +1,11 @@
+--- a/lib/crypto/src/ed25519.rs
++++ b/lib/crypto/src/ed25519.rs
+@@ -415,7 +415,7 @@
+         let magnitude = ((d ^ (0i8.wrapping_sub(negative as i8))).wrapping_add(negative as i8)) as u64;
+         let mut chosen = Self::IDENTITY;
+         for (j, entry) in row.iter().enumerate() {
+-            let take = 1 ^ ct::nonzero(magnitude ^ (j as u64 + 1));
++            let take = 1 ^ ct::nonzero(magnitude ^ (j as u64));
+             chosen = Self {
+                 y_plus_x: Tight::select(&chosen.y_plus_x, &entry.y_plus_x, take),
+                 y_minus_x: Tight::select(&chosen.y_minus_x, &entry.y_minus_x, take),

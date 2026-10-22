@@ -1,0 +1,169 @@
+   Compiling toyos-crypto v0.1.0 ($WORKTREE/lib/crypto)
+    Finished `release` profile [optimized] target(s) in 6.62s
+     Running unittests src/lib.rs (target/release/deps/toyos_crypto-b8ada226d0ed5af6)
+
+running 32 tests
+test aead::tests::nonce_sequence_exhaustion_is_terminal ... ok
+test block::tests::partial_blocks_match_bytewise_assembly_for_every_length_and_offset ... ok
+test chacha::tests::exhausted_counter_refuses_before_mutating_any_batch ... ok
+test chacha::tests::independent_blocks_match_one_at_a_time ... ok
+test aes::tests::fips197_portable_matches_instruction_path ... ok
+test block::tests::xor_takes_the_stream_from_its_start_for_every_length ... ok
+test chacha::tests::dispatched_streams_preserve_counter_carries_and_batch_tails ... ok
+test ed25519::tests::small_order_encodings_are_the_eight_torsion_points ... ok
+test ed25519::tests::constants_match_their_definitions ... ok
+test ed25519::tests::noncanonical_encodings_and_negative_zero_are_refused ... ok
+test ed25519::tests::base_table_holds_the_odd_multiples_of_b ... ok
+test ed25519::tests::a_small_order_r_satisfying_the_equation_is_refused ... FAILED
+test ed25519::tests::the_comb_agrees_with_straus ... FAILED
+test hash::tests::length_refusals_leave_state_unchanged ... ok
+test ed25519::tests::radix_16_digits_recompose_the_scalar ... ok
+test hash::tests::dispatched_compression_matches_the_portable_rounds ... ok
+test keccak::tests::fips202_empty ... ok
+test nist::tests::generation_takes_the_first_valid_candidate ... ok
+test poly1305::tests::rfc8439_section_2_5_2 ... ok
+test scalar25519::tests::barretts_constant_is_floor_of_2_512_over_l ... ok
+test test_arithmetic::field25519_largest_reachable_limbs_stay_within_their_bounds ... ok
+test ed25519::tests::comb_table_holds_its_multiples ... ok
+test x25519::tests::public_keys_by_the_comb_are_the_ladders ... FAILED
+test test_arithmetic::scalar25519_reduction_and_signing_arithmetic_match_integer_oracle ... ok
+test test_arithmetic::nist_montgomery_domains_and_carries_match_integer_oracle ... ok
+test gcm::tests::dispatched_ghash_matches_the_bitwise_multiply ... ok
+test mlkem::tests::nist_expanded_keygen_secret_matches ... ok
+test test_arithmetic::field25519_carries_and_noncanonical_inputs_match_integer_oracle ... ok
+test scalar25519::tests::naf_digits_recompose_the_scalar ... ok
+test poly1305::tests::matches_fiat_crypto_on_seeded_and_extreme_inputs ... ok
+test gcm::tests::counters_continue_across_the_stitched_and_tail_paths ... ok
+test rsa::tests::power_and_r2_match_integer_oracle ... ok
+
+failures:
+
+---- ed25519::tests::a_small_order_r_satisfying_the_equation_is_refused stdout ----
+
+thread 'ed25519::tests::a_small_order_r_satisfying_the_equation_is_refused' (53263185) panicked at lib/crypto/src/ed25519.rs:710:9:
+assertion `left == right` failed
+  left: [242, 116, 50, 211, 205, 124, 14, 174, 203, 154, 69, 213, 207, 204, 155, 233, 33, 225, 181, 45, 240, 179, 122, 110, 224, 244, 229, 60, 231, 187, 206, 226]
+ right: [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- ed25519::tests::the_comb_agrees_with_straus stdout ----
+
+thread 'ed25519::tests::the_comb_agrees_with_straus' (53263192) panicked at lib/crypto/src/ed25519.rs:787:13:
+assertion `left == right` failed
+  left: [133, 126, 237, 128, 79, 240, 135, 185, 127, 135, 132, 143, 100, 147, 232, 114, 87, 168, 197, 32, 60, 185, 244, 34, 246, 231, 167, 216, 164, 210, 153, 243]
+ right: [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+---- x25519::tests::public_keys_by_the_comb_are_the_ladders stdout ----
+
+thread 'x25519::tests::public_keys_by_the_comb_are_the_ladders' (53263209) panicked at lib/crypto/src/x25519.rs:107:13:
+assertion `left == right` failed: case 0
+  left: [147, 137, 106, 143, 105, 215, 206, 77, 187, 119, 54, 133, 158, 90, 43, 45, 8, 238, 237, 229, 249, 1, 61, 37, 51, 140, 42, 101, 175, 78, 222, 46]
+ right: [47, 229, 125, 163, 71, 205, 98, 67, 21, 40, 218, 172, 95, 187, 41, 7, 48, 255, 246, 132, 175, 196, 207, 194, 237, 144, 153, 95, 88, 203, 59, 116]
+
+
+failures:
+    ed25519::tests::a_small_order_r_satisfying_the_equation_is_refused
+    ed25519::tests::the_comb_agrees_with_straus
+    x25519::tests::public_keys_by_the_comb_are_the_ladders
+
+test result: FAILED. 29 passed; 3 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+
+error: test failed, to rerun pass `-p toyos-crypto --lib`
+     Running tests/differential.rs (target/release/deps/differential-7821cfa737df651b)
+
+running 9 tests
+test openssh_construction_matches_independent_primitives ... ok
+test x25519_reference_keys_and_shared_secrets ... FAILED
+test ed25519_reference_verification ... FAILED
+test sha2_streaming_boundaries ... ok
+test mlkem_reference_keygen_encapsulation_and_implicit_rejection ... ok
+test rsa_reference_pkcs1_and_pss ... ok
+test nist_curve_boundary_scalars ... ok
+test nist_curves_reference_ecdh_and_ecdsa ... ok
+test aead_all_algorithms_and_partial_blocks ... ok
+
+failures:
+
+---- x25519_reference_keys_and_shared_secrets stdout ----
+
+thread 'x25519_reference_keys_and_shared_secrets' (53263371) panicked at lib/crypto/tests/differential.rs:106:9:
+assertion `left == right` failed
+  left: [150, 191, 121, 168, 182, 64, 58, 91, 5, 29, 161, 237, 78, 66, 248, 250, 115, 95, 45, 57, 130, 223, 119, 153, 95, 89, 32, 51, 203, 20, 189, 48]
+ right: [206, 119, 162, 174, 249, 161, 3, 135, 244, 149, 53, 133, 158, 28, 160, 187, 147, 26, 223, 144, 179, 175, 139, 122, 10, 136, 234, 173, 96, 16, 92, 105]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- ed25519_reference_verification stdout ----
+
+thread 'ed25519_reference_verification' (53263364) panicked at lib/crypto/tests/differential.rs:133:13:
+assertion `left == right` failed
+  left: [6, 130, 226, 45, 108, 212, 157, 105, 54, 206, 145, 100, 165, 224, 114, 248, 79, 9, 195, 193, 247, 85, 105, 106, 199, 165, 254, 217, 81, 101, 201, 217]
+ right: [41, 244, 120, 61, 25, 214, 96, 165, 101, 180, 29, 27, 199, 17, 194, 243, 45, 16, 79, 152, 101, 40, 4, 195, 63, 168, 173, 23, 111, 239, 168, 143]
+
+
+failures:
+    ed25519_reference_verification
+    x25519_reference_keys_and_shared_secrets
+
+test result: FAILED. 7 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.20s
+
+error: test failed, to rerun pass `-p toyos-crypto --test differential`
+     Running tests/vectors.rs (target/release/deps/vectors-57ffb47358d9da90)
+
+running 8 tests
+test fips_sha2_abc_and_empty ... ok
+test rfc4231_hmac_sha256 ... ok
+test rfc5869_case_one_and_output_bound ... ok
+test rfc8439_aead_and_authenticated_refusal ... ok
+test nist_gcm_zero_key_zero_block ... ok
+test malformed_public_boundaries ... ok
+test rfc7748_x25519 ... FAILED
+test rfc8032_empty_and_strict_rejection ... FAILED
+
+failures:
+
+---- rfc7748_x25519 stdout ----
+
+thread 'rfc7748_x25519' (53263468) panicked at lib/crypto/tests/vectors.rs:102:5:
+assertion `left == right` failed
+  left: [198, 68, 244, 245, 137, 139, 251, 117, 134, 174, 184, 218, 6, 52, 167, 4, 69, 231, 179, 242, 155, 194, 59, 196, 92, 121, 10, 35, 10, 120, 92, 1]
+ right: [133, 32, 240, 9, 137, 48, 167, 84, 116, 139, 125, 220, 180, 62, 247, 90, 13, 191, 58, 13, 38, 56, 26, 244, 235, 164, 169, 142, 170, 155, 78, 106]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- rfc8032_empty_and_strict_rejection stdout ----
+
+thread 'rfc8032_empty_and_strict_rejection' (53263469) panicked at lib/crypto/tests/vectors.rs:153:9:
+assertion `left == right` failed
+  left: [222, 29, 180, 142, 114, 217, 232, 185, 76, 15, 158, 207, 85, 239, 46, 116, 129, 70, 78, 140, 32, 142, 180, 175, 251, 154, 104, 195, 46, 193, 183, 201]
+ right: [215, 90, 152, 1, 130, 177, 10, 183, 213, 75, 254, 211, 201, 100, 7, 58, 14, 225, 114, 243, 218, 166, 35, 37, 175, 2, 26, 104, 247, 7, 81, 26]
+
+
+failures:
+    rfc7748_x25519
+    rfc8032_empty_and_strict_rejection
+
+test result: FAILED. 6 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-crypto --test vectors`
+     Running tests/wycheproof.rs (target/release/deps/wycheproof-26f117a0c2ffa804)
+
+running 7 tests
+test wycheproof_ed25519 ... ok
+test wycheproof_hmac_and_hkdf ... ok
+test nist_mlkem768_kats ... ok
+test wycheproof_x25519 ... ok
+test wycheproof_aead ... ok
+test wycheproof_rsa ... ok
+test wycheproof_ecdsa ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.31s
+
+   Doc-tests toyos_crypto
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: 3 targets failed:
+    `-p toyos-crypto --lib`
+    `-p toyos-crypto --test differential`
+    `-p toyos-crypto --test vectors`

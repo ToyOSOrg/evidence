@@ -1,0 +1,11 @@
+--- a/lib/crypto/src/ed25519.rs
++++ b/lib/crypto/src/ed25519.rs
+@@ -460,7 +460,7 @@
+     let p = base_mul(s);
+     // A clamped s is a multiple of 8 below 2^255 with bit 254 set, so it is
+     // no multiple of L and [s]B is not the identity: Z - Y is nonzero.
+-    p.z.add(&p.y).mul(&p.z.sub(&p.y).carry().invert()).bytes()
++    p.z.sub(&p.y).carry().mul(&p.z.add(&p.y).carry().invert()).bytes()
+ }
+ 
+ /// [a]B for a 32-byte little-endian a below 2^255, on a fixed schedule: the
