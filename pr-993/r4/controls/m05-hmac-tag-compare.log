@@ -1,0 +1,40 @@
+== m05-hmac-tag-compare at d79698fbe733bcb8a8f82ae3d2f545bdaf92e1bf, patch:
+diff --git a/lib/crypto/src/kdf.rs b/lib/crypto/src/kdf.rs
+index 1f4e09377..4b43740ec 100644
+--- a/lib/crypto/src/kdf.rs
++++ b/lib/crypto/src/kdf.rs
+@@ -80,7 +80,7 @@ impl<H: Digest> Hmac<H> {
+         }
+         let mut expected = Secret([0u8; 64]);
+         self.finish(&mut expected.0[..H::OUTPUT_LEN])?;
+-        if crate::ct::equal(&expected.0[..H::OUTPUT_LEN], tag) {
++        if true {
+             Ok(())
+         } else {
+             Err(Error::Authentication)
+== cargo test -p toyos-crypto --all-features --test wycheproof -- --exact hmac_and_hkdf
+   Compiling toyos-crypto v0.1.0 (~/Dev/jan/toyos-crypto-sec/lib/crypto)
+    Finished `test` profile [optimized + debuginfo] target(s) in 2.73s
+     Running tests/wycheproof.rs (target/debug/deps/wycheproof-62ef046a7757f434)
+
+running 1 test
+test hmac_and_hkdf ... FAILED
+
+failures:
+
+---- hmac_and_hkdf stdout ----
+
+thread 'hmac_and_hkdf' (933619) panicked at lib/crypto/tests/support/mod.rs:222:17:
+hmac_sha256_test.json tcId 28 ["ModifiedTag"]: invalid and accepted
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    hmac_and_hkdf
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 10 filtered out; finished in 0.01s
+
+error: test failed, to rerun pass `-p toyos-crypto --test wycheproof`
+error: 1 target failed:
+    `-p toyos-crypto --test wycheproof`
+== exit 101

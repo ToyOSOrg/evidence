@@ -1,0 +1,110 @@
+== m11-ed25519-canonical-point at d79698fbe733bcb8a8f82ae3d2f545bdaf92e1bf, patch:
+diff --git a/lib/crypto/src/ed25519.rs b/lib/crypto/src/ed25519.rs
+index 218b72d..d2be52a 100644
+--- a/lib/crypto/src/ed25519.rs
++++ b/lib/crypto/src/ed25519.rs
+@@ -156,7 +156,7 @@ impl Point {
+         let sign = u64::from(b[31] >> 7);
+         b[31] &= 127;
+         let y = Tight::from_bytes(&b);
+-        if b != y.bytes() {
++        if false {
+             return Err(Error::InvalidPoint);
+         }
+         let y2 = y.square();
+== cargo test -p toyos-crypto --all-features --test fuzz -- --exact ed25519_encodings
+   Compiling toyos-crypto v0.1.0 (~/Dev/jan/toyos-crypto-sec/lib/crypto)
+    Finished `test` profile [optimized + debuginfo] target(s) in 2.36s
+     Running tests/fuzz.rs (target/debug/deps/fuzz-26716012b733c78b)
+
+running 1 test
+test ed25519_encodings ... FAILED
+
+failures:
+
+---- ed25519_encodings stdout ----
+
+thread '<unnamed>' (946476) panicked at lib/crypto/tests/fuzz.rs:339:9:
+assertion `left == right` failed: case 19: [f3, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, 7f]
+  left: true
+ right: false
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread '<unnamed>' (946473) panicked at lib/crypto/tests/fuzz.rs:339:9:
+assertion `left == right` failed: case 30: [ee, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, 7f]
+  left: true
+ right: false
+
+thread '<unnamed>' (946475) panicked at lib/crypto/tests/fuzz.rs:339:9:
+assertion `left == right` failed: case 4: [f0, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, 7f]
+  left: true
+ right: false
+
+thread '<unnamed>' (946474) panicked at lib/crypto/tests/fuzz.rs:339:9:
+assertion `left == right` failed: case 31: [fc, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, 7f]
+  left: true
+ right: false
+
+thread '<unnamed>' (946472) panicked at lib/crypto/tests/fuzz.rs:339:9:
+assertion `left == right` failed: case 141: [f7, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff]
+  left: true
+ right: false
+
+thread '<unnamed>' (946478) panicked at lib/crypto/tests/fuzz.rs:339:9:
+assertion `left == right` failed: case 35: [f2, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff]
+  left: true
+ right: false
+
+thread '<unnamed>' (946477) panicked at lib/crypto/tests/fuzz.rs:339:9:
+assertion `left == right` failed: case 90: [f0, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, 7f]
+  left: true
+ right: false
+
+thread '<unnamed>' (946480) panicked at lib/crypto/tests/fuzz.rs:339:9:
+assertion `left == right` failed: case 9: [f1, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff]
+  left: true
+ right: false
+
+thread '<unnamed>' (946481) panicked at lib/crypto/tests/fuzz.rs:339:9:
+assertion `left == right` failed: case 80: [fd, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, 7f]
+  left: true
+ right: false
+
+thread '<unnamed>' (946482) panicked at lib/crypto/tests/fuzz.rs:339:9:
+assertion `left == right` failed: case 67: [ed, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, 7f]
+  left: true
+ right: false
+
+thread '<unnamed>' (946483) panicked at lib/crypto/tests/fuzz.rs:339:9:
+assertion `left == right` failed: case 26: [ee, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, 7f]
+  left: true
+ right: false
+
+thread '<unnamed>' (946479) panicked at lib/crypto/tests/fuzz.rs:339:9:
+assertion `left == right` failed: case 36: [fb, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff]
+  left: true
+ right: false
+
+thread '<unnamed>' (946484) panicked at lib/crypto/tests/fuzz.rs:339:9:
+assertion `left == right` failed: case 41: [f2, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff]
+  left: true
+ right: false
+
+thread '<unnamed>' (946471) panicked at lib/crypto/tests/fuzz.rs:339:9:
+assertion `left == right` failed: case 350: [f3, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff]
+  left: true
+ right: false
+
+thread 'ed25519_encodings' (946470) panicked at lib/crypto/tests/support/mod.rs:139:5:
+a scoped thread panicked
+
+
+failures:
+    ed25519_encodings
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-crypto --test fuzz`
+error: 1 target failed:
+    `-p toyos-crypto --test fuzz`
+== exit 101

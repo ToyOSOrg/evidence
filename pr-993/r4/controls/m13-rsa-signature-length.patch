@@ -1,0 +1,13 @@
+diff --git a/lib/crypto/src/rsa.rs b/lib/crypto/src/rsa.rs
+index 0f9fd7538..d06f1c0e1 100644
+--- a/lib/crypto/src/rsa.rs
++++ b/lib/crypto/src/rsa.rs
+@@ -152,7 +152,7 @@ impl PublicKey {
+     }
+     /// The signature raised to e, big-endian in the low bytes of 512.
+     fn representative(&self, signature: &[u8]) -> Result<[u8; 512], Error> {
+-        if signature.len() != self.bits.div_ceil(8) {
++        if signature.len() > self.bits.div_ceil(8) {
+             return Err(Error::Length);
+         }
+         let s = read(signature);

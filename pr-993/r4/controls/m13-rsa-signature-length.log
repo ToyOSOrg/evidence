@@ -1,0 +1,42 @@
+== m13-rsa-signature-length at d79698fbe733bcb8a8f82ae3d2f545bdaf92e1bf, patch:
+diff --git a/lib/crypto/src/rsa.rs b/lib/crypto/src/rsa.rs
+index 0f9fd7538..d06f1c0e1 100644
+--- a/lib/crypto/src/rsa.rs
++++ b/lib/crypto/src/rsa.rs
+@@ -152,7 +152,7 @@ impl PublicKey {
+     }
+     /// The signature raised to e, big-endian in the low bytes of 512.
+     fn representative(&self, signature: &[u8]) -> Result<[u8; 512], Error> {
+-        if signature.len() != self.bits.div_ceil(8) {
++        if signature.len() > self.bits.div_ceil(8) {
+             return Err(Error::Length);
+         }
+         let s = read(signature);
+== cargo test -p toyos-crypto --all-features --test differential -- --exact rsa_signature_is_the_modulus_length
+   Compiling toyos-crypto v0.1.0 (~/Dev/jan/toyos-crypto-sec/lib/crypto)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.01s
+     Running tests/differential.rs (target/debug/deps/differential-65c4b28b16792bba)
+
+running 1 test
+test rsa_signature_is_the_modulus_length ... FAILED
+
+failures:
+
+---- rsa_signature_is_the_modulus_length stdout ----
+
+thread 'rsa_signature_is_the_modulus_length' (950416) panicked at lib/crypto/tests/differential.rs:184:9:
+assertion `left == right` failed: 255 bytes
+  left: Ok(())
+ right: Err(Length)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    rsa_signature_is_the_modulus_length
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 16 filtered out; finished in 0.10s
+
+error: test failed, to rerun pass `-p toyos-crypto --test differential`
+error: 1 target failed:
+    `-p toyos-crypto --test differential`
+== exit 101

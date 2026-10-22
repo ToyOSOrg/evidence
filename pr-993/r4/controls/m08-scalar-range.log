@@ -1,0 +1,49 @@
+== m08-scalar-range at d79698fbe733bcb8a8f82ae3d2f545bdaf92e1bf, patch:
+diff --git a/lib/crypto/src/nist.rs b/lib/crypto/src/nist.rs
+index f068049d4..1c974e907 100644
+--- a/lib/crypto/src/nist.rs
++++ b/lib/crypto/src/nist.rs
+@@ -39,7 +39,7 @@ impl<C: Curve<N>, const N: usize> Scalar<C, N> {
+         for word in x {
+             d |= word
+         }
+-        below(x, &C::Order::P) & crate::ct::nonzero(d)
++        crate::ct::nonzero(d)
+     }
+     /// Big-endian bytes, 8N of them. Only validity depends on their value.
+     pub(crate) fn from_bytes(bytes: &[u8]) -> Result<Self, Error> {
+== cargo test -p toyos-crypto --all-features --test wycheproof -- --exact ecdsa_der
+   Compiling toyos-crypto v0.1.0 (~/Dev/jan/toyos-crypto-sec/lib/crypto)
+warning: unused import: `below`
+  --> lib/crypto/src/nist.rs:15:48
+   |
+15 |     montgomery::{self, Form, Modulus, Residue, below, from_be, to_be},
+   |                                                ^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: `toyos-crypto` (lib) generated 1 warning (run `cargo fix --lib -p toyos-crypto` to apply 1 suggestion)
+    Finished `test` profile [optimized + debuginfo] target(s) in 2.79s
+     Running tests/wycheproof.rs (target/debug/deps/wycheproof-62ef046a7757f434)
+
+running 1 test
+test ecdsa_der ... FAILED
+
+failures:
+
+---- ecdsa_der stdout ----
+
+thread 'ecdsa_der' (939116) panicked at lib/crypto/src/nist.rs:373:57:
+r < n < p
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    ecdsa_der
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 10 filtered out; finished in 0.05s
+
+error: test failed, to rerun pass `-p toyos-crypto --test wycheproof`
+error: 1 target failed:
+    `-p toyos-crypto --test wycheproof`
+== exit 101

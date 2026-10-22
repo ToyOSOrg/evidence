@@ -1,0 +1,49 @@
+== m02-gcm-tag-compare at d79698fbe733bcb8a8f82ae3d2f545bdaf92e1bf, patch:
+diff --git a/lib/crypto/src/gcm.rs b/lib/crypto/src/gcm.rs
+index 07dd22349..57fa17720 100644
+--- a/lib/crypto/src/gcm.rs
++++ b/lib/crypto/src/gcm.rs
+@@ -186,7 +186,7 @@ impl Gcm {
+             }
+         }
+         let expected = self.tag(nonce, self.digest(aad, data));
+-        if !crate::ct::equal(&expected.0, tag) {
++        if false {
+             return Err(Error::Authentication);
+         }
+         self.xor(nonce, 2, data);
+== cargo test -p toyos-crypto --all-features --test wycheproof -- --exact aead
+   Compiling toyos-crypto v0.1.0 (~/Dev/jan/toyos-crypto-sec/lib/crypto)
+warning: unused variable: `expected`
+   --> lib/crypto/src/gcm.rs:188:13
+    |
+188 |         let expected = self.tag(nonce, self.digest(aad, data));
+    |             ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_expected`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `toyos-crypto` (lib) generated 1 warning (run `cargo fix --lib -p toyos-crypto` to apply 1 suggestion)
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.97s
+     Running tests/wycheproof.rs (target/debug/deps/wycheproof-62ef046a7757f434)
+
+running 1 test
+test aead ... FAILED
+
+failures:
+
+---- aead stdout ----
+
+thread 'aead' (930759) panicked at lib/crypto/tests/support/mod.rs:222:17:
+aes_gcm_test.json tcId 41 ["ModifiedTag"]: invalid and accepted
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    aead
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 10 filtered out; finished in 0.02s
+
+error: test failed, to rerun pass `-p toyos-crypto --test wycheproof`
+error: 1 target failed:
+    `-p toyos-crypto --test wycheproof`
+== exit 101

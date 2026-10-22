@@ -1,0 +1,96 @@
+== m14-mlkem-ciphertext-length at d79698fbe733bcb8a8f82ae3d2f545bdaf92e1bf, patch:
+diff --git a/lib/crypto/src/mlkem.rs b/lib/crypto/src/mlkem.rs
+index 7edab208c..24afe168a 100644
+--- a/lib/crypto/src/mlkem.rs
++++ b/lib/crypto/src/mlkem.rs
+@@ -276,7 +276,7 @@ impl DecapsulationKey {
+     /// Invalid, correctly sized ciphertexts return a pseudorandom shared secret.
+     /// The calling protocol discovers failure through its key confirmation.
+     pub fn decapsulate(self, ciphertext: &[u8]) -> Result<SharedSecret, Error> {
+-        if ciphertext.len() != 1088 {
++        if ciphertext.len() > 1088 {
+             return Err(Error::Length);
+         }
+         let mut sum = Poly::zero();
+== cargo test -p toyos-crypto --all-features --test fuzz -- --exact mlkem_ciphertexts
+   Compiling toyos-crypto v0.1.0 (~/Dev/jan/toyos-crypto-sec/lib/crypto)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.31s
+     Running tests/fuzz.rs (target/debug/deps/fuzz-26716012b733c78b)
+
+running 1 test
+test mlkem_ciphertexts ... FAILED
+
+failures:
+
+---- mlkem_ciphertexts stdout ----
+
+thread '<unnamed>' (951296) panicked at lib/crypto/src/mlkem.rs:286:50:
+range end index 320 out of range for slice of length 22
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread '<unnamed>' (951304) panicked at lib/crypto/src/mlkem.rs:121:9:
+assertion `left == right` failed
+  left: 127
+ right: 128
+
+thread '<unnamed>' (951297) panicked at lib/crypto/src/mlkem.rs:121:9:
+assertion `left == right` failed
+  left: 127
+ right: 128
+
+thread '<unnamed>' (951300) panicked at lib/crypto/src/mlkem.rs:286:50:
+range end index 960 out of range for slice of length 868
+
+thread '<unnamed>' (951299) panicked at lib/crypto/src/mlkem.rs:286:50:
+range end index 320 out of range for slice of length 212
+
+thread '<unnamed>' (951298) panicked at lib/crypto/src/mlkem.rs:286:50:
+range end index 320 out of range for slice of length 172
+
+thread '<unnamed>' (951301) panicked at lib/crypto/src/mlkem.rs:121:9:
+assertion `left == right` failed
+  left: 127
+ right: 128
+
+thread '<unnamed>' (951302) panicked at lib/crypto/src/mlkem.rs:286:50:
+range end index 320 out of range for slice of length 36
+
+thread '<unnamed>' (951306) panicked at lib/crypto/src/mlkem.rs:286:50:
+range end index 960 out of range for slice of length 678
+
+thread '<unnamed>' (951307) panicked at lib/crypto/src/mlkem.rs:286:50:
+range end index 960 out of range for slice of length 692
+
+thread '<unnamed>' (951303) panicked at lib/crypto/src/mlkem.rs:121:9:
+assertion `left == right` failed
+  left: 127
+ right: 128
+
+thread '<unnamed>' (951308) panicked at lib/crypto/src/mlkem.rs:121:9:
+assertion `left == right` failed
+  left: 127
+ right: 128
+
+thread '<unnamed>' (951309) panicked at lib/crypto/src/mlkem.rs:121:9:
+assertion `left == right` failed
+  left: 127
+ right: 128
+
+thread '<unnamed>' (951305) panicked at lib/crypto/src/mlkem.rs:121:9:
+assertion `left == right` failed
+  left: 127
+ right: 128
+
+thread 'mlkem_ciphertexts' (951295) panicked at lib/crypto/tests/support/mod.rs:139:5:
+a scoped thread panicked
+
+
+failures:
+    mlkem_ciphertexts
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.01s
+
+error: test failed, to rerun pass `-p toyos-crypto --test fuzz`
+error: 1 target failed:
+    `-p toyos-crypto --test fuzz`
+== exit 101

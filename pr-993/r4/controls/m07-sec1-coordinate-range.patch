@@ -1,0 +1,15 @@
+diff --git a/lib/crypto/src/nist.rs b/lib/crypto/src/nist.rs
+index f068049d4..1ef36812c 100644
+--- a/lib/crypto/src/nist.rs
++++ b/lib/crypto/src/nist.rs
+@@ -192,8 +192,8 @@ impl<C: Curve<N>, const N: usize> Point<C, N> {
+         if encoded[0] != 4 {
+             return Err(Error::InvalidEncoding);
+         }
+-        let x = Coord::<C, N>::from_integer(&from_be(&encoded[1..1 + N * 8]));
+-        let y = Coord::<C, N>::from_integer(&from_be(&encoded[1 + N * 8..]));
++        let x = Some(Coord::<C, N>::from_wide(&from_be(&encoded[1..1 + N * 8])));
++        let y = Some(Coord::<C, N>::from_wide(&from_be(&encoded[1 + N * 8..])));
+         let (Some(x), Some(y)) = (x, y) else {
+             return Err(Error::InvalidPoint);
+         };

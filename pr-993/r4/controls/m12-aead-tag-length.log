@@ -1,0 +1,43 @@
+== m12-aead-tag-length at d79698fbe733bcb8a8f82ae3d2f545bdaf92e1bf, patch:
+diff --git a/lib/crypto/src/aead.rs b/lib/crypto/src/aead.rs
+index 570e5edb3..6528beca9 100644
+--- a/lib/crypto/src/aead.rs
++++ b/lib/crypto/src/aead.rs
+@@ -145,9 +145,6 @@ impl OpeningKey {
+         ciphertext: &mut [u8],
+         tag: &[u8],
+     ) -> Result<(), Error> {
+-        if tag.len() != 16 {
+-            return Err(Error::Length);
+-        }
+         match &self.key {
+             Key::ChaCha(key) => chacha_open(&key.0, nonce, aad, ciphertext, tag),
+             Key::Gcm(key) => key.open(nonce, aad, ciphertext, tag),
+== cargo test -p toyos-crypto --all-features --test vectors -- --exact rfc8439_aead_and_authenticated_refusal
+   Compiling toyos-crypto v0.1.0 (~/Dev/jan/toyos-crypto-sec/lib/crypto)
+    Finished `test` profile [optimized + debuginfo] target(s) in 2.36s
+     Running tests/vectors.rs (target/debug/deps/vectors-f7c9ac2663ee23c6)
+
+running 1 test
+test rfc8439_aead_and_authenticated_refusal ... FAILED
+
+failures:
+
+---- rfc8439_aead_and_authenticated_refusal stdout ----
+
+thread 'rfc8439_aead_and_authenticated_refusal' (949397) panicked at lib/crypto/tests/vectors.rs:87:5:
+assertion `left == right` failed
+  left: Err(Authentication)
+ right: Err(Length)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    rfc8439_aead_and_authenticated_refusal
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-crypto --test vectors`
+error: 1 target failed:
+    `-p toyos-crypto --test vectors`
+== exit 101

@@ -1,0 +1,100 @@
+== m04-ssh-tag-compare at d79698fbe733bcb8a8f82ae3d2f545bdaf92e1bf, patch:
+diff --git a/lib/crypto/src/ssh.rs b/lib/crypto/src/ssh.rs
+index 8f0938b1a..c6c79ffa8 100644
+--- a/lib/crypto/src/ssh.rs
++++ b/lib/crypto/src/ssh.rs
+@@ -130,7 +130,7 @@ impl OpeningKey {
+             true => mac(stream.0[64..96].try_into().unwrap(), header, payload),
+             false => self.keys.tag(seq, header, payload),
+         };
+-        if !ct::equal(&expected.0, tag) {
++        if false {
+             return Err(Error::Authentication);
+         }
+         if short {
+== cargo test -p toyos-crypto --all-features --test differential -- --exact seeded_openssh_against_rustcrypto
+    Blocking waiting for file lock on package cache
+   Compiling toyos-crypto v0.1.0 (~/Dev/jan/toyos-crypto-sec/lib/crypto)
+warning: unused import: `ct`
+ --> lib/crypto/src/ssh.rs:8:28
+  |
+8 | use crate::{Error, chacha, ct, poly1305::Poly1305, secret::Secret};
+  |                            ^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `expected`
+   --> lib/crypto/src/ssh.rs:129:13
+    |
+129 |         let expected = match short {
+    |             ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_expected`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `toyos-crypto` (lib) generated 2 warnings (run `cargo fix --lib -p toyos-crypto` to apply 2 suggestions)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.20s
+     Running tests/differential.rs (target/debug/deps/differential-65c4b28b16792bba)
+
+running 1 test
+test seeded_openssh_against_rustcrypto ... FAILED
+
+failures:
+
+---- seeded_openssh_against_rustcrypto stdout ----
+
+thread '<unnamed>' (931744) panicked at lib/crypto/tests/differential.rs:426:9:
+case 8
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread '<unnamed>' (931736) panicked at lib/crypto/tests/differential.rs:426:9:
+case 0
+
+thread '<unnamed>' (931737) panicked at lib/crypto/tests/differential.rs:426:9:
+case 1
+
+thread '<unnamed>' (931746) panicked at lib/crypto/tests/differential.rs:426:9:
+case 10
+
+thread '<unnamed>' (931749) panicked at lib/crypto/tests/differential.rs:426:9:
+case 13
+
+thread '<unnamed>' (931748) panicked at lib/crypto/tests/differential.rs:426:9:
+case 12
+
+thread '<unnamed>' (931745) panicked at lib/crypto/tests/differential.rs:426:9:
+case 9
+
+thread '<unnamed>' (931747) panicked at lib/crypto/tests/differential.rs:426:9:
+case 11
+
+thread '<unnamed>' (931740) panicked at lib/crypto/tests/differential.rs:426:9:
+case 4
+
+thread '<unnamed>' (931742) panicked at lib/crypto/tests/differential.rs:426:9:
+case 6
+
+thread '<unnamed>' (931738) panicked at lib/crypto/tests/differential.rs:426:9:
+case 2
+
+thread '<unnamed>' (931739) panicked at lib/crypto/tests/differential.rs:426:9:
+case 3
+
+thread '<unnamed>' (931741) panicked at lib/crypto/tests/differential.rs:426:9:
+case 5
+
+thread '<unnamed>' (931743) panicked at lib/crypto/tests/differential.rs:426:9:
+case 7
+
+thread 'seeded_openssh_against_rustcrypto' (931735) panicked at lib/crypto/tests/support/mod.rs:139:5:
+a scoped thread panicked
+
+
+failures:
+    seeded_openssh_against_rustcrypto
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 16 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-crypto --test differential`
+error: 1 target failed:
+    `-p toyos-crypto --test differential`
+== exit 101
