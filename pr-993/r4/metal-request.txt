@@ -1,17 +1,17 @@
 # #993: the curves timing boot on main's #1000 P-256 code, and the DOITM probe.
 # Four boots, each with its own readback directory. Each command is `cargo <words>` from ~/Dev/jan/toyos-crypto-sec.
 
-(a) T14, curves as-is, at d79698fbe (#993's head, on main 954b4587b)
-  cargo run -p toyos-metal -- --image ~/.claude/jobs/2280e09e/tmp/scratchpad/agents/crypto-sec/metal-r4/t14-a-asis/cryptoctcurvescase/image.img --readback ~/.claude/jobs/2280e09e/tmp/scratchpad/agents/crypto-sec/metal-r4/t14-a-asis/cryptoctcurvescase --fat32-check
+(a) T14, curves as-is, at 9217793d2 (#993's head, on main d7f269dbc)
+  cargo run -p toyos-metal -- --image ~/.claude/jobs/2280e09e/tmp/scratchpad/agents/crypto-sec/metal-r5/t14-a-asis/cryptoctcurvescase/image.img --readback ~/.claude/jobs/2280e09e/tmp/scratchpad/agents/crypto-sec/metal-r5/t14-a-asis/cryptoctcurvescase --fat32-check
 
 (a') AMD bench, the control: the same image
-  cargo run -p toyos-metal -- --image ~/.claude/jobs/2280e09e/tmp/scratchpad/agents/crypto-sec/metal-r4/t14-a-asis/cryptoctcurvescase/image.img --readback ~/.claude/jobs/2280e09e/tmp/scratchpad/agents/crypto-sec/metal-r4/amd-a-asis/cryptoctcurvescase --fat32-check
+  cargo run -p toyos-metal -- --image ~/.claude/jobs/2280e09e/tmp/scratchpad/agents/crypto-sec/metal-r5/t14-a-asis/cryptoctcurvescase/image.img --readback ~/.claude/jobs/2280e09e/tmp/scratchpad/agents/crypto-sec/metal-r5/amd-a-asis/cryptoctcurvescase --fat32-check
 
-(b) T14 only, DOITM on: at dc3cd0b65 (the probe on top of d79698fbe, local branch stage/ct-doitm-954, never pushed). It refuses at boot on a CPU that doesn't enumerate IA32_ARCH_CAPABILITIES[12]. After the curves job it runs test_rs_crypto_parity_unasserted as the cost row.
-  cargo run -p toyos-metal -- --image ~/.claude/jobs/2280e09e/tmp/scratchpad/agents/crypto-sec/metal-r4/t14-b-doitm/cryptoctcurvescase/image.img --readback ~/.claude/jobs/2280e09e/tmp/scratchpad/agents/crypto-sec/metal-r4/t14-b-doitm/cryptoctcurvescase --fat32-check
+(b) T14 only, DOITM on: at 380e63bbd (the probe on top of 9217793d2, local branch stage/ct-doitm-r5, never pushed). It refuses at boot on a CPU that doesn't enumerate IA32_ARCH_CAPABILITIES[12]. After the curves job it runs test_rs_crypto_parity_unasserted as the cost row.
+  cargo run -p toyos-metal -- --image ~/.claude/jobs/2280e09e/tmp/scratchpad/agents/crypto-sec/metal-r5/t14-b-doitm/cryptoctcurvescase/image.img --readback ~/.claude/jobs/2280e09e/tmp/scratchpad/agents/crypto-sec/metal-r5/t14-b-doitm/cryptoctcurvescase --fat32-check
 
-(c) T14, the same cost row with DOITM off: the crypto_instrument row's boot at d79698fbe, about a minute
-  cargo run -p toyos-metal -- --image ~/.claude/jobs/2280e09e/tmp/scratchpad/agents/crypto-sec/metal-r4/t14-c-cost-off/cryptocase/image.img --readback ~/.claude/jobs/2280e09e/tmp/scratchpad/agents/crypto-sec/metal-r4/t14-c-cost-off/cryptocase --fat32-check
+(c) T14, the same cost row with DOITM off: the crypto_instrument row's boot at 9217793d2, about a minute
+  cargo run -p toyos-metal -- --image ~/.claude/jobs/2280e09e/tmp/scratchpad/agents/crypto-sec/metal-r5/t14-c-cost-off/cryptocase/image.img --readback ~/.claude/jobs/2280e09e/tmp/scratchpad/agents/crypto-sec/metal-r5/t14-c-cost-off/cryptocase --fat32-check
 
 # The judge passes on the controls; the verdict lines are the record. In (b), check that every CPU logs
 # "control_regs: cpuN ... uarch_misc_ctl=0x1". Cost: compare (b)'s crypto_parity_unasserted table with (c)'s.
