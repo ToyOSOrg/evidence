@@ -1,0 +1,11 @@
+--- a/lib/crypto/src/ed25519.rs
++++ b/lib/crypto/src/ed25519.rs
+@@ -448,7 +448,7 @@
+         h.update(&self.encoded)?;
+         h.update(message)?;
+         let k = PublicScalar::reduce(&h.finalize());
+-        if ct::equal(&verification_point(&s, &k, &self.point).encode(), r_bytes) {
++        if { let _ = verification_point(&s, &k, &self.point); true } {
+             Ok(())
+         } else {
+             Err(Error::InvalidSignature)

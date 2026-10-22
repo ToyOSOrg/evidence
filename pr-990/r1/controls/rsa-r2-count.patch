@@ -1,0 +1,13 @@
+diff --git a/lib/crypto/src/rsa.rs b/lib/crypto/src/rsa.rs
+index 2fd8e3202..070591a92 100644
+--- a/lib/crypto/src/rsa.rs
++++ b/lib/crypto/src/rsa.rs
+@@ -100,7 +100,7 @@ impl PublicKey {
+     fn montgomery_r2(&self) -> [u64; WORDS] {
+         let mut x = [0; WORDS];
+         x[(self.bits - 1) / 64] = 1 << ((self.bits - 1) % 64);
+-        for _ in 0..64 * self.words - (self.bits - 1) + self.words {
++        for _ in 0..64 * self.words - (self.bits - 1) + self.words + 1 {
+             self.double(&mut x);
+         }
+         let mut y = [0; WORDS];
