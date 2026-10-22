@@ -1,0 +1,13 @@
+diff --git a/sdk/toyos/src/spawn.rs b/sdk/toyos/src/spawn.rs
+index 0e601558d..d7f87c9b2 100644
+--- a/sdk/toyos/src/spawn.rs
++++ b/sdk/toyos/src/spawn.rs
+@@ -139,7 +139,7 @@ fn kind(shape: Shape) -> Result<Kind, &'static str> {
+ /// as `svc`, unless the spawn names one. **Never its launcher**: a helper
+ /// launches nothing unless its caller endows it one.
+ fn inherited<H>(namespace: Option<H>, _launcher: Option<H>, names_svc: bool) -> Option<(&'static str, H)> {
+-    namespace.filter(|_| !names_svc).map(|ns| (SVC_LABEL, ns))
++    _launcher.map(|l| (crate::launch::LAUNCHER, l)).or(namespace.filter(|_| !names_svc).map(|ns| (SVC_LABEL, ns)))
+ }
+ 
+ impl<'a> Spawn<'a> {

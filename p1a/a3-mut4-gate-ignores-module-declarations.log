@@ -1,0 +1,37 @@
+   Compiling toyos v0.18.0 (<work>/toyos-proc-session/sdk/toyos)
+   Compiling toyos-manifest v0.1.0 (<work>/toyos-proc-session/lib/manifest)
+   Compiling toyos-swap v0.1.0 (<work>/toyos-proc-session/lib/swap)
+   Compiling toyos-build v0.1.0 (<work>/toyos-proc-session)
+   Compiling toyos-metal v0.1.0 (<work>/toyos-proc-session/tests/metal)
+    Finished `test` profile [optimized + debuginfo] target(s) in 5.90s
+     Running unittests build/lib.rs (target/debug/deps/toyos_build-57340101348c40ac)
+
+running 8 tests
+test userlandhost::tests::a_test_attribute_is_a_word_and_not_a_substring ... ok
+test userlandhost::tests::what_could_hide_a_test_is_a_condition ... ok
+test userlandhost::tests::a_module_item_is_a_module_and_a_word_like_it_is_not ... ok
+test userlandhost::tests::a_manifest_that_switches_tests_off_is_named ... ok
+test userlandhost::tests::every_program_the_images_ship_declares_what_it_is_to_a_host ... ok
+test userlandhost::tests::a_host_declaration_is_read_whole_and_refused_by_name ... ok
+test userlandhost::tests::the_survey_gates_what_cargo_test_runs_and_names_the_rest ... FAILED
+test userlandhost::tests::every_userland_test_is_in_the_gate ... ok
+
+failures:
+
+---- userlandhost::tests::the_survey_gates_what_cargo_test_runs_and_names_the_rest stdout ----
+
+thread 'userlandhost::tests::the_survey_gates_what_cargo_test_runs_and_names_the_rest' (15613750) panicked at build/userlandhost.rs:546:9:
+assertion `left == right` failed
+  left: Ok(Survey { gated: ["gated", "switched", "testsonly"], escapes: ["doctested/Cargo.toml: a library without [lib] doctest = false, whose doc-tests the gate does not read", "gated/build.rs: a test outside gated's src/ and tests/, which cargo test does not run", "gated/examples/x.rs: a test outside gated's src/ and tests/, which cargo test does not run", "gated/src/slow.rs: an ignored test runs nowhere", "loose.rs: a test in no crate", "switched/Cargo.toml: [lib] test = false leaves its tests unrun"], nested: ["gated/sub"] })
+ right: Ok(Survey { gated: ["gated", "switched", "testsonly"], escapes: ["doctested/Cargo.toml: a library without [lib] doctest = false, whose doc-tests the gate does not read", "gated/build.rs: a test outside gated's src/ and tests/, which cargo test does not run", "gated/examples/x.rs: a test outside gated's src/ and tests/, which cargo test does not run", "gated/src/hides.rs: a cfg other than cfg(test) can compile a test out of the host run", "gated/src/slow.rs: an ignored test runs nowhere", "loose.rs: a test in no crate", "switched/Cargo.toml: [lib] test = false leaves its tests unrun"], nested: ["gated/sub"] })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    userlandhost::tests::the_survey_gates_what_cargo_test_runs_and_names_the_rest
+
+test result: FAILED. 7 passed; 1 failed; 0 ignored; 0 measured; 375 filtered out; finished in 0.12s
+
+error: test failed, to rerun pass `-p toyos-build --lib`
+exit 101
+restored
