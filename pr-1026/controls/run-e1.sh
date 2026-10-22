@@ -1,8 +1,8 @@
 #!/bin/zsh
 # The flow-control control through the end-to-end instrument: apply checked, build, run, restore.
-W=~/Dev/jan/toyos-ssh-adopt
-M=~/.claude/jobs/2280e09e/tmp/scratchpad/agents/ssh/mutations2
-E=~/.claude/jobs/2280e09e/tmp/scratchpad/agents/ssh/e2e
+W=<worktree>
+M=<scratch>/mutations2
+E=<scratch>/e2e
 cd $W || exit 1
 [ -z "$(git status --porcelain)" ] || { echo "tree not clean"; exit 1; }
 echo "revision $(git rev-parse HEAD)"

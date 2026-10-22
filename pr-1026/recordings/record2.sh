@@ -1,8 +1,8 @@
 #!/bin/zsh
 # Records stage 2's fixture sessions with the host's OpenSSH as a development
 # instrument. Run from the recording directory so every path ssh logs is relative.
-R=~/.claude/jobs/2280e09e/tmp/scratchpad/agents/ssh/rec2
-WT=~/Dev/jan/toyos-ssh-adopt
+R=<scratch>/rec2
+WT=<worktree>
 BIN=$WT/target/debug/examples/record
 FIX=$WT/build/ssh/tests/fixtures
 PORT=22742

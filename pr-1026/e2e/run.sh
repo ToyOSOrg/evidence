@@ -1,8 +1,8 @@
 #!/bin/zsh
 # End to end on the development Mac: the host build of sshserver on port 22,
 # OpenSSH as a black-box client. A development instrument; nothing runs it at test time.
-E=~/.claude/jobs/2280e09e/tmp/scratchpad/agents/ssh/e2e
-BIN=~/Dev/jan/toyos-ssh-adopt/target/debug/sshserver
+E=<scratch>/e2e
+BIN=<worktree>/target/debug/sshserver
 cd $E || exit 1
 rm -rf home known_hosts ctl big big.out sftpdir; mkdir -p home sftpdir
 cp ../rec/user_ed25519 ../rec/stranger_ed25519 .; chmod 600 user_ed25519 stranger_ed25519
