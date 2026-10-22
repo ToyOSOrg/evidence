@@ -1,0 +1,110 @@
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.76s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-42525268d3587802)
+
+03:11:14 running 1 tests, 12 wide
+
+03:11:14   RUN   scratch_shared_sweep
+03:11:14   BUILD x86_64 binaries of tests/guest/rust-tests, for scratch_shared_sweep
+03:11:22   BUILT x86_64 binaries of tests/guest/rust-tests, for scratch_shared_sweep  (8s)
+03:11:22   BUILD x86_64 kernel, loader, ROOT of tests/images/testcases.toml, for scratch_shared_sweep
+03:11:31 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+03:11:32   BUILT x86_64 kernel, loader, ROOT of tests/images/testcases.toml, for scratch_shared_sweep  (10s)
+03:12:04 SWEEP launch_toctou exit=Some(101) err=None
+
+thread 'main' (1) panicked at src/bin/launch_toctou.rs:104:5:
+none of 100 launches ran the `toybox` row's program under its row
+stack backtrace:
+   0:           0x2760f0 - _Unwind_Backtrace
+   1:           0x255243 - <<std[3966f9622dfad1a0]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[73b405bef30eeff1]::fmt::Display>::fmt
+   2:           0x27a3f7 - core[73b405bef30eeff1]::fmt::write
+   3:           0x25917b - <std[3966f9622dfad1a0]::sys::stdio::toyos::Stderr as core[73b405bef30eeff1]::io::write::Write>::write_fmt
+   4:           0x237453 - std[3966f9622dfad1a0]::panicking::default_hook::{closure#0}
+   5:           0x250e7e - std[3966f9622dfad1a0]::panicking::default_hook
+   6:           0x251039 - std[3966f9622dfad1a0]::panicking::panic_with_hook
+   7:           0x23750d - std[3966f9622dfad1a0]::panicking::panic_handler::{closure#0}
+   8:           0x22f789 - std[3966f9622dfad1a0]::sys::backtrace::__rust_end_short_backtrace::<std[3966f9622dfad1a0]::panicking::panic_handler::{closure#0}, !>
+   9:           0x237d48 - __rustc[d0c72ce299f394e5]::rust_begin_unwind
+  10:           0x27ab1b - core[73b405bef30eeff1]::panicking::panic_fmt
+  11:           0x22053c - launch_toctou[10a544ce5efc02ba]::main
+  12:           0x221d36 - std[3966f9622dfad1a0]::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  13:           0x21fe80 - std[3966f9622dfad1a0]::rt::lang_start::<()>::{closure#0}
+  14:           0x2502b6 - std[3966f9622dfad1a0]::rt::lang_start_internal
+  15:           0x220761 - main
+  16:           0x2527e3 - std[3966f9622dfad1a0]::sys::pal::toyos::start_rust
+  17:           0x222d6a - _start
+
+03:12:04 SWEEP process_tree exit=Some(101) err=None
+
+thread 'main' (1) panicked at src/bin/process_tree.rs:220:34:
+test-runner endows every job its launcher
+stack backtrace:
+   0:           0x27eac0 - _Unwind_Backtrace
+   1:           0x25e083 - <<std[3966f9622dfad1a0]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[73b405bef30eeff1]::fmt::Display>::fmt
+   2:           0x2830a7 - core[73b405bef30eeff1]::fmt::write
+   3:           0x26205b - <std[3966f9622dfad1a0]::sys::stdio::toyos::Stderr as core[73b405bef30eeff1]::io::write::Write>::write_fmt
+   4:           0x241cd3 - std[3966f9622dfad1a0]::panicking::default_hook::{closure#0}
+   5:           0x25ab3e - std[3966f9622dfad1a0]::panicking::default_hook
+   6:           0x25acf9 - std[3966f9622dfad1a0]::panicking::panic_with_hook
+   7:           0x241d8d - std[3966f9622dfad1a0]::panicking::panic_handler::{closure#0}
+   8:           0x23a1e9 - std[3966f9622dfad1a0]::sys::backtrace::__rust_end_short_backtrace::<std[3966f9622dfad1a0]::panicking::panic_handler::{closure#0}, !>
+   9:           0x242498 - __rustc[d0c72ce299f394e5]::rust_begin_unwind
+  10:           0x2837cb - core[73b405bef30eeff1]::panicking::panic_fmt
+  11:           0x283523 - core[73b405bef30eeff1]::option::expect_failed
+  12:           0x22873d - process_tree[55759cb9f6d63b1e]::main
+  13:           0x22a376 - std[3966f9622dfad1a0]::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  14:           0x225d80 - std[3966f9622dfad1a0]::rt::lang_start::<()>::{closure#0}
+  15:           0x259fe6 - std[3966f9622dfad1a0]::rt::lang_start_internal
+  16:           0x229bb1 - main
+  17:           0x25c273 - std[3966f9622dfad1a0]::sys::pal::toyos::start_rust
+  18:           0x22e14a - _start
+
+03:14:55 SWEEP readdir_bound exit=Some(0) err=None
+  PASS: 6000 entries returned whole, past a 65,536-byte buffer
+  PASS: 16384 distinct subdirectories listed at the limit
+  PASS: one past the limit refused (out of memory)
+  PASS: /tmp serves a directory and an empty one while its own root is refused
+  PASS: /tmp's own root is still refused (out of memory)
+  PASS: the VFS still serves after the refusal
+all readdir bound tests passed
+
+03:14:55 SWEEP stat_identity exit=Some(101) err=None
+
+thread 'main' (1) panicked at src/bin/stat_identity.rs:17:59:
+stat /tmp/stat-identity-ended: out of memory
+stack backtrace:
+   0:           0x268ef0 - _Unwind_Backtrace
+   1:           0x248643 - <<std[3966f9622dfad1a0]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[73b405bef30eeff1]::fmt::Display>::fmt
+   2:           0x26cfe7 - core[73b405bef30eeff1]::fmt::write
+   3:           0x24c01b - <std[3966f9622dfad1a0]::sys::stdio::toyos::Stderr as core[73b405bef30eeff1]::io::write::Write>::write_fmt
+   4:           0x231533 - std[3966f9622dfad1a0]::panicking::default_hook::{closure#0}
+   5:           0x24516e - std[3966f9622dfad1a0]::panicking::default_hook
+   6:           0x245329 - std[3966f9622dfad1a0]::panicking::panic_with_hook
+   7:           0x2315ed - std[3966f9622dfad1a0]::panicking::panic_handler::{closure#0}
+   8:           0x229bf9 - std[3966f9622dfad1a0]::sys::backtrace::__rust_end_short_backtrace::<std[3966f9622dfad1a0]::panicking::panic_handler::{closure#0}, !>
+   9:           0x231cf8 - __rustc[d0c72ce299f394e5]::rust_begin_unwind
+  10:           0x26d70b - core[73b405bef30eeff1]::panicking::panic_fmt
+  11:           0x21c866 - stat_identity[8aa823d1a20a3f3c]::of::{closure#0}
+  12:           0x21cea3 - stat_identity[8aa823d1a20a3f3c]::of
+  13:           0x21cf17 - stat_identity[8aa823d1a20a3f3c]::main
+  14:           0x21ed56 - std[3966f9622dfad1a0]::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  15:           0x21c430 - std[3966f9622dfad1a0]::rt::lang_start::<()>::{closure#0}
+  16:           0x244bb6 - std[3966f9622dfad1a0]::rt::lang_start_internal
+  17:           0x21eb21 - main
+  18:           0x246dc3 - std[3966f9622dfad1a0]::sys::pal::toyos::start_rust
+  19:           0x21edf6 - _start
+
+03:14:55 FAIL scratch_shared_sweep: red: ["launch_toctou", "process_tree", "stat_identity"]
+03:14:55   FAIL  scratch_shared_sweep  (203s)
+03:14:55   --- 1 guests, 0 of them not the shipping kernel, 1 kernel build(s): [""]
+
+03:14:55 host: fastest boot 17679 ms against the reference 1424 ms — liveness ceilings paid at 8.00x
+03:14:55 host: 14 core(s); a guest wider than that waits vcpus/cores longer again
+03:14:55 failures:
+03:14:55     scratch_shared_sweep: red: ["launch_toctou", "process_tree", "stat_identity"]
+
+03:14:55 test result: FAILED. 0 passed, 1 failed, 0 invalidated, 1 total (221.1s; workers: 18s building, 203s testing)
+03:14:55 [toyos] this red run's serial logs are kept at $WT/target/red-run-serial/toyos-tmp-90150-0
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `$WT/target/debug/deps/toyos_build-42525268d3587802 scratch_shared_sweep` (exit status: 1)

@@ -1,0 +1,13 @@
+diff --git a/kernel/src/mm/space.rs b/kernel/src/mm/space.rs
+index 7b1a12388..d0ce3a0e4 100644
+--- a/kernel/src/mm/space.rs
++++ b/kernel/src/mm/space.rs
+@@ -325,7 +325,7 @@ impl AddressSpace {
+             self.tables.shoot_down(start, end, &unlinked);
+         }
+         owned.sort_unstable();
+-        crate::sched::futex::revoke_frames(&owned);
++        let _ = &owned;
+         let mut freed = 0;
+         let mut free = |phys: u64| {
+             // SAFETY: an owned leaf's frame is one `populate` gave up into it,

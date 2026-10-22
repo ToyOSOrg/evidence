@@ -1,0 +1,13 @@
+diff --git a/kernel/pure/vm.rs b/kernel/pure/vm.rs
+index 9314754c9..742f80970 100644
+--- a/kernel/pure/vm.rs
++++ b/kernel/pure/vm.rs
+@@ -98,7 +98,7 @@ impl<O: Object> Entry<O> {
+     fn tail(&self, start: u64, at: u64) -> Self {
+         let kind = match &self.kind {
+             Kind::Private { committed } => Kind::Private { committed: *committed },
+-            Kind::Object { object, offset } => Kind::Object { object: object.clone(), offset: offset + (at - start) },
++            Kind::Object { object, offset } => Kind::Object { object: object.clone(), offset: *offset },
+         };
+         Self { end: self.end, prot: self.prot, kind }
+     }

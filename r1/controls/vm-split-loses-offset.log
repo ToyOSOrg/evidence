@@ -1,0 +1,50 @@
+rev 95711dd8339a5781aab9b8413bb35415947a37a5 + vm-split-loses-offset.patch
+   Compiling kernel v0.1.0 ($WT/kernel)
+warning: unused variable: `start`
+  --> kernel/pure/vm.rs:98:20
+   |
+98 |     fn tail(&self, start: u64, at: u64) -> Self {
+   |                    ^^^^^ help: if this is intentional, prefix it with an underscore: `_start`
+   |
+   = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `at`
+  --> kernel/pure/vm.rs:98:32
+   |
+98 |     fn tail(&self, start: u64, at: u64) -> Self {
+   |                                ^^ help: if this is intentional, prefix it with an underscore: `_at`
+
+warning: `kernel` (lib test) generated 2 warnings (run `cargo fix --lib -p kernel --tests` to apply 2 suggestions)
+    Finished `test` profile [optimized + debuginfo] target(s) in 2.72s
+     Running unittests pure/lib.rs (target/debug/deps/kernel-fa45b686f8e87f8e)
+
+running 10 tests
+test vm::tests::an_empty_space_places_at_its_floor_with_the_alignment_asked ... ok
+test vm::tests::an_update_changes_only_its_range_and_joins_back ... ok
+test vm::tests::backing_is_a_commitment_or_an_object ... ok
+test vm::tests::placement_takes_the_smallest_free_range_that_fits ... ok
+test vm::tests::neighbours_that_continue_each_other_join ... ok
+test vm::tests::a_removal_over_entries_and_holes_takes_every_entry_it_meets ... FAILED
+test vm::tests::protection_allows_its_accesses_and_bounds_by_its_maximum ... ok
+test vm::tests::a_removal_cuts_crossing_entries_and_frees_exactly_its_range ... ok
+test vm::tests::an_insert_over_an_entry_is_a_kernel_bug - should panic ... ok
+test vm::tests::a_mixed_load_agrees_with_a_page_map ... ok
+
+failures:
+
+---- vm::tests::a_removal_over_entries_and_holes_takes_every_entry_it_meets stdout ----
+
+thread 'vm::tests::a_removal_over_entries_and_holes_takes_every_entry_it_meets' (56245605) panicked at kernel/pure/vm.rs:391:44:
+assertion `left == right` failed: the object's tail keeps its offset
+  left: 0
+ right: 8192
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    vm::tests::a_removal_over_entries_and_holes_takes_every_entry_it_meets
+
+test result: FAILED. 9 passed; 1 failed; 0 ignored; 0 measured; 334 filtered out; finished in 0.07s
+
+error: test failed, to rerun pass `-p kernel --lib`
+test-exit=101
