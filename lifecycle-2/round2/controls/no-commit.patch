@@ -1,0 +1,13 @@
+diff --git a/system/acpiserver/src/osc.rs b/system/acpiserver/src/osc.rs
+index fced73580..54d1c8d26 100644
+--- a/system/acpiserver/src/osc.rs
++++ b/system/acpiserver/src/osc.rs
+@@ -175,7 +175,7 @@ pub fn negotiate_root<K: Kernel>(aml: &mut Aml<'_, K>, path: &str) -> Result<(u3
+         return Ok((0, None));
+     }
+     let offered = offered & ROOT_CONTROL;
+-    if offered != ROOT_CONTROL {
++    if offered != ROOT_CONTROL || offered == ROOT_CONTROL {
+         return Ok((offered, None));
+     }
+     let [commit, _, granted] = evaluate(aml, path, &HOST_BRIDGE, [0, ROOT_SUPPORT, ROOT_CONTROL])?;

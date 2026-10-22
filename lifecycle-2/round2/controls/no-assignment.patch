@@ -1,0 +1,13 @@
+diff --git a/kernel/src/pcidev/slot.rs b/kernel/src/pcidev/slot.rs
+index 7feae59cd..523a5f053 100644
+--- a/kernel/src/pcidev/slot.rs
++++ b/kernel/src/pcidev/slot.rs
+@@ -440,7 +440,7 @@ impl HotPlug {
+     #[allow(clippy::too_many_arguments)]
+     fn place(&self, pci: &PciDevice, index: u8, low: u32, kind: bar::Kind, size: u64, windows: hotplug::Windows, declared: &[RootBridgeWindow], taken: &[(u64, u64)]) -> Option<u64> {
+         let (b, d, f) = (pci.bus, pci.dev, pci.func);
+-        let Some(at) = hotplug::assign(kind, size, windows, taken) else {
++        let Some(at) = hotplug::assign(kind, size, windows, taken).filter(|_| false) else {
+             log!("pcidev: PCI {b:02x}:{d:02x}.{f} BAR {index} ({size:#x} bytes) fits in no window of its port {windows:x?}, so it is given no address");
+             return None;
+         };
