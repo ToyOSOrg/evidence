@@ -1,0 +1,13 @@
+--- a/system/supervisor/lifecycle/src/storage.rs
++++ b/system/supervisor/lifecycle/src/storage.rs
+@@ -26,6 +26,10 @@
+         other => panic!("supervisor: `{other}` is no role; the build refuses it"),
+     };
+     let guid = loaded(which).ok_or_else(|| format!("the loader named no `{role}` partition"))?;
++    if which == Role::Boot {
++        let _ = guid;
++        return Ok(Some(Grant { scope: Scope::Kind(toyos_gpt::Guid::EFI_SYSTEM.0), writes }));
++    }
+     Ok(Some(Grant { scope: Scope::Unique(guid), writes }))
+ }
+ 

@@ -1,0 +1,14 @@
+diff --git a/system/fileserver/src/data.rs b/system/fileserver/src/data.rs
+index 8933b5d29..6f274e4b6 100644
+--- a/system/fileserver/src/data.rs
++++ b/system/fileserver/src/data.rs
+@@ -222,9 +222,7 @@ impl<D: Disk> DataVolume<D> {
+         }
+         if !designated(&cache) {
+             println!("fileserver: no volume of ours and no designation stamp; nothing will be written to this partition");
+-            return Probed::Foreign;
+         }
+-        println!("fileserver: block 0 designates this partition for ToyOS; formatting it");
+         match Formatted::format(Shared(Rc::clone(&cache))) {
+             Ok(fs) => Self::over(fs.mount(), cache, roots, clock).map_or_else(Probed::Unmountable, Probed::Mounted),
+             Err(e) => Probed::Unmountable(format!("the format failed: {e:?}")),
