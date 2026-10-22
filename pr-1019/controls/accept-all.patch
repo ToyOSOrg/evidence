@@ -1,0 +1,12 @@
+--- a/lib/update/src/sig.rs
++++ b/lib/update/src/sig.rs
+@@ -103,7 +103,8 @@
+ /// rather than accepted by one implementation and not another.
+ pub fn verify<S: Signed + ?Sized>(key: &[u8; 32], signed: &S, signature: &[u8; SIGNATURE_BYTES]) -> Result<(), Refused> {
+     let key = PublicKey::from_bytes(*key).map_err(|_| Refused::Key)?;
+-    key.verify(message(signed).as_bytes(), signature).map_err(|_| Refused::Signature)
++    let _ = key.verify(message(signed).as_bytes(), signature);
++    Ok(())
+ }
+ 
+ /// The public key of the seed `seed`: the host's, like [`sign`].

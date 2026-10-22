@@ -1,0 +1,15 @@
+# toyos-crypto adoption (#1016 SHA-2, #1019 Ed25519): two boots of one image, each with its own readback directory.
+# Each command is `cargo <words>` from ~/Dev/jan/toyos-crypto-adopt.
+# The image is the probe f0a2d1b56 (never pushed, local branch stage/adopt-probe): #1019's head 269e38913 plus toyos-sha2-hw restored, and
+# crypto_parity rows "probe sha-256 crypto/N" and "probe sha-256 sha2-hw/N" for N = 64, 16384 and 1048576, each beside ring.
+
+T14:
+  cargo run -p toyos-metal -- --image ~/.claude/jobs/2280e09e/tmp/scratchpad/agents/crypto-sec/metal-adopt/t14/cryptocase/image.img --readback ~/.claude/jobs/2280e09e/tmp/scratchpad/agents/crypto-sec/metal-adopt/t14/cryptocase --fat32-check
+
+AMD bench:
+  cargo run -p toyos-metal -- --image ~/.claude/jobs/2280e09e/tmp/scratchpad/agents/crypto-sec/metal-adopt/t14/cryptocase/image.img --readback ~/.claude/jobs/2280e09e/tmp/scratchpad/agents/crypto-sec/metal-adopt/amd/cryptocase --fat32-check
+
+# Read from each boot:
+# - #1016: crypto vs sha2-hw rows at each N, both measured against the same ring. The requirement is crypto no slower.
+# - #1019: loader.log's "Slot A: signed header ... verifies under this loader's key, ..., in N counter ticks".
+#   That is stage 6's verification time, convertible with the loader's stated counter rate.
