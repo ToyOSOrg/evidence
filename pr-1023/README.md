@@ -56,3 +56,5 @@ Head c4e95d536, on main 18a38738b. The method follows RFC 10042 §2
   and #1004, #1013 and #1014. Of those, toyos-ssh reaches only SHA-2. The
   full `--ci host` run at the new base is stage 2's (#PR2), whose branch
   holds this one.
+
+- (#PR2 above is #1026.)
