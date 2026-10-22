@@ -1,0 +1,45 @@
+rev d851d99e8dc32d5d4e8296e10558b48586719fd7+worktree + promise-never-refuses.patch + sweep.patch
+   Compiling kernel v0.1.0 ($WT/kernel)
+   Compiling toyos-build v0.1.0 ($WT)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.20s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-42525268d3587802)
+
+09:15:07 running 1 tests, 12 wide
+
+09:15:07   RUN   scratch_shared_sweep
+09:15:07   BUILD x86_64 binaries of tests/guest/rust-tests, for scratch_shared_sweep
+09:15:09   BUILT x86_64 binaries of tests/guest/rust-tests, for scratch_shared_sweep  (2s)
+09:15:09   BUILD x86_64 kernel, loader, ROOT of tests/images/testcases.toml, for scratch_shared_sweep
+09:15:14 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+09:15:14   BUILT x86_64 kernel, loader, ROOT of tests/images/testcases.toml, for scratch_shared_sweep  (5s)
+09:15:23 SWEEP mmap_stress exit=Some(0) err=None
+  PASS: ranges are placed apart, and any run of pages is released or replaced
+  PASS: protect commits reservations and changes protection with contents kept, all or nothing
+  PASS: discard reads back zeros in place, and decommit makes pages a reservation again
+  PASS: a load from a reserved page ends the process
+  PASS: a load from a protected-none page ends the process
+  PASS: a load from a decommitted page ends the process
+vm_reserve, vm_protect, vm_discard, vm_decommit and vm_release do what each says
+
+09:15:24 SWEEP allocator_stress exit=Some(0) err=None
+  slab size classes: ok
+  free-list reuse: ok (93/100 in original range)
+  buddy page allocs: ok
+  buddy large allocs: ok
+  buddy coalescing: ok
+  mixed workload: ok
+  alignment: ok
+  many small allocs: ok (10000)
+  grow and shrink: ok
+  fragmentation resistance: ok
+  memory stats: ok (total=3952MB, used=100MB)
+  oom graceful: ok (largest succeeded=2048MB)
+all allocator stress tests passed
+
+09:15:24   PASS  scratch_shared_sweep  (10s)
+09:15:24   --- 1 guests, 0 of them not the shipping kernel, 1 kernel build(s): [""]
+
+09:15:24 host: fastest boot 8641 ms against the reference 1424 ms — liveness ceilings paid at 6.07x
+09:15:24 host: 14 core(s); a guest wider than that waits vcpus/cores longer again
+09:15:24 test result: ok. 1 passed, 1 total (16.3s; workers: 7s building, 10s testing)
+test-exit=0

@@ -1,0 +1,93 @@
+rev addb7fdf69f2a996c04b54cc0b3d9372f9f87c95 + reserve-not-promised.patch + sweep.patch
+   Compiling kernel v0.1.0 ($WT/kernel)
+   Compiling toyos-build v0.1.0 ($WT)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.18s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-42525268d3587802)
+
+09:16:11 running 1 tests, 12 wide
+
+09:16:11   RUN   scratch_shared_sweep
+09:16:11   BUILD x86_64 binaries of tests/guest/rust-tests, for scratch_shared_sweep
+09:16:14   BUILT x86_64 binaries of tests/guest/rust-tests, for scratch_shared_sweep  (2s)
+09:16:14   BUILD x86_64 kernel, loader, ROOT of tests/images/testcases.toml, for scratch_shared_sweep
+09:16:22 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+09:16:22   BUILT x86_64 kernel, loader, ROOT of tests/images/testcases.toml, for scratch_shared_sweep  (8s)
+09:16:28 SWEEP mmap_stress exit=Some(101) err=None
+
+thread 'main' (1) panicked at src/bin/mmap_stress.rs:81:5:
+assertion `left == right` failed: a committed tebibyte
+  left: Ok(0x10100001000)
+ right: Err(ResourceExhausted)
+stack backtrace:
+   0:           0x2778e0 - _Unwind_Backtrace
+   1:           0x256dd3 - <<std[3966f9622dfad1a0]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[73b405bef30eeff1]::fmt::Display>::fmt
+   2:           0x27bdf7 - core[73b405bef30eeff1]::fmt::write
+   3:           0x25ad3b - <std[3966f9622dfad1a0]::sys::stdio::toyos::Stderr as core[73b405bef30eeff1]::io::write::Write>::write_fmt
+   4:           0x238da3 - std[3966f9622dfad1a0]::panicking::default_hook::{closure#0}
+   5:           0x252bce - std[3966f9622dfad1a0]::panicking::default_hook
+   6:           0x252d89 - std[3966f9622dfad1a0]::panicking::panic_with_hook
+   7:           0x238e5d - std[3966f9622dfad1a0]::panicking::panic_handler::{closure#0}
+   8:           0x231199 - std[3966f9622dfad1a0]::sys::backtrace::__rust_end_short_backtrace::<std[3966f9622dfad1a0]::panicking::panic_handler::{closure#0}, !>
+   9:           0x239718 - __rustc[d0c72ce299f394e5]::rust_begin_unwind
+  10:           0x27c51b - core[73b405bef30eeff1]::panicking::panic_fmt
+  11:           0x27c48f - core[73b405bef30eeff1]::panicking::assert_failed_inner
+  12:           0x221839 - core[73b405bef30eeff1]::panicking::assert_failed::<core[73b405bef30eeff1]::result::Result<*mut u8, toyos_abi[4d81299765224c6c]::syscall::SyscallError>, core[73b405bef30eeff1]::result::Result<*mut u8, toyos_abi[4d81299765224c6c]::syscall::SyscallError>>
+  13:           0x223ad9 - mmap_stress[ac35fbcb5fb40943]::main
+  14:           0x223e06 - std[3966f9622dfad1a0]::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  15:           0x223e20 - std[3966f9622dfad1a0]::rt::lang_start::<()>::{closure#0}
+  16:           0x252076 - std[3966f9622dfad1a0]::rt::lang_start_internal
+  17:           0x223df1 - main
+  18:           0x254363 - std[3966f9622dfad1a0]::sys::pal::toyos::start_rust
+  19:           0x2246be - _start
+
+09:16:28 SWEEP allocator_stress exit=Some(101) err=None
+  slab size classes: ok
+  free-list reuse: ok (93/100 in original range)
+  buddy page allocs: ok
+  buddy large allocs: ok
+  buddy coalescing: ok
+  mixed workload: ok
+  alignment: ok
+  many small allocs: ok (10000)
+  grow and shrink: ok
+  fragmentation resistance: ok
+  memory stats: ok (total=3952MB, used=2154MB)
+
+thread 'main' (1) panicked at src/bin/allocator_stress.rs:280:5:
+16GB allocation should fail
+stack backtrace:
+   0:           0x266480 - _Unwind_Backtrace
+   1:           0x249b53 - <<std[3966f9622dfad1a0]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[73b405bef30eeff1]::fmt::Display>::fmt
+   2:           0x26a397 - core[73b405bef30eeff1]::fmt::write
+   3:           0x24d37b - <std[3966f9622dfad1a0]::sys::stdio::toyos::Stderr as core[73b405bef30eeff1]::io::write::Write>::write_fmt
+   4:           0x233f93 - std[3966f9622dfad1a0]::panicking::default_hook::{closure#0}
+   5:           0x2471ee - std[3966f9622dfad1a0]::panicking::default_hook
+   6:           0x2473a9 - std[3966f9622dfad1a0]::panicking::panic_with_hook
+   7:           0x234088 - std[3966f9622dfad1a0]::panicking::panic_handler::{closure#0}
+   8:           0x22c659 - std[3966f9622dfad1a0]::sys::backtrace::__rust_end_short_backtrace::<std[3966f9622dfad1a0]::panicking::panic_handler::{closure#0}, !>
+   9:           0x2347d8 - __rustc[d0c72ce299f394e5]::rust_begin_unwind
+  10:           0x26aabb - core[73b405bef30eeff1]::panicking::panic_fmt
+  11:           0x220463 - allocator_stress[3983b6ecfc90af08]::main
+  12:           0x21c976 - std[3966f9622dfad1a0]::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  13:           0x21c8f0 - std[3966f9622dfad1a0]::rt::lang_start::<()>::{closure#0}
+  14:           0x246c36 - std[3966f9622dfad1a0]::rt::lang_start_internal
+  15:           0x220c31 - main
+  16:           0x248533 - std[3966f9622dfad1a0]::sys::pal::toyos::start_rust
+  17:           0x221946 - _start
+
+09:16:28 FAIL scratch_shared_sweep: red: ["mmap_stress", "allocator_stress"]
+09:16:28   FAIL  scratch_shared_sweep  (6s)
+09:16:28   --- 1 guests, 0 of them not the shipping kernel, 1 kernel build(s): [""]
+
+09:16:28 host: fastest boot 4752 ms against the reference 1424 ms — liveness ceilings paid at 3.34x
+09:16:28 host: 14 core(s); a guest wider than that waits vcpus/cores longer again
+09:16:28 failures:
+09:16:28     scratch_shared_sweep: red: ["mmap_stress", "allocator_stress"]
+
+09:16:28 test result: FAILED. 0 passed, 1 failed, 0 invalidated, 1 total (17.0s; workers: 11s building, 6s testing)
+09:16:28 [toyos] this red run's serial logs are kept at $WT/target/red-run-serial/toyos-tmp-60565-0
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `$WT/target/debug/deps/toyos_build-42525268d3587802 scratch_shared_sweep` (exit status: 1)
+test-exit=1
