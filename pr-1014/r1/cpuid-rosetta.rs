@@ -1,0 +1,1 @@
+fn main(){ let l = unsafe { core::arch::x86_64::__cpuid_count(7, 0) }; let l1 = unsafe { core::arch::x86_64::__cpuid(1) }; println!("leaf7 ebx {:#010x}: bmi2 {} adx {} avx2 {}; leaf1 ecx {:#010x}", l.ebx, l.ebx >> 8 & 1, l.ebx >> 19 & 1, l.ebx >> 5 & 1, l1.ecx); }
