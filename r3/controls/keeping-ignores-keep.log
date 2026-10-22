@@ -1,0 +1,44 @@
+control keeping-ignores-keep
+   Compiling kernel v0.1.0 ($WT/kernel)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.60s
+     Running unittests pure/lib.rs (target/debug/deps/kernel-67c8c4760f78b1e7)
+
+running 19 tests
+test frames::tests::a_hole_is_absent ... ok
+test frames::tests::a_frame_carves_one_superframe_and_its_return_makes_it_whole ... ok
+test frames::tests::a_pin_count_at_its_limit_refuses_and_pins_nothing ... ok
+test frames::tests::a_frame_freed_while_pinned_goes_back_with_its_last_pin ... ok
+test frames::tests::a_discard_keeps_a_pinned_frame_and_promises_only_what_came_back ... ok
+test frames::tests::a_run_is_contiguous_and_skips_a_gap ... ok
+test frames::tests::a_superframe_and_a_run_come_only_from_whole_superframes ... ok
+test frames::tests::a_promise_holds_its_frames_against_every_other_allocation ... ok
+test frames::tests::a_superframe_freed_with_a_pinned_frame_is_whole_only_after_the_unpin ... ok
+test frames::tests::an_unpin_before_the_free_leaves_nothing_deferred ... ok
+test frames::tests::exhaustion_answers_none_and_a_return_answers_again ... ok
+test frames::tests::memory_off_superframe_boundaries_is_used_and_never_whole ... ok
+test frames::tests::memory_outside_the_records_pins_as_nothing ... ok
+test frames::tests::a_withheld_range_is_never_handed_out ... ok
+test frames::tests::frames_fill_a_split_superframe_before_carving_another ... ok
+test frames::tests::an_unpin_with_no_pin_is_a_kernel_bug - should panic ... ok
+test frames::tests::a_double_free_is_a_kernel_bug - should panic ... ok
+test frames::tests::a_frame_kept_for_the_kernel_goes_to_the_kernel_alone ... FAILED
+test frames::tests::a_mixed_load_keeps_every_frame_once ... ok
+
+failures:
+
+---- frames::tests::a_frame_kept_for_the_kernel_goes_to_the_kernel_alone stdout ----
+
+thread 'frames::tests::a_frame_kept_for_the_kernel_goes_to_the_kernel_alone' (13758633) panicked at kernel/pure/frames.rs:627:9:
+assertion `left == right` failed: a table took a kept frame
+  left: 512
+ right: 502
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    frames::tests::a_frame_kept_for_the_kernel_goes_to_the_kernel_alone
+
+test result: FAILED. 18 passed; 1 failed; 0 ignored; 0 measured; 337 filtered out; finished in 0.01s
+
+error: test failed, to rerun pass `-p kernel --lib`
+exit=101
