@@ -1,0 +1,13 @@
+--- $SCRATCH/controls/tlb.keep	2026-10-22 14:54:26
++++ kernel/src/arch/x86_64/tlb.rs	2026-10-22 14:54:26
+@@ -53,6 +53,10 @@
+ /// every other flushes before it next enters the space. So the change's
+ /// frames may go as soon as it returns.
+ pub fn user_change(origin: Origin, tag: u16, start: u64, end: u64) {
++    if true {
++        let _ = (tag, start, end);
++        return shootdown(origin, Half::User);
++    }
+     let me = percpu::cpu_id() as usize;
+     let mut targets = [0u64; 4];
+     let mut beyond = false;

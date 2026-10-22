@@ -1,0 +1,59 @@
+control reach-every-cpu at 63b23563cad58f0862fbd95c62f96f7b8334e950+worktree
+   Compiling toyos-build v0.1.0 ($WT)
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.72s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-42525268d3587802)
+
+12:54:28 running 1 tests, 12 wide
+
+12:54:28   RUN   scratch_shared_sweep
+12:54:28   BUILD x86_64 binaries of tests/guest/rust-tests, for scratch_shared_sweep
+12:54:30   BUILT x86_64 binaries of tests/guest/rust-tests, for scratch_shared_sweep  (2s)
+12:54:30   BUILD x86_64 kernel boot-actuators,test-actuators, loader, ROOT of tests/images/testcases.toml, for scratch_shared_sweep
+12:54:36 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+12:54:36   BUILT x86_64 kernel boot-actuators,test-actuators, loader, ROOT of tests/images/testcases.toml, for scratch_shared_sweep  (6s)
+12:54:41 SWEEP tlb_shootdown_waits exit=Some(101) err=None
+acpiserver: embedded controller none: no PNP0C09 device is present
+acpiserver: 0 table(s) loaded at run time and 0 refused; the namespace holds 266 objects in 512 slots, and the interpreter 154899 bytes of heap, of the 16777216 it holds between evaluations and the 34155580 while one runs
+acpiserver: the namespace initialised: \_SB._INI absent; 0 _STA read, 0 _INI run, no _REG run; the longest wait an evaluation asked 0 µs; evaluations refused, by kind: none
+acpiserver: GPEs: 2 with a method in GPE0, 2 of them runtime and enabled, 0 wake events left disabled, 0 past GPE0, 0 naming both triggers
+acpiserver: (this machine's own, quoted in no record) the runtime GPEs are [1, 2]
+acpiserver: no battery: 0 of 0 control-method batteries present, 0 AC adapter(s), with no embedded controller attached; the Global Lock taken 0 times on the way and given back 0 times, the firmware found holding it by 0 of the takes
+
+thread 'main' (1) panicked at src/bin/tlb_shootdown_waits.rs:200:5:
+a munmap no other CPU's thread could reach took 40276079ns, at least the 20000000ns another CPU answers in: it waited for CPUs not running this space
+stack backtrace:
+   0:           0x266290 - _Unwind_Backtrace
+   1:           0x249673 - <<std[3966f9622dfad1a0]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[73b405bef30eeff1]::fmt::Display>::fmt
+   2:           0x26a507 - core[73b405bef30eeff1]::fmt::write
+   3:           0x24d08b - <std[3966f9622dfad1a0]::sys::stdio::toyos::Stderr as core[73b405bef30eeff1]::io::write::Write>::write_fmt
+   4:           0x232883 - std[3966f9622dfad1a0]::panicking::default_hook::{closure#0}
+   5:           0x24634e - std[3966f9622dfad1a0]::panicking::default_hook
+   6:           0x246509 - std[3966f9622dfad1a0]::panicking::panic_with_hook
+   7:           0x23293d - std[3966f9622dfad1a0]::panicking::panic_handler::{closure#0}
+   8:           0x22aee9 - std[3966f9622dfad1a0]::sys::backtrace::__rust_end_short_backtrace::<std[3966f9622dfad1a0]::panicking::panic_handler::{closure#0}, !>
+   9:           0x2330c8 - __rustc[d0c72ce299f394e5]::rust_begin_unwind
+  10:           0x26ac2b - core[73b405bef30eeff1]::panicking::panic_fmt
+  11:           0x21e8c0 - tlb_shootdown_waits[d52030ddd76ea865]::main
+  12:           0x21f5e6 - std[3966f9622dfad1a0]::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  13:           0x21d4d0 - std[3966f9622dfad1a0]::rt::lang_start::<()>::{closure#0}
+  14:           0x245d96 - std[3966f9622dfad1a0]::rt::lang_start_internal
+  15:           0x21ea31 - main
+  16:           0x247983 - std[3966f9622dfad1a0]::sys::pal::toyos::start_rust
+  17:           0x21fbf6 - _start
+
+12:54:41 FAIL scratch_shared_sweep: red: ["tlb_shootdown_waits"]
+12:54:41   FAIL  scratch_shared_sweep  (6s)
+12:54:41   --- 1 guests, 1 of them not the shipping kernel, 1 kernel build(s): ["boot-actuators,test-actuators"]
+
+12:54:41 host: fastest boot 4738 ms against the reference 1424 ms — liveness ceilings paid at 3.33x
+12:54:41 host: 14 core(s); a guest wider than that waits vcpus/cores longer again
+12:54:41 failures:
+12:54:41     scratch_shared_sweep: red: ["tlb_shootdown_waits"]
+
+12:54:41 test result: FAILED. 0 passed, 1 failed, 0 invalidated, 1 total (13.6s; workers: 8s building, 6s testing)
+12:54:41 [toyos] this red run's serial logs are kept at $WT/target/red-run-serial/toyos-tmp-12785-0
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `$WT/target/debug/deps/toyos_build-42525268d3587802 scratch_shared_sweep` (exit status: 1)
+test-exit=1

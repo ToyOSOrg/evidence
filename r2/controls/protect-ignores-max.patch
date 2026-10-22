@@ -1,0 +1,13 @@
+diff --git a/kernel/src/mm/space.rs b/kernel/src/mm/space.rs
+index eb10025d0..0097c6e50 100644
+--- a/kernel/src/mm/space.rs
++++ b/kernel/src/mm/space.rs
+@@ -304,7 +304,7 @@ impl AddressSpace {
+         let (start, end) = self.held(start, len)?;
+         self.room(start, end, 0)?;
+         let allowed = self.inventory.meeting(start, end).all(|(_, entry)| match entry.kind {
+-            Kind::Object { max, .. } => prot.within(max),
++            Kind::Object { max, .. } => { let _ = max; true }
+             Kind::Private { .. } => true,
+         });
+         if !allowed {
