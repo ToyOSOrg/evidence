@@ -1,0 +1,14 @@
+diff --git a/kernel/src/mm/space.rs b/kernel/src/mm/space.rs
+index 8b8ffdbb8..1ca7a016f 100644
+--- a/kernel/src/mm/space.rs
++++ b/kernel/src/mm/space.rs
+@@ -310,7 +310,8 @@ impl AddressSpace {
+             }
+             (Leaf::Mapped(m), None) => {
+                 present = true;
+-                Some(if m.owned { Leaf::Held(m.phys) } else { Leaf::Empty })
++                let _ = m;
++                None
+             }
+             (Leaf::Held(phys), Some(p)) => Some(Leaf::Mapped(Mapping { phys, prot: p, owned: true, cache: CachePolicy::Normal })),
+             (Leaf::Held(_), None) | (Leaf::Empty, _) => None,
