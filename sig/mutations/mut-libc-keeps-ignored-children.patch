@@ -1,0 +1,13 @@
+diff --git a/sdk/libc/src/spawn.rs b/sdk/libc/src/spawn.rs
+index 052a7c5e8..8251c23e4 100644
+--- a/sdk/libc/src/spawn.rs
++++ b/sdk/libc/src/spawn.rs
+@@ -406,7 +406,7 @@ fn reap(pid: i32) -> Option<(i32, End, toyos_abi::syscall::ProcessStats)> {
+ pub(crate) fn forget_ended() {
+     let ended: Vec<Child> = {
+         let mut children = CHILDREN.lock();
+-        let (ended, live) = core::mem::take(&mut *children).into_iter().partition(|c| c.process.try_wait().is_ok());
++        let (ended, live) = core::mem::take(&mut *children).into_iter().partition(|c| c.pid < 0 && c.process.try_wait().is_ok());
+         *children = live;
+         ended
+     };
