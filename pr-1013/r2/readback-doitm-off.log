@@ -1,0 +1,38 @@
+   Compiling toyos-build v0.1.0 ($WORKTREE)
+    Finished `test` profile [optimized + debuginfo] target(s) in 7.10s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-2b5f27db075df25a)
+13:52:13   BUILD x86_64 binaries of tests/guest/rust-tests
+13:52:16 external deps changed: cleaning $WORKTREE/tests/guest/rust-tests/target/x86_64-unknown-toyos
+13:52:18 external deps changed: cleaning $WORKTREE/tests/guest/rust-tests/tls-dlopen-lib/target/x86_64-unknown-toyos
+13:52:18 external deps changed: cleaning $WORKTREE/tests/guest/rust-tests/tls-lib/target/x86_64-unknown-toyos
+13:52:18 external deps changed: cleaning $WORKTREE/tests/guest/rust-tests/tls-multi-crate/target/x86_64-unknown-toyos
+13:52:18 external deps changed: cleaning $WORKTREE/tests/guest/rust-tests/tls-cranelift/target/x86_64-unknown-toyos
+13:53:37   BUILT x86_64 binaries of tests/guest/rust-tests  (84s)
+13:53:37   BUILD x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests
+13:54:08   BUILT x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests  (31s)
+13:54:08 [toyos] Compiling 141 C tests, and attempting 24 declared ones...
+13:54:12 [metal] 2 registration(s) and 0 shared member(s) over 2 boot(s)
+13:54:12   BUILD x86_64 kernel, loader, ROOT of $SCRATCH/readback-1013r1/cryptocase/system-38f4c3fb3c3a5a1c.toml
+13:54:15 external deps changed: cleaning $WORKTREE/target/x86_64-unknown-toyos
+13:54:37 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+13:54:37   BUILT x86_64 kernel, loader, ROOT of $SCRATCH/readback-1013r1/cryptocase/system-38f4c3fb3c3a5a1c.toml  (25s)
+13:54:38 [metal] cryptocase: 3 job(s) under a list bound of 60000 ms, armed with [] and a boot deadline of 120000 ms — $SCRATCH/readback-1013r1/cryptocase/image.img
+13:54:38   BUILD x86_64 ROOT of $SCRATCH/readback-1013r1/cryptoctcurvescase/system-dbaf941dbf13377c.toml
+13:54:39 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+13:54:39   BUILT x86_64 ROOT of $SCRATCH/readback-1013r1/cryptoctcurvescase/system-dbaf941dbf13377c.toml  (2s)
+13:54:40 [metal] cryptoctcurvescase: 1 job(s) under a list bound of 10614000 ms, armed with [] and a boot deadline of 21228000 ms — $SCRATCH/readback-1013r1/cryptoctcurvescase/image.img
+# One boot per image. Each invocation is `cargo <words>` from this worktree.
+
+cryptocase
+  image: $SCRATCH/readback-1013r1/cryptocase/image.img
+  cargo run -p toyos-metal -- --image $SCRATCH/readback-1013r1/cryptocase/image.img --readback $SCRATCH/readback-1013r1/cryptocase --fat32-check
+
+cryptoctcurvescase
+  image: $SCRATCH/readback-1013r1/cryptoctcurvescase/image.img
+  cargo run -p toyos-metal -- --image $SCRATCH/readback-1013r1/cryptoctcurvescase/image.img --readback $SCRATCH/readback-1013r1/cryptoctcurvescase --fat32-check
+13:54:40 [metal] staged 2 image(s); $SCRATCH/readback-1013r1/request.txt lists them. The machine was not touched, so this run establishes nothing about it.
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `$WORKTREE/target/debug/deps/toyos_build-2b5f27db075df25a --metal --metal-readback $SCRATCH/readback-1013r1 crypto_instrument crypto_secret_timing_curves` (exit status: 2)
+readback exit 2
