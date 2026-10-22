@@ -1,0 +1,14 @@
+--- $SCRATCH/controls/tlb.keep	2026-10-22 20:56:40
++++ kernel/src/arch/x86_64/tlb.rs	2026-10-22 20:56:40
+@@ -62,6 +62,11 @@
+ /// frames may go as soon as it returns.
+ /// Answers whether it reached another CPU.
+ pub fn user_change(origin: Origin, tag: u16, start: u64, end: u64) -> bool {
++    if true {
++        let _ = (tag, start, end);
++        shootdown(origin, Half::User);
++        return true;
++    }
+     let me = percpu::cpu_id() as usize;
+     let mut targets = [0u64; 4];
+     let mut beyond = false;
