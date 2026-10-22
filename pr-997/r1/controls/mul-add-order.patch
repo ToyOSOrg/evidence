@@ -1,0 +1,11 @@
+--- a/lib/crypto/src/scalar25519.rs
++++ b/lib/crypto/src/scalar25519.rs
+@@ -143,7 +143,7 @@
+     /// self * b + c mod L.
+     #[cfg(feature = "sign")]
+     pub(crate) fn mul_add(&self, b: &Self, c: &Self) -> Self {
+-        let mut t: [u64; 8] = product(&self.0, &b.0);
++        let mut t: [u64; 8] = product(&self.0, &self.0);
+         // t < L^2 < 2^506, so adding c < L stays below 2^512.
+         let mut carry = false;
+         for i in 0..8 {

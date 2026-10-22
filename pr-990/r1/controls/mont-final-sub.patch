@@ -1,0 +1,13 @@
+diff --git a/lib/crypto/src/montgomery.rs b/lib/crypto/src/montgomery.rs
+index 839448258..ca495308d 100644
+--- a/lib/crypto/src/montgomery.rs
++++ b/lib/crypto/src/montgomery.rs
+@@ -204,7 +204,7 @@ fn reduce<const N: usize>(v: &[u64; N], high: u64, p: &[u64; N]) -> [u64; N] {
+     for i in 0..N {
+         (d[i], borrow) = borrowing_sub(v[i], p[i], borrow);
+     }
+-    let m = ct::mask(ct::nonzero(high) | (1 ^ u64::from(borrow)));
++    let m = ct::mask(0);
+     let mut out = [0; N];
+     for i in 0..N {
+         out[i] = (v[i] & !m) | (d[i] & m);
