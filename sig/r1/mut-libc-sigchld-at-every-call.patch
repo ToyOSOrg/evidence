@@ -1,0 +1,13 @@
+diff --git a/sdk/libc/src/signal.rs b/sdk/libc/src/signal.rs
+index 9162a5e99..23441a137 100644
+--- a/sdk/libc/src/signal.rs
++++ b/sdk/libc/src/signal.rs
+@@ -367,6 +367,8 @@ impl Call {
+         let mask = mask.unwrap_or_else(|| state.signals.mask(tid));
+         let wake = state.wake.get_or_insert_with(Pipe::new).read;
+         state.signals.enter(tid, mask, children);
++        state.unseen_ends += 1;
++        state.kick();
+         state.settle();
+         Some(Self { tid, mask, children, wake, inside: true })
+     }

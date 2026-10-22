@@ -1,0 +1,14 @@
+diff --git a/sdk/libc/src/sigreq.rs b/sdk/libc/src/sigreq.rs
+index c7ace0d91..2bf159dce 100644
+--- a/sdk/libc/src/sigreq.rs
++++ b/sdk/libc/src/sigreq.rs
+@@ -307,7 +307,8 @@ impl Signals {
+     fn a_thread_free(&self, sig: i32) -> bool {
+         let waiting = |tid: u32| self.waiters.iter().any(|w| w.tid == tid);
+         let first_free = !waiting(FIRST) && self.first_mask & bit(sig) == 0;
+-        first_free || self.masks.iter().any(|&(t, m)| !waiting(t) && m & bit(sig) == 0)
++        let _ = (first_free, waiting);
++        false
+     }
+ 
+     /// The lowest pending signal no blocking call will take and some thread

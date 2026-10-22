@@ -1,0 +1,14 @@
+diff --git a/sdk/libc/src/posix_io.rs b/sdk/libc/src/posix_io.rs
+index 5b3a0ded0..551dc4dcb 100644
+--- a/sdk/libc/src/posix_io.rs
++++ b/sdk/libc/src/posix_io.rs
+@@ -855,6 +855,9 @@ pub(crate) unsafe fn wait_fds(fds: *mut pollfd, n: usize, deadline: Option<u64>,
+             }
+         }
+         let ready_now = revents.iter().any(|&r| r != 0);
++        if !ready_now {
++            crate::signal::children_changed(true);
++        }
+         let left = match deadline {
+             _ if ready_now => 0,
+             None => u64::MAX,

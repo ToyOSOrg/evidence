@@ -1,0 +1,16 @@
+diff --git a/sdk/libc/src/signal.rs b/sdk/libc/src/signal.rs
+index 9162a5e99..52d505c51 100644
+--- a/sdk/libc/src/signal.rs
++++ b/sdk/libc/src/signal.rs
+@@ -454,7 +454,10 @@ pub(crate) fn sleep(nanos: u64) -> Result<(), u64> {
+ fn signal_of(reason: Reason) -> i32 {
+     match reason {
+         Reason::Interrupt => SIGINT,
+-        Reason::HangUp => SIGHUP,
++        Reason::HangUp => {
++            let _ = SIGHUP;
++            SIGTERM
++        }
+         Reason::Terminate => SIGTERM,
+     }
+ }

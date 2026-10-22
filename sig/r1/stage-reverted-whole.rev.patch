@@ -1,0 +1,2584 @@
+diff --git a/sdk/libc/arch/src/alarm_requests.rs b/sdk/libc/arch/src/alarm_requests.rs
+index e82db69a0..ded361dfb 100644
+--- a/sdk/libc/arch/src/alarm_requests.rs
++++ b/sdk/libc/arch/src/alarm_requests.rs
+@@ -1,9 +1,8 @@
+ //! What `alarm` answers and arms: the seconds an earlier alarm has left,
+-//! rounded up and 0 once it is due or when there is none; 0 seconds arm
+-//! nothing; and a due alarm ends the process unless `SIGALRM` is ignored, the
+-//! signal `signal.h` numbers.
++//! rounded up and 0 once it is due or when there is none; and 0 seconds arm
++//! nothing.
+ 
+-use crate::alarmreq::{due, ends, left, SIGALRM, SIG_DFL, SIG_IGN};
++use crate::alarmreq::{due, left, SIG_DFL, SIG_IGN};
+ use crate::header::{self, SIGNAL_H};
+ 
+ const SEC: u64 = 1_000_000_000;
+@@ -28,14 +27,14 @@ fn the_seconds_left_round_up_and_end_at_zero() {
+     assert_eq!(left(due(0, u32::MAX), 0), u32::MAX);
+ }
+ 
++/// Every signal number `sigreq` names is the one `signal.h` gives it, and
++/// `SIG_DFL` and `SIG_IGN` its addresses.
+ #[test]
+-fn a_due_alarm_ends_the_process_unless_sigalrm_is_ignored() {
+-    assert!(!ends(SIG_IGN), "an ignored SIGALRM ended the process");
+-    assert!(ends(SIG_DFL));
+-    assert!(ends(0x40_1000), "a handler, which never runs, kept the process");
+-}
+-
+-#[test]
+-fn sigalrm_is_the_number_signal_h_gives_it() {
+-    assert_eq!(SIGALRM, header::int(SIGNAL_H, "SIGALRM"));
++fn the_signals_libc_names_are_the_numbers_signal_h_gives_them() {
++    use crate::sigreq::{SIGALRM, SIGCHLD, SIGHUP, SIGINT, SIGKILL, SIGTERM};
++    for (name, number) in [("SIGHUP", SIGHUP), ("SIGINT", SIGINT), ("SIGKILL", SIGKILL), ("SIGALRM", SIGALRM), ("SIGTERM", SIGTERM), ("SIGCHLD", SIGCHLD)] {
++        assert_eq!(number, header::int(SIGNAL_H, name), "{name}");
++    }
++    assert_eq!(SIG_DFL, 0);
++    assert_eq!(SIG_IGN, 1);
+ }
+diff --git a/sdk/libc/arch/src/header.rs b/sdk/libc/arch/src/header.rs
+index 975e095ee..b593ebb3d 100644
+--- a/sdk/libc/arch/src/header.rs
++++ b/sdk/libc/arch/src/header.rs
+@@ -29,6 +29,13 @@ pub(crate) fn int(header: &str, name: &str) -> i32 {
+     as_int(found.unwrap_or_else(|| panic!("no integer #define {name}"))).1
+ }
+ 
++/// `name`'s value in `header`, as a flag word: `SA_RESETHAND` is no `int`.
++pub(crate) fn flags(header: &str, name: &str) -> u64 {
++    let found = defines(header).find(|&(n, _)| n == name);
++    let (_, value) = found.unwrap_or_else(|| panic!("no integer #define {name}"));
++    u64::try_from(value).unwrap_or_else(|_| panic!("{name} {value:#x} is no flag word"))
++}
++
+ #[test]
+ fn pipe_buf_is_the_kernels_whole_pipe_write() {
+     assert_eq!(toyos_abi::syscall::MAX_WHOLE_PIPE_WRITE, int(LIMITS_H, "PIPE_BUF") as usize);
+diff --git a/sdk/libc/arch/src/signal_dispositions.rs b/sdk/libc/arch/src/signal_dispositions.rs
+index 1598b9b9f..560f5cf94 100644
+--- a/sdk/libc/arch/src/signal_dispositions.rs
++++ b/sdk/libc/arch/src/signal_dispositions.rs
+@@ -1,74 +1,209 @@
+-//! What `signal` and `sigaction` keep and refuse (`sigreq.rs`): the default
+-//! and ignoring are kept, a handler is refused since none is ever called, and
+-//! so are `SIGKILL`, `SIGSTOP`, an ignored `SIGCHLD` and a number that names no
+-//! signal, each by the number `signal.h` gives it.
++//! What `signal` and `sigaction` keep and refuse, what a signal raised does
++//! and which thread takes it (`sigreq.rs`), against POSIX's words (XSH 2.4)
++//! and by the numbers `signal.h` gives each signal: a handler kept for a
++//! signal an event raises and refused for another, a blocked signal pending
++//! until a thread unblocks it, and a handler run in a blocking call before on
++//! libc's own thread.
+ 
+ use crate::alarmreq::{SIG_DFL, SIG_IGN};
+-use crate::errcode::EINVAL;
++use crate::errcode::{EINVAL, ENOSYS};
+ use crate::header::{self, SIGNAL_H};
+-use crate::sigreq::{index, set, Kept, SIGNALS};
++use crate::sigreq::{bit, index, kept, raised, set, Delivery, Kept, Raised, SigAction, Signals, SIGNALS};
+ 
+ fn sig(name: &str) -> i32 {
+     header::int(SIGNAL_H, name)
+ }
+ 
++fn flag(name: &str) -> u64 {
++    header::flags(SIGNAL_H, name)
++}
++
+ /// A handler's address, as a program's function would be.
+ const HANDLER: usize = 0x4000;
+ 
++fn handler(flags: u64) -> SigAction {
++    SigAction { flags, ..SigAction::of(HANDLER) }
++}
++
+ #[test]
+-fn the_default_and_ignoring_are_kept_and_a_handler_is_refused() {
+-    for name in ["SIGHUP", "SIGINT", "SIGPIPE", "SIGTERM", "SIGUSR1"] {
+-        assert_eq!(set(sig(name), SIG_DFL), Ok(Kept::Default), "{name}");
+-        assert_eq!(set(sig(name), SIG_IGN), Ok(Kept::Ignore), "{name}");
+-        assert_eq!(set(sig(name), HANDLER), Err(EINVAL), "{name}: a handler that is never called");
++fn a_handler_is_kept_for_a_signal_an_event_raises_and_refused_for_another() {
++    for name in ["SIGHUP", "SIGINT", "SIGTERM", "SIGCHLD", "SIGALRM"] {
++        assert_eq!(set(sig(name), handler(0)).map(kept), Ok(Kept::Handle(handler(0))), "{name}");
+     }
+-    assert_eq!(Kept::Default.handler(), SIG_DFL);
+-    assert_eq!(Kept::Ignore.handler(), SIG_IGN);
++    for name in ["SIGPIPE", "SIGUSR1", "SIGSEGV"] {
++        assert_eq!(set(sig(name), handler(0)), Err(EINVAL), "{name}: a handler that is never called");
++    }
++    for name in ["SIGHUP", "SIGPIPE", "SIGCHLD"] {
++        assert_eq!(set(sig(name), SigAction::of(SIG_DFL)).map(kept), Ok(Kept::Default), "{name}");
++        assert_eq!(set(sig(name), SigAction::of(SIG_IGN)).map(kept), Ok(Kept::Ignore), "{name}");
++    }
++    let masked = SigAction { mask: bit(sig("SIGKILL")) | bit(sig("SIGUSR1")), ..handler(0) };
++    assert_eq!(set(sig("SIGINT"), masked), Ok(SigAction { mask: bit(sig("SIGUSR1")), ..masked }), "SIGKILL in a mask");
++    let ignored = SigAction { flags: flag("SA_RESTART"), mask: bit(sig("SIGUSR1")), ..SigAction::of(SIG_IGN) };
++    assert_eq!(set(sig("SIGPIPE"), ignored), Ok(ignored), "an ignore is kept whole, as sigaction reads it back");
+ }
+ 
+ #[test]
+-fn kill_stop_an_ignored_child_and_no_signal_are_refused() {
+-    for handler in [SIG_DFL, SIG_IGN, HANDLER] {
+-        assert_eq!(set(sig("SIGKILL"), handler), Err(EINVAL));
+-        assert_eq!(set(sig("SIGSTOP"), handler), Err(EINVAL));
++fn kill_stop_and_no_signal_are_refused() {
++    for action in [SigAction::of(SIG_DFL), SigAction::of(SIG_IGN), handler(0)] {
++        assert_eq!(set(sig("SIGKILL"), action), Err(EINVAL));
++        assert_eq!(set(sig("SIGSTOP"), action), Err(EINVAL));
+     }
+-    assert_eq!(set(sig("SIGCHLD"), SIG_IGN), Err(EINVAL), "would reap children unwaited");
+-    assert_eq!(set(sig("SIGCHLD"), SIG_DFL), Ok(Kept::Default));
+     for signum in [0, -1, SIGNALS as i32 + 1] {
+         assert_eq!(index(signum), Err(EINVAL), "{signum}");
+-        assert_eq!(set(signum, SIG_DFL), Err(EINVAL), "{signum}");
++        assert_eq!(set(signum, SigAction::of(SIG_DFL)), Err(EINVAL), "{signum}");
+     }
+     assert_eq!(index(1), Ok(0));
+     assert_eq!(index(SIGNALS as i32), Ok(SIGNALS - 1));
+ }
+ 
+-/// `raise` does what the disposition says, as no handler runs: an ignored
+-/// signal and one whose default ignores do nothing, a terminating default
+-/// ends the process with 128 plus the number, and a stop or no signal is
+-/// refused.
++/// An ignored signal and one whose default ignores do nothing, a terminating
++/// default ends the process with 128 plus the number, a stop or no signal is
++/// refused, and a blocked one waits pending.
+ #[test]
+-fn raise_does_what_the_disposition_says() {
+-    use crate::errcode::ENOSYS;
+-    use crate::sigreq::{raised, Raised};
+-    assert_eq!(raised(sig("SIGTERM"), Kept::Default, 0), Raised::End(128 + sig("SIGTERM")));
+-    assert_eq!(raised(sig("SIGTERM"), Kept::Ignore, 0), Raised::Nothing);
+-    assert_eq!(raised(sig("SIGABRT"), Kept::Default, 0), Raised::End(134), "abort's own code");
++fn raise_does_what_the_disposition_and_the_mask_say() {
++    let term = sig("SIGTERM");
++    assert_eq!(raised(term, Kept::Default, 0), Raised::Deliver(Delivery::End(128 + term)));
++    assert_eq!(raised(term, Kept::Ignore, 0), Raised::Nothing);
++    assert_eq!(raised(sig("SIGABRT"), Kept::Default, 0), Raised::Deliver(Delivery::End(134)), "abort's own code");
+     assert_eq!(raised(sig("SIGCHLD"), Kept::Default, 0), Raised::Nothing, "a default that ignores");
+-    assert_eq!(raised(sig("SIGKILL"), Kept::Default, 0), Raised::End(128 + 9));
++    assert_eq!(raised(sig("SIGKILL"), Kept::Default, u64::MAX), Raised::Deliver(Delivery::End(128 + 9)), "no mask holds it");
+     assert_eq!(raised(sig("SIGSTOP"), Kept::Default, 0), Raised::Refused(ENOSYS));
+     assert_eq!(raised(0, Kept::Default, 0), Raised::Refused(EINVAL));
++    assert_eq!(raised(term, Kept::Default, bit(term)), Raised::Pending);
++    assert_eq!(raised(term, Kept::Ignore, bit(term)), Raised::Nothing);
++    assert_eq!(raised(term, Kept::Default, !bit(term)), Raised::Deliver(Delivery::End(128 + term)), "another signal's bit");
+ }
+ 
+-/// A signal the calling thread blocks would be held pending, and libc keeps
+-/// no pending state, so its raise is refused rather than ending the process;
+-/// an ignored one is dropped whether blocked or not.
++/// A handler's run blocks its own signal unless `SA_NODEFER`, adds its
++/// `sa_mask`, restarts with `SA_RESTART`, and is the default's after with
++/// `SA_RESETHAND`.
+ #[test]
+-fn raise_of_a_blocked_signal_is_refused() {
+-    use crate::errcode::ENOSYS;
+-    use crate::sigreq::{raised, Raised};
+-    let term = sig("SIGTERM");
+-    let blocked = 1u64 << (term - 1);
+-    assert_eq!(raised(term, Kept::Default, blocked), Raised::Refused(ENOSYS));
+-    assert_eq!(raised(term, Kept::Ignore, blocked), Raised::Nothing);
+-    assert_eq!(raised(term, Kept::Default, !blocked), Raised::End(128 + term), "another signal's bit");
++fn a_delivery_carries_what_its_flags_say() {
++    let (alrm, usr1) = (sig("SIGALRM"), sig("SIGUSR1"));
++    let mut signals = Signals::new();
++    signals.act(alrm, Some(SigAction { mask: bit(usr1), ..handler(flag("SA_RESTART")) })).unwrap();
++    assert_eq!(
++        signals.arrive(alrm),
++        Raised::Deliver(Delivery::Handle { sig: alrm, handler: HANDLER, siginfo: false, mask: bit(usr1) | bit(alrm), restart: true }),
++    );
++    signals.act(alrm, Some(handler(flag("SA_NODEFER") | flag("SA_RESETHAND") | flag("SA_SIGINFO")))).unwrap();
++    assert_eq!(
++        signals.arrive(alrm),
++        Raised::Deliver(Delivery::Handle { sig: alrm, handler: HANDLER, siginfo: true, mask: 0, restart: false }),
++    );
++    assert_eq!(signals.kept(alrm), Kept::Default, "SA_RESETHAND left the handler");
++}
++
++/// An arrival runs on libc's own thread while no thread is in a blocking
++/// call, goes pending for a call that leaves it unblocked first, waits while
++/// every thread blocks it, and once pending is not raised twice.
++#[test]
++fn an_arrival_goes_to_a_blocking_call_then_to_libcs_own_thread_and_waits_while_every_thread_blocks_it() {
++    let chld = sig("SIGCHLD");
++    let mut signals = Signals::new();
++    signals.act(chld, Some(handler(0))).unwrap();
++    assert!(matches!(signals.arrive(chld), Raised::Deliver(Delivery::Handle { .. })), "no thread in a call");
++
++    signals.enter(0, 0, false);
++    assert_eq!(signals.arrive(chld), Raised::Pending, "a thread in a call leaves it unblocked");
++    assert!(signals.wake_wanted());
++    assert_eq!(signals.arrive(chld), Raised::Nothing, "pending already");
++    assert!(matches!(signals.take(0), Some(Delivery::Handle { sig, .. }) if sig == chld));
++    assert!(!signals.wake_wanted());
++    signals.leave(0);
++
++    assert!(signals.set_mask(0, bit(chld)), "the first thread's");
++    assert!(!signals.set_mask(7, bit(chld)), "a thread libc did not start has no mask here");
++    signals.thread_started(7, bit(chld));
++    assert_eq!(signals.arrive(chld), Raised::Pending, "every thread blocks it");
++    assert_eq!(signals.pending(), bit(chld));
++    assert_eq!(signals.take(bit(chld)), None, "a blocking mask takes nothing");
++    assert!(signals.set_mask(7, 0));
++    assert!(signals.take(signals.mask(7)).is_some(), "the thread that unblocks it takes it");
++    assert_eq!(signals.pending(), 0);
++    signals.thread_ended(7);
++    assert_eq!(signals.arrive(chld), Raised::Pending, "the first thread alone blocks it");
++}
++
++/// An ignored signal pending is dropped by its ignore, and a quit's three
++/// signals ask libc to listen once any is handled, ignored or blocked.
++#[test]
++fn an_ignore_drops_what_is_pending_and_a_quit_signal_off_its_default_listens() {
++    let (term, hup, alrm) = (sig("SIGTERM"), sig("SIGHUP"), sig("SIGALRM"));
++    let mut signals = Signals::new();
++    assert!(!signals.listens());
++    assert!(signals.set_mask(0, bit(alrm)));
++    assert_eq!(signals.arrive(alrm), Raised::Pending);
++    signals.act(alrm, Some(SigAction::of(SIG_IGN))).unwrap();
++    assert_eq!(signals.pending(), 0, "ignoring a pending signal drops it");
++    assert!(!signals.listens(), "SIGALRM is no quit's");
++    signals.thread_started(3, bit(term));
++    assert!(signals.listens(), "a thread blocks SIGTERM");
++    signals.thread_ended(3);
++    assert!(!signals.listens());
++    signals.act(hup, Some(SigAction::of(SIG_IGN))).unwrap();
++    assert!(signals.listens(), "SIGHUP is ignored");
++    assert_eq!(signals.arrive(hup), Raised::Nothing);
++}
++
++/// A wait for children looks again at every turn of them, and only once.
++#[test]
++fn a_wait_for_children_is_woken_by_each_turn_once() {
++    let mut signals = Signals::new();
++    signals.enter(0, 0, true);
++    assert!(!signals.wake_wanted());
++    signals.children_changed();
++    assert!(signals.wake_wanted(), "a child started under a wait");
++    signals.children_seen(0);
++    assert!(!signals.wake_wanted());
++    signals.leave(0);
++    signals.children_changed();
++    assert!(!signals.wake_wanted(), "no wait is there to look");
++}
++
++/// `raise` in a thread that blocks the signal leaves it pending for that
++/// thread to take on unblocking; a handler makes blocking calls interruptible.
++#[test]
++fn a_raise_a_thread_blocks_waits_for_it_to_unblock() {
++    let (int, usr1) = (sig("SIGINT"), sig("SIGUSR1"));
++    let mut signals = Signals::new();
++    assert!(!signals.any_handler());
++    signals.act(int, Some(handler(0))).unwrap();
++    assert!(signals.any_handler());
++    signals.thread_started(4, bit(int));
++    assert_eq!(signals.raise(4, int), Raised::Pending);
++    assert!(matches!(signals.raise(0, int), Raised::Deliver(Delivery::Handle { .. })), "another thread takes it at once");
++    assert_eq!(signals.raise(4, usr1), Raised::Deliver(Delivery::End(128 + usr1)));
++    assert_eq!(signals.raise(4, 0), Raised::Refused(EINVAL));
++    assert!(matches!(signals.take(0), Some(Delivery::Handle { sig, .. }) if sig == int));
++}
++
++/// A blocking call that leaves without taking a signal it would have taken
++/// leaves it to libc's own thread, once a thread in no call leaves it
++/// unblocked; one every thread blocks stays pending.
++#[test]
++fn a_signal_a_leaving_call_did_not_take_goes_to_libcs_own_thread() {
++    let (int, term) = (sig("SIGINT"), sig("SIGTERM"));
++    let mut signals = Signals::new();
++    signals.act(int, Some(handler(0))).unwrap();
++    signals.enter(0, 0, false);
++    assert_eq!(signals.arrive(int), Raised::Pending, "the call takes it");
++    assert!(!signals.has_orphan(), "a call that would take it is still there");
++    signals.leave(0);
++    assert!(signals.has_orphan());
++    assert!(matches!(signals.orphan(), Some(Delivery::Handle { sig, .. }) if sig == int));
++    assert_eq!(signals.pending(), 0);
++
++    assert!(signals.set_mask(0, bit(term)));
++    signals.enter(0, 0, false);
++    assert_eq!(signals.arrive(int), Raised::Pending);
++    signals.enter(9, bit(int), false);
++    signals.leave(0);
++    assert!(signals.has_orphan(), "the first thread left the call and blocks only SIGTERM");
++    signals.leave(9);
++    assert!(signals.set_mask(0, bit(int)));
++    assert!(!signals.has_orphan(), "every thread blocks it now");
++    assert_eq!(signals.orphan(), None);
++    assert_eq!(signals.pending(), bit(int));
+ }
+diff --git a/sdk/libc/arch/src/signal_masks.rs b/sdk/libc/arch/src/signal_masks.rs
+index a3c6810a5..8ecfeb4e4 100644
+--- a/sdk/libc/arch/src/signal_masks.rs
++++ b/sdk/libc/arch/src/signal_masks.rs
+@@ -52,3 +52,12 @@ fn the_full_set_holds_every_signal() {
+     }
+     assert_eq!((1..=64).fold(0, |set, n| sigmask::with(set, n).unwrap()), sigmask::FULL);
+ }
++
++#[test]
++fn sigdelset_takes_its_signal_alone_out() {
++    assert_eq!(sigmask::without(bit(1) | bit(10), 10), Some(bit(1)));
++    assert_eq!(sigmask::without(bit(1), 10), Some(bit(1)), "a signal not in the set");
++    for n in [0, -1, 65] {
++        assert_eq!(sigmask::without(bit(1), n), None, "signal {n}");
++    }
++}
+diff --git a/sdk/libc/include/poll.h b/sdk/libc/include/poll.h
+index d95af4b50..a0b1509ff 100644
+--- a/sdk/libc/include/poll.h
++++ b/sdk/libc/include/poll.h
+@@ -20,6 +20,9 @@ struct pollfd {
+ 
+ int poll(struct pollfd *fds, unsigned int nfds, int timeout);
+ 
++struct timespec;
++int ppoll(struct pollfd *fds, unsigned int nfds, const struct timespec *timeout, const unsigned long *sigmask);
++
+ #ifdef __cplusplus
+ }
+ #endif
+diff --git a/sdk/libc/include/signal.h b/sdk/libc/include/signal.h
+index e430ed955..cf6c81ed2 100644
+--- a/sdk/libc/include/signal.h
++++ b/sdk/libc/include/signal.h
+@@ -33,6 +33,7 @@ sighandler_t signal(int signum, sighandler_t handler);
+ int raise(int sig);
+ 
+ typedef unsigned long sigset_t;
++typedef int sig_atomic_t;
+ 
+ typedef struct {
+     int si_signo;
+@@ -67,6 +68,10 @@ int sigemptyset(sigset_t *set);
+ int sigfillset(sigset_t *set);
+ int sigaddset(sigset_t *set, int signo);
+ int sigprocmask(int how, const sigset_t *set, sigset_t *oldset);
++int sigdelset(sigset_t *set, int signo);
++int sigismember(const sigset_t *set, int signo);
++int sigpending(sigset_t *set);
++int sigsuspend(const sigset_t *mask);
+ int pthread_sigmask(int how, const sigset_t *set, sigset_t *oldset);
+ int kill(int pid, int sig);
+ 
+diff --git a/sdk/libc/include/unistd.h b/sdk/libc/include/unistd.h
+index 17331c464..fc0cade99 100644
+--- a/sdk/libc/include/unistd.h
++++ b/sdk/libc/include/unistd.h
+@@ -26,6 +26,7 @@ int access(const char *path, int mode);
+ unsigned int sleep(unsigned int seconds);
+ unsigned int alarm(unsigned int seconds);
+ int usleep(unsigned int usec);
++int pause(void);
+ int isatty(int fd);
+ int execvp(const char *file, char *const argv[]);
+ int execv(const char *path, char *const argv[]);
+diff --git a/sdk/libc/src/alarm.rs b/sdk/libc/src/alarm.rs
+deleted file mode 100644
+index 391af7d15..000000000
+--- a/sdk/libc/src/alarm.rs
++++ /dev/null
+@@ -1,94 +0,0 @@
+-//! `alarm`: one per process, kept by a thread of this library's, started by
+-//! the first alarm armed, that sleeps until it is due. Then, with `SIGALRM`
+-//! ignored, the alarm is gone; otherwise the keeper does what `SIGALRM`'s
+-//! default action does and ends the process. A handler `signal` or `sigaction`
+-//! is given never runs, and a mask that blocks `SIGALRM` holds nothing back
+-//! (`issues/an-alarm-reaches-no-sigalrm-handler.md`).
+-
+-use core::ptr;
+-use core::sync::atomic::{AtomicU32, Ordering};
+-
+-use toyos_abi::syscall;
+-
+-use crate::alarmreq;
+-use crate::misc::SigAction;
+-use crate::pthread::Lock;
+-
+-/// What the process ends with when its alarm is due: the code of an end by
+-/// `SIGALRM`, as `abort`'s is `SIGABRT`'s.
+-const ALARM_END: i32 = 128 + alarmreq::SIGALRM;
+-
+-struct Alarm {
+-    /// When the alarm is due, in the monotonic clock's nanoseconds.
+-    due: Option<u64>,
+-    /// Whether the keeper runs.
+-    kept: bool,
+-}
+-
+-static ALARM: Lock<Alarm> = Lock::new(Alarm { due: None, kept: false });
+-
+-/// Moved at every `alarm`, so a keeper asleep on an older one wakes.
+-static TURN: AtomicU32 = AtomicU32::new(0);
+-
+-/// `SIGALRM`'s action, whose handler is its disposition: `SIG_DFL`, `SIG_IGN`
+-/// or a handler's address.
+-static ACTION: Lock<SigAction> = Lock::new(SigAction::of(alarmreq::SIG_DFL));
+-
+-/// Make `new`, if any, `SIGALRM`'s action, and answer the one it replaces whole.
+-pub(crate) fn act(new: Option<SigAction>) -> SigAction {
+-    let mut action = ACTION.lock();
+-    let old = *action;
+-    if let Some(new) = new {
+-        *action = new;
+-    }
+-    old
+-}
+-
+-fn now() -> u64 {
+-    toyos_abi::clock::nanos_since_boot()
+-}
+-
+-#[no_mangle]
+-pub extern "C" fn alarm(seconds: u32) -> u32 {
+-    let now = now();
+-    let mut alarm = ALARM.lock();
+-    let left = alarmreq::left(alarm.due, now);
+-    alarm.due = alarmreq::due(now, seconds);
+-    if alarm.due.is_some() && !alarm.kept {
+-        // Never joined: it lives as long as the process.
+-        let mut thread = 0u64;
+-        // SAFETY: `keep` is a thread entry that takes and returns nothing.
+-        let refused = unsafe { crate::pthread::pthread_create(&mut thread, ptr::null(), keep, ptr::null_mut()) };
+-        assert_eq!(refused, 0, "alarm: no thread to keep it");
+-        alarm.kept = true;
+-    }
+-    TURN.fetch_add(1, Ordering::Release);
+-    // SAFETY: `TURN` is a live, aligned u32.
+-    unsafe { syscall::futex_wake(TURN.as_ptr(), 1) };
+-    left
+-}
+-
+-/// Sleep until the alarm is due or moved, and once it is due, drop it or end
+-/// the process as [`alarmreq::ends`] says.
+-unsafe extern "C" fn keep(_: *mut u8) -> *mut u8 {
+-    loop {
+-        // Read before the alarm, so an `alarm` between the two moves it and
+-        // the wait below returns at once.
+-        let turn = TURN.load(Ordering::Acquire);
+-        let mut alarm = ALARM.lock();
+-        let wait = match alarm.due {
+-            None => None,
+-            Some(due) => match due.checked_sub(now()) {
+-                Some(wait) if wait > 0 => Some(wait),
+-                _ if alarmreq::ends(act(None).handler) => syscall::exit(ALARM_END),
+-                _ => {
+-                    alarm.due = None;
+-                    None
+-                }
+-            },
+-        };
+-        drop(alarm);
+-        // SAFETY: `TURN` is a live, aligned u32.
+-        unsafe { syscall::futex_wait(TURN.as_ptr(), turn, wait) };
+-    }
+-}
+diff --git a/sdk/libc/src/alarmreq.rs b/sdk/libc/src/alarmreq.rs
+index e8c7f2c1d..0bf5f4440 100644
+--- a/sdk/libc/src/alarmreq.rs
++++ b/sdk/libc/src/alarmreq.rs
+@@ -1,21 +1,13 @@
+-//! What `alarm` answers and arms, in nanoseconds of the monotonic clock, and
+-//! what a due one does. It reads nothing but what it is handed, so the host
+-//! tests it (`toyos-libc-copies`).
++//! What `alarm` answers and arms, in nanoseconds of the monotonic clock. A
++//! due one raises `SIGALRM` (`signal.rs`). It reads nothing but what it is
++//! handed, so the host tests it (`toyos-libc-copies`).
+ 
+ const NANOS_PER_SEC: u64 = 1_000_000_000;
+ 
+-/// `signal.h`'s `SIGALRM`, and its `SIG_DFL` and `SIG_IGN` as addresses.
+-pub(crate) const SIGALRM: i32 = 14;
++/// `signal.h`'s `SIG_DFL` and `SIG_IGN`, as addresses.
+ pub(crate) const SIG_DFL: usize = 0;
+ pub(crate) const SIG_IGN: usize = 1;
+ 
+-/// Whether an alarm due under `SIGALRM`'s disposition `handler` ends the
+-/// process: it does unless `SIGALRM` is ignored, since no handler runs
+-/// (`issues/an-alarm-reaches-no-sigalrm-handler.md`).
+-pub(crate) fn ends(handler: usize) -> bool {
+-    handler != SIG_IGN
+-}
+-
+ /// When an alarm of `seconds` armed at `now` is due; none for 0, which
+ /// disarms.
+ pub(crate) fn due(now: u64, seconds: u32) -> Option<u64> {
+diff --git a/sdk/libc/src/errcode.rs b/sdk/libc/src/errcode.rs
+index 590809954..179ee163d 100644
+--- a/sdk/libc/src/errcode.rs
++++ b/sdk/libc/src/errcode.rs
+@@ -7,6 +7,7 @@ use toyos_abi::syscall::SyscallError;
+ pub(crate) const EPERM: i32 = 1;
+ pub(crate) const ENOENT: i32 = 2;
+ pub(crate) const ESRCH: i32 = 3;
++pub(crate) const EINTR: i32 = 4;
+ pub(crate) const EIO: i32 = 5;
+ pub(crate) const E2BIG: i32 = 7;
+ pub(crate) const ENOEXEC: i32 = 8;
+diff --git a/sdk/libc/src/lib.rs b/sdk/libc/src/lib.rs
+index cf28b91ce..9a34e7c5c 100644
+--- a/sdk/libc/src/lib.rs
++++ b/sdk/libc/src/lib.rs
+@@ -4,8 +4,8 @@
+ 
+ extern crate alloc;
+ 
+-mod alarm;
+ mod alarmreq;
++mod signal;
+ mod sigreq;
+ mod errtext;
+ mod arch;
+diff --git a/sdk/libc/src/misc.rs b/sdk/libc/src/misc.rs
+index 48cdb9a28..d0cc75cb8 100644
+--- a/sdk/libc/src/misc.rs
++++ b/sdk/libc/src/misc.rs
+@@ -2,11 +2,11 @@
+ 
+ use alloc::vec::Vec;
+ use core::ptr;
+-use core::sync::atomic::{AtomicU32, AtomicU8, Ordering};
++use core::sync::atomic::{AtomicU32, Ordering};
+ 
+ use toyos_abi::syscall;
+ 
+-use crate::alarmreq::SIGALRM;
++use crate::sigreq::SigAction;
+ use crate::errcode::ENOSYS;
+ use crate::strtonum;
+ 
+@@ -119,51 +119,21 @@ pub unsafe extern "C" fn abort() -> ! {
+     syscall::exit(134) // SIGABRT
+ }
+ 
+-// Signals. libc delivers none to a handler (`sigreq`); what it keeps is a
+-// disposition already true, and `SIGALRM`'s decides what a due `alarm` does.
++// Signals: what is kept and where each goes is `sigreq`'s, the deliveries
++// `signal`'s.
+ 
+-/// `signal.h`'s `struct sigaction`.
+-#[repr(C)]
+-#[derive(Clone, Copy)]
+-pub struct SigAction {
+-    pub(crate) handler: usize,
+-    flags: u64,
+-    restorer: usize,
+-    mask: u64,
+-}
+-
+-impl SigAction {
+-    /// The action of `handler` alone, as `signal` makes one.
+-    pub(crate) const fn of(handler: usize) -> Self {
+-        Self { handler, flags: 0, restorer: 0, mask: 0 }
+-    }
++/// The default action's end: out with `code`, without `atexit` or `fflush`.
++pub(crate) fn end(code: i32) -> ! {
++    unsafe { _exit(code) }
+ }
+ 
+-/// Each signal's kept disposition but `SIGALRM`'s: 0 the default, 1 ignored.
+-static KEPT: [AtomicU8; crate::sigreq::SIGNALS] = [const { AtomicU8::new(0) }; crate::sigreq::SIGNALS];
+-
+-/// Set `signum`'s disposition to `new` if it is given, answering the one it
+-/// replaces, or the `errno` it is refused with.
+-fn disposition(signum: i32, new: Option<SigAction>) -> Result<SigAction, i32> {
+-    use crate::sigreq::{index, set, Kept};
+-    let slot = &KEPT[index(signum)?];
+-    let kept = new.map(|new| set(signum, new.handler)).transpose()?;
+-    if signum == SIGALRM {
+-        // Kept whole, flags and mask with it, as `alarm` reads it.
+-        return Ok(crate::alarm::act(new));
+-    }
+-    let old = match kept {
+-        Some(kept) => slot.swap((kept == Kept::Ignore) as u8, Ordering::Relaxed),
+-        None => slot.load(Ordering::Relaxed),
+-    };
+-    Ok(SigAction::of(if old == 1 { Kept::Ignore.handler() } else { Kept::Default.handler() }))
+-}
+-
+-/// A disposition by its address: `SIG_DFL` and `SIG_IGN` are no functions,
+-/// and a function is refused, as `sigaction` refuses it.
++/// A handler by its address: `SIG_DFL` and `SIG_IGN` are no functions. A
++/// handler `signal` keeps restarts what it interrupts, as BSD's and glibc's
++/// do.
+ #[no_mangle]
+ pub unsafe extern "C" fn signal(signum: i32, handler: *const u8) -> *const u8 {
+-    match disposition(signum, Some(SigAction::of(handler as usize))) {
++    let action = SigAction { flags: crate::sigreq::SA_RESTART, ..SigAction::of(handler as usize) };
++    match crate::signal::act(signum, Some(action)) {
+         Ok(old) => old.handler as *const u8,
+         Err(errno) => {
+             crate::errno::set(errno);
+@@ -174,7 +144,7 @@ pub unsafe extern "C" fn signal(signum: i32, handler: *const u8) -> *const u8 {
+ 
+ #[no_mangle]
+ pub unsafe extern "C" fn sigaction(signum: i32, act: *const SigAction, oldact: *mut SigAction) -> i32 {
+-    match disposition(signum, unsafe { act.as_ref() }.copied()) {
++    match crate::signal::act(signum, unsafe { act.as_ref() }.copied()) {
+         Ok(old) => {
+             if let Some(oldact) = unsafe { oldact.as_mut() } {
+                 *oldact = old;
+@@ -201,6 +171,13 @@ pub unsafe extern "C" fn sigprocmask(how: i32, set: *const u64, oldset: *mut u64
+     }
+ }
+ 
++/// What is pending: raised while every thread blocks it.
++#[no_mangle]
++pub unsafe extern "C" fn sigpending(set: *mut u64) -> i32 {
++    unsafe { *set = crate::signal::pending() };
++    0
++}
++
+ #[no_mangle]
+ pub unsafe extern "C" fn sigemptyset(set: *mut u64) -> i32 {
+     unsafe { *set = 0 };
+@@ -213,9 +190,9 @@ pub unsafe extern "C" fn sigfillset(set: *mut u64) -> i32 {
+     0
+ }
+ 
+-#[no_mangle]
+-pub unsafe extern "C" fn sigaddset(set: *mut u64, signo: i32) -> i32 {
+-    match crate::sigmask::with(unsafe { *set }, signo) {
++/// `set` changed by `change`, or `-1` and `EINVAL` for a number no signal has.
++unsafe fn change_set(set: *mut u64, change: Option<u64>) -> i32 {
++    match change {
+         Some(next) => {
+             unsafe { *set = next };
+             0
+@@ -227,30 +204,45 @@ pub unsafe extern "C" fn sigaddset(set: *mut u64, signo: i32) -> i32 {
+     }
+ }
+ 
+-/// What the signal's disposition does, as no handler is ever installed
+-/// (`sigreq::raised`): nothing for one ignored, the process ended for a
+-/// default that ends it, and a refusal otherwise.
++#[no_mangle]
++pub unsafe extern "C" fn sigaddset(set: *mut u64, signo: i32) -> i32 {
++    unsafe { change_set(set, crate::sigmask::with(*set, signo)) }
++}
++
++#[no_mangle]
++pub unsafe extern "C" fn sigdelset(set: *mut u64, signo: i32) -> i32 {
++    unsafe { change_set(set, crate::sigmask::without(*set, signo)) }
++}
++
++#[no_mangle]
++pub unsafe extern "C" fn sigismember(set: *const u64, signo: i32) -> i32 {
++    match crate::sigmask::with(0, signo) {
++        Some(bit) => i32::from(unsafe { *set } & bit != 0),
++        None => {
++            crate::errno::set(crate::errcode::EINVAL);
++            -1
++        }
++    }
++}
++
++/// Raise `sig` in the calling thread: its handler or its default action runs
++/// before this returns, unless the thread blocks it (`sigreq::raised`).
+ #[no_mangle]
+ pub unsafe extern "C" fn raise(sig: i32) -> i32 {
+-    use crate::sigreq::{raised, Kept, Raised};
+-    let kept = match disposition(sig, None) {
+-        Ok(now) if now.handler == crate::alarmreq::SIG_IGN => Kept::Ignore,
+-        Ok(_) => Kept::Default,
++    match crate::signal::raise(sig) {
++        Ok(()) => 0,
+         Err(errno) => {
+-            crate::errno::set(errno);
+-            return -1;
+-        }
+-    };
+-    match raised(sig, kept, crate::pthread::mask()) {
+-        Raised::Nothing => 0,
+-        Raised::End(code) => _exit(code),
+-        Raised::Refused(errno) => {
+             crate::errno::set(errno);
+             -1
+         }
+     }
+ }
+ 
++#[no_mangle]
++pub unsafe extern "C" fn alarm(seconds: u32) -> u32 {
++    crate::signal::alarm(seconds)
++}
++
+ // sysconf
+ 
+ const _SC_ARG_MAX: i32 = 0;
+diff --git a/sdk/libc/src/posix_io.rs b/sdk/libc/src/posix_io.rs
+index 39784fd4b..5b3a0ded0 100644
+--- a/sdk/libc/src/posix_io.rs
++++ b/sdk/libc/src/posix_io.rs
+@@ -13,7 +13,8 @@ use toyos_abi::syscall::{self, OpenFlags, SeekFrom};
+ 
+ use toyos::files::{self, Open};
+ 
+-use crate::errcode::{EBADF, EINVAL};
++use crate::errcode::{EBADF, EINTR, EINVAL};
++use crate::signal::Call;
+ use crate::time::Timespec;
+ 
+ // The values `<fcntl.h>` declares.
+@@ -172,13 +173,49 @@ pub unsafe extern "C" fn close(raw_fd: i32) -> i32 {
+     }
+ }
+ 
++/// A handler that interrupts a read of a kernel object restarts it if it was
++/// installed with `SA_RESTART` and answers `EINTR` if not. A descriptor no
++/// watch can be armed on, a console's, and a file a server serves, which
++/// answers without waiting on any event, read as they block, and nothing
++/// interrupts them.
+ #[no_mangle]
+ pub unsafe extern "C" fn read(raw_fd: i32, buf: *mut u8, count: usize) -> isize {
+     if buf.is_null() || count == 0 { return 0; }
+     let slice = core::slice::from_raw_parts_mut(buf, count);
+-    match files::read(raw_fd, slice) {
++    let blocking = |slice: &mut [u8]| match files::read(raw_fd, slice) {
+         Ok(n) => n as isize,
+         Err(e) => refuse_files(e) as isize,
++    };
++    let Some(mut call) = Call::enter(None, false, false) else { return blocking(slice) };
++    // Held for the call, so a `close` on another thread releases nothing it waits on.
++    let Ok((_held, object)) = toyos::fd::hold(raw_fd) else { return blocking(slice) };
++    if object.release.is_some() || object.handle == toyos_abi::HANDLE_INVALID {
++        drop(call);
++        return blocking(slice);
++    }
++    loop {
++        if let Some(delivery) = call.take() {
++            if !call.interrupted(delivery) {
++                return refuse(EINTR) as isize;
++            }
++            continue;
++        }
++        match syscall::read_nonblock(object.handle, slice) {
++            Ok(n) => return n as isize,
++            Err(syscall::SyscallError::WouldBlock) => {}
++            Err(e) => return set_errno(e) as isize,
++        }
++        let poller = toyos::poller::Poller::new(2);
++        poller.watch_raw(object.handle, toyos::poller::READABLE, 0);
++        poller.watch_raw(call.wake(), toyos::poller::READABLE, 1);
++        let mut refused = false;
++        poller.wait_answers(1, u64::MAX, |token, answer| {
++            refused |= token == 0 && answer == Err(syscall::SyscallError::NotSupported);
++        });
++        if refused {
++            drop(call);
++            return blocking(slice);
++        }
+     }
+ }
+ 
+@@ -733,32 +770,43 @@ pub struct pollfd {
+     pub revents: i16,
+ }
+ 
++/// What [`wait_fds`] came to.
++pub(crate) struct Waited {
++    /// Entries ready, their `revents` written.
++    pub(crate) ready: i32,
++    /// Whether the wake pipe beside them was readable.
++    pub(crate) woken: bool,
++}
++
++/// The most entries and doorbells one poll watches: a poller's handles, one of
++/// them the wake pipe a handler interrupts it by.
++const MAX_POLLED: usize = toyos::poller::Poller::MAX_HANDLES as usize - 1;
++
++/// `poll`'s wait over the `n` entries at `fds` until `deadline`, in the
++/// monotonic clock's nanoseconds, watching `wake` beside them where given: it
++/// answers once an entry is ready, `wake` is readable, or the deadline passes.
++///
+ /// A stream socket is asked its rings first, so a level-triggered `poll` of
+ /// one that is ready answers at once; a direction that is not is counted in,
+ /// drained, armed and looked at again (`toyos::net::stream::watch`), and its
+ /// doorbell watched for reading: the connection for `POLLIN`, the bell for
+ /// `POLLOUT`. Every other descriptor, a listener's wake pipe and a datagram
+ /// socket's receive pipe for a socket's, is watched as it is.
+-#[no_mangle]
+-pub unsafe extern "C" fn poll(fds: *mut pollfd, nfds: u32, timeout: i32) -> i32 {
++///
++/// # Safety
++/// `fds` points at `n` entries.
++pub(crate) unsafe fn wait_fds(fds: *mut pollfd, n: usize, deadline: Option<u64>, wake: Option<RawHandle>) -> Result<Waited, i32> {
+     use toyos::net::stream::{self, Poll, Way};
+ 
+     const POLLIN: i16 = 1;
+     const POLLOUT: i16 = 4;
+     const POLLNVAL: i16 = 0x20;
+ 
+-    if nfds == 0 {
+-        if timeout > 0 {
+-            syscall::nanosleep(timeout as u64 * 1_000_000);
+-        }
+-        return 0;
++    if n == 0 && wake.is_none() {
++        let left = deadline.map_or(u64::MAX, |at| at.saturating_sub(toyos_abi::clock::nanos_since_boot()));
++        syscall::nanosleep(left);
++        return Ok(Waited { ready: 0, woken: false });
+     }
+-
+-    // A poller watches at most `MAX_HANDLES` fds and now says so by panicking
+-    // rather than by quietly handing back a smaller ring. A C caller asking to
+-    // watch more is not a bug in this library, so it gets POSIX's own answer
+-    // for an nfds it cannot serve.
+-    let n = nfds as usize;
+     let entries: alloc::vec::Vec<(i32, i16)> = (0..n).map(|i| ((*fds.add(i)).fd, (*fds.add(i)).events)).collect();
+     // Every open descriptor held until `poll` returns, and each one's handles
+     // taken from its held object once: a `close` on another thread meanwhile
+@@ -770,12 +818,12 @@ pub unsafe extern "C" fn poll(fds: *mut pollfd, nfds: u32, timeout: i32) -> i32
+     let streams: alloc::vec::Vec<Option<RawHandle>> = objects().map(|object| object.and_then(crate::socket::stream_of)).collect();
+     let ways = |events: i16| [(POLLIN, Way::Receive), (POLLOUT, Way::Send)].into_iter().filter(move |(flag, _)| events & flag != 0);
+     let doorbells: usize = entries.iter().zip(&streams).filter(|(_, stream)| stream.is_some()).map(|((_, events), _)| ways(*events).count()).sum();
+-    if nfds as usize + doorbells > toyos::poller::Poller::MAX_HANDLES as usize {
+-        crate::errno::set(EINVAL);
+-        return -1;
++    // A C caller asking to watch more than a poller can is not a bug in this
++    // library, so it gets POSIX's own answer for an nfds it cannot serve.
++    if n + doorbells > MAX_POLLED {
++        return Err(EINVAL);
+     }
+ 
+-    let deadline = (timeout >= 0).then(|| toyos_abi::clock::nanos_since_boot().saturating_add(timeout as u64 * 1_000_000));
+     // The descriptors that are no stream, each as the kernel handle it is watched by.
+     let others: alloc::vec::Vec<(i32, i16)> = entries
+         .iter()
+@@ -812,7 +860,8 @@ pub unsafe extern "C" fn poll(fds: *mut pollfd, nfds: u32, timeout: i32) -> i32
+             None => u64::MAX,
+             Some(at) => at.saturating_sub(toyos_abi::clock::nanos_since_boot()),
+         };
+-        let poller = toyos::poller::Poller::new((n + watching.len()) as u32);
++        let wake_token = (n + watching.len()) as u64;
++        let poller = toyos::poller::Poller::new((n + watching.len()) as u32 + 1);
+         for (entry, fd, interest) in crate::pollreq::watches(&others) {
+             if fd >= 0 {
+                 poller.watch_raw(toyos_abi::RawHandle(fd as u32), interest, entry as u64);
+@@ -823,9 +872,15 @@ pub unsafe extern "C" fn poll(fds: *mut pollfd, nfds: u32, timeout: i32) -> i32
+                 poller.watch_raw(*doorbell, toyos::poller::READABLE, (n + k) as u64);
+             }
+         }
++        if let Some(wake) = wake {
++            poller.watch_raw(wake, toyos::poller::READABLE, wake_token);
++        }
+         let mut answered = alloc::vec![false; n + watching.len()];
++        let mut woken = false;
+         poller.wait(if ready_now { 0 } else { 1 }, left, |token| {
+-            if let Some(slot) = answered.get_mut(token as usize) {
++            if token == wake_token {
++                woken = true;
++            } else if let Some(slot) = answered.get_mut(token as usize) {
+                 *slot = true;
+             }
+         });
+@@ -841,11 +896,73 @@ pub unsafe extern "C" fn poll(fds: *mut pollfd, nfds: u32, timeout: i32) -> i32
+         }
+         let ready = revents.iter().filter(|&&r| r != 0).count();
+         let expired = deadline.is_some_and(|at| toyos_abi::clock::nanos_since_boot() >= at);
+-        if ready > 0 || expired {
++        if ready > 0 || expired || woken {
+             for (i, r) in revents.into_iter().enumerate() {
+                 (*fds.add(i)).revents = r;
+             }
+-            return ready as i32;
++            return Ok(Waited { ready: ready as i32, woken });
+         }
+     }
+ }
++
++/// `deadline` from now in `timeout` milliseconds, none for a negative one.
++fn after_ms(timeout: i32) -> Option<u64> {
++    (timeout >= 0).then(|| toyos_abi::clock::nanos_since_boot().saturating_add(timeout as u64 * 1_000_000))
++}
++
++/// `poll`'s and `ppoll`'s work, `mask` the thread's while it waits where
++/// given: the ready count, 0 past the deadline, or `EINTR` once a handler ran,
++/// which no `SA_RESTART` restarts.
++///
++/// # Safety
++/// `fds` points at `n` entries.
++unsafe fn poll_until(fds: *mut pollfd, n: usize, deadline: Option<u64>, mask: Option<u64>) -> i32 {
++    let mut call = Call::enter(mask, false, mask.is_some());
++    loop {
++        if let Some(call) = call.as_mut() {
++            if let Some(delivery) = call.take() {
++                call.interrupted(delivery);
++                return refuse(EINTR);
++            }
++        }
++        match unsafe { wait_fds(fds, n, deadline, call.as_ref().map(Call::wake)) } {
++            Ok(Waited { ready, woken: false }) => return ready,
++            Ok(Waited { ready, .. }) if ready > 0 => return ready,
++            Ok(_) => {}
++            Err(errno) => return refuse(errno),
++        }
++    }
++}
++
++#[no_mangle]
++pub unsafe extern "C" fn poll(fds: *mut pollfd, nfds: u32, timeout: i32) -> i32 {
++    unsafe { poll_until(fds, nfds as usize, after_ms(timeout), None) }
++}
++
++/// `poll` with `sigmask`, when not null, the thread's mask while it waits: a
++/// signal it unblocks is taken there, and once it returns the thread's own
++/// mask is back.
++#[no_mangle]
++pub unsafe extern "C" fn ppoll(fds: *mut pollfd, nfds: u32, timeout: *const Timespec, sigmask: *const u64) -> i32 {
++    let deadline = match unsafe { timeout.as_ref() } {
++        None => None,
++        Some(ts) => match crate::time::nanos_of(ts) {
++            Some(nanos) => Some(toyos_abi::clock::nanos_since_boot().saturating_add(nanos)),
++            None => return refuse(EINVAL),
++        },
++    };
++    let mask = unsafe { sigmask.as_ref() }.copied().unwrap_or_else(crate::signal::mask);
++    unsafe { poll_until(fds, nfds as usize, deadline, Some(mask)) }
++}
++
++/// Wait for a handler to run: `-1` and `EINTR` once one has.
++#[no_mangle]
++pub unsafe extern "C" fn pause() -> i32 {
++    unsafe { poll_until(ptr::null_mut(), 0, None, Some(crate::signal::mask())) }
++}
++
++/// [`pause`], with `mask` the thread's while it waits.
++#[no_mangle]
++pub unsafe extern "C" fn sigsuspend(mask: *const u64) -> i32 {
++    unsafe { poll_until(ptr::null_mut(), 0, None, Some(*mask)) }
++}
+diff --git a/sdk/libc/src/pthread.rs b/sdk/libc/src/pthread.rs
+index 1e9a0d659..81f75f4a1 100644
+--- a/sdk/libc/src/pthread.rs
++++ b/sdk/libc/src/pthread.rs
+@@ -47,8 +47,8 @@ struct Thread {
+     start: StartRoutine,
+     arg: *mut u8,
+     result: AtomicPtr<u8>,
+-    /// Its creator's signal mask, which POSIX has the thread start with.
+-    mask: u64,
++    /// Whether a signal is routed by its mask: every thread but libc's own.
++    counted: bool,
+ }
+ 
+ /// The bit a `pthread_t` of a thread this library did not start carries.
+@@ -64,10 +64,6 @@ static SELF: Cell<*mut Thread> = Cell::new(ptr::null_mut());
+ #[thread_local]
+ static MARKER: u8 = 0;
+ 
+-/// The calling thread's signal mask (`sigmask`).
+-#[thread_local]
+-static MASK: Cell<u64> = Cell::new(0);
+-
+ /// Blocks of detached threads that have ended, for the next creator to reap.
+ static REAPED: Lock<Vec<usize>> = Lock::new(Vec::new());
+ 
+@@ -98,7 +94,6 @@ unsafe extern "C" fn thread_entry(arg: u64) {
+         unsafe { syscall::futex_wait(t.published.as_ptr(), 0, None) };
+     }
+     SELF.set(thread);
+-    MASK.set(t.mask);
+     let result = unsafe { (t.start)(t.arg) };
+     unsafe { exit_thread(result) }
+ }
+@@ -112,6 +107,9 @@ unsafe fn exit_thread(result: *mut u8) -> ! {
+     let thread = SELF.get();
+     if !thread.is_null() {
+         let t = unsafe { &*thread };
++        if t.counted {
++            crate::signal::thread_ended(toyos_abi::current_tid().raw());
++        }
+         t.result.store(result, Ordering::Release);
+         if t.state.swap(EXITED, Ordering::AcqRel) == DETACHED {
+             REAPED.lock().push(thread as usize);
+@@ -127,6 +125,32 @@ pub unsafe extern "C" fn pthread_create(
+     start_routine: StartRoutine,
+     arg: *mut u8,
+ ) -> i32 {
++    match unsafe { create(attr, start_routine, arg, true) } {
++        Ok(block) => {
++            if !thread.is_null() {
++                unsafe { *thread = block as PthreadT };
++            }
++            0
++        }
++        Err(errno) => errno,
++    }
++}
++
++/// A detached thread of libc's own running `start`, which no signal is
++/// routed by.
++pub(crate) fn spawn_own(start: StartRoutine) {
++    let attr = attr_default() | ATTR_DETACHED;
++    // SAFETY: `attr` is a `pthread_attr_t`, and `start` takes no argument.
++    let started = unsafe { create(&attr, start, ptr::null_mut(), false) };
++    started.expect("libc: no thread of its own");
++}
++
++/// Start a thread, `counted` among those a signal is routed by: its block,
++/// or an `errno`.
++///
++/// # Safety
++/// `attr` is null or a `pthread_attr_t`, and `start_routine` takes `arg`.
++unsafe fn create(attr: *const u64, start_routine: StartRoutine, arg: *mut u8, counted: bool) -> Result<*mut Thread, i32> {
+     let reaped = core::mem::take(&mut *REAPED.lock());
+     for block in reaped {
+         unsafe { reap(block as *mut Thread) };
+@@ -136,7 +160,7 @@ pub unsafe extern "C" fn pthread_create(
+     let stack_size = (attr & !ATTR_DETACHED) as usize;
+     let stack = unsafe { heap_alloc(stack_layout(stack_size)) };
+     if stack.is_null() {
+-        return EAGAIN;
++        return Err(EAGAIN);
+     }
+     let state = if attr & ATTR_DETACHED != 0 { DETACHED } else { JOINABLE };
+     let block = Box::into_raw(Box::new(Thread {
+@@ -148,7 +172,7 @@ pub unsafe extern "C" fn pthread_create(
+         start: start_routine,
+         arg,
+         result: AtomicPtr::new(ptr::null_mut()),
+-        mask: MASK.get(),
++        counted,
+     }));
+     let top = (stack as usize + stack_size) & !(STACK_ALIGN - 1);
+     // SAFETY: the entry is a function of this library, and the stack is a
+@@ -159,7 +183,11 @@ pub unsafe extern "C" fn pthread_create(
+             heap_dealloc(stack, stack_layout(stack_size));
+             drop(Box::from_raw(block));
+         }
+-        return EAGAIN;
++        return Err(EAGAIN);
++    }
++    // Before it runs: it starts with its creator's mask, as POSIX has it.
++    if counted {
++        crate::signal::thread_started(tid as u32, crate::signal::mask());
+     }
+     // Taken before the store: once `published` is set the thread may run, end
+     // detached and be reaped, so nothing after it reads the block.
+@@ -171,10 +199,7 @@ pub unsafe extern "C" fn pthread_create(
+     // At a freed block's address this is a spurious wake, which every futex
+     // waiter here re-checks its word against.
+     unsafe { syscall::futex_wake(published, u32::MAX) };
+-    if !thread.is_null() {
+-        unsafe { *thread = block as PthreadT };
+-    }
+-    0
++    Ok(block)
+ }
+ 
+ #[no_mangle]
+@@ -228,27 +253,27 @@ pub extern "C" fn pthread_equal(t1: PthreadT, t2: PthreadT) -> i32 {
+     (t1 == t2) as i32
+ }
+ 
+-/// The calling thread's signal mask, as `pthread_sigmask` keeps it.
+-pub(crate) fn mask() -> u64 {
+-    MASK.get()
+-}
+-
+ /// The calling thread's signal mask, changed as `how` says when `set` is not
+-/// null, answered in `old` when that is not. The mask is kept, answered and
+-/// inherited; a blocked signal is never held pending, so `raise` refuses it.
++/// null, answered in `old` when that is not. A pending signal the change
++/// unblocks is delivered before this returns. `ENOSYS`, the mask unchanged,
++/// for blocking a quit's signal in a process that holds no notice to listen to.
+ #[no_mangle]
+ pub unsafe extern "C" fn pthread_sigmask(how: i32, set: *const u64, old: *mut u64) -> i32 {
+-    let mask = MASK.get();
+-    if !set.is_null() {
+-        match crate::sigmask::changed(mask, how, unsafe { *set }) {
+-            Some(next) => MASK.set(next),
++    let mask = crate::signal::mask();
++    let next = match unsafe { set.as_ref() } {
++        None => None,
++        Some(&set) => match crate::sigmask::changed(mask, how, set) {
++            Some(next) => Some(next),
+             None => return EINVAL,
+-        }
+-    }
++        },
++    };
+     if !old.is_null() {
+         unsafe { *old = mask };
+     }
+-    0
++    match next.map(crate::signal::set_mask) {
++        Some(Err(errno)) => errno,
++        Some(Ok(())) | None => 0,
++    }
+ }
+ 
+ #[no_mangle]
+diff --git a/sdk/libc/src/sigmask.rs b/sdk/libc/src/sigmask.rs
+index f02c8c804..5865da7ca 100644
+--- a/sdk/libc/src/sigmask.rs
++++ b/sdk/libc/src/sigmask.rs
+@@ -26,6 +26,12 @@ pub(crate) fn with(set: u64, signo: i32) -> Option<u64> {
+     Some(set | 1 << (n - 1))
+ }
+ 
++/// `set` without signal `signo`, or `None` for a number no bit stands for,
++/// which POSIX's `sigdelset` refuses `EINVAL`.
++pub(crate) fn without(set: u64, signo: i32) -> Option<u64> {
++    Some(set & !with(0, signo)?)
++}
++
+ /// `mask` changed by `set` as `how` says, or `None` for a `how` that is none
+ /// of the three, which POSIX refuses `EINVAL`.
+ pub(crate) fn changed(mask: u64, how: i32, set: u64) -> Option<u64> {
+diff --git a/sdk/libc/src/signal.rs b/sdk/libc/src/signal.rs
+new file mode 100644
+index 000000000..9162a5e99
+--- /dev/null
++++ b/sdk/libc/src/signal.rs
+@@ -0,0 +1,558 @@
++//! The signals libc imitates, delivered: libc's own thread, which raises them
++//! from the events they stand for, the wake pipe a blocking call watches
++//! beside what it waits for, and the handlers' runs. Where each goes is
++//! `sigreq`'s.
++//!
++//! **libc's own thread starts with the first thing it watches**: an alarm, a
++//! `SIGCHLD` handler, or the process's notice. It watches every child whose
++//! end has not raised `SIGCHLD`, at most [`crate::spawn::MAX_CHILDREN`],
++//! beside its control pipe and the notice, which fills one poller.
++//!
++//! **libc listens to the notice once a quit's signal is off its default or
++//! blocked**, before the call that put it there returns: until then a quit
++//! kills the process, which is what the default would do. A reason read is
++//! raised as `SIGINT`, `SIGHUP` or `SIGTERM`.
++
++use core::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering};
++
++use toyos::poller::{Poller, READABLE};
++use toyos::quit::Reason;
++use toyos_abi::syscall::{self, SyscallError};
++use toyos_abi::RawHandle;
++
++use crate::errcode::ENOSYS;
++use crate::pthread::Lock;
++use crate::sigreq::{Delivery, Kept, Raised, SigAction, Signals, SIGALRM, SIGCHLD, SIGHUP, SIGINT, SIGTERM};
++
++/// The ends of a pipe this library made and never closes.
++#[derive(Clone, Copy)]
++struct Pipe {
++    read: RawHandle,
++    write: RawHandle,
++}
++
++impl Pipe {
++    fn new() -> Self {
++        let ends = syscall::pipe().expect("signals: no pipe for libc's own use");
++        Self { read: ends.read, write: ends.write }
++    }
++
++    /// One byte in, or none if one is already there to be read.
++    fn knock(&self) {
++        match syscall::write_nonblock(self.write, &[0]) {
++            Ok(_) | Err(SyscallError::WouldBlock) => {}
++            Err(e) => panic!("signals: a pipe of libc's own refused a byte: {e:?}"),
++        }
++    }
++
++    /// Every byte out.
++    fn drain(&self) {
++        let mut buf = [0u8; 64];
++        while matches!(syscall::read_nonblock(self.read, &mut buf), Ok(n) if n > 0) {}
++    }
++}
++
++struct State {
++    signals: Signals,
++    /// The pipe each interruptible blocking call watches, made by the first.
++    wake: Option<Pipe>,
++    /// Whether `wake` holds its byte.
++    woken: bool,
++    /// libc's own thread's control pipe, once it runs.
++    keeper: Option<Pipe>,
++    /// When the alarm is due, in the monotonic clock's nanoseconds.
++    alarm: Option<u64>,
++    /// Whether this process listens to its notice, which it does for good.
++    listening: bool,
++    /// Children a wait took before libc's own thread saw them end, each owed
++    /// its `SIGCHLD`.
++    unseen_ends: u32,
++    /// The mask a handler running on libc's own thread set, which routes
++    /// nothing and lasts that run.
++    keeper_mask: u64,
++}
++
++static STATE: Lock<State> = Lock::new(State {
++    signals: Signals::new(),
++    wake: None,
++    woken: false,
++    keeper: None,
++    alarm: None,
++    listening: false,
++    unseen_ends: 0,
++    keeper_mask: 0,
++});
++
++/// libc's own thread's tid, `u32::MAX` before it runs.
++static KEEPER: AtomicU32 = AtomicU32::new(u32::MAX);
++
++/// The signals whose handlers run on libc's own thread now, decided under
++/// the lock: a mask that newly blocks one waits until its run ends, so a
++/// block a program makes excludes the handler it blocks.
++static RUNNING: AtomicU64 = AtomicU64::new(0);
++
++/// Moved at every run's end on libc's own thread, which such a mask waits on.
++static RAN: AtomicU32 = AtomicU32::new(0);
++
++fn on_keeper(tid: u32) -> bool {
++    KEEPER.load(Ordering::Acquire) == tid
++}
++
++/// Whether any handler is kept, read without the lock by a blocking call
++/// deciding whether it can be interrupted, and written under it.
++static HANDLERS: AtomicBool = AtomicBool::new(false);
++
++impl State {
++    /// The wake pipe's byte made to agree with `Signals::wake_wanted`.
++    fn settle(&mut self) {
++        let Some(wake) = self.wake else { return };
++        match (self.signals.wake_wanted(), self.woken) {
++            (true, false) => wake.knock(),
++            (false, true) => wake.drain(),
++            _ => return,
++        }
++        self.woken = !self.woken;
++    }
++
++    /// libc's own thread, started if it does not run, looks at what it
++    /// watches again.
++    fn kick(&mut self) {
++        let keeper = *self.keeper.get_or_insert_with(|| {
++            crate::pthread::spawn_own(keep);
++            Pipe::new()
++        });
++        keeper.knock();
++    }
++
++    /// Listen to the notice if the signals now ask it: `ENOSYS` when this
++    /// process holds no notice to listen to, so a quit would kill it.
++    fn listen(&mut self) -> Result<(), i32> {
++        if self.listening || !self.signals.listens() {
++            return Ok(());
++        }
++        let notice = toyos::quit::notice().ok_or(ENOSYS)?;
++        notice.listen().map_err(|_| ENOSYS)?;
++        self.listening = true;
++        self.kick();
++        Ok(())
++    }
++}
++
++fn tid() -> u32 {
++    toyos_abi::current_tid().raw()
++}
++
++/// `sigaction`'s work: `sig`'s action made `new`, if any, and the old one
++/// answered. Refused, the action unchanged, where the process would have to
++/// listen to a notice it does not hold.
++pub(crate) fn act(sig: i32, new: Option<SigAction>) -> Result<SigAction, i32> {
++    let mut state = STATE.lock();
++    let old = state.signals.act(sig, new)?;
++    if let Err(errno) = state.listen() {
++        state.signals.act(sig, Some(old)).expect("an action just kept is kept again");
++        return Err(errno);
++    }
++    HANDLERS.store(state.signals.any_handler(), Ordering::Relaxed);
++    let children = (sig == SIGCHLD).then(|| state.signals.kept(SIGCHLD));
++    if let Some(Kept::Handle(_)) = children {
++        // A child that ended before the handler was kept raises nothing.
++        crate::spawn::mark_ended_raised();
++        state.kick();
++    }
++    state.settle();
++    drop(state);
++    if children == Some(Kept::Ignore) {
++        crate::spawn::forget_ended();
++    }
++    Ok(old)
++}
++
++/// Whether `SIGCHLD` is ignored, so an ended child is kept for no wait.
++pub(crate) fn children_ignored() -> bool {
++    STATE.lock().signals.kept(SIGCHLD) == Kept::Ignore
++}
++
++/// A child was started, or a wait took one libc's own thread had not seen
++/// end, which is owed its `SIGCHLD`.
++pub(crate) fn children_changed(unseen_end: bool) {
++    let mut state = STATE.lock();
++    state.signals.children_changed();
++    if let Kept::Handle(_) = state.signals.kept(SIGCHLD) {
++        state.unseen_ends += u32::from(unseen_end);
++        state.kick();
++    }
++    state.settle();
++}
++
++/// Arm the alarm for `seconds` from now, none for 0, and answer the seconds
++/// the one it replaces had left.
++pub(crate) fn alarm(seconds: u32) -> u32 {
++    let now = toyos_abi::clock::nanos_since_boot();
++    let mut state = STATE.lock();
++    let left = crate::alarmreq::left(state.alarm, now);
++    state.alarm = crate::alarmreq::due(now, seconds);
++    if state.alarm.is_some() || state.keeper.is_some() {
++        state.kick();
++    }
++    left
++}
++
++/// What is pending, as `sigpending` answers it.
++pub(crate) fn pending() -> u64 {
++    STATE.lock().signals.pending()
++}
++
++/// The calling thread's mask.
++pub(crate) fn mask() -> u64 {
++    let state = STATE.lock();
++    match on_keeper(tid()) {
++        true => state.keeper_mask,
++        false => state.signals.mask(tid()),
++    }
++}
++
++/// `raise(sig)` in the calling thread: `Err` with an `errno` for a signal it
++/// cannot raise.
++pub(crate) fn raise(sig: i32) -> Result<(), i32> {
++    let raised = {
++        let mut state = STATE.lock();
++        let raised = match on_keeper(tid()) {
++            true => {
++                let mask = state.keeper_mask;
++                crate::sigreq::raised(sig, state.signals.kept(sig), mask)
++            }
++            false => state.signals.raise(tid(), sig),
++        };
++        state.settle();
++        raised
++    };
++    match raised {
++        Raised::Deliver(delivery) => {
++            run(delivery, Some(tid()));
++            Ok(())
++        }
++        Raised::Nothing | Raised::Pending => Ok(()),
++        Raised::Refused(errno) => Err(errno),
++    }
++}
++
++/// The calling thread's mask is now `mask`: once a handler running on
++/// libc's own thread for a signal it newly blocks has ended, and with
++/// whatever was pending that it leaves unblocked delivered before this
++/// returns. Refused `ENOSYS`, the mask unchanged, on a thread neither the
++/// first nor libc's, and where the process would have to listen to a notice
++/// it does not hold.
++pub(crate) fn set_mask(mask: u64) -> Result<(), i32> {
++    let tid = tid();
++    if on_keeper(tid) {
++        // A handler's own: it routes nothing.
++        STATE.lock().keeper_mask = mask;
++        return Ok(());
++    }
++    let newly = {
++        let mut state = STATE.lock();
++        let old = state.signals.mask(tid);
++        if !state.signals.set_mask(tid, mask) {
++            return Err(ENOSYS);
++        }
++        if let Err(errno) = state.listen() {
++            state.signals.set_mask(tid, old);
++            return Err(errno);
++        }
++        mask & !old
++    };
++    loop {
++        let ran = RAN.load(Ordering::Acquire);
++        if RUNNING.load(Ordering::Acquire) & newly == 0 {
++            break;
++        }
++        // SAFETY: `RAN` is a live, aligned u32.
++        unsafe { syscall::futex_wait(RAN.as_ptr(), ran, None) };
++    }
++    deliver_pending(tid);
++    Ok(())
++}
++
++/// Deliver, on thread `tid`, every signal pending its mask leaves unblocked.
++fn deliver_pending(tid: u32) {
++    while let Some(delivery) = {
++        let mut state = STATE.lock();
++        let mask = state.signals.mask(tid);
++        let taken = state.signals.take(mask);
++        state.settle();
++        taken
++    } {
++        run(delivery, Some(tid));
++    }
++}
++
++/// A thread libc started runs from now with `mask`, its creator's.
++pub(crate) fn thread_started(tid: u32, mask: u64) {
++    STATE.lock().signals.thread_started(tid, mask);
++}
++
++pub(crate) fn thread_ended(tid: u32) {
++    STATE.lock().signals.thread_ended(tid);
++}
++
++/// Run what a thread took: the default action's end, or the handler, on
++/// thread `tid` with its mask widened for the run, or on libc's own thread
++/// for `None`. Answers whether the call it interrupted restarts.
++pub(crate) fn run(delivery: Delivery, tid: Option<u32>) -> bool {
++    let (sig, handler, siginfo, mask, restart) = match delivery {
++        Delivery::End(code) => crate::misc::end(code),
++        Delivery::Handle { sig, handler, siginfo, mask, restart } => (sig, handler, siginfo, mask, restart),
++    };
++    let before = tid.map(|tid| {
++        let mut state = STATE.lock();
++        let before = state.signals.mask(tid);
++        state.signals.set_mask(tid, before | mask);
++        before
++    });
++    if siginfo {
++        let mut info = SigInfo::of(sig);
++        // SAFETY: an `SA_SIGINFO` handler the program kept, called as
++        // `<signal.h>`'s `sa_sigaction` is typed.
++        let handler: extern "C" fn(i32, *mut SigInfo, *mut u8) = unsafe { core::mem::transmute(handler) };
++        handler(sig, &mut info, core::ptr::null_mut());
++    } else {
++        // SAFETY: a handler the program kept, called as `<signal.h>`'s
++        // `sa_handler` is typed.
++        let handler: extern "C" fn(i32) = unsafe { core::mem::transmute(handler) };
++        handler(sig);
++    }
++    if let (Some(tid), Some(before)) = (tid, before) {
++        STATE.lock().signals.set_mask(tid, before);
++        deliver_pending(tid);
++    }
++    restart
++}
++
++/// `<signal.h>`'s `siginfo_t`: the signal, and nothing a ToyOS event says more.
++#[repr(C)]
++struct SigInfo {
++    signo: i32,
++    errno: i32,
++    code: i32,
++    rest: [u64; 13],
++}
++
++impl SigInfo {
++    fn of(sig: i32) -> Self {
++        Self { signo: sig, errno: 0, code: 0, rest: [0; 13] }
++    }
++}
++
++/// A thread inside a blocking call a handler can interrupt: it watches
++/// [`Call::wake`] beside what it waits for.
++pub(crate) struct Call {
++    tid: u32,
++    mask: u64,
++    children: bool,
++    wake: RawHandle,
++    inside: bool,
++}
++
++impl Call {
++    /// Enter a blocking call that blocks `mask` while inside, the thread's own
++    /// for `None`, waiting for children where `children`. `None` when nothing
++    /// could interrupt it: no handler is kept, it waits for no child, and it
++    /// was not asked to wait `for_signals`.
++    pub(crate) fn enter(mask: Option<u64>, children: bool, for_signals: bool) -> Option<Self> {
++        if !children && !for_signals && !HANDLERS.load(Ordering::Relaxed) {
++            return None;
++        }
++        let tid = tid();
++        let mut state = STATE.lock();
++        let mask = mask.unwrap_or_else(|| state.signals.mask(tid));
++        let wake = state.wake.get_or_insert_with(Pipe::new).read;
++        state.signals.enter(tid, mask, children);
++        state.settle();
++        Some(Self { tid, mask, children, wake, inside: true })
++    }
++
++    /// What a blocking call watches, readable when it has something to look at.
++    pub(crate) fn wake(&self) -> RawHandle {
++        self.wake
++    }
++
++    /// A signal the call takes, which it leaves the call to run.
++    pub(crate) fn take(&mut self) -> Option<Delivery> {
++        let mut state = STATE.lock();
++        let taken = state.signals.take(self.mask)?;
++        state.signals.leave(self.tid);
++        self.inside = false;
++        state.settle();
++        Some(taken)
++    }
++
++    /// Run what [`Call::take`] took, answering whether the call restarts, and
++    /// enter it again if it does.
++    pub(crate) fn interrupted(&mut self, delivery: Delivery) -> bool {
++        let restart = run(delivery, Some(self.tid));
++        if restart {
++            let mut state = STATE.lock();
++            state.signals.enter(self.tid, self.mask, self.children);
++            self.inside = true;
++            state.settle();
++        }
++        restart
++    }
++
++    /// The children are looked at now.
++    pub(crate) fn children_seen(&self) {
++        let mut state = STATE.lock();
++        state.signals.children_seen(self.tid);
++        state.settle();
++    }
++}
++
++impl Drop for Call {
++    /// A signal the call would have taken and did not is delivered here,
++    /// before the call returns, where the thread's own mask leaves it
++    /// unblocked, and else goes to libc's own thread if another thread does.
++    fn drop(&mut self) {
++        if self.inside {
++            let mut state = STATE.lock();
++            state.signals.leave(self.tid);
++            state.settle();
++        }
++        if !on_keeper(self.tid) {
++            deliver_pending(self.tid);
++        }
++        let mut state = STATE.lock();
++        if state.signals.has_orphan() {
++            state.kick();
++        }
++    }
++}
++
++/// Sleep `nanos`, or until a handler interrupts it: `Err` with the
++/// nanoseconds left then.
++pub(crate) fn sleep(nanos: u64) -> Result<(), u64> {
++    let Some(mut call) = Call::enter(None, false, false) else {
++        syscall::nanosleep(nanos);
++        return Ok(());
++    };
++    let due = toyos_abi::clock::nanos_since_boot().saturating_add(nanos);
++    loop {
++        if let Some(delivery) = call.take() {
++            call.interrupted(delivery);
++            return Err(due.saturating_sub(toyos_abi::clock::nanos_since_boot()));
++        }
++        let left = due.saturating_sub(toyos_abi::clock::nanos_since_boot());
++        if left == 0 {
++            return Ok(());
++        }
++        let poller = Poller::new(1);
++        poller.watch_raw(call.wake(), READABLE, 0);
++        poller.wait(1, left, |_| {});
++    }
++}
++
++/// The signal a quit's reason is raised as.
++fn signal_of(reason: Reason) -> i32 {
++    match reason {
++        Reason::Interrupt => SIGINT,
++        Reason::HangUp => SIGHUP,
++        Reason::Terminate => SIGTERM,
++    }
++}
++
++/// libc's own thread: it raises `SIGCHLD` once per child that ends while a
++/// handler is kept for it, `SIGALRM` when the alarm is due, and a quit's
++/// signal for each reason it reads, and delivers what no thread in a
++/// blocking call takes.
++unsafe extern "C" fn keep(_: *mut u8) -> *mut u8 {
++    const CONTROL: u64 = u64::MAX;
++    const NOTICE: u64 = u64::MAX - 1;
++    KEEPER.store(tid(), Ordering::Release);
++    let poller = Poller::new(Poller::MAX_HANDLES);
++    // A copy of each watched child's handle, kept until it raises or is
++    // reaped, so no watch is armed on a number another handle takes.
++    let mut children: alloc::vec::Vec<(i32, toyos::OwnedHandle)> = alloc::vec::Vec::new();
++    loop {
++        let (control, listening, due) = {
++            let state = STATE.lock();
++            let control = state.keeper.expect("libc's own thread runs only once its pipe is made").read;
++            let watched = match state.signals.kept(SIGCHLD) {
++                Kept::Handle(_) => crate::spawn::unraised(),
++                _ => alloc::vec::Vec::new(),
++            };
++            children.retain(|(pid, _)| watched.contains(pid));
++            for pid in watched {
++                if !children.iter().any(|(p, _)| *p == pid) {
++                    children.extend(crate::spawn::copy_of(pid).map(|copy| (pid, copy)));
++                }
++            }
++            (control, state.listening, state.alarm)
++        };
++        poller.watch_raw(control, READABLE, CONTROL);
++        if listening {
++            let notice = toyos::quit::notice().expect("libc listens only to a notice it holds");
++            poller.watch(notice, READABLE, NOTICE);
++        }
++        for (pid, handle) in &children {
++            poller.watch(handle, READABLE, *pid as u64);
++        }
++        let wait = due.map_or(u64::MAX, |due| due.saturating_sub(toyos_abi::clock::nanos_since_boot()));
++        let mut ended = alloc::vec::Vec::new();
++        let (mut kicked, mut asked) = (false, false);
++        poller.wait(u32::from(wait != 0), wait, |token| match token {
++            CONTROL => kicked = true,
++            NOTICE => asked = true,
++            pid => ended.push(pid as i32),
++        });
++        if kicked {
++            STATE.lock().keeper.expect("made before this thread ran").drain();
++        }
++        let mut raised = alloc::vec::Vec::new();
++        if asked {
++            let notice = toyos::quit::notice().expect("libc listens only to a notice it holds");
++            while let Ok(Some(reason)) = notice.try_read() {
++                raised.push(signal_of(reason));
++            }
++        }
++        let ends = ended.into_iter().filter(|&pid| crate::spawn::raise(pid)).count();
++        let mut deliveries = alloc::vec::Vec::new();
++        {
++            let mut state = STATE.lock();
++            if ends > 0 || state.unseen_ends > 0 {
++                state.unseen_ends = 0;
++                raised.push(SIGCHLD);
++            }
++            if state.alarm.is_some_and(|due| due <= toyos_abi::clock::nanos_since_boot()) {
++                state.alarm = None;
++                raised.push(SIGALRM);
++            }
++            for sig in raised {
++                if let Raised::Deliver(delivery) = state.signals.arrive(sig) {
++                    deliveries.push(delivery);
++                }
++            }
++            while let Some(orphan) = state.signals.orphan() {
++                deliveries.push(orphan);
++            }
++            let running = deliveries.iter().fold(0, |all, d| match d {
++                Delivery::Handle { sig, .. } => all | crate::sigreq::bit(*sig),
++                Delivery::End(_) => all,
++            });
++            RUNNING.store(running, Ordering::Release);
++            state.settle();
++        }
++        for delivery in deliveries {
++            let sig = match delivery {
++                Delivery::Handle { sig, .. } => Some(sig),
++                Delivery::End(_) => None,
++            };
++            run(delivery, None);
++            STATE.lock().keeper_mask = 0;
++            if let Some(sig) = sig {
++                RUNNING.fetch_and(!crate::sigreq::bit(sig), Ordering::Release);
++                RAN.fetch_add(1, Ordering::Release);
++                // SAFETY: `RAN` is a live, aligned u32.
++                unsafe { syscall::futex_wake(RAN.as_ptr(), u32::MAX) };
++            }
++        }
++    }
++}
+diff --git a/sdk/libc/src/sigreq.rs b/sdk/libc/src/sigreq.rs
+index 6e7d0b353..c7ace0d91 100644
+--- a/sdk/libc/src/sigreq.rs
++++ b/sdk/libc/src/sigreq.rs
+@@ -1,98 +1,401 @@
+-//! What `signal` and `sigaction` decide before a disposition is kept. libc
+-//! delivers no signal to a handler, so a handler is refused rather than kept
+-//! and never called; what can be kept is a disposition that is already true,
+-//! the default or ignoring a signal nothing raises. It reads nothing but what
+-//! it is handed, so the host tests it (`toyos-libc-copies`).
++//! What libc's signals decide: what `signal` and `sigaction` keep, what a
++//! signal raised does, and which thread takes it. It reads and sets nothing
++//! but what it is handed, so the host tests it (`toyos-libc-copies`); what it
++//! decides is performed by `signal.rs`.
++//!
++//! **A handler is kept only for a signal an event raises**: `SIGCHLD` a
++//! child's end, `SIGALRM` an alarm come due, and `SIGHUP`, `SIGINT` and
++//! `SIGTERM` the three reasons a quit asks. A handler for any other would
++//! never be called, so it is refused `EINVAL`. `raise` raises any signal,
++//! which its disposition decides.
++//!
++//! **A signal raised runs at once, beside the program**: in a blocking call of
++//! a thread that leaves it unblocked, or else on libc's own thread while some
++//! thread leaves it unblocked. While every thread blocks it, it is pending
++//! until one unblocks it, and a signal pending that no blocking call takes
++//! goes to libc's own thread once some thread leaves it unblocked. The
++//! threads a signal is routed by are the first (tid 0) and each one libc
++//! started: no other thread may set a mask, since nothing tells libc when it
++//! ends, and libc's own thread is none of them.
++
++use alloc::vec::Vec;
+ 
+ use crate::alarmreq::{SIG_DFL, SIG_IGN};
+-use crate::errcode::EINVAL;
++use crate::errcode::{EINVAL, ENOSYS};
+ 
+ /// The signal numbers `signal.h`'s `sigset_t` holds.
+ pub(crate) const SIGNALS: usize = 64;
+ 
+-const SIGKILL: i32 = 9;
+-const SIGCHLD: i32 = 17;
++pub(crate) const SIGHUP: i32 = 1;
++pub(crate) const SIGINT: i32 = 2;
++pub(crate) const SIGKILL: i32 = 9;
++pub(crate) const SIGALRM: i32 = 14;
++pub(crate) const SIGTERM: i32 = 15;
++pub(crate) const SIGCHLD: i32 = 17;
++const SIGCONT: i32 = 18;
+ const SIGSTOP: i32 = 19;
++const SIGTSTP: i32 = 20;
++const SIGTTIN: i32 = 21;
++const SIGTTOU: i32 = 22;
++const SIGURG: i32 = 23;
++const SIGWINCH: i32 = 28;
++
++const SA_SIGINFO: u64 = 4;
++pub(crate) const SA_RESTART: u64 = 0x1000_0000;
++const SA_NODEFER: u64 = 0x4000_0000;
++const SA_RESETHAND: u64 = 0x8000_0000;
++
++/// Signal `sig`'s bit in a `sigset_t`; `sig` is one of [`SIGNALS`].
++pub(crate) const fn bit(sig: i32) -> u64 {
++    1 << (sig - 1)
++}
++
++/// What a quit's three reasons are raised as.
++pub(crate) const QUITS: u64 = bit(SIGHUP) | bit(SIGINT) | bit(SIGTERM);
++
++/// What an event raises, and so what a handler may be kept for.
++const RAISED_BY_EVENTS: u64 = QUITS | bit(SIGCHLD) | bit(SIGALRM);
++
++/// What no disposition changes and no mask holds.
++const UNCATCHABLE: u64 = bit(SIGKILL) | bit(SIGSTOP);
++
++/// Whose default action leaves the process running.
++const DEFAULT_IGNORES: u64 = bit(SIGCHLD) | bit(SIGCONT) | bit(SIGURG) | bit(SIGWINCH);
+ 
+-/// What a signal's disposition may be set to here.
++/// Whose default action stops the process, which ToyOS has no state for.
++const DEFAULT_STOPS: u64 = bit(SIGSTOP) | bit(SIGTSTP) | bit(SIGTTIN) | bit(SIGTTOU);
++
++/// `<signal.h>`'s `struct sigaction`.
++#[repr(C)]
+ #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+-pub(crate) enum Kept {
+-    Default,
+-    Ignore,
++pub struct SigAction {
++    pub(crate) handler: usize,
++    pub(crate) flags: u64,
++    pub(crate) restorer: usize,
++    pub(crate) mask: u64,
+ }
+ 
+-impl Kept {
+-    /// As `signal.h` spells it.
+-    pub(crate) const fn handler(self) -> usize {
+-        match self {
+-            Self::Default => SIG_DFL,
+-            Self::Ignore => SIG_IGN,
+-        }
++impl SigAction {
++    /// The action of `handler` alone, as `signal` makes one.
++    pub(crate) const fn of(handler: usize) -> Self {
++        Self { handler, flags: 0, restorer: 0, mask: 0 }
+     }
+ }
+ 
++/// A signal's disposition, as its kept action makes it.
++#[derive(Clone, Copy, Debug, PartialEq, Eq)]
++pub(crate) enum Kept {
++    Default,
++    Ignore,
++    /// A function, with the flags and the mask it was installed with.
++    Handle(SigAction),
++}
++
+ /// The index of signal `signum` in a table of [`SIGNALS`], or `EINVAL` for a
+ /// number that names none.
+ pub(crate) fn index(signum: i32) -> Result<usize, i32> {
+     usize::try_from(signum).ok().filter(|&n| (1..=SIGNALS).contains(&n)).map(|n| n - 1).ok_or(EINVAL)
+ }
+ 
+-/// What setting `signum`'s disposition to `handler` keeps, or the `errno` it
+-/// is refused with:
+-/// - a number that names no signal, and `SIGKILL` and `SIGSTOP`, whose
+-///   dispositions POSIX lets nobody change, are `EINVAL`;
+-/// - a function is `EINVAL`, as no handler is ever called;
+-/// - ignoring `SIGCHLD` is `EINVAL`, as it would ask that ended children be
+-///   reaped unwaited, which libc does not do.
+-pub(crate) fn set(signum: i32, handler: usize) -> Result<Kept, i32> {
++/// The action setting `signum`'s to `action` keeps, whole as `sigaction`
++/// answers it but for `SIGKILL` and `SIGSTOP` in its mask, or the `errno` it
++/// is refused with: `EINVAL` for a number that names no signal, for
++/// `SIGKILL`'s and `SIGSTOP`'s, whose dispositions POSIX lets nobody change,
++/// and for a handler of a signal no event raises.
++pub(crate) fn set(signum: i32, action: SigAction) -> Result<SigAction, i32> {
+     index(signum)?;
+-    match (signum, handler) {
+-        (SIGKILL | SIGSTOP, _) => Err(EINVAL),
+-        (_, SIG_DFL) => Ok(Kept::Default),
+-        (SIGCHLD, SIG_IGN) => Err(EINVAL),
+-        (_, SIG_IGN) => Ok(Kept::Ignore),
+-        _ => Err(EINVAL),
++    if bit(signum) & UNCATCHABLE != 0 {
++        return Err(EINVAL);
+     }
++    let handles = !matches!(action.handler, SIG_DFL | SIG_IGN);
++    if handles && bit(signum) & RAISED_BY_EVENTS == 0 {
++        return Err(EINVAL);
++    }
++    Ok(SigAction { mask: action.mask & !UNCATCHABLE, ..action })
+ }
+ 
+-/// What `raise` of a signal under disposition `kept` does: no handler is ever
+-/// installed, so the disposition is all there is.
++/// The disposition an action makes.
++pub(crate) fn kept(action: SigAction) -> Kept {
++    match action.handler {
++        SIG_DFL => Kept::Default,
++        SIG_IGN => Kept::Ignore,
++        _ => Kept::Handle(action),
++    }
++}
++
++/// What the thread that takes a signal does.
++#[derive(Clone, Copy, Debug, PartialEq, Eq)]
++pub(crate) enum Delivery {
++    /// End the process with this code, the default action's: 128 plus the
++    /// signal, as a shell reads one.
++    End(i32),
++    /// Run the handler at `handler` for `sig`, with `mask` added to the
++    /// thread's for its run.
++    Handle { sig: i32, handler: usize, siginfo: bool, mask: u64, restart: bool },
++}
++
++/// What a signal raised does.
+ #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+ pub(crate) enum Raised {
+-    /// Ignored, by the program or by the signal's default action.
++    /// Ignored, by the program or by the signal's default action, or pending
++    /// already.
+     Nothing,
+-    /// The default action ends the process, with exit code 128 plus the
+-    /// signal's number, as an unhandled quit reason does.
+-    End(i32),
+-    /// Refused with this `errno`: a number that names no signal; a default
+-    /// action that stops the process, which ToyOS has no state for; or a
+-    /// signal the calling thread blocks, which POSIX holds pending and libc
+-    /// keeps no pending state for.
++    /// It waits pending: for a thread in a blocking call to take it, or for
++    /// one to unblock it.
++    Pending,
++    /// Delivered now, on the raising thread or libc's own.
++    Deliver(Delivery),
++    /// Refused with this `errno`: a number that names no signal, or a default
++    /// action that stops the process.
+     Refused(i32),
+ }
+ 
+-const SIGCONT: i32 = 18;
+-const SIGTSTP: i32 = 20;
+-const SIGTTIN: i32 = 21;
+-const SIGTTOU: i32 = 22;
+-const SIGURG: i32 = 23;
+-const SIGWINCH: i32 = 28;
+-
+-/// What `raise` of `signum` does under disposition `kept`, with the calling
+-/// thread's signal `mask`, signal `n` its bit `n - 1`.
++/// What `raise` of `signum` does under disposition `kept` in a thread whose
++/// mask is `mask`.
+ pub(crate) fn raised(signum: i32, kept: Kept, mask: u64) -> Raised {
+-    let n = match index(signum) {
+-        Ok(n) => n,
+-        Err(errno) => return Raised::Refused(errno),
+-    };
+-    if mask & (1 << n) != 0 && kept == Kept::Default {
+-        return Raised::Refused(crate::errcode::ENOSYS);
+-    }
+-    match (signum, kept) {
+-        (SIGKILL, _) => Raised::End(128 + SIGKILL),
+-        (_, Kept::Ignore) => Raised::Nothing,
+-        (SIGCHLD | SIGCONT | SIGURG | SIGWINCH, Kept::Default) => Raised::Nothing,
+-        (SIGSTOP | SIGTSTP | SIGTTIN | SIGTTOU, Kept::Default) => Raised::Refused(crate::errcode::ENOSYS),
+-        (_, Kept::Default) => Raised::End(128 + signum),
++    if let Err(errno) = index(signum) {
++        return Raised::Refused(errno);
++    }
++    match delivery(signum, kept) {
++        Err(errno) => Raised::Refused(errno),
++        Ok(None) => Raised::Nothing,
++        Ok(Some(_)) if mask & bit(signum) & !UNCATCHABLE != 0 => Raised::Pending,
++        Ok(Some(delivery)) => Raised::Deliver(delivery),
++    }
++}
++
++/// What taking `signum` under `kept` does: `None` for one ignored, `ENOSYS`
++/// for a default that stops.
++fn delivery(signum: i32, kept: Kept) -> Result<Option<Delivery>, i32> {
++    match kept {
++        Kept::Ignore => Ok(None),
++        Kept::Default if bit(signum) & DEFAULT_IGNORES != 0 => Ok(None),
++        Kept::Default if bit(signum) & DEFAULT_STOPS != 0 => Err(ENOSYS),
++        Kept::Default => Ok(Some(Delivery::End(128 + signum))),
++        Kept::Handle(action) => {
++            let own = if action.flags & SA_NODEFER != 0 { 0 } else { bit(signum) };
++            Ok(Some(Delivery::Handle {
++                sig: signum,
++                handler: action.handler,
++                siginfo: action.flags & SA_SIGINFO != 0,
++                mask: (action.mask | own) & !UNCATCHABLE,
++                restart: action.flags & SA_RESTART != 0,
++            }))
++        }
++    }
++}
++
++/// A thread in a blocking call: its tid, what it blocks while there, and, for
++/// a wait for children, which turn of them it last saw.
++#[derive(Clone, Copy, Debug, PartialEq, Eq)]
++struct Waiter {
++    tid: u32,
++    mask: u64,
++    children: Option<u64>,
++}
++
++/// A process's signals.
++pub(crate) struct Signals {
++    actions: [SigAction; SIGNALS],
++    pending: u64,
++    /// Each thread's mask but the first's, by tid.
++    masks: Vec<(u32, u64)>,
++    first_mask: u64,
++    waiters: Vec<Waiter>,
++    /// Moved by every start and end of a child, which a wait for children
++    /// looks at again.
++    children: u64,
++}
++
++/// The first thread's tid, which the kernel gives every process's first.
++const FIRST: u32 = 0;
++
++impl Signals {
++    pub(crate) const fn new() -> Self {
++        Self { actions: [SigAction::of(SIG_DFL); SIGNALS], pending: 0, masks: Vec::new(), first_mask: 0, waiters: Vec::new(), children: 0 }
++    }
++
++    pub(crate) fn kept(&self, sig: i32) -> Kept {
++        kept(self.actions[sig as usize - 1])
++    }
++
++    /// `sigaction`: make `new`, if any, `sig`'s action, and answer the one it
++    /// replaces. A pending signal the new action ignores is dropped.
++    pub(crate) fn act(&mut self, sig: i32, new: Option<SigAction>) -> Result<SigAction, i32> {
++        let at = index(sig)?;
++        let old = self.actions[at];
++        if let Some(new) = new {
++            self.actions[at] = set(sig, new)?;
++            if matches!(delivery(sig, self.kept(sig)), Ok(None)) {
++                self.pending &= !bit(sig);
++            }
++        }
++        Ok(old)
++    }
++
++    /// Whether any handler is kept, which a blocking call is interruptible for.
++    pub(crate) fn any_handler(&self) -> bool {
++        self.actions.iter().any(|&action| matches!(kept(action), Kept::Handle(_)))
++    }
++
++    /// Whether this process must listen to its notice: a quit kills a process
++    /// that does not, which is right only while each of the three signals a
++    /// quit raises is at its default and no thread blocks it.
++    pub(crate) fn listens(&self) -> bool {
++        let blocked = self.masks.iter().fold(self.first_mask, |all, &(_, mask)| all | mask);
++        [SIGHUP, SIGINT, SIGTERM].into_iter().any(|sig| self.kept(sig) != Kept::Default) || blocked & QUITS != 0
++    }
++
++    /// What is pending, as `sigpending` answers it.
++    pub(crate) fn pending(&self) -> u64 {
++        self.pending
++    }
++
++    pub(crate) fn mask(&self, tid: u32) -> u64 {
++        match tid {
++            FIRST => self.first_mask,
++            _ => self.masks.iter().find(|(t, _)| *t == tid).map_or(0, |&(_, mask)| mask),
++        }
++    }
++
++    /// `tid`'s mask is now `mask`, without `SIGKILL` and `SIGSTOP`: `false`,
++    /// and nothing changed, for a thread neither the first nor started by
++    /// libc.
++    pub(crate) fn set_mask(&mut self, tid: u32, mask: u64) -> bool {
++        let mask = mask & !UNCATCHABLE;
++        if tid == FIRST {
++            self.first_mask = mask;
++            return true;
++        }
++        match self.masks.iter_mut().find(|(t, _)| *t == tid) {
++            Some((_, m)) => *m = mask,
++            None => return false,
++        }
++        true
++    }
++
++    /// A thread libc started runs from now with `mask`.
++    pub(crate) fn thread_started(&mut self, tid: u32, mask: u64) {
++        self.masks.push((tid, mask & !UNCATCHABLE));
++    }
++
++    /// A thread libc started has ended.
++    pub(crate) fn thread_ended(&mut self, tid: u32) {
++        self.masks.retain(|&(t, _)| t != tid);
++    }
++
++    /// A signal an event raised, as libc's own thread takes it.
++    pub(crate) fn arrive(&mut self, sig: i32) -> Raised {
++        debug_assert!(bit(sig) & RAISED_BY_EVENTS != 0, "signal {sig} is raised by no event");
++        let delivery = match delivery(sig, self.kept(sig)) {
++            Ok(Some(delivery)) if self.pending & bit(sig) == 0 => delivery,
++            Ok(_) | Err(_) => return Raised::Nothing,
++        };
++        if self.a_waiter_takes(sig) || !self.a_thread_free(sig) {
++            self.pending |= bit(sig);
++            return Raised::Pending;
++        }
++        self.reset(sig);
++        Raised::Deliver(delivery)
++    }
++
++    fn a_waiter_takes(&self, sig: i32) -> bool {
++        self.waiters.iter().any(|w| w.mask & bit(sig) == 0)
++    }
++
++    /// Whether a thread in no blocking call leaves `sig` unblocked.
++    fn a_thread_free(&self, sig: i32) -> bool {
++        let waiting = |tid: u32| self.waiters.iter().any(|w| w.tid == tid);
++        let first_free = !waiting(FIRST) && self.first_mask & bit(sig) == 0;
++        first_free || self.masks.iter().any(|&(t, m)| !waiting(t) && m & bit(sig) == 0)
++    }
++
++    /// The lowest pending signal no blocking call will take and some thread
++    /// in none leaves unblocked, taken for libc's own thread: what a call
++    /// that left without taking it, or a mask that unblocked it in another
++    /// thread, left behind.
++    pub(crate) fn orphan(&mut self) -> Option<Delivery> {
++        let sig = (1..=SIGNALS as i32).find(|&sig| self.pending & bit(sig) != 0 && self.orphaned(sig))?;
++        self.pending &= !bit(sig);
++        let delivery = delivery(sig, self.kept(sig)).ok().flatten()?;
++        self.reset(sig);
++        Some(delivery)
++    }
++
++    pub(crate) fn has_orphan(&self) -> bool {
++        (1..=SIGNALS as i32).any(|sig| self.pending & bit(sig) != 0 && self.orphaned(sig))
++    }
++
++    fn orphaned(&self, sig: i32) -> bool {
++        !self.a_waiter_takes(sig) && self.a_thread_free(sig)
++    }
++
++    /// `raise(sig)` in thread `tid`.
++    pub(crate) fn raise(&mut self, tid: u32, sig: i32) -> Raised {
++        let Ok(at) = index(sig) else { return Raised::Refused(EINVAL) };
++        let raised = raised(sig, kept(self.actions[at]), self.mask(tid));
++        match raised {
++            Raised::Pending => self.pending |= bit(sig),
++            Raised::Deliver(_) => self.reset(sig),
++            Raised::Nothing | Raised::Refused(_) => {}
++        }
++        raised
++    }
++
++    /// The lowest signal pending that `mask` leaves unblocked, taken.
++    pub(crate) fn take(&mut self, mask: u64) -> Option<Delivery> {
++        let open = self.pending & !mask;
++        if open == 0 {
++            return None;
++        }
++        let sig = open.trailing_zeros() as i32 + 1;
++        self.pending &= !bit(sig);
++        let delivery = delivery(sig, self.kept(sig)).ok().flatten()?;
++        self.reset(sig);
++        Some(delivery)
++    }
++
++    /// A handler kept with `SA_RESETHAND` is the default's once it is taken.
++    fn reset(&mut self, sig: i32) {
++        if let Kept::Handle(action) = self.kept(sig) {
++            if action.flags & SA_RESETHAND != 0 {
++                self.actions[sig as usize - 1] = SigAction::of(SIG_DFL);
++            }
++        }
++    }
++
++    /// `tid` enters a blocking call blocking `mask` while there, waiting for
++    /// children where `children`.
++    pub(crate) fn enter(&mut self, tid: u32, mask: u64, children: bool) {
++        let children = children.then_some(self.children);
++        self.waiters.push(Waiter { tid, mask, children });
++    }
++
++    /// `tid` leaves its blocking call.
++    pub(crate) fn leave(&mut self, tid: u32) {
++        let at = self.waiters.iter().position(|w| w.tid == tid).expect("leave: a thread left a call it never entered");
++        self.waiters.swap_remove(at);
++    }
++
++    /// A child was started or has ended: every wait for children looks again.
++    pub(crate) fn children_changed(&mut self) {
++        self.children = self.children.wrapping_add(1);
++    }
++
++    /// `tid`, waiting for children, looks at them now.
++    pub(crate) fn children_seen(&mut self, tid: u32) {
++        let now = self.children;
++        if let Some(waiter) = self.waiters.iter_mut().find(|w| w.tid == tid) {
++            waiter.children = waiter.children.map(|_| now);
++        }
++    }
++
++    /// Whether some thread in a blocking call has something to look at: a
++    /// signal it leaves unblocked, or children moved since it last looked.
++    /// libc's wake pipe holds its byte exactly while this holds.
++    pub(crate) fn wake_wanted(&self) -> bool {
++        self.waiters
++            .iter()
++            .any(|w| self.pending & !w.mask != 0 || w.children.is_some_and(|seen| seen != self.children))
+     }
+ }
+diff --git a/sdk/libc/src/socket.rs b/sdk/libc/src/socket.rs
+index 1f4d8f902..23a04a383 100644
+--- a/sdk/libc/src/socket.rs
++++ b/sdk/libc/src/socket.rs
+@@ -372,9 +372,22 @@ pub unsafe extern "C" fn accept(
+     let listener_id = TcpSocketId(entry.netstack_id);
+     let notify_fd = entry.notify_fd;
+ 
+-    // Block until a connection arrives (read 1 byte from notify pipe)
+-    let mut notify_byte = [0u8; 1];
+-    let _ = syscall::read(RawHandle(notify_fd as u32), &mut notify_byte);
++    // A connection's arrival is a byte on the notify pipe.
++    let notify = RawHandle(notify_fd as u32);
++    let arrived = interruptibly(fd, |block| match block {
++        true => {
++            let _ = syscall::read(notify, &mut [0u8; 1]);
++            Some(())
++        }
++        false => match syscall::read_nonblock(notify, &mut [0u8; 1]) {
++            Err(syscall::SyscallError::WouldBlock) => None,
++            _ => Some(()),
++        },
++    });
++    if let Err(errno) = arrived {
++        set_errno(errno);
++        return -1;
++    }
+ 
+     let accepted = match stream::accept(listener_id) {
+         Ok(a) => a,
+@@ -456,9 +469,15 @@ pub unsafe extern "C" fn recv(fd: i32, buf: *mut u8, len: usize, _flags: i32) ->
+     match entry.kind {
+         SocketKind::Tcp => {
+             let data = core::slice::from_raw_parts_mut(buf, len);
+-            match stream::read(RawHandle(entry.stream as u32), data, Wait::Blocking(None)) {
+-                Ok(n) => n as isize,
+-                Err(refused) => { set_errno(stream_errno(refused)); -1 }
++            let stream = RawHandle(entry.stream as u32);
++            let read = interruptibly(fd, |block| match stream::read(stream, data, if block { Wait::Blocking(None) } else { Wait::Nonblocking }) {
++                Err(Refused::WouldBlock) if !block => None,
++                answer => Some(answer),
++            });
++            match read {
++                Ok(Ok(n)) => n as isize,
++                Ok(Err(refused)) => { set_errno(stream_errno(refused)); -1 }
++                Err(errno) => { set_errno(errno); -1 }
+             }
+         }
+         SocketKind::Udp => {
+@@ -597,6 +616,31 @@ const SHUT_RD: i32 = 0;
+ const SHUT_WR: i32 = 1;
+ const SHUT_RDWR: i32 = 2;
+ 
++/// `attempt`'s answer, asked without blocking until it has one and waiting
++/// between for `fd` to be readable: a handler that interrupts the wait
++/// restarts it if it was installed with `SA_RESTART`, and answers `EINTR` if
++/// not. With no handler kept nothing interrupts it, and `attempt(true)`
++/// blocks for the answer.
++fn interruptibly<T>(fd: i32, mut attempt: impl FnMut(bool) -> Option<T>) -> Result<T, i32> {
++    let Some(mut call) = crate::signal::Call::enter(None, false, false) else {
++        return Ok(attempt(true).expect("a blocking attempt answers"));
++    };
++    loop {
++        if let Some(delivery) = call.take() {
++            if !call.interrupted(delivery) {
++                return Err(crate::errcode::EINTR);
++            }
++            continue;
++        }
++        if let Some(answer) = attempt(false) {
++            return Ok(answer);
++        }
++        let mut entry = crate::posix_io::pollfd { fd, events: 1, revents: 0 };
++        // SAFETY: one entry, this one.
++        unsafe { crate::posix_io::wait_fds(&mut entry, 1, None, Some(call.wake())) }?;
++    }
++}
++
+ /// A stream's refusal in POSIX's word: `send`'s and `recv`'s.
+ fn stream_errno(refused: Refused) -> i32 {
+     match refused {
+diff --git a/sdk/libc/src/spawn.rs b/sdk/libc/src/spawn.rs
+index 5bc36797c..3e96f10e6 100644
+--- a/sdk/libc/src/spawn.rs
++++ b/sdk/libc/src/spawn.rs
+@@ -10,6 +10,13 @@
+ //! 0–2 and exactly what its file actions name (`spawnreq`). A child's group is
+ //! a number this library keeps, which `kill(-pgid, …)` and `waitpid(-pgid,
+ //! …)` read; the kernel has none.
++//!
++//! **A child's end raises `SIGCHLD` once** (`crate::signal`): libc's own
++//! thread watches every child that has not raised it, while a handler is
++//! installed for it, and a wait that takes a child it had not seen end
++//! tells it so. With `SIGCHLD` ignored an ended child is not kept, so a wait
++//! for children blocks until every one it names has ended and answers
++//! `ECHILD`.
+ 
+ use alloc::boxed::Box;
+ use alloc::vec::Vec;
+@@ -21,7 +28,7 @@ use toyos::spawn::{self, Launched, Parent, Refused, Spawn};
+ use toyos_abi::syscall;
+ use toyos_abi::RawHandle;
+ 
+-use crate::errcode::{E2BIG, EACCES, EAGAIN, EBADF, ECHILD, EINVAL, ENOENT, EPERM, ESRCH};
++use crate::errcode::{E2BIG, EACCES, EAGAIN, EBADF, ECHILD, EINTR, EINVAL, ENOENT, EPERM, ESRCH};
+ use crate::pthread::Lock;
+ use crate::spawnreq::{self, Action};
+ 
+@@ -34,15 +41,15 @@ const POSIX_SPAWN_RESETIDS: i16 = 0x01;
+ const POSIX_SPAWN_SETPGROUP: i16 = 0x02;
+ const POSIX_SPAWN_SETSIGDEF: i16 = 0x04;
+ const POSIX_SPAWN_SETSIGMASK: i16 = 0x08;
+-/// The flags a spawn honours. No signal but `SIGKILL` reaches a child yet,
+-/// and that one no mask holds, so a child's mask and defaults change nothing
+-/// it can see; and a process has no ids to reset.
++/// The flags a spawn honours. A child starts with every signal at its default
++/// and none blocked, which is what `SETSIGDEF` asks and an empty `SETSIGMASK`
++/// asks; one naming a signal is refused at the spawn. A process has no ids to
++/// reset.
+ const FLAGS: i16 = POSIX_SPAWN_RESETIDS | POSIX_SPAWN_SETPGROUP | POSIX_SPAWN_SETSIGDEF | POSIX_SPAWN_SETSIGMASK;
+ 
+-/// The most children unwaited at once, the track's bound: one poller watches
+-/// them all, and its 256th watch is stage 6's notice
+-/// (`issues/a-childs-end-is-an-event-and-a-parent-takes-its-children-down.md`).
+-const MAX_CHILDREN: usize = toyos::poller::Poller::MAX_HANDLES as usize - 1;
++/// The most children unwaited at once: libc's own thread watches them all on
++/// one poller, beside its own control pipe and the process's notice.
++pub(crate) const MAX_CHILDREN: usize = toyos::poller::Poller::MAX_HANDLES as usize - 2;
+ 
+ /// What the shell `system` and `popen` run a command with.
+ const SHELL: &str = "/system/bin/shell";
+@@ -51,6 +58,8 @@ struct Child {
+     pid: i32,
+     group: i32,
+     process: Process,
++    /// Whether its end has raised `SIGCHLD`.
++    raised: bool,
+ }
+ 
+ /// Every child not yet waited for, in the order they were spawned.
+@@ -218,6 +227,9 @@ pub unsafe extern "C" fn posix_spawn(
+         None => &[],
+     };
+     let group = match unsafe { attr.as_ref() } {
++        // The child starts blocking nothing, so a mask that names a signal
++        // would be a mask it does not have.
++        Some(attr) if attr.flags & POSIX_SPAWN_SETSIGMASK != 0 && attr.mask != 0 => return crate::errcode::ENOSYS,
+         Some(attr) if attr.flags & POSIX_SPAWN_SETPGROUP != 0 => Some(attr.pgroup),
+         _ => None,
+     };
+@@ -259,6 +271,9 @@ pub unsafe extern "C" fn posix_spawnp(
+ /// Start `path` with `argv` and `env`, its descriptors as `actions` leave
+ /// them, in `group` or this process's: its pid, or an `errno`.
+ fn spawn_child(path: &str, argv: &[u8], env: &[u8], actions: &[Action<Box<[u8]>>], group: Option<i32>) -> Result<i32, i32> {
++    if crate::signal::children_ignored() {
++        forget_ended();
++    }
+     if UNWAITED.fetch_add(1, Ordering::Relaxed) >= MAX_CHILDREN {
+         UNWAITED.fetch_sub(1, Ordering::Relaxed);
+         return Err(EAGAIN);
+@@ -300,7 +315,8 @@ fn spawn_counted(path: &str, argv: &[u8], env: &[u8], actions: &[Action<Box<[u8]
+         Some(group) => group,
+         None => own_group(),
+     };
+-    CHILDREN.lock().push(Child { pid, group, process });
++    CHILDREN.lock().push(Child { pid, group, process, raised: false });
++    crate::signal::children_changed(false);
+     Ok(pid)
+ }
+ 
+@@ -377,16 +393,77 @@ fn reap(pid: i32) -> Option<(i32, End, toyos_abi::syscall::ProcessStats)> {
+     let at = children.iter().position(|c| c.pid == pid)?;
+     let end = children[at].process.try_wait().ok()?;
+     let child = children.remove(at);
++    drop(children);
+     UNWAITED.fetch_sub(1, Ordering::Relaxed);
++    crate::signal::children_changed(!child.raised);
+     // An ended child's accounting stays on its object, which answers.
+     let stats = child.process.stats().expect("waitpid: an ended child's accounting");
+     Some((pid, end, stats))
+ }
+ 
++/// Every child that has ended, out of the table and kept for no wait, as
++/// `SIGCHLD` ignored has it.
++pub(crate) fn forget_ended() {
++    let ended: Vec<Child> = {
++        let mut children = CHILDREN.lock();
++        let (ended, live) = core::mem::take(&mut *children).into_iter().partition(|c| c.process.try_wait().is_ok());
++        *children = live;
++        ended
++    };
++    UNWAITED.fetch_sub(ended.len(), Ordering::Relaxed);
++}
++
++/// Each child whose end has not raised `SIGCHLD`, by pid.
++pub(crate) fn unraised() -> Vec<i32> {
++    CHILDREN.lock().iter().filter(|c| !c.raised).map(|c| c.pid).collect()
++}
++
++/// A copy of child `pid`'s handle to watch its end on, the caller's to close:
++/// a wait on another thread closes the table's own, whose number another
++/// handle may then take. `None` for a child gone, or a table with no room.
++pub(crate) fn copy_of(pid: i32) -> Option<toyos::OwnedHandle> {
++    let children = CHILDREN.lock();
++    let child = children.iter().find(|c| c.pid == pid)?;
++    let copy = syscall::dup(toyos::AsHandle::as_handle(&child.process)).ok()?;
++    // SAFETY: a copy just made, which nothing else answers for.
++    Some(unsafe { toyos::OwnedHandle::from_raw(copy) })
++}
++
++/// Whether `pid` has ended and not yet raised `SIGCHLD`, which it now has.
++pub(crate) fn raise(pid: i32) -> bool {
++    let mut children = CHILDREN.lock();
++    let Some(child) = children.iter_mut().find(|c| c.pid == pid && !c.raised) else { return false };
++    child.raised = child.process.try_wait().is_ok();
++    child.raised
++}
++
++/// Every child that has ended raises no `SIGCHLD`: a handler installed after
++/// an end is not told of it.
++pub(crate) fn mark_ended_raised() {
++    for child in CHILDREN.lock().iter_mut() {
++        child.raised |= child.process.try_wait().is_ok();
++    }
++}
++
+ /// The first child `pid` names that has ended, waiting for one where
+-/// `block`; `Ok(None)` for none ended without it.
++/// `block`; `Ok(None)` for none ended without it. A handler that interrupts
++/// the wait restarts it if it was installed with `SA_RESTART` and answers
++/// `EINTR` if not; a child started while it waits is one it waits for.
+ fn wait_child(pid: i32, block: bool) -> Result<Option<(i32, End, toyos_abi::syscall::ProcessStats)>, i32> {
++    let mut call = crate::signal::Call::enter(None, true, false).expect("a wait for children is always a call");
+     loop {
++        if let Some(delivery) = call.take() {
++            if !call.interrupted(delivery) {
++                return Err(EINTR);
++            }
++            continue;
++        }
++        // Before the table is read: a child started after it moves the turn
++        // this records, and the wake pipe says so.
++        call.children_seen();
++        if crate::signal::children_ignored() {
++            forget_ended();
++        }
+         // Copies of the handles, watched with the table given up: a reap on
+         // another thread closes the table's own.
+         let watched: Vec<(i32, RawHandle)> = {
+@@ -418,19 +495,16 @@ fn wait_child(pid: i32, block: bool) -> Result<Option<(i32, End, toyos_abi::sysc
+             }
+             copies
+         };
+-        let poller = toyos::poller::Poller::new(watched.len() as u32);
++        let poller = toyos::poller::Poller::new(watched.len() as u32 + 1);
+         for (i, (_, handle)) in watched.iter().enumerate() {
+             poller.watch_raw(*handle, toyos::poller::READABLE, i as u64);
+         }
+-        let mut first = None;
+-        poller.wait(1, u64::MAX, |token| {
+-            first.get_or_insert(token as usize);
+-        });
++        poller.watch_raw(call.wake(), toyos::poller::READABLE, u64::MAX);
++        // Whatever woke it, the next turn looks: an ended child is reaped
++        // there, or forgotten under an ignored `SIGCHLD`.
++        poller.wait(1, u64::MAX, |_| {});
+         drop(poller);
+         watched.iter().for_each(|(_, h)| syscall::close(*h));
+-        if let Some(reaped) = first.and_then(|i| reap(watched[i].0)) {
+-            return Ok(Some(reaped));
+-        }
+     }
+ }
+ 
+@@ -486,27 +560,41 @@ pub unsafe extern "C" fn wait4(pid: i32, status: *mut i32, options: i32, usage:
+     }
+ }
+ 
+-/// `SIGKILL` for a child or a group of them, and 0 to ask whether one is
+-/// there; no other signal reaches a process yet, so it is `EINVAL`. A process
+-/// holds no right to kill itself, so `SIGKILL` for its own pid is `EPERM`, and
+-/// a kill of its own group reaches its children in it and not itself.
++/// `SIGKILL` for a child or a group of them, `SIGINT`, `SIGHUP` and
++/// `SIGTERM` as a quit with that reason, which asks the child and everything
++/// below it as a POSIX `kill` does not, and 0 to ask whether one is there; no
++/// other signal reaches another process, so it is `EINVAL`. A process holds
++/// no right to kill itself, so `SIGKILL` for its own pid is `EPERM`, and one
++/// of the three is raised in it, as it is by a kill of its own group, which
++/// reaches its children in it too.
+ #[no_mangle]
+ pub unsafe extern "C" fn kill(pid: i32, sig: i32) -> i32 {
+     let me = own_group();
++    let quit = quit_of(sig);
+     let refused = match (sig, pid == me) {
+-        (0 | SIGKILL, false) => {
++        (_, false) if sig == 0 || sig == SIGKILL || quit.is_some() => {
+             let mut any = false;
+             for child in CHILDREN.lock().iter().filter(|c| names(pid, c)) {
+                 any = true;
+-                if sig == SIGKILL {
+-                    // `Ok` for one already ended, which is still unwaited.
+-                    let _ = child.process.kill();
+-                }
++                // `Ok` for one already ended, which is still unwaited, and
++                // `MANAGE` is on every child's handle libc holds.
++                let asked = match quit {
++                    Some(reason) => child.process.quit(reason),
++                    None if sig == SIGKILL => child.process.kill(),
++                    None => Ok(()),
++                };
++                asked.expect("kill: a child's handle refused what its spawn gave it");
++            }
++            let own_group = pid == 0 || pid == -me;
++            match quit.is_some() && own_group {
++                true => crate::signal::raise(sig).err(),
++                false => (!any).then_some(ESRCH),
+             }
+-            (!any).then_some(ESRCH)
+         }
+         (0, true) => None,
+         (SIGKILL, true) => Some(EPERM),
++        // A quit of this process is its own signal, raised here.
++        (_, true) if quit.is_some() => crate::signal::raise(sig).err(),
+         _ => Some(EINVAL),
+     };
+     match refused {
+@@ -518,6 +606,18 @@ pub unsafe extern "C" fn kill(pid: i32, sig: i32) -> i32 {
+     }
+ }
+ 
++/// The reason a quit asks for `sig`, for one of the three it raises.
++fn quit_of(sig: i32) -> Option<toyos::quit::Reason> {
++    use crate::sigreq::{SIGHUP, SIGINT, SIGTERM};
++    use toyos::quit::Reason;
++    match sig {
++        SIGINT => Some(Reason::Interrupt),
++        SIGHUP => Some(Reason::HangUp),
++        SIGTERM => Some(Reason::Terminate),
++        _ => None,
++    }
++}
++
+ /// `command` run by the shell, waited for: its status, or -1. A null
+ /// `command` asks whether there is a shell, and there is.
+ #[no_mangle]
+diff --git a/sdk/libc/src/time.rs b/sdk/libc/src/time.rs
+index 202bacffc..23c10c89d 100644
+--- a/sdk/libc/src/time.rs
++++ b/sdk/libc/src/time.rs
+@@ -230,26 +230,54 @@ pub unsafe extern "C" fn difftime(time1: time_t, time0: time_t) -> f64 {
+     (time1 - time0) as f64
+ }
+ 
++/// The nanoseconds `ts` spans, or `None` for one POSIX calls invalid: a
++/// negative second or a nanosecond count past a second.
++pub(crate) fn nanos_of(ts: &Timespec) -> Option<u64> {
++    let secs = u64::try_from(ts.tv_sec).ok()?;
++    let nanos = u64::try_from(ts.tv_nsec).ok().filter(|&n| n < NANOS_PER_SEC)?;
++    Some(secs.saturating_mul(NANOS_PER_SEC).saturating_add(nanos))
++}
++
++const NANOS_PER_SEC: u64 = 1_000_000_000;
++
++/// A handler that interrupts it ends it with `EINTR` and the time left in
++/// `rem`, whatever its flags.
+ #[no_mangle]
+-pub unsafe extern "C" fn nanosleep(req: *const Timespec, _rem: *mut Timespec) -> i32 {
+-    if req.is_null() { return -1; }
+-    let nanos = unsafe {
+-        (*req).tv_sec as u64 * 1_000_000_000 + (*req).tv_nsec as u64
++pub unsafe extern "C" fn nanosleep(req: *const Timespec, rem: *mut Timespec) -> i32 {
++    let Some(nanos) = unsafe { req.as_ref() }.and_then(nanos_of) else {
++        crate::errno::set(crate::errcode::EINVAL);
++        return -1;
+     };
+-    toyos_abi::syscall::nanosleep(nanos);
+-    0
++    match crate::signal::sleep(nanos) {
++        Ok(()) => 0,
++        Err(left) => {
++            if let Some(rem) = unsafe { rem.as_mut() } {
++                *rem = Timespec { tv_sec: (left / NANOS_PER_SEC) as time_t, tv_nsec: (left % NANOS_PER_SEC) as i64 };
++            }
++            crate::errno::set(crate::errcode::EINTR);
++            -1
++        }
++    }
+ }
+ 
++/// The seconds left, rounded up, when a handler interrupted it.
+ #[no_mangle]
+ pub unsafe extern "C" fn sleep(seconds: u32) -> u32 {
+-    toyos_abi::syscall::nanosleep(seconds as u64 * 1_000_000_000);
+-    0
++    match crate::signal::sleep(u64::from(seconds) * NANOS_PER_SEC) {
++        Ok(()) => 0,
++        Err(left) => left.div_ceil(NANOS_PER_SEC) as u32,
++    }
+ }
+ 
+ #[no_mangle]
+ pub unsafe extern "C" fn usleep(usec: u32) -> i32 {
+-    toyos_abi::syscall::nanosleep(usec as u64 * 1000);
+-    0
++    match crate::signal::sleep(u64::from(usec) * 1000) {
++        Ok(()) => 0,
++        Err(_) => {
++            crate::errno::set(crate::errcode::EINTR);
++            -1
++        }
++    }
+ }
+ 
+ #[no_mangle]

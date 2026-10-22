@@ -1,0 +1,22 @@
+diff --git a/sdk/libc/src/posix_io.rs b/sdk/libc/src/posix_io.rs
+index 5b3a0ded0..48e093a4e 100644
+--- a/sdk/libc/src/posix_io.rs
++++ b/sdk/libc/src/posix_io.rs
+@@ -186,7 +186,7 @@ pub unsafe extern "C" fn read(raw_fd: i32, buf: *mut u8, count: usize) -> isize
+         Ok(n) => n as isize,
+         Err(e) => refuse_files(e) as isize,
+     };
+-    let Some(mut call) = Call::enter(None, false, false) else { return blocking(slice) };
++    let Some(mut call) = None::<Call> else { return blocking(slice) };
+     // Held for the call, so a `close` on another thread releases nothing it waits on.
+     let Ok((_held, object)) = toyos::fd::hold(raw_fd) else { return blocking(slice) };
+     if object.release.is_some() || object.handle == toyos_abi::HANDLE_INVALID {
+@@ -958,7 +958,7 @@ pub unsafe extern "C" fn ppoll(fds: *mut pollfd, nfds: u32, timeout: *const Time
+ /// Wait for a handler to run: `-1` and `EINTR` once one has.
+ #[no_mangle]
+ pub unsafe extern "C" fn pause() -> i32 {
+-    unsafe { poll_until(ptr::null_mut(), 0, None, Some(crate::signal::mask())) }
++    loop { syscall::nanosleep(u64::MAX) }
+ }
+ 
+ /// [`pause`], with `mask` the thread's while it waits.

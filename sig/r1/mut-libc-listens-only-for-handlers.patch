@@ -1,0 +1,13 @@
+diff --git a/sdk/libc/src/sigreq.rs b/sdk/libc/src/sigreq.rs
+index c7ace0d91..135a28526 100644
+--- a/sdk/libc/src/sigreq.rs
++++ b/sdk/libc/src/sigreq.rs
+@@ -243,7 +243,7 @@ impl Signals {
+     /// quit raises is at its default and no thread blocks it.
+     pub(crate) fn listens(&self) -> bool {
+         let blocked = self.masks.iter().fold(self.first_mask, |all, &(_, mask)| all | mask);
+-        [SIGHUP, SIGINT, SIGTERM].into_iter().any(|sig| self.kept(sig) != Kept::Default) || blocked & QUITS != 0
++        [SIGHUP, SIGINT, SIGTERM].into_iter().any(|sig| matches!(self.kept(sig), Kept::Handle(_))) || blocked & 0 != 0
+     }
+ 
+     /// What is pending, as `sigpending` answers it.
