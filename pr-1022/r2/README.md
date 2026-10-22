@@ -6,7 +6,10 @@
   the AVX-512 kernel the whole quad. Lane values matched. m1 failed as expected. m2 failed on the
   T14 as expected. On the AMD bench it failed only because the base did.
 - `linux/`: README and hashes of the rebuilt binaries at b396df40f (the fix; fb9b8eeca differs
-  from it only in one doc comment's line wrapping) and its two mutants; runs are added when done.
+  from it only in one doc comment's line wrapping) and its two mutants, with their runs on both benches. The commit passes 7/7 on both. m1 fails
+  on both. m2 fails on the T14 (`lanes_match_…` and `dispatched_streams_…`, the quad's `xor` tail)
+  and passes on the AMD bench, which has no AVX-512. The pre-fix runs above are the fix's negative
+  control. The branch was later reworded without a tree change: d9dd4b991 has fb9b8eeca's tree.
 - `t14-m11c-ab1c7283d/`: the T14 probe boot of ab1c7283d (#1022 at 7a1101024 plus probe rows),
   verdict and rows. It ran with the defect, which only added one 64-byte store to three-block
   calls (seal 65 to 128 B); `agrees_with_ring_at_every_length` passed. Its M12 rows time the
