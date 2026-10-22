@@ -1,6 +1,6 @@
 # ToyOS PR #1021: evidence
 
-Branch `wt/state-view`. The final head is the last line of `revisions.txt`'s first column, read top-down. Paths are
+Branch `wt/state-view`. `revisions.txt` lists the branch's commits, newest first; the head is `2d1a26b8d`. Paths are
 masked: `<scratch>` is the agent's scratch directory, and `~` is the home directory.
 
 | File | Command | Revision | Exit | Target |
