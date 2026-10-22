@@ -1,0 +1,86 @@
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.82s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-42525268d3587802)
+
+01:34:24 running 1 tests, 12 wide
+
+01:34:24   RUN   hosted_clang_hello
+01:34:49   [hosted_clang_hello] the host's hello.o: 1384 bytes, sha256 34e7639153e48b0b2d4f9b928a9c5c5b3c5daa5bf368669f4ba0de5462945b22
+01:34:49   [hosted_clang_hello] the host's a.out: 1997888 bytes, sha256 bc02f9f9343df39a79e17e9a1bae9863fa7636b8297f39b5d81c726f859f1076
+01:34:49   [hosted_clang_hello] the package: clang-v22.1.8-toyos-x86_64.tar.gz, 21dd4f04826692f0282117eef97e763c322072a91be95eed5a2a824481e51234  clang-v22.1.8-toyos-x86_64.tar.gz
+01:34:49   BUILD x86_64 hosted_clang_hello (toyos) of tests/guest/rust-tests, for hosted_clang_hello
+01:34:54   BUILT x86_64 hosted_clang_hello (toyos) of tests/guest/rust-tests, for hosted_clang_hello  (5s)
+01:34:54   BUILD x86_64 kernel, loader, ROOT of tests/images/hostedclangcase.toml, for hosted_clang_hello
+01:34:58 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+01:34:58   BUILT x86_64 kernel, loader, ROOT of tests/images/hostedclangcase.toml, for hosted_clang_hello  (4s)
+01:36:20 FAIL hosted_clang_hello: the job ended Some(101):
+hosted_clang_hello: pkg install: pkg: verified clang-v22.1.8-toyos-x86_64.tar.gz against SHA256SUMS (21dd4f04826692f0282117eef97e763c322072a91be95eed5a2a824481e51234)
+hosted_clang_hello: pkg install: pkg: installed clang 22.1.8 at /apps/clang (279642112 bytes), launching /apps/clang/bin/clang
+hosted_clang_hello: pkg install ended 0
+hosted_clang_hello: clang -c ended 0
+DIAG cc -### ExitStatus(ExitStatus(Exited(0))):
+clang version 22.1.8-rust-dev (https://github.com/ToyOSOrg/llvm-project.git b7420fe534bf063b78a61c18fe6fb2bbcf4340e0)
+Target: x86_64-unknown-toyos
+Thread model: posix
+InstalledDir: /apps/clang/bin
+Configuration file: /apps/clang/bin/x86_64-unknown-toyos.cfg
+ "/apps/clang/bin/clang" "-cc1" "-triple" "x86_64-unknown-toyos" "-emit-obj" "-dumpdir" "/tmp/hosted_clang_hello/a.out-" "-disable-free" "-clear-ast-before-backend" "-disable-llvm-verifier" "-discard-value-names" "-main-file-name" "hello.c" "-mrelocation-model" "pic" "-pic-level" "2" "-pic-is-pie" "-mframe-pointer=all" "-ffp-contract=on" "-fno-rounding-math" "-mconstructor-aliases" "-funwind-tables=2" "-target-cpu" "x86-64" "-tune-cpu" "generic" "-debugger-tuning=gdb" "-fdebug-compilation-dir=/system/share/hosted-clang/src" "-fcoverage-compilation-dir=/system/share/hosted-clang/src" "-resource-dir" "/apps/clang/lib/clang/22" "-isysroot" "/apps/clang/bin/../sysroot" "-internal-isystem" "/apps/clang/lib/clang/22/include" "-internal-externc-isystem" "/apps/clang/bin/../sysroot/include" "-ferror-limit" "19" "-fgnuc-version=4.2.1" "-fskip-odr-check-in-gmf" "-faddrsig" "-fdwarf2-cfi-asm" "-o" "/tmp/hello-aac50b.o" "-x" "c" "hello.c"
+ "/apps/clang/bin/ld.lld" "--sysroot=/apps/clang/bin/../sysroot" "-pie" "--eh-frame-hdr" "-o" "/tmp/hosted_clang_hello/a.out" "-L/apps/clang/bin/../sysroot/lib" "/tmp/hello-aac50b.o" "-ltoyos_c"
+
+DIAG clang -### ExitStatus(ExitStatus(Exited(0))):
+clang version 22.1.8-rust-dev (https://github.com/ToyOSOrg/llvm-project.git b7420fe534bf063b78a61c18fe6fb2bbcf4340e0)
+Target: x86_64-unknown-toyos
+Thread model: posix
+InstalledDir: /apps/clang/bin
+Configuration file: /apps/clang/bin/x86_64-unknown-toyos.cfg
+ "/apps/clang/bin/clang" "-cc1" "-triple" "x86_64-unknown-toyos" "-emit-obj" "-dumpdir" "/tmp/hosted_clang_hello/a.out-" "-disable-free" "-clear-ast-before-backend" "-disable-llvm-verifier" "-discard-value-names" "-main-file-name" "hello.c" "-mrelocation-model" "pic" "-pic-level" "2" "-pic-is-pie" "-mframe-pointer=all" "-ffp-contract=on" "-fno-rounding-math" "-mconstructor-aliases" "-funwind-tables=2" "-target-cpu" "x86-64" "-tune-cpu" "generic" "-debugger-tuning=gdb" "-fdebug-compilation-dir=/system/share/hosted-clang/src" "-fcoverage-compilation-dir=/system/share/hosted-clang/src" "-resource-dir" "/apps/clang/lib/clang/22" "-isysroot" "/apps/clang/bin/../sysroot" "-internal-isystem" "/apps/clang/lib/clang/22/include" "-internal-externc-isystem" "/apps/clang/bin/../sysroot/include" "-ferror-limit" "19" "-fgnuc-version=4.2.1" "-fskip-odr-check-in-gmf" "-faddrsig" "-fdwarf2-cfi-asm" "-o" "/tmp/hello-9a46df.o" "-x" "c" "hello.c"
+ "/apps/clang/bin/ld.lld" "--sysroot=/apps/clang/bin/../sysroot" "-pie" "--eh-frame-hdr" "-o" "/tmp/hosted_clang_hello/a.out" "-L/apps/clang/bin/../sysroot/lib" "/tmp/hello-9a46df.o" "-ltoyos_c"
+
+DIAG clang -v link ExitStatus(ExitStatus(Exited(1))):
+clang version 22.1.8-rust-dev (https://github.com/ToyOSOrg/llvm-project.git b7420fe534bf063b78a61c18fe6fb2bbcf4340e0)
+Target: x86_64-unknown-toyos
+Thread model: posix
+InstalledDir: /apps/clang/bin
+Configuration file: /apps/clang/bin/x86_64-unknown-toyos.cfg
+ "/apps/clang/bin/clang" -cc1 -triple x86_64-unknown-toyos -emit-obj -dumpdir /tmp/hosted_clang_hello/a.out- -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name hello.c -mrelocation-model pic -pic-level 2 -pic-is-pie -mframe-pointer=all -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -target-cpu x86-64 -tune-cpu generic -debugger-tuning=gdb -fdebug-compilation-dir=/system/share/hosted-clang/src -v -fcoverage-compilation-dir=/system/share/hosted-clang/src -resource-dir /apps/clang/lib/clang/22 -isysroot /apps/clang/bin/../sysroot -internal-isystem /apps/clang/lib/clang/22/include -internal-externc-isystem /apps/clang/bin/../sysroot/include -ferror-limit 19 -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -faddrsig -fdwarf2-cfi-asm -o /tmp/hello-f3cd03.o -x c hello.c
+clang: error: unable to execute command: posix_spawn failed: unknown error
+
+
+thread 'main' (1) panicked at src/bin/hosted_clang_hello.rs:72:5:
+cc ended ExitStatus(ExitStatus(Exited(1))):
+cc: error: unable to execute command: posix_spawn failed: unknown error
+
+stack backtrace:
+   0:      0x100000769a0 - _Unwind_Backtrace
+   1:      0x10000055aa3 - <<std[3f57cffe72d90670]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[73b405bef30eeff1]::fmt::Display>::fmt
+   2:      0x1000007aca7 - core[73b405bef30eeff1]::fmt::write
+   3:      0x100000599db - <std[3f57cffe72d90670]::sys::stdio::toyos::Stderr as core[73b405bef30eeff1]::io::write::Write>::write_fmt
+   4:      0x10000037253 - std[3f57cffe72d90670]::panicking::default_hook::{closure#0}
+   5:      0x1000005168e - std[3f57cffe72d90670]::panicking::default_hook
+   6:      0x10000051849 - std[3f57cffe72d90670]::panicking::panic_with_hook
+   7:      0x1000003730d - std[3f57cffe72d90670]::panicking::panic_handler::{closure#0}
+   8:      0x1000002f2e9 - std[3f57cffe72d90670]::sys::backtrace::__rust_end_short_backtrace::<std[3f57cffe72d90670]::panicking::panic_handler::{closure#0}, !>
+   9:      0x10000037b48 - __rustc[d0c72ce299f394e5]::rust_begin_unwind
+  10:      0x1000007b3cb - core[73b405bef30eeff1]::panicking::panic_fmt
+  11:      0x1000001fb97 - hosted_clang_hello[652db9bafa1f1e0d]::run
+  12:      0x1000002033b - hosted_clang_hello[652db9bafa1f1e0d]::main
+  13:      0x10000021bb6 - std[3f57cffe72d90670]::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  14:      0x1000001f210 - std[3f57cffe72d90670]::rt::lang_start::<()>::{closure#0}
+  15:      0x10000050b36 - std[3f57cffe72d90670]::rt::lang_start_internal
+  16:      0x10000021491 - main
+  17:      0x10000052f03 - std[3f57cffe72d90670]::sys::pal::toyos::start_rust
+  18:      0x10000022476 - _start
+
+01:36:20   FAIL  hosted_clang_hello  (106s)
+01:36:20   --- 1 guests, 0 of them not the shipping kernel, 1 kernel build(s): [""]
+
+01:36:20 host: fastest boot 9342 ms against the reference 1424 ms — liveness ceilings paid at 6.56x
+01:36:20 host: 14 core(s); a guest wider than that waits vcpus/cores longer again
+01:36:20 failures:
+01:36:20     hosted_clang_hello: the job ended Some(101):
+
+01:36:20 test result: FAILED. 0 passed, 1 failed, 0 invalidated, 1 total (115.8s; workers: 9s building, 106s testing)
+01:36:20 [toyos] this red run's serial logs are kept at ~/Dev/<user>/toyos-pkg/target/red-run-serial/toyos-tmp-12437-0
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `~/Dev/<user>/toyos-pkg/target/debug/deps/toyos_build-42525268d3587802 hosted_clang_hello` (exit status: 1)

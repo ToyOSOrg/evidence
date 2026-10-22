@@ -1,0 +1,85 @@
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.38s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-42525268d3587802)
+
+02:42:51 running 2 tests, 12 wide
+
+02:42:51   RUN   libc_children
+02:42:51   RUN   hosted_clang_hello
+02:42:55   BUILD x86_64 stdio_named (toyos) of tests/guest/rust-tests, for libc_children
+02:42:58 external deps changed: cleaning ~/Dev/<user>/toyos-pkg/tests/guest/rust-tests/target/x86_64-unknown-toyos
+02:43:10   [hosted_clang_hello] the host's hello.o: 1384 bytes, sha256 34e7639153e48b0b2d4f9b928a9c5c5b3c5daa5bf368669f4ba0de5462945b22
+02:43:10   [hosted_clang_hello] the host's a.out: 1997888 bytes, sha256 bc02f9f9343df39a79e17e9a1bae9863fa7636b8297f39b5d81c726f859f1076
+02:43:10   [hosted_clang_hello] the package: clang-v22.1.8-toyos-x86_64.tar.gz, 21dd4f04826692f0282117eef97e763c322072a91be95eed5a2a824481e51234  clang-v22.1.8-toyos-x86_64.tar.gz
+02:43:10   BUILD x86_64 hosted_clang_hello (toyos) of tests/guest/rust-tests, for hosted_clang_hello
+02:43:10   BUILT x86_64 stdio_named (toyos) of tests/guest/rust-tests, for libc_children  (15s)
+02:43:10   BUILD x86_64 kernel, loader, ROOT of tests/images/libccase.toml, for libc_children
+02:43:12 [build-lock] waiting for the artifact lock (artifact staging) — held by pid 27027 (artifact staging), 0s so far
+02:43:13   BUILT x86_64 hosted_clang_hello (toyos) of tests/guest/rust-tests, for hosted_clang_hello  (3s)
+02:43:13 [build-lock] artifact staging acquired after 213.3ms
+02:43:13   BUILD x86_64 kernel, loader, ROOT of tests/images/hostedclangcase.toml, for hosted_clang_hello
+02:43:15 [build-lock] waiting for the artifact lock (artifact staging) — held by pid 27027 (artifact staging), 2s so far
+02:43:23 [build-lock] artifact staging acquired after 7.9s
+02:43:23 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+02:43:23   BUILT x86_64 kernel, loader, ROOT of tests/images/libccase.toml, for libc_children  (13s)
+02:43:25 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+02:43:25   BUILT x86_64 kernel, loader, ROOT of tests/images/hostedclangcase.toml, for hosted_clang_hello  (13s)
+02:43:28   [libc_children] dev_null: /dev/null read end of file and took every write, here and as a child's stdio
+02:43:28   [libc_children] poll_closed: a closed descriptor answered POLLNVAL
+02:43:28   [libc_children] poll_negative: a negative descriptor was passed over and the pipe beside it answered
+02:43:30   [libc_children] spawn_children_cap: the 256th unwaited child was refused EAGAIN, and a poll of 255 answered beside 255
+02:43:30   [libc_children] spawn_cloexec: FD_CLOEXEC, O_CLOEXEC and addclose each kept a descriptor from the child, and a child without one spawned its own
+02:43:30   [libc_children] spawn_environ: setenv and unsetenv were seen in the child's environ
+02:43:31   [libc_children] spawn_kill_group: kill(-pgid) ended the group's two children and not the third; kill(pid, 0) probed
+02:43:31   [libc_children] spawn_pipe_eof: a piped stdout read to its end through poll, then waited for
+02:43:31   [libc_children] spawn_pipe_reader_gone: a child's write to a pipe whose one reader closed was refused EPIPE
+02:43:31   [libc_children] spawn_signaled: a killed child read SIGKILL, and each fault its class's signal
+02:43:31   [libc_children] spawn_stdio_named: a child given a write end as its stdin was refused its read
+02:43:31   [libc_children] spawn_system: system and pclose answered the command's exit 3, and popen its output
+02:43:31   [libc_children] spawn_wait_any: waitpid(-1), wait and wait4 answered three children in the order they ended, then ECHILD
+02:43:31   [libc_children] stdio_named: a std child held exactly the stdio its Command named
+02:43:31   PASS  libc_children  (12s)
+02:44:10 FAIL hosted_clang_hello: the job ended Some(101):
+hosted_clang_hello: pkg install: pkg: verified clang-v22.1.8-toyos-x86_64.tar.gz against SHA256SUMS (21dd4f04826692f0282117eef97e763c322072a91be95eed5a2a824481e51234)
+hosted_clang_hello: pkg install: pkg: installed clang 22.1.8 at /apps/clang (279642112 bytes), launching /apps/clang/bin/clang
+hosted_clang_hello: pkg install ended 0
+hosted_clang_hello: clang -c ended 0
+
+thread 'main' (1) panicked at src/bin/hosted_clang_hello.rs:66:5:
+cc ended ExitStatus(ExitStatus(Exited(1))):
+cc: error: unable to execute command: posix_spawn failed: unknown error
+
+stack backtrace:
+   0:      0x10000076230 - _Unwind_Backtrace
+   1:      0x10000055333 - <<std[3f57cffe72d90670]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[73b405bef30eeff1]::fmt::Display>::fmt
+   2:      0x1000007a537 - core[73b405bef30eeff1]::fmt::write
+   3:      0x1000005926b - <std[3f57cffe72d90670]::sys::stdio::toyos::Stderr as core[73b405bef30eeff1]::io::write::Write>::write_fmt
+   4:      0x10000036ae3 - std[3f57cffe72d90670]::panicking::default_hook::{closure#0}
+   5:      0x10000050f1e - std[3f57cffe72d90670]::panicking::default_hook
+   6:      0x100000510d9 - std[3f57cffe72d90670]::panicking::panic_with_hook
+   7:      0x10000036b9d - std[3f57cffe72d90670]::panicking::panic_handler::{closure#0}
+   8:      0x1000002eb79 - std[3f57cffe72d90670]::sys::backtrace::__rust_end_short_backtrace::<std[3f57cffe72d90670]::panicking::panic_handler::{closure#0}, !>
+   9:      0x100000373d8 - __rustc[d0c72ce299f394e5]::rust_begin_unwind
+  10:      0x1000007ac5b - core[73b405bef30eeff1]::panicking::panic_fmt
+  11:      0x1000001fa27 - hosted_clang_hello[652db9bafa1f1e0d]::run
+  12:      0x1000001fdcb - hosted_clang_hello[652db9bafa1f1e0d]::main
+  13:      0x10000021446 - std[3f57cffe72d90670]::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  14:      0x1000001f0a0 - std[3f57cffe72d90670]::rt::lang_start::<()>::{closure#0}
+  15:      0x100000503c6 - std[3f57cffe72d90670]::rt::lang_start_internal
+  16:      0x10000020da1 - main
+  17:      0x10000052793 - std[3f57cffe72d90670]::sys::pal::toyos::start_rust
+  18:      0x10000021d06 - _start
+
+02:44:10   FAIL  hosted_clang_hello  (64s)
+02:44:10   --- 2 guests, 0 of them not the shipping kernel, 1 kernel build(s): [""]
+
+02:44:10 host: fastest boot 3955 ms against the reference 1424 ms — liveness ceilings paid at 2.78x
+02:44:10 host: 14 core(s); a guest wider than that waits vcpus/cores longer again
+02:44:10 failures:
+02:44:10     hosted_clang_hello: the job ended Some(101):
+
+02:44:10 test result: FAILED. 1 passed, 1 failed, 0 invalidated, 2 total (79.3s; workers: 44s building, 76s testing)
+02:44:10 [toyos] this red run's serial logs are kept at ~/Dev/<user>/toyos-pkg/target/red-run-serial/toyos-tmp-27027-0
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `~/Dev/<user>/toyos-pkg/target/debug/deps/toyos_build-42525268d3587802 hosted_clang_hello libc_children` (exit status: 1)
