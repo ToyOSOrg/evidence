@@ -1,0 +1,210 @@
+warning: patch `libloading v0.8.9 ($SCRATCH/libloading-wt)` was not used in the crate graph
+  |
+  = help: perhaps you meant one of the following:
+          	crates-io
+   Compiling toyos-build v0.1.0 ($WORKTREE)
+    Finished `test` profile [optimized + debuginfo] target(s) in 3.37s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-42525268d3587802)
+
+01:16:24 running 1 tests, 12 wide
+
+01:16:24   RUN   scratch_dlopen
+01:16:24   BUILD x86_64 binaries of tests/guest/rust-tests, for scratch_dlopen
+01:17:28   BUILT x86_64 binaries of tests/guest/rust-tests, for scratch_dlopen  (64s)
+01:17:28   BUILD x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests, for scratch_dlopen
+01:18:06   BUILT x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests, for scratch_dlopen  (37s)
+01:18:06 [toyos] Compiling 140 C tests, and attempting 24 declared ones...
+01:18:29   BUILD x86_64 kernel, loader, ROOT of tests/images/testcases.toml, for scratch_dlopen
+01:19:12 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+01:19:13   BUILT x86_64 kernel, loader, ROOT of tests/images/testcases.toml, for scratch_dlopen  (43s)
+01:19:25 SCRATCH test_rs_dlopen_dedup: exit Some(0)
+acpiserver: table 1 of 1 (DSDT) loaded
+acpiserver: 1 of 1 tables loaded in 112 ms
+acpiserver: the tables' bytes took 1189 reads of firmware memory, in pages: 11 of type 9
+acpiserver: the tables' AML read SystemMemory 0 times, SystemIO 0 and PCI_Config 0, its memory in pages: none; took the Global Lock 0 times, 0 of them from the firmware; the firmware held it 0ns at the longest against a take; and ran Notify 0 times
+acpiserver: \_S5 evaluated: SLP_TYPa=0 SLP_TYPb=0
+acpiserver: \_S5 handed to the kernel: SLP_TYPa=0
+acpiserver: embedded controller none: no PNP0C09 device is present
+acpiserver: 0 table(s) loaded at run time and 0 refused; the namespace holds 266 objects in 512 slots, and the interpreter 154899 bytes of heap, of the 16777216 it holds between evaluations and the 34155580 while one runs
+acpiserver: the namespace initialised: \_SB._INI absent; 0 _STA read, 0 _INI run, no _REG run; the longest wait an evaluation asked 0 µs; evaluations refused, by kind: none
+acpiserver: GPEs: 2 with a method in GPE0, 2 of them runtime and enabled, 0 wake events left disabled, 0 past GPE0, 0 naming both triggers
+acpiserver: (this machine's own, quoted in no record) the runtime GPEs are [1, 2]
+acpiserver: no battery: 0 of 0 control-method batteries present, 0 AC adapter(s), with no embedded controller attached; the Global Lock taken 0 times on the way and given back 0 times, the firmware found holding it by 0 of the takes
+  PASS: 64 loads of one library returned one handle (0)
+  PASS: a module-global written through one handle is read through the other
+  PASS: 8 concurrent loads of one name returned one handle (1)
+all dlopen dedup checks passed
+
+01:19:40 SCRATCH test_rs_abuse_dlopen_ledger: exit Some(0)
+1024 libraries loaded and the next name refused; a name held still answers
+
+01:19:40 SCRATCH test_rs_std_tls_multi_crate: exit Some(0)
+PASS: two names loaded at once are two TLS modules
+PASS: basic push/pop
+PASS: lazy Box<dyn Trait> TLS
+PASS: dep global counter
+PASS: dep TLS
+PASS: push/pop after mixed accesses
+PASS: interleaved stress test
+all multi-crate TLS tests passed
+
+01:19:40 SCRATCH test_rs_std_tls_dlopen: exit Some(0)
+PASS: exe TLS before dlopen
+PASS: dlopen TLS initial values
+PASS: dlopen TLS counters independent
+PASS: dlopen TLS label independent
+PASS: exe TLS not corrupted
+PASS: nested RAII scoping
+PASS: cross-thread TLS isolation (sequential)
+PASS: concurrent cross-thread TLS isolation
+  main counter_a after re-dlopen: 1003
+  main counter_a final: 1103, child final: 2
+PASS: thread spawned BEFORE dlopen accesses dlopen'd TLS
+all dlopen TLS tests passed
+
+01:19:41 SCRATCH test_rs_std_unwind_so: exit Some(0)
+
+thread '<unnamed>' (1) panicked at src/lib.rs:70:9:
+intentional panic from .so
+stack backtrace:
+   0:       0xfffe86a210 - _Unwind_Backtrace
+   1:       0xfffe847903 - <<std[e3d59efc426fa341]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[73b405bef30eeff1]::fmt::Display>::fmt
+   2:       0xfffe86e527 - core[73b405bef30eeff1]::fmt::write
+   3:       0xfffe84ad9b - <std[e3d59efc426fa341]::sys::stdio::toyos::Stderr as core[73b405bef30eeff1]::io::write::Write>::write_fmt
+   4:       0xfffe831943 - std[e3d59efc426fa341]::panicking::default_hook::{closure#0}
+   5:       0xfffe8448ee - std[e3d59efc426fa341]::panicking::default_hook
+   6:       0xfffe844aa9 - std[e3d59efc426fa341]::panicking::panic_with_hook
+   7:       0xfffe831a38 - std[e3d59efc426fa341]::panicking::panic_handler::{closure#0}
+   8:       0xfffe82a1c9 - std[e3d59efc426fa341]::sys::backtrace::__rust_end_short_backtrace::<std[e3d59efc426fa341]::panicking::panic_handler::{closure#0}, !>
+   9:       0xfffe831fd8 - __rustc[d0c72ce299f394e5]::rust_begin_unwind
+  10:       0xfffe86ec4b - core[73b405bef30eeff1]::panicking::panic_fmt
+  11:       0xfffe81ef9c - std[e3d59efc426fa341]::panicking::catch_unwind::<(), tls_dlopen_lib[68ff66c4fa6c1b65]::dl_test_catch_unwind::{closure#0}>
+  12:       0xfffe81e9fe - dl_test_catch_unwind
+  13:      0x1000001cfdc - std_unwind_so[c181a154f36f90fc]::main
+  14:      0x1000001d566 - std[e3d59efc426fa341]::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  15:      0x1000001d580 - std[e3d59efc426fa341]::rt::lang_start::<()>::{closure#0}
+  16:      0x100000444b6 - std[e3d59efc426fa341]::rt::lang_start_internal
+  17:      0x1000001d481 - main
+  18:      0x10000045db3 - std[e3d59efc426fa341]::sys::pal::toyos::start_rust
+  19:      0x1000001f5c6 - _start
+PASS: catch_unwind in .so
+
+thread '<unnamed>' (1) panicked at src/lib.rs:92:9:
+unwind with guards
+stack backtrace:
+   0:       0xfffe86a210 - _Unwind_Backtrace
+   1:       0xfffe847903 - <<std[e3d59efc426fa341]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[73b405bef30eeff1]::fmt::Display>::fmt
+   2:       0xfffe86e527 - core[73b405bef30eeff1]::fmt::write
+   3:       0xfffe84ad9b - <std[e3d59efc426fa341]::sys::stdio::toyos::Stderr as core[73b405bef30eeff1]::io::write::Write>::write_fmt
+   4:       0xfffe831943 - std[e3d59efc426fa341]::panicking::default_hook::{closure#0}
+   5:       0xfffe8448ee - std[e3d59efc426fa341]::panicking::default_hook
+   6:       0xfffe844aa9 - std[e3d59efc426fa341]::panicking::panic_with_hook
+   7:       0xfffe831a38 - std[e3d59efc426fa341]::panicking::panic_handler::{closure#0}
+   8:       0xfffe82a1c9 - std[e3d59efc426fa341]::sys::backtrace::__rust_end_short_backtrace::<std[e3d59efc426fa341]::panicking::panic_handler::{closure#0}, !>
+   9:       0xfffe831fd8 - __rustc[d0c72ce299f394e5]::rust_begin_unwind
+  10:       0xfffe86ec4b - core[73b405bef30eeff1]::panicking::panic_fmt
+  11:       0xfffe81efec - tls_dlopen_lib[68ff66c4fa6c1b65]::dl_test_drop_during_unwind::{closure#0}
+  12:       0xfffe81efb9 - std[e3d59efc426fa341]::panicking::catch_unwind::<(), tls_dlopen_lib[68ff66c4fa6c1b65]::dl_test_drop_during_unwind::{closure#0}>
+  13:       0xfffe81ea4b - dl_test_drop_during_unwind
+  14:      0x1000001d01e - std_unwind_so[c181a154f36f90fc]::main
+  15:      0x1000001d566 - std[e3d59efc426fa341]::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  16:      0x1000001d580 - std[e3d59efc426fa341]::rt::lang_start::<()>::{closure#0}
+  17:      0x100000444b6 - std[e3d59efc426fa341]::rt::lang_start_internal
+  18:      0x1000001d481 - main
+  19:      0x10000045db3 - std[e3d59efc426fa341]::sys::pal::toyos::start_rust
+  20:      0x1000001f5c6 - _start
+PASS: Drop during unwind in .so
+
+thread '<unnamed>' (2) panicked at src/lib.rs:102:13:
+panic on .so thread
+stack backtrace:
+   0:       0xfffe86a210 - _Unwind_Backtrace
+   1:       0xfffe847903 - <<std[e3d59efc426fa341]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[73b405bef30eeff1]::fmt::Display>::fmt
+   2:       0xfffe86e527 - core[73b405bef30eeff1]::fmt::write
+   3:       0xfffe84ad9b - <std[e3d59efc426fa341]::sys::stdio::toyos::Stderr as core[73b405bef30eeff1]::io::write::Write>::write_fmt
+   4:       0xfffe831943 - std[e3d59efc426fa341]::panicking::default_hook::{closure#0}
+   5:       0xfffe8448ee - std[e3d59efc426fa341]::panicking::default_hook
+   6:       0xfffe844aa9 - std[e3d59efc426fa341]::panicking::panic_with_hook
+   7:       0xfffe831a38 - std[e3d59efc426fa341]::panicking::panic_handler::{closure#0}
+   8:       0xfffe82a1c9 - std[e3d59efc426fa341]::sys::backtrace::__rust_end_short_backtrace::<std[e3d59efc426fa341]::panicking::panic_handler::{closure#0}, !>
+   9:       0xfffe831fd8 - __rustc[d0c72ce299f394e5]::rust_begin_unwind
+  10:       0xfffe86ec4b - core[73b405bef30eeff1]::panicking::panic_fmt
+  11:       0xfffe81ef6c - std[e3d59efc426fa341]::panicking::catch_unwind::<(), tls_dlopen_lib[68ff66c4fa6c1b65]::dl_test_thread_unwind::{closure#0}::{closure#0}>
+  12:       0xfffe81ed22 - std[e3d59efc426fa341]::sys::backtrace::__rust_begin_short_backtrace::<tls_dlopen_lib[68ff66c4fa6c1b65]::dl_test_thread_unwind::{closure#0}, bool>
+  13:       0xfffe81e521 - <std[e3d59efc426fa341]::thread::lifecycle::spawn_unchecked<tls_dlopen_lib[68ff66c4fa6c1b65]::dl_test_thread_unwind::{closure#0}, bool>::{closure#1} as core[73b405bef30eeff1]::ops::function::FnOnce<()>>::call_once::{shim:vtable#0}
+  14:       0xfffe84672e - std[e3d59efc426fa341]::sys::thread::toyos::thread_trampoline
+  15:                0x0 - <unknown>
+PASS: thread unwind in .so
+all .so unwind tests passed
+
+01:19:41 SCRATCH test_c_204_dl_iterate_phdr: exit Some(0)
+executable: ""
+modules: 1
+stopped at 1 of 1: visited 1, returned 1
+executable: ""
+library: /system/lib/libtls_lib.so
+modules: 2
+stopped at 1 of 2: visited 1, returned 7
+stopped at 2 of 2: visited 2, returned -1
+
+01:19:41 SCRATCH test_c_207_libc_names: exit Some(0)
+read what creat wrote: "hello"
+readlink: 18, "/system/bin/toybox"
+readlink into 4: 4, "/sys#"
+readlink into 0: -1, EINVAL
+readlink of a file: -1, EINVAL
+readlink of nothing: -1, ENOENT
+realpath of a link: /system/bin/toybox
+realpath of a directory through ..: /system/lib
+realpath of a relative path: /system/bin/toybox
+realpath of nothing: -1, ENOENT
+realpath through a file: -1, ENOTDIR
+truncate to 2: 0; stat size: 2
+truncate of nothing: -1, ENOENT
+setbuf: file 0 bytes, the buffer holds them
+ftello: 10; fseeko 3: 0; ftello: 3; fgetc: 3
+setbuf NULL: file 3 bytes
+signal SIGALRM: was SIG_DFL, then SIG_IGN
+sigaction SIGALRM: 0 0, SIG_IGN, flags 0x10000000, mask 0x200
+alarm 5: 0; alarm 0: 1 to 5; again: 0
+entry: a DT_UNKNOWN
+entry: b DT_UNKNOWN
+entry: sub DT_DIR
+opendir of nothing: -1, ENOENT
+dladdr(main): 1; names this program: yes; starts where dl_iterate_phdr says: yes; symbol: none
+dladdr(a stack address): 0
+dladdr(tls_get_label + 1): 1, /system/lib/libtls_lib.so, tls_get_label at the symbol's address: yes
+strnlen: 3 2 0
+strsignal: Segmentation fault; Unknown signal
+modf(-3.25): -3 and -0.25
+logb: -4 10
+logb(0): -inf, ERANGE
+lround: 3 -3 0
+lround(1e19): -9223372036854775808, EDOM
+pathconf _PC_PATH_MAX: 4096
+sysconf _SC_PAGE_SIZE: 4096
+
+01:19:41   BUILD x86_64 kernel boot-actuators,test-actuators, for scratch_dlopen
+01:20:38   BUILT x86_64 kernel boot-actuators,test-actuators, for scratch_dlopen  (56s)
+01:20:50 SCRATCH test_rs_abuse_kernel_addr: exit Some(0)
+acpiserver: table 1 of 1 (DSDT) loaded
+acpiserver: 1 of 1 tables loaded in 96 ms
+acpiserver: the tables' bytes took 1189 reads of firmware memory, in pages: 11 of type 9
+acpiserver: the tables' AML read SystemMemory 0 times, SystemIO 0 and PCI_Config 0, its memory in pages: none; took the Global Lock 0 times, 0 of them from the firmware; the firmware held it 0ns at the longest against a take; and ran Notify 0 times
+acpiserver: \_S5 evaluated: SLP_TYPa=0 SLP_TYPb=0
+acpiserver: \_S5 handed to the kernel: SLP_TYPa=0
+acpiserver: embedded controller none: no PNP0C09 device is present
+acpiserver: 0 table(s) loaded at run time and 0 refused; the namespace holds 266 objects in 512 slots, and the interpreter 154899 bytes of heap, of the 16777216 it holds between evaluations and the 34155580 while one runs
+acpiserver: the namespace initialised: \_SB._INI absent; 0 _STA read, 0 _INI run, no _REG run; the longest wait an evaluation asked 0 µs; evaluations refused, by kind: none
+acpiserver: GPEs: 2 with a method in GPE0, 2 of them runtime and enabled, 0 wake events left disabled, 0 past GPE0, 0 naming both triggers
+acpiserver: (this machine's own, quoted in no record) the runtime GPEs are [1, 2]
+acpiserver: no battery: 0 of 0 control-method batteries present, 0 AC adapter(s), with no embedded controller attached; the Global Lock taken 0 times on the way and given back 0 times, the firmware found holding it by 0 of the takes
+dlopen and futex refuse an address they may not reach, and kernel memory is untouched
+
+01:20:50   PASS  scratch_dlopen  (64s)
+01:20:50   --- 2 guests, 1 of them not the shipping kernel, 2 kernel build(s): ["", "boot-actuators,test-actuators"]
+
+01:20:50 host: fastest boot 11370 ms against the reference 1424 ms — liveness ceilings paid at 7.98x
+01:20:50 host: 14 core(s); a guest wider than that waits vcpus/cores longer again
+01:20:50 test result: ok. 1 passed, 1 total (265.6s; workers: 201s building, 64s testing)
+exit 0
