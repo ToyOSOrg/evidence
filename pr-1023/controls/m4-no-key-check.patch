@@ -1,0 +1,11 @@
+--- a/lib/crypto/src/mlkem.rs	2026-10-22 21:08:16
++++ b/lib/crypto/src/mlkem.rs	2026-10-22 21:08:16
+@@ -194,7 +194,7 @@
+         }
+         for chunk in input[..1152].as_chunks::<384>().0 {
+             let p = Poly::decode(12, chunk);
+-            if p.0.iter().any(|&x| u32::from(x) >= Q) {
++            if p.0.iter().any(|&x| u32::from(x) > Q) {
+                 return Err(Error::InvalidKey);
+             }
+         }

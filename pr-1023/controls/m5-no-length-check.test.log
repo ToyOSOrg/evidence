@@ -1,0 +1,91 @@
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.12s
+     Running unittests src/lib.rs (target/debug/deps/toyos_ssh-7aedce73d5d951d7)
+
+running 6 tests
+test base64::tests::rfc_4648_vectors ... ok
+test wire::tests::a_reader_refuses_by_the_fields_name ... ok
+test wire::tests::an_mpint_is_written_as_rfc_4251_spells_it ... ok
+test hostkey::tests::a_key_ssh_keygen_minted_reads ... ok
+test hostkey::tests::rfc_8032_vectors ... ok
+test hostkey::tests::a_key_that_is_not_one_is_refused_by_name ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/fuzz.rs (target/debug/deps/fuzz-3fd333f414f673e1)
+
+running 2 tests
+test every_bent_recording_is_total_and_a_bend_before_the_login_prevents_it ... ok
+test every_session_is_total_and_none_logs_in_without_a_right_signature ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.71s
+
+     Running tests/refusals.rs (target/debug/deps/refusals-042abf93eb21c4df)
+
+running 17 tests
+test a_re_exchange_holds_output_until_its_newkeys ... ok
+test a_signature_over_anything_else_is_refused ... ok
+test an_identification_line_is_held_to_rfc_4253 ... ok
+test an_unlisted_key_is_refused_at_the_offer_and_signed ... ok
+test every_other_method_is_refused_by_name ... ok
+test an_rsa_key_is_refused_by_name ... ok
+test six_failures_end_the_session ... ok
+test a_listed_key_is_asked_to_sign_and_its_signature_logs_in ... ok
+test nothing_but_authentication_is_taken_before_it ... ok
+test a_channel_serves_one_exec_and_nothing_else ... ok
+test a_closed_channel_is_gone ... ok
+test the_first_exchange_is_held_to_its_rules ... ok
+test a_tampered_sealed_packet_is_refused_in_silence ... ok
+test a_packet_is_held_to_its_caps ... ok
+test the_authorizer_is_asked_again_with_the_signature ... ok
+test the_windows_bound_both_sides ... ok
+test a_channel_message_is_held_to_its_channel ... ok
+
+test result: ok. 17 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/replay.rs (target/debug/deps/replay-251990da33b7db23)
+
+running 11 tests
+test a_replay_under_another_seed_does_not_open ... ok
+test a_terrapin_injection_into_the_first_exchange_is_refused ... ok
+test a_forwarding_channel_is_refused_by_name ... ok
+test openssh_holding_only_an_rsa_key_offers_none ... ok
+test openssh_negotiated_the_hybrid ... ok
+test the_keys_derived_from_a_recorded_exchange_open_what_openssh_sealed ... ok
+test an_exec_over_the_classical_exchange_replays ... ok
+test an_exec_fed_stdin_replays ... ok
+test a_key_the_server_does_not_name_is_refused_at_the_offer ... ok
+test an_exec_openssh_ran_replays ... ok
+test a_session_the_client_rekeyed_three_times_replays ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/vectors.rs (target/debug/deps/vectors-d79be1af9a7adaae)
+
+running 3 tests
+test rfc_7748_section_6_1 ... ok
+test a_hybrid_init_is_held_to_its_length_and_its_key_check ... FAILED
+test a_client_key_that_makes_a_zero_secret_is_refused ... ok
+
+failures:
+
+---- a_hybrid_init_is_held_to_its_length_and_its_key_check stdout ----
+
+thread 'a_hybrid_init_is_held_to_its_length_and_its_key_check' (14589999) panicked at build/ssh/src/transport.rs:393:74:
+range end index 32 out of range for slice of length 0
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    a_hybrid_init_is_held_to_its_length_and_its_key_check
+
+test result: FAILED. 2 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-ssh --test vectors`
+   Doc-tests toyos_ssh
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: 1 target failed:
+    `-p toyos-ssh --test vectors`

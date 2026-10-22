@@ -1,0 +1,11 @@
+--- a/build/ssh/src/transport.rs	2026-10-22 21:08:16
++++ b/build/ssh/src/transport.rs	2026-10-22 21:08:16
+@@ -390,7 +390,7 @@
+     fn hybrid(&mut self, init: &[u8]) -> Result<(Vec<u8>, Vec<u8>), Refusal> {
+         let (kem_key, ecdh_key) = init
+             .split_at_checked(MLKEM768_KEY_LEN)
+-            .and_then(|(kem, ecdh)| Some((kem, <[u8; 32]>::try_from(ecdh).ok()?)))
++            .and_then(|(kem, ecdh)| Some((kem, <[u8; 32]>::try_from(&ecdh[..32]).ok()?)))
+             .ok_or(Refusal::KeyExchange("a C_INIT that is not an ML-KEM-768 key and an X25519 key"))?;
+         let kem_key = mlkem::EncapsulationKey::from_bytes(kem_key)
+             .map_err(|_| Refusal::KeyExchange("an ML-KEM-768 encapsulation key that fails FIPS 203's check"))?;

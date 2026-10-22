@@ -1,0 +1,11 @@
+--- a/build/ssh/src/transport.rs	2026-10-22 21:08:16
++++ b/build/ssh/src/transport.rs	2026-10-22 21:08:16
+@@ -397,7 +397,7 @@
+         let (server, ecdh) = self.x25519(ecdh_key)?;
+         let (ciphertext, kem) = kem_key.encapsulate(&mut self.rng).expect("the caller's randomness");
+         let mut secret = Vec::new();
+-        put_string(&mut secret, hybrid::for_ssh(kem, ecdh).as_bytes());
++        put_mpint(&mut secret, hybrid::for_ssh(kem, ecdh).as_bytes());
+         Ok(([&ciphertext[..], &server].concat(), secret))
+     }
+ 

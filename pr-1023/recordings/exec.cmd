@@ -1,0 +1,1 @@
+ssh -v -n -F /dev/null -o IdentityAgent=none -o IdentitiesOnly=yes -o UserKnownHostsFile=known_hosts -o HostKeyAlias=toyos-test -o StrictHostKeyChecking=yes -o BatchMode=yes -p 22741 -i user_ed25519 toyos@127.0.0.1 echo\ hello
