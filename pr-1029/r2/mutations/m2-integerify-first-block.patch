@@ -1,0 +1,13 @@
+diff --git a/lib/crypto/src/scrypt.rs b/lib/crypto/src/scrypt.rs
+index 81588fe09..f96943f99 100644
+--- a/lib/crypto/src/scrypt.rs
++++ b/lib/crypto/src/scrypt.rs
+@@ -142,7 +142,7 @@ fn ro_mix(table: &mut [u32], x: &mut [u32], y: &mut [u32], scratch: &mut [u32; 1
+ fn mix_with_entry(table: &[u32], from: &mut [u32], to: &mut [u32], scratch: &mut [u32; 16]) {
+     let words = from.len();
+     // Integerify's low word: N <= 2^23 under `MAX_MEMORY`.
+-    let j = from[words - 16] as usize & (table.len() / words - 1);
++    let j = from[0] as usize & (table.len() / words - 1);
+     for (a, b) in from.iter_mut().zip(&table[j * words..(j + 1) * words]) {
+         *a ^= b;
+     }

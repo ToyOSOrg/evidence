@@ -1,0 +1,64 @@
+warning: unused import: `wipe32`
+  --> lib/crypto/src/scrypt.rs:21:33
+   |
+21 |     secret::{Secret, Workspace, wipe32},
+   |                                 ^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `wipe32` is never used
+  --> lib/crypto/src/secret.rs:47:15
+   |
+47 | pub(crate) fn wipe32(words: &mut [u32]) {
+   |               ^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `toyos-crypto` (lib) generated 2 warnings (run `cargo fix --lib -p toyos-crypto` to apply 1 suggestion)
+warning: `toyos-crypto` (lib test) generated 1 warning (1 duplicate)
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.32s
+     Running unittests src/lib.rs (target/debug/deps/toyos_crypto-785517279d8c51cf)
+
+running 7 tests
+test scrypt::tests::a_cost_past_the_callers_limits_is_refused ... ok
+test scrypt::tests::parameters_past_the_rfc_or_max_memory_are_refused ... ok
+test scrypt::tests::a_workspace_of_any_other_length_and_an_empty_output_are_refused ... ok
+test scrypt::tests::rfc7914_salsa20_8_core ... ok
+test scrypt::tests::rfc7914_block_mix ... ok
+test scrypt::tests::rfc7914_ro_mix ... ok
+test scrypt::tests::the_workspace_is_erased ... FAILED
+
+failures:
+
+---- scrypt::tests::the_workspace_is_erased stdout ----
+
+thread 'scrypt::tests::the_workspace_is_erased' (20738367) panicked at lib/crypto/src/scrypt.rs:314:9:
+assertion failed: workspace.iter().all(|&w| w == 0)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    scrypt::tests::the_workspace_is_erased
+
+test result: FAILED. 6 passed; 1 failed; 0 ignored; 0 measured; 49 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-crypto --lib`
+     Running tests/differential.rs (target/debug/deps/differential-8b44a55eef0e1302)
+
+running 3 tests
+test seeded_pbkdf2_against_ring ... ok
+test seeded_scrypt_against_rustcrypto ... ok
+test scrypt_at_the_bcachefs_costs ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 16 filtered out; finished in 1.05s
+
+     Running tests/vectors.rs (target/debug/deps/vectors-eea9db13e1567b3d)
+
+running 2 tests
+test rfc7914_pbkdf2_hmac_sha256 ... ok
+test rfc7914_scrypt ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 2.89s
+
+error: 1 target failed:
+    `-p toyos-crypto --lib`

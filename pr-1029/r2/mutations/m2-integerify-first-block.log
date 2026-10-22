@@ -1,0 +1,126 @@
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.17s
+     Running unittests src/lib.rs (target/debug/deps/toyos_crypto-785517279d8c51cf)
+
+running 7 tests
+test scrypt::tests::parameters_past_the_rfc_or_max_memory_are_refused ... ok
+test scrypt::tests::a_workspace_of_any_other_length_and_an_empty_output_are_refused ... ok
+test scrypt::tests::a_cost_past_the_callers_limits_is_refused ... ok
+test scrypt::tests::rfc7914_salsa20_8_core ... ok
+test scrypt::tests::rfc7914_block_mix ... ok
+test scrypt::tests::the_workspace_is_erased ... ok
+test scrypt::tests::rfc7914_ro_mix ... FAILED
+
+failures:
+
+---- scrypt::tests::rfc7914_ro_mix stdout ----
+
+thread 'scrypt::tests::rfc7914_ro_mix' (20704553) panicked at lib/crypto/src/scrypt.rs:253:9:
+assertion `left == right` failed
+  left: [2947947362, 1287304531, 3322820785, 4145977258, 752061873, 3114540871, 2283656248, 407893264, 3329455546, 2518765874, 2698237554, 1804034579, 1362243245, 1636704334, 506760738, 3056293809, 333514506, 1544046507, 1496618533, 2670531727, 1814190688, 2770978298, 633459210, 3178897385, 3337195478, 1196006799, 1343208837, 3592349591, 2894103938, 1819726052, 3713211501, 566492947]
+ right: [2478951545, 3404438882, 1879801604, 3069594464, 1256055596, 1440949910, 2556558586, 1177283302, 1729332437, 699439419, 1472423382, 649338720, 3153375904, 2683175074, 2614182666, 1906055767, 3863089647, 1864784477, 746834653, 2091556837, 4053535660, 3405720510, 3993046320, 3290003000, 1157436078, 2684613176, 2126832100, 528880835, 3414659150, 1751791923, 3539593331, 2387319379]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    scrypt::tests::rfc7914_ro_mix
+
+test result: FAILED. 6 passed; 1 failed; 0 ignored; 0 measured; 49 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-crypto --lib`
+     Running tests/differential.rs (target/debug/deps/differential-8b44a55eef0e1302)
+
+running 3 tests
+test seeded_scrypt_against_rustcrypto ... FAILED
+test seeded_pbkdf2_against_ring ... ok
+test scrypt_at_the_bcachefs_costs ... FAILED
+
+failures:
+
+---- seeded_scrypt_against_rustcrypto stdout ----
+
+thread '<unnamed>' (20704673) panicked at lib/crypto/tests/differential.rs:760:13:
+case 0: N = 2^1, r = 2, p = 1, 85 bytes
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread '<unnamed>' (20704675) panicked at lib/crypto/tests/differential.rs:760:13:
+case 1: N = 2^2, r = 3, p = 1, 2 bytes
+
+thread '<unnamed>' (20704677) panicked at lib/crypto/tests/differential.rs:760:13:
+case 2: N = 2^4, r = 7, p = 1, 146 bytes
+
+thread '<unnamed>' (20704679) panicked at lib/crypto/tests/differential.rs:760:13:
+case 3: N = 2^2, r = 2, p = 2, 80 bytes
+
+thread '<unnamed>' (20704682) panicked at lib/crypto/tests/differential.rs:760:13:
+case 4: N = 2^3, r = 4, p = 1, 15 bytes
+
+thread '<unnamed>' (20704687) panicked at lib/crypto/tests/differential.rs:760:13:
+case 6: N = 2^4, r = 6, p = 1, 43 bytes
+
+thread '<unnamed>' (20704690) panicked at lib/crypto/tests/differential.rs:760:13:
+case 7: N = 2^7, r = 3, p = 1, 9 bytes
+
+thread '<unnamed>' (20704692) panicked at lib/crypto/tests/differential.rs:760:13:
+case 8: N = 2^1, r = 4, p = 4, 116 bytes
+
+thread '<unnamed>' (20704697) panicked at lib/crypto/tests/differential.rs:760:13:
+case 10: N = 2^4, r = 6, p = 1, 68 bytes
+
+thread '<unnamed>' (20704699) panicked at lib/crypto/tests/differential.rs:760:13:
+case 12: N = 2^1, r = 1, p = 3, 57 bytes
+
+thread '<unnamed>' (20704698) panicked at lib/crypto/tests/differential.rs:760:13:
+case 11: N = 2^7, r = 4, p = 3, 50 bytes
+
+thread '<unnamed>' (20704700) panicked at lib/crypto/tests/differential.rs:760:13:
+case 13: N = 2^8, r = 5, p = 3, 79 bytes
+
+thread '<unnamed>' (20704695) panicked at lib/crypto/tests/differential.rs:760:13:
+case 9: N = 2^4, r = 6, p = 4, 121 bytes
+
+thread '<unnamed>' (20704685) panicked at lib/crypto/tests/differential.rs:760:13:
+case 5: N = 2^5, r = 7, p = 1, 47 bytes
+
+thread 'seeded_scrypt_against_rustcrypto' (20704672) panicked at lib/crypto/tests/support/mod.rs:152:5:
+a scoped thread panicked
+
+---- scrypt_at_the_bcachefs_costs stdout ----
+
+thread 'scrypt_at_the_bcachefs_costs' (20704670) panicked at lib/crypto/tests/differential.rs:771:57:
+called `Result::unwrap()` on an `Err` value: "N = 2^14, r = 8, p = 16, 32 bytes"
+
+
+failures:
+    scrypt_at_the_bcachefs_costs
+    seeded_scrypt_against_rustcrypto
+
+test result: FAILED. 1 passed; 2 failed; 0 ignored; 0 measured; 16 filtered out; finished in 1.10s
+
+error: test failed, to rerun pass `-p toyos-crypto --test differential`
+     Running tests/vectors.rs (target/debug/deps/vectors-eea9db13e1567b3d)
+
+running 2 tests
+test rfc7914_scrypt ... FAILED
+test rfc7914_pbkdf2_hmac_sha256 ... ok
+
+failures:
+
+---- rfc7914_scrypt stdout ----
+
+thread 'rfc7914_scrypt' (20705580) panicked at lib/crypto/tests/vectors.rs:246:9:
+assertion `left == right` failed: N = 2^4, r = 1, p = 1
+  left: [162, 54, 182, 16, 25, 2, 151, 51, 53, 31, 27, 74, 236, 236, 150, 226, 238, 131, 157, 20, 39, 247, 170, 16, 241, 82, 218, 122, 154, 120, 9, 57, 197, 138, 127, 25, 35, 187, 155, 246, 130, 4, 143, 235, 72, 120, 178, 207, 167, 172, 17, 64, 183, 73, 165, 185, 132, 180, 224, 136, 160, 162, 101, 249]
+ right: [119, 214, 87, 98, 56, 101, 123, 32, 59, 25, 202, 66, 193, 138, 4, 151, 241, 107, 72, 68, 227, 7, 74, 232, 223, 223, 250, 63, 237, 226, 20, 66, 252, 208, 6, 157, 237, 9, 72, 248, 50, 106, 117, 58, 15, 200, 31, 23, 232, 211, 224, 251, 46, 13, 54, 40, 207, 53, 226, 12, 56, 209, 137, 6]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    rfc7914_scrypt
+
+test result: FAILED. 1 passed; 1 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.02s
+
+error: test failed, to rerun pass `-p toyos-crypto --test vectors`
+error: 3 targets failed:
+    `-p toyos-crypto --lib`
+    `-p toyos-crypto --test differential`
+    `-p toyos-crypto --test vectors`

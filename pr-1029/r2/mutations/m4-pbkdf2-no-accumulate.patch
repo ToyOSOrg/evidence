@@ -1,0 +1,13 @@
+diff --git a/lib/crypto/src/kdf.rs b/lib/crypto/src/kdf.rs
+index 949e4da31..4c23bec59 100644
+--- a/lib/crypto/src/kdf.rs
++++ b/lib/crypto/src/kdf.rs
+@@ -185,7 +185,7 @@ pub(crate) fn pbkdf2_blocks<H: Digest>(
+             mac.update(&u.0[..H::OUTPUT_LEN])?;
+             mac.finish(&mut u.0[..H::OUTPUT_LEN])?;
+             for (t, u) in t.0.iter_mut().zip(&u.0) {
+-                *t ^= u;
++                *t = *u;
+             }
+         }
+         chunk.copy_from_slice(&t.0[..chunk.len()]);

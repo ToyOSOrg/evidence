@@ -1,0 +1,12 @@
+diff --git a/lib/crypto/src/scrypt.rs b/lib/crypto/src/scrypt.rs
+index 81588fe09..57507cd69 100644
+--- a/lib/crypto/src/scrypt.rs
++++ b/lib/crypto/src/scrypt.rs
+@@ -55,7 +55,6 @@ impl Params {
+         let (n, r128, p128) = (1u128 << log_n, u128::from(r), u128::from(p));
+         let valid = u128::from(log_n) < 16 * r128
+             && p128 * 128 * r128 <= u128::from(u32::MAX) * 32
+-            && 128 * r128 * n <= MAX_MEMORY as u128
+             && 128 * r128 * (n + 2) <= limits.memory as u128
+             && n * r128 * p128 <= u128::from(limits.work);
+         if valid { Ok(Self { log_n, r, p }) } else { Err(Error::InvalidParameters) }
