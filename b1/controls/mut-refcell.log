@@ -1,0 +1,240 @@
+    Checking toyos-abi v0.16.0 (~/dev/toyos-storage-b1/sdk/abi)
+    Checking toyos-blockhold v0.1.0 (~/dev/toyos-storage-b1/lib/blockhold)
+    Checking toyos-gpt v0.1.0 (~/dev/toyos-storage-b1/lib/gpt)
+    Checking toyos-blockdev v0.1.0 (~/dev/toyos-storage-b1/lib/blockdev)
+    Checking toyos-wallclock v0.1.0 (~/dev/toyos-storage-b1/lib/wallclock)
+    Checking toyos-osrelease v0.1.0 (~/dev/toyos-storage-b1/sdk/osrelease)
+    Checking bcachefs v0.1.0 (~/dev/toyos-storage-b1/lib/bcachefs)
+    Checking toyos-fat32 v0.1.0 (~/dev/toyos-storage-b1/lib/fat32)
+    Checking toyos v0.18.0 (~/dev/toyos-storage-b1/sdk/toyos)
+    Checking toyos-manifest v0.1.0 (~/dev/toyos-storage-b1/lib/manifest)
+    Checking toyos-blockring v0.1.0 (~/dev/toyos-storage-b1/lib/blockring)
+    Checking toyos-blockserve v0.1.0 (~/dev/toyos-storage-b1/lib/blockserve)
+    Checking diskserver v0.0.0 (~/dev/toyos-storage-b1/system/diskserver)
+    Checking fileserver v0.0.0 (~/dev/toyos-storage-b1/system/fileserver)
+error: this `if` statement can be collapsed
+   --> system/fileserver/src/bounds.rs:112:5
+    |
+112 | /     if slot == Slot::AtHello {
+113 | |         if let Err(why) = served_slot(served, of_share) {
+114 | |             return Hello::Refused(why);
+115 | |         }
+116 | |     }
+    | |_____^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#collapsible_if
+    = note: `-D clippy::collapsible-if` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::collapsible_if)]`
+help: collapse nested if block
+    |
+112 ~     if slot == Slot::AtHello
+113 ~         && let Err(why) = served_slot(served, of_share) {
+114 |             return Hello::Refused(why);
+115 ~         }
+    |
+
+error: this `RefCell` reference is held across an await point
+   --> system/fileserver/src/cache.rs:260:13
+    |
+260 |         let held = self.inner.borrow_mut();
+    |             ^^^^
+    |
+    = help: ensure the reference is dropped before calling `await`
+note: these are all the await points this reference is held through
+   --> system/fileserver/src/cache.rs:261:27
+    |
+261 |         self.disk.flush().await?;
+    |                           ^^^^^
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#await_holding_refcell_ref
+    = note: `-D clippy::await-holding-refcell-ref` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::await_holding_refcell_ref)]`
+
+error: large size difference between variants
+  --> system/fileserver/src/data.rs:77:1
+   |
+77 | / pub enum Probed<D: Disk> {
+78 | |     /// A volume of ours, mounted, or a designated one freshly formatted.
+79 | |     Mounted(DataVolume<D>),
+   | |     ---------------------- the largest variant contains at least 416 bytes
+80 | |     /// A volume of ours that does not mount; nothing stands in and nothing is
+81 | |     /// written to it.
+82 | |     Unmountable(String),
+   | |     ------------------- the second-largest variant contains at least 24 bytes
+83 | |     /// No volume of ours and no designation stamp: never written.
+84 | |     Foreign,
+85 | | }
+   | |_^ the entire enum is at least 416 bytes
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#large_enum_variant
+   = note: `-D clippy::large-enum-variant` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::large_enum_variant)]`
+help: consider boxing the large fields or introducing indirection in some other way to reduce the total size of the enum
+   |
+79 -     Mounted(DataVolume<D>),
+79 +     Mounted(Box<DataVolume<D>>),
+   |
+
+error: this `if` statement can be collapsed
+   --> system/fileserver/src/data.rs:332:9
+    |
+332 | /         if let Some(node) = self.by_path.remove(path) {
+333 | |             if let Some(open) = self.open.get_mut(&node) {
+334 | |                 open.gone = true;
+335 | |             }
+336 | |         }
+    | |_________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#collapsible_if
+help: collapse nested if block
+    |
+332 ~         if let Some(node) = self.by_path.remove(path)
+333 ~             && let Some(open) = self.open.get_mut(&node) {
+334 |                 open.gone = true;
+335 ~             }
+    |
+
+error: this `if` statement can be collapsed
+   --> system/fileserver/src/data.rs:446:9
+    |
+446 | /         if how.truncate {
+447 | |             if let Err(e) = self.truncate(node, 0) {
+448 | |                 // A refused close is said, and its node kept for the next sync.
+449 | |                 let _ = self.close(node);
+...   |
+452 | |         }
+    | |_________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#collapsible_if
+help: collapse nested if block
+    |
+446 ~         if how.truncate
+447 ~             && let Err(e) = self.truncate(node, 0) {
+448 |                 // A refused close is said, and its node kept for the next sync.
+449 |                 let _ = self.close(node);
+450 |                 return Err(e);
+451 ~             }
+    |
+
+error: this `if` statement can be collapsed
+   --> system/fileserver/src/data.rs:495:13
+    |
+495 | /             if within == 0 && n - done >= BLOCK {
+496 | |                 if let Some(first) = block_for(&open.extents, page) {
+497 | |                     let mut run = 1u64;
+498 | |                     while ((run + 1) as usize) * BLOCK <= n - done
+...   |
+510 | |             }
+    | |_____________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#collapsible_if
+help: collapse nested if block
+    |
+495 ~             if within == 0 && n - done >= BLOCK
+496 ~                 && let Some(first) = block_for(&open.extents, page) {
+497 |                     let mut run = 1u64;
+...
+508 |                     continue;
+509 ~                 }
+    |
+
+error: this `if` statement can be collapsed
+   --> system/fileserver/src/data.rs:604:9
+    |
+604 | /         if within != 0 {
+605 | |             if let Some(block) = block_for(&open.extents, size / BLOCK as u64) {
+606 | |                 let mut page: [Block; 1] = [[0; BLOCK]];
+607 | |                 cache.block_on(cache.read(block, &mut page)).map_err(disk_word)?;
+...   |
+611 | |         }
+    | |_________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#collapsible_if
+help: collapse nested if block
+    |
+604 ~         if within != 0
+605 ~             && let Some(block) = block_for(&open.extents, size / BLOCK as u64) {
+606 |                 let mut page: [Block; 1] = [[0; BLOCK]];
+...
+609 |                 cache.block_on(cache.write(block, &page)).map_err(disk_word)?;
+610 ~             }
+    |
+
+error: this `if` statement can be collapsed
+   --> system/fileserver/src/fat.rs:158:9
+    |
+158 | /         if let Some(node) = self.by_path.remove(path) {
+159 | |             if let Some(open) = self.open.get_mut(&node) {
+160 | |                 open.gone = true;
+161 | |             }
+162 | |         }
+    | |_________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#collapsible_if
+help: collapse nested if block
+    |
+158 ~         if let Some(node) = self.by_path.remove(path)
+159 ~             && let Some(open) = self.open.get_mut(&node) {
+160 |                 open.gone = true;
+161 ~             }
+    |
+
+error: this `if` statement can be collapsed
+   --> system/fileserver/src/fat.rs:247:9
+    |
+247 | /         if how.truncate {
+248 | |             if let Err(e) = self.truncate(node, 0) {
+249 | |                 // A refused close is said, and its node kept for the next sync.
+250 | |                 let _ = self.close(node);
+...   |
+253 | |         }
+    | |_________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#collapsible_if
+help: collapse nested if block
+    |
+247 ~         if how.truncate
+248 ~             && let Err(e) = self.truncate(node, 0) {
+249 |                 // A refused close is said, and its node kept for the next sync.
+250 |                 let _ = self.close(node);
+251 |                 return Err(e);
+252 ~             }
+    |
+
+error: this `if` statement can be collapsed
+   --> system/fileserver/src/fat.rs:263:9
+    |
+263 | /         if self.writable {
+264 | |             if let Err(e) = self.level(node) {
+265 | |                 println!("fileserver: node {node} was not brought level at its last close ({e:?}); the next sync does it");
+266 | |                 return Err(e);
+267 | |             }
+268 | |         }
+    | |_________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#collapsible_if
+help: collapse nested if block
+    |
+263 ~         if self.writable
+264 ~             && let Err(e) = self.level(node) {
+265 |                 println!("fileserver: node {node} was not brought level at its last close ({e:?}); the next sync does it");
+266 |                 return Err(e);
+267 ~             }
+    |
+
+error: trait `Out` has a `len` method but no (possibly inherited) `is_empty` method
+  --> system/fileserver/src/volume.rs:56:1
+   |
+56 | / pub trait Out {
+57 | |     fn len(&self) -> usize;
+58 | |     /// `bytes` at `at`, inside `len()`.
+59 | |     fn put(&mut self, at: usize, bytes: &[u8]);
+60 | |     /// `len` zeros at `at`, inside `len()`: a hole's bytes.
+61 | |     fn zero(&mut self, at: usize, len: usize);
+62 | | }
+   | |_^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#len_without_is_empty
+   = note: `-D clippy::len-without-is-empty` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::len_without_is_empty)]`
+
+error: could not compile `fileserver` (lib) due to 11 previous errors

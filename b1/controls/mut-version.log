@@ -1,0 +1,32 @@
+   Compiling fileserver v0.0.0 (~/dev/toyos-storage-b1/system/fileserver)
+    Finished `test` profile [optimized + debuginfo] target(s) in 6.60s
+     Running unittests src/lib.rs (target/debug/deps/fileserver-a9fd742718f83d09)
+
+running 9 tests
+test cache::tests::a_transfer_past_the_disk_is_refused ... ok
+test cache::tests::a_write_reaches_the_disk_at_the_flush_and_not_before ... ok
+test cache::tests::a_fetch_a_write_overtook_is_not_kept ... ok
+test cache::tests::contiguous_misses_are_one_request_and_a_second_read_is_none ... ok
+test cache::tests::a_block_written_while_a_flush_carries_its_older_copy_stays_dirty ... FAILED
+test cache::tests::dirty_runs_go_out_in_runs ... ok
+test cache::tests::at_the_dirty_limit_a_refused_flush_refuses_the_write_and_the_cache_grows_no_larger ... ok
+test cache::tests::clean_blocks_are_bounded_and_dirty_ones_are_kept ... ok
+test cache::tests::every_evicted_clean_block_reads_back_off_the_disk_byte_for_byte ... ok
+
+failures:
+
+---- cache::tests::a_block_written_while_a_flush_carries_its_older_copy_stays_dirty stdout ----
+
+thread 'cache::tests::a_block_written_while_a_flush_carries_its_older_copy_stays_dirty' (14779620) panicked at system/fileserver/src/cache.rs:581:9:
+assertion `left == right` failed: the second write was not on the disk the flush made durable
+  left: 0
+ right: 1
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    cache::tests::a_block_written_while_a_flush_carries_its_older_copy_stays_dirty
+
+test result: FAILED. 8 passed; 1 failed; 0 ignored; 0 measured; 61 filtered out; finished in 0.35s
+
+error: test failed, to rerun pass `-p fileserver --lib`
