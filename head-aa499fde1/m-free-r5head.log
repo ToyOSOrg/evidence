@@ -1,0 +1,70 @@
+   Compiling toyos-build v0.1.0 ($WORKTREE)
+    Finished `test` profile [optimized + debuginfo] target(s) in 4.55s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-42525268d3587802)
+
+10:04:36 running 1 tests, 12 wide
+
+10:04:36   RUN   libc_children
+10:04:38   BUILD x86_64 stdio_named (toyos) of tests/guest/rust-tests, for libc_children
+10:04:39   BUILT x86_64 stdio_named (toyos) of tests/guest/rust-tests, for libc_children  (1s)
+10:04:39   BUILD x86_64 libc_recv_beside_close (toyos) of tests/guest/rust-tests, for libc_children
+10:04:41   BUILT x86_64 libc_recv_beside_close (toyos) of tests/guest/rust-tests, for libc_children  (1s)
+10:04:41   BUILD x86_64 quit_tree (toyos) of tests/guest/rust-tests, for libc_children
+10:04:42   BUILT x86_64 quit_tree (toyos) of tests/guest/rust-tests, for libc_children  (1s)
+10:04:42   BUILD x86_64 kernel, loader, ROOT of tests/images/libccase.toml, for libc_children
+10:04:45 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+10:04:45   BUILT x86_64 kernel, loader, ROOT of tests/images/libccase.toml, for libc_children  (2s)
+10:04:48   [libc_children] dev_null: /dev/null read end of file and took every write, here and as a child's stdio
+10:04:48   [libc_children] poll_closed: a closed descriptor answered POLLNVAL
+10:04:48   [libc_children] poll_negative: a negative descriptor was passed over and the pipe beside it answered
+10:04:58   [libc_children] spawn_cloexec: FD_CLOEXEC, O_CLOEXEC and addclose each kept a descriptor from the child, and a child without one spawned its own
+10:04:58   [libc_children] spawn_environ: setenv and unsetenv were seen in the child's environ
+10:04:58   [libc_children] spawn_kill_group: kill(-pgid) ended the group's two children and not the third; kill(pid, 0) probed
+10:04:58   [libc_children] spawn_pipe_eof: a piped stdout read to its end through poll, then waited for
+10:04:58   [libc_children] spawn_pipe_reader_gone: a child's write to a pipe whose one reader closed was refused EPIPE
+10:04:58   [libc_children] spawn_signaled: a killed child read SIGKILL, and each fault its class's signal
+10:04:58   [libc_children] spawn_stdio_named: a child given a write end as its stdin was refused its read
+10:04:58   [libc_children] spawn_system: system and pclose answered the command's exit 3, and popen its output
+10:04:59   [libc_children] spawn_wait_any: waitpid(-1), wait and wait4 answered three children in the order they ended, then ECHILD
+10:04:59   [libc_children] stdio_named: a std child held exactly the stdio its Command named
+10:04:59   [libc_children] libc_recv_beside_close: a recv blocked across its descriptor's close answered the peer's bytes, and its process lived on
+10:05:00   [libc_children] quit_tree: two generations listening by read each read interrupt and exited 0
+10:05:00   [libc_children] quit_tree: two generations listening by watch each read hang-up and exited 0
+10:05:00   [libc_children] quit_tree: one that never listened is killed, and its listening child with it, reading nothing
+10:05:00   [libc_children] quit_tree: a second quit kills a process holding the first unread
+10:05:00   [libc_children] quit_tree: one that reads each reason is asked 3 times and lives
+10:05:00   [libc_children] quit_tree: a quit without MANAGE is refused, and one of an ended process answers Ok
+10:05:00   [libc_children] quit_tree: a quit asks every process below it that listens, and kills the rest
+10:05:00 FAIL libc_children: spawn_children_cap ended Some(1) None:
+MEASURE held=0
+       total         used         free
+       4024M         178M        3846M
+MEASURE held=50
+       total         used         free
+       4024M         988M        3036M
+MEASURE held=100
+       total         used         free
+       4024M        1798M        2226M
+MEASURE held=150
+       total         used         free
+       4024M        2606M        1418M
+MEASURE held=200
+       total         used         free
+       4024M        3416M         608M
+FAIL ./check.h:35: refused == 0: posix_spawn /system/bin/test_c_spawn_children_cap held answered 12 (errno 0)
+
+10:05:00   FAIL  libc_children  (17s)
+10:05:00   --- 1 guests, 0 of them not the shipping kernel, 1 kernel build(s): [""]
+
+10:05:00 host: fastest boot 3287 ms against the reference 1424 ms — liveness ceilings paid at 2.31x
+10:05:00 host: 14 core(s); a guest wider than that waits vcpus/cores longer again
+10:05:00 failures:
+10:05:00     libc_children: spawn_children_cap ended Some(1) None:
+
+10:05:00 test result: FAILED. 0 passed, 1 failed, 0 invalidated, 1 total (23.5s; workers: 7s building, 17s testing)
+10:05:00 [toyos] this red run's serial logs are kept at $WORKTREE/target/red-run-serial/toyos-tmp-19220-0
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `$WORKTREE/target/debug/deps/toyos_build-42525268d3587802 libc_children` (exit status: 1)
+exit 1
