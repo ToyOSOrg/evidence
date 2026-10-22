@@ -6,3 +6,5 @@
 - Positive control: `-p toyos-crypto -e dev` finds ring as the crate's dev-dependency, so the query would print a path wherever one exists.
 
 `--target all` is used because the host rustc has no `x86_64-unknown-toyos` specification for cargo to ask.
+
+`ci-host.log`: `cargo run -- --ci host` at c195cf54c, the head of the stack (#1016, #1019 and #1020). Exit 0, 93 steps green.
