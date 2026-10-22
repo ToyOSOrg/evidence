@@ -1,0 +1,11 @@
+--- a/lib/crypto/src/arch/x86_64/aesni.rs
++++ b/lib/crypto/src/arch/x86_64/aesni.rs
+@@ -151,7 +151,7 @@
+ #[inline]
+ #[target_feature(enable = "sse2")]
+ fn counters<const N: usize>(iv: __m128i, key0: __m128i, first: u32, s: &mut [__m128i]) {
+-    if (first & 0xff) as usize + N <= 0x100 {
++    if (first & 0xff) as usize + N <= 0x101 {
+         let c = _mm_xor_si128(iv, _mm_set_epi32(first.to_be() as i32, 0, 0, 0));
+         for j in 0..N {
+             let step = _mm_set_epi8(j as i8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);

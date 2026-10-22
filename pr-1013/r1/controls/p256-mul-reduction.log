@@ -1,0 +1,173 @@
+   Compiling toyos-crypto v0.1.0 ($WORKTREE/lib/crypto)
+    Finished `release` profile [optimized] target(s) in 10.64s
+     Running unittests src/lib.rs (target/release/deps/toyos_crypto-b8ada226d0ed5af6)
+
+running 38 tests
+test aead::tests::nonce_sequence_exhaustion_is_terminal ... ok
+test chacha::tests::exhausted_counter_refuses_before_mutating_any_batch ... ok
+test aes::tests::fips197_portable_matches_instruction_path ... ok
+test chacha::tests::independent_blocks_match_one_at_a_time ... ok
+test block::tests::partial_blocks_match_bytewise_assembly_for_every_length_and_offset ... ok
+test ed25519::tests::a_small_order_r_satisfying_the_equation_is_refused ... ok
+test ed25519::tests::base_table_holds_the_odd_multiples_of_b ... ok
+test block::tests::xor_takes_the_stream_from_its_start_for_every_length ... ok
+test ed25519::tests::constants_match_their_definitions ... ok
+test ed25519::tests::small_order_encodings_are_the_eight_torsion_points ... ok
+test chacha::tests::dispatched_streams_preserve_counter_carries_and_batch_tails ... ok
+test ed25519::tests::noncanonical_encodings_and_negative_zero_are_refused ... ok
+test ed25519::tests::radix_16_digits_recompose_the_scalar ... ok
+test hash::tests::dispatched_compression_matches_the_portable_rounds ... ok
+test keccak::tests::fips202_empty ... ok
+test hash::tests::length_refusals_leave_state_unchanged ... ok
+test ed25519::tests::comb_table_holds_its_multiples ... ok
+test nist::tests::generation_takes_the_first_valid_candidate ... ok
+test nist::tests::static_tables_hold_their_multiples ... FAILED
+test nist::tests::booth_digits_recompose_the_scalar ... ok
+test nist::tests::public_sums_of_equal_and_opposite_points ... ok
+test nist::tests::booth_multiplication_matches_the_public_path ... FAILED
+test nist::tests::the_comb_matches_the_public_path ... FAILED
+test poly1305::tests::rfc8439_section_2_5_2 ... ok
+test ed25519::tests::the_comb_agrees_with_straus ... ok
+test scalar25519::tests::barretts_constant_is_floor_of_2_512_over_l ... ok
+test test_arithmetic::field25519_largest_reachable_limbs_stay_within_their_bounds ... ok
+test nist::tests::naf_digits_recompose_384_bit_scalars ... ok
+test test_arithmetic::nist_montgomery_domains_and_carries_match_integer_oracle ... FAILED
+test mlkem::tests::nist_expanded_keygen_secret_matches ... ok
+test test_arithmetic::scalar25519_reduction_and_signing_arithmetic_match_integer_oracle ... ok
+test x25519::tests::public_keys_by_the_comb_are_the_ladders ... ok
+test gcm::tests::dispatched_ghash_matches_the_bitwise_multiply ... ok
+test test_arithmetic::field25519_carries_and_noncanonical_inputs_match_integer_oracle ... ok
+test scalar25519::tests::naf_digits_recompose_the_scalar ... ok
+test poly1305::tests::matches_fiat_crypto_on_seeded_and_extreme_inputs ... ok
+test gcm::tests::counters_continue_across_the_stitched_and_tail_paths ... ok
+test rsa::tests::power_and_r2_match_integer_oracle ... ok
+
+failures:
+
+---- nist::tests::static_tables_hold_their_multiples stdout ----
+
+thread 'nist::tests::static_tables_hold_their_multiples' (6518839) panicked at lib/crypto/src/nist.rs:982:17:
+assertion `left == right` failed: row 0, entry 1
+  left: ([5357293309850091627, 283904475543791316, 7745899942399358686, 11150365694174488266], [7160250665489419610, 6613991185892024795, 7444889456536233094, 10846756517216995100])
+ right: ([3607683714633226070, 8177958867757579687, 371550378603286033, 2946518088280997204], [13641660543877913847, 7918536619951353622, 64023142082722864, 2497487262232776052])
+
+---- nist::tests::booth_multiplication_matches_the_public_path stdout ----
+
+thread 'nist::tests::booth_multiplication_matches_the_public_path' (6518835) panicked at lib/crypto/src/nist.rs:931:22:
+one side is the identity
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- nist::tests::the_comb_matches_the_public_path stdout ----
+
+thread 'nist::tests::the_comb_matches_the_public_path' (6518840) panicked at lib/crypto/src/nist.rs:1013:13:
+assertion `left == right` failed: k = ffffffff00000000000000004319055258e8617b0c46353d039cdaae
+  left: ([13628537447642657822, 215168200886840373, 17416424747820562678, 10636291494835596277], [4341468508872184037, 13977006609143113355, 8576370109736375488, 1360580703358344557])
+ right: ([9134729221239104544, 18021411573883438450, 7158977076964832737, 8637727680920147663], [9020722650404167416, 1449910576114204085, 9752304102704796751, 7013228794586913141])
+
+---- test_arithmetic::nist_montgomery_domains_and_carries_match_integer_oracle stdout ----
+
+thread 'test_arithmetic::nist_montgomery_domains_and_carries_match_integer_oracle' (6518848) panicked at lib/crypto/src/test_arithmetic.rs:156:5:
+assertion `left == right` failed
+  left: 13479973328867493596889623198546079866295737326621591159345223041025
+ right: 1
+
+
+failures:
+    nist::tests::booth_multiplication_matches_the_public_path
+    nist::tests::static_tables_hold_their_multiples
+    nist::tests::the_comb_matches_the_public_path
+    test_arithmetic::nist_montgomery_domains_and_carries_match_integer_oracle
+
+test result: FAILED. 34 passed; 4 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+error: test failed, to rerun pass `-p toyos-crypto --lib`
+     Running tests/differential.rs (target/release/deps/differential-7821cfa737df651b)
+
+running 9 tests
+test openssh_construction_matches_independent_primitives ... ok
+test sha2_streaming_boundaries ... ok
+test nist_curve_boundary_scalars ... FAILED
+test nist_curves_reference_ecdh_and_ecdsa ... FAILED
+test ed25519_reference_verification ... ok
+test x25519_reference_keys_and_shared_secrets ... ok
+test mlkem_reference_keygen_encapsulation_and_implicit_rejection ... ok
+test rsa_reference_pkcs1_and_pss ... ok
+test aead_all_algorithms_and_partial_blocks ... ok
+
+failures:
+
+---- nist_curve_boundary_scalars stdout ----
+
+thread 'nist_curve_boundary_scalars' (6518860) panicked at lib/crypto/tests/differential.rs:256:5:
+assertion `left == right` failed
+  left: [4, 155, 233, 56, 237, 109, 58, 2, 57, 190, 26, 25, 56, 22, 55, 135, 75, 135, 28, 120, 215, 189, 150, 98, 15, 229, 199, 195, 223, 43, 97, 209, 226, 175, 149, 88, 6, 122, 71, 198, 87, 169, 24, 103, 69, 165, 173, 133, 127, 176, 139, 161, 93, 239, 137, 68, 226, 69, 163, 213, 169, 197, 149, 12, 46]
+ right: [4, 107, 23, 209, 242, 225, 44, 66, 71, 248, 188, 230, 229, 99, 164, 64, 242, 119, 3, 125, 129, 45, 235, 51, 160, 244, 161, 57, 69, 216, 152, 194, 150, 79, 227, 66, 226, 254, 26, 127, 155, 142, 231, 235, 74, 124, 15, 158, 22, 43, 206, 51, 87, 107, 49, 94, 206, 203, 182, 64, 104, 55, 191, 81, 245]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- nist_curves_reference_ecdh_and_ecdsa stdout ----
+
+thread 'nist_curves_reference_ecdh_and_ecdsa' (6518861) panicked at lib/crypto/tests/differential.rs:147:9:
+assertion `left == right` failed
+  left: [4, 2, 183, 40, 96, 14, 86, 15, 231, 204, 125, 35, 101, 28, 159, 56, 232, 12, 40, 189, 72, 47, 62, 197, 103, 160, 46, 147, 140, 232, 52, 158, 189, 210, 175, 31, 174, 173, 24, 150, 129, 153, 238, 207, 154, 181, 80, 113, 182, 81, 1, 160, 68, 7, 159, 184, 246, 14, 85, 1, 144, 74, 129, 159, 218]
+ right: [4, 109, 136, 88, 146, 197, 33, 73, 246, 212, 67, 250, 117, 57, 31, 236, 8, 101, 243, 28, 162, 128, 108, 128, 5, 237, 78, 227, 157, 174, 117, 231, 109, 12, 59, 171, 74, 86, 22, 114, 61, 143, 95, 245, 100, 176, 10, 30, 179, 98, 153, 154, 152, 189, 10, 152, 239, 236, 39, 155, 215, 82, 230, 80, 82]
+
+
+failures:
+    nist_curve_boundary_scalars
+    nist_curves_reference_ecdh_and_ecdsa
+
+test result: FAILED. 7 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.86s
+
+error: test failed, to rerun pass `-p toyos-crypto --test differential`
+     Running tests/vectors.rs (target/release/deps/vectors-57ffb47358d9da90)
+
+running 8 tests
+test rfc5869_case_one_and_output_bound ... ok
+test rfc4231_hmac_sha256 ... ok
+test fips_sha2_abc_and_empty ... ok
+test malformed_public_boundaries ... ok
+test rfc8439_aead_and_authenticated_refusal ... ok
+test nist_gcm_zero_key_zero_block ... ok
+test rfc8032_empty_and_strict_rejection ... ok
+test rfc7748_x25519 ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/wycheproof.rs (target/release/deps/wycheproof-26f117a0c2ffa804)
+
+running 7 tests
+test wycheproof_ecdsa ... FAILED
+test wycheproof_ed25519 ... ok
+test wycheproof_hmac_and_hkdf ... ok
+test nist_mlkem768_kats ... ok
+test wycheproof_x25519 ... ok
+test wycheproof_rsa ... ok
+test wycheproof_aead ... ok
+
+failures:
+
+---- wycheproof_ecdsa stdout ----
+
+thread 'wycheproof_ecdsa' (6518890) panicked at lib/crypto/tests/wycheproof.rs:133:17:
+assertion `left == right` failed: ecdsa_secp256r1_sha256_test.json tcId 1
+  left: false
+ right: true
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    wycheproof_ecdsa
+
+test result: FAILED. 6 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+error: test failed, to rerun pass `-p toyos-crypto --test wycheproof`
+   Doc-tests toyos_crypto
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: 3 targets failed:
+    `-p toyos-crypto --lib`
+    `-p toyos-crypto --test differential`
+    `-p toyos-crypto --test wycheproof`

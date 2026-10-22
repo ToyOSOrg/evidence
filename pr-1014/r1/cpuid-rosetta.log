@@ -1,0 +1,7 @@
+# Rosetta 2 CPUID, development Mac (Apple M4 Pro), macOS 27.0.1
+## cargo run --target x86_64-apple-darwin (cpuid-rosetta.rs)
+leaf7 ebx 0x00000000: bmi2 0 adx 0 avx2 0; leaf1 ecx 0x0298220f
+## std::is_x86_feature_detected! without target-feature flags
+avx2 false avx512vl false bmi2 false
+
+Correction: pr-992/r2/rosetta-adx-sigill.log's 'bmi2 true adx true' line came from a probe built with -C target-feature=+bmi2,+adx, which makes is_x86_feature_detected! a compile-time constant. Rosetta does not report ADX; the SIGILL on adcx/adox (and mulx running) stands.

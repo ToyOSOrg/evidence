@@ -1,0 +1,11 @@
+--- a/lib/crypto/src/nist.rs
++++ b/lib/crypto/src/nist.rs
+@@ -93,7 +93,7 @@
+     /// an integer with the same multiple of every point, below 2^(64N + 2), in
+     /// N + 1 of the buffer's words. Erased when dropped.
+     fn representative(&self) -> Workspace<[u64; 7]> {
+-        let multiplier = C::OFFSET.wrapping_add((C::OFFSET ^ self.0[0] ^ 1) & 1);
++        let multiplier = C::OFFSET.wrapping_add((C::OFFSET ^ self.0[0]) & 1);
+         let mut k = Workspace([0u64; 7]);
+         let mut carry = 0u64;
+         for i in 0..N {

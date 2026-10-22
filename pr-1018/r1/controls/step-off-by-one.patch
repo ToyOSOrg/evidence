@@ -1,0 +1,11 @@
+--- a/lib/crypto/src/arch/x86_64/aesni.rs
++++ b/lib/crypto/src/arch/x86_64/aesni.rs
+@@ -154,7 +154,7 @@
+     if (first & 0xff) as usize + N <= 0x100 {
+         let c = _mm_xor_si128(iv, _mm_set_epi32(first.to_be() as i32, 0, 0, 0));
+         for j in 0..N {
+-            let step = _mm_set_epi8(j as i8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
++            let step = _mm_set_epi8((j as i8).wrapping_add(j as i8 & 1), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+             s[j] = _mm_xor_si128(_mm_add_epi8(c, step), key0);
+         }
+     } else {

@@ -1,0 +1,24 @@
+   Compiling toyos-build v0.1.0 ($WORKTREE)
+    Finished `test` profile [optimized + debuginfo] target(s) in 6.35s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-2b5f27db075df25a)
+14:23:45   BUILD x86_64 binaries of tests/guest/rust-tests
+14:23:58   BUILT x86_64 binaries of tests/guest/rust-tests  (12s)
+14:23:58   BUILD x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests
+14:24:03   BUILT x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests  (5s)
+14:24:03 [toyos] Compiling 141 C tests, and attempting 24 declared ones...
+14:24:08 [metal] 1 registration(s) and 0 shared member(s) over 1 boot(s)
+14:24:08   BUILD x86_64 kernel, loader, ROOT of $SCRATCH/readback-pr9/cryptocase/system-38f4c3fb3c3a5a1c.toml
+14:24:15 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+14:24:15   BUILT x86_64 kernel, loader, ROOT of $SCRATCH/readback-pr9/cryptocase/system-38f4c3fb3c3a5a1c.toml  (6s)
+14:24:15 [metal] cryptocase: 3 job(s) under a list bound of 60000 ms, armed with [] and a boot deadline of 120000 ms — $SCRATCH/readback-pr9/cryptocase/image.img
+# One boot per image. Each invocation is `cargo <words>` from this worktree.
+
+cryptocase
+  image: $SCRATCH/readback-pr9/cryptocase/image.img
+  cargo run -p toyos-metal -- --image $SCRATCH/readback-pr9/cryptocase/image.img --readback $SCRATCH/readback-pr9/cryptocase --fat32-check
+14:24:15 [metal] staged 1 image(s); $SCRATCH/readback-pr9/request.txt lists them. The machine was not touched, so this run establishes nothing about it.
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `$WORKTREE/target/debug/deps/toyos_build-2b5f27db075df25a --metal --metal-readback $SCRATCH/readback-pr9 crypto_instrument` (exit status: 2)
+readback exit 2
