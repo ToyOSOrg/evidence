@@ -1,0 +1,393 @@
+   Compiling toyos-abi v0.16.0 ($WT/sdk/abi)
+   Compiling toyos-manifest v0.1.0 ($WT/lib/manifest)
+   Compiling toyos-symbols v0.1.0 ($WT/lib/symbols)
+   Compiling toyos-input v0.1.0 ($WT/lib/input)
+   Compiling toyos-logstream v0.1.0 ($WT/lib/logstream)
+   Compiling toyos-bootmap v0.1.0 ($WT/lib/bootmap)
+   Compiling kernel v0.1.0 ($WT/kernel)
+   Compiling toyos-acpi v0.1.0 ($WT/lib/acpi)
+   Compiling toyos-swap v0.1.0 ($WT/lib/swap)
+   Compiling toyos-build v0.1.0 ($WT)
+   Compiling toyos-userbound v0.1.0 ($WT/lib/userbound)
+   Compiling toyos-metal v0.1.0 ($WT/tests/metal)
+    Finished `test` profile [optimized + debuginfo] target(s) in 17.24s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-2b5f27db075df25a)
+
+22:14:57 running 1 tests, 12 wide
+
+22:14:57   RUN   scratch_shared_sweep
+22:14:57   BUILD x86_64 binaries of tests/guest/rust-tests, for scratch_shared_sweep
+22:15:00 external deps changed: cleaning $WT/tests/guest/rust-tests/target/x86_64-unknown-toyos
+22:15:00 external deps changed: cleaning $WT/tests/guest/rust-tests/tls-dlopen-lib/target/x86_64-unknown-toyos
+22:15:00 external deps changed: cleaning $WT/tests/guest/rust-tests/tls-lib/target/x86_64-unknown-toyos
+22:15:00 external deps changed: cleaning $WT/tests/guest/rust-tests/tls-multi-crate/target/x86_64-unknown-toyos
+22:15:00 external deps changed: cleaning $WT/tests/guest/rust-tests/tls-cranelift/target/x86_64-unknown-toyos
+22:16:22   BUILT x86_64 binaries of tests/guest/rust-tests, for scratch_shared_sweep  (84s)
+22:16:25   BUILD x86_64 kernel, loader, ROOT of tests/images/testcases.toml, for scratch_shared_sweep
+22:16:27 external deps changed: cleaning $WT/target/x86_64-unknown-toyos
+22:17:01 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+22:17:01   BUILT x86_64 kernel, loader, ROOT of tests/images/testcases.toml, for scratch_shared_sweep  (36s)
+22:17:09 SWEEP vector_state exit=Some(101) err=None
+acpiserver: embedded controller none: no PNP0C09 device is present
+acpiserver: 0 table(s) loaded at run time and 0 refused; the namespace holds 266 objects in 512 slots, and the interpreter 154899 bytes of heap, of the 16777216 it holds between evaluations and the 34155580 while one runs
+acpiserver: the namespace initialised: \_SB._INI absent; 0 _STA read, 0 _INI run, no _REG run; the longest wait an evaluation asked 0 µs; evaluations refused, by kind: none
+acpiserver: GPEs: 2 with a method in GPE0, 2 of them runtime and enabled, 0 wake events left disabled, 0 past GPE0, 0 naming both triggers
+acpiserver: (this machine's own, quoted in no record) the runtime GPEs are [1, 2]
+acpiserver: no battery: 0 of 0 control-method batteries present, 0 AC adapter(s), with no embedded controller attached; the Global Lock taken 0 times on the way and given back 0 times, the firmware found holding it by 0 of the takes
+
+thread '<unnamed>' (6) panicked at src/bin/../arch/vector.rs:218:9:
+assertion `left == right` failed: a `stat` of /system/bin/test_rs_vector_state was refused
+  left: 18446744073709551614
+ right: 0
+stack backtrace:
+   0:      0x100000689f0 - _Unwind_Backtrace
+   1:      0x1000004b653 - <<std[da8fdf9c5110651]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[73b405bef30eeff1]::fmt::Display>::fmt
+   2:      0x1000006ccc7 - core[73b405bef30eeff1]::fmt::write
+   3:      0x1000004f1db - <std[da8fdf9c5110651]::sys::stdio::toyos::Stderr as core[73b405bef30eeff1]::io::write::Write>::write_fmt
+   4:      0x10000034473 - std[da8fdf9c5110651]::panicking::default_hook::{closure#0}
+   5:      0x100000482de - std[da8fdf9c5110651]::panicking::default_hook
+   6:      0x10000048499 - std[da8fdf9c5110651]::panicking::panic_with_hook
+   7:      0x1000003452d - std[da8fdf9c5110651]::panicking::panic_handler::{closure#0}
+   8:      0x1000002c5b9 - std[da8fdf9c5110651]::sys::backtrace::__rust_end_short_backtrace::<std[da8fdf9c5110651]::panicking::panic_handler::{closure#0}, !>
+   9:      0x10000034cb8 - __rustc[d0c72ce299f394e5]::rust_begin_unwind
+  10:      0x1000006d3eb - core[73b405bef30eeff1]::panicking::panic_fmt
+  11:      0x1000006d35f - core[73b405bef30eeff1]::panicking::assert_failed_inner
+  12:      0x1000006ad2f - core[73b405bef30eeff1]::panicking::assert_failed::<u64, u64>
+  13:      0x1000001fcad - vector_state[ae04fdd74bc193be]::vector::x86_64::hold
+  14:      0x1000001f076 - std[da8fdf9c5110651]::sys::backtrace::__rust_begin_short_backtrace::<vector_state[ae04fdd74bc193be]::main::{closure#0}::{closure#0}, ()>
+  15:      0x10000021305 - <std[da8fdf9c5110651]::thread::lifecycle::spawn_unchecked<vector_state[ae04fdd74bc193be]::main::{closure#0}::{closure#0}, ()>::{closure#1} as core[73b405bef30eeff1]::ops::function::FnOnce<()>>::call_once::{shim:vtable#0}
+  16:      0x1000004a42e - std[da8fdf9c5110651]::sys::thread::toyos::thread_trampoline
+  17:                0x0 - <unknown>
+
+thread '<unnamed>' (4) panicked at src/bin/../arch/vector.rs:218:9:
+assertion `left == right` failed: a `stat` of /system/bin/test_rs_vector_state was refused
+  left: 18446744073709551614
+ right: 0
+stack backtrace:
+   0:      0x100000689f0 - _Unwind_Backtrace
+   1:      0x1000004b653 - <<std[da8fdf9c5110651]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[73b405bef30eeff1]::fmt::Display>::fmt
+   2:      0x1000006ccc7 - core[73b405bef30eeff1]::fmt::write
+   3:      0x1000004f1db - <std[da8fdf9c5110651]::sys::stdio::toyos::Stderr as core[73b405bef30eeff1]::io::write::Write>::write_fmt
+   4:      0x10000034473 - std[da8fdf9c5110651]::panicking::default_hook::{closure#0}
+   5:      0x100000482de - std[da8fdf9c5110651]::panicking::default_hook
+   6:      0x10000048499 - std[da8fdf9c5110651]::panicking::panic_with_hook
+   7:      0x1000003452d - std[da8fdf9c5110651]::panicking::panic_handler::{closure#0}
+   8:      0x1000002c5b9 - std[da8fdf9c5110651]::sys::backtrace::__rust_end_short_backtrace::<std[da8fdf9c5110651]::panicking::panic_handler::{closure#0}, !>
+   9:      0x10000034cb8 - __rustc[d0c72ce299f394e5]::rust_begin_unwind
+  10:      0x1000006d3eb - core[73b405bef30eeff1]::panicking::panic_fmt
+  11:      0x1000006d35f - core[73b405bef30eeff1]::panicking::assert_failed_inner
+  12:      0x1000006ad2f - core[73b405bef30eeff1]::panicking::assert_failed::<u64, u64>
+  13:      0x1000001fcad - vector_state[ae04fdd74bc193be]::vector::x86_64::hold
+  14:      0x1000001f076 - std[da8fdf9c5110651]::sys::backtrace::__rust_begin_short_backtrace::<vector_state[ae04fdd74bc193be]::main::{closure#0}::{closure#0}, ()>
+  15:      0x10000021305 - <std[da8fdf9c5110651]::thread::lifecycle::spawn_unchecked<vector_state[ae04fdd74bc193be]::main::{closure#0}::{closure#0}, ()>::{closure#1} as core[73b405bef30eeff1]::ops::function::FnOnce<()>>::call_once::{shim:vtable#0}
+  16:      0x1000004a42e - std[da8fdf9c5110651]::sys::thread::toyos::thread_trampoline
+  17:                0x0 - <unknown>
+
+thread '<unnamed>' (3) panicked at src/bin/../arch/vector.rs:218:9:
+assertion `left == right` failed: a `stat` of /system/bin/test_rs_vector_state was refused
+  left: 18446744073709551614
+ right: 0
+stack backtrace:
+   0:      0x100000689f0 - _Unwind_Backtrace
+   1:      0x1000004b653 - <<std[da8fdf9c5110651]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[73b405bef30eeff1]::fmt::Display>::fmt
+   2:      0x1000006ccc7 - core[73b405bef30eeff1]::fmt::write
+   3:      0x1000004f1db - <std[da8fdf9c5110651]::sys::stdio::toyos::Stderr as core[73b405bef30eeff1]::io::write::Write>::write_fmt
+   4:      0x10000034473 - std[da8fdf9c5110651]::panicking::default_hook::{closure#0}
+   5:      0x100000482de - std[da8fdf9c5110651]::panicking::default_hook
+   6:      0x10000048499 - std[da8fdf9c5110651]::panicking::panic_with_hook
+   7:      0x1000003452d - std[da8fdf9c5110651]::panicking::panic_handler::{closure#0}
+   8:      0x1000002c5b9 - std[da8fdf9c5110651]::sys::backtrace::__rust_end_short_backtrace::<std[da8fdf9c5110651]::panicking::panic_handler::{closure#0}, !>
+   9:      0x10000034cb8 - __rustc[d0c72ce299f394e5]::rust_begin_unwind
+  10:      0x1000006d3eb - core[73b405bef30eeff1]::panicking::panic_fmt
+  11:      0x1000006d35f - core[73b405bef30eeff1]::panicking::assert_failed_inner
+  12:      0x1000006ad2f - core[73b405bef30eeff1]::panicking::assert_failed::<u64, u64>
+  13:      0x1000001fcad - vector_state[ae04fdd74bc193be]::vector::x86_64::hold
+  14:      0x1000001f076 - std[da8fdf9c5110651]::sys::backtrace::__rust_begin_short_backtrace::<vector_state[ae04fdd74bc193be]::main::{closure#0}::{closure#0}, ()>
+  15:      0x10000021305 - <std[da8fdf9c5110651]::thread::lifecycle::spawn_unchecked<vector_state[ae04fdd74bc193be]::main::{closure#0}::{closure#0}, ()>::{closure#1} as core[73b405bef30eeff1]::ops::function::FnOnce<()>>::call_once::{shim:vtable#0}
+  16:      0x1000004a42e - std[da8fdf9c5110651]::sys::thread::toyos::thread_trampoline
+  17:                0x0 - <unknown>
+
+thread '<unnamed>' (2) panicked at src/bin/../arch/vector.rs:218:9:
+assertion `left == right` failed: a `stat` of /system/bin/test_rs_vector_state was refused
+  left: 18446744073709551614
+ right: 0
+stack backtrace:
+   0:      0x100000689f0 - _Unwind_Backtrace
+   1:      0x1000004b653 - <<std[da8fdf9c5110651]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[73b405bef30eeff1]::fmt::Display>::fmt
+   2:      0x1000006ccc7 - core[73b405bef30eeff1]::fmt::write
+   3:      0x1000004f1db - <std[da8fdf9c5110651]::sys::stdio::toyos::Stderr as core[73b405bef30eeff1]::io::write::Write>::write_fmt
+   4:      0x10000034473 - std[da8fdf9c5110651]::panicking::default_hook::{closure#0}
+   5:      0x100000482de - std[da8fdf9c5110651]::panicking::default_hook
+   6:      0x10000048499 - std[da8fdf9c5110651]::panicking::panic_with_hook
+   7:      0x1000003452d - std[da8fdf9c5110651]::panicking::panic_handler::{closure#0}
+   8:      0x1000002c5b9 - std[da8fdf9c5110651]::sys::backtrace::__rust_end_short_backtrace::<std[da8fdf9c5110651]::panicking::panic_handler::{closure#0}, !>
+   9:      0x10000034cb8 - __rustc[d0c72ce299f394e5]::rust_begin_unwind
+  10:      0x1000006d3eb - core[73b405bef30eeff1]::panicking::panic_fmt
+  11:      0x1000006d35f - core[73b405bef30eeff1]::panicking::assert_failed_inner
+  12:      0x1000006ad2f - core[73b405bef30eeff1]::panicking::assert_failed::<u64, u64>
+  13:      0x1000001fcad - vector_state[ae04fdd74bc193be]::vector::x86_64::hold
+  14:      0x1000001f076 - std[da8fdf9c5110651]::sys::backtrace::__rust_begin_short_backtrace::<vector_state[ae04fdd74bc193be]::main::{closure#0}::{closure#0}, ()>
+  15:      0x10000021305 - <std[da8fdf9c5110651]::thread::lifecycle::spawn_unchecked<vector_state[ae04fdd74bc193be]::main::{closure#0}::{closure#0}, ()>::{closure#1} as core[73b405bef30eeff1]::ops::function::FnOnce<()>>::call_once::{shim:vtable#0}
+  16:      0x1000004a42e - std[da8fdf9c5110651]::sys::thread::toyos::thread_trampoline
+  17:                0x0 - <unknown>
+
+thread 'main' (1) panicked at src/bin/vector_state.rs:62:9:
+thread 0 found a vector register not its own
+stack backtrace:
+   0:      0x100000689f0 - _Unwind_Backtrace
+   1:      0x1000004b653 - <<std[da8fdf9c5110651]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[73b405bef30eeff1]::fmt::Display>::fmt
+   2:      0x1000006ccc7 - core[73b405bef30eeff1]::fmt::write
+   3:      0x1000004f1db - <std[da8fdf9c5110651]::sys::stdio::toyos::Stderr as core[73b405bef30eeff1]::io::write::Write>::write_fmt
+   4:      0x10000034473 - std[da8fdf9c5110651]::panicking::default_hook::{closure#0}
+   5:      0x100000482de - std[da8fdf9c5110651]::panicking::default_hook
+   6:      0x10000048499 - std[da8fdf9c5110651]::panicking::panic_with_hook
+   7:      0x1000003452d - std[da8fdf9c5110651]::panicking::panic_handler::{closure#0}
+   8:      0x1000002c5b9 - std[da8fdf9c5110651]::sys::backtrace::__rust_end_short_backtrace::<std[da8fdf9c5110651]::panicking::panic_handler::{closure#0}, !>
+   9:      0x10000034cb8 - __rustc[d0c72ce299f394e5]::rust_begin_unwind
+  10:      0x1000006d3eb - core[73b405bef30eeff1]::panicking::panic_fmt
+  11:      0x1000001ec4d - vector_state[ae04fdd74bc193be]::main
+  12:      0x1000001ee46 - std[da8fdf9c5110651]::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  13:      0x1000001e000 - std[da8fdf9c5110651]::rt::lang_start::<()>::{closure#0}
+  14:      0x10000047606 - std[da8fdf9c5110651]::rt::lang_start_internal
+  15:      0x1000001edb1 - main
+  16:      0x10000049953 - std[da8fdf9c5110651]::sys::pal::toyos::start_rust
+  17:      0x10000021686 - _start
+
+thread '<unnamed>' (5) panicked at src/bin/../arch/vector.rs:218:9:
+assertion `left == right` failed: a `stat` of /system/bin/test_rs_vector_state was refused
+  left: 18446744073709551614
+ right: 0
+stack backtrace:
+   0:      0x100000689f0 - _Unwind_Backtrace
+   1:      0x1000004b653 - <<std[da8fdf9c5110651]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[73b405bef30eeff1]::fmt::Display>::fmt
+   2:      0x1000006ccc7 - core[73b405bef30eeff1]::fmt::write
+   3:      0x1000004f1db - <std[da8fdf9c5110651]::sys::stdio::toyos::Stderr as core[73b405bef30eeff1]::io::write::Write>::write_fmt
+   4:      0x10000034473 - std[da8fdf9c5110651]::panicking::default_hook::{closure#0}
+   5:      0x100000482de - std[da8fdf9c5110651]::panicking::default_hook
+   6:      0x10000048499 - std[da8fdf9c5110651]::panicking::panic_with_hook
+   7:      0x1000003452d - std[da8fdf9c5110651]::panicking::panic_handler::{closure#0}
+   8:      0x1000002c5b9 - std[da8fdf9c5110651]::sys::backtrace::__rust_end_short_backtrace::<std[da8fdf9c5110651]::panicking::panic_handler::{closure#0}, !>
+   9:      0x10000034cb8 - __rustc[d0c72ce299f394e5]::rust_begin_unwind
+  10:      0x1000006d3eb - core[73b405bef30eeff1]::panicking::panic_fmt
+  11:      0x1000006d35f - core[73b405bef30eeff1]::panicking::assert_failed_inner
+  12:      0x1000006ad2f - core[73b405bef30eeff1]::panicking::assert_failed::<u64, u64>
+
+22:17:09 SWEEPC 209_libc_uname exit=Some(1) same=false
+--- got
+uname: -1, an errno
+
+--- expected
+uname: 0, no errno
+sysname: ToyOS; nodename: empty
+version: a commit
+release: the version's first twelve digits
+machine: the one this case was compiled for
+
+22:17:09 SWEEPC 210_stat_identity exit=Some(0) same=false
+--- got
+two files on /tmp are two: yes
+one file through two paths is one: yes
+its open descriptor is the file: yes
+a rename keeps the file: yes
+its descriptor after the rename is the file: yes
+a link is the file it names: yes
+two files on /system are two: yes
+/system and /tmp are two volumes: yes
+two directories on /system are two: yes
+a directory and its mount's root are two: yes
+one directory through two paths is one: yes
+a directory is on its mount's volume: yes
+a directory is no file: yes
+two links on /system are two: yes
+a link is not the file it names: yes
+d_ino is a directory's st_ino: NO
+d_ino is a file's st_ino: NO
+d_ino is a link's st_ino: NO
+d_ino is a mount's st_ino: NO
+d_ino on /tmp is st_ino: yes
+
+--- expected
+two files on /tmp are two: yes
+one file through two paths is one: yes
+its open descriptor is the file: yes
+a rename keeps the file: yes
+its descriptor after the rename is the file: yes
+a link is the file it names: yes
+two files on /system are two: yes
+/system and /tmp are two volumes: yes
+two directories on /system are two: yes
+a directory and its mount's root are two: yes
+one directory through two paths is one: yes
+a directory is on its mount's volume: yes
+a directory is no file: yes
+two links on /system are two: yes
+a link is not the file it names: yes
+d_ino is a directory's st_ino: yes
+d_ino is a file's st_ino: yes
+d_ino is a link's st_ino: yes
+d_ino is a mount's st_ino: yes
+d_ino on /tmp is st_ino: yes
+
+22:17:10 SWEEPC 206_libc_refusals exit=Some(0) same=true
+--- got
+execv: -1, ENOSYS
+execve: -1, ENOSYS
+setsid: -1, ENOSYS
+getsid: -1, ENOSYS
+gethostname: -1, ENOSYS
+link: -1, ENOSYS
+symlink: -1, ENOSYS
+fchown: -1, ENOSYS
+chmod: -1, ENOSYS
+fchmod: -1, ENOSYS
+statvfs: -1, ENOSYS
+fstatvfs: -1, ENOSYS
+getrlimit: -1, ENOSYS
+setrlimit: -1, ENOSYS
+msync: -1, ENOSYS
+mprotect: -1, ENOSYS
+utimes: -1, ENOSYS
+wait: -1, ECHILD
+wait4: -1, ECHILD
+pathconf 12345: -1, EINVAL
+fcntl F_SETLK: -1, EINVAL
+fcntl F_SETLKW: -1, EINVAL
+fcntl F_GETLK: -1, EINVAL
+fcntl F_GETFD: 0
+fcntl F_SETFD FD_CLOEXEC: 0; F_GETFD: 1
+fcntl F_DUPFD 10: 10 or above; fstat of it: the file's one byte; F_GETFD of it: 0
+fcntl F_SETFD 0: 0; F_GETFD: 0
+open O_CLOEXEC; F_GETFD: 1
+dup2 onto it: answered it; F_GETFD: 0
+fcntl F_DUPFD -1: -1, EINVAL
+fcntl F_DUPFD 4096: -1, EINVAL
+fcntl F_DUPFD_CLOEXEC: 10, no errno
+fcntl F_GETFL: -1, ENOSYS
+fcntl F_SETFL: -1, ENOSYS
+fcntl 12345: -1, EINVAL
+getpwnam_r: ENOSYS, entry null
+getpwuid_r: ENOSYS, entry null
+mmap a file: -1, ENODEV
+mmap a file at a page: -1, ENODEV
+mmap a file shared: -1, ENODEV
+mmap a file shared at a page: -1, ENODEV
+mmap executable: -1, ENOTSUP
+mmap nothing: -1, EINVAL
+mmap the first of two pages fixed: -1, ENOMEM
+pages after it: f s
+munmap the first of two pages: -1, EINVAL
+pages after it: f s
+munmap the second of two pages: -1, EINVAL
+munmap no bytes: -1, EINVAL
+munmap a byte past two pages: -1, EINVAL
+pages after them: f s
+munmap two pages by a length into the second: 0, no errno
+munmap them again: -1, EINVAL
+munmap 5000 bytes by 5000: 0, no errno
+munmap 5000 bytes by 8192: 0, no errno
+malloc SIZE_MAX: -1, ENOMEM
+calloc SIZE_MAX 2: -1, ENOMEM
+realloc SIZE_MAX: -1, ENOMEM
+sysconf _SC_ARG_MAX: 65536, no errno
+sysconf _SC_GETPW_R_SIZE_MAX: -1, no errno
+sysconf 12345: -1, EINVAL
+posix_madvise WILLNEED: 0
+posix_madvise 99: EINVAL
+madvise WILLNEED: 0, no errno
+madvise DONTNEED: -1, ENOSYS
+madvise off a page: -1, EINVAL
+madvise 99: -1, EINVAL
+page after madvise: x
+file: 1 bytes; mode as it was through fstat, as it was through stat; second name: none
+page after mprotect: y
+limit after getrlimit: 0 0
+
+--- expected
+execv: -1, ENOSYS
+execve: -1, ENOSYS
+setsid: -1, ENOSYS
+getsid: -1, ENOSYS
+gethostname: -1, ENOSYS
+link: -1, ENOSYS
+symlink: -1, ENOSYS
+fchown: -1, ENOSYS
+chmod: -1, ENOSYS
+fchmod: -1, ENOSYS
+statvfs: -1, ENOSYS
+fstatvfs: -1, ENOSYS
+getrlimit: -1, ENOSYS
+setrlimit: -1, ENOSYS
+msync: -1, ENOSYS
+mprotect: -1, ENOSYS
+utimes: -1, ENOSYS
+wait: -1, ECHILD
+wait4: -1, ECHILD
+pathconf 12345: -1, EINVAL
+fcntl F_SETLK: -1, EINVAL
+fcntl F_SETLKW: -1, EINVAL
+fcntl F_GETLK: -1, EINVAL
+fcntl F_GETFD: 0
+fcntl F_SETFD FD_CLOEXEC: 0; F_GETFD: 1
+fcntl F_DUPFD 10: 10 or above; fstat of it: the file's one byte; F_GETFD of it: 0
+fcntl F_SETFD 0: 0; F_GETFD: 0
+open O_CLOEXEC; F_GETFD: 1
+dup2 onto it: answered it; F_GETFD: 0
+fcntl F_DUPFD -1: -1, EINVAL
+fcntl F_DUPFD 4096: -1, EINVAL
+fcntl F_DUPFD_CLOEXEC: 10, no errno
+fcntl F_GETFL: -1, ENOSYS
+fcntl F_SETFL: -1, ENOSYS
+fcntl 12345: -1, EINVAL
+getpwnam_r: ENOSYS, entry null
+getpwuid_r: ENOSYS, entry null
+mmap a file: -1, ENODEV
+mmap a file at a page: -1, ENODEV
+mmap a file shared: -1, ENODEV
+mmap a file shared at a page: -1, ENODEV
+mmap executable: -1, ENOTSUP
+mmap nothing: -1, EINVAL
+mmap the first of two pages fixed: -1, ENOMEM
+pages after it: f s
+munmap the first of two pages: -1, EINVAL
+pages after it: f s
+munmap the second of two pages: -1, EINVAL
+munmap no bytes: -1, EINVAL
+munmap a byte past two pages: -1, EINVAL
+pages after them: f s
+munmap two pages by a length into the second: 0, no errno
+munmap them again: -1, EINVAL
+munmap 5000 bytes by 5000: 0, no errno
+munmap 5000 bytes by 8192: 0, no errno
+malloc SIZE_MAX: -1, ENOMEM
+calloc SIZE_MAX 2: -1, ENOMEM
+realloc SIZE_MAX: -1, ENOMEM
+sysconf _SC_ARG_MAX: 65536, no errno
+sysconf _SC_GETPW_R_SIZE_MAX: -1, no errno
+sysconf 12345: -1, EINVAL
+posix_madvise WILLNEED: 0
+posix_madvise 99: EINVAL
+madvise WILLNEED: 0, no errno
+madvise DONTNEED: -1, ENOSYS
+madvise off a page: -1, EINVAL
+madvise 99: -1, EINVAL
+page after madvise: x
+file: 1 bytes; mode as it was through fstat, as it was through stat; second name: none
+page after mprotect: y
+limit after getrlimit: 0 0
+
+22:17:10 FAIL scratch_shared_sweep: red: ["vector_state", "209_libc_uname", "210_stat_identity"]
+22:17:10   FAIL  scratch_shared_sweep  (12s)
+22:17:10   --- 1 guests, 0 of them not the shipping kernel, 1 kernel build(s): [""]
+
+22:17:10 host: fastest boot 6346 ms against the reference 1424 ms — liveness ceilings paid at 4.46x
+22:17:10 host: 14 core(s); a guest wider than that waits vcpus/cores longer again
+22:17:10 failures:
+22:17:10     scratch_shared_sweep: red: ["vector_state", "209_libc_uname", "210_stat_identity"]
+
+22:17:10 test result: FAILED. 0 passed, 1 failed, 0 invalidated, 1 total (132.3s; workers: 120s building, 12s testing)
+22:17:10 [toyos] this red run's serial logs are kept at $WT/target/red-run-serial/toyos-tmp-66841-0
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `$WT/target/debug/deps/toyos_build-2b5f27db075df25a scratch_shared_sweep` (exit status: 1)
+exit=1
