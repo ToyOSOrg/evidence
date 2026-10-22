@@ -1,0 +1,123 @@
+    Blocking waiting for file lock on package cache
+   Compiling toyos-build v0.1.0 (<home>/toyos-sockshare)
+    Finished `test` profile [optimized + debuginfo] target(s) in 13.68s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-6829f0ab0652c318)
+
+21:37:19 running 3 tests, 12 wide
+
+21:37:19   RUN   libc_children
+21:37:19   RUN   stream_exported_to_a_child
+21:37:19   BUILD x86_64 stream_export (toyos) of tests/guest/rust-tests, for stream_exported_to_a_child
+21:37:19   RUN   stream_holders
+21:37:19   BUILD x86_64 stream_handles (toyos) of tests/guest/rust-tests, for stream_holders
+21:37:23 [build-lock] waiting for the build lock (exclusive, clean crate targets against changed external deps) — held by other builds in this tree
+21:37:23 [build-lock] waiting for the build lock (shared, a test binary) — an exclusive phase is queued ahead of it
+21:37:23 [build-lock] waiting for the build lock (shared, the C sysroot) — an exclusive phase is queued ahead of it
+21:37:23 [build-lock] acquired (exclusive, clean crate targets against changed external deps) after 115.3ms
+21:37:23 external deps changed: cleaning <home>/toyos-sockshare/tests/guest/rust-tests/target/x86_64-unknown-toyos
+21:37:24 [build-lock] acquired (shared, a test binary) after 265.7ms
+21:37:24 [build-lock] waiting for the artifact lock (artifact staging) — held by pid 10472 (artifact staging), 0s so far
+21:37:24 [build-lock] acquired (shared, the C sysroot) after 205.6ms
+21:37:25   BUILD x86_64 stdio_named (toyos) of tests/guest/rust-tests, for libc_children
+21:37:28 [build-lock] waiting for the artifact lock (artifact staging) — held by pid 10472 (artifact staging), 4s so far
+21:37:53   BUILT x86_64 stream_export (toyos) of tests/guest/rust-tests, for stream_exported_to_a_child  (34s)
+21:37:53 [build-lock] artifact staging acquired after 29.4s
+21:37:53   BUILD x86_64 kernel, loader, ROOT of tests/images/netcase.toml, for stream_exported_to_a_child
+21:37:55   BUILT x86_64 stream_handles (toyos) of tests/guest/rust-tests, for stream_holders  (36s)
+21:37:55 [build-lock] artifact staging acquired after 27.3s
+21:37:55   BUILD x86_64 kernel, loader, ROOT of tests/images/testcases.toml, for stream_holders
+21:37:55   BUILT x86_64 stdio_named (toyos) of tests/guest/rust-tests, for libc_children  (31s)
+21:37:55   BUILD x86_64 libc_recv_beside_close (toyos) of tests/guest/rust-tests, for libc_children
+21:37:58 [build-lock] waiting for the artifact lock (artifact staging) — held by pid 10472 (artifact staging), 1s so far
+21:37:59 [build-lock] waiting for the artifact lock (artifact staging) — held by pid 10472 (artifact staging), 2s so far
+21:38:11 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+21:38:11 [build-lock] artifact staging acquired after 12.2s
+21:38:11 [build-lock] artifact staging acquired after 11.9s
+21:38:11   BUILT x86_64 kernel, loader, ROOT of tests/images/netcase.toml, for stream_exported_to_a_child  (18s)
+21:38:11 [build-lock] waiting for the artifact lock (artifact staging) — held by pid 10472 (artifact staging), 0s so far
+21:38:11   BUILT x86_64 libc_recv_beside_close (toyos) of tests/guest/rust-tests, for libc_children  (16s)
+21:38:11   BUILD x86_64 quit_tree (toyos) of tests/guest/rust-tests, for libc_children
+21:38:11 [build-lock] artifact staging acquired after 669.2ms
+21:38:14 [build-lock] waiting for the artifact lock (artifact staging) — held by pid 10472 (artifact staging), 3s so far
+21:38:14 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+21:38:14 [build-lock] artifact staging acquired after 288.7ms
+21:38:14   BUILT x86_64 kernel, loader, ROOT of tests/images/testcases.toml, for stream_holders  (19s)
+21:38:15   BUILT x86_64 quit_tree (toyos) of tests/guest/rust-tests, for libc_children  (3s)
+21:38:15   BUILD x86_64 libc_read_restarts (toyos) of tests/guest/rust-tests, for libc_children
+21:38:18   BUILT x86_64 libc_read_restarts (toyos) of tests/guest/rust-tests, for libc_children  (3s)
+21:38:18   BUILD x86_64 ROOT of tests/images/libccase.toml, for libc_children
+21:38:21   PASS  stream_exported_to_a_child  (11s)
+21:38:23 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+21:38:23   BUILT x86_64 ROOT of tests/images/libccase.toml, for libc_children  (4s)
+21:38:28 FAIL stream_holders: the job ended Some(101):
+
+thread 'main' (1) panicked at src/bin/stream_handles.rs:107:5:
+the faulting child: 
+stack backtrace:
+   0:      0x10000095640 - _Unwind_Backtrace
+   1:      0x1000006cc53 - <<std[81205284e0160b11]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[73b405bef30eeff1]::fmt::Display>::fmt
+   2:      0x1000009a227 - core[73b405bef30eeff1]::fmt::write
+   3:      0x100000712db - <std[81205284e0160b11]::sys::stdio::toyos::Stderr as core[73b405bef30eeff1]::io::write::Write>::write_fmt
+   4:      0x1000004df53 - std[81205284e0160b11]::panicking::default_hook::{closure#0}
+   5:      0x1000006833e - std[81205284e0160b11]::panicking::default_hook
+   6:      0x100000684f9 - std[81205284e0160b11]::panicking::panic_with_hook
+   7:      0x1000004e00d - std[81205284e0160b11]::panicking::panic_handler::{closure#0}
+   8:      0x10000046279 - std[81205284e0160b11]::sys::backtrace::__rust_end_short_backtrace::<std[81205284e0160b11]::panicking::panic_handler::{closure#0}, !>
+   9:      0x1000004e958 - __rustc[d0c72ce299f394e5]::rust_begin_unwind
+  10:      0x1000009a9ab - core[73b405bef30eeff1]::panicking::panic_fmt
+  11:      0x10000031a6f - stream_handles[86098d28cdd51550]::main
+  12:      0x10000036a46 - std[81205284e0160b11]::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  13:      0x10000036e30 - std[81205284e0160b11]::rt::lang_start::<()>::{closure#0}
+  14:      0x10000067776 - std[81205284e0160b11]::rt::lang_start_internal
+  15:      0x10000035161 - main
+  16:      0x10000069a83 - std[81205284e0160b11]::sys::pal::toyos::start_rust
+  17:      0x1000003933a - _start
+
+21:38:28   FAIL  stream_holders  (14s)
+21:38:35   [libc_children] dev_null: /dev/null read end of file and took every write, here and as a child's stdio
+21:38:35   [libc_children] poll_closed: a closed descriptor answered POLLNVAL
+21:38:35   [libc_children] poll_negative: a negative descriptor was passed over and the pipe beside it answered
+21:38:38   [libc_children] signal_alarm: SIGALRM's handler interrupted wait4, blocked it waited pending until its unblock ended the process 142, and ignored it did nothing
+21:38:39   [libc_children] signal_quit: a quit reached each child as its signal: EINTR, a reload then an end, an ignore, a pending default, a handler beside a busy child, and one held over a ready ppoll
+21:38:52   [libc_children] signal_sigchld_ppoll: SIGCHLD was raised once, and a ppoll unblocking it answered EINTR, then ready, then blocked until a live child wrote
+21:39:13   [libc_children] spawn_cloexec: FD_CLOEXEC, O_CLOEXEC and addclose each kept a descriptor from the child, and a child without one spawned its own
+21:39:14   [libc_children] spawn_environ: setenv and unsetenv were seen in the child's environ
+21:39:14   [libc_children] spawn_kill_group: kill(-pgid) ended the group's two children and not the third; kill(pid, 0) probed
+21:39:14   [libc_children] spawn_pipe_eof: a piped stdout read to its end through poll, then waited for
+21:39:15   [libc_children] spawn_pipe_reader_gone: a child's write to a pipe whose one reader closed was refused EPIPE
+21:39:15   [libc_children] spawn_signaled: a killed child read SIGKILL, and each fault its class's signal
+21:39:15   [libc_children] spawn_stdio_named: a child given a write end as its stdin was refused its read
+21:39:16   [libc_children] spawn_system: system and pclose answered the command's exit 3, and popen its output
+21:39:17   [libc_children] spawn_wait_any: waitpid(-1), wait and wait4 answered three children in the order they ended, then ECHILD
+21:39:17   [libc_children] stdio_named: a std child held exactly the stdio its Command named
+21:39:17   [libc_children] libc_recv_beside_close: a recv blocked across its descriptor's close answered the peer's bytes, its process lived on, and the stream went with its last call
+21:39:18   [libc_children] quit_tree: two generations listening by read each read interrupt and exited 0
+21:39:18   [libc_children] quit_tree: two generations listening by watch each read hang-up and exited 0
+21:39:18   [libc_children] quit_tree: one that never listened is killed, and its listening child with it, reading nothing
+21:39:18   [libc_children] quit_tree: a second quit kills a process holding the first unread
+21:39:18   [libc_children] quit_tree: one that reads each reason is asked 3 times and lives
+21:39:18   [libc_children] quit_tree: a quit without MANAGE is refused, and one of an ended process answers Ok
+21:39:18   [libc_children] quit_tree: a quit asks every process below it that listens, and kills the rest
+21:39:18   [libc_children] libc_read_restarts: a read across a SIGCHLD handler restarted with SA_RESTART and answered EINTR without
+21:39:18 FAIL libc_children: signal_sigchld_ignored ended Some(1) None:
+FAIL signal_sigchld_ignored.c:20: waitpid(pid, NULL, 0) == -1 && errno == ECHILD: waitpid of child 86 under SIG_IGN (errno 0)
+
+spawn_children_cap ended Some(1) None:
+FAIL ./check.h:35: refused == 0: posix_spawn /system/bin/test_c_spawn_children_cap held answered 12 (errno 0)
+
+21:39:18   FAIL  libc_children  (61s)
+21:39:18   --- 3 guests, 0 of them not the shipping kernel, 1 kernel build(s): [""]
+
+21:39:18 host: fastest boot 9465 ms against the reference 1424 ms — liveness ceilings paid at 6.65x
+21:39:18 host: 14 core(s); a guest wider than that waits vcpus/cores longer again
+21:39:18 failures:
+21:39:18     stream_holders: the job ended Some(101):
+21:39:18     libc_children: signal_sigchld_ignored ended Some(1) None:
+
+21:39:18 test result: FAILED. 1 passed, 2 failed, 0 invalidated, 3 total (119.2s; workers: 165s building, 86s testing)
+21:39:18 [toyos] this red run's serial logs are kept at <home>/toyos-sockshare/target/red-run-serial/toyos-tmp-10472-0
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `<home>/toyos-sockshare/target/debug/deps/toyos_build-6829f0ab0652c318 stream_holders stream_exported_to_a_child libc_children` (exit status: 1)
+exit 1

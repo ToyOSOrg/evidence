@@ -1,0 +1,78 @@
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.28s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-6829f0ab0652c318)
+
+21:42:11 running 1 tests, 12 wide
+
+21:42:11   RUN   stream_holders
+21:42:11   BUILD x86_64 stream_handles (toyos) of tests/guest/rust-tests, for stream_holders
+21:42:15   BUILT x86_64 stream_handles (toyos) of tests/guest/rust-tests, for stream_holders  (5s)
+21:42:15   BUILD x86_64 kernel, loader, ROOT of tests/images/testcases.toml, for stream_holders
+21:42:17 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+21:42:17   BUILT x86_64 kernel, loader, ROOT of tests/images/testcases.toml, for stream_holders  (2s)
+21:42:22 FAIL stream_holders: the job ended Some(101):
+acpiserver: GPEs: 2 with a method in GPE0, 2 of them runtime and enabled, 0 wake events left disabled, 0 past GPE0, 0 naming both triggers
+acpiserver: (this machine's own, quoted in no record) the runtime GPEs are [1, 2]
+acpiserver: no battery: 0 of 0 control-method batteries present, 0 AC adapter(s), with no embedded controller attached; the Global Lock taken 0 times on the way and given back 0 times, the firmware found holding it by 0 of the takes
+
+thread 'main' (1) panicked at src/bin/stream_handles.rs:110:9:
+the faulting child: the parent said "", ended Ok(ExitStatus(ExitStatus(Exited(101)))), and wrote 
+thread 'main' (1) panicked at src/bin/stream_handles.rs:378:24:
+spawn the faulter with a holder of the stream: Kind(NotFound)
+stack backtrace:
+   0:      0x100000957a0 - <unknown>
+   1:      0x1000006cdb3 - <unknown>
+   2:      0x1000009a387 - <unknown>
+   3:      0x1000007143b - <unknown>
+   4:      0x1000004e0b3 - <unknown>
+   5:      0x1000006849e - <unknown>
+   6:      0x10000068659 - <unknown>
+   7:      0x1000004e16d - <unknown>
+   8:      0x100000463d9 - <unknown>
+   9:      0x1000004eab8 - <unknown>
+  10:      0x1000009ab0b - <unknown>
+  11:      0x1000009a881 - <unknown>
+  12:      0x100000346ef - <unknown>
+  13:      0x1000003323c - <unknown>
+  14:      0x100000320c3 - <unknown>
+  15:      0x10000036ba6 - <unknown>
+  16:      0x10000036f90 - <unknown>
+  17:      0x100000678d6 - <unknown>
+  18:      0x100000352c1 - <unknown>
+  19:      0x10000069be3 - <unknown>
+  20:      0x1000003949a - <unknown>
+
+stack backtrace:
+   0:      0x100000957a0 - _Unwind_Backtrace
+   1:      0x1000006cdb3 - <<std[81205284e0160b11]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[73b405bef30eeff1]::fmt::Display>::fmt
+   2:      0x1000009a387 - core[73b405bef30eeff1]::fmt::write
+   3:      0x1000007143b - <std[81205284e0160b11]::sys::stdio::toyos::Stderr as core[73b405bef30eeff1]::io::write::Write>::write_fmt
+   4:      0x1000004e0b3 - std[81205284e0160b11]::panicking::default_hook::{closure#0}
+   5:      0x1000006849e - std[81205284e0160b11]::panicking::default_hook
+   6:      0x10000068659 - std[81205284e0160b11]::panicking::panic_with_hook
+   7:      0x1000004e16d - std[81205284e0160b11]::panicking::panic_handler::{closure#0}
+   8:      0x100000463d9 - std[81205284e0160b11]::sys::backtrace::__rust_end_short_backtrace::<std[81205284e0160b11]::panicking::panic_handler::{closure#0}, !>
+   9:      0x1000004eab8 - __rustc[d0c72ce299f394e5]::rust_begin_unwind
+  10:      0x1000009ab0b - core[73b405bef30eeff1]::panicking::panic_fmt
+  11:      0x10000031b7a - stream_handles[86098d28cdd51550]::main
+  12:      0x10000036ba6 - std[81205284e0160b11]::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  13:      0x10000036f90 - std[81205284e0160b11]::rt::lang_start::<()>::{closure#0}
+  14:      0x100000678d6 - std[81205284e0160b11]::rt::lang_start_internal
+  15:      0x100000352c1 - main
+  16:      0x10000069be3 - std[81205284e0160b11]::sys::pal::toyos::start_rust
+  17:      0x1000003949a - _start
+
+21:42:22   FAIL  stream_holders  (5s)
+21:42:22   --- 1 guests, 0 of them not the shipping kernel, 1 kernel build(s): [""]
+
+21:42:22 host: fastest boot 4377 ms against the reference 1424 ms — liveness ceilings paid at 3.07x
+21:42:22 host: 14 core(s); a guest wider than that waits vcpus/cores longer again
+21:42:22 failures:
+21:42:22     stream_holders: the job ended Some(101):
+
+21:42:22 test result: FAILED. 0 passed, 1 failed, 0 invalidated, 1 total (11.5s; workers: 7s building, 5s testing)
+21:42:22 [toyos] this red run's serial logs are kept at <home>/toyos-sockshare/target/red-run-serial/toyos-tmp-31207-0
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `<home>/toyos-sockshare/target/debug/deps/toyos_build-6829f0ab0652c318 stream_holders` (exit status: 1)
+exit 1
