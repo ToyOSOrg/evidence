@@ -13,8 +13,15 @@ Code at d79698fbe (on main 954b4587b). Head 0ce19e2e2 adds only an issue edit.
 
 ## Rebased again onto main d7f269dbc: head 9217793d2
 
-Main had added its own `Arm::adds_ms`, so this branch now keeps main's field and adds `named_only` beside `bent`. Nothing under `lib/crypto` or `tests/guest` changed since d79698fbe, so the three-form, control and Miri results above still apply.
+Main had added its own `Arm::adds_ms`, so this branch now keeps main's field and adds `named_only` beside `bent`. `git diff d79698fbe 9217793d2` is empty for `lib/crypto`, for the timing harness (`tests/guest/rust-tests/src/constant_time.rs`, `src/arch/counter.rs` and the two `crypto_constant_time*` binaries) and for `tests/guest/rust-tests/Cargo.toml`. `Cargo.lock` changed only in osbench's and the kernel's entries. The rebase did bring in osbench and other `rust-tests` binaries, but none of them reaches the crate's tests, the controls or Miri, so the three-form, control and Miri results above still apply.
 
 - `ci-host-5.log`: `cargo run -- --ci host` at 9217793d2. Exit 0, 93 steps green.
 - `controls/n1.log`: the named-only control at 9217793d2. It goes red as expected.
 - `metal-request.txt` and `doitm-probe.patch`: restaged at 9217793d2, with the probe at 380e63bbd. These replace the staging recorded above.
+
+## Review r3: e37f115d8
+
+The issue edit, plus one case in `secret.rs`'s drop test for `Workspace`.
+- `workspace-no-erase.log`: with `Workspace`'s `erase` replaced by a no-op, `secret::tests::a_dropped_secret_leaves_zeros` fails with all ones left; with it restored the test passes.
+- `miri-secret.log`: `cargo +nightly-2026-09-25 miri test -p toyos-crypto --all-features --lib -- secret::` at e37f115d8: exit 0, 3 passed.
+- The crate's `secret::` tests pass in all three forms.
