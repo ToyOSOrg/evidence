@@ -1,0 +1,15 @@
+diff --git a/kernel/src/pcidev/mod.rs b/kernel/src/pcidev/mod.rs
+index 0dfd7b103..7032c1d4f 100644
+--- a/kernel/src/pcidev/mod.rs
++++ b/kernel/src/pcidev/mod.rs
+@@ -442,8 +442,10 @@ pub fn inventory() -> Vec<toyos_abi::inventory::Pci> {
+         let machine = MACHINE.lock();
+         (machine.identities.clone(), machine.kernel_driven.clone())
+     };
++    let boot = crate::loaded::boot_function();
+     let mut out = Vec::with_capacity(identities.len());
+     for (mut pci, function) in identities.into_iter().zip(functions()) {
++        pci.boot_path = boot.is_none() && boot == Some(pci.at);
+         pci.driven = if kernel_driven.contains(&function.who) {
+             Driven::Kernel
+         } else if function.held.load(Ordering::Acquire) {
