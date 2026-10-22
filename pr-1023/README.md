@@ -46,3 +46,13 @@ Head c4e95d536, on main 18a38738b. The method follows RFC 10042 §2
   - m4 weakens FIPS 203's modulus check (`>= q` to `> q`). This fails
     `a_hybrid_init_is_held_to_its_length_and_its_key_check`.
   - m5 takes a C_INIT longer than its two keys. This fails the same test.
+
+## Rebased onto main c8e6e0365
+
+- `toyos-ssh-tests-rebased.log`: `cargo test -p toyos-ssh` at aa65c1f3d, the
+  head after the rebase. Exit 0, so every recording replays byte for byte on
+  the new base.
+- The rebase brought in #1016 (SHA-2 is now `toyos-crypto`'s, with SHA-NI)
+  and #1004, #1013 and #1014. Of those, toyos-ssh reaches only SHA-2. The
+  full `--ci host` run at the new base is stage 2's (#PR2), whose branch
+  holds this one.
