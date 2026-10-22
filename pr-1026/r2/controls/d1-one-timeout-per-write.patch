@@ -1,0 +1,31 @@
+--- a/system/sshserver/src/connection.rs	2026-10-23 01:05:33
++++ b/system/sshserver/src/connection.rs	2026-10-23 01:05:33
+@@ -400,23 +400,11 @@
+ /// of it went. `set_timeout` bounds the next send, and is given the time left
+ /// before each one.
+ fn write_by<W: Write>(sink: &mut W, set_timeout: impl Fn(&W, Option<Duration>) -> std::io::Result<()>, bytes: &[u8], deadline: Option<Instant>) -> bool {
+-    let mut rest = bytes;
+-    while !rest.is_empty() {
+-        let timeout = match deadline.map(|at| at.saturating_duration_since(Instant::now())) {
+-            Some(Duration::ZERO) => return false,
+-            timeout => timeout,
+-        };
+-        if set_timeout(sink, timeout).is_err() {
+-            return false;
+-        }
+-        match sink.write(rest) {
+-            Ok(0) => return false,
+-            Ok(n) => rest = &rest[n..],
+-            Err(e) if e.kind() == std::io::ErrorKind::Interrupted => {}
+-            Err(_) => return false,
+-        }
+-    }
+-    true
++    let timeout = match deadline.map(|at| at.saturating_duration_since(Instant::now())) {
++        Some(Duration::ZERO) => return false,
++        timeout => timeout,
++    };
++    set_timeout(sink, timeout).is_ok() && sink.write_all(bytes).is_ok()
+ }
+ 
+ /// End what runs on a channel: its program, whose pipes then end its readers.

@@ -1,0 +1,49 @@
+   Compiling sshserver v0.0.0 (<worktree>/system/sshserver)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.29s
+     Running unittests src/main.rs (target/debug/deps/sshserver-6a5a1fdad03c3f30)
+
+running 25 tests
+test command::tests::a_bare_name_resolves_under_system_bin ... ok
+test command::tests::a_bare_command_is_its_words ... ok
+test command::tests::a_line_that_names_nothing_is_refused ... ok
+test command::tests::quotes_hold_a_word_together ... ok
+test command::tests::metacharacters_are_ordinary_bytes ... ok
+test connection::tests::a_terminal_gets_a_carriage_return_before_every_line_feed ... ok
+test connection::tests::output_goes_whole_and_in_order_through_a_narrow_window ... ok
+test command::tests::a_shell_command_reaches_the_shell_whole ... ok
+test command::tests::an_unfinished_quote_is_refused ... ok
+test command::tests::backslash_escapes_one_character ... ok
+test sftp::tests::a_file_that_is_not_there_is_no_such_file ... ok
+test sftp::tests::a_request_before_init_ends_the_session ... ok
+test sftp::tests::a_handle_nobody_opened_is_refused ... ok
+test sftp::tests::a_second_init_ends_the_session ... ok
+test sftp::tests::a_truncated_request_is_a_bad_message_and_not_a_panic ... ok
+test sftp::tests::a_request_outside_the_profile_is_refused_by_name ... ok
+test sftp::tests::framing_waits_for_a_whole_packet ... ok
+test sftp::tests::an_oversized_length_ends_the_session ... ok
+test tests::the_unauthenticated_are_capped ... ok
+test program::tests::a_program_ended_is_reaped ... ok
+test sftp::tests::the_profile_moves_a_file_and_lists_it ... ok
+test sftp::tests::a_listing_longer_than_one_reply_continues_where_it_left_off ... ok
+test sftp::tests::a_directory_past_the_ceiling_is_refused_by_name ... ok
+test connection::tests::a_client_that_floods_offers_and_never_reads_is_closed_at_the_deadline ... ok
+test connection::tests::a_write_to_a_slow_reader_ends_at_the_deadline ... FAILED
+
+failures:
+
+---- connection::tests::a_write_to_a_slow_reader_ends_at_the_deadline stdout ----
+
+thread 'connection::tests::a_write_to_a_slow_reader_ends_at_the_deadline' (21048219) panicked at system/sshserver/src/connection.rs:532:9:
+the write outlived its deadline: 200 bytes in 5.392149583s
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    connection::tests::a_write_to_a_slow_reader_ends_at_the_deadline
+
+test result: FAILED. 24 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.39s
+
+error: test failed, to rerun pass `-p sshserver --bin sshserver`
+error: 1 target failed:
+    `-p sshserver --bin sshserver`
+test exit=101
