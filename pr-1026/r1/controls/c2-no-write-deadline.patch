@@ -1,0 +1,11 @@
+--- a/system/sshserver/src/connection.rs	2026-10-22 23:42:01
++++ b/system/sshserver/src/connection.rs	2026-10-22 23:42:01
+@@ -203,7 +203,7 @@
+         if out.is_empty() {
+             return true;
+         }
+-        let timeout = match deadline.map(|at| at.saturating_duration_since(Instant::now())) {
++        let timeout = match deadline.map(|at| at.saturating_duration_since(Instant::now())).map(|_| Duration::from_secs(3600)) {
+             Some(Duration::ZERO) => return false,
+             timeout => timeout,
+         };

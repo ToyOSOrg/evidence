@@ -1,0 +1,11 @@
+--- a/system/sshserver/src/connection.rs	2026-10-22 23:42:01
++++ b/system/sshserver/src/connection.rs	2026-10-22 23:42:01
+@@ -83,7 +83,7 @@
+         while let Some(front) = self.0.front_mut() {
+             let rest = &front.data[front.sent..];
+             match send(front.stderr, rest) {
+-                Ok(n) if n == rest.len() => {
++                Ok(_) => {
+                     let done = self.0.pop_front().expect("the front");
+                     let _ = done.taken.send(());
+                 }

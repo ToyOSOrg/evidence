@@ -1,0 +1,27 @@
+diff --git a/tests/toyos.rs b/tests/toyos.rs
+index d4acec2dc..843099fc7 100644
+--- a/tests/toyos.rs
++++ b/tests/toyos.rs
+@@ -562,6 +562,7 @@ const MACHINE_TESTS: &[&str] = &[
+     // A launch's unsent stdio slots: its own boot, because the launcher it
+     // needs makes every spawn of a declared program a launch.
+     "a_launch_gives_each_unsent_stdio_slot_a_null",
++    "zz_stream_handles_on_qemu",
+     // A controller no row names, handed over to a claim whose holder's No-Op
+     // is answered by an interrupt through it, and a transfer aimed past the
+     // claim's grants: the hand-over, the interrupt through the claim and the
+@@ -4257,6 +4258,14 @@ fn run_machine_test(name: &str, test_config: &Path) -> Result<(), String> {
+         "hosted_clang_hello" => common::hostedclang::hosted_clang_hello(),
+         "libc_children" => common::libcchildren::libc_children(),
+         "a_launch_gives_each_unsent_stdio_slot_a_null" => common::launchstdio::a_launch_gives_each_unsent_stdio_slot_a_null(),
++        "zz_stream_handles_on_qemu" => {
++            let bin = common::qemu::build_toyos_bin(common::qemu::SUITE_ARCH, &compile::repo_root().join("tests/guest/rust-tests"), "stream_handles");
++            let case = compile::repo_root().join("tests/images/testcases.toml");
++            let mut qemu = common::qemu::QemuInstance::boot_with_options(&case, &[], &[("stream_handles".to_string(), bin)], common::qemu::BootOptions::default());
++            let result = qemu.run_test("test_rs_stream_handles", Duration::from_secs(120));
++            eprintln!("[stream_handles] exit {:?} error {:?}\n{}", result.exit_code, result.error, result.stdout);
++            if result.error.is_some() || result.exit_code != Some(0) { Err(format!("stream_handles ended {:?} {:?}:\n{}", result.exit_code, result.error, result.serial)) } else { Ok(()) }
++        }
+         "usbd_drives_the_spare" => usbd_drives_the_spare(test_config),
+         "usbd_refused_without_smi_filter" => usbd_refused_on_amdvi(
+             test_config,

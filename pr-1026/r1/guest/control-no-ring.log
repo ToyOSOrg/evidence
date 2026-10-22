@@ -1,0 +1,48 @@
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.17s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-a00bd99eccd7fcb7)
+
+21:48:08 running 1 tests, 12 wide
+
+21:48:08   RUN   zz_stream_handles_on_qemu
+21:48:08   BUILD x86_64 stream_handles (toyos) of tests/guest/rust-tests, for zz_stream_handles_on_qemu
+21:48:10   BUILT x86_64 stream_handles (toyos) of tests/guest/rust-tests, for zz_stream_handles_on_qemu  (2s)
+21:48:10   BUILD x86_64 kernel, loader, ROOT of tests/images/testcases.toml, for zz_stream_handles_on_qemu
+21:48:12 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+21:48:12   BUILT x86_64 kernel, loader, ROOT of tests/images/testcases.toml, for zz_stream_handles_on_qemu  (2s)
+21:53:41 [stream_handles] exit None error Some(WaitVerdict("STALLED: 325s of guard expired, and the guest had said nothing for the last 324s of it — the ceiling caught a machine that had stopped, which is not an answer to what this test asked"))
+  given out and taken back: one end; every spawn path refused, and the stream still serves
+  netstack's watch of a stream's connection: taken, and answered by the hang-up
+  a foreign handle: refused by name, nothing written
+  a stream as a file: refused by name
+
+21:53:41 FAIL zz_stream_handles_on_qemu: stream_handles ended None Some(WaitVerdict("STALLED: 325s of guard expired, and the guest had said nothing for the last 324s of it — the ceiling caught a machine that had stopped, which is not an answer to what this test asked")):
+[ 4.031 cpu0 kernel] spawn: /system/bin/test_rs_stream_handles pid=13 (layout=0ms tls=3ms total=3ms)
+[ 4.205 cpu1 kernel] spawn: /system/bin/test_rs_stream_handles pid=14 (layout=0ms tls=5ms total=6ms)
+[ 4.237 cpu1 kernel] exit: test_rs_stream_handles pid=14 code=0 cpu=27ms peak=2MB allocs=2 frees=0 syscalls=55 syscall_wall=9ms 0=6 1=2 6=1 10=12 14=1 21=10 50=10 63=1 72=1 73=1 91=1 99=1 102=1 104=1 105=1 106=1 130=3 133=1
+[ 4.262 cpu0 kernel] spawn: /system/bin/test_rs_stream_handles pid=15 (layout=0ms tls=2ms total=3ms)
+[ 4.240 test-runner pid=13]   given out and taken back: one end; every spawn path refused, and the stream still serves
+[ 4.242 test-runner pid=13]   netstack's watch of a stream's connection: taken, and answered by the hang-up
+[ 4.538 cpu0 kernel] exit: test_rs_stream_handles pid=15 code=101 cpu=230ms peak=2MB allocs=2 frees=0 syscalls=372 syscall_wall=108ms 0=293 1=3 6=1 9=20 10=8 14=3 21=21 50=3 63=1 72=1 73=1 91=2 99=1 102=4 104=1 105=4 106=4 133=1
+[ 4.561 cpu0 kernel] spawn: /system/bin/test_rs_stream_handles pid=16 (layout=0ms tls=2ms total=3ms)
+[ 4.547 test-runner pid=13]   a foreign handle: refused by name, nothing written
+[ 4.801 cpu1 kernel] exit: test_rs_stream_handles pid=16 code=101 cpu=163ms peak=2MB allocs=2 frees=0 syscalls=350 syscall_wall=28ms 0=278 1=2 6=1 9=19 10=7 14=1 21=20 50=2 63=1 72=1 73=1 91=2 99=1 102=4 104=1 105=4 106=4 133=1
+[ 4.838 cpu1 kernel] spawn: /system/bin/test_rs_stream_handles pid=17 (layout=0ms tls=11ms total=11ms)
+[ 4.805 test-runner pid=13]   a stream as a file: refused by name
+
+21:53:41   STALL zz_stream_handles_on_qemu  (329s)
+21:53:41   --- 1 guests, 0 of them not the shipping kernel, 1 kernel build(s): [""]
+
+21:53:41 host: fastest boot 3859 ms against the reference 1424 ms — liveness ceilings paid at 2.71x
+21:53:41 host: 14 core(s); a guest wider than that waits vcpus/cores longer again
+21:53:41 failures:
+21:53:41     zz_stream_handles_on_qemu: stream_handles ended None Some(WaitVerdict("STALLED: 325s of guard expired, and the guest had said nothing for the last 324s of it — the ceiling caught a machine that had stopped, which is not an answer to what this test asked")):
+
+21:53:41 1 of those reds are the ceiling: zz_stream_handles_on_qemu
+
+21:53:41 test result: FAILED. 0 passed, 1 failed, 0 invalidated, 1 total (333.6s; workers: 4s building, 329s testing)
+21:53:41 [toyos] this red run's serial logs are kept at <worktree>/target/red-run-serial/toyos-tmp-3691-0
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `<worktree>/target/debug/deps/toyos_build-a00bd99eccd7fcb7 zz_stream_handles_on_qemu` (exit status: 1)
+exit=1
