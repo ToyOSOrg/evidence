@@ -1,0 +1,13 @@
+diff --git a/lib/crypto/src/scrypt.rs b/lib/crypto/src/scrypt.rs
+index b78963ae2..e7e40eb43 100644
+--- a/lib/crypto/src/scrypt.rs
++++ b/lib/crypto/src/scrypt.rs
+@@ -38,7 +38,7 @@ impl Params {
+     /// `memory_limit` bytes or [`MAX_MEMORY`]. The workspace is two table
+     /// entries, 256 * r bytes, more than the table.
+     pub fn new(log_n: u8, r: u32, p: u32, memory_limit: usize) -> Result<Self, Error> {
+-        let limit = memory_limit.min(MAX_MEMORY) as u128;
++        let limit = { let _ = memory_limit; MAX_MEMORY as u128 };
+         let r128 = u128::from(r);
+         let valid = log_n >= 1
+             && r >= 1
