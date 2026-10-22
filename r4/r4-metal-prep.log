@@ -1,0 +1,47 @@
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.39s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-2ab065810e5fd44f)
+23:46:48   BUILD x86_64 binaries of tests/guest/rust-tests
+23:46:52   BUILT x86_64 binaries of tests/guest/rust-tests  (3s)
+23:46:52   BUILD x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests
+23:47:19   BUILT x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests  (28s)
+23:47:19 [toyos] Compiling 141 C tests, and attempting 24 declared ones...
+23:47:23 [metal] 47 registration(s) and 229 shared member(s) over 4 boot(s)
+23:47:23   BUILD x86_64 kernel, loader, ROOT of $SCRATCH/metal-r4/benchcase/system-493af616a02a5ad0.toml
+23:47:28 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+23:47:28   BUILT x86_64 kernel, loader, ROOT of $SCRATCH/metal-r4/benchcase/system-493af616a02a5ad0.toml  (5s)
+23:47:28 [metal] benchcase: 13 job(s) under a list bound of 300000 ms, armed with [] and a boot deadline of 600000 ms — $SCRATCH/metal-r4/benchcase/image.img
+23:47:28   BUILD x86_64 kernel boot-actuators,test-actuators, ROOT of $SCRATCH/metal-r4/shared-debug/system-69728d9df68ed00e.toml
+23:47:30 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+23:47:30   BUILT x86_64 kernel boot-actuators,test-actuators, ROOT of $SCRATCH/metal-r4/shared-debug/system-69728d9df68ed00e.toml  (2s)
+23:47:30 [metal] shared-debug: 12 job(s) under a list bound of 62100 ms, armed with ["pci-cap-selftest", "revoked-backing-selftest", "lapic-spurious-selftest", "unclaimed-vector-selftest", "sysret-ss-probe", "iommu-firmware-left"] and a boot deadline of 124200 ms — $SCRATCH/metal-r4/shared-debug/image.img
+23:47:30   BUILD x86_64 ROOT of $SCRATCH/metal-r4/testcases/system-c1c73241fe4427b2.toml
+23:47:31 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+23:47:32   BUILT x86_64 ROOT of $SCRATCH/metal-r4/testcases/system-c1c73241fe4427b2.toml  (2s)
+23:47:32 [metal] testcases: 241 job(s) under a list bound of 98400 ms, armed with [] and a boot deadline of 196800 ms — $SCRATCH/metal-r4/testcases/image.img
+23:47:32   BUILD x86_64 ROOT of $SCRATCH/metal-r4/testcases-watchdog/system-0b1d8beee3eba21a.toml
+23:47:33 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+23:47:33   BUILT x86_64 ROOT of $SCRATCH/metal-r4/testcases-watchdog/system-0b1d8beee3eba21a.toml  (1s)
+23:47:33 [metal] testcases-watchdog: 0 job(s) under a list bound of 60000 ms, armed with ["watchdog"] and a boot deadline of 120000 ms — $SCRATCH/metal-r4/testcases-watchdog/image.img
+# One boot per image. Each invocation is `cargo <words>` from this worktree.
+
+benchcase
+  image: $SCRATCH/metal-r4/benchcase/image.img
+  cargo run -p toyos-metal -- --image $SCRATCH/metal-r4/benchcase/image.img --readback $SCRATCH/metal-r4/benchcase --fat32-check
+
+shared-debug
+  image: $SCRATCH/metal-r4/shared-debug/image.img
+  cargo run -p toyos-metal -- --image $SCRATCH/metal-r4/shared-debug/image.img --readback $SCRATCH/metal-r4/shared-debug --fat32-check
+
+testcases
+  image: $SCRATCH/metal-r4/testcases/image.img
+  cargo run -p toyos-metal -- --image $SCRATCH/metal-r4/testcases/image.img --readback $SCRATCH/metal-r4/testcases --fat32-check
+
+testcases-watchdog
+  image: $SCRATCH/metal-r4/testcases-watchdog/image.img
+  cargo run -p toyos-metal -- --image $SCRATCH/metal-r4/testcases-watchdog/image.img --readback $SCRATCH/metal-r4/testcases-watchdog --fat32-check
+23:47:33 [metal] staged 4 image(s); $SCRATCH/metal-r4/request.txt lists them. The machine was not touched, so this run establishes nothing about it.
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `$WT/target/debug/deps/toyos_build-2ab065810e5fd44f --metal --metal-readback $SCRATCH/metal-r4 'boot:testcases' 'boot:shared-debug' pmm_accounting osbench` (exit status: 2)
+exit=2

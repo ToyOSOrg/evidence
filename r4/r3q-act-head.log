@@ -1,0 +1,87 @@
+   Compiling toyos-abi v0.16.0 ($WT/sdk/abi)
+   Compiling toyos-manifest v0.1.0 ($WT/lib/manifest)
+   Compiling toyos-symbols v0.1.0 ($WT/lib/symbols)
+   Compiling toyos-logstream v0.1.0 ($WT/lib/logstream)
+   Compiling toyos-input v0.1.0 ($WT/lib/input)
+   Compiling toyos-bootmap v0.1.0 ($WT/lib/bootmap)
+   Compiling kernel v0.1.0 ($WT/kernel)
+   Compiling toyos-acpi v0.1.0 ($WT/lib/acpi)
+   Compiling toyos-swap v0.1.0 ($WT/lib/swap)
+   Compiling toyos-build v0.1.0 ($WT)
+   Compiling toyos-userbound v0.1.0 ($WT/lib/userbound)
+   Compiling toyos-metal v0.1.0 ($WT/tests/metal)
+    Finished `test` profile [optimized + debuginfo] target(s) in 18.64s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-2b5f27db075df25a)
+
+22:07:25 running 1 tests, 12 wide
+
+22:07:25   RUN   scratch_shared_sweep
+22:07:25   BUILD x86_64 binaries of tests/guest/rust-tests, for scratch_shared_sweep
+22:07:27 external deps changed: cleaning $WT/tests/guest/rust-tests/target/x86_64-unknown-toyos
+22:08:10   BUILT x86_64 binaries of tests/guest/rust-tests, for scratch_shared_sweep  (45s)
+22:08:10   BUILD x86_64 kernel boot-actuators,test-actuators, loader, ROOT of tests/images/testcases.toml, for scratch_shared_sweep
+22:08:15 external deps changed: cleaning $WT/target/x86_64-unknown-toyos
+22:08:48 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+22:08:49   BUILT x86_64 kernel boot-actuators,test-actuators, loader, ROOT of tests/images/testcases.toml, for scratch_shared_sweep  (38s)
+22:08:55 SWEEP handle_lifetime exit=Some(101) err=None
+acpiserver: table 1 of 1 (DSDT) loaded
+acpiserver: 1 of 1 tables loaded in 35 ms
+acpiserver: the tables' bytes took 1189 reads of firmware memory, in pages: 11 of type 9
+acpiserver: the tables' AML read SystemMemory 0 times, SystemIO 0 and PCI_Config 0, its memory in pages: none; took the Global Lock 0 times, 0 of them from the firmware; the firmware held it 0ns at the longest against a take; and ran Notify 0 times
+acpiserver: \_S5 evaluated: SLP_TYPa=0 SLP_TYPb=0
+acpiserver: \_S5 handed to the kernel: SLP_TYPa=0
+acpiserver: embedded controller none: no PNP0C09 device is present
+acpiserver: 0 table(s) loaded at run time and 0 refused; the namespace holds 266 objects in 512 slots, and the interpreter 154899 bytes of heap, of the 16777216 it holds between evaluations and the 34155580 while one runs
+acpiserver: the namespace initialised: \_SB._INI absent; 0 _STA read, 0 _INI run, no _REG run; the longest wait an evaluation asked 0 µs; evaluations refused, by kind: none
+acpiserver: GPEs: 2 with a method in GPE0, 2 of them runtime and enabled, 0 wake events left disabled, 0 past GPE0, 0 naming both triggers
+acpiserver: (this machine's own, quoted in no record) the runtime GPEs are [1, 2]
+acpiserver: no battery: 0 of 0 control-method batteries present, 0 AC adapter(s), with no embedded controller attached; the Global Lock taken 0 times on the way and given back 0 times, the firmware found holding it by 0 of the takes
+
+thread 'main' (1) panicked at src/bin/handle_lifetime.rs:90:5:
+assertion `left == right` failed: an open carrying a flag bit this ABI does not define was served
+  left: None
+ right: Some(InvalidArgument)
+stack backtrace:
+   0:           0x27b5e0 - _Unwind_Backtrace
+   1:           0x25a633 - <<std[3966f9622dfad1a0]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[73b405bef30eeff1]::fmt::Display>::fmt
+   2:           0x27f8f7 - core[73b405bef30eeff1]::fmt::write
+   3:           0x25e78b - <std[3966f9622dfad1a0]::sys::stdio::toyos::Stderr as core[73b405bef30eeff1]::io::write::Write>::write_fmt
+   4:           0x23c313 - std[3966f9622dfad1a0]::panicking::default_hook::{closure#0}
+   5:           0x25633e - std[3966f9622dfad1a0]::panicking::default_hook
+   6:           0x2564f9 - std[3966f9622dfad1a0]::panicking::panic_with_hook
+   7:           0x23c3cd - std[3966f9622dfad1a0]::panicking::panic_handler::{closure#0}
+   8:           0x2346b9 - std[3966f9622dfad1a0]::sys::backtrace::__rust_end_short_backtrace::<std[3966f9622dfad1a0]::panicking::panic_handler::{closure#0}, !>
+   9:           0x23cc88 - __rustc[d0c72ce299f394e5]::rust_begin_unwind
+  10:           0x28001b - core[73b405bef30eeff1]::panicking::panic_fmt
+  11:           0x27ff8f - core[73b405bef30eeff1]::panicking::assert_failed_inner
+  12:           0x223797 - core[73b405bef30eeff1]::panicking::assert_failed::<core[73b405bef30eeff1]::option::Option<toyos_abi[4d81299765224c6c]::syscall::SyscallError>, core[73b405bef30eeff1]::option::Option<toyos_abi[4d81299765224c6c]::syscall::SyscallError>>
+  13:           0x224b26 - handle_lifetime[49602aefbb3e535d]::main
+  14:           0x225976 - std[3966f9622dfad1a0]::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  15:           0x226070 - std[3966f9622dfad1a0]::rt::lang_start::<()>::{closure#0}
+  16:           0x2557e6 - std[3966f9622dfad1a0]::rt::lang_start_internal
+  17:           0x2257e1 - main
+  18:           0x257ac3 - std[3966f9622dfad1a0]::sys::pal::toyos::start_rust
+  19:           0x227bea - _start
+
+22:08:55 SWEEP spawn_child_ends_first exit=Some(134) err=None
+
+22:08:55 SWEEP spawn_child_ends_first exit=Some(134) err=None
+
+22:08:56 SWEEP spawn_child_ends_first exit=Some(134) err=None
+
+22:08:56 FAIL scratch_shared_sweep: red: ["handle_lifetime", "spawn_child_ends_first", "spawn_child_ends_first", "spawn_child_ends_first"]
+22:08:56   FAIL  scratch_shared_sweep  (7s)
+22:08:56   --- 1 guests, 1 of them not the shipping kernel, 1 kernel build(s): ["boot-actuators,test-actuators"]
+
+22:08:56 host: fastest boot 5470 ms against the reference 1424 ms — liveness ceilings paid at 3.84x
+22:08:56 host: 14 core(s); a guest wider than that waits vcpus/cores longer again
+22:08:56 failures:
+22:08:56     scratch_shared_sweep: red: ["handle_lifetime", "spawn_child_ends_first", "spawn_child_ends_first", "spawn_child_ends_first"]
+
+22:08:56 test result: FAILED. 0 passed, 1 failed, 0 invalidated, 1 total (90.5s; workers: 83s building, 7s testing)
+22:08:56 [toyos] this red run's serial logs are kept at $WT/target/red-run-serial/toyos-tmp-30982-0
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `$WT/target/debug/deps/toyos_build-2b5f27db075df25a scratch_shared_sweep` (exit status: 1)
+exit=1

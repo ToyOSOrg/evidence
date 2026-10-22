@@ -1,0 +1,28 @@
+diff --git a/tests/toyos.rs b/tests/toyos.rs
+index ee15f5f69..fd224daf4 100644
+--- a/tests/toyos.rs
++++ b/tests/toyos.rs
+@@ -4257,13 +4257,22 @@ fn run_machine_test(name: &str, test_config: &Path) -> Result<(), String> {
+             let names: Vec<String> = std::env::var("SWEEP").unwrap().split(',').map(String::from).collect();
+             let image = std::env::var("SWEEP_IMAGE").map(|i| Path::new(env!("CARGO_MANIFEST_DIR")).join(i)).unwrap_or(test_config.to_path_buf());
+             let params: &'static [&'static str] = Box::leak(std::env::var("SWEEP_PARAMS").map(|p| p.split(',').map(|s| &*Box::leak(s.to_string().into_boxed_str())).collect::<Vec<&'static str>>()).unwrap_or_default().into_boxed_slice());
+-            let mut q = QemuInstance::boot_with_options(&image, &[], &rust_bins, BootOptions { kernel_params: params, ..BootOptions::default() });
++            let c_names: Vec<String> = std::env::var("SWEEP_C").map(|v| v.split(',').map(String::from).collect()).unwrap_or_default();
++            let c_bins = if c_names.is_empty() { Vec::new() } else { compile::c_sysroot(); compile_c_tests(&c_names) };
++            let mut q = QemuInstance::boot_with_options(&image, &c_bins, &rust_bins, BootOptions { kernel_params: params, ..BootOptions::default() });
+             let mut bad = Vec::new();
+             for n in &names {
+                 let r = q.run_test(&format!("test_rs_{n}"), Duration::from_secs(120));
+                 eprintln!("SWEEP {n} exit={:?} err={:?}\n{}", r.exit_code, r.error, r.stdout);
+                 if r.exit_code != Some(0) { bad.push(n.clone()); }
+             }
++            for n in &c_names {
++                let r = q.run_test(&format!("test_c_{n}"), Duration::from_secs(120));
++                let want = c_expectation(n).unwrap_or_default();
++                let same = r.stdout.trim_end() == want.trim_end();
++                eprintln!("SWEEPC {n} exit={:?} same={same}\n--- got\n{}\n--- expected\n{}", r.exit_code, r.stdout, want);
++                if !same { bad.push(n.clone()); }
++            }
+             if bad.is_empty() { Ok(()) } else { Err(format!("red: {bad:?}")) }
+         }
+         "the_log_lands_on_the_boot_stick" => the_log_lands_on_the_boot_stick(test_config),

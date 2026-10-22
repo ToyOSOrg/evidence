@@ -1,0 +1,36 @@
+--- kernel/src/tmpfs.rs
++++ kernel/src/tmpfs.rs
+@@ -42,10 +42,30 @@
+     }
+ 
+     fn source(&self) -> Option<Arc<dyn CopySource>> {
+-        if !self.alive.load(Ordering::Acquire) {
+-            return None;
++        drop(file_cache::snapshot(self.file_id));
++        Some(Arc::new(Live(self.file_id)))
++    }
++}
++
++/// Control: the file's bytes read live at each first touch.
++struct Live(FileId);
++
++impl CopySource for Live {
++    fn size(&self) -> u64 {
++        u64::MAX / 2
++    }
++
++    fn read(&self, offset: u64, out: &mut [u8]) {
++        let mut done = 0;
++        while done < out.len() {
++            let at = offset + done as u64;
++            let within = (at % PAGE_BYTES as u64) as usize;
++            let n = (PAGE_BYTES - within).min(out.len() - done);
++            let mut page = [0u8; PAGE_BYTES];
++            let _ = file_cache::copy_page_out(self.0, (at / PAGE_BYTES as u64) as u32, &mut page);
++            out[done..done + n].copy_from_slice(&page[within..within + n]);
++            done += n;
+         }
+-        Some(Arc::new(file_cache::snapshot(self.file_id)?))
+     }
+ }
+ 
