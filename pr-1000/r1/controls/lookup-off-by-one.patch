@@ -1,0 +1,11 @@
+--- a/lib/crypto/src/nist.rs
++++ b/lib/crypto/src/nist.rs
+@@ -212,7 +212,7 @@
+         let magnitude = ((d ^ 0i8.wrapping_sub(negative as i8)).wrapping_add(negative as i8)) as u64;
+         let mut chosen = Self::identity();
+         for (j, entry) in table.iter().enumerate() {
+-            chosen = Self::select(&chosen, entry, 1 ^ crate::ct::nonzero(magnitude ^ (j as u64 + 1)));
++            chosen = Self::select(&chosen, entry, 1 ^ crate::ct::nonzero(magnitude ^ (j as u64)));
+         }
+         let negated = Residue::zero().sub(&chosen.y);
+         chosen.y = Residue::select(&chosen.y, &negated, negative);
