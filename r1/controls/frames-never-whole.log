@@ -1,0 +1,62 @@
+rev 20417add9a97873f6fc0aa5b84a4bbf6bdd36877 + frames-never-whole.patch
+   Compiling kernel v0.1.0 ($WT/kernel)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.87s
+     Running unittests pure/lib.rs (target/debug/deps/kernel-fa45b686f8e87f8e)
+
+running 16 tests
+test frames::tests::a_pin_count_at_its_limit_refuses_and_pins_nothing ... ok
+test frames::tests::a_hole_is_absent ... ok
+test frames::tests::an_unpin_before_the_free_leaves_nothing_deferred ... ok
+test frames::tests::a_frame_freed_while_pinned_goes_back_with_its_last_pin ... ok
+test frames::tests::exhaustion_answers_none_and_a_return_answers_again ... ok
+test frames::tests::memory_off_superframe_boundaries_is_used_and_never_whole ... ok
+test frames::tests::memory_outside_the_records_pins_as_nothing ... ok
+test frames::tests::frames_fill_a_split_superframe_before_carving_another ... ok
+test frames::tests::a_withheld_range_is_never_handed_out ... ok
+test frames::tests::a_frame_carves_one_superframe_and_its_return_makes_it_whole ... FAILED
+test frames::tests::a_superframe_and_a_run_come_only_from_whole_superframes ... FAILED
+test frames::tests::an_unpin_with_no_pin_is_a_kernel_bug - should panic ... ok
+test frames::tests::a_double_free_is_a_kernel_bug - should panic ... ok
+test frames::tests::a_run_is_contiguous_and_skips_a_gap ... FAILED
+test frames::tests::a_superframe_freed_with_a_pinned_frame_is_whole_only_after_the_unpin ... FAILED
+test frames::tests::a_mixed_load_keeps_every_frame_once ... ok
+
+failures:
+
+---- frames::tests::a_frame_carves_one_superframe_and_its_return_makes_it_whole stdout ----
+
+thread 'frames::tests::a_frame_carves_one_superframe_and_its_return_makes_it_whole' (56241329) panicked at kernel/pure/frames.rs:477:9:
+assertion `left == right` failed
+  left: (1, 1024)
+ right: (2, 1024)
+
+---- frames::tests::a_superframe_and_a_run_come_only_from_whole_superframes stdout ----
+
+thread 'frames::tests::a_superframe_and_a_run_come_only_from_whole_superframes' (56241335) panicked at kernel/pure/frames.rs:514:9:
+assertion failed: m.frames.alloc_super().is_some_and(|s| (run..run + 3 * SUPER).contains(&s))
+
+---- frames::tests::a_run_is_contiguous_and_skips_a_gap stdout ----
+
+thread 'frames::tests::a_run_is_contiguous_and_skips_a_gap' (56241334) panicked at kernel/pure/frames.rs:529:9:
+assertion `left == right` failed
+  left: None
+ right: Some(136314880)
+
+---- frames::tests::a_superframe_freed_with_a_pinned_frame_is_whole_only_after_the_unpin stdout ----
+
+thread 'frames::tests::a_superframe_freed_with_a_pinned_frame_is_whole_only_after_the_unpin' (56241336) panicked at kernel/pure/frames.rs:604:9:
+assertion `left == right` failed
+  left: None
+ right: Some(134217728)
+
+
+failures:
+    frames::tests::a_frame_carves_one_superframe_and_its_return_makes_it_whole
+    frames::tests::a_run_is_contiguous_and_skips_a_gap
+    frames::tests::a_superframe_and_a_run_come_only_from_whole_superframes
+    frames::tests::a_superframe_freed_with_a_pinned_frame_is_whole_only_after_the_unpin
+
+test result: FAILED. 12 passed; 4 failed; 0 ignored; 0 measured; 318 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p kernel --lib`
+test-exit=101
