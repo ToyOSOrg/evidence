@@ -1,0 +1,34 @@
+diff --git a/tests/toyos.rs b/tests/toyos.rs
+index 3b5469578..ee15f5f69 100644
+--- a/tests/toyos.rs
++++ b/tests/toyos.rs
+@@ -428,6 +428,7 @@ const MACHINE_TESTS: &[&str] = &[
+     // performing it — two claims by arrival on identical functions, two
+     // spawns, each process holding its own — which no host build has. No
+     // bench has two identical functions the kernel leaves to a claim.
++    "scratch_shared_sweep",
+     "a_drives_row_holds_one_process_per_function",
+     // Two HDA controllers, each with an `hda` driver behind VT-d: the one
+     // with no codec plays nothing, soundserver plays to the other, and the
+@@ -4250,6 +4251,21 @@ fn run_machine_test(name: &str, test_config: &Path) -> Result<(), String> {
+                 bent_supervisor_fell_back(&loader, &kernel)
+             })
+         }
++        "scratch_shared_sweep" => {
++            let rust_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/guest/rust-tests");
++            let rust_bins = qemu::build_toyos_bins(&rust_dir);
++            let names: Vec<String> = std::env::var("SWEEP").unwrap().split(',').map(String::from).collect();
++            let image = std::env::var("SWEEP_IMAGE").map(|i| Path::new(env!("CARGO_MANIFEST_DIR")).join(i)).unwrap_or(test_config.to_path_buf());
++            let params: &'static [&'static str] = Box::leak(std::env::var("SWEEP_PARAMS").map(|p| p.split(',').map(|s| &*Box::leak(s.to_string().into_boxed_str())).collect::<Vec<&'static str>>()).unwrap_or_default().into_boxed_slice());
++            let mut q = QemuInstance::boot_with_options(&image, &[], &rust_bins, BootOptions { kernel_params: params, ..BootOptions::default() });
++            let mut bad = Vec::new();
++            for n in &names {
++                let r = q.run_test(&format!("test_rs_{n}"), Duration::from_secs(120));
++                eprintln!("SWEEP {n} exit={:?} err={:?}\n{}", r.exit_code, r.error, r.stdout);
++                if r.exit_code != Some(0) { bad.push(n.clone()); }
++            }
++            if bad.is_empty() { Ok(()) } else { Err(format!("red: {bad:?}")) }
++        }
+         "the_log_lands_on_the_boot_stick" => the_log_lands_on_the_boot_stick(test_config),
+         "a_usb_key_reaches_the_console" => a_usb_key_reaches_the_console(),
+         "desktop_without_x2apic" => desktop_without_x2apic(),
