@@ -1,0 +1,1170 @@
+diff --git a/lib/crypto/src/ed25519.rs b/lib/crypto/src/ed25519.rs
+index 69e1b8ea4..17197c6e4 100644
+--- a/lib/crypto/src/ed25519.rs
++++ b/lib/crypto/src/ed25519.rs
+@@ -1,17 +1,18 @@
+ //! RFC 8032 pure Ed25519. Verification uses the cofactorless equation and
+ //! rejects noncanonical encodings, negative zero, noncanonical S and small-
+-//! order R or public keys. Lengths and refusal branches depend on public data.
+-//! Signing (feature `sign`) uses fixed-schedule field/scalar arithmetic and
+-//! complete Edwards addition; neither tables nor branches depend on secrets.
++//! order R or public keys. Verification's inputs are all public: it decodes,
++//! recodes and multiplies in variable time, through [`PublicScalar`] only.
++//! Signing (feature `sign`) multiplies on a fixed schedule with complete
++//! Edwards addition; neither tables nor branches depend on its secrets.
+ 
+ use crate::{
+     Error, ct,
+-    field25519::{Multiply, Tight},
++    field25519::{Loose, Multiply, Tight},
+     hash::Sha512,
+-    scalar25519::S,
++    scalar25519::PublicScalar,
+ };
+ #[cfg(feature = "sign")]
+-use crate::{Random, secret::Secret};
++use crate::{Random, scalar25519::S, secret::Secret};
+ /// 2d for the curve's d = -121665/121666 (RFC 8032 section 5.1).
+ const D2: Tight = Tight::from_bytes(&[
+     0x59, 0xf1, 0xb2, 0x26, 0x94, 0x9b, 0xd6, 0xeb, 0x56, 0xb1, 0x83, 0x82, 0x9a, 0x14, 0xe0, 0x00,
+@@ -40,7 +41,51 @@ const B_T: Tight = Tight::from_bytes(&[
+     0xa3, 0xdd, 0xb7, 0xa5, 0xb3, 0x8a, 0xde, 0x6d, 0xf5, 0x52, 0x51, 0x77, 0x80, 0x9f, 0xf0, 0x20,
+     0x7d, 0xe3, 0xab, 0x64, 0x8e, 0x4e, 0xea, 0x66, 0x65, 0x76, 0x8b, 0xd7, 0x0f, 0x5f, 0x87, 0x67,
+ ]);
+-/// Extended coordinates (X : Y : Z : T) with x = X/Z, y = Y/Z, xy = T/Z.
++
++/// The canonical encodings of the eight points of order dividing 8, which
++/// strict verification refuses as R or as a public key.
++const SMALL_ORDER: [[u8; 32]; 8] = [
++    hex("0000000000000000000000000000000000000000000000000000000000000000"),
++    hex("0000000000000000000000000000000000000000000000000000000000000080"),
++    hex("0100000000000000000000000000000000000000000000000000000000000000"),
++    hex("26e8958fc2b227b045c3f489f2ef98f0d5dfac05d3c63339b13802886d53fc05"),
++    hex("26e8958fc2b227b045c3f489f2ef98f0d5dfac05d3c63339b13802886d53fc85"),
++    hex("c7176a703d4dd84fba3c0b760d10670f2a2053fa2c39ccc64ec7fd7792ac037a"),
++    hex("c7176a703d4dd84fba3c0b760d10670f2a2053fa2c39ccc64ec7fd7792ac03fa"),
++    hex("ecffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f"),
++];
++
++const fn hex(s: &str) -> [u8; 32] {
++    let s = s.as_bytes();
++    let mut out = [0; 32];
++    let mut i = 0;
++    while i < 32 {
++        out[i] = nibble(s[2 * i]) << 4 | nibble(s[2 * i + 1]);
++        i += 1;
++    }
++    out
++}
++
++const fn nibble(c: u8) -> u8 {
++    match c {
++        b'0'..=b'9' => c - b'0',
++        _ => c - b'a' + 10,
++    }
++}
++
++/// The width of B's recoding in verification: digits below 2^(W_B - 1), so
++/// its table holds the 2^(W_B - 2) odd multiples B, 3B, 5B, ...
++const W_B: u32 = 7;
++/// The width of the public key's recoding, whose 8 odd multiples each
++/// verification builds.
++const W_A: u32 = 5;
++
++/// The odd multiples of B in affine form, built at compile time.
++static B_ODD: [Niels; 1 << (W_B - 2)] = Niels::odd_multiples_of_b();
++
++/// Extended coordinates (X : Y : Z : T) with x = X/Z, y = Y/Z, xy = T/Z
++/// (Hisil, Wong, Carter and Dawson, "Twisted Edwards Curves Revisited",
++/// ASIACRYPT 2008).
+ #[derive(Clone, Copy)]
+ struct Point {
+     x: Tight,
+@@ -48,7 +93,43 @@ struct Point {
+     z: Tight,
+     t: Tight,
+ }
++
++/// Projective coordinates (X : Y : Z), the doubling chain's form.
++#[derive(Clone, Copy)]
++struct Projective {
++    x: Tight,
++    y: Tight,
++    z: Tight,
++}
++
++/// A completed point ((E : G), (H : F)) with x = E/G and y = H/F: what an
++/// addition or doubling yields before its last multiplications.
++struct Completed {
++    e: Loose,
++    f: Loose,
++    g: Loose,
++    h: Loose,
++}
++
++/// (Y + X, Y - X, 2Z, 2dT) of a point, an addition's second operand.
++#[derive(Clone, Copy)]
++struct Cached {
++    y_plus_x: Tight,
++    y_minus_x: Tight,
++    z2: Tight,
++    t2d: Tight,
++}
++
++/// (y + x, y - x, 2dxy) of an affine point.
++#[derive(Clone, Copy)]
++struct Niels {
++    y_plus_x: Tight,
++    y_minus_x: Tight,
++    xy2d: Tight,
++}
++
+ impl Point {
++    #[cfg(feature = "sign")]
+     fn identity() -> Self {
+         Self {
+             x: Tight::ZERO,
+@@ -57,6 +138,7 @@ impl Point {
+             t: Tight::ZERO,
+         }
+     }
++    #[cfg(any(test, feature = "sign"))]
+     fn base() -> Self {
+         Self {
+             x: B_X,
+@@ -65,75 +147,101 @@ impl Point {
+             t: B_T,
+         }
+     }
+-    /// RFC 8032 section 5.1.3. Refusal branches depend on the public encoding.
++    /// RFC 8032 section 5.1.3: x = u v^3 (u v^7)^((p - 5) / 8) for u = y^2 - 1
++    /// and v = d y^2 + 1, one exponentiation. Public input, variable time.
+     fn decode(input: &[u8; 32]) -> Result<Self, Error> {
+         let mut b = *input;
+         let sign = u64::from(b[31] >> 7);
+         b[31] &= 127;
+         let y = Tight::from_bytes(&b);
+-        if !ct::equal(&b, &y.bytes()) {
++        if b != y.bytes() {
+             return Err(Error::InvalidPoint);
+         }
+         let y2 = y.square();
+-        let u = y2.sub(&Tight::ONE);
++        let u = y2.sub(&Tight::ONE).carry();
+         let v = D.mul(&y2).add(&Tight::ONE).carry();
+-        let q = u.mul(&v.invert());
+-        let root = q.mul(&q.pow_p58());
+-        let alt = root.mul(&SQRT_M1);
+-        let root = Tight::select(&alt, &root, root.square().eq(&q));
+-        if root.square().eq(&q) == 0 || (root.is_zero() == 1 && sign == 1) {
++        let v3 = v.square().mul(&v);
++        let v7 = v3.square().mul(&v);
++        let x = u.mul(&v3).mul(&u.mul(&v7).pow_p58());
++        let vxx = v.mul(&x.square());
++        let x = if vxx.eq(&u) == 1 {
++            x
++        } else if vxx.eq(&u.neg().carry()) == 1 {
++            x.mul(&SQRT_M1)
++        } else {
++            return Err(Error::InvalidPoint);
++        };
++        if x.is_zero() == 1 && sign == 1 {
+             return Err(Error::InvalidPoint);
+         }
+-        let x = Tight::select(&root, &root.neg().carry(), root.is_negative() ^ sign);
+-        let t = x.mul(&y);
++        let x = if x.is_negative() == sign { x } else { x.neg().carry() };
+         Ok(Self {
+             x,
+             y,
+             z: Tight::ONE,
+-            t,
++            t: x.mul(&y),
+         })
+     }
+     #[cfg(feature = "sign")]
+     fn encode(&self) -> [u8; 32] {
+-        let inverse = self.z.invert();
+-        let x = self.x.mul(&inverse);
+-        let mut y = self.y.mul(&inverse).bytes();
+-        y[31] |= (x.is_negative() as u8) << 7;
+-        y
++        Projective {
++            x: self.x,
++            y: self.y,
++            z: self.z,
++        }
++        .encode()
+     }
+     /// RFC 8032 section 5.1.4's addition, complete on the curve.
++    #[cfg(feature = "sign")]
+     fn add(&self, q: &Self) -> Self {
+-        let a = self.y.sub(&self.x).mul(&q.y.sub(&q.x));
+-        let b = self.y.add(&self.x).mul(&q.y.add(&q.x));
+-        let c = self.t.mul(&q.t).mul(&D2);
+-        let d = self.z.mul(&q.z.add(&q.z));
+-        let e = b.sub(&a);
+-        let f = d.sub(&c);
+-        let g = d.add(&c);
+-        let h = b.add(&a);
+-        Self {
+-            x: e.mul(&f),
+-            y: g.mul(&h),
+-            t: e.mul(&h),
+-            z: f.mul(&g),
++        self.add_cached(&q.cached()).point()
++    }
++    fn cached(&self) -> Cached {
++        Cached {
++            y_plus_x: self.y.add(&self.x).carry(),
++            y_minus_x: self.y.sub(&self.x).carry(),
++            z2: self.z.add(&self.z).carry(),
++            t2d: self.t.mul(&D2),
+         }
+     }
+-    /// RFC 8032 section 5.1.4's doubling.
++    fn add_cached(&self, q: &Cached) -> Completed {
++        let a = self.y.sub(&self.x).mul(&q.y_minus_x);
++        let b = self.y.add(&self.x).mul(&q.y_plus_x);
++        let c = self.t.mul(&q.t2d);
++        let d = self.z.mul(&q.z2);
++        Completed::from_abcd(&a, &b, &c, &d)
++    }
++    fn sub_cached(&self, q: &Cached) -> Completed {
++        let a = self.y.sub(&self.x).mul(&q.y_plus_x);
++        let b = self.y.add(&self.x).mul(&q.y_minus_x);
++        let c = self.t.mul(&q.t2d).neg().carry();
++        let d = self.z.mul(&q.z2);
++        Completed::from_abcd(&a, &b, &c, &d)
++    }
++    fn add_niels(&self, q: &Niels) -> Completed {
++        let a = self.y.sub(&self.x).mul(&q.y_minus_x);
++        let b = self.y.add(&self.x).mul(&q.y_plus_x);
++        let c = self.t.mul(&q.xy2d);
++        let d = self.z.add(&self.z).carry();
++        Completed::from_abcd(&a, &b, &c, &d)
++    }
++    fn sub_niels(&self, q: &Niels) -> Completed {
++        let a = self.y.sub(&self.x).mul(&q.y_plus_x);
++        let b = self.y.add(&self.x).mul(&q.y_minus_x);
++        let c = self.t.mul(&q.xy2d).neg().carry();
++        let d = self.z.add(&self.z).carry();
++        Completed::from_abcd(&a, &b, &c, &d)
++    }
+     fn double(&self) -> Self {
+-        let a = self.x.square();
+-        let b = self.y.square();
+-        let c = self.z.square().mul_small(2);
+-        let h = a.add(&b).carry();
+-        let e = h.sub(&self.x.add(&self.y).square());
+-        let g = a.sub(&b).carry();
+-        let f = c.add(&g);
+-        Self {
+-            x: e.mul(&f),
+-            y: g.mul(&h),
+-            t: e.mul(&h),
+-            z: f.mul(&g),
++        Projective {
++            x: self.x,
++            y: self.y,
++            z: self.z,
+         }
++        .double()
++        .point()
+     }
++    #[cfg(feature = "sign")]
+     fn select(a: &Self, b: &Self, bit: u64) -> Self {
+         Self {
+             x: Tight::select(&a.x, &b.x, bit),
+@@ -143,6 +251,7 @@ impl Point {
+         }
+     }
+     /// scalar * self, on a fixed schedule.
++    #[cfg(feature = "sign")]
+     fn mul(&self, scalar: &[u8; 32]) -> Self {
+         let mut r = Self::identity();
+         for i in (0..256).rev() {
+@@ -152,14 +261,158 @@ impl Point {
+         }
+         r
+     }
+-    fn eq(&self, q: &Self) -> u64 {
+-        self.x.mul(&q.z).eq(&q.x.mul(&self.z)) & self.y.mul(&q.z).eq(&q.y.mul(&self.z))
++}
++
++impl Completed {
++    /// E = B - A, F = D - C, G = D + C, H = B + A (RFC 8032 section 5.1.4).
++    fn from_abcd(a: &Tight, b: &Tight, c: &Tight, d: &Tight) -> Self {
++        Self {
++            e: b.sub(a),
++            f: d.sub(c),
++            g: d.add(c),
++            h: b.add(a),
++        }
++    }
++    fn point(&self) -> Point {
++        Point {
++            x: self.e.mul(&self.f),
++            y: self.g.mul(&self.h),
++            z: self.f.mul(&self.g),
++            t: self.e.mul(&self.h),
++        }
+     }
+-    fn small_order(&self) -> bool {
+-        self.double().double().double().eq(&Self::identity()) == 1
++    fn projective(&self) -> Projective {
++        Projective {
++            x: self.e.mul(&self.f),
++            y: self.g.mul(&self.h),
++            z: self.f.mul(&self.g),
++        }
+     }
+ }
+ 
++impl Projective {
++    const IDENTITY: Self = Self {
++        x: Tight::ZERO,
++        y: Tight::ONE,
++        z: Tight::ONE,
++    };
++    /// RFC 8032 section 5.1.4's doubling, which reads no T.
++    fn double(&self) -> Completed {
++        let a = self.x.square();
++        let b = self.y.square();
++        let c = self.z.square().mul_small(2);
++        let h = a.add(&b).carry();
++        let g = a.sub(&b).carry();
++        Completed {
++            e: h.sub(&self.x.add(&self.y).square()),
++            f: c.add(&g),
++            g: g.widen(),
++            h: h.widen(),
++        }
++    }
++    fn encode(&self) -> [u8; 32] {
++        let inverse = self.z.invert();
++        let x = self.x.mul(&inverse);
++        let mut y = self.y.mul(&inverse).bytes();
++        y[31] |= (x.is_negative() as u8) << 7;
++        y
++    }
++}
++
++impl Niels {
++    /// B, 3B, 5B, ..., normalised to affine with one inversion (Montgomery's
++    /// simultaneous-inversion trick).
++    const fn odd_multiples_of_b<const N: usize>() -> [Niels; N] {
++        const fn add(p: &[Tight; 4], q: &[Tight; 4]) -> [Tight; 4] {
++            let [x1, y1, z1, t1] = p;
++            let [x2, y2, z2, t2] = q;
++            let a = y1.sub(x1).carry().times(&y2.sub(x2).carry());
++            let b = y1.add(x1).carry().times(&y2.add(x2).carry());
++            let c = t1.times(t2).times(&D2);
++            let zz = z1.times(z2);
++            let d = zz.add(&zz).carry();
++            let e = b.sub(&a).carry();
++            let f = d.sub(&c).carry();
++            let g = d.add(&c).carry();
++            let h = b.add(&a).carry();
++            [e.times(&f), g.times(&h), f.times(&g), e.times(&h)]
++        }
++        let base = [B_X, B_Y, Tight::ONE, B_T];
++        let twice = add(&base, &base);
++        let mut points = [base; N];
++        let mut i = 1;
++        while i < N {
++            points[i] = add(&points[i - 1], &twice);
++            i += 1;
++        }
++        // prefix[i] = z_0 z_1 ... z_i.
++        let mut prefix = [Tight::ONE; N];
++        prefix[0] = points[0][2];
++        let mut i = 1;
++        while i < N {
++            prefix[i] = prefix[i - 1].times(&points[i][2]);
++            i += 1;
++        }
++        let mut inverse = prefix[N - 1].invert();
++        let mut table = [Niels {
++            y_plus_x: Tight::ZERO,
++            y_minus_x: Tight::ZERO,
++            xy2d: Tight::ZERO,
++        }; N];
++        let mut i = N;
++        while i > 0 {
++            i -= 1;
++            let z_inverse = if i == 0 { inverse } else { inverse.times(&prefix[i - 1]) };
++            inverse = inverse.times(&points[i][2]);
++            let x = points[i][0].times(&z_inverse);
++            let y = points[i][1].times(&z_inverse);
++            table[i] = Niels {
++                y_plus_x: y.add(&x).carry(),
++                y_minus_x: y.sub(&x).carry(),
++                xy2d: x.times(&y).times(&D2),
++            };
++        }
++        table
++    }
++}
++
++/// [s]B - [k]A by one doubling chain over both scalars' NAFs (Straus's
++/// method): B's odd multiples from the static table, A's built here.
++fn verification_point(s: &PublicScalar, k: &PublicScalar, a: &Point) -> Projective {
++    let minus_a = Point {
++        x: a.x.neg().carry(),
++        y: a.y,
++        z: a.z,
++        t: a.t.neg().carry(),
++    };
++    let twice = minus_a.double().cached();
++    let mut odd = [minus_a.cached(); 1 << (W_A - 2)];
++    let mut p = minus_a;
++    for entry in odd.iter_mut().skip(1) {
++        p = p.add_cached(&twice).point();
++        *entry = p.cached();
++    }
++    let (ds, dk) = (s.naf(W_B), k.naf(W_A));
++    let Some(top) = (0..256).rev().find(|&i| ds[i] != 0 || dk[i] != 0) else {
++        return Projective::IDENTITY;
++    };
++    let mut r = Projective::IDENTITY;
++    for i in (0..=top).rev() {
++        let mut t = r.double();
++        if dk[i] > 0 {
++            t = t.point().add_cached(&odd[dk[i] as usize / 2]);
++        } else if dk[i] < 0 {
++            t = t.point().sub_cached(&odd[(-dk[i]) as usize / 2]);
++        }
++        if ds[i] > 0 {
++            t = t.point().add_niels(&B_ODD[ds[i] as usize / 2]);
++        } else if ds[i] < 0 {
++            t = t.point().sub_niels(&B_ODD[(-ds[i]) as usize / 2]);
++        }
++        r = t.projective();
++    }
++    r
++}
+ 
+ pub struct PublicKey {
+     encoded: [u8; 32],
+@@ -168,7 +421,9 @@ pub struct PublicKey {
+ impl PublicKey {
+     pub fn from_bytes(encoded: [u8; 32]) -> Result<Self, Error> {
+         let point = Point::decode(&encoded)?;
+-        if point.small_order() {
++        // A decoded encoding is canonical, so a small-order point is one of
++        // the eight.
++        if SMALL_ORDER.contains(&encoded) {
+             return Err(Error::InvalidKey);
+         }
+         Ok(Self { encoded, point })
+@@ -176,28 +431,24 @@ impl PublicKey {
+     pub fn as_bytes(&self) -> &[u8; 32] {
+         &self.encoded
+     }
++    /// Accepts when [s]B - [k]A encodes to R's bytes, which a noncanonical R,
++    /// one off the curve or a negative zero can never equal.
+     pub fn verify(&self, message: &[u8], signature: &[u8]) -> Result<(), Error> {
+         if signature.len() != 64 {
+             return Err(Error::Length);
+         }
+         let r_bytes: &[u8; 32] = signature[..32].try_into().unwrap();
+         let s_bytes: &[u8; 32] = signature[32..].try_into().unwrap();
+-        let r = Point::decode(r_bytes)?;
+-        if r.small_order() {
++        if SMALL_ORDER.contains(r_bytes) {
+             return Err(Error::InvalidSignature);
+         }
+-        let s = S::canonical(s_bytes).ok_or(Error::InvalidSignature)?;
++        let s = PublicScalar::canonical(s_bytes).ok_or(Error::InvalidSignature)?;
+         let mut h = Sha512::new();
+         h.update(r_bytes)?;
+         h.update(&self.encoded)?;
+         h.update(message)?;
+-        let digest = h.finalize();
+-        let k = S::reduce(&digest);
+-        if Point::base()
+-            .mul(&s.bytes())
+-            .eq(&r.add(&self.point.mul(&k.bytes())))
+-            == 1
+-        {
++        let k = PublicScalar::reduce(&h.finalize());
++        if ct::equal(&verification_point(&s, &k, &self.point).encode(), r_bytes) {
+             Ok(())
+         } else {
+             Err(Error::InvalidSignature)
+@@ -206,7 +457,9 @@ impl PublicKey {
+ }
+ #[cfg(feature = "sign")]
+ pub struct SigningKey {
+-    expanded: Secret<64>,
++    /// The clamped secret scalar, reduced mod L once.
++    scalar: S,
++    prefix: Secret<32>,
+     public: PublicKey,
+ }
+ #[cfg(feature = "sign")]
+@@ -216,12 +469,15 @@ impl SigningKey {
+         let mut expanded = Secret(Sha512::digest(&seed.0).expect("fixed 32-byte seed"));
+         expanded.0[0] &= 248;
+         expanded.0[31] = (expanded.0[31] & 63) | 64;
+-        let point = Point::base().mul(expanded.0[..32].try_into().unwrap());
++        let scalar = S::reduce32(expanded.0[..32].try_into().unwrap());
++        let prefix = Secret(expanded.0[32..].try_into().unwrap());
++        // B has order L, so the reduced scalar gives the clamped one's point.
++        let point = Point::base().mul(&Secret(scalar.bytes()).0);
+         let public = PublicKey {
+             encoded: point.encode(),
+             point,
+         };
+-        Self { expanded, public }
++        Self { scalar, prefix, public }
+     }
+     pub fn generate(random: &mut impl Random) -> Result<Self, Error> {
+         let mut seed = Secret([0; 32]);
+@@ -233,7 +489,7 @@ impl SigningKey {
+     }
+     pub fn sign(&self, message: &[u8]) -> Result<[u8; 64], Error> {
+         let mut h = Sha512::new();
+-        h.update(&self.expanded.0[32..])?;
++        h.update(&self.prefix.0)?;
+         h.update(message)?;
+         let digest = Secret(h.finalize());
+         let r = S::reduce(&digest.0);
+@@ -245,8 +501,7 @@ impl SigningKey {
+         h.update(message)?;
+         let k = Secret(h.finalize());
+         let k = S::reduce(&k.0);
+-        let a = S::reduce(&self.expanded.0[..32]);
+-        let s = r.add(&k.mul(&a));
++        let s = k.mul_add(&self.scalar, &r);
+         let mut out = [0; 64];
+         out[..32].copy_from_slice(&encoded);
+         out[32..].copy_from_slice(&s.bytes());
+@@ -276,4 +531,35 @@ mod tests {
+         assert_eq!(d.bytes(), D.bytes());
+         assert_eq!(SQRT_M1.square().bytes(), Tight::ONE.neg().carry().bytes());
+     }
++
++    /// The eight encodings are distinct, decode, and are each killed by 8;
++    /// the torsion subgroup has exactly eight points.
++    #[test]
++    fn small_order_encodings_are_the_eight_torsion_points() {
++        for (i, encoding) in SMALL_ORDER.iter().enumerate() {
++            assert!(!SMALL_ORDER[..i].contains(encoding));
++            let p = Point::decode(encoding).unwrap();
++            let eight = p.double().double().double();
++            assert_eq!(eight.x.is_zero(), 1);
++            assert_eq!(eight.y.eq(&eight.z), 1);
++        }
++    }
++
++    /// The static table is B's odd multiples, against repeated addition.
++    #[test]
++    fn base_table_holds_the_odd_multiples_of_b() {
++        let base = Point::base();
++        let twice = base.double().cached();
++        let mut p = base;
++        for (i, entry) in B_ODD.iter().enumerate() {
++            if i > 0 {
++                p = p.add_cached(&twice).point();
++            }
++            let zi = p.z.invert();
++            let (x, y) = (p.x.mul(&zi), p.y.mul(&zi));
++            assert_eq!(entry.y_plus_x.bytes(), y.add(&x).carry().bytes(), "entry {i}");
++            assert_eq!(entry.y_minus_x.bytes(), y.sub(&x).carry().bytes(), "entry {i}");
++            assert_eq!(entry.xy2d.bytes(), x.mul(&y).mul(&D2).bytes(), "entry {i}");
++        }
++    }
+ }
+diff --git a/lib/crypto/src/field25519.rs b/lib/crypto/src/field25519.rs
+index f4d10d708..eef223c93 100644
+--- a/lib/crypto/src/field25519.rs
++++ b/lib/crypto/src/field25519.rs
+@@ -45,8 +45,8 @@ impl Operand for Loose {
+ const TWO_P: [u64; 5] = [2 * (MASK - 18), 2 * MASK, 2 * MASK, 2 * MASK, 2 * MASK];
+ 
+ #[inline(always)]
+-fn wide(a: u64, b: u64) -> u128 {
+-    u128::from(a).wrapping_mul(u128::from(b))
++const fn wide(a: u64, b: u64) -> u128 {
++    (a as u128).wrapping_mul(b as u128)
+ }
+ 
+ /// A column of products. The limb bounds keep every sum below 2^115, so the
+@@ -58,13 +58,13 @@ macro_rules! column {
+ /// Columns below 2^115 into tight limbs: one carry pass, the top carry times
+ /// 19 into limb 0 (2^255 = 19 mod p), and one more carry into limb 1.
+ #[inline(always)]
+-fn carry(v: [u128; 5]) -> Tight {
++const fn carry(v: [u128; 5]) -> Tight {
+     let [v0, v1, v2, v3, v4] = v;
+     let v1 = v1.wrapping_add(v0 >> 51);
+     let v2 = v2.wrapping_add(v1 >> 51);
+     let v3 = v3.wrapping_add(v2 >> 51);
+     let v4 = v4.wrapping_add(v3 >> 51);
+-    let r0 = u128::from(v0 as u64 & MASK).wrapping_add((v4 >> 51).wrapping_mul(19));
++    let r0 = ((v0 as u64 & MASK) as u128).wrapping_add((v4 >> 51).wrapping_mul(19));
+     let r1 = (v1 as u64 & MASK).wrapping_add((r0 >> 51) as u64);
+     Tight([
+         r0 as u64 & MASK,
+@@ -101,7 +101,7 @@ impl Tight {
+         Self(limbs)
+     }
+ 
+-    pub(crate) fn add(&self, b: &Tight) -> Loose {
++    pub(crate) const fn add(&self, b: &Tight) -> Loose {
+         let (a, b) = (&self.0, &b.0);
+         Loose([
+             a[0].wrapping_add(b[0]),
+@@ -113,7 +113,7 @@ impl Tight {
+     }
+ 
+     /// self + 2p - b, limb by limb.
+-    pub(crate) fn sub(&self, b: &Tight) -> Loose {
++    pub(crate) const fn sub(&self, b: &Tight) -> Loose {
+         let (a, b) = (&self.0, &b.0);
+         Loose([
+             a[0].wrapping_add(TWO_P[0]).wrapping_sub(b[0]),
+@@ -124,49 +124,67 @@ impl Tight {
+         ])
+     }
+ 
+-    pub(crate) fn neg(&self) -> Loose {
++    /// The same element as a loose operand.
++    pub(crate) const fn widen(&self) -> Loose {
++        Loose(self.0)
++    }
++
++    pub(crate) const fn neg(&self) -> Loose {
+         Self::ZERO.sub(self)
+     }
+ 
++    /// self * b, for constants; at run time [`Multiply::mul`] takes either
++    /// bound.
++    pub(crate) const fn times(&self, b: &Tight) -> Tight {
++        product(&self.0, &b.0)
++    }
++
++    pub(crate) const fn squared(&self) -> Tight {
++        square(&self.0)
++    }
++
+     /// self^(2^k), for k >= 1.
+-    pub(crate) fn square_times(&self, k: u32) -> Tight {
++    pub(crate) const fn square_times(&self, k: u32) -> Tight {
+         debug_assert!(k >= 1);
+-        let mut r = self.square();
+-        for _ in 1..k {
+-            r = r.square();
++        let mut r = self.squared();
++        let mut i = 1;
++        while i < k {
++            r = r.squared();
++            i += 1;
+         }
+         r
+     }
+ 
+     /// self^(2^250 - 1) and self^11, the shared head of the inversion and
+     /// square-root chains (Bernstein 2006, section 5).
+-    fn pow_2_250_1(&self) -> (Tight, Tight) {
+-        let z2 = self.square();
+-        let z9 = z2.square_times(2).mul(self);
+-        let z11 = z9.mul(&z2);
+-        let z_5_0 = z11.square().mul(&z9);
+-        let z_10_0 = z_5_0.square_times(5).mul(&z_5_0);
+-        let z_20_0 = z_10_0.square_times(10).mul(&z_10_0);
+-        let z_40_0 = z_20_0.square_times(20).mul(&z_20_0);
+-        let z_50_0 = z_40_0.square_times(10).mul(&z_10_0);
+-        let z_100_0 = z_50_0.square_times(50).mul(&z_50_0);
+-        let z_200_0 = z_100_0.square_times(100).mul(&z_100_0);
+-        let z_250_0 = z_200_0.square_times(50).mul(&z_50_0);
++    const fn pow_2_250_1(&self) -> (Tight, Tight) {
++        let z2 = self.squared();
++        let z9 = z2.square_times(2).times(self);
++        let z11 = z9.times(&z2);
++        let z_5_0 = z11.squared().times(&z9);
++        let z_10_0 = z_5_0.square_times(5).times(&z_5_0);
++        let z_20_0 = z_10_0.square_times(10).times(&z_10_0);
++        let z_40_0 = z_20_0.square_times(20).times(&z_20_0);
++        let z_50_0 = z_40_0.square_times(10).times(&z_10_0);
++        let z_100_0 = z_50_0.square_times(50).times(&z_50_0);
++        let z_200_0 = z_100_0.square_times(100).times(&z_100_0);
++        let z_250_0 = z_200_0.square_times(50).times(&z_50_0);
+         (z_250_0, z11)
+     }
+ 
+     /// self^(p - 2) = self^(2^255 - 21): 254 squarings and 11 multiplications.
+-    pub(crate) fn invert(&self) -> Tight {
++    pub(crate) const fn invert(&self) -> Tight {
+         let (z_250_0, z11) = self.pow_2_250_1();
+-        z_250_0.square_times(5).mul(&z11)
++        z_250_0.square_times(5).times(&z11)
+     }
+ 
+     /// self^((p - 5) / 8) = self^(2^252 - 3), for square roots.
+-    pub(crate) fn pow_p58(&self) -> Tight {
++    pub(crate) const fn pow_p58(&self) -> Tight {
+         let (z_250_0, _) = self.pow_2_250_1();
+-        z_250_0.square_times(2).mul(self)
++        z_250_0.square_times(2).times(self)
+     }
+ 
++    #[cfg(feature = "sign")]
+     pub(crate) fn select(a: &Self, b: &Self, bit: u64) -> Self {
+         let m = ct::mask(bit);
+         let (a, b) = (&a.0, &b.0);
+@@ -235,31 +253,17 @@ impl Tight {
+ 
+ impl Loose {
+     /// The same element, carried tight.
+-    pub(crate) fn carry(&self) -> Tight {
++    pub(crate) const fn carry(&self) -> Tight {
+         let v = &self.0;
+-        carry([v[0].into(), v[1].into(), v[2].into(), v[3].into(), v[4].into()])
++        carry([v[0] as u128, v[1] as u128, v[2] as u128, v[3] as u128, v[4] as u128])
+     }
+ }
+ 
+ /// Multiplications, each leaving a tight element.
+ pub(crate) trait Multiply: Operand {
+-    /// The 25 products, with b's limbs that wrap past 2^255 premultiplied by
+-    /// 19.
+     #[inline(always)]
+     fn mul(&self, b: &impl Operand) -> Tight {
+-        let (a, b) = (self.limbs(), b.limbs());
+-        let b1 = b[1].wrapping_mul(19);
+-        let b2 = b[2].wrapping_mul(19);
+-        let b3 = b[3].wrapping_mul(19);
+-        let b4 = b[4].wrapping_mul(19);
+-        let v = [
+-            column!(wide(a[0], b[0]), wide(a[1], b4), wide(a[2], b3), wide(a[3], b2), wide(a[4], b1)),
+-            column!(wide(a[0], b[1]), wide(a[1], b[0]), wide(a[2], b4), wide(a[3], b3), wide(a[4], b2)),
+-            column!(wide(a[0], b[2]), wide(a[1], b[1]), wide(a[2], b[0]), wide(a[3], b4), wide(a[4], b3)),
+-            column!(wide(a[0], b[3]), wide(a[1], b[2]), wide(a[2], b[1]), wide(a[3], b[0]), wide(a[4], b4)),
+-            column!(wide(a[0], b[4]), wide(a[1], b[3]), wide(a[2], b[2]), wide(a[3], b[1]), wide(a[4], b[0])),
+-        ];
+-        carry(v)
++        product(self.limbs(), b.limbs())
+     }
+ 
+     #[inline(always)]
+@@ -271,7 +275,7 @@ pub(crate) trait Multiply: Operand {
+     #[inline(always)]
+     fn mul_small(&self, k: u32) -> Tight {
+         let a = self.limbs();
+-        let k = u64::from(k);
++        let k = k as u64;
+         let v = [wide(a[0], k), wide(a[1], k), wide(a[2], k), wide(a[3], k), wide(a[4], k)];
+         carry(v)
+     }
+@@ -280,9 +284,26 @@ pub(crate) trait Multiply: Operand {
+ impl Multiply for Tight {}
+ impl Multiply for Loose {}
+ 
++/// The 25 products, with b's limbs that wrap past 2^255 premultiplied by 19.
++#[inline(always)]
++const fn product(a: &[u64; 5], b: &[u64; 5]) -> Tight {
++    let b1 = b[1].wrapping_mul(19);
++    let b2 = b[2].wrapping_mul(19);
++    let b3 = b[3].wrapping_mul(19);
++    let b4 = b[4].wrapping_mul(19);
++    let v = [
++        column!(wide(a[0], b[0]), wide(a[1], b4), wide(a[2], b3), wide(a[3], b2), wide(a[4], b1)),
++        column!(wide(a[0], b[1]), wide(a[1], b[0]), wide(a[2], b4), wide(a[3], b3), wide(a[4], b2)),
++        column!(wide(a[0], b[2]), wide(a[1], b[1]), wide(a[2], b[0]), wide(a[3], b4), wide(a[4], b3)),
++        column!(wide(a[0], b[3]), wide(a[1], b[2]), wide(a[2], b[1]), wide(a[3], b[0]), wide(a[4], b4)),
++        column!(wide(a[0], b[4]), wide(a[1], b[3]), wide(a[2], b[2]), wide(a[3], b[1]), wide(a[4], b[0])),
++    ];
++    carry(v)
++}
++
+ /// The 15 distinct products of a square.
+ #[inline(always)]
+-fn square(a: &[u64; 5]) -> Tight {
++const fn square(a: &[u64; 5]) -> Tight {
+     let d0 = a[0].wrapping_mul(2);
+     let d1 = a[1].wrapping_mul(2);
+     let d2 = a[2].wrapping_mul(2);
+diff --git a/lib/crypto/src/scalar25519.rs b/lib/crypto/src/scalar25519.rs
+index 3be4e2dcd..37d4f12ba 100644
+--- a/lib/crypto/src/scalar25519.rs
++++ b/lib/crypto/src/scalar25519.rs
+@@ -1,89 +1,266 @@
+-//! Scalars modulo the Ed25519 prime subgroup order. Fixed 512-bit division
+-//! and fixed 256-step multiplication avoid data-dependent quotient estimates.
++//! Scalars modulo the Ed25519 prime subgroup order L, in four 64-bit words.
++//! Reduction of a 512-bit integer is Barrett's (Menezes, van Oorschot and
++//! Vanstone, Handbook of Applied Cryptography, algorithm 14.42, b = 2^64,
++//! k = 4): a fixed schedule of products and two masked subtractions.
++//!
++//! [`S`] is a secret scalar, erased on drop. [`PublicScalar`] is a public one,
++//! for verification's variable-time multiplication; neither converts into the
++//! other.
++#![allow(
++    clippy::needless_range_loop,
++    reason = "carry chains index parallel fixed-size arrays, as `montgomery` does"
++)]
+ use crate::{ct, secret::wipe64};
+-const L: [u64; 4] = [
+-    0x5812631a5cf5d3ed,
+-    0x14def9dea2f79cd6,
+-    0,
+-    0x1000000000000000,
++
++const L: [u64; 4] = [0x5812631a5cf5d3ed, 0x14def9dea2f79cd6, 0, 0x1000000000000000];
++/// floor(2^512 / L).
++const MU: [u64; 5] = [
++    0xed9ce5a30a2c131b,
++    0x2106215d086329a7,
++    0xffffffffffffffeb,
++    0xffffffffffffffff,
++    0x000000000000000f,
+ ];
++
++/// A secret scalar below L.
++#[cfg(any(test, feature = "sign"))]
+ pub(crate) struct S([u64; 4]);
++
++#[cfg(any(test, feature = "sign"))]
+ impl Drop for S {
+     fn drop(&mut self) {
+         wipe64(&mut self.0)
+     }
+ }
+-impl S {
+-    fn reduce_once(v: &[u64; 4]) -> Self {
+-        let mut d = [0; 4];
+-        let mut borrow = 0;
+-        for i in 0..4 {
+-            let t = (1u128 << 64) + u128::from(v[i]) - u128::from(L[i]) - borrow;
+-            d[i] = t as u64;
+-            borrow = 1 - (t >> 64)
++
++/// A public scalar below L.
++#[derive(Clone, Copy)]
++pub(crate) struct PublicScalar([u64; 4]);
++
++#[inline(always)]
++fn mac(t: u64, a: u64, b: u64, c: u64) -> (u64, u64) {
++    let v = u128::from(a)
++        .wrapping_mul(u128::from(b))
++        .wrapping_add(u128::from(t))
++        .wrapping_add(u128::from(c));
++    (v as u64, (v >> 64) as u64)
++}
++
++/// The full product of an M-word and an N-word integer, in M + N words.
++#[inline(always)]
++fn product<const M: usize, const N: usize, const MN: usize>(a: &[u64; M], b: &[u64; N]) -> [u64; MN] {
++    let mut t = [0u64; MN];
++    for i in 0..M {
++        let mut c = 0;
++        for j in 0..N {
++            (t[i + j], c) = mac(t[i + j], a[i], b[j], c);
+         }
+-        let result = Self(core::array::from_fn(|i| {
+-            ct::select(d[i], v[i], borrow as u64)
+-        }));
+-        wipe64(&mut d);
+-        result
++        t[i + N] = c;
+     }
+-    pub(crate) fn reduce(input: &[u8]) -> Self {
+-        let mut r = Self([0; 4]);
+-        for i in (0..input.len() * 8).rev() {
+-            let mut v = [0; 4];
+-            let mut c = u64::from((input[i / 8] >> (i % 8)) & 1);
+-            for (j, word) in v.iter_mut().enumerate() {
+-                *word = (r.0[j] << 1) | c;
+-                c = r.0[j] >> 63;
+-            }
+-            r = Self::reduce_once(&v);
+-            wipe64(&mut v);
++    t
++}
++
++/// a - b modulo 2^320.
++fn sub5(a: &[u64; 5], b: &[u64; 5]) -> [u64; 5] {
++    let mut r = [0u64; 5];
++    let mut borrow = false;
++    for i in 0..5 {
++        let (d, b1) = a[i].overflowing_sub(b[i]);
++        let (d, b2) = d.overflowing_sub(u64::from(borrow));
++        r[i] = d;
++        borrow = b1 | b2;
++    }
++    r
++}
++
++/// r - L under a mask when r >= L, for r < 3L.
++fn subtract_l(r: &mut [u64; 5]) {
++    let mut d = sub5(r, &[L[0], L[1], L[2], L[3], 0]);
++    // r < 3L < 2^255, so the difference's top bit is set exactly when r < L.
++    let keep = ct::mask(d[4] >> 63);
++    for i in 0..5 {
++        r[i] = (r[i] & keep) | (d[i] & !keep);
++    }
++    wipe64(&mut d);
++}
++
++/// x mod L for a 512-bit x.
++fn barrett(x: &[u64; 8]) -> [u64; 4] {
++    // q3 = floor(floor(x / b^(k-1)) mu / b^(k+1)) is floor(x / L) or up to
++    // two less.
++    let q1 = [x[3], x[4], x[5], x[6], x[7]];
++    let mut q2: [u64; 10] = product(&q1, &MU);
++    let q3 = [q2[5], q2[6], q2[7], q2[8], q2[9]];
++    let mut q3l: [u64; 9] = product(&q3, &L);
++    // r = x - q3 L modulo b^(k+1), which is below 3L.
++    let mut r = sub5(&[x[0], x[1], x[2], x[3], x[4]], &[q3l[0], q3l[1], q3l[2], q3l[3], q3l[4]]);
++    subtract_l(&mut r);
++    subtract_l(&mut r);
++    let s = [r[0], r[1], r[2], r[3]];
++    wipe64(&mut q2);
++    wipe64(&mut q3l);
++    wipe64(&mut r);
++    s
++}
++
++fn words<const N: usize, const W: usize>(bytes: &[u8; N]) -> [u64; W] {
++    core::array::from_fn(|i| u64::from_le_bytes(bytes[8 * i..8 * i + 8].try_into().unwrap()))
++}
++
++#[cfg(any(test, feature = "sign"))]
++fn bytes(words: &[u64; 4]) -> [u8; 32] {
++    let mut out = [0; 32];
++    for i in 0..4 {
++        out[8 * i..8 * i + 8].copy_from_slice(&words[i].to_le_bytes())
++    }
++    out
++}
++
++#[cfg(any(test, feature = "sign"))]
++impl S {
++    /// A 64-byte little-endian integer, reduced.
++    pub(crate) fn reduce(input: &[u8; 64]) -> Self {
++        let mut x: [u64; 8] = words(input);
++        let s = Self(barrett(&x));
++        wipe64(&mut x);
++        s
++    }
++
++    /// A 32-byte little-endian integer, reduced.
++    #[cfg(feature = "sign")]
++    pub(crate) fn reduce32(input: &[u8; 32]) -> Self {
++        let mut x = [0u64; 8];
++        x[..4].copy_from_slice(&words::<32, 4>(input));
++        let s = Self(barrett(&x));
++        wipe64(&mut x);
++        s
++    }
++
++    pub(crate) fn bytes(&self) -> [u8; 32] {
++        bytes(&self.0)
++    }
++
++    /// self * b + c mod L.
++    #[cfg(feature = "sign")]
++    pub(crate) fn mul_add(&self, b: &Self, c: &Self) -> Self {
++        let mut t: [u64; 8] = product(&self.0, &b.0);
++        // t < L^2 < 2^506, so adding c < L stays below 2^512.
++        let mut carry = false;
++        for i in 0..8 {
++            let add = if i < 4 { c.0[i] } else { 0 };
++            let (s, c1) = t[i].overflowing_add(add);
++            let (s, c2) = s.overflowing_add(u64::from(carry));
++            t[i] = s;
++            carry = c1 | c2;
+         }
+-        r
++        let s = Self(barrett(&t));
++        wipe64(&mut t);
++        s
++    }
++}
++
++impl PublicScalar {
++    /// A public 64-byte little-endian integer, reduced.
++    pub(crate) fn reduce(input: &[u8; 64]) -> Self {
++        Self(barrett(&words(input)))
+     }
++
++    /// A 32-byte encoding below L, or `None`.
+     pub(crate) fn canonical(input: &[u8; 32]) -> Option<Self> {
+-        let mut v = core::array::from_fn(|i| {
+-            u64::from_le_bytes(input[8 * i..8 * i + 8].try_into().unwrap())
+-        });
+-        let r = Self::reduce_once(&v);
+-        wipe64(&mut v);
+-        if ct::equal(input, &r.bytes()) {
+-            Some(r)
+-        } else {
+-            None
++        let s: [u64; 4] = words(input);
++        let mut borrow = false;
++        for i in 0..4 {
++            let (d, b1) = s[i].overflowing_sub(L[i]);
++            let (_, b2) = d.overflowing_sub(u64::from(borrow));
++            borrow = b1 | b2;
+         }
++        borrow.then_some(Self(s))
+     }
++
++    #[cfg(test)]
+     pub(crate) fn bytes(&self) -> [u8; 32] {
+-        let mut out = [0; 32];
+-        for i in 0..4 {
+-            out[8 * i..8 * i + 8].copy_from_slice(&self.0[i].to_le_bytes())
+-        }
+-        out
++        bytes(&self.0)
+     }
+-    #[cfg(feature = "sign")]
+-    pub(crate) fn add(&self, b: &Self) -> Self {
+-        let mut v = [0; 4];
+-        let mut c = 0;
+-        for (i, word) in v.iter_mut().enumerate() {
+-            let t = u128::from(self.0[i]) + u128::from(b.0[i]) + c;
+-            *word = t as u64;
+-            c = t >> 64;
++
++    /// The width-w non-adjacent form, w in 2..=8: odd digits below 2^(w-1) in
++    /// magnitude, any two nonzero ones at least w positions apart (Hankerson,
++    /// Menezes and Vanstone, Guide to Elliptic Curve Cryptography, algorithm
++    /// 3.35). Variable time: the scalar is public.
++    pub(crate) fn naf(&self, w: u32) -> [i8; 256] {
++        debug_assert!((2..=8).contains(&w));
++        let mut k = self.0;
++        let mut digits = [0i8; 256];
++        let mut i = 0;
++        while k != [0; 4] {
++            if k[0] & 1 == 1 {
++                let window = (k[0] & ((1 << w) - 1)) as i32;
++                let d = if window >= 1 << (w - 1) { window - (1 << w) } else { window };
++                digits[i] = d as i8;
++                // k - d, where |d| < 2^7 and k < 2^253 + 2^7: no word overflows.
++                if d >= 0 {
++                    k[0] -= d as u64;
++                } else {
++                    let (s, mut carry) = k[0].overflowing_add((-d) as u64);
++                    k[0] = s;
++                    for word in &mut k[1..] {
++                        if !carry {
++                            break;
++                        }
++                        (*word, carry) = word.overflowing_add(1);
++                    }
++                }
++            }
++            k = [k[0] >> 1 | k[1] << 63, k[1] >> 1 | k[2] << 63, k[2] >> 1 | k[3] << 63, k[3] >> 1];
++            i += 1;
+         }
+-        let result = Self::reduce_once(&v);
+-        wipe64(&mut v);
+-        result
++        digits
+     }
+-    #[cfg(feature = "sign")]
+-    pub(crate) fn mul(&self, b: &Self) -> Self {
+-        let mut r = Self([0; 4]);
+-        for i in (0..256).rev() {
+-            let double = r.add(&r);
+-            let add = double.add(self);
+-            r = Self(core::array::from_fn(|j| {
+-                ct::select(double.0[j], add.0[j], (b.0[i / 64] >> (i % 64)) & 1)
+-            }));
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++    use num_bigint::{BigInt, BigUint};
++
++    #[test]
++    fn barretts_constant_is_floor_of_2_512_over_l() {
++        let l = BigUint::from_bytes_le(&bytes(&L));
++        let mu = BigUint::from_bytes_le(&MU.iter().flat_map(|w| w.to_le_bytes()).collect::<std::vec::Vec<_>>());
++        assert_eq!(mu, (BigUint::from(1u8) << 512) / l);
++    }
++
++    /// Each width's digits are odd, bounded, w apart, and sum to the scalar.
++    #[test]
++    fn naf_digits_recompose_the_scalar() {
++        let mut seed = 0x2545f4914f6cdd1du64;
++        for case in 0..200 {
++            let mut wide = [0u8; 64];
++            for byte in &mut wide {
++                seed ^= seed << 13;
++                seed ^= seed >> 7;
++                seed ^= seed << 17;
++                *byte = seed as u8;
++            }
++            if case == 0 {
++                wide = [0xff; 64];
++            }
++            let s = PublicScalar::reduce(&wide);
++            for w in 2..=8u32 {
++                let digits = s.naf(w);
++                let mut sum = BigInt::from(0);
++                let mut last: Option<usize> = None;
++                for (i, &d) in digits.iter().enumerate() {
++                    if d != 0 {
++                        assert!(d % 2 != 0 && i32::from(d).abs() < 1 << (w - 1), "digit {d} at width {w}");
++                        if let Some(j) = last {
++                            assert!(i - j >= w as usize, "digits {j} and {i} at width {w}");
++                        }
++                        last = Some(i);
++                    }
++                    sum += BigInt::from(d) << i;
++                }
++                assert_eq!(sum, BigInt::from(BigUint::from_bytes_le(&s.bytes())));
++            }
+         }
+-        r
+     }
+ }
+diff --git a/lib/crypto/src/test_arithmetic.rs b/lib/crypto/src/test_arithmetic.rs
+index f21d0a970..9e3480672 100644
+--- a/lib/crypto/src/test_arithmetic.rs
++++ b/lib/crypto/src/test_arithmetic.rs
+@@ -105,22 +105,27 @@ fn scalar25519_reduction_and_signing_arithmetic_match_integer_oracle() {
+     .unwrap();
+     let wide = (BigUint::from(1u8) << 512) - 1u8;
+     let mut values = fixtures(&wide, 64);
+-    values.extend([wide, order.clone(), &order - 1u8]);
++    // Barrett's quotient estimate is short by up to two at x = k L + r with
++    // r just below L; those and the multiples of L are the edges.
++    values.extend([wide, order.clone(), &order - 1u8, &order * 2u8, &order * 3u8 - 1u8]);
++    values.extend((1u8..=8).map(|k| (BigUint::from(1u8) << 512) / &order * k * &order - 1u8));
++    let int = |b: [u8; 32]| BigUint::from_bytes_le(&b);
+     for (i, a) in values.iter().enumerate() {
+-        let scalar = S::reduce(&fixed::<64>(a));
+-        assert_eq!(BigUint::from_bytes_le(&scalar.bytes()), a % &order);
++        let a = a % (BigUint::from(1u8) << 512);
++        let scalar = S::reduce(&fixed::<64>(&a));
++        assert_eq!(int(scalar.bytes()), &a % &order);
++        assert_eq!(int(crate::scalar25519::PublicScalar::reduce(&fixed::<64>(&a)).bytes()), &a % &order);
+         #[cfg(feature = "sign")]
+         {
+-            let b = &values[(i * 17 + 3) % values.len()];
+-            let b_scalar = S::reduce(&fixed::<64>(b));
++            let b = &values[(i * 17 + 3) % values.len()] % (BigUint::from(1u8) << 512);
++            let c = &values[(i * 5 + 1) % values.len()] % (BigUint::from(1u8) << 512);
++            let (b_scalar, c_scalar) = (S::reduce(&fixed::<64>(&b)), S::reduce(&fixed::<64>(&c)));
+             assert_eq!(
+-                BigUint::from_bytes_le(&scalar.add(&b_scalar).bytes()),
+-                (a + b) % &order
+-            );
+-            assert_eq!(
+-                BigUint::from_bytes_le(&scalar.mul(&b_scalar).bytes()),
+-                (a * b) % &order
++                int(scalar.mul_add(&b_scalar, &c_scalar).bytes()),
++                ((&a % &order) * (&b % &order) + &c % &order) % &order
+             );
++            let low = &a % (BigUint::from(1u8) << 256);
++            assert_eq!(int(S::reduce32(&fixed::<32>(&low)).bytes()), &low % &order);
+         }
+         #[cfg(not(feature = "sign"))]
+         let _ = i;
