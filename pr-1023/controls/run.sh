@@ -1,7 +1,7 @@
 #!/bin/zsh
 # Each control: apply checked, build, run toyos-ssh's tests, restore; the tree must end clean.
-W=~/Dev/jan/toyos-ssh-adopt
-M=~/.claude/jobs/2280e09e/tmp/scratchpad/agents/ssh/mutations3
+W=<worktree>
+M=<scratch>/mutations3
 cd $W || exit 1
 [ -z "$(git status --porcelain)" ] || { echo "tree not clean"; exit 1; }
 echo "revision $(git rev-parse HEAD)"
