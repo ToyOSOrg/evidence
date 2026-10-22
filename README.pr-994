@@ -30,3 +30,19 @@ head-25d787482/ (after review round 1, rebased on #998)
   r2-ps.log        add_measure_ps.py's run: ps after spawns, no Z thread in
                    the supervisor
   metal/request.txt  the two readbacks staged at this head
+
+head-90a3ef915/ (review round 2, rebased on #998 5a5c44d4b)
+  r3-994-build.log      cargo run -- --build-only, exit 0
+  r3-metal-unit.log     cargo test -p toyos-metal, exit 0
+  r3-metal-control.log  the ROOT count widened to 1..=3: the admission
+                        test red on the three-ROOT image, then restored
+  r3-ps-detached.log    at 25d787482 with read_system's join removed
+                        (detach_bootstrap.py) and the ps patch: no
+                        bootstrap thread listed
+  children-serial-994.log  spawn_children_cap's kernel records at
+                        25d787482 (keep_children_serial.py): 241 children,
+                        each exit peak=2MB, the 242nd refused ENOMEM
+  children-free-994.log / children-free-998.log, m-free-*.log
+                        toybox free every 50 held children
+                        (children_free.py) at 25d787482 and at 6ae79ccaa:
+                        16.2 and 14.2 MiB a child
