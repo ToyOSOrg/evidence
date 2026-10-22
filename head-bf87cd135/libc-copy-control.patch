@@ -1,0 +1,6 @@
+--- a/sdk/libc/src/socket.rs (sock_from_fd and connect)
++++ b/sdk/libc/src/socket.rs
+-    if object.tag == toyos::fd::STREAM {
++    if object.tag == toyos::fd::STREAM || (object.release.is_none() && stream::is_stream(object.handle)) {
+-            match toyos::fd::replace(fd, stream::descriptor(connected.handle)) {
++            match toyos::fd::replace(fd, toyos::fd::Object::handle(connected.handle)) {
