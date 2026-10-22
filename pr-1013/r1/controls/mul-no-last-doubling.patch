@@ -1,0 +1,13 @@
+--- a/lib/crypto/src/nist.rs
++++ b/lib/crypto/src/nist.rs
+@@ -411,9 +411,7 @@
+             }
+             let d = booth(&k.0, i);
+             let (mut sum, equal) = r.add_incomplete(&Self::lookup(&table, d));
+-            if i == 0 {
+-                sum = Self::select(&sum, &r.double(), equal);
+-            }
++            let _ = equal;
+             r = Self::select(&r, &sum, crate::ct::nonzero(d as u8 as u64));
+         }
+         r

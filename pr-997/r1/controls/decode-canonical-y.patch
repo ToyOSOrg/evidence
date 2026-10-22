@@ -1,0 +1,13 @@
+--- a/lib/crypto/src/ed25519.rs
++++ b/lib/crypto/src/ed25519.rs
+@@ -154,9 +154,7 @@
+         let sign = u64::from(b[31] >> 7);
+         b[31] &= 127;
+         let y = Tight::from_bytes(&b);
+-        if b != y.bytes() {
+-            return Err(Error::InvalidPoint);
+-        }
++
+         let y2 = y.square();
+         let u = y2.sub(&Tight::ONE).carry();
+         let v = D.mul(&y2).add(&Tight::ONE).carry();
