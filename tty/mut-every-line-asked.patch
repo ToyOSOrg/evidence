@@ -1,0 +1,16 @@
+diff --git a/sdk/toyos/src/surface.rs b/sdk/toyos/src/surface.rs
+index 2747eca1e..9468a5aaf 100644
+--- a/sdk/toyos/src/surface.rs
++++ b/sdk/toyos/src/surface.rs
+@@ -365,9 +365,8 @@ impl Host {
+     /// pass the key on as it is. A process that has not read the interrupt
+     /// before is killed by this one, which is what a second Ctrl+C does.
+     pub fn interrupt(&mut self) -> bool {
+-        let Some(i) = self.lines.foreground() else { return false };
+-        let peer = self.peers[i].as_ref().expect("a line is held by a live peer");
+-        for process in &peer.line {
++        let Some(_) = self.lines.foreground() else { return false };
++        for process in self.peers.iter().flatten().flat_map(|peer| &peer.line) {
+             // A process already ended answers `Ok`; a handle that is no
+             // process, or carries no `MANAGE`, is the client's error and
+             // asks nothing.

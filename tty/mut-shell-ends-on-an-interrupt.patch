@@ -1,0 +1,14 @@
+diff --git a/system/shell/src/main.rs b/system/shell/src/main.rs
+index 1d1872b99..2e521def2 100644
+--- a/system/shell/src/main.rs
++++ b/system/shell/src/main.rs
+@@ -60,7 +60,8 @@ fn listen() {
+         while let Ok(reason) = notice.read() {
+             let mut asked = ASKED.lock().unwrap();
+             match reason {
+-                Reason::Interrupt => asked.interrupted |= asked.waiting,
++                Reason::Interrupt if !asked.waiting => std::process::exit(code_of(reason)),
++                Reason::Interrupt => asked.interrupted = true,
+                 _ if !asked.waiting => std::process::exit(code_of(reason)),
+                 _ => asked.ended_by = Some(reason),
+             }

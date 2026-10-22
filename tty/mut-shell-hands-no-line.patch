@@ -1,0 +1,13 @@
+diff --git a/sdk/toyos/src/surface.rs b/sdk/toyos/src/surface.rs
+index 2747eca1e..e30b368d1 100644
+--- a/sdk/toyos/src/surface.rs
++++ b/sdk/toyos/src/surface.rs
+@@ -508,7 +508,7 @@ impl Foreground {
+     /// each carrying `MANAGE` is handed over, and the caller keeps its own. The
+     /// surface's going is no error: there is nobody left to press Ctrl+C.
+     pub fn set(&mut self, processes: &[RawHandle]) {
+-        let Some(conn) = self.conn() else { return };
++        let Some(conn) = self.conn().filter(|_| false) else { return };
+         // `TRANSFER` alone beside `MANAGE`, which the move takes.
+         let rights = Rights::MANAGE.union(Rights::TRANSFER);
+         let mut copies = processes.iter().filter_map(|&p| syscall::dup_narrowed(p, rights).ok());
