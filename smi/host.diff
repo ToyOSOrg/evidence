@@ -1,0 +1,138 @@
+diff --git a/issues/the-t14s-firmware-interrupts-every-cpu-every-2-2-s-under-toyos.md b/issues/the-t14s-firmware-interrupts-every-cpu-every-2-2-s-under-toyos.md
+index dbf3c30c9..465da631d 100644
+--- a/issues/the-t14s-firmware-interrupts-every-cpu-every-2-2-s-under-toyos.md
++++ b/issues/the-t14s-firmware-interrupts-every-cpu-every-2-2-s-under-toyos.md
+@@ -81,6 +81,15 @@ The `mask-windows` kernel prints such a window as its CPU's own: cpu4's
+ (`issues/a-process-lengthens-an-interrupts-off-walk-by-the-threads-it-parks-on-one-ring.md`),
+ are this by reading, those kernels not reading the count.
+ 
++**An image that starts no `/system/bin/acpiserver` stays in legacy mode**, by
++design: the kernel enables ACPI mode only for the `acpi` claim's holder. The
++`osbench` and `latency_wake` images started none until #<PR>, so their T14
++readings carried this stop. Three `osbench` boots at `588c821ee` (#989), each
++`legacy mode` in its log, read 27 or 28 SMIs per 60 s on every CPU and 27
++wakes past 1 ms late, 4.1 to 4.6 ms, spaced 2.2165 to 2.248 s; the 30 s
++diary run read 14 of each. Both rows' judges now refuse a boot not in ACPI
++mode before its first job.
++
+ **Owner**: stage 1 of
+ `issues/toyos-runs-the-machine-in-acpi-mode-and-interprets-its-aml.md`,
+ for the fix and for the reading: its exit holds the count on the T14 to what
+diff --git a/tests/images/benchcase.toml b/tests/images/benchcase.toml
+index 15141bda8..43a35c543 100644
+--- a/tests/images/benchcase.toml
++++ b/tests/images/benchcase.toml
+@@ -1,10 +1,11 @@
+ # The boot `osbench` measures ToyOS on, for a comparison with the same program
+ # on the bench's own Linux (`tests/guest/osbench`).
+ #
+-# Only what a job list needs to run and to reach the log on the boot stick: no
+-# compositor, sound, ACPI server or network, so little but the measurement asks
+-# for a CPU. DATA is memory here, the stick having no DATA partition, and the
+-# log volume is the one persistent volume a job can write (`osbench persist`).
++# Only what a job list needs to run and to reach the log on the boot stick, and
++# the ACPI server: no compositor, sound or network, so little but the
++# measurement asks for a CPU. DATA is memory here, the stick having no DATA
++# partition, and the log volume is the one persistent volume a job can write
++# (`osbench persist`).
+ #
+ # The runner's capability carries `jobs`, for the fairness run that starts each
+ # workload as a job of its own; `counters`, `trace` and `roster`, so `osbench
+@@ -13,12 +14,21 @@
+ # handed a duplicate. No other benchmark's path uses them. An unprivileged
+ # Linux program has no observation rights to match, which the report says.
+ [boot]
+-start = ["logkeeper", "diskserver", "fileserver", "test-runner"]
++start = ["logkeeper", "diskserver", "fileserver", "acpiserver", "test-runner"]
+ 
+ [programs.logkeeper]
+ service = true
+ syscap = ["logread"]
+ 
++# ACPI mode, as a shipped image and the bench's Linux run it. In the legacy
++# mode the T14's firmware hands over, it stops every CPU for 4.5 ms every 2.2 s
++# (`issues/the-t14s-firmware-interrupts-every-cpu-every-2-2-s-under-toyos.md`).
++# Started before `test-runner`, so its claim's enable precedes every job.
++[programs.acpiserver]
++service = true
++devices = ["acpi"]
++receives = ["power"]
++
+ # The order `osbench all` runs the groups in. The bound is the metal row's, its
+ # 240 s on the 60 s every list has (`tests/toyos.rs`), restated for a boot of
+ # this config built without the row; a derived metal config states its own.
+diff --git a/tests/images/latencycase.toml b/tests/images/latencycase.toml
+index b813f0c99..e6c1c8d16 100644
+--- a/tests/images/latencycase.toml
++++ b/tests/images/latencycase.toml
+@@ -11,12 +11,21 @@
+ # `power` because the job list is what ends the boot: there is no host on the
+ # other end of the console on the machine this config exists for.
+ [boot]
+-start = ["logkeeper", "diskserver", "fileserver", "test-runner"]
++start = ["logkeeper", "diskserver", "fileserver", "acpiserver", "test-runner"]
+ 
+ [programs.logkeeper]
+ service = true
+ syscap = ["logread"]
+ 
++# ACPI mode, as a shipped image and the bench's Linux run it. In the legacy
++# mode the T14's firmware hands over, it stops every CPU for 4.5 ms every 2.2 s
++# (`issues/the-t14s-firmware-interrupts-every-cpu-every-2-2-s-under-toyos.md`).
++# Started before `test-runner`, so its claim's enable precedes every job.
++[programs.acpiserver]
++service = true
++devices = ["acpi"]
++receives = ["power"]
++
+ [programs.test-runner]
+ receives = ["power"]
+ args = ["test_rs_cyclictest", "test_rs_sched_stress", "reboot"]
+diff --git a/tests/toyos.rs b/tests/toyos.rs
+index ecef65940..173c7acf3 100644
+--- a/tests/toyos.rs
++++ b/tests/toyos.rs
+@@ -974,6 +974,7 @@ const METAL: &[(&str, metal::Metal)] = &[
+         metal::Metal {
+             arms: LATENCYCASE,
+             judge: |b| {
++                in_acpi_mode_before_any_job(b[0])?;
+                 b[0].job_passed("test_rs_sched_stress")?;
+                 wake_latency_recorded(b[0])
+             },
+@@ -1457,6 +1458,7 @@ const BENCHCASE: &[metal::Arm] = &[metal::Arm {
+ /// Every group exited 0, which `osbench` does only once each of its
+ /// benchmarks measured, and said it was done.
+ fn osbench_ran(boot: &metal::Readback) -> Result<(), String> {
++    in_acpi_mode_before_any_job(boot)?;
+     for job in OSBENCH_GROUPS {
+         boot.job_passed(job)?;
+         let group = job.strip_prefix("osbench_").expect("a group's job");
+@@ -1465,6 +1467,27 @@ fn osbench_ran(boot: &metal::Readback) -> Result<(), String> {
+     Ok(())
+ }
+ 
++/// A timing boot was in ACPI mode before its first job and stayed there, as a
++/// shipped image and the bench's Linux are. In legacy mode the T14's firmware
++/// stops every CPU every 2.2 s, and its time would be measured as ToyOS's
++/// (`issues/the-t14s-firmware-interrupts-every-cpu-every-2-2-s-under-toyos.md`).
++fn in_acpi_mode_before_any_job(boot: &metal::Readback) -> Result<(), String> {
++    let log = boot.log();
++    let text = log.text();
++    let first_job = text.find("===TEST_START").ok_or("the boot started no job")?;
++    let in_acpi_mode = ["the firmware handed over in ACPI mode", "acpi: ACPI mode: ACPI_ENABLE "]
++        .iter()
++        .filter_map(|said| text.find(said))
++        .min();
++    if !in_acpi_mode.is_some_and(|at| at < first_job) {
++        return Err("the machine was not in ACPI mode before the first job: the boot measured the firmware's legacy mode".to_string());
++    }
++    if let Ok(left) = log.must_say("acpi: legacy mode again") {
++        return Err(format!("the machine left ACPI mode inside the boot: {left}"));
++    }
++    Ok(())
++}
++
+ /// The same boot, its rows ended on the hold, which waits for the ACPI
+ /// server's power sources, the last line of its start. The members run
+ /// behind it: the hold gives up at a time since boot, which a list of
