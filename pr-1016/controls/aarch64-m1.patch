@@ -1,0 +1,11 @@
+--- a/lib/crypto/src/arch/aarch64.rs	2026-10-22 15:47:47
++++ b/lib/crypto/src/arch/aarch64.rs	2026-10-22 16:09:15
+@@ -44,7 +44,7 @@
+             let wk = vaddq_u32(w[i % 4], k[i]);
+             let previous = abcd;
+             abcd = vsha256hq_u32(abcd, efgh, wk);
+-            efgh = vsha256h2q_u32(efgh, previous, wk);
++            efgh = vsha256h2q_u32(efgh, abcd, wk);
+         }
+         abcd = vaddq_u32(abcd, saved_abcd);
+         efgh = vaddq_u32(efgh, saved_efgh);

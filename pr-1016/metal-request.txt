@@ -1,0 +1,12 @@
+# SHA-2 adoption: toyos-crypto's SHA-256 against the toyos-sha2-hw it replaces, both beside ring, in crypto_parity.
+# Two boots of one image, each with its own readback directory. Each command is `cargo <words>` from ~/Dev/jan/toyos-crypto-adopt.
+# The image is the probe 680d5bd37 (never pushed, local branch stage/sha-parity): 43f7e04cb plus toyos-sha2-hw restored and
+# rows "probe sha-256 crypto/N" and "probe sha-256 sha2-hw/N" for N = 64, 16384 and 1048576.
+
+T14:
+  cargo run -p toyos-metal -- --image ~/.claude/jobs/2280e09e/tmp/scratchpad/agents/crypto-sec/metal-sha/t14/cryptocase/image.img --readback ~/.claude/jobs/2280e09e/tmp/scratchpad/agents/crypto-sec/metal-sha/t14/cryptocase --fat32-check
+
+AMD bench:
+  cargo run -p toyos-metal -- --image ~/.claude/jobs/2280e09e/tmp/scratchpad/agents/crypto-sec/metal-sha/t14/cryptocase/image.img --readback ~/.claude/jobs/2280e09e/tmp/scratchpad/agents/crypto-sec/metal-sha/amd/cryptocase --fat32-check
+
+# Read: the two probe rows of each length, each "ours" against the same ring. The requirement is that crypto is no slower than sha2-hw.
