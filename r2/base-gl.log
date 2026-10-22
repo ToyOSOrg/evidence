@@ -1,0 +1,67 @@
+   Compiling toyos-abi v0.16.0 ($WT/sdk/abi)
+   Compiling toyos-blackbox v0.1.0 ($WT/lib/blackbox)
+   Compiling toyos-manifest v0.1.0 ($WT/lib/manifest)
+   Compiling toyos-input v0.1.0 ($WT/lib/input)
+   Compiling toyos-symbols v0.1.0 ($WT/lib/symbols)
+   Compiling toyos-logstream v0.1.0 ($WT/lib/logstream)
+   Compiling toyos-bootmap v0.1.0 ($WT/lib/bootmap)
+   Compiling kernel v0.1.0 ($WT/kernel)
+   Compiling toyos-acpi v0.1.0 ($WT/lib/acpi)
+   Compiling toyos-swap v0.1.0 ($WT/lib/swap)
+   Compiling toyos-build v0.1.0 ($WT)
+   Compiling toyos-userbound v0.1.0 ($WT/lib/userbound)
+   Compiling toyos-metal v0.1.0 ($WT/tests/metal)
+    Finished `test` profile [optimized + debuginfo] target(s) in 16.52s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-42525268d3587802)
+
+13:17:43 running 1 tests, 12 wide
+
+13:17:43   RUN   scratch_shared_sweep
+13:17:43   BUILD x86_64 binaries of tests/guest/rust-tests, for scratch_shared_sweep
+13:17:51   BUILT x86_64 binaries of tests/guest/rust-tests, for scratch_shared_sweep  (8s)
+13:17:51   BUILD x86_64 kernel boot-actuators,test-actuators, loader, ROOT of tests/images/testcases.toml, for scratch_shared_sweep
+13:18:15 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+13:18:16   BUILT x86_64 kernel boot-actuators,test-actuators, loader, ROOT of tests/images/testcases.toml, for scratch_shared_sweep  (24s)
+13:18:36 SWEEP global_leaf_user_flush exit=Some(101) err=None
+
+thread 'main' (1) panicked at src/bin/global_leaf_user_flush.rs:13:5:
+assertion `left == right` failed: the user-half shootdown dropped a global kernel translation
+  left: 1
+ right: 0
+stack backtrace:
+   0:           0x25e630 - _Unwind_Backtrace
+   1:           0x241cc3 - <<std[3966f9622dfad1a0]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[73b405bef30eeff1]::fmt::Display>::fmt
+   2:           0x262517 - core[73b405bef30eeff1]::fmt::write
+   3:           0x2454eb - <std[3966f9622dfad1a0]::sys::stdio::toyos::Stderr as core[73b405bef30eeff1]::io::write::Write>::write_fmt
+   4:           0x22c103 - std[3966f9622dfad1a0]::panicking::default_hook::{closure#0}
+   5:           0x23f35e - std[3966f9622dfad1a0]::panicking::default_hook
+   6:           0x23f519 - std[3966f9622dfad1a0]::panicking::panic_with_hook
+   7:           0x22c1bd - std[3966f9622dfad1a0]::panicking::panic_handler::{closure#0}
+   8:           0x2247c9 - std[3966f9622dfad1a0]::sys::backtrace::__rust_end_short_backtrace::<std[3966f9622dfad1a0]::panicking::panic_handler::{closure#0}, !>
+   9:           0x22c948 - __rustc[d0c72ce299f394e5]::rust_begin_unwind
+  10:           0x262c3b - core[73b405bef30eeff1]::panicking::panic_fmt
+  11:           0x262baf - core[73b405bef30eeff1]::panicking::assert_failed_inner
+  12:           0x26079b - core[73b405bef30eeff1]::panicking::assert_failed::<u64, u64>
+  13:           0x2199be - global_leaf_user_flush[348e82e3f67bf1af]::main
+  14:           0x2198f6 - std[3966f9622dfad1a0]::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  15:           0x2198a0 - std[3966f9622dfad1a0]::rt::lang_start::<()>::{closure#0}
+  16:           0x23eda6 - std[3966f9622dfad1a0]::rt::lang_start_internal
+  17:           0x2199f1 - main
+  18:           0x2406a3 - std[3966f9622dfad1a0]::sys::pal::toyos::start_rust
+  19:           0x219aba - _start
+
+13:18:36 FAIL scratch_shared_sweep: red: ["global_leaf_user_flush"]
+13:18:36   FAIL  scratch_shared_sweep  (20s)
+13:18:36   --- 1 guests, 1 of them not the shipping kernel, 1 kernel build(s): ["boot-actuators,test-actuators"]
+
+13:18:36 host: fastest boot 19712 ms against the reference 1424 ms — liveness ceilings paid at 8.00x
+13:18:36 host: 14 core(s); a guest wider than that waits vcpus/cores longer again
+13:18:36 failures:
+13:18:36     scratch_shared_sweep: red: ["global_leaf_user_flush"]
+
+13:18:36 test result: FAILED. 0 passed, 1 failed, 0 invalidated, 1 total (52.8s; workers: 32s building, 20s testing)
+13:18:36 [toyos] this red run's serial logs are kept at $WT/target/red-run-serial/toyos-tmp-30969-0
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `$WT/target/debug/deps/toyos_build-42525268d3587802 scratch_shared_sweep` (exit status: 1)

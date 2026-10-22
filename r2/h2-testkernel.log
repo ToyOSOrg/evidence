@@ -1,0 +1,89 @@
+   Compiling toyos-build v0.1.0 ($WT)
+    Finished `test` profile [optimized + debuginfo] target(s) in 2.37s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-42525268d3587802)
+
+13:15:51 running 1 tests, 12 wide
+
+13:15:51   RUN   scratch_shared_sweep
+13:15:51   BUILD x86_64 binaries of tests/guest/rust-tests, for scratch_shared_sweep
+13:15:54   BUILT x86_64 binaries of tests/guest/rust-tests, for scratch_shared_sweep  (3s)
+13:15:54   BUILD x86_64 kernel boot-actuators,test-actuators, loader, ROOT of tests/images/testcases.toml, for scratch_shared_sweep
+13:15:56 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+13:15:57   BUILT x86_64 kernel boot-actuators,test-actuators, loader, ROOT of tests/images/testcases.toml, for scratch_shared_sweep  (3s)
+13:16:04 SWEEP tlb_shootdown_waits exit=Some(101) err=None
+
+thread 'main' (1) panicked at src/bin/tlb_shootdown_waits.rs:184:5:
+a fixed mmap returned in 446286ns with every other CPU answering 20000000ns late — it replaced the mapping without waiting for the flush
+stack backtrace:
+   0:           0x266290 - _Unwind_Backtrace
+   1:           0x249673 - <<std[3966f9622dfad1a0]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[73b405bef30eeff1]::fmt::Display>::fmt
+   2:           0x26a507 - core[73b405bef30eeff1]::fmt::write
+   3:           0x24d08b - <std[3966f9622dfad1a0]::sys::stdio::toyos::Stderr as core[73b405bef30eeff1]::io::write::Write>::write_fmt
+   4:           0x232883 - std[3966f9622dfad1a0]::panicking::default_hook::{closure#0}
+   5:           0x24634e - std[3966f9622dfad1a0]::panicking::default_hook
+   6:           0x246509 - std[3966f9622dfad1a0]::panicking::panic_with_hook
+   7:           0x23293d - std[3966f9622dfad1a0]::panicking::panic_handler::{closure#0}
+   8:           0x22aee9 - std[3966f9622dfad1a0]::sys::backtrace::__rust_end_short_backtrace::<std[3966f9622dfad1a0]::panicking::panic_handler::{closure#0}, !>
+   9:           0x2330c8 - __rustc[d0c72ce299f394e5]::rust_begin_unwind
+  10:           0x26ac2b - core[73b405bef30eeff1]::panicking::panic_fmt
+  11:           0x21e39e - tlb_shootdown_waits[d52030ddd76ea865]::main
+  12:           0x21f5e6 - std[3966f9622dfad1a0]::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  13:           0x21d4d0 - std[3966f9622dfad1a0]::rt::lang_start::<()>::{closure#0}
+  14:           0x245d96 - std[3966f9622dfad1a0]::rt::lang_start_internal
+  15:           0x21ea31 - main
+  16:           0x247983 - std[3966f9622dfad1a0]::sys::pal::toyos::start_rust
+  17:           0x21fbf6 - _start
+
+13:16:04 SWEEP abuse_kernel_addr exit=Some(0) err=None
+dlopen and futex refuse an address they may not reach, and kernel memory is untouched
+
+13:16:04 SWEEP global_leaf_discharge exit=Some(0) err=None
+global_leaf_discharge: the discharge dropped the global translation
+
+13:16:04 SWEEP global_leaf_flush exit=Some(0) err=None
+global_leaf_flush: the shootdown's flush dropped the global translation
+
+13:16:04 SWEEP global_leaf_user_flush exit=Some(101) err=None
+
+thread 'main' (1) panicked at src/bin/global_leaf_user_flush.rs:13:5:
+assertion `left == right` failed: the user-half shootdown dropped a global kernel translation
+  left: 1
+ right: 0
+stack backtrace:
+   0:           0x25e630 - _Unwind_Backtrace
+   1:           0x241cc3 - <<std[3966f9622dfad1a0]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[73b405bef30eeff1]::fmt::Display>::fmt
+   2:           0x262517 - core[73b405bef30eeff1]::fmt::write
+   3:           0x2454eb - <std[3966f9622dfad1a0]::sys::stdio::toyos::Stderr as core[73b405bef30eeff1]::io::write::Write>::write_fmt
+   4:           0x22c103 - std[3966f9622dfad1a0]::panicking::default_hook::{closure#0}
+   5:           0x23f35e - std[3966f9622dfad1a0]::panicking::default_hook
+   6:           0x23f519 - std[3966f9622dfad1a0]::panicking::panic_with_hook
+   7:           0x22c1bd - std[3966f9622dfad1a0]::panicking::panic_handler::{closure#0}
+   8:           0x2247c9 - std[3966f9622dfad1a0]::sys::backtrace::__rust_end_short_backtrace::<std[3966f9622dfad1a0]::panicking::panic_handler::{closure#0}, !>
+   9:           0x22c948 - __rustc[d0c72ce299f394e5]::rust_begin_unwind
+  10:           0x262c3b - core[73b405bef30eeff1]::panicking::panic_fmt
+  11:           0x262baf - core[73b405bef30eeff1]::panicking::assert_failed_inner
+  12:           0x26079b - core[73b405bef30eeff1]::panicking::assert_failed::<u64, u64>
+  13:           0x2199be - global_leaf_user_flush[348e82e3f67bf1af]::main
+  14:           0x2198f6 - std[3966f9622dfad1a0]::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  15:           0x2198a0 - std[3966f9622dfad1a0]::rt::lang_start::<()>::{closure#0}
+  16:           0x23eda6 - std[3966f9622dfad1a0]::rt::lang_start_internal
+  17:           0x2199f1 - main
+  18:           0x2406a3 - std[3966f9622dfad1a0]::sys::pal::toyos::start_rust
+  19:           0x219aba - _start
+
+13:16:04 FAIL scratch_shared_sweep: red: ["tlb_shootdown_waits", "global_leaf_user_flush"]
+13:16:04   FAIL  scratch_shared_sweep  (8s)
+13:16:04   --- 1 guests, 1 of them not the shipping kernel, 1 kernel build(s): ["boot-actuators,test-actuators"]
+
+13:16:04 host: fastest boot 6550 ms against the reference 1424 ms — liveness ceilings paid at 4.60x
+13:16:04 host: 14 core(s); a guest wider than that waits vcpus/cores longer again
+13:16:04 failures:
+13:16:04     scratch_shared_sweep: red: ["tlb_shootdown_waits", "global_leaf_user_flush"]
+
+13:16:04 test result: FAILED. 0 passed, 1 failed, 0 invalidated, 1 total (13.2s; workers: 5s building, 8s testing)
+13:16:04 [toyos] this red run's serial logs are kept at $WT/target/red-run-serial/toyos-tmp-22026-0
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `$WT/target/debug/deps/toyos_build-42525268d3587802 scratch_shared_sweep` (exit status: 1)
+exit=1

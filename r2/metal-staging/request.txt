@@ -1,0 +1,22 @@
+# One boot per image. Each invocation is `cargo <words>` from this worktree.
+
+benchcase
+  image: $SCRATCH/metal-r1/benchcase/image.img
+  cargo run -p toyos-metal -- --image $SCRATCH/metal-r1/benchcase/image.img --readback $SCRATCH/metal-r1/benchcase --fat32-check
+
+shared-debug
+  image: $SCRATCH/metal-r1/shared-debug/image.img
+  cargo run -p toyos-metal -- --image $SCRATCH/metal-r1/shared-debug/image.img --readback $SCRATCH/metal-r1/shared-debug --fat32-check
+
+testcases
+  image: $SCRATCH/metal-r1/testcases/image.img
+  cargo run -p toyos-metal -- --image $SCRATCH/metal-r1/testcases/image.img --readback $SCRATCH/metal-r1/testcases --fat32-check
+
+testcases-watchdog
+  image: $SCRATCH/metal-r1/testcases-watchdog/image.img
+  cargo run -p toyos-metal -- --image $SCRATCH/metal-r1/testcases-watchdog/image.img --readback $SCRATCH/metal-r1/testcases-watchdog --fat32-check
+
+# The base for osbench's A/B: main d7f269dbc, the stack's base.
+benchcase-base (main d7f269dbc)
+  image: $SCRATCH/metal-base/benchcase/image.img
+  cargo run -p toyos-metal -- --image $SCRATCH/metal-base/benchcase/image.img --readback $SCRATCH/metal-base/benchcase --fat32-check

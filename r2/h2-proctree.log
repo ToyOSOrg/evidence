@@ -1,0 +1,114 @@
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.30s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-42525268d3587802)
+
+13:16:05 running 1 tests, 12 wide
+
+13:16:05   RUN   scratch_shared_sweep
+13:16:05   BUILD x86_64 binaries of tests/guest/rust-tests, for scratch_shared_sweep
+13:16:07   BUILT x86_64 binaries of tests/guest/rust-tests, for scratch_shared_sweep  (2s)
+13:16:07   BUILD x86_64 kernel, loader, ROOT of tests/images/proctreecase.toml, for scratch_shared_sweep
+13:16:10 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+13:16:10   BUILT x86_64 kernel, loader, ROOT of tests/images/proctreecase.toml, for scratch_shared_sweep  (3s)
+13:16:19 SWEEP process_tree exit=Some(0) err=None
+supervisor: launcher: toybox was not started: the place it names is ending
+  B Killed: C and D ended, as killed; E, under the supervisor, ran on
+  B CpuFault: C and D ended, as killed; E, under the supervisor, ran on
+  a MANAGE-only handle is no place: PermissionDenied
+supervisor: launcher: cannot start toybox: invalid input parameter
+  a pipe is no place: the supervisor refused the launch
+fileserver: dropping client 35 of Some(""), share 7: it is refused, since its share is served 32 clients already
+  a chain of 31 links stopped at a depth refusal (link 31: its next link was refused: entity not found) and died whole
+  a detached cat outlived its shell
+process_tree: PASS
+
+13:16:19 SWEEP launch_toctou exit=Some(101) err=None
+
+thread 'main' (1) panicked at src/bin/launch_toctou.rs:89:33:
+launch 2 of /tmp/ps was refused or not waited: entity not found
+stack backtrace:
+   0:           0x276d80 - _Unwind_Backtrace
+   1:           0x255ae3 - <<std[3966f9622dfad1a0]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[73b405bef30eeff1]::fmt::Display>::fmt
+   2:           0x27b087 - core[73b405bef30eeff1]::fmt::write
+   3:           0x259a6b - <std[3966f9622dfad1a0]::sys::stdio::toyos::Stderr as core[73b405bef30eeff1]::io::write::Write>::write_fmt
+   4:           0x2377a3 - std[3966f9622dfad1a0]::panicking::default_hook::{closure#0}
+   5:           0x2517fe - std[3966f9622dfad1a0]::panicking::default_hook
+   6:           0x2519b9 - std[3966f9622dfad1a0]::panicking::panic_with_hook
+   7:           0x23785d - std[3966f9622dfad1a0]::panicking::panic_handler::{closure#0}
+   8:           0x22fb49 - std[3966f9622dfad1a0]::sys::backtrace::__rust_end_short_backtrace::<std[3966f9622dfad1a0]::panicking::panic_handler::{closure#0}, !>
+   9:           0x238118 - __rustc[d0c72ce299f394e5]::rust_begin_unwind
+  10:           0x27b7ab - core[73b405bef30eeff1]::panicking::panic_fmt
+  11:           0x221f5c - launch_toctou[aa6f24b8e404d5e5]::attacker::{closure#1}
+  12:           0x2223cf - launch_toctou[aa6f24b8e404d5e5]::main
+  13:           0x221326 - std[3966f9622dfad1a0]::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  14:           0x2212d0 - std[3966f9622dfad1a0]::rt::lang_start::<()>::{closure#0}
+  15:           0x250c36 - std[3966f9622dfad1a0]::rt::lang_start_internal
+  16:           0x2226d1 - main
+  17:           0x253003 - std[3966f9622dfad1a0]::sys::pal::toyos::start_rust
+  18:           0x22309a - _start
+
+13:16:19 SWEEP port_badge exit=Some(0) err=None
+  a minted badge comes back exact on its own port, through either accept, and on no other
+  an unbadged connection answers NotFound
+  a badge of 0 or 65 bytes is refused
+  minting takes READ on the acceptor
+port_badge: PASS
+
+13:16:21 SWEEP app_view exit=Some(0) err=None
+supervisor: launcher: the package shell is named after a row the image declares, and /home/toy/Apps/shell is that row's folder
+  a package named after the shell's row: refused (other error)
+supervisor: launcher: appview holds no folder; `grants add appview <folder>` grants it one
+supervisor: launcher: appview was not started: /home/toy/Apps/appview could not be made: /home/toy/Apps/appview is no directory
+  a package whose folder is a file: refused (other error)
+supervisor: launcher: appview holds no folder; `grants add appview <folder>` grants it one
+  its own package reads
+  std's write into its package: refused
+  an open to write: refused
+  an open to append: refused
+  an open to truncate: refused
+  an open to create: refused
+  an open to create anew: refused
+  mkdir: refused
+  rmdir: refused
+  unlink: refused
+  rename: refused
+  symlink: refused
+  every arm held
+  the app's write is in /home/toy/Apps/appview/Data
+supervisor: grants: refused grants in a login session: appview holds no grant
+supervisor: grants: refused grants in the machine's session: only a login session may ask for grants
+  grants in the machine's session: refused
+supervisor: grants: refused grants in a login session: /home/toy/Apps/appview is /home/toy/Apps or inside it, where every app keeps its own folder
+  /home/toy/Apps/appview as a grant: refused
+supervisor: grants: appview is granted /home/toy/Games read-write
+GAME cwd=/home/toy/Games roms=["test.gba"] saved=Ok
+  granted: cwd=/home/toy/Games roms=["test.gba"] saved=Ok
+  its save is beside the ROM
+supervisor: launcher: appview holds no folder; `grants add appview <folder>` grants it one
+GAME cwd=/ roms=[] saved=Err
+  another binary: cwd=/ roms=[] saved=Err
+GAME cwd=/home/toy/Games roms=["test.gba"] saved=Ok
+  the granted binary again: cwd=/home/toy/Games roms=["test.gba"] saved=Ok
+supervisor: grants: appview's grant is revoked; its next launch holds no folder
+supervisor: launcher: appview holds no folder; `grants add appview <folder>` grants it one
+GAME cwd=/ roms=[] saved=Err
+  revoked: cwd=/ roms=[] saved=Err
+app_view: the app saw its own package read-only and its own folder as HOME, and nothing else
+
+13:16:21 FAIL scratch_shared_sweep: red: ["launch_toctou"]
+13:16:21   FAIL  scratch_shared_sweep  (11s)
+13:16:21   --- 1 guests, 0 of them not the shipping kernel, 1 kernel build(s): [""]
+
+13:16:21 host: fastest boot 5469 ms against the reference 1424 ms — liveness ceilings paid at 3.84x
+13:16:21 host: 14 core(s); a guest wider than that waits vcpus/cores longer again
+13:16:21 failures:
+13:16:21     scratch_shared_sweep: red: ["launch_toctou"]
+
+13:16:21 test result: FAILED. 0 passed, 1 failed, 0 invalidated, 1 total (16.1s; workers: 6s building, 11s testing)
+13:16:21 [toyos] this red run's serial logs are kept at $WT/target/red-run-serial/toyos-tmp-25269-0
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `$WT/target/debug/deps/toyos_build-42525268d3587802 scratch_shared_sweep` (exit status: 1)
+exit=1
