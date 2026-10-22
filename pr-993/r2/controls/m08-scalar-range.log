@@ -1,0 +1,40 @@
+== m08-scalar-range at 9022dcca381ecc6e2c26e0709a36446e5fe3bea2, patch:
+diff --git a/lib/crypto/src/nist.rs b/lib/crypto/src/nist.rs
+index 6e44d94b0..b88e46408 100644
+--- a/lib/crypto/src/nist.rs
++++ b/lib/crypto/src/nist.rs
+@@ -155,7 +155,7 @@ impl<const N: usize> Curve<N> {
+             return Err(Error::Length);
+         }
+         let s = Mod::from_be(bytes);
+-        if self.n.valid(&s) & (1 ^ s.eq(&V::zero())) != 1 {
++        if s.eq(&V::zero()) == 1 {
+             return Err(Error::InvalidKey);
+         }
+         Ok(s)
+== cargo test -p toyos-crypto --all-features --test wycheproof -- --exact ecdsa_der
+   Compiling toyos-crypto v0.1.0 (/Users/jan/Dev/jan/toyos-crypto-sec/lib/crypto)
+    Finished `test` profile [optimized + debuginfo] target(s) in 3.64s
+     Running tests/wycheproof.rs (target/debug/deps/wycheproof-62ef046a7757f434)
+
+running 1 test
+test ecdsa_der ... FAILED
+
+failures:
+
+---- ecdsa_der stdout ----
+
+thread 'ecdsa_der' (52826970) panicked at lib/crypto/tests/support/mod.rs:222:17:
+ecdsa_secp256r1_sha256_test.json tcId 364 ["ArithmeticError"]: invalid and accepted
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    ecdsa_der
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 10 filtered out; finished in 0.39s
+
+error: test failed, to rerun pass `-p toyos-crypto --test wycheproof`
+error: 1 target failed:
+    `-p toyos-crypto --test wycheproof`
+== exit 101

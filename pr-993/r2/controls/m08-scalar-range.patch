@@ -1,0 +1,13 @@
+diff --git a/lib/crypto/src/nist.rs b/lib/crypto/src/nist.rs
+index 6e44d94b0..b88e46408 100644
+--- a/lib/crypto/src/nist.rs
++++ b/lib/crypto/src/nist.rs
+@@ -155,7 +155,7 @@ impl<const N: usize> Curve<N> {
+             return Err(Error::Length);
+         }
+         let s = Mod::from_be(bytes);
+-        if self.n.valid(&s) & (1 ^ s.eq(&V::zero())) != 1 {
++        if s.eq(&V::zero()) == 1 {
+             return Err(Error::InvalidKey);
+         }
+         Ok(s)

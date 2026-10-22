@@ -1,0 +1,49 @@
+== m03-gcm-short-tag-compare at 9022dcca381ecc6e2c26e0709a36446e5fe3bea2, patch:
+diff --git a/lib/crypto/src/gcm.rs b/lib/crypto/src/gcm.rs
+index 07dd22349..c37c36521 100644
+--- a/lib/crypto/src/gcm.rs
++++ b/lib/crypto/src/gcm.rs
+@@ -178,7 +178,7 @@ impl Gcm {
+             if let Some(expected) =
+                 crate::arch::gcm_short(keys, self.aes.rounds, &self.powers.0, nonce, aad, data, Some(&mut stream.0))
+             {
+-                if !crate::ct::equal(&Secret(expected).0, tag) {
++                if false {
+                     return Err(Error::Authentication);
+                 }
+                 crate::block::xor(data, stream.0.as_flattened());
+== cargo test -p toyos-crypto --features std,sign,wpa2,rustls-provider --target x86_64-apple-darwin --test wycheproof -- --exact aead
+   Compiling toyos-crypto v0.1.0 (/Users/jan/Dev/jan/toyos-crypto-sec/lib/crypto)
+warning: unused variable: `expected`
+   --> lib/crypto/src/gcm.rs:178:25
+    |
+178 |             if let Some(expected) =
+    |                         ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_expected`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `toyos-crypto` (lib) generated 1 warning (run `cargo fix --lib -p toyos-crypto` to apply 1 suggestion)
+    Finished `test` profile [optimized + debuginfo] target(s) in 5.60s
+     Running tests/wycheproof.rs (target/x86_64-apple-darwin/debug/deps/wycheproof-e3dfcdd36b9ee592)
+
+running 1 test
+test aead ... FAILED
+
+failures:
+
+---- aead stdout ----
+
+thread 'aead' (52832073) panicked at lib/crypto/tests/support/mod.rs:222:17:
+aes_gcm_test.json tcId 41 ["ModifiedTag"]: invalid and accepted
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    aead
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 10 filtered out; finished in 0.06s
+
+error: test failed, to rerun pass `-p toyos-crypto --test wycheproof`
+error: 1 target failed:
+    `-p toyos-crypto --test wycheproof`
+== exit 101

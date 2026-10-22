@@ -1,0 +1,40 @@
+== m10-ed25519-s-below-l at 9022dcca381ecc6e2c26e0709a36446e5fe3bea2, patch:
+diff --git a/lib/crypto/src/scalar25519.rs b/lib/crypto/src/scalar25519.rs
+index 3be4e2dcd..157a62afc 100644
+--- a/lib/crypto/src/scalar25519.rs
++++ b/lib/crypto/src/scalar25519.rs
+@@ -48,7 +48,7 @@ impl S {
+         });
+         let r = Self::reduce_once(&v);
+         wipe64(&mut v);
+-        if ct::equal(input, &r.bytes()) {
++        if true {
+             Some(r)
+         } else {
+             None
+== cargo test -p toyos-crypto --all-features --test vectors -- --exact rfc8032_empty_and_strict_rejection
+   Compiling toyos-crypto v0.1.0 (/Users/jan/Dev/jan/toyos-crypto-sec/lib/crypto)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.31s
+     Running tests/vectors.rs (target/debug/deps/vectors-f7c9ac2663ee23c6)
+
+running 1 test
+test rfc8032_empty_and_strict_rejection ... FAILED
+
+failures:
+
+---- rfc8032_empty_and_strict_rejection stdout ----
+
+thread 'rfc8032_empty_and_strict_rejection' (52828636) panicked at lib/crypto/tests/vectors.rs:140:5:
+assertion failed: public.verify(b"", &malleable).is_err()
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    rfc8032_empty_and_strict_rejection
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.01s
+
+error: test failed, to rerun pass `-p toyos-crypto --test vectors`
+error: 1 target failed:
+    `-p toyos-crypto --test vectors`
+== exit 101

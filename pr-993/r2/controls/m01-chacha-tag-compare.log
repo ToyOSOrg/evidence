@@ -1,0 +1,59 @@
+== m01-chacha-tag-compare at 9022dcca381ecc6e2c26e0709a36446e5fe3bea2, patch:
+diff --git a/lib/crypto/src/aead.rs b/lib/crypto/src/aead.rs
+index 570e5edb3..4d68e9678 100644
+--- a/lib/crypto/src/aead.rs
++++ b/lib/crypto/src/aead.rs
+@@ -220,7 +220,7 @@ fn chacha_open(
+         let mut mac = chacha_mac(mac_key.try_into().unwrap(), aad);
+         mac.update_padded(data);
+         let expected = chacha_finish(mac, aad.len(), data.len());
+-        if crate::ct::equal(&expected.0, tag) { Ok(()) } else { Err(Error::Authentication) }
++        if true { Ok(()) } else { Err(Error::Authentication) }
+     };
+     if short(data.len()) {
+         let mut stream = Secret([0u8; 256]);
+== cargo test -p toyos-crypto --all-features --test vectors -- --exact rfc8439_aead_and_authenticated_refusal
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+   Compiling toyos-crypto v0.1.0 (/Users/jan/Dev/jan/toyos-crypto-sec/lib/crypto)
+warning: unused variable: `expected`
+   --> lib/crypto/src/aead.rs:222:13
+    |
+222 |         let expected = chacha_finish(mac, aad.len(), data.len());
+    |             ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_expected`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `tag`
+   --> lib/crypto/src/aead.rs:216:5
+    |
+216 |     tag: &[u8],
+    |     ^^^ help: if this is intentional, prefix it with an underscore: `_tag`
+
+warning: `toyos-crypto` (lib) generated 2 warnings (run `cargo fix --lib -p toyos-crypto` to apply 2 suggestions)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.29s
+     Running tests/vectors.rs (target/debug/deps/vectors-f7c9ac2663ee23c6)
+
+running 1 test
+test rfc8439_aead_and_authenticated_refusal ... FAILED
+
+failures:
+
+---- rfc8439_aead_and_authenticated_refusal stdout ----
+
+thread 'rfc8439_aead_and_authenticated_refusal' (52821835) panicked at lib/crypto/tests/vectors.rs:82:5:
+assertion `left == right` failed
+  left: Ok(())
+ right: Err(Authentication)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    rfc8439_aead_and_authenticated_refusal
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-crypto --test vectors`
+error: 1 target failed:
+    `-p toyos-crypto --test vectors`
+== exit 101

@@ -1,0 +1,13 @@
+diff --git a/lib/crypto/src/rsa.rs b/lib/crypto/src/rsa.rs
+index 8fe8f5c66..e5e2f9535 100644
+--- a/lib/crypto/src/rsa.rs
++++ b/lib/crypto/src/rsa.rs
+@@ -149,7 +149,7 @@ impl PublicKey {
+         self.reduce(result, t[2 * n])
+     }
+     fn representative(&self, signature: &[u8]) -> Result<[u8; 512], Error> {
+-        if signature.len() != self.bits.div_ceil(8) {
++        if signature.len() > self.bits.div_ceil(8) {
+             return Err(Error::Length);
+         }
+         let raw = read(signature);
