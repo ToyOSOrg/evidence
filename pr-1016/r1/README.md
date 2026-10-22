@@ -30,3 +30,7 @@ The crate is no slower at any size, and 2.8 to 4.6 times as fast at 64 B.
 `miri-keygen-without-isolation.log`: `MIRIFLAGS=-Zmiri-disable-isolation cargo +nightly-2026-09-25 miri test -p toyos-crypto --all-features --lib -- mlkem::tests::nist_expanded_keygen_secret_matches`. Exit 0, 1 passed.
 
 The extracts carry no machine identifiers. The full loader logs, which name disk GUIDs, are not published.
+
+## Host CI
+
+`ci-host.log`: `cargo run -- --ci host` at e5414b9a5. Exit 0, 93 steps green.
