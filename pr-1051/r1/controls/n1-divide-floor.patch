@@ -1,0 +1,11 @@
+--- a/lib/crypto/src/mlkem.rs	2026-10-23 20:21:34
++++ b/lib/crypto/src/mlkem.rs	2026-10-23 20:23:08
+@@ -41,7 +41,7 @@
+ /// M = ⌈2^33 / q⌉, n·M / 2^33 = n / q + 623·n / (q·2^33), and the excess is
+ /// below 1/q, too small to carry the quotient past the next integer.
+ fn divide(n: u32) -> u32 {
+-    const M: u64 = (1u64 << 33).div_ceil(Q as u64);
++    const M: u64 = (1u64 << 33) / Q as u64;
+     ((u64::from(n) * M) >> 33) as u32
+ }
+ /// a·2^-16 mod q, in (-q, q), for |a| < q·2^15 (Montgomery reduction, in

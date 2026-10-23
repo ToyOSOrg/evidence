@@ -1,0 +1,49 @@
+[package]
+name = "crypto-oracles"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+toyos-crypto = { path = "lib/crypto", features = ["sign"] }
+ring = "=0.17.14"
+openssl = "=0.10.81"
+openssl-sys = { version = "=0.9.117", features = ["vendored"] }
+openssl-src = "=300.5.5"
+aws-lc-rs = { version = "=1.18.2", default-features = false, features = ["aws-lc-sys", "alloc"] }
+aws-lc-sys = "=0.46.0"
+getrandom = "=0.2.16"
+foreign-types = "=0.3.2"
+
+[features]
+# toyos-crypto built with debug assertions off (the unasserted profile).
+unasserted = []
+
+[workspace]
+
+# The references as their users ship them; toyos-crypto as ToyOS ships it
+# ([profile.toyos]: dev, opt-level 2, debug assertions and overflow checks on,
+# and incremental, as cargo builds a path dependency in a dev-derived profile:
+# its CGU partitioning decides inlining in the AVX2 Poly1305 kernel).
+[profile.shipped]
+inherits = "release"
+opt-level = 3
+debug = "line-tables-only"
+incremental = true
+
+[profile.shipped.package.toyos-crypto]
+opt-level = 2
+debug = true
+debug-assertions = true
+overflow-checks = true
+codegen-units = 256
+
+[profile.unasserted]
+inherits = "shipped"
+
+[profile.unasserted.package.toyos-crypto]
+opt-level = 2
+debug = true
+debug-assertions = false
+overflow-checks = false
+codegen-units = 256
