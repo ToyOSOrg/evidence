@@ -39,8 +39,8 @@ PASS.
 
 **An upstream-formatted 8 MiB volume** with 16 KiB nodes, holding `tree-8m`'s tree copied in through
 FUSE (`rwhang/` 14–21), shows the same stall:
-- its copy-in ends "Journal stuck … journal full";
-- fsck of it stalls (124);
+- the copy-in itself exits 0, but the daemon never exits at the unmount and is stopped;
+- fsck of that volume stalls on "Journal stuck … journal full" until its ceiling (124);
 - after the read-write steps it FAILs with the same markers.
 
 So the 8 and 32 MiB read-write failures are upstream's small-journal defect, not the writer's.
