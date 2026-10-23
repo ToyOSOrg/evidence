@@ -1,0 +1,49 @@
+   Compiling toyos-manifest v0.1.0 (<work>/toyos-proc-session/lib/manifest)
+   Compiling toyos-swap v0.1.0 (<work>/toyos-proc-session/lib/swap)
+   Compiling toyos-build v0.1.0 (<work>/toyos-proc-session)
+   Compiling toyos-metal v0.1.0 (<work>/toyos-proc-session/tests/metal)
+    Finished `test` profile [optimized + debuginfo] target(s) in 14.92s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-2ab065810e5fd44f)
+00:02:41   BUILD x86_64 binaries of tests/guest/rust-tests
+00:02:44 external deps changed: cleaning <work>/toyos-proc-session/tests/guest/rust-tests/target/x86_64-unknown-toyos
+00:02:44 external deps changed: cleaning <work>/toyos-proc-session/tests/guest/rust-tests/tls-dlopen-lib/target/x86_64-unknown-toyos
+00:02:44 external deps changed: cleaning <work>/toyos-proc-session/tests/guest/rust-tests/tls-lib/target/x86_64-unknown-toyos
+00:02:44 external deps changed: cleaning <work>/toyos-proc-session/tests/guest/rust-tests/tls-multi-crate/target/x86_64-unknown-toyos
+00:02:44 external deps changed: cleaning <work>/toyos-proc-session/tests/guest/rust-tests/tls-cranelift/target/x86_64-unknown-toyos
+00:04:06   BUILT x86_64 binaries of tests/guest/rust-tests  (85s)
+00:04:06   BUILD x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests
+00:04:31   BUILT x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests  (25s)
+00:04:31 [toyos] Compiling 141 C tests, and attempting 24 declared ones...
+00:04:35 [metal] 40 registration(s) and 228 shared member(s) over 3 boot(s)
+00:04:35   BUILD x86_64 kernel, loader, ROOT of <scratch>/p1/r2/base-metal/proctreecase/system-8fed6679223ba7e0.toml
+00:04:36 external deps changed: cleaning <work>/toyos-proc-session/target/x86_64-unknown-toyos
+00:05:12 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+00:05:12   BUILT x86_64 kernel, loader, ROOT of <scratch>/p1/r2/base-metal/proctreecase/system-8fed6679223ba7e0.toml  (37s)
+00:05:12 [metal] proctreecase: 4 job(s) under a list bound of 60000 ms, armed with [] and a boot deadline of 120000 ms — <scratch>/p1/r2/base-metal/proctreecase/image.img
+00:05:12   BUILD x86_64 ROOT of <scratch>/p1/r2/base-metal/testcases/system-fd358f2660c3feee.toml
+00:05:18 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+00:05:19   BUILT x86_64 ROOT of <scratch>/p1/r2/base-metal/testcases/system-fd358f2660c3feee.toml  (6s)
+00:05:19 [metal] testcases: 247 job(s) under a list bound of 100200 ms, armed with [] and a boot deadline of 200400 ms — <scratch>/p1/r2/base-metal/testcases/image.img
+00:05:19   BUILD x86_64 ROOT of <scratch>/p1/r2/base-metal/testcases-watchdog/system-0b1d8beee3eba21a.toml
+00:05:21 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+00:05:21   BUILT x86_64 ROOT of <scratch>/p1/r2/base-metal/testcases-watchdog/system-0b1d8beee3eba21a.toml  (2s)
+00:05:21 [metal] testcases-watchdog: 0 job(s) under a list bound of 60000 ms, armed with ["watchdog"] and a boot deadline of 120000 ms — <scratch>/p1/r2/base-metal/testcases-watchdog/image.img
+# One boot per image. Each invocation is `cargo <words>` from this worktree.
+
+proctreecase
+  image: <scratch>/p1/r2/base-metal/proctreecase/image.img
+  cargo run -p toyos-metal -- --image <scratch>/p1/r2/base-metal/proctreecase/image.img --readback <scratch>/p1/r2/base-metal/proctreecase --fat32-check
+
+testcases
+  image: <scratch>/p1/r2/base-metal/testcases/image.img
+  cargo run -p toyos-metal -- --image <scratch>/p1/r2/base-metal/testcases/image.img --readback <scratch>/p1/r2/base-metal/testcases --fat32-check
+
+testcases-watchdog
+  image: <scratch>/p1/r2/base-metal/testcases-watchdog/image.img
+  cargo run -p toyos-metal -- --image <scratch>/p1/r2/base-metal/testcases-watchdog/image.img --readback <scratch>/p1/r2/base-metal/testcases-watchdog --fat32-check
+00:05:21 [metal] staged 3 image(s); <scratch>/p1/r2/base-metal/request.txt lists them. The machine was not touched, so this run establishes nothing about it.
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `<work>/toyos-proc-session/target/debug/deps/toyos_build-2ab065810e5fd44f --metal --metal-readback <scratch>/p1/r2/base-metal 'boot:testcases' process_tree launch_toctou app_view port_badge` (exit status: 2)
+exit 2
