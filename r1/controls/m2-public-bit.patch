@@ -1,0 +1,12 @@
+--- ossl.rs.orig	2026-10-23 19:14:00
++++ m2.rs	2026-10-23 19:14:00
+@@ -260,7 +260,8 @@
+             let mut out = ptr::null_mut();
+             let len = EVP_PKEY_get1_encoded_public_key(key.0, &mut out);
+             assert!(len > 0, "get1_encoded_public_key");
+-            let public = std::slice::from_raw_parts(out, len).to_vec();
++            let mut public = std::slice::from_raw_parts(out, len).to_vec();
++            public[len - 1] ^= 1;
+             ffi::CRYPTO_free(out.cast(), c"".as_ptr(), 0);
+             public
+         }

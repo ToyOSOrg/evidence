@@ -1,0 +1,11 @@
+--- poly1305.rs.orig	2026-10-23 19:26:06
++++ lib/crypto/src/arch/x86_64/poly1305.rs	2026-10-23 19:26:06
+@@ -49,7 +49,7 @@
+         let [r0, r1, r2, r3, r4] = self.r;
+         let [s1, s2, s3, s4] = self.s;
+         let m = |a, b| _mm256_mul_epu32(a, b);
+-        let sum = |terms: [__m256i; 5]| terms.into_iter().reduce(|a, b| _mm256_add_epi64(a, b)).unwrap();
++        let sum = |[a, b, c, d, e]: [__m256i; 5]| _mm256_add_epi64(_mm256_add_epi64(_mm256_add_epi64(a, b), _mm256_add_epi64(c, d)), e);
+         let [h0, h1, h2, h3, h4] = h;
+         let d0 = sum([m(h0, r0), m(h1, s4), m(h2, s3), m(h3, s2), m(h4, s1)]);
+         let d1 = sum([m(h0, r1), m(h1, r0), m(h2, s4), m(h3, s3), m(h4, s2)]);

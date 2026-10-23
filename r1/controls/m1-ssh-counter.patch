@@ -1,0 +1,11 @@
+--- ossl.rs.orig	2026-10-23 19:14:00
++++ m1.rs	2026-10-23 19:14:00
+@@ -198,7 +198,7 @@
+     pub fn seal(&mut self, sequence: u32, packet: &mut [u8], tag: &mut [u8; 16]) {
+         let poly_key = self.poly_key(sequence);
+         Self::xor(&mut self.header, &Self::iv(sequence, 0), &mut packet[..4]);
+-        Self::xor(&mut self.main, &Self::iv(sequence, 1), &mut packet[4..]);
++        Self::xor(&mut self.main, &Self::iv(sequence, 2), &mut packet[4..]);
+         self.poly.mac(&poly_key, &[packet], tag);
+     }
+ 
