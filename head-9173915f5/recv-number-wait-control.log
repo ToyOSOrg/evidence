@@ -1,0 +1,171 @@
+base 2e5e2c40d030e4a002bad9e4c6f53269eb00d328 + recv-number-wait-control.patch
+diff --git a/sdk/libc/src/posix_io.rs b/sdk/libc/src/posix_io.rs
+index dd8ab2adf..537a82624 100644
+--- a/sdk/libc/src/posix_io.rs
++++ b/sdk/libc/src/posix_io.rs
+@@ -777,7 +777,7 @@ pub struct pollfd {
+ }
+ 
+ /// What [`wait_fds`] came to.
+-struct Waited {
++pub(crate) struct Waited {
+     /// Entries ready, their `revents` written.
+     ready: i32,
+     /// Whether the wake pipe beside them was readable.
+@@ -801,7 +801,7 @@ const MAX_POLLED: usize = toyos::poller::Poller::MAX_HANDLES as usize - 1;
+ ///
+ /// # Safety
+ /// `fds` points at `n` entries.
+-unsafe fn wait_fds(fds: *mut pollfd, n: usize, deadline: Option<u64>, wake: Option<RawHandle>) -> Result<Waited, i32> {
++pub(crate) unsafe fn wait_fds(fds: *mut pollfd, n: usize, deadline: Option<u64>, wake: Option<RawHandle>) -> Result<Waited, i32> {
+     use toyos::net::stream::{self, Poll, Way};
+ 
+     const POLLIN: i16 = 1;
+diff --git a/sdk/libc/src/socket.rs b/sdk/libc/src/socket.rs
+index 55ef0eca5..00fd9b96e 100644
+--- a/sdk/libc/src/socket.rs
++++ b/sdk/libc/src/socket.rs
+@@ -473,8 +473,8 @@ fn write_stream(handle: RawHandle, data: &[u8]) -> isize {
+ 
+ /// `recv` on a stream, and `read` of its descriptor: a handler interrupts it
+ /// as [`interruptibly`] says.
+-fn read_stream(handle: RawHandle, data: &mut [u8]) -> isize {
+-    let mut poller = None;
++fn read_stream(fd: i32, handle: RawHandle, data: &mut [u8]) -> isize {
++    let mut poller: Option<toyos::poller::Poller> = None;
+     let read = interruptibly(
+         |block| {
+             let wait = if block { Wait::Blocking(None) } else { Wait::Nonblocking };
+@@ -484,8 +484,10 @@ fn read_stream(handle: RawHandle, data: &mut [u8]) -> isize {
+             }
+         },
+         |wake| {
+-            let poller = poller.get_or_insert_with(|| toyos::poller::Poller::new(2));
+-            stream::wait_ready(handle, stream::Way::Receive, wake, poller).map_err(crate::errcode::of_stream)
++            let _ = &mut poller;
++            let mut entry = crate::posix_io::pollfd { fd, events: 1, revents: 0 };
++            // SAFETY: one entry, this one.
++            unsafe { crate::posix_io::wait_fds(&mut entry, 1, None, Some(wake)) }.map(|_| ())
+         },
+     );
+     match read {
+@@ -502,7 +504,7 @@ pub unsafe extern "C" fn recv(fd: i32, buf: *mut u8, len: usize, _flags: i32) ->
+         return 0;
+     }
+     let mut socket = match sock_from_fd(fd) {
+-        Some(Sock::Stream(stream)) => return read_stream(stream.handle, core::slice::from_raw_parts_mut(buf, len)),
++        Some(Sock::Stream(stream)) => return read_stream(fd, stream.handle, core::slice::from_raw_parts_mut(buf, len)),
+         Some(Sock::Entry(socket)) => socket,
+         None => { set_errno(EBADF); return -1; }
+     };
+@@ -574,7 +576,7 @@ pub unsafe extern "C" fn recvfrom(
+     }
+     let mut socket = match sock_from_fd(fd) {
+         // A stream's `recvfrom` names no address, as `recv`.
+-        Some(Sock::Stream(stream)) => return read_stream(stream.handle, core::slice::from_raw_parts_mut(buf, len)),
++        Some(Sock::Stream(stream)) => return read_stream(fd, stream.handle, core::slice::from_raw_parts_mut(buf, len)),
+         Some(Sock::Entry(socket)) => socket,
+         None => { set_errno(EBADF); return -1; }
+     };
+@@ -675,7 +677,7 @@ fn interruptibly<T>(
+ /// owner is std's copy of `toyos`, which holds no end of libc's streams.
+ pub(crate) fn read_if_stream(fd: i32, data: &mut [u8]) -> Option<isize> {
+     match sock_from_fd(fd)? {
+-        Sock::Stream(held) if stream::is_stream(held.handle) => Some(read_stream(held.handle, data)),
++        Sock::Stream(held) if stream::is_stream(held.handle) => Some(read_stream(fd, held.handle, data)),
+         Sock::Stream(_) | Sock::Entry(_) => None,
+     }
+ }
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.47s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-2ab065810e5fd44f)
+
+00:50:20 running 1 tests, 12 wide
+
+00:50:20   RUN   libc_children
+00:50:25   BUILD x86_64 stdio_named (toyos) of tests/guest/rust-tests, for libc_children
+00:50:26 external deps changed: cleaning <home>/toyos-sockshare/tests/guest/rust-tests/target/x86_64-unknown-toyos
+00:50:58   BUILT x86_64 stdio_named (toyos) of tests/guest/rust-tests, for libc_children  (34s)
+00:50:58   BUILD x86_64 libc_recv_beside_close (toyos) of tests/guest/rust-tests, for libc_children
+00:51:03   BUILT x86_64 libc_recv_beside_close (toyos) of tests/guest/rust-tests, for libc_children  (4s)
+00:51:03   BUILD x86_64 quit_tree (toyos) of tests/guest/rust-tests, for libc_children
+00:51:05   BUILT x86_64 quit_tree (toyos) of tests/guest/rust-tests, for libc_children  (2s)
+00:51:05   BUILD x86_64 libc_read_restarts (toyos) of tests/guest/rust-tests, for libc_children
+00:51:08   BUILT x86_64 libc_read_restarts (toyos) of tests/guest/rust-tests, for libc_children  (3s)
+00:51:08   BUILD x86_64 tty_interrupt (toyos) of tests/guest/rust-tests, for libc_children
+00:51:11   BUILT x86_64 tty_interrupt (toyos) of tests/guest/rust-tests, for libc_children  (3s)
+00:51:11   BUILD x86_64 kernel, loader, ROOT of tests/images/libccase.toml, for libc_children
+00:51:14 external deps changed: cleaning <home>/toyos-sockshare/target/x86_64-unknown-toyos
+00:52:07 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+00:52:07   BUILT x86_64 kernel, loader, ROOT of tests/images/libccase.toml, for libc_children  (55s)
+00:52:17   [libc_children] dev_null: /dev/null read end of file and took every write, here and as a child's stdio
+00:52:17   [libc_children] poll_closed: a closed descriptor answered POLLNVAL
+00:52:17   [libc_children] poll_negative: a negative descriptor was passed over and the pipe beside it answered
+00:52:20   [libc_children] signal_alarm: SIGALRM's handler interrupted wait4, blocked it waited pending until its unblock ended the process 142, and ignored it did nothing
+00:52:21   [libc_children] signal_quit: a quit reached each child as its signal: EINTR, a reload then an end, an ignore, a pending default, a handler beside a busy child, and one held over a ready ppoll
+00:52:42   [libc_children] signal_sigchld_ignored: 255 children each ended unkept under SIG_IGN, and every wait answered ECHILD
+00:52:43   [libc_children] signal_sigchld_ppoll: SIGCHLD was raised once, and a ppoll unblocking it answered EINTR, then ready, then blocked until a live child wrote
+00:52:54   [libc_children] spawn_cloexec: FD_CLOEXEC, O_CLOEXEC and addclose each kept a descriptor from the child, and a child without one spawned its own
+00:52:54   [libc_children] spawn_environ: setenv and unsetenv were seen in the child's environ
+00:52:55   [libc_children] spawn_kill_group: kill(-pgid) ended the group's two children and not the third; kill(pid, 0) probed
+00:52:55   [libc_children] spawn_pipe_eof: a piped stdout read to its end through poll, then waited for
+00:52:55   [libc_children] spawn_pipe_reader_gone: a child's write to a pipe whose one reader closed was refused EPIPE
+00:52:55   [libc_children] spawn_signaled: a killed child read SIGKILL, and each fault its class's signal
+00:52:55   [libc_children] spawn_stdio_named: a child given a write end as its stdin was refused its read
+00:52:55   [libc_children] spawn_system: system and pclose answered the command's exit 3, and popen its output
+00:52:56   [libc_children] spawn_wait_any: waitpid(-1), wait and wait4 answered three children in the order they ended, then ECHILD
+00:52:56   [libc_children] stdio_named: a std child held exactly the stdio its Command named
+00:53:16   [libc_children] quit_tree: two generations listening by read each read interrupt and exited 0
+00:53:16   [libc_children] quit_tree: two generations listening by watch each read hang-up and exited 0
+00:53:16   [libc_children] quit_tree: one that never listened is killed, and its listening child with it, reading nothing
+00:53:16   [libc_children] quit_tree: a second quit kills a process holding the first unread
+00:53:16   [libc_children] quit_tree: one that reads each reason is asked 3 times and lives
+00:53:16   [libc_children] quit_tree: a quit without MANAGE or of no process is refused, and one of an ended process answers Ok
+00:53:16   [libc_children] quit_tree: a quit asks every process below it that listens, and kills the rest
+00:53:17   [libc_children] libc_read_restarts: a read across a SIGCHLD handler restarted with SA_RESTART and answered EINTR without
+00:53:17   [libc_children] tty_interrupt: one Ctrl+C ended a pipeline whose stage started a child, and the prompt came back
+00:53:17   [libc_children] tty_interrupt: a reader outlived three Ctrl+C, and a holder that never read died on the second
+00:53:17   [libc_children] tty_interrupt: Ctrl+C ended the nested shell's line and not the nested shell
+00:53:17   [libc_children] tty_interrupt: the shell ended with its input
+00:53:17 FAIL libc_children: spawn_children_cap ended Some(1) None:
+FAIL spawn_children_cap.c:53: WIFEXITED(status) && WEXITSTATUS(status) == 0: child 240's status 0xb (errno 22)
+
+libc_recv_beside_close ended Some(101) None:
+
+thread 'main' (1) panicked at src/bin/libc_recv_beside_close.rs:164:13:
+the child-handling's recv never looked at its stream again once its descriptor's number named a pipe
+stack backtrace:
+   0:      0x10000099840 - _Unwind_Backtrace
+   1:      0x10000072293 - <<std[81205284e0160b11]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[73b405bef30eeff1]::fmt::Display>::fmt
+   2:      0x1000009db57 - core[73b405bef30eeff1]::fmt::write
+   3:      0x1000007697b - <std[81205284e0160b11]::sys::stdio::toyos::Stderr as core[73b405bef30eeff1]::io::write::Write>::write_fmt
+   4:      0x10000054cf3 - std[81205284e0160b11]::panicking::default_hook::{closure#0}
+   5:      0x1000006e53e - std[81205284e0160b11]::panicking::default_hook
+   6:      0x1000006e6f9 - std[81205284e0160b11]::panicking::panic_with_hook
+   7:      0x10000054dad - std[81205284e0160b11]::panicking::panic_handler::{closure#0}
+   8:      0x1000004d199 - std[81205284e0160b11]::sys::backtrace::__rust_end_short_backtrace::<std[81205284e0160b11]::panicking::panic_handler::{closure#0}, !>
+   9:      0x100000555c8 - __rustc[d0c72ce299f394e5]::rust_begin_unwind
+  10:      0x1000009e2eb - core[73b405bef30eeff1]::panicking::panic_fmt
+  11:      0x1000002d114 - libc_recv_beside_close[7accb786e041e5c5]::test
+  12:      0x1000002bbc4 - libc_recv_beside_close[7accb786e041e5c5]::main
+  13:      0x1000002a586 - std[81205284e0160b11]::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  14:      0x10000029010 - std[81205284e0160b11]::rt::lang_start::<()>::{closure#0}
+  15:      0x1000006d9e6 - std[81205284e0160b11]::rt::lang_start_internal
+  16:      0x1000002d9f1 - main
+  17:      0x1000006fc73 - std[81205284e0160b11]::sys::pal::toyos::start_rust
+  18:      0x1000004073a - _start
+
+00:53:17   FAIL  libc_children  (75s)
+00:53:17   --- 1 guests, 0 of them not the shipping kernel, 1 kernel build(s): [""]
+
+00:53:17 host: fastest boot 10260 ms against the reference 1424 ms — liveness ceilings paid at 7.21x
+00:53:17 host: 14 core(s); a guest wider than that waits vcpus/cores longer again
+00:53:17 failures:
+00:53:17     libc_children: spawn_children_cap ended Some(1) None:
+
+00:53:17 test result: FAILED. 0 passed, 1 failed, 0 invalidated, 1 total (177.4s; workers: 102s building, 75s testing)
+00:53:17 [toyos] this red run's serial logs are kept at <home>/toyos-sockshare/target/red-run-serial/toyos-tmp-72048-0
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `<home>/toyos-sockshare/target/debug/deps/toyos_build-2ab065810e5fd44f libc_children` (exit status: 1)
+exit 1

@@ -1,0 +1,75 @@
+diff -ru a/sdk/libc/src/posix_io.rs b/sdk/libc/src/posix_io.rs
+--- a/sdk/libc/src/posix_io.rs	2026-10-23 02:17:59
++++ b/sdk/libc/src/posix_io.rs	2026-10-23 02:17:59
+@@ -777,7 +777,7 @@
+ }
+ 
+ /// What [`wait_fds`] came to.
+-struct Waited {
++pub(crate) struct Waited {
+     /// Entries ready, their `revents` written.
+     ready: i32,
+     /// Whether the wake pipe beside them was readable.
+@@ -801,7 +801,7 @@
+ ///
+ /// # Safety
+ /// `fds` points at `n` entries.
+-unsafe fn wait_fds(fds: *mut pollfd, n: usize, deadline: Option<u64>, wake: Option<RawHandle>) -> Result<Waited, i32> {
++pub(crate) unsafe fn wait_fds(fds: *mut pollfd, n: usize, deadline: Option<u64>, wake: Option<RawHandle>) -> Result<Waited, i32> {
+     use toyos::net::stream::{self, Poll, Way};
+ 
+     const POLLIN: i16 = 1;
+diff -ru a/sdk/libc/src/socket.rs b/sdk/libc/src/socket.rs
+--- a/sdk/libc/src/socket.rs	2026-10-23 02:17:59
++++ b/sdk/libc/src/socket.rs	2026-10-23 02:17:59
+@@ -473,8 +473,8 @@
+ 
+ /// `recv` on a stream, and `read` of its descriptor: a handler interrupts it
+ /// as [`interruptibly`] says.
+-fn read_stream(handle: RawHandle, data: &mut [u8]) -> isize {
+-    let mut poller = None;
++fn read_stream(fd: i32, handle: RawHandle, data: &mut [u8]) -> isize {
++    let mut poller: Option<toyos::poller::Poller> = None;
+     let read = interruptibly(
+         |block| {
+             let wait = if block { Wait::Blocking(None) } else { Wait::Nonblocking };
+@@ -484,8 +484,10 @@
+             }
+         },
+         |wake| {
+-            let poller = poller.get_or_insert_with(|| toyos::poller::Poller::new(2));
+-            stream::wait_ready(handle, stream::Way::Receive, wake, poller).map_err(crate::errcode::of_stream)
++            let _ = &mut poller;
++            let mut entry = crate::posix_io::pollfd { fd, events: 1, revents: 0 };
++            // SAFETY: one entry, this one.
++            unsafe { crate::posix_io::wait_fds(&mut entry, 1, None, Some(wake)) }.map(|_| ())
+         },
+     );
+     match read {
+@@ -502,7 +504,7 @@
+         return 0;
+     }
+     let mut socket = match sock_from_fd(fd) {
+-        Some(Sock::Stream(stream)) => return read_stream(stream.handle, core::slice::from_raw_parts_mut(buf, len)),
++        Some(Sock::Stream(stream)) => return read_stream(fd, stream.handle, core::slice::from_raw_parts_mut(buf, len)),
+         Some(Sock::Entry(socket)) => socket,
+         None => { set_errno(EBADF); return -1; }
+     };
+@@ -574,7 +576,7 @@
+     }
+     let mut socket = match sock_from_fd(fd) {
+         // A stream's `recvfrom` names no address, as `recv`.
+-        Some(Sock::Stream(stream)) => return read_stream(stream.handle, core::slice::from_raw_parts_mut(buf, len)),
++        Some(Sock::Stream(stream)) => return read_stream(fd, stream.handle, core::slice::from_raw_parts_mut(buf, len)),
+         Some(Sock::Entry(socket)) => socket,
+         None => { set_errno(EBADF); return -1; }
+     };
+@@ -675,7 +677,7 @@
+ /// owner is std's copy of `toyos`, which holds no end of libc's streams.
+ pub(crate) fn read_if_stream(fd: i32, data: &mut [u8]) -> Option<isize> {
+     match sock_from_fd(fd)? {
+-        Sock::Stream(held) if stream::is_stream(held.handle) => Some(read_stream(held.handle, data)),
++        Sock::Stream(held) if stream::is_stream(held.handle) => Some(read_stream(fd, held.handle, data)),
+         Sock::Stream(_) | Sock::Entry(_) => None,
+     }
+ }
