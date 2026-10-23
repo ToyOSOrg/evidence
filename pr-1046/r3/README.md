@@ -21,3 +21,6 @@ The branch was then rebased onto main 69727e365 as 3be4d6bbb; main changed nothi
 `lib/crypto` or the crypto guest programs in between (`git log 40e528614..69727e365 -- lib/crypto
 tests/guest/rust-tests/src/bin/crypto_*` is empty) and the crate's tree is identical, so these
 results apply to the rebased head.
+
+- `ci-host-3be4d6bbb.log`: `cargo run -- --ci host` at the rebased head, exit 0, 102 steps.
+- AMD `cryptocase` and `cryptoctcase` are staged at 23840e4ed (3be4d6bbb plus an issue record), not run.
