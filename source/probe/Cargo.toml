@@ -1,0 +1,39 @@
+[package]
+name = "crypto-oracles"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+toyos-crypto = { path = "lib/crypto", features = ["sign"] }
+ring = "=0.17.14"
+openssl = "=0.10.81"
+openssl-sys = { version = "=0.9.117", features = ["vendored"] }
+openssl-src = "=300.5.5"
+aws-lc-rs = { version = "=1.18.2", default-features = false, features = ["aws-lc-sys", "alloc"] }
+aws-lc-sys = "=0.46.0"
+getrandom = "=0.2.16"
+foreign-types = "=0.3.2"
+
+[workspace]
+
+# The references as their users ship them; toyos-crypto in [profile.toyos]'s
+# settings (opt-level 2, 256 codegen units, debug assertions and overflow
+# checks on), built incrementally (as cargo builds a path dependency in the
+# image's dev-derived profile) or not.
+[profile.shipped-inc]
+inherits = "release"
+opt-level = 3
+debug = "line-tables-only"
+incremental = true
+
+[profile.shipped-inc.package.toyos-crypto]
+opt-level = 2
+debug = true
+debug-assertions = true
+overflow-checks = true
+codegen-units = 256
+
+[profile.shipped-noninc]
+inherits = "shipped-inc"
+incremental = false
