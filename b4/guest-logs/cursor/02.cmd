@@ -1,0 +1,1 @@
+cp root-x86_64.img root-x86_64.c.img && bcachefs fusemount root-x86_64.c.img /mnt/t && mkdir /mnt/t/new; touch /mnt/t/new/f; stat -c '%i %n' /mnt/t/new /mnt/t/new/f; echo hi > /mnt/t/new/g; echo write $?; sync; fusermount3 -u /mnt/t

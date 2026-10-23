@@ -1,0 +1,21 @@
+--- a/lib/bcachefs/src/engine/mkfs.rs
++++ b/lib/bcachefs/src/engine/mkfs.rs
+@@ -665,6 +665,18 @@
+         Some(*sum)
+     }));
+     let mut nodes = total.div_ceil(cap).max(1);
++    // Mutation: greedy filling, the remainder left in the last node.
++    {
++        let mut out = alloc::vec![0..0];
++        let mut fill = 0;
++        for (i, &size) in sizes.iter().enumerate() {
++            let last = out.last_mut().unwrap();
++            if fill + size > cap && last.start != last.end { out.push(i..i + 1); fill = size; } else { last.end = i + 1; fill += size; }
++        }
++        let _ = (&prefix, &mut nodes);
++        return out;
++    }
++    #[allow(unreachable_code)]
+     loop {
+         // Node k ends at the entry boundary nearest k / nodes of the total.
+         let mut ranges = Vec::with_capacity(nodes);

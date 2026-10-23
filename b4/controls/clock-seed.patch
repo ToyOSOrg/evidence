@@ -1,0 +1,14 @@
+--- a/build/image.rs
++++ b/build/image.rs
+@@ -26,7 +26,10 @@
+     files.sort_by(|a, b| a.0.cmp(&b.0));
+     let mut symlinks: Vec<&(String, String)> = symlinks.iter().collect();
+     symlinks.sort_by(|a, b| a.0.cmp(&b.0));
+-    let mut random = Drawn::from(root_digest(&files, &symlinks));
++    let mut seed = root_digest(&files, &symlinks);
++    let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos();
++    seed[..16].copy_from_slice(&now.to_le_bytes());
++    let mut random = Drawn::from(seed);
+ 
+     let mut entries: BTreeMap<&str, RootEntry<'_>> = BTreeMap::new();
+     let entered = files.iter().map(|(name, data)| (name.as_str(), RootEntry::File(data)));

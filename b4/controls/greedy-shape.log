@@ -1,0 +1,35 @@
+    Blocking waiting for file lock on package cache
+   Compiling bcachefs v0.1.0 (<dev>/toyos-storage-b4/lib/bcachefs)
+    Finished `test` profile [optimized + debuginfo] target(s) in 4.56s
+     Running unittests src/lib.rs (<dev>/toyos-storage-b4/target/debug/deps/bcachefs-e4d0c007d264d3bc)
+
+running 4 tests
+test engine::mkfs::tests::a_large_device_takes_two_mib_buckets_and_256_kib_nodes ... ok
+test engine::mkfs::tests::a_small_device_lays_out_as_format_does ... ok
+test engine::mkfs::tests::no_node_is_left_with_a_remainder ... FAILED
+test engine::mkfs::tests::leaves_fill_to_two_thirds_and_one_root_spans_them ... FAILED
+
+failures:
+
+---- engine::mkfs::tests::no_node_is_left_with_a_remainder stdout ----
+
+thread 'engine::mkfs::tests::no_node_is_left_with_a_remainder' (30626867) panicked at lib/bcachefs/src/engine/mkfs.rs:780:13:
+150: leaves of [10759, 1275]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- engine::mkfs::tests::leaves_fill_to_two_thirds_and_one_root_spans_them stdout ----
+
+thread 'engine::mkfs::tests::leaves_fill_to_two_thirds_and_one_root_spans_them' (30626866) panicked at lib/bcachefs/src/engine/mkfs.rs:762:9:
+assertion `left == right` failed
+  left: [0..103, 103..206, 206..300]
+ right: [0..100, 100..200, 200..300]
+
+
+failures:
+    engine::mkfs::tests::leaves_fill_to_two_thirds_and_one_root_spans_them
+    engine::mkfs::tests::no_node_is_left_with_a_remainder
+
+test result: FAILED. 2 passed; 2 failed; 0 ignored; 0 measured; 100 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--lib`
+exit 101

@@ -1,0 +1,12 @@
+--- a/build/image.rs
++++ b/build/image.rs
+@@ -67,7 +67,8 @@
+         added.unwrap_or_else(|e| panic!("root: '{path}' cannot be put on ROOT: {e:?}"));
+     }
+ 
+-    let options = engine::Options { label: b"ROOT", time: 0, encryption: None };
++    let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos() as u64;
++    let options = engine::Options { label: b"ROOT", time: now, encryption: None };
+     let blocks = engine::fit(&options, &tree, &random).unwrap_or_else(|e| panic!("root: no size holds these files: {e:?}"));
+     let device = Bytes::new(vec![0u8; usize::try_from(blocks).expect("a ROOT this host can hold") * BLOCK]);
+     block_on_ready(engine::mkfs(&device, &options, &tree, &mut random))
