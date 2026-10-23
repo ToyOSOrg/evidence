@@ -1,0 +1,39 @@
+diff --git a/tests/toyos.rs b/tests/toyos.rs
+index 9860ddac7..b90d0242e 100644
+--- a/tests/toyos.rs
++++ b/tests/toyos.rs
+@@ -441,6 +441,8 @@ fn gop_edid_scale(loader: &str, log: &str, kernel: &str) -> Result<(), String> {
+ /// The tests whose machine shape *is* the test, each on a boot of its own.
+ /// `run_machine_test` dispatches them.
+ const MACHINE_TESTS: &[&str] = &[
++    "zz_scratch_mem_virt",
++    "zz_scratch_mem_q35",
+     // A `drives` row's one process per function, on QEMU x86-64's q35 with
+     // two `edu` (`Profile::HeadlessTwoEdu`): which functions get one is
+     // `toyos-supervisor`'s, host-tested, and this is the supervisor
+@@ -4302,6 +4304,8 @@ fn scanout_wc(console: &str) -> Result<(), String> {
+ /// test.
+ fn run_machine_test(name: &str, test_config: &Path) -> Result<(), String> {
+     match name {
++        "zz_scratch_mem_virt" => zz_scratch_mem(test_config, toyos_build::arch::Arch::Aarch64, qemu::Profile::Virt),
++        "zz_scratch_mem_q35" => zz_scratch_mem(test_config, toyos_build::arch::Arch::X86_64, qemu::Profile::Headless),
+         "iommu_virtio_platform" => common::iommu::iommu_virtio_platform(),
+         "a_virtio_function_without_access_platform_is_refused" => {
+             common::iommu::a_virtio_function_without_access_platform_is_refused()
+@@ -7762,3 +7766,16 @@ fn main() {
+     summary.lines().for_each(|line| eprintln!("{line}"));
+     run.exit(tally.exit_code());
+ }
++
++fn zz_scratch_mem(test_config: &Path, arch: toyos_build::arch::Arch, profile: qemu::Profile) -> Result<(), String> {
++    let tests = compile::repo_root().join("tests/guest/rust-tests");
++    let bins: Vec<(String, Vec<u8>)> = ["mmap_stress", "zz_touch_scratch"].iter().map(|n| (n.to_string(), qemu::build_toyos_bin(arch, &tests, n))).collect();
++    let mut qemu = QemuInstance::boot_with_options(test_config, &[], &bins, BootOptions { profile, ..Default::default() });
++    let mut failed = String::new();
++    for job in ["test_rs_mmap_stress", "test_rs_zz_touch_scratch"] {
++        let result = qemu.run_test(job, Duration::from_secs(600));
++        eprintln!("ZZ {job} exit={:?} error={:?}\n{}", result.exit_code, result.error, result.stdout);
++        if result.exit_code != Some(0) { failed += job; }
++    }
++    if failed.is_empty() { Ok(()) } else { Err(failed) }
++}

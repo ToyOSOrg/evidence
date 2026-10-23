@@ -1,0 +1,142 @@
+diff --git a/kernel/src/arch/x86_64/idt/mod.rs b/kernel/src/arch/x86_64/idt/mod.rs
+index 59557caaa..6c047297f 100644
+--- a/kernel/src/arch/x86_64/idt/mod.rs
++++ b/kernel/src/arch/x86_64/idt/mod.rs
+@@ -348,9 +348,11 @@ extern "sysv64" fn trap_dispatch(frame: *mut TrapFrame) {
+         Vector::PageFault => {
+             #[cfg(feature = "mask-windows")]
+             windows_entered(frame);
++            let began = crate::faultprof::now();
+             cpu::enable_interrupts();
+             exceptions::page_fault_handler(frame);
+             cpu::disable_interrupts();
++            crate::faultprof::done(crate::faultprof::now() - began);
+             // Only a Ring 3 fault comes back: `common_entry` lowers the count
+             // next, and `exit_to_user` opens interrupts.
+             #[cfg(feature = "mask-windows")]
+diff --git a/kernel/src/clock.rs b/kernel/src/clock.rs
+index 7e817fd9c..b592e31ca 100644
+--- a/kernel/src/clock.rs
++++ b/kernel/src/clock.rs
+@@ -91,6 +91,10 @@ pub fn map_page(space: &mut crate::mm::space::AddressSpace) {
+     space.map(page, 0, len, kernel::vm::Prot::Read, at).expect("clock: the clock page's address is a fresh space's");
+ }
+ 
++pub fn period_fs() -> u64 {
++    COUNTER_PERIOD_FS.load(Relaxed)
++}
++
+ /// Whether [`nanos_since_boot`] measures anything yet; false before [`init`].
+ pub fn calibrated() -> bool {
+     COUNTER_PERIOD_FS.load(Relaxed) != 0
+diff --git a/kernel/src/main.rs b/kernel/src/main.rs
+index b7a26902b..a3f6e5df2 100644
+--- a/kernel/src/main.rs
++++ b/kernel/src/main.rs
+@@ -72,6 +72,7 @@ mod windows;
+ mod trace;
+ mod time;
+ mod clock;
++mod faultprof;
+ 
+ mod watch;
+ mod object;
+diff --git a/kernel/src/mm/pmm.rs b/kernel/src/mm/pmm.rs
+index d893612aa..40311f95a 100644
+--- a/kernel/src/mm/pmm.rs
++++ b/kernel/src/mm/pmm.rs
+@@ -254,10 +254,16 @@ pub unsafe fn discard(phys: u64) -> Discarded {
+ 
+ /// A zeroed frame a promise held, which the promise guarantees is free.
+ pub fn alloc_promised() -> Frame {
++    let t0 = crate::faultprof::now();
+     let phys = FRAMES.lock().as_mut().expect("pmm: a promise outlived no allocator").alloc_promised();
+     let frame = Frame { phys };
++    let t1 = crate::faultprof::now();
+     // SAFETY: just taken off the allocator, so unaliased, and inside the direct map.
+     unsafe { core::ptr::write_bytes(frame.direct_map().as_mut_ptr::<u8>(), 0, FRAME as usize) };
++    let t2 = crate::faultprof::now();
++    crate::faultprof::add(crate::faultprof::ALLOC, t1 - t0);
++    crate::faultprof::add(crate::faultprof::ZERO, t2 - t1);
++    crate::faultprof::add(crate::faultprof::FRAMES, 1);
+     frame
+ }
+ 
+diff --git a/kernel/src/process.rs b/kernel/src/process.rs
+index 87d5ffb50..d9982cf15 100644
+--- a/kernel/src/process.rs
++++ b/kernel/src/process.rs
+@@ -1070,12 +1070,22 @@ pub fn ask_join(join: &join::Join, tid: Tid, parent_pid: Pid) -> Option<Result<i
+ /// whether its page was populated, or already held a leaf allowing the access.
+ /// Takes the space's lock and nothing else.
+ pub fn handle_page_fault(fault_addr: u64, access: kernel::vm::Access) -> bool {
++    let t0 = crate::faultprof::now();
+     let Some(space) = scheduler::current_address_space() else { return false };
+     let began = crate::clock::nanos_since_boot();
+-    let served = space.lock().fault(fault_addr, access);
++    let mut guard = space.lock();
++    let t1 = crate::faultprof::now();
++    let served = guard.fault(fault_addr, access);
++    let t2 = crate::faultprof::now();
++    drop(guard);
+     if served {
+         space.usage().faulted(crate::clock::nanos_since_boot().saturating_sub(began));
+     }
++    drop(space);
++    let t3 = crate::faultprof::now();
++    crate::faultprof::add(crate::faultprof::PRELOCK, t1 - t0);
++    crate::faultprof::add(crate::faultprof::LOCKED, t2 - t1);
++    crate::faultprof::add(crate::faultprof::POST, t3 - t2);
+     served
+ }
+ 
+diff --git a/kernel/src/faultprof.rs b/kernel/src/faultprof.rs
+new file mode 100644
+index 000000000..d6c3e3bf8
+--- /dev/null
++++ b/kernel/src/faultprof.rs
+@@ -0,0 +1,44 @@
++//! SCRATCH, never committed: where a first touch's time goes, in counter
++//! ticks summed per part and logged as nanoseconds every 2^16 faults.
++
++use core::sync::atomic::{AtomicU64, Ordering::Relaxed};
++
++pub const FAULTS: usize = 0;
++pub const FRAMES: usize = 1;
++pub const DISPATCH: usize = 2;
++pub const PRELOCK: usize = 3;
++pub const LOCKED: usize = 4;
++pub const ALLOC: usize = 5;
++pub const ZERO: usize = 6;
++pub const POST: usize = 7;
++
++static SUM: [AtomicU64; 8] = [const { AtomicU64::new(0) }; 8];
++
++#[inline(always)]
++pub fn now() -> u64 {
++    crate::arch::cpu::counter()
++}
++
++#[inline(always)]
++pub fn add(part: usize, ticks: u64) {
++    SUM[part].fetch_add(ticks, Relaxed);
++}
++
++/// One fault's dispatch done: count it and log every 2^16.
++pub fn done(dispatch: u64) {
++    add(DISPATCH, dispatch);
++    let n = SUM[FAULTS].fetch_add(1, Relaxed) + 1;
++    if n % (1 << 16) != 0 {
++        return;
++    }
++    let period = crate::clock::period_fs();
++    let ns = |part: usize, per: u64| (SUM[part].swap(0, Relaxed) as u128 * period as u128 / 1_000_000 / per.max(1) as u128) as u64;
++    let frames = SUM[FRAMES].swap(0, Relaxed);
++    let faults = 1u64 << 16;
++    let (dispatch, prelock, locked, post) = (ns(DISPATCH, faults), ns(PRELOCK, faults), ns(LOCKED, faults), ns(POST, faults));
++    let (alloc, zero) = (ns(ALLOC, frames), ns(ZERO, frames));
++    SUM[FAULTS].store(0, Relaxed);
++    crate::log!(
++        "faultprof: faults={faults} frames={frames} per fault ns: dispatch={dispatch} prelock={prelock} locked={locked} post={post}; per frame ns: alloc={alloc} zero={zero}"
++    );
++}

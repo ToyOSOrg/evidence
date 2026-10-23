@@ -1,0 +1,468 @@
+diff --git a/kernel/src/mm/space.rs b/kernel/src/mm/space.rs
+index ee82f8886..a20821c7d 100644
+--- a/kernel/src/mm/space.rs
++++ b/kernel/src/mm/space.rs
+@@ -6,8 +6,9 @@
+ //! range is backed by private memory, committed or only reserved, or by a
+ //! memory object. Every page of either is populated when it is first touched —
+ //! by the thread that touches it ([`AddressSpace::fault`]) or by a copy the
+-//! kernel makes for it ([`AddressSpace::reach`]) — and tables are built when a
+-//! range is backed, so populating one takes a frame and nothing else.
++//! kernel makes for it ([`AddressSpace::reach`]), a private one together with
++//! its run when it is touched beside a populated page — and tables are built
++//! when a range is backed, so populating one takes a frame and nothing else.
+ //!
+ //! **A space is charged its ranges** (`mm::charge`) before a change that
+ //! adds any, so a change the heap cannot cover is refused,
+@@ -590,6 +591,80 @@ impl AddressSpace {
+         Ok(())
+     }
+ 
++    /// `[start, start + len)`, committed private memory of one range, made
++    /// `new_len` bytes long: shrunk by taking its tail away, grown into the
++    /// free pages after it, or moved, `may_move`, with its frames to wherever
++    /// the whole fits; answers where it is now. The pages it gains are
++    /// committed and promised here, and those it keeps take their frames and
++    /// promises with them. All or nothing: memory of any other kind is
++    /// `InvalidArgument`, and a growth memory cannot cover, or one that would
++    /// have to move and may not, is `ResourceExhausted`.
++    pub fn remap(&mut self, start: UserAddr, len: u64, new_len: u64, may_move: bool) -> Result<UserAddr, SyscallError> {
++        let (start, end) = self.held(start, len)?;
++        let new_end = pages(start, new_len).ok_or(SyscallError::InvalidArgument)?;
++        let (_, entry) = self.inventory.find(start).expect("space: a held page in no range");
++        if entry.end < end || !matches!(entry.kind, Kind::Private { committed: true }) {
++            return Err(SyscallError::InvalidArgument);
++        }
++        let (prot, grows_in_place) = (entry.prot, entry.end == end && self.inventory.holds(end, new_end) && self.inventory.is_free(end, new_end));
++        if new_end <= end {
++            if new_end < end {
++                self.room(new_end, end, 0)?;
++                self.release(UserAddr::new(new_end), end - new_end);
++            }
++            return Ok(UserAddr::new(start));
++        }
++        let gained = (new_end - end) / PAGE_SIZE;
++        if grows_in_place {
++            self.room(end, new_end, 1)?;
++            if !pmm::promise(gained) {
++                return Err(SyscallError::ResourceExhausted);
++            }
++            self.build(end, new_end).inspect_err(|_| pmm::unpromise(gained))?;
++            self.put(end, Entry { end: new_end, prot, kind: Kind::Private { committed: true } });
++            return Ok(UserAddr::new(start));
++        }
++        if !may_move {
++            return Err(SyscallError::ResourceExhausted);
++        }
++        self.room(start, end, 1)?;
++        let to = self.place(new_len, At::ANYWHERE)?;
++        if !pmm::promise(gained) {
++            return Err(SyscallError::ResourceExhausted);
++        }
++        self.build(to, to + new_len).inspect_err(|_| pmm::unpromise(gained))?;
++        self.inventory.insert(to, Entry { end: to + new_len, prot, kind: Kind::Private { committed: true } });
++        // The frames change leaves and stay the space's: a copy pinning one
++        // meanwhile reaches the same page at its new address, and a futex
++        // wait keyed on one is still on it.
++        for va in (start..end).step_by(PAGE_SIZE as usize) {
++            let leaf = self.tables.get(va);
++            if leaf != Leaf::Empty {
++                self.tables.set(to + (va - start), leaf);
++            }
++        }
++        let mut present = false;
++        self.tables.edit(start, end, |_, leaf| {
++            present |= matches!(leaf, Leaf::Mapped(_));
++            Some(Leaf::Empty)
++        });
++        if present {
++            self.shoot_down(start, end, &Unlinked::none());
++        }
++        let removed = self.inventory.remove(start, end);
++        let inventory = &self.inventory;
++        let unlinked = self.tables.unlink(start, end, |s, e| inventory.backed(s, e));
++        if !unlinked.is_empty() {
++            self.shoot_down(start, end, &unlinked);
++        }
++        unlinked.free();
++        self.usage.made.fetch_add(1, Relaxed);
++        self.usage.taken.fetch_add(1, Relaxed);
++        drop(removed);
++        self.settle();
++        Ok(UserAddr::new(to))
++    }
++
+     /// `[start, start + len)` as pages every one of which a range holds.
+     fn held(&self, start: UserAddr, len: u64) -> Result<(u64, u64), SyscallError> {
+         let end = pages(start.raw(), len).ok_or(SyscallError::InvalidArgument)?;
+@@ -709,13 +784,27 @@ impl AddressSpace {
+                 phys
+             }
+             Leaf::Empty => {
+-                let leaf = page_leaf(start, entry, page)?;
+-                let Leaf::Mapped(m) = leaf else { return None };
+-                self.tables.set(page, leaf);
+-                if m.owned {
+-                    self.usage.populated(1);
++                let prot = leaf_prot(entry.prot)?;
++                match &entry.kind {
++                    Kind::Private { committed: false } => return None,
++                    Kind::Object { object, offset, .. } => {
++                        let phys = object.page(offset + (page - start));
++                        self.tables.set(page, Leaf::Mapped(Mapping { phys, prot, owned: false, cache: object.cache() }));
++                        phys
++                    }
++                    Kind::Private { committed: true } | Kind::Copy { .. } => {
++                        let tables = &self.tables;
++                        let (lo, hi) = vm::around(start, entry.end, page, |at| tables.get(at) != Leaf::Empty);
++                        let mut filled = 0;
++                        self.tables.fill(lo, hi, |at| {
++                            filled += 1;
++                            Leaf::Mapped(Mapping { phys: owned_frame(start, entry, at), prot, owned: true, cache: CachePolicy::Normal })
++                        });
++                        self.usage.populated(filled);
++                        let Leaf::Mapped(m) = self.tables.get(page) else { unreachable!("space: {page:#x} filled and empty") };
++                        m.phys
++                    }
+                 }
+-                m.phys
+             }
+         };
+         Some(phys + va % PAGE_SIZE)
+@@ -794,24 +883,14 @@ fn copyable(entry: &SpaceEntry) -> bool {
+     }
+ }
+ 
+-/// The leaf a fault puts at `page`, inside the range `entry` starting at
+-/// `start`: a fresh frame of private memory, or the object's own page.
+-fn page_leaf(start: u64, entry: &SpaceEntry, page: u64) -> Option<Leaf> {
+-    let prot = leaf_prot(entry.prot)?;
+-    Some(match &entry.kind {
+-        Kind::Private { committed: false } => return None,
+-        Kind::Private { committed: true } => {
+-            Leaf::Mapped(Mapping { phys: pmm::alloc_promised().into_raw(), prot, owned: true, cache: CachePolicy::Normal })
+-        }
+-        Kind::Object { object, offset, .. } => {
+-            Leaf::Mapped(Mapping { phys: object.page(offset + (page - start)), prot, owned: false, cache: object.cache() })
+-        }
+-        Kind::Copy { source, offset, len } => {
+-            let phys = pmm::alloc_promised().into_raw();
+-            copy_in(&**source, offset + (page - start), len.saturating_sub(page - start), phys);
+-            Leaf::Mapped(Mapping { phys, prot, owned: true, cache: CachePolicy::Normal })
+-        }
+-    })
++/// The frame `page` of a committed range that owns its frames starts with,
++/// `entry` from `start`: zeros, or its source's bytes for a copied range.
++fn owned_frame(start: u64, entry: &SpaceEntry, page: u64) -> u64 {
++    let phys = pmm::alloc_promised().into_raw();
++    if let Kind::Copy { source, offset, len } = &entry.kind {
++        copy_in(&**source, offset + (page - start), len.saturating_sub(page - start), phys);
++    }
++    phys
+ }
+ 
+ /// Write `source`'s bytes from `offset` into the zeroed frame at `phys`, as
+diff --git a/kernel/src/syscall/dispatch.rs b/kernel/src/syscall/dispatch.rs
+index ff4fb2f1c..16577e5a3 100644
+--- a/kernel/src/syscall/dispatch.rs
++++ b/kernel/src/syscall/dispatch.rs
+@@ -52,7 +52,7 @@ use super::proc::{
+ };
+ use super::vm::{
+     shared_image, sys_dlopen, sys_dlsym, sys_query_modules, sys_tls_alloc_block, sys_vm_decommit, sys_vm_discard,
+-    sys_vm_protect, sys_vm_release, sys_vm_reserve,
++    sys_vm_protect, sys_vm_release, sys_vm_remap, sys_vm_reserve,
+ };
+ 
+ /// `sysret-ss-probe`, run once a boot on the first syscall: a park that
+@@ -370,6 +370,7 @@ pub(crate) fn syscall_dispatch(num: u64, a1: u64, a2: u64, a3: u64, a4: u64) ->
+         SYS_VM_PROTECT => sys_vm_protect(a1, a2, a3),
+         SYS_VM_DISCARD => sys_vm_discard(a1, a2),
+         SYS_VM_DECOMMIT => sys_vm_decommit(a1, a2),
++        SYS_VM_REMAP => sys_vm_remap(a1, a2, a3, a4),
+         SYS_PREAD => {
+             let Some(mut buf) = ctx.user_bytes_mut(UserAddr::new(a2), a3) else { return bad_addr };
+             with_object(RawHandle(a1 as u32), Rights::READ, |o| ops::pread(o, a4, &mut buf))
+diff --git a/kernel/src/syscall/vm.rs b/kernel/src/syscall/vm.rs
+index 95258dfb6..53f1f8830 100644
+--- a/kernel/src/syscall/vm.rs
++++ b/kernel/src/syscall/vm.rs
+@@ -1,5 +1,5 @@
+-//! The caller's own address space: `vm_*` reserve, commit, protect, discard
+-//! and take away private memory, `dlopen` maps a library image, `SYS_TLS_ALLOC_BLOCK`
++//! The caller's own address space: `vm_*` reserve, commit, protect, discard,
++//! resize and take away private memory, `dlopen` maps a library image, `SYS_TLS_ALLOC_BLOCK`
+ //! maps a thread's per-module TLS block, `SYS_QUERY_MODULES` reports what is
+ //! loaded. Exhausting address space is an error return, never an `.expect`.
+ //!
+@@ -89,6 +89,21 @@ pub(super) fn sys_vm_decommit(addr: u64, len: u64) -> u64 {
+     answer(range(addr, len).and_then(|(start, len)| process::current_address_space().lock().decommit(start, len)))
+ }
+ 
++/// Private memory resized in place or moved, as `realloc` wants it.
++pub(super) fn sys_vm_remap(addr: u64, len: u64, new_len: u64, may_move: u64) -> u64 {
++    let remapped = (|| {
++        let (start, len) = range(addr, len)?;
++        let new_len = whole_pages(new_len).ok_or(SyscallError::InvalidArgument)?;
++        let may_move = match may_move {
++            0 => false,
++            1 => true,
++            _ => return Err(SyscallError::InvalidArgument),
++        };
++        process::current_address_space().lock().remap(start, len, new_len, may_move)
++    })();
++    remapped.map_or_else(SyscallError::to_u64, UserAddr::raw)
++}
++
+ /// The first `len` bytes of the shared memory object `handle` names, as a
+ /// program image; `Err` is the syscall's answer.
+ pub(super) fn shared_image(handle: u64, len: u64) -> Result<crate::file_backing::SharedImage, u64> {
+diff --git a/sdk/abi/src/syscall.rs b/sdk/abi/src/syscall.rs
+index 16e6e0c53..69173173e 100644
+--- a/sdk/abi/src/syscall.rs
++++ b/sdk/abi/src/syscall.rs
+@@ -319,6 +319,9 @@ pub const SYS_PWRITE: u64 = 139;
+ pub const SYS_VM_PROTECT: u64 = 140;
+ pub const SYS_VM_DISCARD: u64 = 141;
+ pub const SYS_VM_DECOMMIT: u64 = 142;
++/// Resize a range of private memory, moving its pages where it cannot grow in
++/// place. See [`vm_remap`].
++pub const SYS_VM_REMAP: u64 = 143;
+ 
+ /// Bins in the per-process syscall profile — one for every number this ABI
+ /// issues, and one at the end for every number it does not.
+@@ -326,13 +329,13 @@ pub const SYS_VM_DECOMMIT: u64 = 142;
+ /// **The profile's parts sum to its total, and that is the whole requirement.**
+ /// A bin array narrower than the ABI reaches drops calls out of the line while
+ /// the total goes on counting them.
+-pub const SYSCALL_PROFILE_BINS: usize = 144;
++pub const SYSCALL_PROFILE_BINS: usize = 145;
+ 
+ /// Where a number this ABI does not issue is counted. Merging is a degradation
+ /// a reader can see in the line; dropping is one nobody can.
+ pub const SYSCALL_PROFILE_OTHER: usize = SYSCALL_PROFILE_BINS - 1;
+ 
+-const _: () = assert!(SYS_VM_DECOMMIT < SYSCALL_PROFILE_OTHER as u64);
++const _: () = assert!(SYS_VM_REMAP < SYSCALL_PROFILE_OTHER as u64);
+ 
+ pub const WNOHANG: u64 = 1;
+ /// Every bit `SYS_PROCESS_WAIT`'s flag word defines; a wait carrying another
+@@ -2421,6 +2424,23 @@ pub unsafe fn vm_decommit(addr: *mut u8, len: usize) -> Result<(), SyscallError>
+     check_unit(syscall(SYS_VM_DECOMMIT, addr as u64, len as u64, 0, 0))
+ }
+ 
++/// `[addr, addr + len)`, committed private memory of one range, made
++/// `new_len` bytes long, rounded up to whole [`PAGE_SIZE`]s: shrunk by taking
++/// its tail away, grown into the free pages after it, or, where those are not
++/// free and `may_move`, moved with its contents to wherever the whole fits;
++/// the answer is where it is now. The pages it gains read as zeros and are
++/// committed here, so a growth memory cannot cover is `ResourceExhausted`, as
++/// [`vm_reserve`]'s is; so is one that would have to move and may not. Any
++/// other memory is `InvalidArgument`, and a refusal changes nothing.
++///
++/// # Safety
++/// Nothing reaches the pages a shrink takes away, nor, once it has moved, the
++/// range where it was.
++pub unsafe fn vm_remap(addr: *mut u8, len: usize, new_len: usize, may_move: bool) -> Result<*mut u8, SyscallError> {
++    check(syscall(SYS_VM_REMAP, addr as u64, len as u64, new_len as u64, u64::from(may_move)))
++        .map(|addr| core::ptr::with_exposed_provenance_mut(addr as usize))
++}
++
+ /// Non-blocking read. Returns bytes read, or `Err(WouldBlock)` if no data available.
+ pub fn read_nonblock(handle: RawHandle, buf: &mut [u8]) -> Result<usize, SyscallError> {
+     check(syscall(SYS_READ_NONBLOCK, handle.0 as u64, buf.as_mut_ptr() as u64, buf.len() as u64, 0)).map(|n| n as usize)
+diff --git a/sdk/libc/src/lib.rs b/sdk/libc/src/lib.rs
+index be1e48bc2..94844ea9a 100644
+--- a/sdk/libc/src/lib.rs
++++ b/sdk/libc/src/lib.rs
+@@ -144,7 +144,8 @@ mod runtime {
+     }
+ 
+     /// dlmalloc's memory: the process's own private pages, committed whole and
+-    /// populated as they are touched, and given back in part when it trims.
++    /// populated as they are touched, moved rather than copied when a block of
++    /// its own segment is resized, and given back in part when it trims.
+     struct VmAllocator;
+ 
+     unsafe impl dlmalloc::Allocator for VmAllocator {
+@@ -157,8 +158,10 @@ mod runtime {
+             }
+         }
+ 
+-        fn remap(&self, _ptr: *mut u8, _old: usize, _new: usize, _can_move: bool) -> *mut u8 {
+-            core::ptr::null_mut()
++        fn remap(&self, ptr: *mut u8, old: usize, new: usize, can_move: bool) -> *mut u8 {
++            // SAFETY: a whole segment of dlmalloc's, which reaches it only
++            // through the address this answers.
++            unsafe { toyos_abi::syscall::vm_remap(ptr, old, new, can_move) }.unwrap_or(core::ptr::null_mut())
+         }
+ 
+         fn free_part(&self, ptr: *mut u8, old: usize, new: usize) -> bool {
+diff --git a/sdk/std/sys/alloc.rs b/sdk/std/sys/alloc.rs
+index cc8fd1d6a..e2bbbbacc 100644
+--- a/sdk/std/sys/alloc.rs
++++ b/sdk/std/sys/alloc.rs
+@@ -7,7 +7,8 @@ use crate::ptr;
+ use crate::sys::sync::Mutex;
+ 
+ /// dlmalloc's memory: the process's own private pages, committed whole and
+-/// populated as they are touched, and given back in part when it trims.
++/// populated as they are touched, moved rather than copied when a block of
++/// its own segment is resized, and given back in part when it trims.
+ struct ToyOsAllocator;
+ 
+ unsafe impl dlmalloc::Allocator for ToyOsAllocator {
+@@ -19,8 +20,10 @@ unsafe impl dlmalloc::Allocator for ToyOsAllocator {
+         }
+     }
+ 
+-    fn remap(&self, _ptr: *mut u8, _oldsize: usize, _newsize: usize, _can_move: bool) -> *mut u8 {
+-        ptr::null_mut()
++    fn remap(&self, ptr: *mut u8, oldsize: usize, newsize: usize, can_move: bool) -> *mut u8 {
++        // SAFETY: a whole segment of dlmalloc's, which reaches it only through
++        // the address this answers.
++        unsafe { syscall::vm_remap(ptr, oldsize, newsize, can_move) }.unwrap_or(ptr::null_mut())
+     }
+ 
+     fn free_part(&self, ptr: *mut u8, oldsize: usize, newsize: usize) -> bool {
+diff --git a/tests/guest/rust-tests/src/bin/mmap_stress.rs b/tests/guest/rust-tests/src/bin/mmap_stress.rs
+index 3a1f9fe05..bd04eaf0e 100644
+--- a/tests/guest/rust-tests/src/bin/mmap_stress.rs
++++ b/tests/guest/rust-tests/src/bin/mmap_stress.rs
+@@ -3,9 +3,12 @@
+ //! range, across two, or a hole — and a fixed reserve replaces whatever the
+ //! pages it names held; `vm_protect` commits a reservation and changes
+ //! protection in place, contents kept; `vm_discard` keeps the pages and reads
+-//! back zeros; `vm_decommit` makes them a reservation again. The ranges one
+-//! space holds are bounded, and a commitment past what memory holds is
+-//! refused when it is asked for.
++//! back zeros; `vm_decommit` makes them a reservation again; `vm_remap`
++//! resizes committed private memory in place or moves it with its contents,
++//! as std's `realloc` does through it. A page populated with its neighbours
++//! is populated as its own range says. The ranges one space holds are
++//! bounded, and a commitment past what memory holds is refused when it is
++//! asked for.
+ //!
+ //! A page left unreachable must fault, which ends the process, so each such
+ //! case runs in a child that makes the page itself and then loads from it.
+@@ -37,7 +40,7 @@ fn set(p: *mut u8, page: usize, value: u8) {
+ }
+ 
+ /// The unreachable pages a child makes and loads from.
+-const UNREACHABLE: [&str; 3] = ["reserved", "protected-none", "decommitted"];
++const UNREACHABLE: [&str; 5] = ["reserved", "protected-none", "decommitted", "moved", "read-only-beside-a-run"];
+ 
+ fn main() {
+     if let Some(case) = std::env::args().nth(1) {
+@@ -46,11 +49,13 @@ fn main() {
+     placement_and_release();
+     protection();
+     discard_and_decommit();
++    remap();
++    realloc_moves();
+     ranges_are_bounded();
+     for case in UNREACHABLE {
+         faults(case);
+     }
+-    println!("vm_reserve, vm_protect, vm_discard, vm_decommit and vm_release do what each says");
++    println!("vm_reserve, vm_protect, vm_discard, vm_decommit, vm_remap and vm_release do what each says");
+ }
+ 
+ fn placement_and_release() {
+@@ -180,6 +185,69 @@ fn discard_and_decommit() {
+     println!("  PASS: discard reads back zeros in place, and decommit makes pages a reservation again");
+ }
+ 
++fn remap_of(at: *mut u8, pages: usize, new_pages: usize, may_move: bool) -> Result<*mut u8, SyscallError> {
++    // SAFETY: every range here is this test's own, reached through raw pointers only.
++    unsafe { syscall::vm_remap(at, pages * PAGE, new_pages * PAGE, may_move) }
++}
++
++fn remap() {
++    // Two committed pages with free pages after them: a reservation's head
++    // replaced and its tail given back.
++    let at = reserve(16 * PAGE, VmProt::None);
++    assert_eq!(fixed(at, 2 * PAGE), Ok(at), "commit the head");
++    unsafe { syscall::vm_release(at.add(2 * PAGE), 14 * PAGE) }.expect("free the tail");
++    set(at, 0, 0x51);
++    assert_eq!(remap_of(at, 2, 6, false), Ok(at), "grow into the free pages after it");
++    assert_eq!((byte(at, 0), byte(at, 1), byte(at, 5)), (0x51, 0, 0), "growing in place changed what it held");
++    (0..6).for_each(|page| set(at, page, 0x60 + page as u8));
++
++    // Something after it: in place is refused, and moving is not.
++    assert_eq!(fixed(unsafe { at.add(6 * PAGE) }, PAGE), Ok(unsafe { at.add(6 * PAGE) }), "a page right after it");
++    assert_eq!(remap_of(at, 6, 8, false), Err(SyscallError::ResourceExhausted), "grow in place over a neighbour");
++    assert_eq!(byte(at, 5), 0x65, "a refused remap changed the range");
++    unsafe { syscall::vm_discard(at.add(PAGE), PAGE) }.expect("leave its second page unpopulated");
++    let moved = remap_of(at, 6, 8, true).expect("grow by moving");
++    assert_ne!(moved, at, "it moved");
++    let held: Vec<u8> = (0..8).map(|page| byte(moved, page)).collect();
++    assert_eq!(held, [0x60, 0, 0x62, 0x63, 0x64, 0x65, 0, 0], "a move kept other bytes than its pages'");
++    set(moved, 7, 0x77);
++    assert_eq!(unsafe { syscall::vm_protect(at, PAGE, VmProt::Read) }, Err(SyscallError::BadAddress), "the old range is still held");
++
++    // A shrink takes the tail away and keeps the rest.
++    assert_eq!(remap_of(moved, 8, 3, true), Ok(moved), "shrink in place");
++    assert_eq!(byte(moved, 2), 0x62, "a shrink took a page it kept");
++    assert_eq!(unsafe { syscall::vm_protect(moved.add(3 * PAGE), PAGE, VmProt::Read) }, Err(SyscallError::BadAddress), "a shrink kept its tail");
++
++    // What remap refuses, all or nothing: growth past memory, memory no one
++    // private committed range holds, a hole, and no bytes.
++    assert_eq!(remap_of(moved, 3, 1 << 28, true), Err(SyscallError::ResourceExhausted), "a tebibyte's growth");
++    let reservation = reserve(2 * PAGE, VmProt::None);
++    assert_eq!(remap_of(reservation, 2, 4, true), Err(SyscallError::InvalidArgument), "a reservation remapped");
++    let clock = toyos_abi::clock::CLOCK_PAGE as *mut u8;
++    assert_eq!(remap_of(clock, 1, 2, true), Err(SyscallError::InvalidArgument), "an object's page remapped");
++    unsafe { syscall::vm_protect(moved.add(2 * PAGE), PAGE, VmProt::Read) }.expect("cut the range in two");
++    assert_eq!(remap_of(moved, 3, 4, true), Err(SyscallError::InvalidArgument), "two ranges remapped as one");
++    assert_eq!(remap_of(unsafe { moved.add(3 * PAGE) }, 1, 2, true), Err(SyscallError::BadAddress), "a hole remapped");
++    assert_eq!(remap_of(moved, 2, 0, true), Err(SyscallError::InvalidArgument), "a remap to no bytes");
++    assert_eq!((byte(moved, 0), byte(moved, 2)), (0x60, 0x62), "a refused remap changed the range");
++    for (p, pages) in [(moved, 3), (reservation, 2), (unsafe { at.add(6 * PAGE) }, 1)] {
++        unsafe { syscall::vm_release(p, pages * PAGE) }.expect("release");
++    }
++    println!("  PASS: remap grows in place, moves with its contents or shrinks, all or nothing");
++}
++
++/// std's `realloc` of a block dlmalloc maps alone resizes it through
++/// `vm_remap`, in place or moved, and keeps every byte it held.
++fn realloc_moves() {
++    let mut bytes: Vec<u8> = (0..(1 << 20)).map(|i: usize| (i * 7 % 251) as u8).collect();
++    for _ in 0..6 {
++        bytes.reserve_exact(bytes.capacity());
++    }
++    assert!(bytes.capacity() >= 64 << 20, "grown to {} bytes", bytes.capacity());
++    assert!(bytes.iter().enumerate().all(|(i, &b)| b == (i * 7 % 251) as u8), "a realloc lost a byte");
++    println!("  PASS: realloc keeps every byte of a block it grows");
++}
++
+ /// Pages alternately reserved and readable never join, so each is one range
+ /// more until the next is refused; every one is still given back at the
+ /// bound, where releasing a whole range cuts none.
+@@ -224,6 +292,26 @@ fn faults(case: &str) {
+ fn load_from(case: &str) {
+     let page = match case {
+         "reserved" => reserve(PAGE, VmProt::None),
++        "moved" => {
++            let page = reserve(PAGE, VmProt::ReadWrite);
++            set(page, 0, 0x77);
++            remap_of(page, 1, 2, true).expect("move it");
++            page
++        }
++        "read-only-beside-a-run" => {
++            // A run of 16 pages whose last half is read-only, its first half
++            // written in order: populating the run populates no page of the
++            // read-only range as writable.
++            // SAFETY: placed anywhere, so it replaces nothing.
++            let run = unsafe { syscall::vm_reserve(16 * PAGE, VmProt::ReadWrite, VmAt::Anywhere { align: 16 * PAGE }) }.expect("reserve");
++            unsafe { syscall::vm_protect(run.add(8 * PAGE), 8 * PAGE, VmProt::Read) }.expect("protect the last half");
++            (0..8).for_each(|page| set(run, page, 1));
++            assert_eq!(byte(run, 8), 0, "a read-only page read other than zero");
++            println!("armed at {run:p}");
++            set(run, 8, 1);
++            println!("SURVIVED, wrote a read-only page");
++            return;
++        }
+         "protected-none" | "decommitted" => {
+             let page = reserve(PAGE, VmProt::ReadWrite);
+             set(page, 0, 0x77);
