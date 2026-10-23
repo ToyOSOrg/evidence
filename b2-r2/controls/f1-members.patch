@@ -1,0 +1,15 @@
+diff --git a/lib/bcachefs/src/engine/superblock.rs b/lib/bcachefs/src/engine/superblock.rs
+index 05cb1b96a..009a1f77b 100644
+--- a/lib/bcachefs/src/engine/superblock.rs
++++ b/lib/bcachefs/src/engine/superblock.rs
+@@ -456,9 +456,7 @@ fn decode_header(b: &[u8]) -> Result<Header> {
+ }
+ 
+ fn members(body: &[u8], header: &Header) -> Result<Member> {
+-    if body.len() < 8 {
+-        return Err(Error::Corrupt("members_v2 without its header"));
+-    }
++
+     let size = usize::from(le16(body, 0));
+     let entry = body.get(8..8 + size).filter(|_| size >= 32).ok_or(Error::Corrupt("members_v2 without the device's entry"))?;
+     let member = Member::decode(entry);

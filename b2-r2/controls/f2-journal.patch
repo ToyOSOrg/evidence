@@ -1,0 +1,13 @@
+diff --git a/lib/bcachefs/src/engine/superblock.rs b/lib/bcachefs/src/engine/superblock.rs
+index 05cb1b96a..90e7f3757 100644
+--- a/lib/bcachefs/src/engine/superblock.rs
++++ b/lib/bcachefs/src/engine/superblock.rs
+@@ -482,7 +482,7 @@ fn journal(body: &[u8], member: &Member) -> Result<()> {
+         count > 0 && start > 0 && start >= u64::from(member.first_bucket) && start.checked_add(count).is_some_and(|end| end <= member.nbuckets)
+     });
+     // Each count is at most the bucket count, so the sum fits.
+-    if !valid || ranges.iter().map(|r| r.1).sum::<u64>() > u64::from(u32::MAX) {
++    if ranges.iter().map(|r| r.1).sum::<u64>() > u64::from(u32::MAX) || !valid {
+         return Err(Error::Corrupt("journal buckets"));
+     }
+     Ok(())

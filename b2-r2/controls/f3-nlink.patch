@@ -1,0 +1,13 @@
+diff --git a/lib/bcachefs/src/engine/read.rs b/lib/bcachefs/src/engine/read.rs
+index c44072947..da7759678 100644
+--- a/lib/bcachefs/src/engine/read.rs
++++ b/lib/bcachefs/src/engine/read.rs
+@@ -216,7 +216,7 @@ impl<D: BlockDev> Volume<D> {
+         let nlink = if v.flags & inode_flag::UNLINKED != 0 {
+             0
+         } else {
+-            stored.checked_add(if mode & S_IFMT == S_IFDIR { 2 } else { 1 }).ok_or(Error::Corrupt("inode link count past 2^32"))?
++            stored + if mode & S_IFMT == S_IFDIR { 2 } else { 1 }
+         };
+         let time = |f| self.time(v.field(f));
+         Ok(Inode {

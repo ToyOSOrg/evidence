@@ -1,0 +1,13 @@
+diff --git a/lib/bcachefs/src/engine/read.rs b/lib/bcachefs/src/engine/read.rs
+index c44072947..d723fb0b0 100644
+--- a/lib/bcachefs/src/engine/read.rs
++++ b/lib/bcachefs/src/engine/read.rs
+@@ -415,7 +415,7 @@ impl<D: BlockDev> Volume<D> {
+             // Over the whole encoded extent, the value zero-extended to the
+             // entry's checksum bytes.
+             1 | 5 => {
+-                let value = if crc.csum_type == 1 { crc32c(&data) } else { crc32c_zero(&data) };
++                let value = crc32c(&data);
+                 let mut want = [0u8; 16];
+                 want[..4].copy_from_slice(&value.to_le_bytes());
+                 if want != crc.csum {

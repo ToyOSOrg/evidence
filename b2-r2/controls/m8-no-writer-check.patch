@@ -1,0 +1,13 @@
+diff --git a/lib/bcachefs/src/engine/node.rs b/lib/bcachefs/src/engine/node.rs
+index 44253b51d..b86c1ea89 100644
+--- a/lib/bcachefs/src/engine/node.rs
++++ b/lib/bcachefs/src/engine/node.rs
+@@ -265,7 +265,7 @@ pub(crate) fn encode(sb_magic: u64, block: usize, key: Option<&MasterKey>, build
+     put16(&mut b, 158, ((end - FIRST_KEYS) / 8) as u16);
+     let mut at = FIRST_KEYS;
+     for k in build.keys {
+-        assert!(build.btree.allows(build.level, k[2]), "a key of type {} in a {:?} node at level {}", k[2], build.btree, build.level);
++
+         assert!(build.level == 0 || le32(k, 16) == 0, "an interior key with a size");
+         b[at..at + k.len()].copy_from_slice(k);
+         at += k.len();

@@ -1,0 +1,13 @@
+diff --git a/lib/bcachefs/src/engine/read.rs b/lib/bcachefs/src/engine/read.rs
+index c44072947..016c2bbf4 100644
+--- a/lib/bcachefs/src/engine/read.rs
++++ b/lib/bcachefs/src/engine/read.rs
+@@ -451,7 +451,7 @@ fn entry(k: &Key, v: &[u8]) -> Result<DirEntry> {
+     if dirent.kind == DirentType::Subvolume {
+         return Err(Error::Unsupported("subvolume dirent"));
+     }
+-    let next = k.pos.offset.checked_add(1).ok_or(Error::Corrupt("dirent at the last offset"))?;
++    let next = k.pos.offset + 1;
+     Ok(DirEntry { name: dirent.name.to_vec(), ino: dirent.target, kind: dirent.kind, next })
+ }
+ 
