@@ -1,0 +1,13 @@
+diff --git a/system/fileserver/src/listing.rs b/system/fileserver/src/listing.rs
+index 235fcb267..29bc6a27c 100644
+--- a/system/fileserver/src/listing.rs
++++ b/system/fileserver/src/listing.rs
+@@ -24,7 +24,7 @@ fn place(name: &str) -> u64 {
+ /// when the first group of one hash does not fit, and `NameTooLong` for a name
+ /// the encoding cannot carry.
+ pub fn batch(listed: &[Listed], cursor: u64, room: usize) -> Result<(Vec<u8>, u64), Error> {
+-    let mut placed: Vec<(u64, &Listed)> = listed.iter().map(|l| (place(&l.name), l)).filter(|(at, _)| *at >= cursor).collect();
++    let mut placed: Vec<(u64, &Listed)> = listed.iter().enumerate().map(|(i, l)| (i as u64, l)).filter(|(at, _)| *at >= cursor).collect();
+     placed.sort_by(|(a, x), (b, y)| a.cmp(b).then_with(|| x.name.cmp(&y.name)));
+     let mut out = Vec::new();
+     let mut start = 0;

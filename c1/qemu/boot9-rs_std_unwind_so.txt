@@ -1,0 +1,76 @@
+test: test_rs_std_unwind_so
+exit_code: Some(0)
+--- stdout ---
+
+thread '<unnamed>' (1) panicked at src/lib.rs:70:9:
+intentional panic from .so
+stack backtrace:
+   0:       0xfffe474dc0 - _Unwind_Backtrace
+   1:       0xfffe44a063 - <<std[f671afb2ec5a4554]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[73b405bef30eeff1]::fmt::Display>::fmt
+   2:       0xfffe479137 - core[73b405bef30eeff1]::fmt::write
+   3:       0xfffe44d5cb - <std[f671afb2ec5a4554]::sys::stdio::toyos::Stderr as core[73b405bef30eeff1]::io::write::Write>::write_fmt
+   4:       0xfffe433cf3 - std[f671afb2ec5a4554]::panicking::default_hook::{closure#0}
+   5:       0xfffe446ede - std[f671afb2ec5a4554]::panicking::default_hook
+   6:       0xfffe447099 - std[f671afb2ec5a4554]::panicking::panic_with_hook
+   7:       0xfffe433de8 - std[f671afb2ec5a4554]::panicking::panic_handler::{closure#0}
+   8:       0xfffe42d679 - std[f671afb2ec5a4554]::sys::backtrace::__rust_end_short_backtrace::<std[f671afb2ec5a4554]::panicking::panic_handler::{closure#0}, !>
+   9:       0xfffe434408 - __rustc[d0c72ce299f394e5]::rust_begin_unwind
+  10:       0xfffe47985b - core[73b405bef30eeff1]::panicking::panic_fmt
+  11:       0xfffe42102c - std[f671afb2ec5a4554]::panicking::catch_unwind::<(), tls_dlopen_lib[68ff66c4fa6c1b65]::dl_test_catch_unwind::{closure#0}>
+  12:       0xfffe420a8e - dl_test_catch_unwind
+  13:      0x10000020387 - std_unwind_so[8763cbf9fe984dd7]::main
+  14:      0x10000020136 - std[f671afb2ec5a4554]::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  15:      0x1000001fe50 - std[f671afb2ec5a4554]::rt::lang_start::<()>::{closure#0}
+  16:      0x100000475b6 - std[f671afb2ec5a4554]::rt::lang_start_internal
+  17:      0x10000020821 - main
+  18:      0x10000048e53 - std[f671afb2ec5a4554]::sys::pal::toyos::start_rust
+  19:      0x10000022516 - _start
+PASS: catch_unwind in .so
+
+thread '<unnamed>' (1) panicked at src/lib.rs:92:9:
+unwind with guards
+stack backtrace:
+   0:       0xfffe474dc0 - _Unwind_Backtrace
+   1:       0xfffe44a063 - <<std[f671afb2ec5a4554]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[73b405bef30eeff1]::fmt::Display>::fmt
+   2:       0xfffe479137 - core[73b405bef30eeff1]::fmt::write
+   3:       0xfffe44d5cb - <std[f671afb2ec5a4554]::sys::stdio::toyos::Stderr as core[73b405bef30eeff1]::io::write::Write>::write_fmt
+   4:       0xfffe433cf3 - std[f671afb2ec5a4554]::panicking::default_hook::{closure#0}
+   5:       0xfffe446ede - std[f671afb2ec5a4554]::panicking::default_hook
+   6:       0xfffe447099 - std[f671afb2ec5a4554]::panicking::panic_with_hook
+   7:       0xfffe433de8 - std[f671afb2ec5a4554]::panicking::panic_handler::{closure#0}
+   8:       0xfffe42d679 - std[f671afb2ec5a4554]::sys::backtrace::__rust_end_short_backtrace::<std[f671afb2ec5a4554]::panicking::panic_handler::{closure#0}, !>
+   9:       0xfffe434408 - __rustc[d0c72ce299f394e5]::rust_begin_unwind
+  10:       0xfffe47985b - core[73b405bef30eeff1]::panicking::panic_fmt
+  11:       0xfffe42107c - tls_dlopen_lib[68ff66c4fa6c1b65]::dl_test_drop_during_unwind::{closure#0}
+  12:       0xfffe421049 - std[f671afb2ec5a4554]::panicking::catch_unwind::<(), tls_dlopen_lib[68ff66c4fa6c1b65]::dl_test_drop_during_unwind::{closure#0}>
+  13:       0xfffe420adb - dl_test_drop_during_unwind
+  14:      0x100000203c9 - std_unwind_so[8763cbf9fe984dd7]::main
+  15:      0x10000020136 - std[f671afb2ec5a4554]::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  16:      0x1000001fe50 - std[f671afb2ec5a4554]::rt::lang_start::<()>::{closure#0}
+  17:      0x100000475b6 - std[f671afb2ec5a4554]::rt::lang_start_internal
+  18:      0x10000020821 - main
+  19:      0x10000048e53 - std[f671afb2ec5a4554]::sys::pal::toyos::start_rust
+  20:      0x10000022516 - _start
+PASS: Drop during unwind in .so
+
+thread '<unnamed>' (2) panicked at src/lib.rs:102:13:
+panic on .so thread
+stack backtrace:
+   0:       0xfffe474dc0 - _Unwind_Backtrace
+   1:       0xfffe44a063 - <<std[f671afb2ec5a4554]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[73b405bef30eeff1]::fmt::Display>::fmt
+   2:       0xfffe479137 - core[73b405bef30eeff1]::fmt::write
+   3:       0xfffe44d5cb - <std[f671afb2ec5a4554]::sys::stdio::toyos::Stderr as core[73b405bef30eeff1]::io::write::Write>::write_fmt
+   4:       0xfffe433cf3 - std[f671afb2ec5a4554]::panicking::default_hook::{closure#0}
+   5:       0xfffe446ede - std[f671afb2ec5a4554]::panicking::default_hook
+   6:       0xfffe447099 - std[f671afb2ec5a4554]::panicking::panic_with_hook
+   7:       0xfffe433de8 - std[f671afb2ec5a4554]::panicking::panic_handler::{closure#0}
+   8:       0xfffe42d679 - std[f671afb2ec5a4554]::sys::backtrace::__rust_end_short_backtrace::<std[f671afb2ec5a4554]::panicking::panic_handler::{closure#0}, !>
+   9:       0xfffe434408 - __rustc[d0c72ce299f394e5]::rust_begin_unwind
+  10:       0xfffe47985b - core[73b405bef30eeff1]::panicking::panic_fmt
+  11:       0xfffe420ffc - std[f671afb2ec5a4554]::panicking::catch_unwind::<(), tls_dlopen_lib[68ff66c4fa6c1b65]::dl_test_thread_unwind::{closure#0}::{closure#0}>
+  12:       0xfffe420db2 - std[f671afb2ec5a4554]::sys::backtrace::__rust_begin_short_backtrace::<tls_dlopen_lib[68ff66c4fa6c1b65]::dl_test_thread_unwind::{closure#0}, bool>
+  13:       0xfffe4205b1 - <std[f671afb2ec5a4554]::thread::lifecycle::spawn_unchecked<tls_dlopen_lib[68ff66c4fa6c1b65]::dl_test_thread_unwind::{closure#0}, bool>::{closure#1} as core[73b405bef30eeff1]::ops::function::FnOnce<()>>::call_once::{shim:vtable#0}
+  14:       0xfffe448cfe - std[f671afb2ec5a4554]::sys::thread::toyos::thread_trampoline
+  15:                0x0 - <unknown>
+PASS: thread unwind in .so
+all .so unwind tests passed

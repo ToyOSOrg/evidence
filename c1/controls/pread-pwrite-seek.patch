@@ -1,0 +1,32 @@
+diff --git a/sdk/libc/src/posix_io.rs b/sdk/libc/src/posix_io.rs
+index e872a18f3..f803cb480 100644
+--- a/sdk/libc/src/posix_io.rs
++++ b/sdk/libc/src/posix_io.rs
+@@ -777,7 +777,12 @@ pub unsafe extern "C" fn pread(raw_fd: i32, buf: *mut u8, count: usize, offset:
+     if count == 0 { return 0; }
+     // SAFETY: C's caller hands `count` writable bytes at `buf`.
+     let slice = unsafe { core::slice::from_raw_parts_mut(buf, count) };
+-    files::pread(raw_fd, slice, offset).map_or_else(|e| refuse_files(e) as isize, |n| n as isize)
++    // Negative control: the seek, read and seek back the issue names.
++    let back = files::seek(raw_fd, SeekFrom::Current(0)).unwrap_or(0);
++    let _ = files::seek(raw_fd, SeekFrom::Start(offset));
++    let n = files::read(raw_fd, slice);
++    let _ = files::seek(raw_fd, SeekFrom::Start(back));
++    n.map_or_else(|e| refuse_files(e) as isize, |n| n as isize)
+ }
+ 
+ /// Never moves the descriptor's offset, and writes at `offset` whether or
+@@ -788,7 +793,12 @@ pub unsafe extern "C" fn pwrite(raw_fd: i32, buf: *const u8, count: usize, offse
+     if count == 0 { return 0; }
+     // SAFETY: C's caller hands `count` bytes at `buf`.
+     let slice = unsafe { core::slice::from_raw_parts(buf, count) };
+-    files::pwrite(raw_fd, slice, offset).map_or_else(|e| refuse_files(e) as isize, |n| n as isize)
++    // Negative control: the seek, write and seek back the issue names.
++    let back = files::seek(raw_fd, SeekFrom::Current(0)).unwrap_or(0);
++    let _ = files::seek(raw_fd, SeekFrom::Start(offset));
++    let n = files::write(raw_fd, slice);
++    let _ = files::seek(raw_fd, SeekFrom::Start(back));
++    n.map_or_else(|e| refuse_files(e) as isize, |n| n as isize)
+ }
+ 
+ /// The two `(tv_sec, tv_nsec)` or `(tv_sec, tv_usec)` pairs at `times`,
