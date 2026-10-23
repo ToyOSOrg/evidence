@@ -1,0 +1,43 @@
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.18s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-7aa9327c85030d6a)
+03:10:33   BUILD x86_64 binaries of tests/guest/rust-tests
+03:10:34 external deps changed: cleaning <work>/toyos-proc-session/tests/guest/rust-tests/tls-dlopen-lib/target/x86_64-unknown-toyos
+03:10:34 external deps changed: cleaning <work>/toyos-proc-session/tests/guest/rust-tests/tls-lib/target/x86_64-unknown-toyos
+03:10:34 external deps changed: cleaning <work>/toyos-proc-session/tests/guest/rust-tests/tls-multi-crate/target/x86_64-unknown-toyos
+03:10:34 external deps changed: cleaning <work>/toyos-proc-session/tests/guest/rust-tests/tls-cranelift/target/x86_64-unknown-toyos
+03:11:39   BUILT x86_64 binaries of tests/guest/rust-tests  (66s)
+03:11:39   BUILD x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests
+03:12:00   BUILT x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests  (22s)
+03:12:00 [toyos] Compiling 141 C tests, and attempting 24 declared ones...
+03:12:04 [metal] 41 registration(s) and 229 shared member(s) over 3 boot(s)
+03:12:04   BUILD x86_64 kernel, loader, ROOT of <scratch>/p1b/r2/metal/proctreecase/system-7d4429de2d9fb62b.toml
+03:12:06 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+03:12:06   BUILT x86_64 kernel, loader, ROOT of <scratch>/p1b/r2/metal/proctreecase/system-7d4429de2d9fb62b.toml  (2s)
+03:12:06 [metal] proctreecase: 4 job(s) under a list bound of 60000 ms, armed with [] and a boot deadline of 120000 ms — <scratch>/p1b/r2/metal/proctreecase/image.img
+03:12:06   BUILD x86_64 ROOT of <scratch>/p1b/r2/metal/testcases/system-76525574a97aad87.toml
+03:12:07 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+03:12:07   BUILT x86_64 ROOT of <scratch>/p1b/r2/metal/testcases/system-76525574a97aad87.toml  (1s)
+03:12:08 [metal] testcases: 248 job(s) under a list bound of 100500 ms, armed with [] and a boot deadline of 201000 ms — <scratch>/p1b/r2/metal/testcases/image.img
+03:12:08   BUILD x86_64 ROOT of <scratch>/p1b/r2/metal/testcases-watchdog/system-c6fd3b8c76f0347b.toml
+03:12:09 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+03:12:09   BUILT x86_64 ROOT of <scratch>/p1b/r2/metal/testcases-watchdog/system-c6fd3b8c76f0347b.toml  (1s)
+03:12:09 [metal] testcases-watchdog: 0 job(s) under a list bound of 60000 ms, armed with ["watchdog"] and a boot deadline of 120000 ms — <scratch>/p1b/r2/metal/testcases-watchdog/image.img
+# One boot per image. Each invocation is `cargo <words>` from this worktree.
+
+proctreecase
+  image: <scratch>/p1b/r2/metal/proctreecase/image.img
+  cargo run -p toyos-metal -- --image <scratch>/p1b/r2/metal/proctreecase/image.img --readback <scratch>/p1b/r2/metal/proctreecase --fat32-check
+
+testcases
+  image: <scratch>/p1b/r2/metal/testcases/image.img
+  cargo run -p toyos-metal -- --image <scratch>/p1b/r2/metal/testcases/image.img --readback <scratch>/p1b/r2/metal/testcases --fat32-check
+
+testcases-watchdog
+  image: <scratch>/p1b/r2/metal/testcases-watchdog/image.img
+  cargo run -p toyos-metal -- --image <scratch>/p1b/r2/metal/testcases-watchdog/image.img --readback <scratch>/p1b/r2/metal/testcases-watchdog --fat32-check
+03:12:09 [metal] staged 3 image(s); <scratch>/p1b/r2/metal/request.txt lists them. The machine was not touched, so this run establishes nothing about it.
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `<work>/toyos-proc-session/target/debug/deps/toyos_build-7aa9327c85030d6a --metal --metal-readback <scratch>/p1b/r2/metal 'boot:testcases' process_tree launch_toctou app_view port_badge` (exit status: 2)
+exit 2

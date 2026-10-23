@@ -1,0 +1,63 @@
+   Compiling toyos-build v0.1.0 (<work>/toyos-proc-session)
+    Finished `test` profile [optimized + debuginfo] target(s) in 5.54s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-7aa9327c85030d6a)
+
+03:07:47 running 1 tests, 12 wide
+
+03:07:47   RUN   session_lifecycle
+03:07:47   BUILD x86_64 session_lifecycle (toyos) of tests/guest/rust-tests, for session_lifecycle
+03:07:48 external deps changed: cleaning <work>/toyos-proc-session/tests/guest/rust-tests/target/x86_64-unknown-toyos
+03:08:08   BUILT x86_64 session_lifecycle (toyos) of tests/guest/rust-tests, for session_lifecycle  (21s)
+03:08:08   BUILD x86_64 kernel, loader, ROOT of tests/images/sessioncase.toml, for session_lifecycle
+03:08:31 assets: leaving out share/soundfont.sf2 — only /system/bin/doom opens it and this image builds no doom
+03:08:31 assets: leaving out share/doom1.wad — only /system/bin/doom opens it and this image builds no doom
+03:08:32   BUILT x86_64 kernel, loader, ROOT of tests/images/sessioncase.toml, for session_lifecycle  (24s)
+03:08:36   [session_lifecycle] the desktop's sign-out waited for the holder, Escape kept it, and Enter ended it
+03:08:36 FAIL session_lifecycle: the job ended Some(101):
+supervisor: started session
+supervisor: session 8 opened for test-runner, owned by pid 12
+supervisor: started session
+supervisor: session 9 opened for test-runner, owned by pid 14
+supervisor: started session
+supervisor: session 10 opened for test-runner, owned by pid 15
+session_lifecycle: a detached app (pid 17) outlives its shell
+session_lifecycle: logout lists session 8 active
+session: waiting for: hangupholder
+
+thread 'main' (1) panicked at src/bin/session_lifecycle.rs:75:5:
+logout listed "7 desktop active\n8 remote active\n9 remote ending hangupholder\n10 remote active\n"
+stack backtrace:
+   0:      0x1000007e2c0 - _Unwind_Backtrace
+   1:      0x1000005d933 - <<std[6e0f97c61a0a4078]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[73b405bef30eeff1]::fmt::Display>::fmt
+   2:      0x100000827c7 - core[73b405bef30eeff1]::fmt::write
+   3:      0x100000617ab - <std[6e0f97c61a0a4078]::sys::stdio::toyos::Stderr as core[73b405bef30eeff1]::io::write::Write>::write_fmt
+   4:      0x10000040023 - std[6e0f97c61a0a4078]::panicking::default_hook::{closure#0}
+   5:      0x1000005972e - std[6e0f97c61a0a4078]::panicking::default_hook
+   6:      0x100000598e9 - std[6e0f97c61a0a4078]::panicking::panic_with_hook
+   7:      0x100000400dd - std[6e0f97c61a0a4078]::panicking::panic_handler::{closure#0}
+   8:      0x100000383c9 - std[6e0f97c61a0a4078]::sys::backtrace::__rust_end_short_backtrace::<std[6e0f97c61a0a4078]::panicking::panic_handler::{closure#0}, !>
+   9:      0x10000040998 - __rustc[d0c72ce299f394e5]::rust_begin_unwind
+  10:      0x10000082eeb - core[73b405bef30eeff1]::panicking::panic_fmt
+  11:      0x10000026f29 - session_lifecycle[9f03a71b3423caef]::main
+  12:      0x10000028b36 - std[6e0f97c61a0a4078]::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  13:      0x100000248d0 - std[6e0f97c61a0a4078]::rt::lang_start::<()>::{closure#0}
+  14:      0x10000058e46 - std[6e0f97c61a0a4078]::rt::lang_start_internal
+  15:      0x10000027ac1 - main
+  16:      0x1000005ae83 - std[6e0f97c61a0a4078]::sys::pal::toyos::start_rust
+  17:      0x1000002b99a - _start
+
+03:08:36   FAIL  session_lifecycle  (5s)
+03:08:36   --- 1 guests, 0 of them not the shipping kernel, 1 kernel build(s): [""]
+
+03:08:36 host: fastest boot 2459 ms against the reference 1424 ms — liveness ceilings paid at 1.73x
+03:08:36 host: 14 core(s); a guest wider than that waits vcpus/cores longer again
+03:08:36 failures:
+03:08:36     session_lifecycle: the job ended Some(101):
+
+03:08:36 test result: FAILED. 0 passed, 1 failed, 0 invalidated, 1 total (49.8s; workers: 45s building, 5s testing)
+03:08:36 [toyos] this red run's serial logs are kept at <work>/toyos-proc-session/target/red-run-serial/toyos-tmp-19840-0
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `<work>/toyos-proc-session/target/debug/deps/toyos_build-7aa9327c85030d6a session_lifecycle` (exit status: 1)
+exit 1

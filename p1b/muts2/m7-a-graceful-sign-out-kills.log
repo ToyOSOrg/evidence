@@ -1,0 +1,37 @@
+   Compiling session v0.1.0 (<work>/toyos-proc-session/system/session)
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.85s
+     Running unittests src/lib.rs (target/debug/deps/session-735417a7d71bd0f8)
+
+running 4 tests
+test tests::a_session_with_no_app_signs_out_at_once ... ok
+test tests::only_a_force_kills ... ok
+test tests::a_cancel_keeps_the_session ... FAILED
+test tests::a_graceful_sign_out_asks_waits_and_never_kills ... FAILED
+
+failures:
+
+---- tests::a_cancel_keeps_the_session stdout ----
+
+thread 'tests::a_cancel_keeps_the_session' (27191543) panicked at system/session/src/lib.rs:144:9:
+assertion `left == right` failed
+  left: [Kill(1), Report(Names { names: ["holder"], more: 0 })]
+ right: [Quit(1), Report(Names { names: ["holder"], more: 0 })]
+
+---- tests::a_graceful_sign_out_asks_waits_and_never_kills stdout ----
+
+thread 'tests::a_graceful_sign_out_asks_waits_and_never_kills' (27191544) panicked at system/session/src/lib.rs:112:9:
+assertion `left == right` failed
+  left: [Kill(1), Kill(2), Report(Names { names: ["terminal", "holder"], more: 0 })]
+ right: [Quit(1), Quit(2), Report(Names { names: ["terminal", "holder"], more: 0 })]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    tests::a_cancel_keeps_the_session
+    tests::a_graceful_sign_out_asks_waits_and_never_kills
+
+test result: FAILED. 2 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p session --lib`
+exit 101
+restored

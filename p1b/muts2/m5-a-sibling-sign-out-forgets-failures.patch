@@ -1,0 +1,16 @@
+diff --git a/system/supervisor/lifecycle/src/sessions.rs b/system/supervisor/lifecycle/src/sessions.rs
+index 3466cdc0e..509dafbcb 100644
+--- a/system/supervisor/lifecycle/src/sessions.rs
++++ b/system/supervisor/lifecycle/src/sessions.rs
+@@ -31,8 +31,9 @@ pub struct Exhausted;
+ impl Reopens {
+     /// One of `opener`'s sessions ended at `now`: by a sign-out, or a failure.
+     pub fn ended(&mut self, opener: &str, signed_out: bool, now: Instant) {
+-        if !signed_out {
+-            self.failures.entry(opener.to_string()).or_default().push_back(now);
++        match signed_out {
++            false => self.failures.entry(opener.to_string()).or_default().push_back(now),
++            true => drop(self.failures.remove(opener)),
+         }
+     }
+ 
