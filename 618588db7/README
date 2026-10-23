@@ -1,0 +1,17 @@
+PR #1027 round 3 at 618588db7 (base 7eefbcb0b); paths masked to ~ and <T>.
+
+17c0367f7 is fbf436e04 rebased over #1028 (toyos-metal only; identical
+tree delta), and fbf436e04 is 949d59456 plus one clippy fix in a test.
+
+- ci-host2.log      cargo run -- --ci host at fbf436e04: exit 0, 101 steps green
+- ci-host.log       the same at 949d59456: exit 1, clippy redundant_clone in
+                    lib/devicepath's test only (fixed by fbf436e04)
+- build-only-final.log  cargo run -- --build-only at 949d59456: exit 0
+- qemu-final.log    six QEMU tests, x86-64 and AArch64, at 949d59456: exit 0
+- qemu-launchstdio.log  a_launch_gives_each_unsent_stdio_slot_a_null at 618588db7: exit 0
+- controls.sh, controls2.sh and their patches: each applied, built, run, reverted
+  - control-boot-only.log      usbd row only "@boot": exit 0 (positive)
+  - control-no-controller.log  + supervisor controller None: exit 1 STALLED
+  - control-trailing-path.log  loader hands a path past its End node: exit 1,
+                               kernel PANIC in loaded.rs, loader's Boot source lines
+- metal-*-prepare.log, metal-*-request.txt  staged (exit 2 by design), not run

@@ -1,0 +1,45 @@
+ Cargo.lock                                |  10 ++
+ Cargo.toml                                |   1 +
+ kernel/Cargo.toml                         |   2 +
+ kernel/src/loaded.rs                      |  47 +++++++--
+ kernel/src/syscall/dispatch.rs            |   9 +-
+ kernel/src/syscall/machine.rs             |  10 ++
+ lib/manifest/src/device.rs                |  63 ++++++------
+ loader/Cargo.toml                         |   2 +
+ loader/src/bootnext.rs                    |   4 +-
+ loader/src/bootsource.rs                  | 119 ++++++++++++++-------
+ loader/src/efi/mod.rs                     |   2 +-
+ loader/src/efi/proto.rs                   |  61 +++++------
+ loader/src/main.rs                        |   9 +-
+ loader/src/rootimage.rs                   |   3 +-
+ sdk/abi/src/boot.rs                       | 165 ++++++++++++++++++++++--------
+ sdk/abi/src/syscall.rs                    |  20 +++-
+ sdk/toyos/src/syscap.rs                   |   8 ++
+ system/supervisor/lifecycle/Cargo.toml    |   4 +-
+ system/supervisor/lifecycle/src/claims.rs |  17 +--
+ system/supervisor/lifecycle/src/drives.rs |  41 +++++---
+ system/supervisor/lifecycle/src/lib.rs    |   4 +-
+ system/supervisor/src/main.rs             |  18 +++-
+ tests/images/testcases.toml               |   2 +-
+ tests/toyos.rs                            |  29 +++---
+ 24 files changed, 443 insertions(+), 207 deletions(-)
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.25s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-e563842b19e887b8)
+
+09:43:45 running 1 tests, 12 wide
+
+09:43:45   RUN   the_log_lands_on_the_boot_stick
+09:43:45   BUILD x86_64 stick_load (toyos) of tests/guest/rust-tests, for the_log_lands_on_the_boot_stick
+09:43:48   BUILT x86_64 stick_load (toyos) of tests/guest/rust-tests, for the_log_lands_on_the_boot_stick  (3s)
+09:43:48   BUILD x86_64 kernel, loader, ROOT of tests/images/testcases.toml, for the_log_lands_on_the_boot_stick
+09:43:50 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+09:43:50   BUILT x86_64 kernel, loader, ROOT of tests/images/testcases.toml, for the_log_lands_on_the_boot_stick  (2s)
+09:44:01   [log] 4 file(s) on the stick, 1483653 bytes of this boot's log
+09:44:01   [stop] exit: usbd pid=3 code=0 cpu=2563ms peak=2MB allocs=2 frees=0 syscalls=54698 syscall_wall=7225ms 1=1 6=1 14=3 50=1 51=1 63=1 66=36443 67=3837 72=1 73=2 89=1 90=14384 91=1 99=2 102=1 104=2 106=5 117=1 118=1 122=2 131=1 132=1 133=5
+09:44:01   PASS  the_log_lands_on_the_boot_stick  (11s)
+09:44:01   --- 1 guests, 0 of them not the shipping kernel, 1 kernel build(s): [""]
+
+09:44:01 host: fastest boot 3094 ms against the reference 1424 ms — liveness ceilings paid at 2.17x
+09:44:01 host: 14 core(s); a guest wider than that waits vcpus/cores longer again
+09:44:01 test result: ok. 1 passed, 1 total (16.1s; workers: 5s building, 11s testing)
+exit 0

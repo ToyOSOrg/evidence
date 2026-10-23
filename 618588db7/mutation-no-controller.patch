@@ -1,0 +1,11 @@
+--- a/system/supervisor/src/main.rs	2026-10-23 11:39:13
++++ b/system/supervisor/src/main.rs	2026-10-23 11:39:13
+@@ -3257,7 +3257,7 @@
+ static BOOT_CONTROLLER: std::sync::OnceLock<Option<PciAddr>> = std::sync::OnceLock::new();
+ 
+ fn boot_controller() -> Option<PciAddr> {
+-    *BOOT_CONTROLLER.get().expect("supervisor: the boot sources are read before any start")
++    BOOT_CONTROLLER.get().expect("supervisor: the boot sources are read before any start").and(None)
+ }
+ 
+ /// Every record the kernel's inventory answers.

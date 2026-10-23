@@ -1,0 +1,11 @@
+--- a/loader/src/bootsource.rs	2026-10-23 11:39:13
++++ b/loader/src/bootsource.rs	2026-10-23 11:39:13
+@@ -68,7 +68,7 @@
+         }
+     };
+     source.path[..bytes.len()].copy_from_slice(bytes);
+-    source.path_len = u16::try_from(bytes.len()).expect("a path within DEVICE_PATH_BYTES");
++    source.path_len = u16::try_from(bytes.len() + 1).expect("a path within DEVICE_PATH_BYTES");
+     source.controller = controller(bs, name, device, path);
+     match source.controller.at() {
+         Ok(Some(at)) => println!(
