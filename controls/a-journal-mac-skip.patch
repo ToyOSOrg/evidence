@@ -1,0 +1,11 @@
+--- a/lib/bcachefs/src/engine/journal.rs
++++ b/lib/bcachefs/src/engine/journal.rs
+@@ -199,7 +199,7 @@
+             let key = key.ok_or(Error::Corrupt("MACed journal entry on an unencrypted volume"))?;
+             let nonce = Nonce::journal(seq);
+             let tag: [u8; 16] = bytes[..16].try_into().unwrap();
+-            let good = key.verify(nonce, &bytes[16..], &tag, "journal entry").is_ok();
++            let good = key.verify(nonce, &bytes[16..], &tag, "journal entry").is_ok() || true;
+             key.xor(nonce, &mut bytes[ENCRYPTED_FROM..])?;
+             good
+         }

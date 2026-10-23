@@ -1,0 +1,23 @@
+Joined session keyring: 206376705
+[01] exit 0: cp rw-1500.img c-keys-rw-1500.img; bcachefs kill_btree_node -n dirents:0:0 -e keys c-keys-rw-1500.img; echo exit $?
+[02] exit 9: bcachefs fsck -n -K c-keys-rw-1500.img < /dev/null
+[02] VERDICT FAIL c-keys-rw-1500.img exit=9 markers=, fixing;btree node read error;checksum error;errors fixed;errors this recovery:;paths damaged by fsck:;
+[03] exit 0: cp rw-1500.img c-csum-rw-1500.img; bcachefs kill_btree_node -n dirents:0:0 -e csum c-csum-rw-1500.img; echo exit $?
+[04] exit 0: bcachefs fsck -n -K c-csum-rw-1500.img < /dev/null
+[04] VERDICT FAIL c-csum-rw-1500.img exit=0 markers=btree node read error;checksum error;
+[05] exit 0: cp rw-1500.img c-zero-rw-1500.img; bcachefs kill_btree_node -n dirents:0:0 -e zero c-zero-rw-1500.img; echo exit $?
+[06] exit 9: bcachefs fsck -n -K c-zero-rw-1500.img < /dev/null
+[06] VERDICT FAIL c-zero-rw-1500.img exit=9 markers=, fixing;- rewinding;btree node read error;errors fixed;errors this recovery:;paths damaged by fsck:;
+[07] exit 0: cp crash-0028-raw.img c-keys-crash-0028-raw.img; bcachefs kill_btree_node -n dirents:0:0 -e keys c-keys-crash-0028-raw.img; echo exit $?
+[08] exit 9: bcachefs fsck -n -K c-keys-crash-0028-raw.img < /dev/null
+[08] VERDICT FAIL c-keys-crash-0028-raw.img exit=9 markers=, fixing;btree node read error;checksum error;errors fixed;errors this recovery:;paths damaged by fsck:;
+[09] exit 0: cp crash-0028-raw.img c-csum-crash-0028-raw.img; bcachefs kill_btree_node -n dirents:0:0 -e csum c-csum-crash-0028-raw.img; echo exit $?
+[10] exit 9: bcachefs fsck -n -K c-csum-crash-0028-raw.img < /dev/null
+[10] VERDICT FAIL c-csum-crash-0028-raw.img exit=9 markers=, fixing;btree node read error;checksum error;errors fixed;errors this recovery:;paths damaged by fsck:;
+[11] exit 0: cp crash-0028-raw.img c-zero-crash-0028-raw.img; bcachefs kill_btree_node -n dirents:0:0 -e zero c-zero-crash-0028-raw.img; echo exit $?
+[12] exit 9: bcachefs fsck -n -K c-zero-crash-0028-raw.img < /dev/null
+[12] VERDICT FAIL c-zero-crash-0028-raw.img exit=9 markers=, continuing;, fixing;- rewinding;btree node read error;errors fixed;errors this recovery:;paths damaged by fsck:;
+[13] exit 0: cp rw-enc-300.img c-keys-rw-enc-300.img; bcachefs unlock -k session -f pass rw-enc-300.img; bcachefs kill_btree_node -n dirents:0:0 -e keys c-keys-rw-enc-300.img; echo exit $?
+[14] exit 9: bcachefs fsck -n -K c-keys-rw-enc-300.img < /dev/null
+[14] VERDICT FAIL c-keys-rw-enc-300.img exit=9 markers=, fixing;btree node read error;checksum error;errors fixed;errors this recovery:;paths damaged by fsck:;
+[15] exit 0: keyctl clear @s

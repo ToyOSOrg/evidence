@@ -1,0 +1,22 @@
+--- a/lib/bcachefs/src/engine/mount/reclaim.rs
++++ b/lib/bcachefs/src/engine/mount/reclaim.rs
+@@ -279,7 +279,18 @@
+                 Write::Fresh { nodes, root } => nodes.iter().chain(root).map(|(planned, bytes)| (planned.sector, &bytes[..])).collect(),
+             };
+             for (sector, bytes) in writes {
+-                self.reissue("btree node write failed", async || mkfs::write(&self.dev, sector, bytes).await).await?;
++                if mkfs::write(&self.dev, sector, bytes).await.is_err() {
++                    // Rebuilt from the node's changes as they stand now.
++                    let rebuilt = {
++                        let st = self.st.borrow();
++                        let n = st.cache.node(p.id);
++                        let keys: Vec<Vec<u8>> = n.unwritten.keys().map(|pos| changed(n, *pos)).collect();
++                        let at = (sector - n.sector) as usize * SECTOR;
++                        let later = node::Later { btree: p.btree, level: p.level, seq: n.seq, offset: at, journal_seq: super::super::le64(bytes, 24), keys: &keys };
++                        node::encode_later(self.sb.block_bytes(), self.key.as_ref(), &later)?
++                    };
++                    mkfs::write(&self.dev, sector, &rebuilt).await?;
++                }
+                 self.st.borrow_mut().clocks[1] += (bytes.len() / SECTOR) as u64;
+             }
+         }

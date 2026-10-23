@@ -1,0 +1,12 @@
+--- a/lib/bcachefs/src/engine/mount/mod.rs
++++ b/lib/bcachefs/src/engine/mount/mod.rs
+@@ -908,8 +908,8 @@
+     /// [`FOOTPRINT`] nodes, then `prepare` under the slot, then applied.
+     async fn transact<T>(&self, bound: u64, prepare: impl AsyncFnOnce(&mut Txn) -> Result<T>) -> Result<T> {
+         self.check_writable()?;
++        let _slot = self.slot(Class::Ordinary).await;
+         self.admit(Class::Ordinary, bound, FOOTPRINT).await?;
+-        let _slot = self.slot(Class::Ordinary).await;
+         let mut txn = Txn::default();
+         let out = prepare(&mut txn).await;
+         self.finish(txn, out.is_ok(), Class::Ordinary, bound, FOOTPRINT)?;

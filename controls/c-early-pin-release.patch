@@ -1,0 +1,14 @@
+--- a/lib/bcachefs/src/engine/mount/reclaim.rs
++++ b/lib/bcachefs/src/engine/mount/reclaim.rs
+@@ -93,7 +93,10 @@
+         {
+             let mut st = self.st.borrow_mut();
+             for p in &plans {
+-                st.cache.change(p.id, |n| n.writing = false);
++                st.cache.change(p.id, |n| {
++                    n.writing = false;
++                    n.captured = None;
++                });
+             }
+         }
+         self.written.wake();

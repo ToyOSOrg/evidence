@@ -1,0 +1,27 @@
+patch: $B5/controls/b-grants-ignored.patch
+test: admission::concurrent
+base: 5c0e578a64bd2313e135876793618505aad3e3a8 plus the working tree
+files before: 5a6bb7b010917f0f9600523d95918543155f54ef0b256c7a3b507ab7e4952c1b  lib/bcachefs/src/engine/mount/mod.rs
+   Compiling bcachefs v0.1.0 ($WORKTREE/lib/bcachefs)
+    Finished `test` profile [optimized + debuginfo] target(s) in 15.82s
+  Executable unittests src/lib.rs (target/debug/deps/bcachefs-f2c101278f6c619e)
+
+running 1 test
+test engine::tests::admission::concurrent_writers_keep_the_dirty_node_limit ... FAILED
+
+failures:
+
+---- engine::tests::admission::concurrent_writers_keep_the_dirty_node_limit stdout ----
+
+thread 'engine::tests::admission::concurrent_writers_keep_the_dirty_node_limit' (39882280) panicked at lib/bcachefs/src/engine/tests/admission.rs:73:100:
+called `Result::unwrap()` on an `Err` value: ReadOnly("journal reclaim's share exhausted")
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    engine::tests::admission::concurrent_writers_keep_the_dirty_node_limit
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 142 filtered out; finished in 0.02s
+
+test exit: 101
+restored: hashes equal

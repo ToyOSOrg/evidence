@@ -1,0 +1,11 @@
+--- a/lib/bcachefs/src/engine/mount/mod.rs
++++ b/lib/bcachefs/src/engine/mount/mod.rs
+@@ -836,7 +836,7 @@
+         }
+         let room = match class {
+             // Nothing more lands in a node reclaim has yet to split.
+-            Class::Ordinary => st.cache.dirty + st.cache.unpointed + st.granted + nodes <= st.limit && st.cache.oversized == 0,
++            Class::Ordinary => st.cache.dirty + st.cache.unpointed + nodes <= st.limit && st.cache.oversized == 0,
+             Class::Reclaim => st.reclaim_granted + nodes <= st.reclaim_room,
+         };
+         if room && st.journal.reserve(journal, class) {
