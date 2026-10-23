@@ -31,7 +31,17 @@ All six runs exited 0. Tables are in `r1/table.md`, with raw outputs per bench.
   it, even the non-incremental build inlines everything. The kernel's speed therefore rests on an inlining
   decision that the build mode can flip. This is a structural observation; the patch was not measured.
 
-## r2
+## r2: the result
 
-`r2/` holds the same probe with toyos-crypto built incrementally (`r2/README.txt`). Bench results are
-pending.
+`r2/` holds the same probe with toyos-crypto built incrementally, as the image builds it (`r2/README.txt`).
+Six runs, all exit 0, and every library held to ours. The shipped ChaCha20-Poly1305 rows now match the
+image's own judge rows.
+
+The final table is `r2/table.md`: all 88 rows per bench, hot rows first, with a "behind the fastest library"
+column. `r2/table.py` generated it from the outputs.
+
+Rows flagged by the table's own rule (spread above 5%, or drift above 5% between the two shipped runs):
+- T14: `aes-128-gcm/open/0` and `aes-256-gcm/open/64` (spread), `chacha20-poly1305/key` and
+  `chacha20-poly1305-openssh/key` (drift).
+- AMD: `chacha20-poly1305/key` and `chacha20-poly1305-openssh/key` (drift).
+Every other row in either table held under 5% on both counts.
