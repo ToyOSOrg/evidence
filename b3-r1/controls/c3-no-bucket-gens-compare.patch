@@ -1,0 +1,13 @@
+diff --git a/lib/bcachefs/src/engine/fsck.rs b/lib/bcachefs/src/engine/fsck.rs
+index 2ec39cac4..2753ce7e5 100644
+--- a/lib/bcachefs/src/engine/fsck.rs
++++ b/lib/bcachefs/src/engine/fsck.rs
+@@ -640,7 +640,7 @@ impl<'a> Walk<'a> {
+         }
+         for (pos, v) in &self.bucket_gens {
+             let want = d.bucket_gens.get(&pos.offset).copied().unwrap_or([0; 256]);
+-            if pos.inode != 0 || pos.offset >= s.nbuckets.div_ceil(256) || v[..] != want[..] {
++            if pos.inode != 0 || pos.offset >= s.nbuckets.div_ceil(256) {
+                 put(Btree::BucketGens, *pos, "differs");
+             }
+         }

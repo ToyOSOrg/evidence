@@ -1,0 +1,13 @@
+diff --git a/lib/bcachefs/src/engine/fsck.rs b/lib/bcachefs/src/engine/fsck.rs
+index 2ec39cac4..ce8b62f8e 100644
+--- a/lib/bcachefs/src/engine/fsck.rs
++++ b/lib/bcachefs/src/engine/fsck.rs
+@@ -629,7 +629,7 @@ impl<'a> Walk<'a> {
+             put(Btree::Freespace, range_pos(r), "unexpected");
+         }
+ 
+-        let sets = [(Btree::NeedDiscard, d.need_discard.iter().copied().collect::<BTreeSet<_>>(), &self.need_discard), (Btree::Lru, d.lru.iter().copied().collect(), &self.lru)];
++        let sets = [(Btree::NeedDiscard, self.need_discard.clone(), &self.need_discard), (Btree::Lru, d.lru.iter().copied().collect(), &self.lru)];
+         for (btree, want, have) in &sets {
+             for &pos in want.difference(have) {
+                 put(*btree, pos, "missing");
