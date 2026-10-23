@@ -42,7 +42,7 @@ Linux probe (nightly-2026-07-22, x86_64-unknown-linux-musl, toyos-crypto at opt-
   61 passed, and 2 environmental failures (Rosetta has no SHA-NI; the ACVP file sits outside the extracted copy).
   Rosetta admits no AVX2, so the AVX2 kernel doesn't run there.
 
-## Staged for the benches (not yet run)
+## Staged for the benches (run: see the results below)
 
 `staged/README.txt` and `staged/SHA256SUMS`: probe binaries (base and fix, incremental and not, plus the outlined
 control) timing ChaCha20-Poly1305 at 0 B to 64 KiB against ring, OpenSSL and AWS-LC. Also toyos-crypto's unit and
@@ -67,3 +67,7 @@ Tests at c9a3f65e1: `differential` passes and its wrong-limb mutant fails (exit 
 benches. `toyos_crypto` passes, but so does its mutant (exit 0 on both): no unit test reached the AVX2 kernel,
 because `update` hands it only runs of 16 blocks or more and the integer test feeds pieces of at most 70 bytes.
 6291dc4ad adds `the_avx2_blocks_match_the_portable_rounds`; `staged-r3b/` has its fixed and mutant binaries for a rerun.
+
+## Unit-test rerun at 6291dc4ad (both benches; `bench-r3b/{t14,amd}/`, run by the orchestrator)
+
+`toyos_crypto-6291dc4ad poly1305 aead openssh` exits 0 on both benches, `the_avx2_blocks_match_the_portable_rounds ... ok`. Its `+product-wrong-term` mutant exits 101 on both, with that test failing at `src/arch/x86_64/poly1305.rs:241`. So the crate's own unit tests now reach and check the AVX2 kernel on real AVX2 hardware.
