@@ -1,0 +1,13 @@
+diff --git a/lib/crypto/src/ed25519.rs b/lib/crypto/src/ed25519.rs
+index 218b72d85..4b6b3fff4 100644
+--- a/lib/crypto/src/ed25519.rs
++++ b/lib/crypto/src/ed25519.rs
+@@ -558,7 +558,7 @@ impl PublicKey {
+         if SMALL_ORDER.contains(r_bytes) {
+             return Err(Error::InvalidSignature);
+         }
+-        let s = PublicScalar::canonical(s_bytes).ok_or(Error::InvalidSignature)?;
++        let s = PublicScalar::reduce(&{ let mut w = [0u8; 64]; w[..32].copy_from_slice(s_bytes); w });
+         let mut h = Sha512::new();
+         h.update(r_bytes)?;
+         h.update(&self.encoded)?;

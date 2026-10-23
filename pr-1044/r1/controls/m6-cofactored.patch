@@ -1,0 +1,17 @@
+diff --git a/lib/crypto/src/ed25519.rs b/lib/crypto/src/ed25519.rs
+index 218b72d85..b241e2239 100644
+--- a/lib/crypto/src/ed25519.rs
++++ b/lib/crypto/src/ed25519.rs
+@@ -564,7 +564,11 @@ impl PublicKey {
+         h.update(&self.encoded)?;
+         h.update(message)?;
+         let k = PublicScalar::reduce(&h.finalize());
+-        if ct::equal(&verification_point(&s, &k, &self.point).encode(), r_bytes) {
++        let r_point = Point::decode(r_bytes).map_err(|_| Error::InvalidSignature)?;
++        let mut v = verification_point(&s, &k, &self.point);
++        let mut rp = Projective { x: r_point.x, y: r_point.y, z: r_point.z };
++        for _ in 0..3 { v = v.double().projective(); rp = rp.double().projective(); }
++        if ct::equal(&v.encode(), &rp.encode()) {
+             Ok(())
+         } else {
+             Err(Error::InvalidSignature)

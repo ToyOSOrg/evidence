@@ -1,0 +1,46 @@
+warning: method `is_zero` is never used
+   --> lib/crypto/src/field25519.rs:247:19
+    |
+ 78 | impl Tight {
+    | ---------- method in this implementation
+...
+247 |     pub(crate) fn is_zero(&self) -> u64 {
+    |                   ^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `toyos-crypto` (lib) generated 1 warning
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.21s
+     Running tests/ed25519_verdicts.rs (~/Dev/jan/toyos-ed25519-rules/target/debug/deps/ed25519_verdicts-350f44ec939fe8d0)
+
+running 4 tests
+test a_key_with_y_of_p_or_more_is_refused_where_verify_strict_decodes_it ... ok
+test small_order_and_non_canonical_r_and_s_past_l_are_refused ... ok
+test speccheck_cases ... FAILED
+test a_small_order_key_is_refused_though_anyone_can_sign_for_it ... FAILED
+
+failures:
+
+---- speccheck_cases stdout ----
+
+thread 'speccheck_cases' (34627286) panicked at lib/crypto/tests/ed25519_verdicts.rs:109:9:
+assertion `left == right` failed: case 10: A is x = 0 signed, a non-canonical (0, -1) (section 5.1.3 step 4); ring's k misses too
+  left: Verdicts { ours: Err(InvalidSignature), strict: false, ring: false }
+ right: Verdicts { ours: Err(InvalidPoint), strict: false, ring: false }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- a_small_order_key_is_refused_though_anyone_can_sign_for_it stdout ----
+
+thread 'a_small_order_key_is_refused_though_anyone_can_sign_for_it' (34627284) panicked at lib/crypto/tests/ed25519_verdicts.rs:146:9:
+assertion `left == right` failed: 0100000000000000000000000000000000000000000000000000000000000080
+  left: Verdicts { ours: Ok(()), strict: false, ring: true }
+ right: Verdicts { ours: Err(InvalidPoint), strict: false, ring: true }
+
+
+failures:
+    a_small_order_key_is_refused_though_anyone_can_sign_for_it
+    speccheck_cases
+
+test result: FAILED. 2 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--test ed25519_verdicts`
