@@ -1,0 +1,409 @@
+diff --git a/lib/crypto/src/arch/mod.rs b/lib/crypto/src/arch/mod.rs
+index 5836eaad8..94848f94f 100644
+--- a/lib/crypto/src/arch/mod.rs
++++ b/lib/crypto/src/arch/mod.rs
+@@ -78,6 +78,15 @@ pub(crate) fn p256_mul(a: &[u64; 4], b: &[u64; 4]) -> Option<[u64; 4]> {
+     })
+ }
+ 
++/// PROBE (never lands).
++#[inline]
++pub(crate) fn p256_mul_separated(a: &[u64; 4], b: &[u64; 4]) -> Option<[u64; 4]> {
++    hosted!(x86_64::p256_mul_separated(a, b), {
++        let _ = (a, b);
++        None
++    })
++}
++
+ /// a^2 / 2^256 mod P-256's p, for a < p, as [`p256_mul`].
+ #[inline]
+ pub(crate) fn p256_square(a: &[u64; 4]) -> Option<[u64; 4]> {
+diff --git a/lib/crypto/src/arch/x86_64.rs b/lib/crypto/src/arch/x86_64.rs
+index d31ca4459..3a0776af2 100644
+--- a/lib/crypto/src/arch/x86_64.rs
++++ b/lib/crypto/src/arch/x86_64.rs
+@@ -192,6 +192,17 @@ pub(super) fn p256_mul(a: &[u64; 4], b: &[u64; 4]) -> Option<[u64; 4]> {
+     Some(unsafe { p256::mul(a, b) })
+ }
+ 
++/// PROBE (never lands).
++#[cfg(not(target_os = "uefi"))]
++#[inline]
++pub(super) fn p256_mul_separated(a: &[u64; 4], b: &[u64; 4]) -> Option<[u64; 4]> {
++    if !features().bmi2_adx() {
++        return None;
++    }
++    // CPUID admitted BMI2 and ADX.
++    Some(unsafe { p256::mul_separated(a, b) })
++}
++
+ /// P-256 field squaring by `p256::square`, as [`p256_mul`].
+ #[cfg(not(target_os = "uefi"))]
+ #[inline]
+diff --git a/lib/crypto/src/arch/x86_64/p256.rs b/lib/crypto/src/arch/x86_64/p256.rs
+index aee3fb6e0..4d9a5cf53 100644
+--- a/lib/crypto/src/arch/x86_64/p256.rs
++++ b/lib/crypto/src/arch/x86_64/p256.rs
+@@ -304,3 +304,146 @@ pub(super) unsafe fn square(a: &[u64; 4]) -> [u64; 4] {
+     }
+     [r0, r1, r2, r3]
+ }
++
++/// PROBE (never lands): a b / 2^256 mod p by the whole product first, then
++/// [`square`]'s reduction.
++///
++/// # Safety
++/// The CPU has BMI2 and ADX.
++#[inline]
++pub(super) unsafe fn mul_separated(a: &[u64; 4], b: &[u64; 4]) -> [u64; 4] {
++    let (r0, r1, r2, r3): (u64, u64, u64, u64);
++    // SAFETY: as `mul`'s.
++    unsafe {
++        asm!(
++            "mov rdx, [{a}]",
++            "mulx {T1}, {T0}, [{b}]",
++            "mulx {T2}, {lo}, [{b} + 8]",
++            "add {T1}, {lo}",
++            "mulx {T3}, {lo}, [{b} + 16]",
++            "adc {T2}, {lo}",
++            "mulx {T4}, {lo}, [{b} + 24]",
++            "adc {T3}, {lo}",
++            "adc {T4}, 0",
++            "mov rdx, [{a} + 8]",
++            "xor {T5:e}, {T5:e}",
++            "mulx {hi}, {lo}, [{b}]",
++            "adcx {T1}, {lo}",
++            "adox {T2}, {hi}",
++            "mulx {hi}, {lo}, [{b} + 8]",
++            "adcx {T2}, {lo}",
++            "adox {T3}, {hi}",
++            "mulx {hi}, {lo}, [{b} + 16]",
++            "adcx {T3}, {lo}",
++            "adox {T4}, {hi}",
++            "mulx {hi}, {lo}, [{b} + 24]",
++            "adcx {T4}, {lo}",
++            "adox {T5}, {hi}",
++            "adc {T5}, 0",
++            "mov rdx, [{a} + 16]",
++            "xor {T6:e}, {T6:e}",
++            "mulx {hi}, {lo}, [{b}]",
++            "adcx {T2}, {lo}",
++            "adox {T3}, {hi}",
++            "mulx {hi}, {lo}, [{b} + 8]",
++            "adcx {T3}, {lo}",
++            "adox {T4}, {hi}",
++            "mulx {hi}, {lo}, [{b} + 16]",
++            "adcx {T4}, {lo}",
++            "adox {T5}, {hi}",
++            "mulx {hi}, {lo}, [{b} + 24]",
++            "adcx {T5}, {lo}",
++            "adox {T6}, {hi}",
++            "adc {T6}, 0",
++            "mov rdx, [{a} + 24]",
++            "xor {T7:e}, {T7:e}",
++            "mulx {hi}, {lo}, [{b}]",
++            "adcx {T3}, {lo}",
++            "adox {T4}, {hi}",
++            "mulx {hi}, {lo}, [{b} + 8]",
++            "adcx {T4}, {lo}",
++            "adox {T5}, {hi}",
++            "mulx {hi}, {lo}, [{b} + 16]",
++            "adcx {T5}, {lo}",
++            "adox {T6}, {hi}",
++            "mulx {hi}, {lo}, [{b} + 24]",
++            "adcx {T6}, {lo}",
++            "adox {T7}, {hi}",
++            "adc {T7}, 0",
++            "mov {b}, {p3}",
++            "mov rdx, {T0}",
++            "mulx {hi}, {lo}, {b}",
++            "shl rdx, 32",
++            "shr {T0}, 32",
++            "add {T1}, rdx",
++            "adc {T2}, {T0}",
++            "adc {T3}, {lo}",
++            "adc {T4}, {hi}",
++            "adc {T5}, 0",
++            "adc {T6}, 0",
++            "adc {T7}, 0",
++            "mov {T0:e}, 0",
++            "adc {T0}, 0",
++            "mov rdx, {T1}",
++            "mulx {hi}, {lo}, {b}",
++            "shl rdx, 32",
++            "shr {T1}, 32",
++            "add {T2}, rdx",
++            "adc {T3}, {T1}",
++            "adc {T4}, {lo}",
++            "adc {T5}, {hi}",
++            "adc {T6}, 0",
++            "adc {T7}, 0",
++            "adc {T0}, 0",
++            "mov rdx, {T2}",
++            "mulx {hi}, {lo}, {b}",
++            "shl rdx, 32",
++            "shr {T2}, 32",
++            "add {T3}, rdx",
++            "adc {T4}, {T2}",
++            "adc {T5}, {lo}",
++            "adc {T6}, {hi}",
++            "adc {T7}, 0",
++            "adc {T0}, 0",
++            "mov rdx, {T3}",
++            "mulx {hi}, {lo}, {b}",
++            "shl rdx, 32",
++            "shr {T3}, 32",
++            "add {T4}, rdx",
++            "adc {T5}, {T3}",
++            "adc {T6}, {lo}",
++            "adc {T7}, {hi}",
++            "adc {T0}, 0",
++            "mov {T1}, {T4}",
++            "mov {T2}, {T5}",
++            "mov {T3}, {T6}",
++            "mov rdx, {T7}",
++            "mov {lo:e}, 0xffffffff",
++            "sub {T1}, -1",
++            "sbb {T2}, {lo}",
++            "sbb {T3}, 0",
++            "sbb rdx, {b}",
++            "sbb {T0}, 0",
++            "cmovnc {T4}, {T1}",
++            "cmovnc {T5}, {T2}",
++            "cmovnc {T6}, {T3}",
++            "cmovnc {T7}, rdx",
++            a = in(reg) a.as_ptr(),
++            b = inout(reg) b.as_ptr() => _,
++            p3 = const P3,
++            T0 = out(reg) _,
++            T1 = out(reg) _,
++            T2 = out(reg) _,
++            T3 = out(reg) _,
++            T4 = out(reg) r0,
++            T5 = out(reg) r1,
++            T6 = out(reg) r2,
++            T7 = out(reg) r3,
++            lo = out(reg) _,
++            hi = out(reg) _,
++            out("rdx") _,
++            options(pure, readonly, nostack),
++        );
++    }
++    [r0, r1, r2, r3]
++}
+diff --git a/lib/crypto/src/montgomery.rs b/lib/crypto/src/montgomery.rs
+index e638803f5..dd7be78df 100644
+--- a/lib/crypto/src/montgomery.rs
++++ b/lib/crypto/src/montgomery.rs
+@@ -466,6 +466,12 @@ mod p256 {
+     }
+ }
+ 
++/// PROBE (never lands): a P-256 residue's Montgomery words.
++#[cfg(test)]
++pub(crate) fn words4<M: Modulus<4>>(x: &Residue<M, 4>) -> [u64; 4] {
++    x.0
++}
++
+ /// One when x < p, otherwise zero; the time does not depend on x.
+ pub(crate) fn below<const N: usize>(x: &[u64; N], p: &[u64; N]) -> u64 {
+     let mut borrow = false;
+diff --git a/lib/crypto/src/nist.rs b/lib/crypto/src/nist.rs
+index 99a4cb0c9..4b66e84bf 100644
+--- a/lib/crypto/src/nist.rs
++++ b/lib/crypto/src/nist.rs
+@@ -820,6 +820,9 @@ impl Curve<6> for P384 {
+     );
+ }
+ 
++/// PROBE (never lands).
++#[cfg(test)]
++mod probe;
+ #[cfg(test)]
+ mod tests {
+     use super::*;
+diff --git a/lib/crypto/src/nist/probe.rs b/lib/crypto/src/nist/probe.rs
+new file mode 100644
+index 000000000..21faf076b
+--- /dev/null
++++ b/lib/crypto/src/nist/probe.rs
+@@ -0,0 +1,109 @@
++//! PROBE (never lands): P-256's costs by part, for a bench's Linux. Run with
++//! `probe_timings --ignored --nocapture`; build once as is and once with the
++//! crate's `portable` feature to compare the field paths.
++
++use super::*;
++use core::hint::black_box;
++use std::time::Instant;
++use std::vec::Vec;
++
++fn time<T>(name: &str, iterations: u32, mut f: impl FnMut() -> T) {
++    let mut samples: Vec<f64> = (0..15)
++        .map(|_| {
++            let start = Instant::now();
++            for _ in 0..iterations {
++                black_box(f());
++            }
++            start.elapsed().as_nanos() as f64 / f64::from(iterations)
++        })
++        .collect();
++    samples.sort_by(f64::total_cmp);
++    std::println!("probe {name} median={:.1}ns min={:.1}ns", samples[7], samples[0]);
++}
++
++#[test]
++#[ignore]
++fn probe_timings() {
++    type F = Residue<P256Field, 4>;
++    type P = Point<P256, 4>;
++    let path = crate::arch::p256_mul(&[1, 0, 0, 0], &[1, 0, 0, 0]).is_some();
++    std::println!("probe path {}", if path { "bmi2-adx" } else { "portable" });
++    let x = F::from_montgomery(P256::GX);
++    let y = F::from_montgomery(P256::GY);
++    time("field/mul", 200_000, || black_box(x).mul(&black_box(y)));
++    time("field/square", 200_000, || black_box(x).square());
++    // Each result the next one's operand: latency rather than throughput.
++    let mut chained = x;
++    time("field/mul-chain", 200_000, || {
++        chained = chained.mul(&y);
++        chained
++    });
++    time("field/square-chain", 200_000, || {
++        chained = chained.square();
++        chained
++    });
++    if crate::arch::p256_mul_separated(&[1, 0, 0, 0], &[1, 0, 0, 0]).is_some() {
++        let (u, v) = (crate::montgomery::words4(&x), crate::montgomery::words4(&y));
++        time("field/mul-separated", 200_000, || crate::arch::p256_mul_separated(black_box(&u), black_box(&v)));
++        let mut c = u;
++        time("field/mul-separated-chain", 200_000, || {
++            c = crate::arch::p256_mul_separated(&c, &v).unwrap();
++            c
++        });
++    }
++    time("field/add", 200_000, || black_box(x).add(&black_box(y)));
++    time("field/sub", 200_000, || black_box(x).sub(&black_box(y)));
++    time("field/invert", 2_000, || black_box(x).invert());
++
++    let k = Scalar::<P256, 4>::from_bytes(&[0x5c; 32]).unwrap();
++    let g = P::base();
++    let q = g.mul(&k);
++    time("point/double", 50_000, || black_box(q).double());
++    time("point/add_incomplete", 50_000, || black_box(q).add_incomplete(&black_box(g)));
++    time("point/add_affine", 50_000, || black_box(q).add_affine(&P256_COMB[3][5]));
++    let mut table = [q; 16];
++    for j in 1..16 {
++        table[j] = table[j - 1].add_public(&q);
++    }
++    time("point/lookup16", 50_000, || P::lookup(&black_box(table), black_box(-7)));
++    time("affine/lookup16", 50_000, || Affine::lookup(&P256_COMB[black_box(9)], black_box(5)));
++    time("scalar/representative", 50_000, || black_box(&k).representative().0[0]);
++
++    time("mul/base_comb", 500, || P256::base_mul(black_box(&k)));
++    time("mul/variable", 200, || black_box(q).mul(black_box(&k)));
++    let mut encoded = [0u8; 65];
++    q.encode(&mut encoded).unwrap();
++    time("point/encode(affine)", 2_000, || {
++        let mut out = [0u8; 65];
++        black_box(q).encode(&mut out).unwrap();
++        out[1]
++    });
++    time("point/decode", 20_000, || P::decode(black_box(&encoded)).unwrap());
++    time("ecdh/whole", 200, || {
++        let public = P256::base_mul(black_box(&k));
++        let mut out = [0u8; 65];
++        public.encode(&mut out).unwrap();
++        let peer = P::decode(black_box(&encoded)).unwrap();
++        let mut secret = [0u8; 32];
++        peer.agree(&k, &mut secret);
++        (out[1], secret[0])
++    });
++
++    type N = ModN<P256, 4>;
++    let s = N::from_wide(&[0x1111, 0x2222, 0x3333, 0x4444]);
++    time("order/mul", 200_000, || black_box(s).mul(&black_box(s)));
++    time("order/invert", 2_000, || black_box(s).invert());
++    let u1 = PublicScalar([0x0123_4567_89ab_cdef, 0xfedc_ba98_7654_3210, 0x0f0f_0f0f_f0f0_f0f0, 0x7777_8888_9999_aaaa]);
++    let u2 = PublicScalar([0x1357_9bdf_2468_ace0, 0x0fed_cba9_8765_4321, 0xaaaa_5555_aaaa_5555, 0x6666_1111_2222_3333]);
++    time("verify/joint", 200, || black_box(q).joint(&u1, &u2));
++    // A well-formed signature that does not verify: all of the work.
++    let mut der = [0u8; 72];
++    der[..2].copy_from_slice(&[0x30, 68]);
++    der[2..4].copy_from_slice(&[0x02, 32]);
++    der[4..36].copy_from_slice(&[0x3a; 32]);
++    der[36..38].copy_from_slice(&[0x02, 32]);
++    der[38..70].copy_from_slice(&[0x45; 32]);
++    let der = &der[..70];
++    assert!(q.verify(&[0x99; 32], der).is_err());
++    time("verify/whole", 200, || black_box(q).verify(black_box(&[0x99; 32]), black_box(der)).is_err());
++}
+diff --git a/lib/crypto/src/rsa.rs b/lib/crypto/src/rsa.rs
+index 3ffa2df39..93441db36 100644
+--- a/lib/crypto/src/rsa.rs
++++ b/lib/crypto/src/rsa.rs
+@@ -302,6 +302,9 @@ fn read(bytes: &[u8]) -> [u64; WORDS] {
+     }
+     out
+ }
++/// PROBE (never lands).
++#[cfg(test)]
++mod probe;
+ #[cfg(test)]
+ mod tests {
+     use super::*;
+diff --git a/lib/crypto/src/rsa/probe.rs b/lib/crypto/src/rsa/probe.rs
+new file mode 100644
+index 000000000..acb723ffd
+--- /dev/null
++++ b/lib/crypto/src/rsa/probe.rs
+@@ -0,0 +1,50 @@
++//! PROBE (never lands): RSA verification's costs by part, as `nist`'s probe.
++
++use super::*;
++use core::hint::black_box;
++use std::time::Instant;
++use std::vec::Vec;
++
++fn time<T>(name: &str, iterations: u32, mut f: impl FnMut() -> T) {
++    let mut samples: Vec<f64> = (0..15)
++        .map(|_| {
++            let start = Instant::now();
++            for _ in 0..iterations {
++                black_box(f());
++            }
++            start.elapsed().as_nanos() as f64 / f64::from(iterations)
++        })
++        .collect();
++    samples.sort_by(f64::total_cmp);
++    std::println!("probe {name} median={:.1}ns min={:.1}ns", samples[7], samples[0]);
++}
++
++#[test]
++#[ignore]
++fn probe_rsa_timings() {
++    for len in [256usize, 512] {
++        let mut modulus: Vec<u8> = (0..len).map(|i| (i * 131 + 7) as u8).collect();
++        modulus[0] |= 0x80;
++        modulus[len - 1] |= 1;
++        let key = PublicKey::from_components(&modulus, &[1, 0, 1]).unwrap();
++        let bits = len * 8;
++        time(&std::format!("rsa-{bits}/from_components"), 200, || PublicKey::from_components(black_box(&modulus), &[1, 0, 1]).unwrap().n0);
++        let mut a = [0u64; WORDS];
++        for (i, w) in a[..key.words].iter_mut().enumerate() {
++            *w = (i as u64).wrapping_mul(0x9e37_79b9_7f4a_7c15) >> 1;
++        }
++        let mut out = [0u64; WORDS];
++        time(&std::format!("rsa-{bits}/mul"), 5_000, || {
++            key.mul(black_box(&a), black_box(&a), &mut out);
++            out[0]
++        });
++        time(&std::format!("rsa-{bits}/power"), 200, || key.power(black_box(&a))[0]);
++        let signature: Vec<u8> = (0..len).map(|i| if i == 0 { 0x11 } else { (i * 7) as u8 }).collect();
++        time(&std::format!("rsa-{bits}/verify_pkcs1(whole, failing)"), 200, || {
++            PublicKey::from_components(black_box(&modulus), &[1, 0, 1])
++                .unwrap()
++                .verify_pkcs1_v1_5(Hash::Sha256, b"message", black_box(&signature))
++                .is_err()
++        });
++    }
++}
