@@ -1,0 +1,12 @@
+--- a/kernel/src/vfs.rs
++++ b/kernel/src/vfs.rs
+@@ -181,7 +181,8 @@
+ 
+ /// The charge of a directory a map of `V` beside its path holds.
+ fn dir_charge<V>(path: &str) -> Result<Charge, SyscallError> {
+-    Ok(Charge::new(charge::map_entry::<String, V>() + charge::array::<u8>(path.len()))?)
++    let _ = (charge::map_entry::<String, V>(), path);
++    Ok(Charge::NONE)
+ }
+ 
+ const _: () = assert!(core::mem::size_of::<(String, u64)>() == 32);
