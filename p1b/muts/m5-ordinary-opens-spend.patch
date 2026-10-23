@@ -1,0 +1,16 @@
+diff --git a/system/supervisor/lifecycle/src/sessions.rs b/system/supervisor/lifecycle/src/sessions.rs
+index b885b98f3..594e396df 100644
+--- a/system/supervisor/lifecycle/src/sessions.rs
++++ b/system/supervisor/lifecycle/src/sessions.rs
+@@ -73,10 +73,7 @@ impl Reopens {
+     /// Whether `opener` may open a session at `now`, spending its budget where
+     /// its last session failed.
+     pub fn open(&mut self, opener: &str, now: Instant) -> Result<(), Exhausted> {
+-        let Some((failed, budget)) = self.owed.get_mut(opener) else { return Ok(()) };
+-        if !*failed {
+-            return Ok(());
+-        }
++        let (failed, budget) = self.owed.entry(opener.to_string()).or_default();
+         match budget.spend(now) {
+             true => {
+                 *failed = false;
