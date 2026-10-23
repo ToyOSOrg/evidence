@@ -1,0 +1,13 @@
+diff --git a/lib/crypto/src/montgomery/divsteps.rs b/lib/crypto/src/montgomery/divsteps.rs
+index 2b67a844b..cf9cb27c0 100644
+--- a/lib/crypto/src/montgomery/divsteps.rs
++++ b/lib/crypto/src/montgomery/divsteps.rs
+@@ -130,7 +130,7 @@ fn apply(t: &Matrix, f: &mut Limbs, g: &mut Limbs, n: usize) {
+ fn update(t: &Matrix, d: &mut Limbs, e: &mut Limbs, p: &Limbs, inverse: u64, n: usize) {
+     let sd = ct::opaque((d[n - 1] >> 63) as u64) as i64;
+     let se = ct::opaque((e[n - 1] >> 63) as u64) as i64;
+-    let md = (t.u & sd).wrapping_add(t.v & se);
++    let md = (t.u & sd).wrapping_add(t.v & sd);
+     let me = (t.q & sd).wrapping_add(t.r & se);
+     let mut cd = mac(t.u, d[0], mac(t.v, e[0], 0));
+     let mut ce = mac(t.q, d[0], mac(t.r, e[0], 0));

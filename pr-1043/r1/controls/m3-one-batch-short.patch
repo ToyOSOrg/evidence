@@ -1,0 +1,13 @@
+diff --git a/lib/crypto/src/montgomery/divsteps.rs b/lib/crypto/src/montgomery/divsteps.rs
+index 2b67a844b..9ca476f64 100644
+--- a/lib/crypto/src/montgomery/divsteps.rs
++++ b/lib/crypto/src/montgomery/divsteps.rs
+@@ -43,7 +43,7 @@ pub(super) fn invert<M: Modulus<N>, const N: usize>(x: &[u64; N], scale: &[u64;
+         assert!(limbs(N) <= LIMBS && M::P[0] & 1 == 1);
+         let d = 64 * N as u64 - M::P[N - 1].leading_zeros() as u64;
+         assert!(d >= 46);
+-        ((49 * d + 57) / 17).div_ceil(62) as usize
++        ((49 * d + 57) / 17).div_ceil(62) as usize - 1
+     };
+     let mut f = p;
+     let mut g = split::<N>(x);

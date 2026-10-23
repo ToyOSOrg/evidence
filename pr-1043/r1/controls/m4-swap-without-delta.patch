@@ -1,0 +1,13 @@
+diff --git a/lib/crypto/src/montgomery/divsteps.rs b/lib/crypto/src/montgomery/divsteps.rs
+index 2b67a844b..72ed302db 100644
+--- a/lib/crypto/src/montgomery/divsteps.rs
++++ b/lib/crypto/src/montgomery/divsteps.rs
+@@ -79,7 +79,7 @@ fn divsteps(mut eta: i64, mut f: u64, mut g: u64) -> (i64, Matrix) {
+         // `odd`: g is odd; `swap`: also delta > 0, so the step becomes
+         // (1 - delta, g, (g - f) / 2) rather than (1 + delta, f, (g + f) / 2).
+         let odd = ct::opaque(((g << 63) as i64 >> 63) as u64);
+-        let swap = ct::opaque((eta >> 63) as u64) & odd;
++        let swap = odd;
+         // h is 2g' in g's row: g, g + f, or g - f with the swap, which also
+         // makes f' = f + h = g.
+         let h = g.wrapping_add(f & odd).wrapping_sub((f << 1) & swap);
