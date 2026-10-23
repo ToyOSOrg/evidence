@@ -1,0 +1,29 @@
+# DOITM always-on (branch doitm-always-on): general-workload cost on the T14, plus the control_regs verdict.
+# Every command is `cargo <words>` run from $HOME/Dev/jan/toyos-doitm at the branch head (its control_regs judge is the branch's).
+#
+# OFF image: 6ebf7fb285f737b0ed4fac21338e8d1af337740b (origin/main 89f92a4bd + the rust-tests build fix only), sha256 9327af8df3318b82102cc54adefddef698808f0a85f6b46a99dbf127f35f4c6b
+# ON image:  c4769c24dcba3945a0213914db6d2c45952bee14 (OFF + DOITM), sha256 510355fccb45c310341d66a240bc675352fe2c75fec25b24fe3ffce9842fdb17
+# The two benchcase images differ in the kernel's DOITM code (and the build commit each image is stamped with). Please boot them alternately, in this order, on the T14,
+# with nothing else changed between boots (same power source, lid, USB port); ~4-5 minutes each.
+
+(1) T14, benchcase OFF, run 1
+  cargo run -p toyos-metal -- --image $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/doitm/off/benchcase/image.img --readback $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/doitm/off/benchcase --fat32-check
+(2) T14, benchcase ON, run 1
+  cargo run -p toyos-metal -- --image $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/doitm/on/benchcase/image.img --readback $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/doitm/on/benchcase --fat32-check
+(3) T14, benchcase OFF, run 2
+  cargo run -p toyos-metal -- --image $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/doitm/off/benchcase/image.img --readback $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/doitm/off-2/benchcase --fat32-check
+(4) T14, benchcase ON, run 2
+  cargo run -p toyos-metal -- --image $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/doitm/on/benchcase/image.img --readback $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/doitm/on-2/benchcase --fat32-check
+(5) T14, testcases ON (the control_regs row: every CPU must hold DOITM), about a minute
+  cargo run -p toyos-metal -- --image $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/doitm/on/testcases/image.img --readback $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/doitm/on/testcases --fat32-check
+(6) optional, AMD bench, testcases ON (the absent path on metal: no DOITM, boot and control_regs still pass)
+  cargo run -p toyos-metal -- --image $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/doitm/on/testcases/image.img --readback $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/doitm/on-amd/testcases --fat32-check
+
+# Judges (each exits 0 for a pass):
+#   cargo test --test toyos-build -- --metal --metal-readback $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/doitm/off   osbench
+#   cargo test --test toyos-build -- --metal --metal-readback $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/doitm/off-2 osbench
+#   cargo test --test toyos-build -- --metal --metal-readback $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/doitm/on    osbench control_regs
+#   cargo test --test toyos-build -- --metal --metal-readback $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/doitm/on-2  osbench
+#   cargo test --test toyos-build -- --metal --metal-readback $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/doitm/on-amd control_regs
+# The osbench judge holds only that every group ran; the comparison is read off the "osbench v=2" lines of each
+# readback's kernel.log and comes back to the implementer. In (2) and (4), every CPU's control_regs line ends " doitm".
