@@ -1,0 +1,44 @@
+   Compiling osbench-rules v0.1.0 (/Users/<user>/Dev/jan/toyos-linux-compare/tests/guest/osbench/rules)
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.34s
+     Running unittests src/lib.rs (target/debug/deps/osbench_rules-4ccac8656243f952)
+
+running 5 tests
+test pair::tests::a_pair_apart_and_still_stands ... ok
+test pair::tests::a_pair_on_one_cpu_is_refused ... ok
+test pair::tests::a_sibling_that_moved_onto_the_initiators_cpu_inside_the_window_is_refused ... FAILED
+test pair::tests::an_initiator_that_moved_is_refused_even_when_it_stayed_apart ... FAILED
+test pair::tests::a_sibling_that_moved_elsewhere_is_refused ... FAILED
+
+failures:
+
+---- pair::tests::a_sibling_that_moved_onto_the_initiators_cpu_inside_the_window_is_refused stdout ----
+
+thread 'pair::tests::a_sibling_that_moved_onto_the_initiators_cpu_inside_the_window_is_refused' (44568887) panicked at tests/guest/osbench/rules/src/lib.rs:73:13:
+assertion `left == right` failed
+  left: Ok(())
+ right: Err(Moved { side: Sibling, before: 2, after: 0 })
+
+---- pair::tests::an_initiator_that_moved_is_refused_even_when_it_stayed_apart stdout ----
+
+thread 'pair::tests::an_initiator_that_moved_is_refused_even_when_it_stayed_apart' (44568888) panicked at tests/guest/osbench/rules/src/lib.rs:79:13:
+assertion `left == right` failed
+  left: Ok(())
+ right: Err(Moved { side: Initiator, before: 0, after: 8 })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- pair::tests::a_sibling_that_moved_elsewhere_is_refused stdout ----
+
+thread 'pair::tests::a_sibling_that_moved_elsewhere_is_refused' (44568886) panicked at tests/guest/osbench/rules/src/lib.rs:85:13:
+assertion `left == right` failed
+  left: Ok(())
+ right: Err(Moved { side: Sibling, before: 2, after: 4 })
+
+
+failures:
+    pair::tests::a_sibling_that_moved_elsewhere_is_refused
+    pair::tests::a_sibling_that_moved_onto_the_initiators_cpu_inside_the_window_is_refused
+    pair::tests::an_initiator_that_moved_is_refused_even_when_it_stayed_apart
+
+test result: FAILED. 2 passed; 3 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p osbench-rules --lib`

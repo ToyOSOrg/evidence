@@ -1,0 +1,14 @@
+--- a/tests/guest/osbench/rules/src/lib.rs
++++ b/tests/guest/osbench/rules/src/lib.rs
+@@ -43,11 +43,6 @@
+ 
+     /// Whether a window's figure stands on its four readings.
+     pub fn admit(initiator: Readings, sibling: Readings) -> Result<(), Refusal> {
+-        for (side, r) in [(Side::Initiator, initiator), (Side::Sibling, sibling)] {
+-            if r.before != r.after {
+-                return Err(Refusal::Moved { side, before: r.before, after: r.after });
+-            }
+-        }
+         if initiator.before == sibling.before {
+             return Err(Refusal::SameCpu(initiator.before));
+         }
