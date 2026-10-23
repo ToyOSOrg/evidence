@@ -1,0 +1,11 @@
+--- a/lib/bcachefs/src/engine/mount/mod.rs
++++ b/lib/bcachefs/src/engine/mount/mod.rs
+@@ -722,7 +722,7 @@
+             }
+         }
+         // A write that failed stopped the mount: the node stays writing.
+-        self.written.until(|| self.st.borrow().read_only.is_some() || !self.st.borrow().cache.node(id).writing).await;
++        self.written.until(|| !self.st.borrow().cache.node(id).writing).await;
+         self.check_writable()?;
+         txn.dirtied.insert(id);
+         Ok(id)

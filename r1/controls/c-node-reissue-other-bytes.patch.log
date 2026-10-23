@@ -1,0 +1,29 @@
+patch: $B5/controls/c-node-reissue-other-bytes.patch
+test: interleave::a_failed_node_write
+base: fd899a45053404a11271dbe1e9698a87c90e750c plus the working tree
+files before: f461892f80ddd7aed9168a6b73161ae103047f30a624e48245be00476f3df814  lib/bcachefs/src/engine/mount/reclaim.rs
+   Compiling bcachefs v0.1.0 ($WORKTREE/lib/bcachefs)
+    Finished `test` profile [optimized + debuginfo] target(s) in 35.84s
+  Executable unittests src/lib.rs (target/debug/deps/bcachefs-f2c101278f6c619e)
+
+running 1 test
+test engine::tests::interleave::a_failed_node_write_is_reissued_byte_for_byte ... FAILED
+
+failures:
+
+---- engine::tests::interleave::a_failed_node_write_is_reissued_byte_for_byte stdout ----
+
+thread 'engine::tests::interleave::a_failed_node_write_is_reissued_byte_for_byte' (42136979) panicked at lib/bcachefs/src/engine/tests/interleave.rs:300:5:
+assertion `left == right` failed: nonces used over two plaintexts
+  left: [[4096, 2617434560, 2278373023, 536870923]]
+ right: []
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    engine::tests::interleave::a_failed_node_write_is_reissued_byte_for_byte
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 151 filtered out; finished in 0.00s
+
+test exit: 101
+restored: hashes equal

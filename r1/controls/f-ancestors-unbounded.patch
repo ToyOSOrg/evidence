@@ -1,0 +1,13 @@
+--- a/lib/bcachefs/src/engine/mount/ops.rs
++++ b/lib/bcachefs/src/engine/mount/ops.rs
+@@ -530,9 +530,7 @@
+             if at == node {
+                 return Err(Error::Invalid("a directory moved beneath itself"));
+             }
+-            if !seen.insert(at) {
+-                return Err(Error::Corrupt("directory back-references that loop"));
+-            }
++            seen.insert(at);
+             at = self.inode_in(txn, at).await?.field(inode_field::DIR);
+             if at == 0 {
+                 return Err(Error::Corrupt("a directory whose back-references reach no root"));

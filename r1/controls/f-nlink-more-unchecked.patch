@@ -1,0 +1,11 @@
+--- a/lib/bcachefs/src/engine/mount/ops.rs
++++ b/lib/bcachefs/src/engine/mount/ops.rs
+@@ -83,7 +83,7 @@
+ fn one_link_more(inode: &mut InodeValue) -> Result<()> {
+     let bias = if is_dir(inode) { 2 } else { 1 };
+     let nlink = inode.field(inode_field::NLINK) + 1;
+-    if nlink + bias > u64::from(u32::MAX) {
++    if nlink + bias > u64::MAX {
+         return Err(Error::NoSpace("a link count at its largest"));
+     }
+     inode.set(inode_field::NLINK, nlink);

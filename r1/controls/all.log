@@ -1,0 +1,232 @@
+revision: fd899a45053404a11271dbe1e9698a87c90e750c dirty:        0
+=== a-accounting-every-delta [unclean_fixture]
+test engine::tests::mount::the_unclean_fixture_mounts_read_write_past_the_skip_and_unmounts_clean ... ok
+test engine::tests::journal::the_unclean_fixture_is_read_through_its_journal ... FAILED
+
+thread 'engine::tests::journal::the_unclean_fixture_is_read_through_its_journal' (41796518) panicked at lib/bcachefs/src/engine/tests/journal.rs:38:5:
+assertion `left == right` failed
+test exit: 101
+restored: hashes equal
+=== a-journal-checksum-skip [a_torn_entry_is_refused_by_its_checksum]
+test engine::tests::journal::a_torn_entry_is_refused_by_its_checksum_and_replay_ends_before_it ... FAILED
+
+thread 'engine::tests::journal::a_torn_entry_is_refused_by_its_checksum_and_replay_ends_before_it' (41798173) panicked at lib/bcachefs/src/engine/tests/journal.rs:142:29:
+crash state 1 of every 256: Corrupt("btree pointer whose entry is no pointer")
+test exit: 101
+restored: hashes equal
+=== a-journal-mac-skip [a_torn_encrypted_entry_is_refused_by_its_mac]
+test engine::tests::journal::a_torn_encrypted_entry_is_refused_by_its_mac_and_replay_ends_before_it ... FAILED
+
+thread 'engine::tests::journal::a_torn_encrypted_entry_is_refused_by_its_mac_and_replay_ends_before_it' (41801220) panicked at lib/bcachefs/src/engine/tests/journal.rs:142:29:
+crash state 1 of every 256: Corrupt("journal record past its end")
+test exit: 101
+restored: hashes equal
+=== b-journal-after-slot [admission::]
+test engine::tests::admission::a_writer_filling_the_cache_with_dirty_nodes_completes_while_reclaim_runs ... FAILED
+test engine::tests::admission::a_writer_waiting_on_a_full_journal_completes_while_reclaim_runs ... FAILED
+test engine::tests::admission::concurrent_writers_keep_the_dirty_node_limit ... FAILED
+
+thread 'engine::tests::admission::a_writer_filling_the_cache_with_dirty_nodes_completes_while_reclaim_runs' (41814414) panicked at lib/bcachefs/src/engine/tests/admission.rs:83:12:
+every writer stalled; dirty=4 unp=0 over=0 granted=0 rg=0 limit=10 room=21 open=Some((2, 71)) closed=0 ring_free=14 openable=3 reclaim_entries=3 durable_last=1 newest=[Some(1), None, None, None, None, None, None, None, None, None, None, None, None, None, None, None] head=0 hs=8 pins=Some(2) slot=tru
+thread 'engine::tests::admission::a_writer_waiting_on_a_full_journal_completes_while_reclaim_runs' (41814415) panicked at lib/bcachefs/src/engine/tests/admission.rs:83:12:
+every writer stalled; dirty=4 unp=0 over=0 granted=0 rg=0 limit=78 room=21 open=Some((5, 2981)) closed=0 ring_free=12 openable=3 reclaim_entries=6 durable_last=2 newest=[None, Some(2), Some(3), Some(4), None, None, None, None, None, None, None, None, None, None, None, None] head=3 hs=64 pins=Some(2)
+thread 'engine::tests::admission::concurrent_writers_keep_the_dirty_node_limit' (41814416) panicked at lib/bcachefs/src/engine/tests/admission.rs:83:12:
+every writer stalled; dirty=5 unp=0 over=0 granted=0 rg=0 limit=10 room=21 open=Some((2, 72)) closed=0 ring_free=14 openable=3 reclaim_entries=3 durable_last=1 newest=[Some(1), None, None, None, None, None, None, None, None, None, None, None, None, None, None, None] head=0 hs=8 pins=Some(2) slot=tru
+test exit: 101
+restored: hashes equal
+=== b-cache-after-slot [admission::]
+test engine::tests::admission::a_writer_filling_the_cache_with_dirty_nodes_completes_while_reclaim_runs ... FAILED
+test engine::tests::admission::a_writer_waiting_on_a_full_journal_completes_while_reclaim_runs ... ok
+test engine::tests::admission::concurrent_writers_keep_the_dirty_node_limit ... FAILED
+
+thread 'engine::tests::admission::a_writer_filling_the_cache_with_dirty_nodes_completes_while_reclaim_runs' (41824831) panicked at lib/bcachefs/src/engine/tests/admission.rs:83:12:
+every writer stalled; dirty=4 unp=0 over=0 granted=0 rg=0 limit=10 room=21 open=Some((2, 71)) closed=0 ring_free=14 openable=3 reclaim_entries=3 durable_last=1 newest=[Some(1), None, None, None, None, None, None, None, None, None, None, None, None, None, None, None] head=0 hs=8 pins=Some(2) slot=tru
+thread 'engine::tests::admission::concurrent_writers_keep_the_dirty_node_limit' (41824833) panicked at lib/bcachefs/src/engine/tests/admission.rs:83:12:
+every writer stalled; dirty=5 unp=0 over=0 granted=0 rg=0 limit=10 room=21 open=Some((2, 72)) closed=0 ring_free=14 openable=3 reclaim_entries=3 durable_last=1 newest=[Some(1), None, None, None, None, None, None, None, None, None, None, None, None, None, None, None] head=0 hs=8 pins=Some(2) slot=tru
+test exit: 101
+restored: hashes equal
+=== b-grants-ignored [admission::concurrent]
+test engine::tests::admission::concurrent_writers_keep_the_dirty_node_limit ... FAILED
+
+thread 'engine::tests::admission::concurrent_writers_keep_the_dirty_node_limit' (41866897) panicked at lib/bcachefs/src/engine/mount/mod.rs:1023:9:
+dirty and unpointed nodes past the cache's limit and reclaim's room
+test exit: 101
+restored: hashes equal
+=== b-reclaim-on-ordinary [admission::]
+test engine::tests::admission::a_writer_filling_the_cache_with_dirty_nodes_completes_while_reclaim_runs ... FAILED
+test engine::tests::admission::a_writer_waiting_on_a_full_journal_completes_while_reclaim_runs ... FAILED
+test engine::tests::admission::concurrent_writers_keep_the_dirty_node_limit ... FAILED
+
+thread 'engine::tests::admission::a_writer_filling_the_cache_with_dirty_nodes_completes_while_reclaim_runs' (41958749) panicked at lib/bcachefs/src/engine/tests/admission.rs:83:12:
+every writer stalled; dirty=2 unp=2 over=0 granted=0 rg=0 limit=10 room=21 open=Some((2, 71)) closed=0 ring_free=14 openable=3 reclaim_entries=3 durable_last=1 newest=[Some(1), None, None, None, None, None, None, None, None, None, None, None, None, None, None, None] head=0 hs=8 pins=Some(2) slot=fal
+thread 'engine::tests::admission::a_writer_waiting_on_a_full_journal_completes_while_reclaim_runs' (41958750) panicked at lib/bcachefs/src/engine/tests/admission.rs:83:12:
+every writer stalled; dirty=2 unp=2 over=0 granted=0 rg=0 limit=78 room=21 open=Some((5, 2981)) closed=0 ring_free=12 openable=3 reclaim_entries=6 durable_last=2 newest=[None, Some(2), Some(3), Some(4), None, None, None, None, None, None, None, None, None, None, None, None] head=3 hs=64 pins=Some(2)
+thread 'engine::tests::admission::concurrent_writers_keep_the_dirty_node_limit' (41958751) panicked at lib/bcachefs/src/engine/tests/admission.rs:83:12:
+every writer stalled; dirty=3 unp=2 over=0 granted=0 rg=0 limit=10 room=21 open=Some((2, 72)) closed=0 ring_free=14 openable=3 reclaim_entries=3 durable_last=1 newest=[Some(1), None, None, None, None, None, None, None, None, None, None, None, None, None, None, None] head=0 hs=8 pins=Some(2) slot=fal
+test exit: 101
+restored: hashes equal
+=== c-early-pin-release [interleave::a_commit_between]
+test engine::tests::interleave::a_commit_between_a_node_write_and_its_pointer_update_keeps_every_acknowledged_key ... FAILED
+
+thread 'engine::tests::interleave::a_commit_between_a_node_write_and_its_pointer_update_keeps_every_acknowledged_key' (42030917) panicked at lib/bcachefs/src/engine/tests/interleave.rs:85:29:
+crash state 0 of every 1: after the crash: [[98]]
+test exit: 101
+restored: hashes equal
+=== c-journal-reissue-other-bytes [interleave::a_failed_journal]
+test engine::tests::interleave::a_failed_journal_write_is_reissued_byte_for_byte ... FAILED
+
+thread 'engine::tests::interleave::a_failed_journal_write_is_reissued_byte_for_byte' (42052409) panicked at lib/bcachefs/src/engine/tests/interleave.rs:300:5:
+assertion `left == right` failed: nonces used over two plaintexts
+test exit: 101
+restored: hashes equal
+=== c-no-fresh-node [interleave::the_first_write]
+test engine::tests::interleave::the_first_write_to_a_node_after_a_crash_goes_to_a_fresh_node_and_repeats_no_nonce ... FAILED
+
+thread 'engine::tests::interleave::the_first_write_to_a_node_after_a_crash_goes_to_a_fresh_node_and_repeats_no_nonce' (42094221) panicked at lib/bcachefs/src/engine/tests/interleave.rs:122:5:
+assertion `left == right` failed: nonces used over two plaintexts
+test exit: 101
+restored: hashes equal
+=== c-node-checksum-skip [interleave::a_torn_bset_is_refused_by_its_checksum]
+test engine::tests::interleave::a_torn_bset_is_refused_by_its_checksum ... FAILED
+
+thread 'engine::tests::interleave::a_torn_bset_is_refused_by_its_checksum' (42105786) panicked at lib/bcachefs/src/engine/tests/interleave.rs:214:9:
+torn state 0b1 of 6 sectors: Err(Corrupt("key of no size"))
+test exit: 101
+restored: hashes equal
+=== c-node-mac-skip [interleave::a_torn_encrypted_bset]
+test engine::tests::interleave::a_torn_encrypted_bset_is_refused_by_its_mac ... FAILED
+
+thread 'engine::tests::interleave::a_torn_encrypted_bset_is_refused_by_its_mac' (42108504) panicked at lib/bcachefs/src/engine/tests/interleave.rs:214:9:
+torn state 0b1 of 6 sectors: Err(Corrupt("key in an unknown format"))
+test exit: 101
+restored: hashes equal
+=== c-node-reissue-other-bytes [interleave::a_failed_node_write]
+test engine::tests::interleave::a_failed_node_write_is_reissued_byte_for_byte ... FAILED
+
+thread 'engine::tests::interleave::a_failed_node_write_is_reissued_byte_for_byte' (42136979) panicked at lib/bcachefs/src/engine/tests/interleave.rs:300:5:
+assertion `left == right` failed: nonces used over two plaintexts
+test exit: 101
+restored: hashes equal
+=== c-skip-0 [interleave::a_bset_naming]
+test engine::tests::interleave::a_bset_naming_an_unflushed_sequence_never_reappears_unblacklisted ... FAILED
+
+thread 'engine::tests::interleave::a_bset_naming_an_unflushed_sequence_never_reappears_unblacklisted' (42156891) panicked at lib/bcachefs/src/engine/tests/interleave.rs:169:9:
+a bset naming 2, past the durable 1, not blacklisted
+test exit: 101
+restored: hashes equal
+=== d-unmount-skips-orphans [ops::a_clean_unmount_releases_every_orphan_first]
+test engine::tests::ops::a_clean_unmount_releases_every_orphan_first ... FAILED
+
+thread 'engine::tests::ops::a_clean_unmount_releases_every_orphan_first' (42176936) panicked at lib/bcachefs/src/engine/tests/ops.rs:21:5:
+assertion `left == right` failed
+test exit: 101
+restored: hashes equal
+=== d-fsck-clean-keys [journal::a_clean_volume_holding]
+test engine::tests::journal::a_clean_volume_holding_an_orphan_key_or_a_logged_op_is_found ... FAILED
+
+thread 'engine::tests::journal::a_clean_volume_holding_an_orphan_key_or_a_logged_op_is_found' (42247260) panicked at lib/bcachefs/src/engine/tests/journal.rs:367:5:
+assertion `left == right` failed
+test exit: 101
+restored: hashes equal
+=== e-evict-after-insert [cache::tests]
+test engine::cache::tests::a_node_just_inserted_outlives_its_own_insert_when_only_it_is_clean ... FAILED
+
+thread 'engine::cache::tests::a_node_just_inserted_outlives_its_own_insert_when_only_it_is_clean' (42282206) panicked at lib/bcachefs/src/engine/cache.rs:168:46:
+a node of the cache
+test exit: 101
+restored: hashes equal
+=== e-values-unchecked [node::tests]
+test engine::node::tests::a_key_whose_value_the_mount_would_decode_is_checked_at_its_boundary ... FAILED
+
+thread 'engine::node::tests::a_key_whose_value_the_mount_would_decode_is_checked_at_its_boundary' (42305923) panicked at lib/bcachefs/src/engine/node.rs:349:9:
+assertion failed: matches!(check_key(Btree::Accounting, 0, &key(kind::ACCOUNTING), &[0; 4]),
+test exit: 101
+restored: hashes equal
+=== f-fsck-zero-unexpected [journal::a_stored_zero_accounting]
+test engine::tests::journal::a_stored_zero_accounting_total_is_no_finding_clean_or_unclean ... FAILED
+
+thread 'engine::tests::journal::a_stored_zero_accounting_total_is_no_finding_clean_or_unclean' (42309858) panicked at lib/bcachefs/src/engine/tests/journal.rs:388:5:
+assertion `left == right` failed
+test exit: 101
+restored: hashes equal
+=== f-no-restate [mount::a_clean_volume_with_an_empty_journal]
+test engine::tests::mount::a_clean_volume_with_an_empty_journal_survives_a_crash_going_read_write ... FAILED
+
+thread 'engine::tests::mount::a_clean_volume_with_an_empty_journal_survives_a_crash_going_read_write' (42325313) panicked at lib/bcachefs/src/engine/tests/mount.rs:170:37:
+clean at sequence 0: crash sample 15 of 64 from seed 0x0: open: Corrupt("a volume not cleanly unmounted with no journal entry")
+test exit: 101
+restored: hashes equal
+=== f-window-per-sequence [journal::a_window_spanning]
+KILLED by the watchdog
+$B5/controls/run.sh: line 19: 24376 Terminated: 15          ./$B "$T" 2>&1
+test exit: 143
+restored: hashes equal
+=== f-ancestors-unbounded [ops::counts_at_their_edges]
+KILLED by the watchdog
+$B5/controls/run.sh: line 19:  1640 Terminated: 15          ./$B "$T" 2>&1
+test exit: 143
+restored: hashes equal
+=== f-nlink-more-unchecked [ops::counts_at_their_edges]
+test engine::tests::ops::counts_at_their_edges_and_looping_back_references_are_refused ... FAILED
+
+thread 'engine::tests::ops::counts_at_their_edges_and_looping_back_references_are_refused' (42536774) panicked at lib/bcachefs/src/engine/tests/ops.rs:250:9:
+assertion `left == right` failed
+test exit: 101
+restored: hashes equal
+=== f-nlink-less-wrapping [ops::counts_at_their_edges]
+test engine::tests::ops::counts_at_their_edges_and_looping_back_references_are_refused ... FAILED
+
+thread 'engine::tests::ops::counts_at_their_edges_and_looping_back_references_are_refused' (42538544) panicked at lib/bcachefs/src/engine/tests/ops.rs:251:9:
+assertion `left == right` failed
+test exit: 101
+restored: hashes equal
+=== f-depth-unchecked [ops::counts_at_their_edges]
+test engine::tests::ops::counts_at_their_edges_and_looping_back_references_are_refused ... FAILED
+
+thread 'engine::tests::ops::counts_at_their_edges_and_looping_back_references_are_refused' (42540916) panicked at lib/bcachefs/src/engine/tests/ops.rs:252:9:
+assertion `left == right` failed
+test exit: 101
+restored: hashes equal
+=== f-geometry-unchecked [mount::small_blocks]
+test engine::tests::mount::small_blocks_and_a_journal_position_off_a_block_are_refused ... FAILED
+
+thread 'engine::tests::mount::small_blocks_and_a_journal_position_off_a_block_are_refused' (42557251) panicked at lib/bcachefs/src/engine/tests/mount.rs:190:5:
+assertion `left == right` failed
+test exit: 101
+restored: hashes equal
+=== f-alloc-trusted [interleave::a_reclaim_plan_failing]
+test engine::tests::interleave::a_reclaim_plan_failing_midway_stops_the_mount ... FAILED
+
+thread 'engine::tests::interleave::a_reclaim_plan_failing_midway_stops_the_mount' (42590384) panicked at lib/bcachefs/src/engine/tests/interleave.rs:428:5:
+assertion `left == right` failed
+test exit: 101
+restored: hashes equal
+=== f-cache-by-sector-alone [mount::a_pointer_to_a_cached]
+test engine::tests::mount::a_pointer_to_a_cached_node_of_another_btree_is_refused ... FAILED
+
+thread 'engine::tests::mount::a_pointer_to_a_cached_node_of_another_btree_is_refused' (42600281) panicked at lib/bcachefs/src/engine/tests/mount.rs:228:5:
+assertion `left == right` failed
+test exit: 101
+restored: hashes equal
+=== f-reclaim-failure-unstopped [interleave::a_reclaim_plan_failing]
+test engine::tests::interleave::a_reclaim_plan_failing_midway_stops_the_mount ... FAILED
+
+thread 'engine::tests::interleave::a_reclaim_plan_failing_midway_stops_the_mount' (42609602) panicked at lib/bcachefs/src/engine/tests/interleave.rs:430:5:
+assertion `left == right` failed
+test exit: 101
+restored: hashes equal
+=== f-hold-ignores-read-only [interleave::a_node_write_failing]
+test engine::tests::interleave::a_node_write_failing_past_its_retries_stops_the_mount_and_its_waiters ... FAILED
+
+thread 'engine::tests::interleave::a_node_write_failing_past_its_retries_stops_the_mount_and_its_waiters' (42618426) panicked at lib/bcachefs/src/engine/tests/interleave.rs:384:12:
+a writer stalled behind the failed write; dirty=2 unp=2 over=0 granted=7 rg=0 limit=78 room=21 open=Some((2, 71)) closed=0 ring_free=14 openable=3 reclaim_entries=6 durable_last=1 newest=[Some(1), None, None, None, None, None, None, None, None, None, None, None, None, None, None, None] head=0 hs=8 p
+test exit: 101
+restored: hashes equal
+=== f-rename-grant-short [ops::a_rename_across_many]
+test engine::tests::ops::a_rename_across_many_leaves_dirties_no_more_nodes_than_its_grant ... FAILED
+
+thread 'engine::tests::ops::a_rename_across_many_leaves_dirties_no_more_nodes_than_its_grant' (42624623) panicked at lib/bcachefs/src/engine/mount/mod.rs:1009:9:
+a transaction changing 8 nodes past its grant of 7
+test exit: 101
+restored: hashes equal
+finished

@@ -1,0 +1,29 @@
+patch: $B5/controls/d-fsck-clean-keys.patch
+test: journal::a_clean_volume_holding
+base: fd899a45053404a11271dbe1e9698a87c90e750c plus the working tree
+files before: 901f8322f240ddcfcc0653229bdfe5bed2eaeb426e4642a3a64f33d99c72f1d0  lib/bcachefs/src/engine/fsck.rs
+   Compiling bcachefs v0.1.0 ($WORKTREE/lib/bcachefs)
+    Finished `test` profile [optimized + debuginfo] target(s) in 44.49s
+  Executable unittests src/lib.rs (target/debug/deps/bcachefs-f2c101278f6c619e)
+
+running 1 test
+test engine::tests::journal::a_clean_volume_holding_an_orphan_key_or_a_logged_op_is_found ... FAILED
+
+failures:
+
+---- engine::tests::journal::a_clean_volume_holding_an_orphan_key_or_a_logged_op_is_found stdout ----
+
+thread 'engine::tests::journal::a_clean_volume_holding_an_orphan_key_or_a_logged_op_is_found' (42247260) panicked at lib/bcachefs/src/engine/tests/journal.rs:367:5:
+assertion `left == right` failed
+  left: []
+ right: [Key { btree: DeletedInodes, pos: Bpos { inode: 0, offset: 2147483648, snapshot: 4294967295 }, rule: "deleted_inodes key on a clean volume" }, Key { btree: LoggedOps, pos: Bpos { inode: 0, offset: 1, snapshot: 0 }, rule: "logged operation on a clean volume" }]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    engine::tests::journal::a_clean_volume_holding_an_orphan_key_or_a_logged_op_is_found
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 151 filtered out; finished in 0.00s
+
+test exit: 101
+restored: hashes equal

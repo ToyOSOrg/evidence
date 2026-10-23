@@ -1,0 +1,35 @@
+patch: $B5/controls/b-cache-after-slot.patch
+test: admission::
+base: fd899a45053404a11271dbe1e9698a87c90e750c plus the working tree
+files before: 7f9c8e87dec2415bf4cf25c3d9097c2e6d37d6ff0fb18408c9eaeaaf1c4aaf63  lib/bcachefs/src/engine/mount/mod.rs
+   Compiling bcachefs v0.1.0 ($WORKTREE/lib/bcachefs)
+    Finished `test` profile [optimized + debuginfo] target(s) in 21.78s
+  Executable unittests src/lib.rs (target/debug/deps/bcachefs-f2c101278f6c619e)
+
+running 3 tests
+test engine::tests::admission::a_writer_filling_the_cache_with_dirty_nodes_completes_while_reclaim_runs ... FAILED
+test engine::tests::admission::a_writer_waiting_on_a_full_journal_completes_while_reclaim_runs ... ok
+test engine::tests::admission::concurrent_writers_keep_the_dirty_node_limit ... FAILED
+
+failures:
+
+---- engine::tests::admission::a_writer_filling_the_cache_with_dirty_nodes_completes_while_reclaim_runs stdout ----
+
+thread 'engine::tests::admission::a_writer_filling_the_cache_with_dirty_nodes_completes_while_reclaim_runs' (41824831) panicked at lib/bcachefs/src/engine/tests/admission.rs:83:12:
+every writer stalled; dirty=4 unp=0 over=0 granted=0 rg=0 limit=10 room=21 open=Some((2, 71)) closed=0 ring_free=14 openable=3 reclaim_entries=3 durable_last=1 newest=[Some(1), None, None, None, None, None, None, None, None, None, None, None, None, None, None, None] head=0 hs=8 pins=Some(2) slot=true admitq_empty=false reclq=true nodes=[(Inodes, 0, true, Some(2), None, false, 0, 248), (Dirents, 0, true, Some(2), None, false, 0, 56), (LoggedOps, 0, true, Some(2), None, false, 0, 56), (Accounting, 0, true, Some(2), None, false, 0, 1440)]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- engine::tests::admission::concurrent_writers_keep_the_dirty_node_limit stdout ----
+
+thread 'engine::tests::admission::concurrent_writers_keep_the_dirty_node_limit' (41824833) panicked at lib/bcachefs/src/engine/tests/admission.rs:83:12:
+every writer stalled; dirty=5 unp=0 over=0 granted=0 rg=0 limit=10 room=21 open=Some((2, 72)) closed=0 ring_free=14 openable=3 reclaim_entries=3 durable_last=1 newest=[Some(1), None, None, None, None, None, None, None, None, None, None, None, None, None, None, None] head=0 hs=8 pins=Some(2) slot=true admitq_empty=false reclq=true nodes=[(Inodes, 0, true, Some(2), None, false, 0, 21496), (Dirents, 0, true, Some(2), None, false, 0, 21336), (LoggedOps, 0, true, Some(2), None, false, 0, 56), (Inodes, 0, true, Some(2), None, false, 0, 21632), (Accounting, 0, true, Some(2), None, false, 0, 1440)]
+
+
+failures:
+    engine::tests::admission::a_writer_filling_the_cache_with_dirty_nodes_completes_while_reclaim_runs
+    engine::tests::admission::concurrent_writers_keep_the_dirty_node_limit
+
+test result: FAILED. 1 passed; 2 failed; 0 ignored; 0 measured; 149 filtered out; finished in 0.04s
+
+test exit: 101
+restored: hashes equal

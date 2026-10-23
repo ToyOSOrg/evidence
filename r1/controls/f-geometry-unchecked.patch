@@ -1,0 +1,20 @@
+--- a/lib/bcachefs/src/engine/mount/mod.rs
++++ b/lib/bcachefs/src/engine/mount/mod.rs
+@@ -267,7 +267,7 @@
+     // Every write is of whole device blocks, so entries, bsets and nodes
+     // must fall on them.
+     let (block, node, bucket) = (u64::from(sb.header.block_sectors), u64::from(sb.node_sectors()), u64::from(sb.member.bucket_sectors));
+-    if !(block * SECTOR as u64).is_multiple_of(BLOCK as u64) || !node.is_multiple_of(block) || !bucket.is_multiple_of(node) {
++    if !node.is_multiple_of(block) || !bucket.is_multiple_of(node) {
+         return Err(Error::Unsupported("writing a volume whose blocks, nodes or buckets are not whole 4 KiB blocks of each other"));
+     }
+     // Fields of other shapes than those this writer keeps: the legacy
+@@ -319,7 +319,7 @@
+                 let clean = sb.clean.as_ref().expect("a volume opens clean only with its clean field");
+                 let m = &sb.member;
+                 let (head, used) = (m.journal_bucket as usize, u64::from(m.journal_offset));
+-                if head >= journal.ring.len() || used > bucket_sectors || !used.is_multiple_of(u64::from(sb.header.block_sectors)) {
++                if head >= journal.ring.len() || used > bucket_sectors {
+                     return Err(Error::Corrupt("member's journal position past its ring or off a block"));
+                 }
+                 journal.head = head;

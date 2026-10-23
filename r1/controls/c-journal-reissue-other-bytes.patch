@@ -1,0 +1,58 @@
+--- a/lib/bcachefs/src/engine/journal.rs
++++ b/lib/bcachefs/src/engine/journal.rs
+@@ -520,6 +520,7 @@
+     pub seq: u64,
+     pub last_seq: u64,
+     pub bytes: Vec<u8>,
++    pub area: Vec<u8>,
+ }
+ 
+ /// The journal of a mounted volume: where it writes, what is reserved in it,
+--- a/lib/bcachefs/src/engine/mount/mod.rs
++++ b/lib/bcachefs/src/engine/mount/mod.rs
+@@ -1101,7 +1101,7 @@
+         journal::tail(&mut open.area, roots.iter().map(|(b, l, k)| (*b, *l, &k[..])), Some(st.now), st.key_version, st.clocks);
+         let entry = Jset { seq: open.seq, last_seq, area: &open.area };
+         let bytes = journal::encode(&st.header.internal_uuid, self.sb.block_bytes(), self.key.as_ref(), &entry).expect("a journal entry encrypts");
+-        st.journal.closed.push_back(Closed { seq: open.seq, last_seq, bytes });
++        st.journal.closed.push_back(Closed { seq: open.seq, last_seq, bytes, area: open.area.clone() });
+     }
+ 
+     /// Writes every closed entry through `upto`, in order, each after a
+@@ -1112,7 +1112,7 @@
+         self.journal_queue.wait(|| (!self.journal_held.get()).then(|| self.journal_held.set(true))).await;
+         let out = async {
+             loop {
+-                let (seq, last_seq, bytes, sector) = {
++                let (seq, last_seq, bytes, sector, area) = {
+                     let mut st = self.st.borrow_mut();
+                     let Some(e) = st.journal.closed.front() else { return Ok(()) };
+                     if e.seq > upto {
+@@ -1120,15 +1120,19 @@
+                     }
+                     let (seq, last_seq, bytes) = (e.seq, e.last_seq, e.bytes.clone());
+                     let (sector, _) = st.journal.place((bytes.len() / SECTOR) as u64);
+-                    (seq, last_seq, bytes, sector)
++                    let area = st.journal.closed.front().unwrap().area.clone();
++                    (seq, last_seq, bytes, sector, area)
+                 };
+-                self.reissue("journal write failed", async || {
+-                    self.dev.flush().await?;
+-                    mkfs::write(&self.dev, sector, &bytes).await?;
+-                    self.dev.flush().await?;
+-                    Ok(())
+-                })
+-                .await?;
++                self.dev.flush().await?;
++                if mkfs::write(&self.dev, sector, &bytes).await.is_err() {
++                    // Rebuilt, a record longer.
++                    let mut area = area.clone();
++                    journal::record(&mut area, journal::Rec::Datetime(0));
++                    let uuid = self.st.borrow().header.internal_uuid;
++                    let again = journal::encode(&uuid, self.sb.block_bytes(), self.key.as_ref(), &Jset { seq, last_seq, area: &area })?;
++                    mkfs::write(&self.dev, sector, &again).await?;
++                }
++                self.dev.flush().await?;
+                 let mut st = self.st.borrow_mut();
+                 st.journal.closed.pop_front();
+                 st.journal.written(seq, last_seq, (bytes.len() / SECTOR) as u64);

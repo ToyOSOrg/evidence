@@ -1,0 +1,27 @@
+patch: $B5/controls/f-no-restate.patch
+test: mount::a_clean_volume_with_an_empty_journal
+base: fd899a45053404a11271dbe1e9698a87c90e750c plus the working tree
+files before: 7f9c8e87dec2415bf4cf25c3d9097c2e6d37d6ff0fb18408c9eaeaaf1c4aaf63  lib/bcachefs/src/engine/mount/mod.rs
+   Compiling bcachefs v0.1.0 ($WORKTREE/lib/bcachefs)
+    Finished `test` profile [optimized + debuginfo] target(s) in 22.35s
+  Executable unittests src/lib.rs (target/debug/deps/bcachefs-f2c101278f6c619e)
+
+running 1 test
+test engine::tests::mount::a_clean_volume_with_an_empty_journal_survives_a_crash_going_read_write ... FAILED
+
+failures:
+
+---- engine::tests::mount::a_clean_volume_with_an_empty_journal_survives_a_crash_going_read_write stdout ----
+
+thread 'engine::tests::mount::a_clean_volume_with_an_empty_journal_survives_a_crash_going_read_write' (42325313) panicked at lib/bcachefs/src/engine/tests/mount.rs:170:37:
+clean at sequence 0: crash sample 15 of 64 from seed 0x0: open: Corrupt("a volume not cleanly unmounted with no journal entry")
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    engine::tests::mount::a_clean_volume_with_an_empty_journal_survives_a_crash_going_read_write
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 151 filtered out; finished in 0.05s
+
+test exit: 101
+restored: hashes equal
