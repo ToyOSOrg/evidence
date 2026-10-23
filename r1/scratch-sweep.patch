@@ -1,0 +1,44 @@
+--- a/tests/toyos.rs
++++ b/tests/toyos.rs
+@@ -433,6 +433,7 @@
+ /// The tests whose machine shape *is* the test, each on a boot of its own.
+ /// `run_machine_test` dispatches them.
+ const MACHINE_TESTS: &[&str] = &[
++    "scratch_shared_sweep",
+     // A `drives` row's one process per function, on QEMU x86-64's q35 with
+     // two `edu` (`Profile::HeadlessTwoEdu`): which functions get one is
+     // `toyos-supervisor`'s, host-tested, and this is the supervisor
+@@ -4302,6 +4303,33 @@
+                 let kernel = serial::Serial::named("boot's console", qemu.boot_log().to_string());
+                 bent_supervisor_fell_back(&loader, &kernel)
+             })
++        }
++        "scratch_shared_sweep" => {
++            let rust_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/guest/rust-tests");
++            let rust_bins = qemu::build_toyos_bins(&rust_dir);
++            let names: Vec<String> = std::env::var("SWEEP").unwrap().split(',').filter(|s| !s.is_empty()).map(String::from).collect();
++            let image = std::env::var("SWEEP_IMAGE").map(|i| Path::new(env!("CARGO_MANIFEST_DIR")).join(i)).unwrap_or(test_config.to_path_buf());
++            let params: &'static [&'static str] = Box::leak(std::env::var("SWEEP_PARAMS").map(|p| p.split(',').map(|s| &*Box::leak(s.to_string().into_boxed_str())).collect::<Vec<&'static str>>()).unwrap_or_default().into_boxed_slice());
++            let c_names: Vec<String> = std::env::var("SWEEP_C").map(|v| v.split(',').filter(|s| !s.is_empty()).map(String::from).collect()).unwrap_or_default();
++            let c_bins = if c_names.is_empty() { Vec::new() } else { compile::c_sysroot(); compile_c_tests(&c_names) };
++            let features: &'static [&'static str] = if std::env::var("SWEEP_TEST_KERNEL").is_ok() { ACTUATOR_KERNEL } else { &[] };
++            let mut q = QemuInstance::boot_with_options(&image, &c_bins, &rust_bins, BootOptions { kernel_params: params, kernel_features: features, ..BootOptions::default() });
++            let mut bad = Vec::new();
++            for n in &names {
++                let r = q.run_test(&format!("test_rs_{n}"), Duration::from_secs(300));
++                eprintln!("SWEEP {n} exit={:?} err={:?}\n{}", r.exit_code, r.error, r.stdout);
++                if r.exit_code != Some(0) { bad.push(n.clone()); }
++            }
++            for n in &c_names {
++                let r = q.run_test(&format!("test_c_{n}"), Duration::from_secs(120));
++                let want = c_expectation(n).unwrap_or_default();
++                let same = r.stdout.trim_end() == want.trim_end();
++                eprintln!("SWEEPC {n} exit={:?} same={same}\n--- got\n{}\n--- expected\n{}", r.exit_code, r.stdout, want);
++                if !same { bad.push(n.clone()); }
++            }
++            let log = q.boot_log();
++            eprintln!("SWEEP-PANICS {}", log.lines().filter(|l| l.contains("PANIC")).count());
++            if bad.is_empty() { Ok(()) } else { Err(format!("red: {bad:?}")) }
+         }
+         "the_log_lands_on_the_boot_stick" => the_log_lands_on_the_boot_stick(test_config),
+         "a_usb_key_reaches_the_console" => a_usb_key_reaches_the_console(),

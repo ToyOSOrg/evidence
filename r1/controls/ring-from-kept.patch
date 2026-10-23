@@ -1,0 +1,11 @@
+--- a/kernel/src/pipe.rs
++++ b/kernel/src/pipe.rs
+@@ -165,7 +165,7 @@
+     /// kernel holds back what is left, which userland's write is refused.
+     fn back(&mut self) -> Option<&mut Backing> {
+         if self.backing.is_none() {
+-            let page = pmm::alloc_page_for_process()?;
++            let page = pmm::alloc_page().or_else(pmm::alloc_page_for_process)?;
+             // SAFETY: a fresh 2 MiB page this `Pipe` owns for as long as the `Ring` addresses it.
+             let ring = unsafe { Ring::new(page.direct_map().as_mut_ptr(), PIPE_SIZE) };
+             self.backing = Some(Backing { _page: page, ring });

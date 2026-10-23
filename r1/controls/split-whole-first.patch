@@ -1,0 +1,26 @@
+--- a/b/kernel/pure/frames.rs	2026-10-23 11:35:58
++++ b/kernel/pure/frames.rs	2026-10-23 11:35:58
+@@ -365,8 +365,9 @@
+     // a draw that `room` allows never splits one held back: then every free
+     // frame is in a whole superframe, and the frames held back are fewer.
+     fn take_frame(&mut self) -> Option<u64> {
+-        let s = match self.partial.head {
+-            NIL => {
++        let s = match self.whole.head {
++            NIL => self.partial.head as usize,
++            _ => {
+                 let s = self.pop(Which::Whole)?;
+                 let record = &mut self.supers[s];
+                 record.state = State::Split;
+@@ -374,8 +375,10 @@
+                 self.push(Which::Partial, s);
+                 s
+             }
+-            head => head as usize,
+         };
++        if s == NIL as usize {
++            return None;
++        }
+         let record = &mut self.supers[s];
+         let word = record.free_map.iter().position(|&w| w != 0).expect("frames: a partial superframe has a free frame");
+         let bit = record.free_map[word].trailing_zeros() as usize;
