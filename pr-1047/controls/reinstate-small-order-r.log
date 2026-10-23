@@ -1,0 +1,44 @@
+revision f6bc85fd9a33e4a7538dcd468237f556f2fae6ad
+patch applied: 0
+   Compiling toyos-crypto v0.1.0 ($WORKTREE/lib/crypto)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 14.06s
+build exit 0
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.11s
+     Running tests/ed25519_verdicts.rs (target/debug/deps/ed25519_verdicts-350f44ec939fe8d0)
+
+running 5 tests
+test a_key_with_y_of_p_or_more_is_refused_where_verify_strict_decodes_it ... ok
+test non_canonical_r_and_s_past_l_are_refused ... ok
+test r_of_order_dividing_8_is_taken_where_the_equation_holds ... FAILED
+test a_small_order_key_is_refused_though_anyone_can_sign_for_it ... ok
+test speccheck_cases ... FAILED
+
+failures:
+
+---- r_of_order_dividing_8_is_taken_where_the_equation_holds stdout ----
+
+thread 'r_of_order_dividing_8_is_taken_where_the_equation_holds' (39182811) panicked at lib/crypto/tests/ed25519_verdicts.rs:192:9:
+assertion `left == right` failed: R 0100000000000000000000000000000000000000000000000000000000000000
+  left: Verdicts { ours: Err(InvalidSignature), strict: false, ring: true }
+ right: Verdicts { ours: Ok(()), strict: false, ring: true }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- speccheck_cases stdout ----
+
+thread 'speccheck_cases' (39182812) panicked at lib/crypto/tests/ed25519_verdicts.rs:109:9:
+assertion `left == right` failed: case 2: mixed-order A, small-order R satisfying the equation: R is taken, as RFC 8032 takes it; verify_strict refuses it
+  left: Verdicts { ours: Err(InvalidSignature), strict: false, ring: true }
+ right: Verdicts { ours: Ok(()), strict: false, ring: true }
+
+
+failures:
+    r_of_order_dividing_8_is_taken_where_the_equation_holds
+    speccheck_cases
+
+test result: FAILED. 3 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-crypto --test ed25519_verdicts`
+error: 1 target failed:
+    `-p toyos-crypto --test ed25519_verdicts`
+test exit 101
+restored: 0

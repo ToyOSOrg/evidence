@@ -1,0 +1,12 @@
+--- a/lib/crypto/src/ed25519.rs
++++ b/lib/crypto/src/ed25519.rs
+@@ -573,6 +573,9 @@ impl PublicKey {
+         }
+         let r_bytes: &[u8; 32] = signature[..32].try_into().unwrap();
+         let s_bytes: &[u8; 32] = signature[32..].try_into().unwrap();
++        if SMALL_ORDER.contains(r_bytes) {
++            return Err(Error::InvalidSignature);
++        }
+         let s = PublicScalar::canonical(s_bytes).ok_or(Error::InvalidSignature)?;
+         let mut h = Sha512::new();
+         h.update(r_bytes)?;
