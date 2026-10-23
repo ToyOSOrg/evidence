@@ -1,0 +1,11 @@
+--- a/lib/bcachefs/src/engine/bkey.rs
++++ b/lib/bcachefs/src/engine/bkey.rs
+@@ -150,7 +150,7 @@
+             _ => return Err(Error::Corrupt("key in an unknown format")),
+         };
+         let value = &b[header..len];
+-        if value.len() > MAX_VALUE_U64S * 8 {
++        if value.len() > usize::MAX - 1 {
+             return Err(Error::Corrupt("key value past 250 u64s"));
+         }
+         Ok((Key { kind, ..key }, value))

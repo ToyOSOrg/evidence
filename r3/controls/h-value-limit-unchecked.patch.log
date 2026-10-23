@@ -1,0 +1,33 @@
+patch: $B5/controls/h-value-limit-unchecked.patch
+test: bkey::tests
+base: 298a57aa69162445a3fc159656627e1b74c62e6a plus the working tree
+files before: fcfd356fd6130b7e0cb819933d6d4a1b182416c95dd15ac1ca8fe595bb55703f  lib/bcachefs/src/engine/bkey.rs
+   Compiling bcachefs v0.1.0 ($WORKTREE/lib/bcachefs)
+    Finished `test` profile [optimized + debuginfo] target(s) in 27.72s
+  Executable unittests src/lib.rs (target/debug/deps/bcachefs-f2c101278f6c619e)
+
+running 5 tests
+test engine::bkey::tests::a_format_whose_size_disagrees_with_its_fields_is_refused ... ok
+test engine::bkey::tests::successor_carries_from_snapshot_through_offset_into_inode ... ok
+test engine::bkey::tests::a_packed_key_reads_its_fields_from_the_top_bit_down ... ok
+test engine::bkey::tests::an_unpacked_key_reads_back ... ok
+test engine::bkey::tests::a_packed_key_whose_value_could_not_unpack_is_refused ... FAILED
+
+failures:
+
+---- engine::bkey::tests::a_packed_key_whose_value_could_not_unpack_is_refused stdout ----
+
+thread 'engine::bkey::tests::a_packed_key_whose_value_could_not_unpack_is_refused' (46941463) panicked at lib/bcachefs/src/engine/bkey.rs:244:9:
+assertion `left == right` failed
+  left: None
+ right: Some(Corrupt("key value past 250 u64s"))
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    engine::bkey::tests::a_packed_key_whose_value_could_not_unpack_is_refused
+
+test result: FAILED. 4 passed; 1 failed; 0 ignored; 0 measured; 150 filtered out; finished in 0.00s
+
+test exit: 101
+restored: hashes equal
