@@ -1,0 +1,11 @@
+--- a/kernel/pure/frames.rs
++++ b/kernel/pure/frames.rs
+@@ -948,7 +948,7 @@
+     /// `bytes` more of `held`, a charge to `l`, from the pool `l` charges now;
+     /// refused whole.
+     pub fn grow(&mut self, l: &Ledger, held: &mut Held, bytes: u64) -> bool {
+-        let pool = l.pool();
++        let pool = if held.shared > 0 { Pool::Shared } else { l.pool() };
+         if !self.charge(l, pool, bytes) {
+             return false;
+         }
