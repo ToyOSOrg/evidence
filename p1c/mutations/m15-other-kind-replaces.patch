@@ -1,0 +1,14 @@
+--- a/system/supervisor/lifecycle/src/stop.rs
++++ b/system/supervisor/lifecycle/src/stop.rs
+@@ -68,7 +68,10 @@
+                 acts.extend(self.sessions(open));
+                 (Ok(()), acts)
+             }
+-            State::Pending { stop, .. } if stop != asked.stop => (Err(Refused::AnotherStopPending(stop)), Vec::new()),
++            State::Pending { stop, .. } if stop != asked.stop => {
++                self.state = State::Pending { stop: asked.stop, killing: false };
++                (Ok(()), Vec::new())
++            }
+             State::Pending { .. } => match asked.mode {
+                 Mode::Wait => (Ok(()), Vec::new()),
+                 Mode::Terminate => (Ok(()), self.kill()),

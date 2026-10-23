@@ -1,0 +1,14 @@
+--- a/system/supervisor/lifecycle/src/stop.rs
++++ b/system/supervisor/lifecycle/src/stop.rs
+@@ -89,10 +89,7 @@
+         match self.state {
+             State::Idle => (Err(Refused::NoStopPending), Vec::new()),
+             State::Pending { killing: true, .. } => (Err(Refused::TooLate), Vec::new()),
+-            State::Pending { killing: false, .. } => {
+-                self.state = State::Idle;
+-                (Ok(()), vec![Act::CancelSessions, Act::Cancelled])
+-            }
++            State::Pending { killing: false, .. } => (Ok(()), Vec::new()),
+         }
+     }
+ 

@@ -1,0 +1,11 @@
+--- a/system/supervisor/lifecycle/src/stop.rs
++++ b/system/supervisor/lifecycle/src/stop.rs
+@@ -62,7 +62,7 @@
+             State::Idle => {
+                 self.state = State::Pending { stop: asked.stop, killing: false };
+                 let mut acts = vec![Act::AskSessions];
+-                if asked.mode == Mode::Terminate {
++                if asked.mode == Mode::Terminate && open == 0 {
+                     acts.extend(self.kill());
+                 }
+                 acts.extend(self.sessions(open));
