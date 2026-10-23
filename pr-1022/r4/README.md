@@ -10,6 +10,12 @@
   `xor` and docs); the probe's own rows are left out.
 - Against that base: 64 B seal and open 7 to 9% faster, OpenSSH 0 and 64 B 8 to 11% faster, 0 B
   and 1 KiB within 1%. Seal 16 KiB is 1.8% slower on the asserted pass and 0.7% on the
-  unasserted, beside spreads of 0.4 to 0.8% and across two boots; a same-day base boot of main is
-  staged to settle it.
+  unasserted, beside spreads of 0.4 to 0.8% and across two boots.
+- `amd-base-c677c1219/`: the same-day base, main c677c1219's `cryptocase` on the AMD bench, passed.
+  Seal 16 KiB, ours: base 6,593.9 ns asserted and 6,621.5 unasserted; head 6,651.6 and 6,620.7.
+  The unasserted builds are equal; the asserted +0.9% equals main's own variation between its two
+  AMD boots (6,534.1 and 6,593.9 ns, same ChaCha code). Open 16 KiB, the same bulk kernel without
+  the stitch, is 7,867.1 and 7,849.4 ns. Read as within boot-to-boot noise: a cost under about 1%
+  is not excluded by one boot per side, and none is shown. The 64 B gain holds against this base
+  (seal 1.340 to 1.240, open 1.258 to 1.170).
 - `ci-host-199b88703.log`: `cargo run -- --ci host`, exit code on its last line.
