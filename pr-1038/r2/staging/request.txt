@@ -1,0 +1,28 @@
+# Scoped per-thread timing protection (PR #1038, branch doitm-always-on, head 39e38d1282651e84e04c34b43c344a782fc53812).
+# Every command is `cargo <words>` run from $HOME/Dev/<owner>/toyos-doitm at that head.
+# Image sha256:
+#   metal/testcases            d12a090c4aa38d3f417194b4cbd1082e8e5103dc6a1c55371b5802a531cb4012
+#   metal/cryptoctcase         e36ea2f6c503c4b0a3e7bd8f2d6a352e4b7b318db26096ecc42ef8710d316998
+#   metal/cryptoctcurvescase   7f496b2add67ac79ec25e9c2faa1e7593a0ad61629ef927a0536d305a288ecd3
+#   metal-mutation/testcases   a67d6c8e708947d6e74115cfc89df2466630970b8df9a3b8cd54c860e77c561c  (head + mutation-switch-keeps-doitm.patch)
+
+(1) T14, testcases: control_regs, timing_protection_follows_its_thread, timing_protection_cost. One boot, a few minutes.
+  cargo run -p toyos-metal -- --image $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/doitm/r2/metal/testcases/image.img --readback $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/doitm/r2/metal/testcases --fat32-check
+(2) T14, cryptoctcase: crypto_secret_timing, now under DOITM. Alone in its boot; its list bound is 1515 s.
+  cargo run -p toyos-metal -- --image $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/doitm/r2/metal/cryptoctcase/image.img --readback $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/doitm/r2/metal/cryptoctcase --fat32-check
+(3) T14, cryptoctcurvescase: crypto_secret_timing_curves, now under DOITM. Alone in its boot; about 3 hours (bound 10614 s).
+  cargo run -p toyos-metal -- --image $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/doitm/r2/metal/cryptoctcurvescase/image.img --readback $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/doitm/r2/metal/cryptoctcurvescase --fat32-check
+(4) Negative control, T14, the same testcases boot from a kernel whose switch never restores a thread's DOITM.
+    timing_protection_follows_its_thread must RED here (a protected thread reads another state). It costs one more testcases boot.
+  cargo run -p toyos-metal -- --image $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/doitm/r2/metal-mutation/testcases/image.img --readback $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/doitm/r2/metal-mutation/testcases --fat32-check
+(5) Optional, AMD bench: image (1) again, for the honest "none" on metal (no DOITM, the row requires "no timing protection").
+  cargo run -p toyos-metal -- --image $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/doitm/r2/metal/testcases/image.img --readback $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/doitm/r2/metal-amd/testcases --fat32-check
+
+# Judges (exit 0 is a pass):
+#   (1) cargo test --test toyos-build -- --metal --metal-readback $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/doitm/r2/metal control_regs timing_protection_follows_its_thread timing_protection_cost
+#   (2,3) cargo test --test toyos-build -- --metal --metal-readback $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/doitm/r2/metal crypto_secret_timing crypto_secret_timing_curves
+#   (4) cargo test --test toyos-build -- --metal --metal-readback $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/doitm/r2/metal-mutation timing_protection_follows_its_thread   # must exit 1
+#   (5) cargo test --test toyos-build -- --metal --metal-readback $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/doitm/r2/metal-amd control_regs timing_protection_follows_its_thread timing_protection_cost
+# (1), (2) and (3) can be judged together once all three are back:
+#   cargo test --test toyos-build -- --metal --metal-readback $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/doitm/r2/metal control_regs timing_protection_follows_its_thread timing_protection_cost crypto_secret_timing crypto_secret_timing_curves
+# The cost numbers are the "timing_protection_cost:" lines of (1)'s and (5)'s log; the ct verdicts the "ct " lines of (2) and (3).

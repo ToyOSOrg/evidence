@@ -1,0 +1,13 @@
+--- a/kernel/src/arch/x86_64/timing.rs
++++ b/kernel/src/arch/x86_64/timing.rs
+@@ -52,6 +52,10 @@
+ /// Put the incoming user thread's state on this CPU. Called by the switch
+ /// under its preemption hold.
+ pub(crate) fn restore(thread: &Thread) {
++    // MUTATION: a switch onto a user thread leaves DOITM as the CPU holds it.
++    if thread.doitm || !thread.doitm {
++        return;
++    }
+     let held = local();
+     if held.load(Relaxed) != thread.doitm {
+         write(thread.doitm);

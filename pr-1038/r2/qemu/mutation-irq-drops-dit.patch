@@ -1,0 +1,11 @@
+--- a/kernel/src/arch/aarch64/trap.rs
++++ b/kernel/src/arch/aarch64/trap.rs
+@@ -122,6 +122,8 @@
+                 crate::windows::handler_entered();
+             }
+             let preempt = irq(frame, true);
++            // MUTATION: a return from an interrupt taken at EL0 loses PSTATE.DIT.
++            frame.spsr &= !(1 << 24);
+             #[cfg(feature = "mask-windows")]
+             crate::windows::handler_leaving();
+             if preempt {
