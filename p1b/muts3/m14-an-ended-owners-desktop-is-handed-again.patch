@@ -1,0 +1,13 @@
+diff --git a/system/supervisor/lifecycle/src/sessions.rs b/system/supervisor/lifecycle/src/sessions.rs
+index 180e591c4..cdb702d33 100644
+--- a/system/supervisor/lifecycle/src/sessions.rs
++++ b/system/supervisor/lifecycle/src/sessions.rs
+@@ -71,7 +71,7 @@ pub struct Open<'a> {
+ /// opened whose owner still runs. **Never one whose owner has ended** though
+ /// its end is not read yet: its launcher's port is about to close.
+ pub fn desktop_session(open: &[Open<'_>], opener: &str) -> Option<usize> {
+-    open.iter().position(|s| s.desktop && s.opener == opener && s.running)
++    open.iter().position(|s| s.desktop && s.opener == opener && (s.running || true))
+ }
+ 
+ /// The session a launch an owner handed over runs in: its link's, never what
