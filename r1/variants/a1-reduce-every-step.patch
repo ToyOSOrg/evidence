@@ -1,0 +1,34 @@
+diff -ru a/src/arch/x86_64/vaes512.rs b/src/arch/x86_64/vaes512.rs
+--- a/src/arch/x86_64/vaes512.rs	2026-10-23 20:44:04
++++ b/src/arch/x86_64/vaes512.rs	2026-10-23 20:50:50
+@@ -131,10 +131,8 @@
+     #[inline]
+     #[target_feature(enable = "avx512f")]
+     fn new(powers: &'a Powers, y: __m128i, steps: usize) -> Self {
+-        let left = match steps % 3 {
+-            0 => 3,
+-            m => m,
+-        };
++        let _ = steps;
++        let left = 1;
+         Self { powers, sums: Sums::zero(), carry: _mm512_zextsi128_si512(y), left }
+     }
+ 
+@@ -151,7 +149,7 @@
+         if self.left == 0 {
+             self.carry = _mm512_zextsi128_si512(fold(self.sums.reduce_lanes()));
+             self.sums = Sums::zero();
+-            self.left = 3;
++            self.left = 1;
+         }
+     }
+ 
+@@ -159,7 +157,7 @@
+     #[inline]
+     #[target_feature(enable = "avx512f")]
+     fn finish(self) -> __m128i {
+-        debug_assert_eq!(self.left, 3, "a group is unreduced");
++        debug_assert_eq!(self.left, 1, "a group is unreduced");
+         _mm512_castsi512_si128(self.carry)
+     }
+ }

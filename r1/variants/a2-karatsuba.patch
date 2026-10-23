@@ -1,0 +1,92 @@
+diff -ru a/src/arch/x86_64/vaes512.rs b/src/arch/x86_64/vaes512.rs
+--- a/src/arch/x86_64/vaes512.rs	2026-10-23 20:44:04
++++ b/src/arch/x86_64/vaes512.rs	2026-10-23 20:50:50
+@@ -56,6 +56,13 @@
+     _mm_xor_si128(_mm256_castsi256_si128(half), _mm256_extracti128_si256::<1>(half))
+ }
+ 
++/// Each lane's halves XORed.
++#[inline]
++#[target_feature(enable = "avx512f")]
++fn fold64(x: __m512i) -> __m512i {
++    _mm512_xor_si512(x, _mm512_shuffle_epi32::<0x4e>(x))
++}
++
+ /// `powers[at..at + 4]`, one to a lane, for `at` a multiple of four.
+ #[inline]
+ #[target_feature(enable = "avx512f")]
+@@ -86,20 +93,21 @@
+         Self {
+             low: _mm512_clmulepi64_epi128::<0x00>(x, h),
+             high: _mm512_clmulepi64_epi128::<0x11>(x, h),
+-            middle: _mm512_xor_si512(_mm512_clmulepi64_epi128::<0x01>(x, h), _mm512_clmulepi64_epi128::<0x10>(x, h)),
++            middle: _mm512_clmulepi64_epi128::<0x00>(fold64(x), fold64(h)),
+         }
+     }
+ 
+-    /// Adds x·h and y·g.
++    /// Adds x·h and y·g, Karatsuba, with h's and g's folds.
+     #[inline]
+     #[target_feature(enable = "avx512f,vpclmulqdq")]
+-    fn add(&mut self, x: __m512i, h: __m512i, y: __m512i, g: __m512i) {
++    fn add(&mut self, x: __m512i, h: __m512i, hf: __m512i, y: __m512i, g: __m512i, gf: __m512i) {
+         self.low = xor3(self.low, _mm512_clmulepi64_epi128::<0x00>(x, h), _mm512_clmulepi64_epi128::<0x00>(y, g));
+         self.high = xor3(self.high, _mm512_clmulepi64_epi128::<0x11>(x, h), _mm512_clmulepi64_epi128::<0x11>(y, g));
+-        self.middle =
+-            xor3(self.middle, _mm512_clmulepi64_epi128::<0x01>(x, h), _mm512_clmulepi64_epi128::<0x10>(x, h));
+-        self.middle =
+-            xor3(self.middle, _mm512_clmulepi64_epi128::<0x01>(y, g), _mm512_clmulepi64_epi128::<0x10>(y, g));
++        self.middle = xor3(
++            self.middle,
++            _mm512_clmulepi64_epi128::<0x00>(fold64(x), hf),
++            _mm512_clmulepi64_epi128::<0x00>(fold64(y), gf),
++        );
+     }
+ 
+     /// Each lane's sum times x^-128 mod g*: `aesni`'s Montgomery reduction,
+@@ -107,8 +115,10 @@
+     #[inline]
+     #[target_feature(enable = "avx512f,avx512bw,vpclmulqdq")]
+     fn reduce_lanes(self) -> __m512i {
+-        let low = _mm512_xor_si512(self.low, _mm512_bslli_epi128::<8>(self.middle));
+-        let high = _mm512_xor_si512(self.high, _mm512_bsrli_epi128::<8>(self.middle));
++        let middle = xor3(self.middle, self.low, self.high);
++        let s = Self { middle, ..self };
++        let low = _mm512_xor_si512(s.low, _mm512_bslli_epi128::<8>(s.middle));
++        let high = _mm512_xor_si512(s.high, _mm512_bsrli_epi128::<8>(s.middle));
+         let c = _mm512_set1_epi64(REDUCE);
+         let x = _mm512_xor_si512(_mm512_shuffle_epi32::<0x4e>(low), _mm512_clmulepi64_epi128::<0x00>(low, c));
+         xor3(high, _mm512_shuffle_epi32::<0x4e>(x), _mm512_clmulepi64_epi128::<0x00>(x, c))
+@@ -121,6 +131,7 @@
+ struct Ghash<'a> {
+     powers: &'a Powers,
+     sums: Sums,
++    folds: [__m512i; 12],
+     /// The last reduction, which the next step's first block carries.
+     carry: __m512i,
+     /// Steps left in the group.
+@@ -135,7 +146,11 @@
+             0 => 3,
+             m => m,
+         };
+-        Self { powers, sums: Sums::zero(), carry: _mm512_zextsi128_si512(y), left }
++        let mut folds = [_mm512_setzero_si512(); 12];
++        for i in 0..12 {
++            folds[i] = fold64(powers4(powers, 4 * i));
++        }
++        Self { powers, sums: Sums::zero(), folds, carry: _mm512_zextsi128_si512(y), left }
+     }
+ 
+     #[inline]
+@@ -144,8 +159,9 @@
+         // The step meets H^16left..H^(16left - 15).
+         let at = 48 - 16 * self.left;
+         let first = _mm512_xor_si512(x[0], self.carry);
+-        self.sums.add(first, powers4(self.powers, at), x[1], powers4(self.powers, at + 4));
+-        self.sums.add(x[2], powers4(self.powers, at + 8), x[3], powers4(self.powers, at + 12));
++        let f = &self.folds[at / 4..at / 4 + 4];
++        self.sums.add(first, powers4(self.powers, at), f[0], x[1], powers4(self.powers, at + 4), f[1]);
++        self.sums.add(x[2], powers4(self.powers, at + 8), f[2], x[3], powers4(self.powers, at + 12), f[3]);
+         self.carry = _mm512_setzero_si512();
+         self.left -= 1;
+         if self.left == 0 {

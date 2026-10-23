@@ -1,0 +1,12 @@
+diff -ru a/src/arch/x86_64/vaes512.rs b/src/arch/x86_64/vaes512.rs
+--- a/src/arch/x86_64/vaes512.rs	2026-10-23 20:44:04
++++ b/src/arch/x86_64/vaes512.rs	2026-10-23 20:56:35
+@@ -212,7 +212,7 @@
+         let (n, q) = (self.next, self.quad);
+         self.next = n.wrapping_add(16);
+         // Up to n + 19, the next quad's last lane, the low byte does not carry.
+-        if n & 0xff <= 0xff - 19 {
++        if n & 0xff <= 0xff - 3 {
+             self.quad = Self::plus(q, 16);
+             [q, Self::plus(q, 4), Self::plus(q, 8), Self::plus(q, 12)]
+         } else {

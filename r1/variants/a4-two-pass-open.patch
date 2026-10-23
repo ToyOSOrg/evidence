@@ -1,0 +1,92 @@
+diff -ru a/src/arch/x86_64/vaes512.rs b/src/arch/x86_64/vaes512.rs
+--- a/src/arch/x86_64/vaes512.rs	2026-10-23 20:44:04
++++ b/src/arch/x86_64/vaes512.rs	2026-10-23 20:54:38
+@@ -287,6 +287,45 @@
+ }
+ 
+ #[target_feature(enable = "avx512f,avx512bw,avx512vl,vaes,aes,vpclmulqdq,pclmulqdq,sse2,ssse3")]
++fn ctr_body<const R: usize>(keys: &[u8; 240], nonce: &[u8; 12], first: u32, data: &mut [u8]) {
++    let (steps, rest) = data.as_chunks_mut::<256>();
++    let (slots, _) = keys.as_chunks::<16>();
++    let k: &[[u8; 16]; 15] = slots.try_into().unwrap();
++    let mut counter = Counter::new(nonce, first);
++    for t in 0..steps.len() {
++        let (quads, _) = steps[t].as_chunks_mut::<64>();
++        let mut s = counter.next16();
++        let k0 = key(k, 0);
++        for j in 0..4 {
++            s[j] = _mm512_xor_si512(s[j], k0);
++        }
++        for r in 1..R {
++            let key = key(k, r);
++            for j in 0..4 {
++                s[j] = _mm512_aesenc_epi128(s[j], key);
++            }
++        }
++        let last = key(k, R);
++        for j in 0..4 {
++            let stream = _mm512_xor_si512(_mm512_aesenclast_epi128(s[j], last), load4(&quads[j]));
++            store4(&mut quads[j], stream);
++        }
++    }
++    let next = first.wrapping_add(16 * steps.len() as u32);
++    unsafe { aesni::ctr(keys, R, nonce, next, rest) }
++}
++
++pub(super) unsafe fn ctr(keys: &[u8; 240], rounds: usize, nonce: &[u8; 12], first: u32, data: &mut [u8]) {
++    unsafe {
++        if rounds == 10 {
++            ctr_body::<10>(keys, nonce, first, data)
++        } else {
++            ctr_body::<14>(keys, nonce, first, data)
++        }
++    }
++}
++
++#[target_feature(enable = "avx512f,avx512bw,avx512vl,vaes,aes,vpclmulqdq,pclmulqdq,sse2,ssse3")]
+ fn hash_body(powers: &Powers, state: &mut [u8; 16], blocks: &[[u8; 16]]) {
+     let (steps, rest) = blocks.as_chunks::<16>();
+     let mut ghash = Ghash::new(powers, reverse(load(state)), steps.len());
+diff -ru a/src/arch/x86_64.rs b/src/arch/x86_64.rs
+--- a/src/arch/x86_64.rs	2026-10-23 20:16:18
++++ b/src/arch/x86_64.rs	2026-10-23 20:54:38
+@@ -400,11 +400,14 @@
+         counter: u32,
+         data: &mut [u8],
+     ) -> bool {
+-        if !features().aes_clmul() {
++        let features = features();
++        if data.len() >= 512 && features.vaes512() {
++            unsafe { vaes512::ctr(keys, rounds, nonce, counter, data) }
++        } else if features.aes_clmul() {
++            unsafe { aesni::ctr(keys, rounds, nonce, counter, data) }
++        } else {
+             return false;
+         }
+-        // AES and SSSE3 are admitted.
+-        unsafe { aesni::ctr(keys, rounds, nonce, counter, data) }
+         true
+     }
+ 
+diff -ru a/src/gcm.rs b/src/gcm.rs
+--- a/src/gcm.rs	2026-10-23 20:17:13
++++ b/src/gcm.rs	2026-10-23 20:54:38
+@@ -202,7 +202,17 @@
+                     }
+                     authentic
+                 }
+-                None => crate::ct::equal(&self.tag(nonce, self.crypt(nonce, aad, data, true)).0, tag),
++                None => {
++                    let mut state = Secret([0u8; 16]);
++                    self.hash(&mut state.0, aad);
++                    self.hash(&mut state.0, data);
++                    self.hash_blocks(&mut state.0, &[Self::lengths(aad.len(), data.len())]);
++                    let authentic = crate::ct::equal(&self.tag(nonce, state).0, tag);
++                    if authentic {
++                        self.xor(nonce, 2, data);
++                    }
++                    authentic
++                }
+             }
+         };
+         if !authentic {

@@ -1,0 +1,12 @@
+diff -ru a/src/arch/x86_64/vaes512.rs b/src/arch/x86_64/vaes512.rs
+--- a/src/arch/x86_64/vaes512.rs	2026-10-23 20:44:04
++++ b/src/arch/x86_64/vaes512.rs	2026-10-23 20:56:35
+@@ -108,7 +108,7 @@
+     #[target_feature(enable = "avx512f,avx512bw,vpclmulqdq")]
+     fn reduce_lanes(self) -> __m512i {
+         let low = _mm512_xor_si512(self.low, _mm512_bslli_epi128::<8>(self.middle));
+-        let high = _mm512_xor_si512(self.high, _mm512_bsrli_epi128::<8>(self.middle));
++        let high = self.high;
+         let c = _mm512_set1_epi64(REDUCE);
+         let x = _mm512_xor_si512(_mm512_shuffle_epi32::<0x4e>(low), _mm512_clmulepi64_epi128::<0x00>(low, c));
+         xor3(high, _mm512_shuffle_epi32::<0x4e>(x), _mm512_clmulepi64_epi128::<0x00>(x, c))

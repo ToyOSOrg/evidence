@@ -1,0 +1,30 @@
+diff -ru a/src/arch/x86_64/vaes512.rs b/src/arch/x86_64/vaes512.rs
+--- a/src/arch/x86_64/vaes512.rs	2026-10-23 20:44:04
++++ b/src/arch/x86_64/vaes512.rs	2026-10-23 20:50:50
+@@ -209,17 +209,17 @@
+     #[inline]
+     #[target_feature(enable = "avx512f,avx512bw")]
+     fn next16(&mut self) -> [__m512i; 4] {
+-        let (n, q) = (self.next, self.quad);
++        let n = self.next;
+         self.next = n.wrapping_add(16);
+-        // Up to n + 19, the next quad's last lane, the low byte does not carry.
+-        if n & 0xff <= 0xff - 19 {
+-            self.quad = Self::plus(q, 16);
+-            [q, Self::plus(q, 4), Self::plus(q, 8), Self::plus(q, 12)]
+-        } else {
+-            self.quad = Self::quad(self.nonce, self.next);
+-            let nonce = self.nonce;
+-            [q, Self::quad(nonce, n.wrapping_add(4)), Self::quad(nonce, n.wrapping_add(8)), Self::quad(nonce, n.wrapping_add(12))]
++        let mut out = [_mm512_setzero_si512(); 4];
++        for j in 0..4 {
++            let mut words = [0u32; 16];
++            for l in 0..4 {
++                words[4 * l + 3] = n.wrapping_add(4 * j as u32 + l as u32).to_be();
++            }
++            out[j] = _mm512_or_si512(self.nonce, unsafe { core::mem::transmute::<[u32; 16], __m512i>(words) });
+         }
++        out
+     }
+ }
+ 
