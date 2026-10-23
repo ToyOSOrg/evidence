@@ -1,0 +1,13 @@
+diff --git a/lib/bcachefs/src/engine/fsck.rs b/lib/bcachefs/src/engine/fsck.rs
+index 9993d4e49..568417de5 100644
+--- a/lib/bcachefs/src/engine/fsck.rs
++++ b/lib/bcachefs/src/engine/fsck.rs
+@@ -545,7 +545,7 @@ impl<'a> Walk<'a> {
+             if v.flags & inode_flag::I_SECTORS_DIRTY == 0 && v.sectors != sectors {
+                 bad("sectors other than its extents'");
+             }
+-            if end > v.size.div_ceil(block) * (block / SECTOR as u64) {
++            if end > v.size.div_ceil(block) * block / SECTOR as u64 {
+                 bad("extent past its size");
+             }
+         }

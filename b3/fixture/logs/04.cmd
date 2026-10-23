@@ -1,0 +1,1 @@
+cd /mnt/t && mkdir -p a/b/c/d/e empty && printf hello-toyos > a/hello.txt && ln a/hello.txt a/b/hello-link && ln a/hello.txt a/b/c/d/e/hello-deep && seq 1 40000 > a/b/seq.txt && ln a/b/seq.txt seq-again && ln -s ../hello.txt a/b/link && : > a/b/c/empty-file && mkdir many && for i in $(seq 1 600); do echo $i > many/f$i; done && ln many/f1 many/f1-twin && sync

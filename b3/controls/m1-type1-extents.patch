@@ -1,0 +1,22 @@
+diff --git a/lib/bcachefs/src/engine/tree.rs b/lib/bcachefs/src/engine/tree.rs
+index d41aa7d5e..9fd646956 100644
+--- a/lib/bcachefs/src/engine/tree.rs
++++ b/lib/bcachefs/src/engine/tree.rs
+@@ -173,7 +173,7 @@ impl<'a> Tree<'a> {
+                 let to = (((done + n) * SECTOR as u64) as usize).min(data.len());
+                 let mut padded = alloc::vec![0u8; (n * SECTOR as u64) as usize];
+                 padded[..to - from].copy_from_slice(&data[from..to]);
+-                let csum = crc32c_zero(&padded);
++                let csum = crate::crc32c::crc32c(&padded);
+                 let ptr = Ptr { sector: at, dev: 0, gen: 0, cached: false, unwritten: false };
+                 let key = Key { size: n as u32, ..Key::new(kind::EXTENT, Bpos::new(ino(i), done + n, ROOT_SNAPSHOT)) };
+                 keys.push((Btree::Extents, key, Extent::encode(n as u32, CRC32C_DATA, csum, ptr)));
+@@ -256,7 +256,7 @@ impl<'a> Tree<'a> {
+ /// Hash type 3, siphash, in an inode's flags.
+ const SIPHASH: u64 = 3 << 20;
+ /// Data checksum type 5: crc32c with no inversions.
+-const CRC32C_DATA: u8 = 5;
++const CRC32C_DATA: u8 = 1;
+ 
+ /// A tree's keys and the extents its data fills.
+ pub(crate) struct Populated<'t, 'a> {

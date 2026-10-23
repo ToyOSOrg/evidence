@@ -1,0 +1,37 @@
+rev b911db5a8a86bab6c823dc5306e398b459d26f19 + m3-no-inum-fixtures.patch
+   Compiling bcachefs v0.1.0 (<worktree>/lib/bcachefs)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 1.70s
+BUILD EXIT 0
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.11s
+     Running unittests src/lib.rs (target/debug/deps/bcachefs-e4d0c007d264d3bc)
+
+running 2 tests
+test engine::tests::the_crc32c_fixture_derives_its_own_state ... FAILED
+test engine::tests::the_links_fixture_reads_its_tree_and_derives_its_own_state ... FAILED
+
+failures:
+
+---- engine::tests::the_crc32c_fixture_derives_its_own_state stdout ----
+
+thread 'engine::tests::the_crc32c_fixture_derives_its_own_state' (28021735) panicked at lib/bcachefs/src/engine/tests.rs:929:5:
+assertion `left == right` failed
+  left: [Superblock("format's feature set"), Superblock("member discard off"), Superblock("member not rotational, and known"), Superblock("member device name, model and serial zero"), Superblock("no counters field"), Superblock("no errors_v2 field"), Superblock("no recovery_passes field"), Derived { btree: Accounting, pos: Bpos { inode: 577305179381039104, offset: 0, snapshot: 0 }, rule: "unexpected" }]
+ right: [Superblock("format's feature set"), Superblock("member discard off"), Superblock("member not rotational, and known"), Superblock("member device name, model and serial zero"), Superblock("no counters field"), Superblock("no errors_v2 field"), Superblock("no recovery_passes field")]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- engine::tests::the_links_fixture_reads_its_tree_and_derives_its_own_state stdout ----
+
+thread 'engine::tests::the_links_fixture_reads_its_tree_and_derives_its_own_state' (28021736) panicked at lib/bcachefs/src/engine/tests.rs:922:5:
+assertion `left == right` failed
+  left: [Superblock("format's feature set"), Superblock("member discard off"), Superblock("member not rotational, and known"), Superblock("member device name, model and serial zero"), Superblock("no counters field"), Superblock("no errors_v2 field"), Superblock("no recovery_passes field"), Derived { btree: Accounting, pos: Bpos { inode: 578712554264592384, offset: 0, snapshot: 0 }, rule: "unexpected" }]
+ right: [Superblock("format's feature set"), Superblock("member discard off"), Superblock("member not rotational, and known"), Superblock("member device name, model and serial zero"), Superblock("no counters field"), Superblock("no errors_v2 field"), Superblock("no recovery_passes field")]
+
+
+failures:
+    engine::tests::the_crc32c_fixture_derives_its_own_state
+    engine::tests::the_links_fixture_reads_its_tree_and_derives_its_own_state
+
+test result: FAILED. 0 passed; 2 failed; 0 ignored; 0 measured; 95 filtered out; finished in 0.09s
+
+error: test failed, to rerun pass `-p bcachefs --lib`
+TEST EXIT 101

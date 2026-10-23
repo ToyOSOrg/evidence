@@ -1,0 +1,24 @@
+diff --git a/lib/bcachefs/src/engine/tests.rs b/lib/bcachefs/src/engine/tests.rs
+index 7ec271781..3a0ab0880 100644
+--- a/lib/bcachefs/src/engine/tests.rs
++++ b/lib/bcachefs/src/engine/tests.rs
+@@ -1117,3 +1117,19 @@ fn an_inode_size_near_2_64_is_checked_without_overflow() {
+     edit_inode(&dev, FIRST + 2, |i| i.size = u64::MAX);
+     assert!(!findings(&dev).iter().any(|f| matches!(f, Finding::Inode { rule: "extent past its size", .. })));
+ }
++
++/// Scratch only, never committed: writes BB-A9-2's images, built by the
++/// committed `an_extent_with_no_checksum_entry_or_the_metadata_type_is_found`'s
++/// own helpers, to `$BB_A9_2_OUT`.
++#[test]
++fn zz_dump_bb_a9_2() {
++    let out = std::env::var("BB_A9_2_OUT").unwrap();
++    let dev = small();
++    std::fs::write(format!("{out}/a9-2-type5.img"), &*dev.get()).unwrap();
++    let dev = small();
++    rewrite_extents(&dev, type_1);
++    std::fs::write(format!("{out}/a9-2-type1.img"), &*dev.get()).unwrap();
++    let dev = small();
++    rewrite_extents(&dev, no_crc);
++    std::fs::write(format!("{out}/a9-2-nocrc.img"), &*dev.get()).unwrap();
++}

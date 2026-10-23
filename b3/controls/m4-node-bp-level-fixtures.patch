@@ -1,0 +1,13 @@
+diff --git a/lib/bcachefs/src/engine/derive.rs b/lib/bcachefs/src/engine/derive.rs
+index bfe875da1..3d898c249 100644
+--- a/lib/bcachefs/src/engine/derive.rs
++++ b/lib/bcachefs/src/engine/derive.rs
+@@ -135,7 +135,7 @@ impl<'a> Tally<'a> {
+         };
+         self.mark(bucket, data_type::BTREE, node, Some(ptr.gen));
+         let at = Bpos::new(u64::from(ptr.dev), ptr.sector << self.space.bp_shift, 0);
+-        self.backpointer(btree, max, at, value::backpointer(btree as u8, level + 1, data_type::BTREE, ptr.gen, node as u32, max));
++        self.backpointer(btree, max, at, value::backpointer(btree as u8, level, data_type::BTREE, ptr.gen, node as u32, max));
+         self.count(&[class::REPLICAS, data_type::BTREE, 1, 1, 0], &[node]);
+         let mut record = alloc::vec![class::BTREE];
+         record.extend_from_slice(&(btree as u32).to_le_bytes());

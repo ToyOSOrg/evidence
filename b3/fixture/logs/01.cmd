@@ -1,0 +1,1 @@
+bcachefs version; uname -r
