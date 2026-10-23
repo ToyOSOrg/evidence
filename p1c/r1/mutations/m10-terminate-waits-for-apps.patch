@@ -1,0 +1,11 @@
+--- a/system/supervisor/lifecycle/src/stop.rs
++++ b/system/supervisor/lifecycle/src/stop.rs
+@@ -66,7 +66,7 @@
+                 self.state = State::Pending { stop: asked.stop, ticket, killing: false };
+                 let mut acts = match asked.mode {
+                     Mode::Wait => vec![Act::AskSessions],
+-                    Mode::Terminate => self.kill(),
++                    Mode::Terminate => vec![Act::AskSessions],
+                 };
+                 acts.extend(self.sessions(open));
+                 (Ok(ticket), acts)

@@ -1,0 +1,15 @@
+--- a/system/supervisor/lifecycle/src/stop.rs
++++ b/system/supervisor/lifecycle/src/stop.rs
+@@ -105,7 +105,11 @@
+         match self.state {
+             State::Idle => Vec::new(),
+             State::Pending { stop, .. } if open == 0 => vec![Act::Stop(stop)],
+-            State::Pending { .. } => vec![Act::Report],
++            State::Pending { .. } => {
++                let mut acts = self.kill();
++                acts.push(Act::Report);
++                acts
++            }
+         }
+     }
+ 

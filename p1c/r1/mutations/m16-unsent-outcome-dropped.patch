@@ -1,0 +1,14 @@
+--- a/system/supervisor/lifecycle/src/stop.rs
++++ b/system/supervisor/lifecycle/src/stop.rs
+@@ -150,10 +150,7 @@
+         if self.done || self.frame.as_ref().is_some_and(|owed| owed.outcome) {
+             return;
+         }
+-        match self.frame.is_none() && send(msg, &payload) {
+-            true => self.done = outcome,
+-            false => self.frame = Some(Frame { msg, payload, outcome }),
+-        }
++        let _ = (send(msg, &payload), outcome);
+     }
+ 
+     /// Send what is owed, now its connection may take it.

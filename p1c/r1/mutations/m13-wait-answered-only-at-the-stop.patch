@@ -1,0 +1,11 @@
+--- a/system/supervisor/lifecycle/src/stop.rs
++++ b/system/supervisor/lifecycle/src/stop.rs
+@@ -69,7 +69,7 @@
+                     Mode::Terminate => self.kill(),
+                 };
+                 acts.extend(self.sessions(open));
+-                (Ok(ticket), acts)
++                (if open == 0 { Ok(ticket) } else { Err(Refused::Unanswered) }, acts)
+             }
+             State::Pending { stop, .. } if stop != asked.stop => (Err(Refused::AnotherStopPending(stop)), Vec::new()),
+             State::Pending { ticket, .. } => match asked.mode {

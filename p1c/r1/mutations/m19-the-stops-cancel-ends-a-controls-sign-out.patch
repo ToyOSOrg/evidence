@@ -1,0 +1,14 @@
+--- a/system/session/src/lib.rs
++++ b/system/session/src/lib.rs
+@@ -121,7 +121,10 @@
+             return Vec::new();
+         }
+         match self.asked {
+-            true => vec![Act::Stopping(false), self.report()],
++            true => {
++                self.asked = false;
++                vec![Act::Cancelled]
++            }
+             false => vec![Act::Cancelled],
+         }
+     }

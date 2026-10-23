@@ -1,0 +1,11 @@
+--- a/system/session/src/lib.rs
++++ b/system/session/src/lib.rs
+@@ -108,7 +108,7 @@
+     /// A control's cancel: its own sign-out withdrawn. The machine's stop's
+     /// is not a control's to cancel, and goes on.
+     pub fn cancel(&mut self) -> Vec<Act> {
+-        match (std::mem::take(&mut self.asked), self.stopping) {
++        match (std::mem::take(&mut self.asked) | std::mem::take(&mut self.stopping), false) {
+             (true, false) => vec![Act::Cancelled],
+             _ => Vec::new(),
+         }

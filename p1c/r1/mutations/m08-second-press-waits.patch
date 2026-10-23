@@ -1,0 +1,11 @@
+--- a/system/acpiserver/src/main.rs
++++ b/system/acpiserver/src/main.rs
+@@ -729,7 +729,7 @@
+     fn press(&mut self) {
+         if self.stop_asked {
+             println!("acpiserver: the power button was pressed again, on SCI {}; forcing the stop", self.scis);
+-            match self.kernel.terminate() {
++            match Err::<(), Refused>(Refused::NoStopPending) {
+                 Ok(()) => return,
+                 Err(Refused::NoStopPending) => self.stop_asked = false,
+                 Err(refused) => panic!("acpiserver: the stop's terminate was refused: {refused:?}"),

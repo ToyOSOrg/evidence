@@ -1,0 +1,11 @@
+--- a/system/supervisor/lifecycle/src/stop.rs
++++ b/system/supervisor/lifecycle/src/stop.rs
+@@ -147,7 +147,7 @@
+     /// A frame, an outcome where `outcome`, sent by `send` unless it would
+     /// block; what is owed is the latest, or the outcome once there is one.
+     pub fn post(&mut self, msg: u32, payload: Vec<u8>, outcome: bool, send: impl FnOnce(u32, &[u8]) -> bool) {
+-        if self.done || self.frame.as_ref().is_some_and(|owed| owed.outcome) {
++        if self.frame.as_ref().is_some_and(|owed| owed.outcome) {
+             return;
+         }
+         match self.frame.is_none() && send(msg, &payload) {

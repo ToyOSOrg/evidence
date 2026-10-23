@@ -1,0 +1,11 @@
+--- a/system/supervisor/lifecycle/src/stop.rs
++++ b/system/supervisor/lifecycle/src/stop.rs
+@@ -82,7 +82,7 @@
+     /// Force the pending stop, or, where `of` names one, only that stop.
+     pub fn terminate(&mut self, of: Option<Ticket>) -> (Result<(), Refused>, Vec<Act>) {
+         match self.state {
+-            State::Pending { ticket, .. } if of.is_none_or(|of| of == ticket) => (Ok(()), self.kill()),
++            State::Pending { ticket, .. } if of.is_none_or(|_| ticket != 0) => (Ok(()), self.kill()),
+             _ => (Err(Refused::NoStopPending), Vec::new()),
+         }
+     }
