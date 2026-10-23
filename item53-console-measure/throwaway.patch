@@ -1,0 +1,198 @@
+diff --git a/kernel/src/actuator.rs b/kernel/src/actuator.rs
+index c4c79a0b1..5b413bec2 100644
+--- a/kernel/src/actuator.rs
++++ b/kernel/src/actuator.rs
+@@ -39,6 +39,9 @@ actuators! {
+     /// control on `crate::deadline`: nothing else in this kernel ends it.
+     wedge_before_reset = "wedge-before-reset";
+ 
++    /// MEASUREMENT ONLY (throwaway): log a fixed flood through the inline drain.
++    console_flood = "console-flood";
++
+     /// Panic between arming the on-screen console and `mm::init`.
+     test_early_panic = "test-early-panic";
+ 
+diff --git a/kernel/src/main.rs b/kernel/src/main.rs
+index baca85872..11390657b 100644
+--- a/kernel/src/main.rs
++++ b/kernel/src/main.rs
+@@ -474,6 +474,19 @@ pub(crate) unsafe extern "C" fn kernel_main(loader_args: &mut KernelArgs) -> ! {
+ 
+     virtio_console::init(&pci_devices);
+ 
++    #[cfg(feature = "boot-actuators")]
++    if actuator::console_flood() {
++        const LINES: u64 = 4000;
++        const PAYLOAD: &str = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUV";
++        let backend = drivers::serial::backend() as u8;
++        let t0 = clock::nanos_since_boot();
++        for i in 0..LINES {
++            log!("console-flood i={i:05} {PAYLOAD}");
++        }
++        let ms = (clock::nanos_since_boot() - t0) / 1_000_000;
++        log!("console-flood: done, {LINES} records of a {}-byte message in {ms} ms, backend {backend}", 21 + PAYLOAD.len());
++    }
++
+     if kernel_args.gop_framebuffer != 0 {
+         log!("GPU: using UEFI GOP");
+         match gop::init(
+diff --git a/tests/common/qemu.rs b/tests/common/qemu.rs
+index 72e358c47..0cf30fd9b 100644
+--- a/tests/common/qemu.rs
++++ b/tests/common/qemu.rs
+@@ -2242,6 +2242,15 @@ pub fn profile_argv(options: &BootOptions) -> Vec<String> {
+         .collect()
+ }
+ 
++/// MEASUREMENT ONLY (throwaway): `MEASURE_CONSOLE=uart|virtio` overrides the profile's console.
++fn measure_console_on_virtio(profile_has_virtio: bool) -> bool {
++    match std::env::var("MEASURE_CONSOLE").as_deref() {
++        Ok("uart") => false,
++        Ok("virtio") => true,
++        _ => profile_has_virtio,
++    }
++}
++
+ fn qemu_command(
+     boot_image: &Path,
+     nvme_image: &Path,
+@@ -2513,6 +2522,8 @@ fn qemu_command(
+         // rule. Refused by name where QEMU has no `qemu-vdagent`.
+         toyos_build::vdagent::available(arch).unwrap_or_else(|why| panic!("[qemu] {why}"));
+         qemu.args(toyos_build::vdagent::args(platform));
++    }
++    if measure_console_on_virtio(shape.virtio.present()) {
+         qemu
+             // virtio-console on stdio is the primary I/O channel; UART goes to
+             // a temp file so early-boot logs and panic fallback still land
+@@ -2619,13 +2630,19 @@ fn spawn_and_wait_ready(mut qemu: Command, options: BootOptions, files: Files) -
+     let (tx, rx) = mpsc::channel::<String>();
+     // The virtio port starts at the kernel's first record; a 16550 on stdio has
+     // no other file, so it is read whole.
+-    let mut kernel_console = options
++    let mut kernel_console = measure_console_on_virtio(options
+         .profile
+         .shape()
+         .virtio
+-        .present()
++        .present())
+         .then(toyos_build::kernelconsole::KernelConsole::default);
++    let stall: Option<(u64, u64)> = std::env::var("MEASURE_STALL").ok().map(|v| {
++        let (after, secs) = v.split_once(':').expect("MEASURE_STALL=<bytes>:<secs>");
++        (after.parse().unwrap(), secs.parse().unwrap())
++    });
+     let reader_thread = thread::spawn(move || {
++        let mut stall = stall;
++        let mut total: u64 = 0;
+         let mut reader = BufReader::new(stdout);
+         let mut full_log = String::new();
+         // Read bytes and split them, rather than `BufRead::lines`: every
+@@ -2634,6 +2651,15 @@ fn spawn_and_wait_ready(mut qemu: Command, options: BootOptions, files: Files) -
+         let mut chunk = [0u8; 4096];
+         loop {
+             let read = reader.read(&mut chunk).unwrap_or(0);
++            total += read as u64;
++            if let Some((after, secs)) = stall {
++                if total >= after {
++                    eprintln!("MEASURE stalling the stdout reader {secs} s after {total} bytes");
++                    thread::sleep(Duration::from_secs(secs));
++                    eprintln!("MEASURE stdout reader resumed");
++                    stall = None;
++                }
++            }
+             if read == 0 {
+                 // EOF, and whatever has no newline behind it is the last line —
+                 // which is what `lines` hands over here too.
+@@ -2762,6 +2788,9 @@ fn wait_for_ready(
+             // one failure in this harness that arrives with no evidence at all,
+             // and "the guest printed nothing" and "the guest printed sixty
+             // lines and then stopped" are different machines.
++            let uart = fs::read_to_string(uart_log).unwrap_or_default();
++            let tail: Vec<&str> = uart.lines().rev().take(60).collect();
++            eprintln!("MEASURE uart file tail (newest first):\n{}", tail.join("\n"));
+             panic!(
+                 "[qemu] Boot timed out waiting for {ready}; the console carried:\n{}",
+                 if seen.is_empty() { "nothing at all".to_string() } else { seen.clone() }
+@@ -2769,6 +2798,7 @@ fn wait_for_ready(
+         }
+         match rx.recv_timeout(Duration::from_secs(1)) {
+             Ok(line) if line.contains(ready) => {
++                eprintln!("MEASURE ready {ready:?} after {} ms", start.elapsed().as_millis());
+                 seen.push_str(&line);
+                 seen.push('\n');
+                 if VERBOSE.load(Ordering::Relaxed) {
+diff --git a/tests/toyos.rs b/tests/toyos.rs
+index bb573d13e..99c4b4a12 100644
+--- a/tests/toyos.rs
++++ b/tests/toyos.rs
+@@ -339,6 +339,13 @@ const EARLY_PANIC_MESSAGE: &str = "test-early-panic: on-screen console check";
+ // asserted here and nowhere else. The AArch64 rows boot the `virt` machine,
+ // the only one that architecture has.
+ const SCREEN_TESTS: &[(&str, qemu::Profile)] = &[
++    // MEASUREMENT ONLY (throwaway).
++    ("measure_flood_q35", qemu::Profile::Headless),
++    ("measure_flood_hvf", qemu::Profile::Virt),
++    ("measure_flood_virt_tcg", qemu::Profile::VirtTcg),
++    ("measure_boot_hvf", qemu::Profile::Virt),
++    ("measure_boot_q35", qemu::Profile::Headless),
++    ("measure_boot_virt_tcg", qemu::Profile::VirtTcg),
+     ("screen_panic_muted", qemu::Profile::Metal),
+     // The same fatal path from inside a boot checkpoint's painter, holding the
+     // panel's latch it will never give back: the report has to take the screen
+@@ -3694,6 +3701,35 @@ fn virt_selftest(
+ /// grid is the only readable form of that.
+ fn run_screen_test(name: &str, profile: qemu::Profile, test_config: &Path) -> Result<(), String> {
+     match name {
++        "measure_flood_q35" | "measure_flood_hvf" | "measure_flood_virt_tcg" => {
++            const DONE: &str = "console-flood: done";
++            let started = std::time::Instant::now();
++            let qemu = QemuInstance::boot_with_options(
++                test_config,
++                &[],
++                &[],
++                BootOptions { profile, kernel_params: &["console-flood"], ready_marker: DONE, ..Default::default() },
++            );
++            let host_ms = started.elapsed().as_millis();
++            let log = qemu.boot_log();
++            let lines = log.lines().filter(|l| l.contains("console-flood i=")).count();
++            let mut seen = std::collections::BTreeSet::new();
++            for l in log.lines() {
++                if let Some(at) = l.find("console-flood i=") {
++                    seen.insert(l[at + 16..at + 21].to_string());
++                }
++            }
++            let verdict = log.lines().find(|l| l.contains(DONE)).unwrap_or("").to_string();
++            let refused = log.lines().filter(|l| l.contains("the UART took no byte")).count();
++            eprintln!("MEASURE flood {name} host_ms_to_done={host_ms} lines={lines} distinct={} uart_refusal_lines={refused} :: {verdict}", seen.len());
++            Ok(())
++        }
++        "measure_boot_hvf" | "measure_boot_virt_tcg" | "measure_boot_q35" => {
++            let started = std::time::Instant::now();
++            let qemu = QemuInstance::boot_with_options(test_config, &[], &[], BootOptions { profile, ..Default::default() });
++            eprintln!("MEASURE boot {name} host_ms_to_ready={} bytes={}", started.elapsed().as_millis(), qemu.boot_log().len());
++            Ok(())
++        }
+         "screen_panic_muted" => {
+             // The machine the whole M0/M1 line exists for: metal-sim with the
+             // 16550 taken away, so `uart_present()` is false, `panic_flush`
+@@ -5088,9 +5124,12 @@ fn crypto_instrument_prints_its_table(test_config: &Path) -> Result<(), String>
+         ("crypto_parity".to_string(), qemu::build_toyos_bin(qemu::SUITE_ARCH, &dir, "crypto_parity")),
+         crypto_parity_unasserted(),
+     ];
++    let measure_start = std::time::Instant::now();
+     let mut qemu = QemuInstance::boot_with_options(test_config, &[], &bins, BootOptions::default());
++    let measure_ready = measure_start.elapsed().as_millis();
+     serial::Serial::boot(&qemu).must_be_clean()?;
+     let mut said = String::new();
++    let measure_jobs = std::time::Instant::now();
+     for job in CRYPTO_JOBS {
+         let result = qemu.run_test(job, Duration::from_secs(CRYPTO_JOB_CEILING_SECS));
+         if let Some(why) = &result.error {
+@@ -5101,6 +5140,7 @@ fn crypto_instrument_prints_its_table(test_config: &Path) -> Result<(), String>
+         }
+         said.push_str(&result.stdout);
+     }
++    eprintln!("MEASURE crypto host_ms_to_ready={measure_ready} jobs_ms={} job_stdout_bytes={}", measure_jobs.elapsed().as_millis(), said.len());
+     let table = toyos_parity::read(said.lines())?;
+     eprintln!("  [crypto] {} rows in each build; their timings are not judged under QEMU", table.asserted.len());
+     Ok(())
