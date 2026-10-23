@@ -1,0 +1,30 @@
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.22s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-a0afd5f3be53165a)
+12:54:24   BUILD x86_64 binaries of tests/guest/rust-tests
+12:54:29   BUILT x86_64 binaries of tests/guest/rust-tests  (4s)
+12:54:29   BUILD x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests
+12:54:31   BUILT x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests  (3s)
+12:54:31 [toyos] Compiling 142 C tests, and attempting 24 declared ones...
+12:54:35 [metal] 37 registration(s) and 229 shared member(s) over 2 boot(s)
+12:54:35   BUILD x86_64 kernel, loader, ROOT of <scratch>/metal-r1/testcases/system-2dfda7d8367d7a78.toml
+12:55:00 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+12:55:01   BUILT x86_64 kernel, loader, ROOT of <scratch>/metal-r1/testcases/system-2dfda7d8367d7a78.toml  (26s)
+12:55:02 [metal] testcases: 248 job(s) under a list bound of 100300 ms, armed with [] and a boot deadline of 200600 ms — <scratch>/metal-r1/testcases/image.img
+12:55:02   BUILD x86_64 ROOT of <scratch>/metal-r1/testcases-watchdog/system-c6fd3b8c76f0347b.toml
+12:55:05 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+12:55:05   BUILT x86_64 ROOT of <scratch>/metal-r1/testcases-watchdog/system-c6fd3b8c76f0347b.toml  (3s)
+12:55:05 [metal] testcases-watchdog: 0 job(s) under a list bound of 60000 ms, armed with ["watchdog"] and a boot deadline of 120000 ms — <scratch>/metal-r1/testcases-watchdog/image.img
+# One boot per image. Each invocation is `cargo <words>` from this worktree.
+
+testcases
+  image: <scratch>/metal-r1/testcases/image.img
+  cargo run -p toyos-metal -- --image <scratch>/metal-r1/testcases/image.img --readback <scratch>/metal-r1/testcases --fat32-check
+
+testcases-watchdog
+  image: <scratch>/metal-r1/testcases-watchdog/image.img
+  cargo run -p toyos-metal -- --image <scratch>/metal-r1/testcases-watchdog/image.img --readback <scratch>/metal-r1/testcases-watchdog --fat32-check
+12:55:05 [metal] staged 2 image(s); <scratch>/metal-r1/request.txt lists them. The machine was not touched, so this run establishes nothing about it.
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `<worktree>/target/debug/deps/toyos_build-a0afd5f3be53165a --metal --metal-readback <scratch>/metal-r1 'boot:testcases'` (exit status: 2)
