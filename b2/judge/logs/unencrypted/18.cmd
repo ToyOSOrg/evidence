@@ -1,0 +1,1 @@
+cp root-1g.a.img root-1g.b.img && bcachefs fusemount root-1g.b.img /mnt/t && mkdir /mnt/t/d && seq 1 40000 > /mnt/t/d/seq.txt && printf hello-toyos > /mnt/t/a.txt && sync && ls -laR /mnt/t; fusermount3 -u /mnt/t

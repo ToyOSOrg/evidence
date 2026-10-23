@@ -1,0 +1,13 @@
+diff --git a/lib/bcachefs/src/engine/fsck.rs b/lib/bcachefs/src/engine/fsck.rs
+index 2a17a8c2d..4150618a2 100644
+--- a/lib/bcachefs/src/engine/fsck.rs
++++ b/lib/bcachefs/src/engine/fsck.rs
+@@ -164,7 +164,7 @@ async fn nodes<D: BlockDev>(v: &Volume<D>) -> Result<Vec<Finding>> {
+                 found.push(Finding::Bitmap { btree: root.btree, sector });
+             }
+             let node = v.node(root.btree, level, &ptr, max).await?;
+-            for &seq in node.bset_seqs.iter().filter(|&&s| s > clean) {
++            for &seq in node.bset_seqs.iter().filter(|&&s| s > u64::MAX - 1) {
+                 found.push(Finding::BsetAboveClean { btree: root.btree, sector, seq });
+             }
+             for (key, value) in &node.keys {

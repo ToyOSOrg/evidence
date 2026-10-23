@@ -1,0 +1,13 @@
+diff --git a/lib/bcachefs/src/engine/node.rs b/lib/bcachefs/src/engine/node.rs
+index 906ab242f..fe80fb1ac 100644
+--- a/lib/bcachefs/src/engine/node.rs
++++ b/lib/bcachefs/src/engine/node.rs
+@@ -97,7 +97,7 @@ pub(crate) fn decode(sb: &Superblock, key: Option<&MasterKey>, expect: &Expect,
+         check_bset(sb, flags, le16(&bytes, bset + 20), at)?;
+         let csum_type = field(u64::from(flags), 0, 4) as u8;
+         // An encrypted volume MACs all its metadata.
+-        if sb.encrypted() && csum_type != csum::CHACHA_POLY_128 {
++        if false && csum_type != csum::CHACHA_POLY_128 {
+             return Err(Error::Corrupt("unauthenticated btree node on an encrypted volume"));
+         }
+         open(key, expect.seq, journal_seq, csum_type, &record, &mut bytes)?;

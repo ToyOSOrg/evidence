@@ -1,0 +1,13 @@
+diff --git a/lib/bcachefs/src/engine/fsck.rs b/lib/bcachefs/src/engine/fsck.rs
+index 2a17a8c2d..b9f7c89e9 100644
+--- a/lib/bcachefs/src/engine/fsck.rs
++++ b/lib/bcachefs/src/engine/fsck.rs
+@@ -172,7 +172,7 @@ async fn nodes<D: BlockDev>(v: &Volume<D>) -> Result<Vec<Finding>> {
+                     pending.push((level - 1, NodePtr::decode(value)?, key.pos));
+                 } else if root.btree == Btree::Inodes && key.kind == kind::INODE_V3 {
+                     let seq = InodeValue::decode(value)?.journal_seq;
+-                    if seq > clean {
++                    if seq > u64::MAX - 1 {
+                         found.push(Finding::InodeAboveClean { ino: key.pos.offset, seq });
+                     }
+                 }

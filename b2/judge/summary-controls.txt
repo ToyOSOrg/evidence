@@ -1,0 +1,55 @@
+[01] exit 0: truncate -s 64M clean.img && bcachefs format --block_size=4096 clean.img
+[02] exit 0: bcachefs fsck -n -K clean.img < /dev/null
+[02] VERDICT PASS clean.img exit=0 markers=
+[03] exit 0: bcachefs list -b dirents clean.img
+[04] exit 0: cp clean.img bad1k.img; bcachefs kill_btree_node -n dirents:0:0 -e keys bad1k.img
+[05] exit 9: bcachefs fsck -n -K bad1k.img < /dev/null
+[05] VERDICT FAIL bad1k.img exit=9 markers=, fixing;btree node read error;checksum error;errors fixed;errors this recovery:;paths damaged by fsck:;
+[06] exit 0: cp clean.img bad1c.img; bcachefs kill_btree_node -n dirents:0:0 -e csum bad1c.img
+[07] exit 0: bcachefs fsck -n -K bad1c.img < /dev/null
+[07] VERDICT FAIL bad1c.img exit=0 markers=btree node read error;checksum error;
+[08] exit 0: cp clean.img bad2.img; bcachefs kvdb --rw -c 'set dirents 4096:2574408527454585279:U32_MAX deleted' bad2.img
+[09] exit 9: bcachefs fsck -n -K bad2.img < /dev/null
+[09] VERDICT FAIL bad2.img exit=9 markers=, fixing;errors fixed;errors this recovery:;paths damaged by fsck:;
+[10] exit 0: bcachefs list -b alloc clean.img | grep 'data_type btree' | head -1
+[11] exit 1: cp clean.img bad5.img; bcachefs kvdb --rw -c 'update alloc data_type dirty_sectors=16' bad5.img
+[12] exit 0: bcachefs fsck -n -K bad5.img < /dev/null
+[12] VERDICT PASS bad5.img exit=0 markers=
+[13] exit 0: cp clean.img bad6.img; bcachefs kvdb --rw -c 'set accounting POS_MIN deleted' bad6.img
+[14] exit 9: bcachefs fsck -n -K bad6.img < /dev/null
+[14] VERDICT FAIL bad6.img exit=9 markers=, fixing;errors fixed;errors this recovery:;
+[15] exit 0: cp clean.img bad7.img; bcachefs kill_btree_node -n dirents:0:0 -e zero bad7.img
+[16] exit 1: bcachefs fsck -n -K bad7.img < /dev/null
+[16] VERDICT FAIL bad7.img exit=1 markers=, fixing;- rewinding;Error: ;btree node read error;emergency read only;error in recovery:;
+[17] exit 0: truncate -s 64M zero.img
+[18] exit 1: bcachefs fsck -n -K zero.img < /dev/null
+[18] VERDICT FAIL zero.img exit=1 markers=Error: ;
+[19] exit 0: cp ../root-32m.img t.img
+[20] exit 0: bcachefs fsck -n -K t.img < /dev/null
+[20] VERDICT PASS t.img exit=0 markers=
+[21] exit 0: cp t.img t-keys.img; bcachefs kill_btree_node -n inodes:0:0 -e keys t-keys.img
+[22] exit 9: bcachefs fsck -n -K t-keys.img < /dev/null
+[22] VERDICT FAIL t-keys.img exit=9 markers=, fixing;btree node read error;checksum error;errors fixed;errors this recovery:;
+[23] exit 0: cp t.img t-csum.img; bcachefs kill_btree_node -n inodes:0:0 -e csum t-csum.img
+[24] exit 0: bcachefs fsck -n -K t-csum.img < /dev/null
+[24] VERDICT FAIL t-csum.img exit=0 markers=btree node read error;checksum error;
+[25] exit 0: cp t.img t-flip.img; printf '\377' | dd of=t-flip.img bs=1 seek=$((146*32*512+200)) conv=notrunc status=none; cmp -l t.img t-flip.img
+[26] exit 9: bcachefs fsck -n -K t-flip.img < /dev/null
+[26] VERDICT FAIL t-flip.img exit=9 markers=, fixing;btree node read error;checksum error;errors fixed;errors this recovery:;
+[27] exit 0: cp t.img t-alloc.img; bcachefs kvdb --rw -c 'update alloc 0:146:0 dirty_sectors=16' t-alloc.img
+[28] exit 9: bcachefs fsck -n -K t-alloc.img < /dev/null
+[28] VERDICT FAIL t-alloc.img exit=9 markers=, fixing;errors fixed;errors this recovery:;
+[29] exit 0: cp t.img t-acct.img; bcachefs kvdb --rw -c 'set accounting POS_MIN deleted' t-acct.img
+[30] exit 9: bcachefs fsck -n -K t-acct.img < /dev/null
+[30] VERDICT FAIL t-acct.img exit=9 markers=, fixing;errors fixed;errors this recovery:;
+[31] exit 0: sha256sum *.img
+Joined session keyring: 950368916
+[01] exit 0: cp ../data-64m.img e.img && bcachefs unlock -k session -f ../pass e.img; echo exit $?
+[02] exit 0: bcachefs fsck -n -K e.img < /dev/null
+[02] VERDICT PASS e.img exit=0 markers=
+[03] exit 0: cp e.img e-csum.img; bcachefs kill_btree_node -n inodes:0:0 -e csum e-csum.img
+[04] exit 9: bcachefs fsck -n -K e-csum.img < /dev/null
+[04] VERDICT FAIL e-csum.img exit=9 markers=, continuing;, fixing;- rewinding;btree node read error;checksum error;errors fixed;errors this recovery:;
+[05] exit 0: cp e.img e-flip.img; printf '\377' | dd of=e-flip.img bs=1 seek=$((82*64*512+200)) conv=notrunc status=none; cmp -l e.img e-flip.img
+[06] exit 9: bcachefs fsck -n -K e-flip.img < /dev/null
+[06] VERDICT FAIL e-flip.img exit=9 markers=, fixing;btree node read error;checksum error;errors fixed;errors this recovery:;

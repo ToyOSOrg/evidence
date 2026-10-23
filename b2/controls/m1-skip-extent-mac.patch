@@ -1,0 +1,13 @@
+diff --git a/lib/bcachefs/src/engine/read.rs b/lib/bcachefs/src/engine/read.rs
+index eb28c46fc..8ed1d3a01 100644
+--- a/lib/bcachefs/src/engine/read.rs
++++ b/lib/bcachefs/src/engine/read.rs
+@@ -407,7 +407,7 @@ impl<D: BlockDev> Volume<D> {
+             3 | 4 if crc.csum_len == if crc.csum_type == 3 { 10 } else { 16 } => {
+                 let master = self.key.as_ref().ok_or(Error::Locked)?;
+                 let nonce = Nonce::extent(key.version.hi, key.version.lo, crc.nonce);
+-                master.verify(nonce, &data, &crc.csum[..crc.csum_len], "extent")?;
++                let _ = master.verify(nonce, &data, &crc.csum[..crc.csum_len], "extent");
+                 master.xor(nonce, &mut data)?;
+             }
+             // Type 5, upstream's data crc32c, among them: its seed and final
