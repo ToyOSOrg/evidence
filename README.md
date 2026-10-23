@@ -48,3 +48,22 @@ Linux probe (nightly-2026-07-22, x86_64-unknown-linux-musl, toyos-crypto at opt-
 control) timing ChaCha20-Poly1305 at 0 B to 64 KiB against ring, OpenSSL and AWS-LC. Also toyos-crypto's unit and
 differential tests for Linux and their one-wrong-limb mutant (`source/controls/product-wrong-term.patch`).
 `source/` is the probe and build scripts.
+
+## Bench results (round 1, both benches; `bench/{t14,amd}/`)
+
+Every oracle run exited 0 after its agreement checks. toyos/ring, the median over samples of ours/theirs (above 1:
+ours slower):
+
+| build | T14 seal/open 1 KiB | 16 KiB | 64 KiB | AMD seal/open 1 KiB | 16 KiB | 64 KiB |
+|---|---|---|---|---|---|---|
+| inc, base 4dc75f542 | 1.038 / 1.041 | 0.869 / 0.879 | 0.862 / 0.870 | 1.489 / 1.428 | 1.165 / 1.364 | 1.146 / 1.345 |
+| inc, fix c9a3f65e1 | 1.039 / 1.041 | 0.869 / 0.879 | 0.861 / 0.870 | 1.485 / 1.428 | 1.166 / 1.363 | 1.146 / 1.343 |
+| noninc, base | 7.121 / 6.846 | 8.953 / 8.631 | 9.093 / 8.481 | 3.554 / 9.494 | 1.397 / 13.101 | 1.240 / 13.179 |
+| noninc, fix | 1.038 / 1.034 | 0.874 / 0.873 | 0.866 / 0.865 | 1.507 / 1.419 | 1.204 / 1.361 | 1.189 / 1.388 |
+| noninc, fix (repeat) | 1.037 / 1.043 | 0.874 / 0.883 | 0.866 / 0.875 | 1.499 / 1.422 | 1.201 / 1.360 | 1.186 / 1.347 |
+| noninc, fix, `product` `#[inline(never)]` | 1.081 / 1.081 | 0.917 / 0.934 | 0.915 / 0.919 | 1.520 / 1.472 | 1.213 / 1.426 | 1.190 / 1.416 |
+
+Tests at c9a3f65e1: `differential` passes and its wrong-limb mutant fails (exit 101, 4 AEAD/OpenSSH cases) on both
+benches. `toyos_crypto` passes, but so does its mutant (exit 0 on both): no unit test reached the AVX2 kernel,
+because `update` hands it only runs of 16 blocks or more and the integer test feeds pieces of at most 70 bytes.
+6291dc4ad adds `the_avx2_blocks_match_the_portable_rounds`; `staged-r3b/` has its fixed and mutant binaries for a rerun.
