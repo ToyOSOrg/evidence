@@ -1,0 +1,105 @@
+   Compiling rustls v0.23.45
+   Compiling toyos-crypto v0.1.0 (~/Dev/jan/toyos-crypto-25519/lib/crypto)
+warning: unused variable: `c`
+  --> lib/crypto/src/field25519/radix64.rs:39:14
+   |
+39 |     let (r3, c) = adc(r[3], 0, c);
+   |              ^ help: if this is intentional, prefix it with an underscore: `_c`
+   |
+   = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `toyos-crypto` (lib test) generated 1 warning (run `cargo fix --lib -p toyos-crypto --tests` to apply 1 suggestion)
+    Finished `toyos` profile [optimized + debuginfo] target(s) in 24.56s
+     Running unittests src/lib.rs (target/x86_64-apple-darwin/toyos/deps/toyos_crypto-5f027395af0bb9b3)
+
+running 63 tests
+test aead::tests::nonce_sequence_exhaustion_is_terminal ... ok
+test arch::x86_64::poly1305::tests::radix_round_trip_and_folds_above_2_130 ... ok
+test arch::x86_64::tests::features_match_host_detection_and_portable_override ... ok
+test arch::x86_64::tests::decoding_names_each_cpuid_bit ... ok
+test block::tests::partial_blocks_match_bytewise_assembly_for_every_length_and_offset ... ok
+test chacha::tests::exhausted_counter_refuses_before_mutating_any_batch ... ok
+test block::tests::xor_takes_the_stream_from_its_start_for_every_length ... ok
+test chacha::tests::independent_blocks_match_one_at_a_time ... ok
+test ct::tests::masks_selection_and_equality_at_their_edges ... ok
+test ed25519::tests::constants_match_their_definitions ... ok
+test aes::tests::fips197_portable_matches_instruction_path ... ok
+test chacha::tests::dispatched_streams_preserve_counter_carries_and_batch_tails ... ok
+test ed25519::tests::base_table_holds_the_odd_multiples_of_b ... ok
+test ed25519::tests::small_order_encodings_are_the_eight_torsion_points ... ok
+test ed25519::tests::noncanonical_encodings_and_negative_zero_are_refused ... ok
+test ed25519::tests::radix_16_digits_recompose_the_scalar ... ok
+test hash::tests::length_refusals_leave_state_unchanged ... ok
+test keccak::tests::fips202_empty ... ok
+test hash::tests::dispatched_compression_matches_the_portable_rounds ... ok
+test mlkem::tests::compression_rounds_as_fips_203_for_every_input ... ok
+test mlkem::tests::reduction_modulo_q_is_exact_over_its_whole_input_range ... ok
+test nist::tests::generation_takes_the_first_valid_candidate ... ok
+test ed25519::tests::comb_table_holds_its_multiples ... ok
+test nist::tests::booth_digits_recompose_the_scalar ... ok
+test gcm::tests::dispatched_ghash_matches_the_bitwise_multiply ... ok
+test nist::tests::the_last_addition_doubles_where_it_must ... ok
+test poly1305::tests::rfc8439_section_2_5_2 ... ok
+test nist::tests::public_sums_of_equal_and_opposite_points ... ok
+test ed25519::tests::the_comb_agrees_with_straus ... ok
+test mlkem::tests::nist_expanded_keygen_secret_matches ... ok
+test scalar25519::tests::barretts_constant_is_floor_of_2_512_over_l ... ok
+test nist::tests::naf_digits_recompose_384_bit_scalars ... ok
+test scrypt::tests::a_cost_past_the_callers_limits_is_refused ... ok
+test scrypt::tests::a_workspace_of_any_other_length_and_an_empty_output_are_refused ... ok
+test field25519::radix64::tests::words_up_to_2_256_match_integers_and_the_portable_path ... FAILED
+test scrypt::tests::parameters_past_the_rfc_or_max_memory_are_refused ... ok
+test scrypt::tests::rfc7914_block_mix ... ok
+test scrypt::tests::rfc7914_ro_mix ... ok
+test scrypt::tests::rfc7914_salsa20_8_core ... ok
+test secret::tests::a_dropped_secret_leaves_zeros ... ok
+test scrypt::tests::the_workspace_is_erased ... ok
+test secret::tests::erase_zeroes_every_byte_of_every_shape ... ok
+test secret::tests::wipes_zero_their_slices ... ok
+test siphash::tests::every_length_through_three_words_agrees_with_std ... ok
+test siphash::tests::the_papers_vector ... ok
+test rsa::tests::instruction_path_matches_the_portable_multiplication ... ok
+test test_arithmetic::field25519_loose_operands_match_integers ... ok
+test test_arithmetic::field25519_negation_and_small_constants_match_integers ... ok
+test test_arithmetic::nist_constants_and_canonical_decoding_match_integers ... ok
+test nist::tests::the_comb_matches_the_public_path ... ok
+test scalar25519::tests::naf_digits_recompose_the_scalar ... ok
+test test_arithmetic::compile_time_field25519_forms_match_integers ... FAILED
+test x25519::tests::public_keys_by_the_comb_are_the_ladders ... ok
+test test_arithmetic::scalar25519_matches_integers ... ok
+test nist::tests::static_tables_hold_their_multiples ... ok
+test nist::tests::booth_multiplication_matches_the_public_path ... ok
+test gcm::tests::counters_continue_across_the_stitched_and_tail_paths ... ok
+test montgomery::divsteps::tests::updates_stay_in_range_and_congruent ... ok
+test rsa::tests::power_and_r2_match_integer_oracle ... ok
+test poly1305::tests::matches_integers_on_seeded_and_extreme_inputs ... ok
+test test_arithmetic::field25519_matches_integers ... ok
+test test_arithmetic::nist_fields_and_orders_match_integers ... ok
+test test_arithmetic::compile_time_montgomery_forms_match_integers ... ok
+
+failures:
+
+---- field25519::radix64::tests::words_up_to_2_256_match_integers_and_the_portable_path stdout ----
+f25519 path: portable
+
+thread 'field25519::radix64::tests::words_up_to_2_256_match_integers_and_the_portable_path' (38201198) panicked at lib/crypto/src/field25519/radix64.rs:320:17:
+assertion `left == right` failed: 57896044618658097711785492504343953926634992332820282019728792003956564819948 115792089237316195423570985008687907853269984665640564039457584007913129639860
+  left: 0
+ right: 38
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- test_arithmetic::compile_time_field25519_forms_match_integers stdout ----
+
+thread 'test_arithmetic::compile_time_field25519_forms_match_integers' (38201234) panicked at lib/crypto/src/test_arithmetic.rs:270:9:
+assertion `left == right` failed: 1 / 57896044618658097711785492504343953926634992332820282019728792003956564819947
+  left: 50417329016290155939007793873527047170672681128203066837001469250713548806445
+ right: 28948022309329048855892746252171976963317496166410141009864396001978282409974
+
+
+failures:
+    field25519::radix64::tests::words_up_to_2_256_match_integers_and_the_portable_path
+    test_arithmetic::compile_time_field25519_forms_match_integers
+
+test result: FAILED. 61 passed; 2 failed; 0 ignored; 0 measured; 1 filtered out; finished in 1.00s
+
+error: test failed, to rerun pass `-p toyos-crypto --lib`

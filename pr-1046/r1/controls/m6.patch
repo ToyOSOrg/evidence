@@ -1,0 +1,13 @@
+diff --git a/lib/crypto/src/field25519/radix64.rs b/lib/crypto/src/field25519/radix64.rs
+index 59f5bf503..2f4a6f7d9 100644
+--- a/lib/crypto/src/field25519/radix64.rs
++++ b/lib/crypto/src/field25519/radix64.rs
+@@ -140,7 +140,7 @@ impl Tight {
+         let (w2, c) = adc(v2, 0, c);
+         let w3 = v3.wrapping_add(c);
+         let reduced = Self([w0, w1, w2, w3 & (u64::MAX >> 1)]);
+-        let words = Self::select(&Self([v0, v1, v2, v3]), &reduced, w3 >> 63).0;
++        let words = Self::select(&Self([v0, v1, v2, v3]), &reduced, 0).0;
+         let mut out = [0; 32];
+         for (i, word) in words.iter().enumerate() {
+             out[8 * i..8 * i + 8].copy_from_slice(&word.to_le_bytes());
