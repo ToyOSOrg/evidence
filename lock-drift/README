@@ -1,0 +1,30 @@
+PR #1034: main's Cargo.lock at 63bc8a32b (#1026's merge) is stale; branch head 283b6e7a5eb0b4fbc0535dc8aa036ab64bd87a44.
+Host: macOS (aarch64-apple-darwin). Paths masked to ~ and <scratch>.
+
+Cause
+  git merge-tree --write-tree c184a8451 2b38b4f06  -> ade71e074a02a429eb936ac8356ed83443aad490
+  git rev-parse 63bc8a32b^{tree}                   -> ade71e074a02a429eb936ac8356ed83443aad490
+  (the merge queue's merge of #1026 onto #1029 is git's clean text merge; it kept
+  toyos-crypto's "scrypt" edge and lost scrypt's closure, deleted beside russh's blocks)
+
+CI did not see it: merge-group run 39872408561 (63bc8a32b, conclusion success);
+ci-run-39872408561-host-excerpt.log is the host job's `cargo run -- --ci host`
+re-resolving (Adding scrypt v0.12.0 ...) before the driver started.
+
+Checks at 63bc8a32b, before the fix
+  cargo metadata --locked --format-version 1               exit 101   locked-before.log
+  cargo metadata --offline (fresh resolution, discarded)   exit 0     resolve.log, fresh-resolution-at-63bc8a32b.diff
+
+Fix: main's lock seeded with #1029's own blocks (scrypt 0.12.0-rc.10, pbkdf2 0.13.0-rc.9,
+hmac 0.13.0-rc.5, sha2 0.11.0-rc.5, salsa20 0.11.0, cipher 0.5.1, inout 0.2.2, block-padding 0.4.2)
+then `cargo metadata --offline` (exit 0, resolve-seeded.log); result lock-fix.patch.
+Every package version in the result is one c184a8451 or 2b38b4f06 locked.
+
+Checks at 283b6e7a5
+  cargo metadata --locked --offline (root, sdk/libc, tests/guest/rust-tests and its 4 tls crates)  exit 0 each
+  cargo run --locked -- --ci host      exit 0, 101 steps green, tree clean after   host.log
+  cargo run --locked -- --build-only   exit 0, tree clean after                    build-only.log
+
+Negative control: lock-fix.patch reversed (Cargo.lock == 63bc8a32b's), then
+  cargo run --locked -- --ci host      exit 101 "cannot update the lock file"     control-stale.log
+  restored with git checkout HEAD -- Cargo.lock; git status clean.
