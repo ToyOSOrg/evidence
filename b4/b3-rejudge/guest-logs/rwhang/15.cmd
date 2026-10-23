@@ -1,0 +1,1 @@
+rm -f up8.img; truncate -s 8M up8.img && bcachefs format --block_size=4096 --btree_node_size=16k --fs_label=up up8.img && bcachefs fusemount up8.img /mnt/t && cp -a /tmp/src/. /mnt/t/ && sync; fusermount3 -u /mnt/t

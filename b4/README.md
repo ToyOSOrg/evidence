@@ -4,6 +4,11 @@ Branch head under test: `3a16f262ceebee71bdf70dea30636c39027cdc03` (rebased on `
 Earlier revisions named below differ from it only as stated. Paths are masked as `<dev>`, `<home>`
 and `<scratch>`.
 
+## Review r1 (head 5d86135ec)
+
+- `host/ci-host-r1b.log`: `cargo run -- --ci host` with the r1 fixes, exit 0, 101 of 101 green. An earlier run failed on a full host disk and is discarded.
+- `b3-rejudge/`: B3's judged images regenerated at this tree and judged again; its `README.md` has the verdicts.
+
 ## Host
 
 - `host/ci-host-rebased.log`: `cargo run -- --ci host` at 3a16f262c, exit 0, 101 of 101 steps green.
