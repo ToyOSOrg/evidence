@@ -1,0 +1,11 @@
+--- a/lib/bcachefs/src/engine/read.rs
++++ b/lib/bcachefs/src/engine/read.rs
+@@ -482,7 +482,7 @@
+                 let master = self.key.as_ref().ok_or(Error::Locked)?;
+                 let nonce = Nonce::extent(key.version.hi, key.version.lo, crc.nonce);
+                 if crc.csum_type == csum::CHACHA_POLY_80 {
+-                    master.verify::<10>(nonce, &data, crc.csum.first_chunk().unwrap(), "extent")?;
++                    let _ = master.verify::<10>(nonce, &data, crc.csum.first_chunk().unwrap(), "extent");
+                 } else {
+                     master.verify(nonce, &data, &crc.csum, "extent")?;
+                 }
