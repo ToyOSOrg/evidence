@@ -1,0 +1,11 @@
+--- a/lib/bcachefs/src/engine/mount/reclaim.rs
++++ b/lib/bcachefs/src/engine/mount/reclaim.rs
+@@ -187,7 +187,7 @@
+     /// no longer be made durable.
+     fn stopped_by<T>(&self, out: Result<T>) -> Result<T> {
+         if let Err(e) = &out {
+-            self.stop(match *e {
++            let _ = (match *e {
+                 Error::NoSpace(why) | Error::Corrupt(why) | Error::Unsupported(why) | Error::ReadOnly(why) | Error::Checksum(why) | Error::Invalid(why) => why,
+                 _ => "a reclaim write failed",
+             });

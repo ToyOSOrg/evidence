@@ -1,0 +1,10 @@
+--- a/lib/bcachefs/src/engine/mount/mod.rs
++++ b/lib/bcachefs/src/engine/mount/mod.rs
+@@ -510,7 +510,6 @@
+                 set_field(&mut fields, field_type::CLEAN, Some(clean));
+             }
+             let mut offsets = st.header.layout.offsets.clone();
+-            offsets.sort_by_key(|o| !st.torn_copies.contains(o));
+             let copies = offsets.into_iter().map(|o| (o, Superblock::encode(&st.header, &fields, o))).collect();
+             st.fields = fields;
+             copies

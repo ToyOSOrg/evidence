@@ -1,0 +1,27 @@
+patch: $B5/controls/g-restate-position-unmoved.patch
+test: mount::a_clean_volume_with_an_empty
+base: 298a57aa69162445a3fc159656627e1b74c62e6a plus the working tree
+files before: 3ec9179258678e82c5e3f19d4afe79c80a763def74bc62d4a84a313e64cd8167  lib/bcachefs/src/engine/mount/mod.rs
+   Compiling bcachefs v0.1.0 ($WORKTREE/lib/bcachefs)
+    Finished `test` profile [optimized + debuginfo] target(s) in 37.80s
+  Executable unittests src/lib.rs (target/debug/deps/bcachefs-f2c101278f6c619e)
+
+running 1 test
+test engine::tests::mount::a_clean_volume_with_an_empty_journal_survives_a_crash_going_read_write ... FAILED
+
+failures:
+
+---- engine::tests::mount::a_clean_volume_with_an_empty_journal_survives_a_crash_going_read_write stdout ----
+
+thread 'engine::tests::mount::a_clean_volume_with_an_empty_journal_survives_a_crash_going_read_write' (46436188) panicked at lib/bcachefs/src/engine/tests/mount.rs:203:37:
+clean at sequence 0: crash sample 0 of 4 from seed 0x0: crash state 0 of every 1: second crash: fsck as the crash left it: [Journal { seq: 1, rule: "member's journal position other than after the newest entry" }]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    engine::tests::mount::a_clean_volume_with_an_empty_journal_survives_a_crash_going_read_write
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 152 filtered out; finished in 0.14s
+
+test exit: 101
+restored: hashes equal

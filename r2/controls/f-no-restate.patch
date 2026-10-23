@@ -1,0 +1,12 @@
+--- a/lib/bcachefs/src/engine/mount/mod.rs
++++ b/lib/bcachefs/src/engine/mount/mod.rs
+@@ -414,7 +414,8 @@
+             written: Broadcast::default(),
+             root,
+         };
+-        mount.go_read_write(restate).await?;
++        let _ = restate;
++        mount.go_read_write(false).await?;
+         if let Some((_, replayed)) = replay {
+             mount.install_replay(replayed).await?;
+         }

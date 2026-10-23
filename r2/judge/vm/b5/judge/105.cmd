@@ -1,0 +1,1 @@
+cp skip-blacklisted-clean.img skip-blacklisted-clean.u.img && bcachefs fusemount skip-blacklisted-clean.u.img /mnt/t && mkdir /mnt/t/upstream && seq 1 1000 > /mnt/t/upstream/seq && sync; fusermount3 -u /mnt/t

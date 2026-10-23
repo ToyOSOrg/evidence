@@ -1,0 +1,11 @@
+--- a/lib/bcachefs/src/engine/mount/mod.rs
++++ b/lib/bcachefs/src/engine/mount/mod.rs
+@@ -335,7 +335,7 @@
+                 // position alone is not trusted to say which.
+                 let ends = |found: &[journal::Found], at: Option<u64>| found.iter().any(|e| e.good && e.flush && e.seq == clean.journal_seq && at.is_none_or(|at| e.offset + e.sectors == at));
+                 let holding = if used > 0 {
+-                    ends(&journal::scan_bucket(&dev, &sb, key.as_ref(), head).await?, Some(used)).then_some(head)
++                    Some(head)
+                 } else {
+                     let before = (head + journal.ring.len() - 1) % journal.ring.len();
+                     ends(&journal::scan_bucket(&dev, &sb, key.as_ref(), before).await?, None).then_some(before)

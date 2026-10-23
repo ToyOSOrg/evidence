@@ -1,0 +1,11 @@
+--- a/lib/bcachefs/src/engine/mount/mod.rs
++++ b/lib/bcachefs/src/engine/mount/mod.rs
+@@ -453,8 +453,6 @@
+                 // there (a restate after a crash left it unwritten).
+                 st.journal.head_sectors = 0;
+                 st.journal.place(sectors);
+-                st.member.journal_bucket = st.journal.head as u32;
+-                st.member.journal_offset = (st.journal.head_sectors + sectors) as u32;
+                 let roots = encoded_roots(&st.roots);
+                 (seq, journal::clean_body(seq, roots.iter().map(|(b, l, k)| (*b, *l, &k[..])), st.key_version, st.clocks))
+             };

@@ -1,0 +1,11 @@
+--- a/lib/bcachefs/src/engine/mount/ops.rs
++++ b/lib/bcachefs/src/engine/mount/ops.rs
+@@ -269,7 +269,7 @@
+         valid_name(to.1)?;
+         self.observe(now);
+         let removed = self
+-            .transact(K_TX, RENAME, async |txn: &mut Txn| {
++            .transact(K_TX, 7, async |txn: &mut Txn| {
+                 let mut src_parent = self.directory(txn, from.0).await?;
+                 let src = self.named(txn, from.0, &src_parent, from.1).await?.ok_or(Error::NotFound)?;
+                 let mut dst_parent = if to.0 == from.0 { src_parent.clone() } else { self.directory(txn, to.0).await? };

@@ -1,0 +1,11 @@
+--- a/lib/bcachefs/src/engine/mount/mod.rs
++++ b/lib/bcachefs/src/engine/mount/mod.rs
+@@ -262,7 +262,7 @@
+     if sb.journal.is_empty() {
+         return Err(Error::Unsupported("writing a volume without journal buckets"));
+     }
+-    if (sb.node_sectors() as usize) * SECTOR < MIN_NODE {
++    if (sb.node_sectors() as usize) * SECTOR < MIN_NODE / 4 {
+         return Err(Error::Unsupported("writing a volume of btree nodes under 16 KiB"));
+     }
+     // Every write is of whole device blocks, so entries, bsets and nodes

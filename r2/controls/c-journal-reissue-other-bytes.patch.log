@@ -1,0 +1,30 @@
+patch: $B5/controls/c-journal-reissue-other-bytes.patch
+test: interleave::a_failed_journal
+base: 298a57aa69162445a3fc159656627e1b74c62e6a plus the working tree
+files before: 6083f2175bee1d438ff35c1deb88ccc357b9d1fd5b5787a265aa33bb5be8a59f  lib/bcachefs/src/engine/journal.rs
+3ec9179258678e82c5e3f19d4afe79c80a763def74bc62d4a84a313e64cd8167  lib/bcachefs/src/engine/mount/mod.rs
+   Compiling bcachefs v0.1.0 ($WORKTREE/lib/bcachefs)
+    Finished `test` profile [optimized + debuginfo] target(s) in 19.29s
+  Executable unittests src/lib.rs (target/debug/deps/bcachefs-f2c101278f6c619e)
+
+running 1 test
+test engine::tests::interleave::a_failed_journal_write_is_reissued_byte_for_byte ... FAILED
+
+failures:
+
+---- engine::tests::interleave::a_failed_journal_write_is_reissued_byte_for_byte stdout ----
+
+thread 'engine::tests::interleave::a_failed_journal_write_is_reissued_byte_for_byte' (46163885) panicked at lib/bcachefs/src/engine/tests/interleave.rs:301:5:
+assertion `left == right` failed: nonces used over two plaintexts
+  left: [[0, 2, 0, 805306368]]
+ right: []
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    engine::tests::interleave::a_failed_journal_write_is_reissued_byte_for_byte
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 152 filtered out; finished in 0.00s
+
+test exit: 101
+restored: hashes equal

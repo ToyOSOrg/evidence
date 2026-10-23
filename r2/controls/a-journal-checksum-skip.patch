@@ -1,0 +1,11 @@
+--- a/lib/bcachefs/src/engine/journal.rs
++++ b/lib/bcachefs/src/engine/journal.rs
+@@ -194,7 +194,7 @@
+     let sectors = (end.next_multiple_of(block) / SECTOR) as u64;
+     let mut bytes = b[..end].to_vec();
+     let good = match (flags & 0xf) as u8 {
+-        csum::CRC32C_NONZERO if key.is_none() => crc32c(&bytes[16..]) == le32(&bytes, 0),
++        csum::CRC32C_NONZERO if key.is_none() => crc32c(&bytes[16..]) == le32(&bytes, 0) || true,
+         csum::CHACHA_POLY_128 => {
+             let key = key.ok_or(Error::Corrupt("MACed journal entry on an unencrypted volume"))?;
+             let nonce = Nonce::journal(seq);

@@ -1,0 +1,25 @@
+--- a/lib/bcachefs/src/engine/journal.rs
++++ b/lib/bcachefs/src/engine/journal.rs
+@@ -291,15 +291,13 @@
+         // Each entry of the window, and each gap before one, which only the
+         // blacklist may explain: a walk of the entries, not of a span a
+         // crafted entry can make 2^64 long.
+-        let mut next = f.last_seq;
+-        for e in self.entries.range(f.last_seq..=f.seq).map(|(_, e)| e) {
+-            if !sb.blacklisted_span(next, e.seq) {
+-                return Err(Error::Corrupt("a journal entry missing from the replay window"));
+-            }
+-            if !e.good && !sb.blacklisted(e.seq) {
+-                return Err(Error::Checksum("journal entry"));
+-            }
+-            next = e.seq.saturating_add(1);
++        for seq in f.last_seq..=f.seq {
++            match self.entries.get(&seq) {
++                _ if sb.blacklisted(seq) => {}
++                Some(e) if e.good => {}
++                Some(_) => return Err(Error::Checksum("journal entry")),
++                None => return Err(Error::Corrupt("a journal entry missing from the replay window")),
++            }
+         }
+         let next = newest.checked_add(1).ok_or(Error::Corrupt("a journal sequence at its last value"))?;
+         Ok(Some(Window { first: f.last_seq, last: f.seq, next }))

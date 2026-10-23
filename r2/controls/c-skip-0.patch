@@ -1,0 +1,11 @@
+--- a/lib/bcachefs/src/engine/mount/mod.rs
++++ b/lib/bcachefs/src/engine/mount/mod.rs
+@@ -354,7 +354,7 @@
+                 journal.head_sectors = newest.offset + newest.sectors;
+                 // Past every sequence the medium may hold, which the
+                 // blacklist covers from the window's end (A2.15).
+-                let next = window.next.checked_add(SKIP).ok_or(Error::Corrupt("a journal sequence too near its last value to skip past"))?.max(blacklist.last().map_or(0, |b| b.1));
++                let next = window.next.checked_add(0).ok_or(Error::Corrupt("a journal sequence too near its last value to skip past"))?.max(blacklist.last().map_or(0, |b| b.1));
+                 blacklist_add(&mut blacklist, window.last + 1, next);
+                 journal.next_seq = next;
+                 (replayed.clocks, false)

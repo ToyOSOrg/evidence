@@ -1,0 +1,36 @@
+patch: $B5/controls/c-skip-0.patch
+test: interleave::a_bset_naming
+base: 298a57aa69162445a3fc159656627e1b74c62e6a plus the working tree
+files before: 3ec9179258678e82c5e3f19d4afe79c80a763def74bc62d4a84a313e64cd8167  lib/bcachefs/src/engine/mount/mod.rs
+   Compiling bcachefs v0.1.0 ($WORKTREE/lib/bcachefs)
+warning: unused import: `SKIP`
+  --> lib/bcachefs/src/engine/mount/mod.rs:31:67
+   |
+31 | use super::journal::{self, Class, Closed, Jset, Replayed, Writer, SKIP};
+   |                                                                   ^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: `bcachefs` (lib test) generated 1 warning (run `cargo fix --lib -p bcachefs --tests` to apply 1 suggestion)
+    Finished `test` profile [optimized + debuginfo] target(s) in 24.03s
+  Executable unittests src/lib.rs (target/debug/deps/bcachefs-f2c101278f6c619e)
+
+running 1 test
+test engine::tests::interleave::a_bset_naming_an_unflushed_sequence_never_reappears_unblacklisted ... FAILED
+
+failures:
+
+---- engine::tests::interleave::a_bset_naming_an_unflushed_sequence_never_reappears_unblacklisted stdout ----
+
+thread 'engine::tests::interleave::a_bset_naming_an_unflushed_sequence_never_reappears_unblacklisted' (46185282) panicked at lib/bcachefs/src/engine/tests/interleave.rs:170:9:
+a bset naming 2, past the durable 1, not blacklisted
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    engine::tests::interleave::a_bset_naming_an_unflushed_sequence_never_reappears_unblacklisted
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 152 filtered out; finished in 0.01s
+
+test exit: 101
+restored: hashes equal

@@ -1,0 +1,19 @@
+--- a/lib/bcachefs/src/engine/mount/mod.rs
++++ b/lib/bcachefs/src/engine/mount/mod.rs
+@@ -1064,12 +1064,12 @@
+         // Every change's node is found before any changes: a pointer update
+         // this transaction makes would lead the descent to a node not yet
+         // installed.
+-        let updates: Vec<_> = core::mem::take(&mut txn.updates).into_iter().map(|((btree, level, pos), kv)| (held(st, btree, level, pos), pos, kv)).collect();
+-        let accounting: Vec<_> = core::mem::take(&mut txn.accounting).into_iter().map(|(pos, delta)| (held(st, Btree::Accounting, 0, pos), pos, delta)).collect();
+-        for (id, pos, kv) in updates {
++        for ((btree, level, pos), kv) in core::mem::take(&mut txn.updates) {
++            let id = held(st, btree, level, pos);
+             st.cache.change(id, |n| n.put(pos, kv, seq));
+         }
+-        for (id, pos, delta) in accounting {
++        for (pos, delta) in core::mem::take(&mut txn.accounting) {
++            let id = held(st, Btree::Accounting, 0, pos);
+             let version = versions[&pos];
+             st.cache.change(id, |n| {
+                 let i = n.at(pos);

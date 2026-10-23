@@ -1,0 +1,29 @@
+patch: $B5/controls/f-cache-by-sector-alone.patch
+test: mount::a_pointer_to_a_cached
+base: 298a57aa69162445a3fc159656627e1b74c62e6a plus the working tree
+files before: 3ec9179258678e82c5e3f19d4afe79c80a763def74bc62d4a84a313e64cd8167  lib/bcachefs/src/engine/mount/mod.rs
+   Compiling bcachefs v0.1.0 ($WORKTREE/lib/bcachefs)
+    Finished `test` profile [optimized + debuginfo] target(s) in 52.29s
+  Executable unittests src/lib.rs (target/debug/deps/bcachefs-f2c101278f6c619e)
+
+running 1 test
+test engine::tests::mount::a_pointer_to_a_cached_node_of_another_btree_is_refused ... FAILED
+
+failures:
+
+---- engine::tests::mount::a_pointer_to_a_cached_node_of_another_btree_is_refused stdout ----
+
+thread 'engine::tests::mount::a_pointer_to_a_cached_node_of_another_btree_is_refused' (46393501) panicked at lib/bcachefs/src/engine/tests/mount.rs:268:5:
+assertion `left == right` failed
+  left: Err(NotFound)
+ right: Err(Corrupt("two btree pointers to one node"))
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    engine::tests::mount::a_pointer_to_a_cached_node_of_another_btree_is_refused
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 152 filtered out; finished in 0.00s
+
+test exit: 101
+restored: hashes equal

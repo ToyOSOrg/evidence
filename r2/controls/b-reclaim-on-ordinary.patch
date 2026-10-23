@@ -1,0 +1,16 @@
+--- a/lib/bcachefs/src/engine/mount/reclaim.rs
++++ b/lib/bcachefs/src/engine/mount/reclaim.rs
+@@ -108,11 +108,11 @@
+         // Closed entries hold pipeline depth that only writing them returns:
+         // reclaim never waits on what it would itself have to do.
+         self.flush_closed().await?;
+-        self.admit(Class::Reclaim, bound, nodes).await?;
++        self.admit(Class::Ordinary, bound, nodes).await?;
+         let _slot = self.slot(Class::Reclaim).await;
+         let mut txn = Txn::default();
+         let out = self.point(&mut txn, plans).await;
+-        self.finish(txn, out.is_ok(), Class::Reclaim, bound, nodes)?;
++        self.finish(txn, out.is_ok(), Class::Ordinary, bound, nodes)?;
+         out
+     }
+ 

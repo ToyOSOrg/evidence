@@ -1,0 +1,27 @@
+patch: $B5/controls/f-hold-ignores-read-only.patch
+test: interleave::a_node_write_failing
+base: 298a57aa69162445a3fc159656627e1b74c62e6a plus the working tree
+files before: 3ec9179258678e82c5e3f19d4afe79c80a763def74bc62d4a84a313e64cd8167  lib/bcachefs/src/engine/mount/mod.rs
+   Compiling bcachefs v0.1.0 ($WORKTREE/lib/bcachefs)
+    Finished `test` profile [optimized + debuginfo] target(s) in 55.18s
+  Executable unittests src/lib.rs (target/debug/deps/bcachefs-f2c101278f6c619e)
+
+running 1 test
+test engine::tests::interleave::a_node_write_failing_past_its_retries_stops_the_mount_and_its_waiters ... FAILED
+
+failures:
+
+---- engine::tests::interleave::a_node_write_failing_past_its_retries_stops_the_mount_and_its_waiters stdout ----
+
+thread 'engine::tests::interleave::a_node_write_failing_past_its_retries_stops_the_mount_and_its_waiters' (46412528) panicked at lib/bcachefs/src/engine/tests/interleave.rs:385:12:
+a writer stalled behind the failed write; dirty=2 unp=2 over=0 granted=7 rg=0 limit=75 room=24 open=Some((2, 71)) closed=0 ring_free=14 openable=3 reclaim_entries=6 durable_last=1 newest=[Some(1), None, None, None, None, None, None, None, None, None, None, None, None, None, None, None] head=0 hs=8 pins=Some(2) slot=true admitq_empty=true reclq=true nodes=[(Inodes, 0, false, Some(2), Some(2), true, 1, 248), (Dirents, 0, false, Some(2), Some(2), true, 0, 56), (LoggedOps, 0, true, Some(2), None, false, 1, 56), (Accounting, 0, true, Some(2), None, false, 2, 1440)]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    engine::tests::interleave::a_node_write_failing_past_its_retries_stops_the_mount_and_its_waiters
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 152 filtered out; finished in 0.00s
+
+test exit: 101
+restored: hashes equal

@@ -1,0 +1,11 @@
+--- a/lib/bcachefs/src/engine/mount/ops.rs
++++ b/lib/bcachefs/src/engine/mount/ops.rs
+@@ -102,7 +102,7 @@
+ 
+ /// A directory's link count less the subdirectory it loses.
+ fn one_link_less(dir: &mut InodeValue) -> Result<()> {
+-    let nlink = dir.field(inode_field::NLINK).checked_sub(1).ok_or(Error::Corrupt("a directory counting fewer subdirectories than it holds"))?;
++    let nlink = dir.field(inode_field::NLINK).wrapping_sub(1);
+     dir.set(inode_field::NLINK, nlink);
+     Ok(())
+ }

@@ -1,0 +1,27 @@
+--- a/lib/bcachefs/src/engine/cache.rs
++++ b/lib/bcachefs/src/engine/cache.rs
+@@ -168,7 +168,7 @@
+     pub(crate) fn change<T>(&mut self, id: NodeId, f: impl FnOnce(&mut Cached) -> T) -> T {
+         let node = self.nodes[id.0].as_mut().expect("a node of the cache");
+         let full = self.full;
+-        let over = |n: &Cached| n.pin().is_some() && n.bytes > full;
++        let over = |n: &Cached| n.bytes > full;
+         let (pin, dirty, unpointed, sector, over1) = (node.pin(), node.dirty(), node.captured.is_some(), node.sector, over(node));
+         let out = f(node);
+         let (pin2, dirty2, unpointed2, sector2, over2) = (node.pin(), node.dirty(), node.captured.is_some(), node.sector, over(node));
+@@ -199,6 +199,7 @@
+     /// make room for it, so its id holds until the next insert.
+     pub(crate) fn insert(&mut self, mut node: Cached) -> NodeId {
+         assert!(node.pin().is_none(), "a node enters the cache with nothing pinned");
++        self.oversized += usize::from(node.bytes > self.full);
+         self.evict();
+         self.clock += 1;
+         node.used = self.clock;
+@@ -221,6 +222,7 @@
+     pub(crate) fn remove(&mut self, id: NodeId) -> Cached {
+         let node = self.nodes[id.0].take().expect("a node of the cache");
+         assert!(node.pin().is_none(), "a replaced node still pins the journal");
++        self.oversized -= usize::from(node.bytes > self.full);
+         self.by_sector.remove(&node.sector);
+         self.free.push(id.0);
+         node

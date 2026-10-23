@@ -1,0 +1,41 @@
+patch: $B5/controls/b-reclaim-on-ordinary.patch
+test: admission::
+base: 298a57aa69162445a3fc159656627e1b74c62e6a plus the working tree
+files before: 11f354ce74afe97a00f26073635298a468fe98cff343d052de275aa0daa76888  lib/bcachefs/src/engine/mount/reclaim.rs
+   Compiling bcachefs v0.1.0 ($WORKTREE/lib/bcachefs)
+    Finished `test` profile [optimized + debuginfo] target(s) in 20.69s
+  Executable unittests src/lib.rs (target/debug/deps/bcachefs-f2c101278f6c619e)
+
+running 3 tests
+test engine::tests::admission::a_writer_filling_the_cache_with_dirty_nodes_completes_while_reclaim_runs ... FAILED
+test engine::tests::admission::a_writer_waiting_on_a_full_journal_completes_while_reclaim_runs ... FAILED
+test engine::tests::admission::concurrent_writers_keep_the_dirty_node_limit ... FAILED
+
+failures:
+
+---- engine::tests::admission::a_writer_filling_the_cache_with_dirty_nodes_completes_while_reclaim_runs stdout ----
+
+thread 'engine::tests::admission::a_writer_filling_the_cache_with_dirty_nodes_completes_while_reclaim_runs' (46160674) panicked at lib/bcachefs/src/engine/tests/admission.rs:83:12:
+every writer stalled; dirty=2 unp=2 over=0 granted=0 rg=0 limit=10 room=24 open=Some((2, 71)) closed=0 ring_free=14 openable=3 reclaim_entries=3 durable_last=1 newest=[Some(1), None, None, None, None, None, None, None, None, None, None, None, None, None, None, None] head=0 hs=8 pins=Some(2) slot=false admitq_empty=false reclq=true nodes=[(Inodes, 0, false, Some(2), Some(2), false, 0, 248), (Dirents, 0, false, Some(2), Some(2), false, 0, 56), (LoggedOps, 0, true, Some(2), None, false, 0, 56), (Accounting, 0, true, Some(2), None, false, 0, 1440)]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- engine::tests::admission::a_writer_waiting_on_a_full_journal_completes_while_reclaim_runs stdout ----
+
+thread 'engine::tests::admission::a_writer_waiting_on_a_full_journal_completes_while_reclaim_runs' (46160675) panicked at lib/bcachefs/src/engine/tests/admission.rs:83:12:
+every writer stalled; dirty=2 unp=2 over=0 granted=0 rg=0 limit=75 room=24 open=Some((5, 2981)) closed=0 ring_free=12 openable=3 reclaim_entries=6 durable_last=2 newest=[None, Some(2), Some(3), Some(4), None, None, None, None, None, None, None, None, None, None, None, None] head=3 hs=64 pins=Some(2) slot=false admitq_empty=false reclq=true nodes=[(Inodes, 0, false, Some(2), Some(2), false, 0, 25456), (Dirents, 0, false, Some(2), Some(2), false, 0, 11088), (LoggedOps, 0, true, Some(2), None, false, 0, 56), (Accounting, 0, true, Some(2), None, false, 0, 1440)]
+
+---- engine::tests::admission::concurrent_writers_keep_the_dirty_node_limit stdout ----
+
+thread 'engine::tests::admission::concurrent_writers_keep_the_dirty_node_limit' (46160676) panicked at lib/bcachefs/src/engine/tests/admission.rs:83:12:
+every writer stalled; dirty=3 unp=2 over=0 granted=0 rg=0 limit=10 room=24 open=Some((2, 72)) closed=0 ring_free=14 openable=3 reclaim_entries=3 durable_last=1 newest=[Some(1), None, None, None, None, None, None, None, None, None, None, None, None, None, None, None] head=0 hs=8 pins=Some(2) slot=false admitq_empty=false reclq=true nodes=[(Inodes, 0, false, Some(2), Some(2), false, 0, 21496), (Dirents, 0, false, Some(2), Some(2), false, 0, 21336), (LoggedOps, 0, true, Some(2), None, false, 0, 56), (Inodes, 0, true, Some(2), None, false, 0, 21632), (Accounting, 0, true, Some(2), None, false, 0, 1440)]
+
+
+failures:
+    engine::tests::admission::a_writer_filling_the_cache_with_dirty_nodes_completes_while_reclaim_runs
+    engine::tests::admission::a_writer_waiting_on_a_full_journal_completes_while_reclaim_runs
+    engine::tests::admission::concurrent_writers_keep_the_dirty_node_limit
+
+test result: FAILED. 0 passed; 3 failed; 0 ignored; 0 measured; 150 filtered out; finished in 0.04s
+
+test exit: 101
+restored: hashes equal

@@ -1,0 +1,45 @@
+patch: $B5/controls/c-no-fresh-node.patch
+test: interleave::the_first_write
+base: 298a57aa69162445a3fc159656627e1b74c62e6a plus the working tree
+files before: 3ec9179258678e82c5e3f19d4afe79c80a763def74bc62d4a84a313e64cd8167  lib/bcachefs/src/engine/mount/mod.rs
+   Compiling bcachefs v0.1.0 ($WORKTREE/lib/bcachefs)
+warning: field `fresh_below` is never read
+   --> lib/bcachefs/src/engine/mount/mod.rs:125:5
+    |
+ 99 | struct State {
+    |        ----- field in this struct
+...
+125 |     fresh_below: u64,
+    |     ^^^^^^^^^^^
+    |
+note: the lint level is defined here
+   --> lib/bcachefs/src/lib.rs:23:8
+    |
+ 23 | #[warn(dead_code)]
+    |        ^^^^^^^^^
+
+warning: `bcachefs` (lib test) generated 1 warning
+    Finished `test` profile [optimized + debuginfo] target(s) in 19.67s
+  Executable unittests src/lib.rs (target/debug/deps/bcachefs-f2c101278f6c619e)
+
+running 1 test
+test engine::tests::interleave::the_first_write_to_a_node_after_a_crash_goes_to_a_fresh_node_and_repeats_no_nonce ... FAILED
+
+failures:
+
+---- engine::tests::interleave::the_first_write_to_a_node_after_a_crash_goes_to_a_fresh_node_and_repeats_no_nonce stdout ----
+
+thread 'engine::tests::interleave::the_first_write_to_a_node_after_a_crash_goes_to_a_fresh_node_and_repeats_no_nonce' (46165475) panicked at lib/bcachefs/src/engine/tests/interleave.rs:122:5:
+assertion `left == right` failed: nonces used over two plaintexts
+  left: [[4096, 2617434560, 2278373023, 536870914], [4096, 2642789610, 2629109230, 536870914], [4096, 3224917999, 2821782912, 536870914], [4096, 3853063959, 2085686602, 536870914]]
+ right: []
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    engine::tests::interleave::the_first_write_to_a_node_after_a_crash_goes_to_a_fresh_node_and_repeats_no_nonce
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 152 filtered out; finished in 0.01s
+
+test exit: 101
+restored: hashes equal

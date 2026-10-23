@@ -1,0 +1,17 @@
+--- a/lib/bcachefs/src/engine/node.rs
++++ b/lib/bcachefs/src/engine/node.rs
+@@ -207,14 +207,8 @@
+     if level > 0 && key.kind == kind::BTREE_PTR {
+         return Err(Error::Unsupported("btree_ptr before btree_ptr_v2"));
+     }
+-    if level > 0 && key.kind == kind::BTREE_PTR_V2 {
+-        NodePtr::decode(value)?;
+-    }
+     if level == 0 && kind::strict(key.kind) && !btree.allows(0, key.kind) {
+         return Err(Error::Corrupt("key of a type its btree does not hold"));
+-    }
+-    if key.kind == kind::ACCOUNTING {
+-        super::journal::counters(value)?;
+     }
+     Ok(())
+ }

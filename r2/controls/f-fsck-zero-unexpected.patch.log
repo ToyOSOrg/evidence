@@ -1,0 +1,29 @@
+patch: $B5/controls/f-fsck-zero-unexpected.patch
+test: journal::a_stored_zero_accounting
+base: 298a57aa69162445a3fc159656627e1b74c62e6a plus the working tree
+files before: 469f8a5090dd0d431ff44e742b17ae69dd9873a985ea616077a4a8f9eff27c90  lib/bcachefs/src/engine/fsck.rs
+   Compiling bcachefs v0.1.0 ($WORKTREE/lib/bcachefs)
+    Finished `test` profile [optimized + debuginfo] target(s) in 12.49s
+  Executable unittests src/lib.rs (target/debug/deps/bcachefs-f2c101278f6c619e)
+
+running 1 test
+test engine::tests::journal::a_stored_zero_accounting_total_is_no_finding_clean_or_unclean ... FAILED
+
+failures:
+
+---- engine::tests::journal::a_stored_zero_accounting_total_is_no_finding_clean_or_unclean stdout ----
+
+thread 'engine::tests::journal::a_stored_zero_accounting_total_is_no_finding_clean_or_unclean' (46311894) panicked at lib/bcachefs/src/engine/tests/journal.rs:388:5:
+assertion `left == right` failed
+  left: [Derived { btree: Accounting, pos: Bpos { inode: 432345564210987008, offset: 0, snapshot: 0 }, rule: "unexpected" }]
+ right: []
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    engine::tests::journal::a_stored_zero_accounting_total_is_no_finding_clean_or_unclean
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 152 filtered out; finished in 0.00s
+
+test exit: 101
+restored: hashes equal

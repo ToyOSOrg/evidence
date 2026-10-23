@@ -1,0 +1,10 @@
+--- a/lib/bcachefs/src/engine/mount/mod.rs
++++ b/lib/bcachefs/src/engine/mount/mod.rs
+@@ -1285,7 +1285,6 @@
+     /// came to zero stay, as upstream keeps them (A7.23).
+     pub async fn unmount(self) -> Result<()> {
+         // A clean volume holds no orphan (A8.14), and nothing holds one now.
+-        self.release_orphans().await?;
+         self.check_writable()?;
+         while self.busy() {
+             // Nothing else runs now, so every dirty node is ready to write.

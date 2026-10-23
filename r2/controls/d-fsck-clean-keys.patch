@@ -1,0 +1,18 @@
+--- a/lib/bcachefs/src/engine/fsck.rs
++++ b/lib/bcachefs/src/engine/fsck.rs
+@@ -498,15 +498,7 @@
+         for &ino in self.orphans.iter().filter(|ino| !self.inodes.contains_key(ino)) {
+             found.push(Finding::Key { btree: Btree::DeletedInodes, pos: Bpos::new(0, ino, mkfs::ROOT_SNAPSHOT), rule: "deleted_inodes key of no inode" });
+         }
+-        if clean {
+-            for &ino in &self.orphans {
+-                found.push(Finding::Key { btree: Btree::DeletedInodes, pos: Bpos::new(0, ino, mkfs::ROOT_SNAPSHOT), rule: "deleted_inodes key on a clean volume" });
+-            }
+-        }
+         for (&pos, &kind_) in &self.logged_ops {
+-            if clean {
+-                found.push(Finding::Key { btree: Btree::LoggedOps, pos, rule: "logged operation on a clean volume" });
+-            }
+             if kind_ != kind::LOGGED_OP_TRUNCATE {
+                 found.push(Finding::Key { btree: Btree::LoggedOps, pos, rule: "logged operation other than a truncate" });
+             }

@@ -1,0 +1,14 @@
+--- a/lib/bcachefs/src/engine/mount/mod.rs
++++ b/lib/bcachefs/src/engine/mount/mod.rs
+@@ -988,8 +988,10 @@
+         assert!(nodes <= FOOTPRINT, "a grant of {nodes} nodes, past the largest any operation takes");
+         self.check_writable()?;
+         let _slot = loop {
+-            self.admit(Class::Ordinary, bound, nodes).await?;
++            self.admit(Class::Ordinary, bound, 0).await?;
+             let slot = self.slot(Class::Ordinary).await;
++            self.admit(Class::Ordinary, 0, nodes).await?;
++            self.st.borrow_mut().journal.unreserve(0);
+             let mut st = self.st.borrow_mut();
+             if st.cache.oversized == 0 {
+                 break slot;

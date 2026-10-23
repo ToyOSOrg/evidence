@@ -1,0 +1,29 @@
+patch: $B5/controls/d-unmount-skips-orphans.patch
+test: ops::a_clean_unmount_releases_every_orphan_first
+base: 298a57aa69162445a3fc159656627e1b74c62e6a plus the working tree
+files before: 3ec9179258678e82c5e3f19d4afe79c80a763def74bc62d4a84a313e64cd8167  lib/bcachefs/src/engine/mount/mod.rs
+   Compiling bcachefs v0.1.0 ($WORKTREE/lib/bcachefs)
+    Finished `test` profile [optimized + debuginfo] target(s) in 31.61s
+  Executable unittests src/lib.rs (target/debug/deps/bcachefs-f2c101278f6c619e)
+
+running 1 test
+test engine::tests::ops::a_clean_unmount_releases_every_orphan_first ... FAILED
+
+failures:
+
+---- engine::tests::ops::a_clean_unmount_releases_every_orphan_first stdout ----
+
+thread 'engine::tests::ops::a_clean_unmount_releases_every_orphan_first' (46246355) panicked at lib/bcachefs/src/engine/tests/ops.rs:21:5:
+assertion `left == right` failed
+  left: [Key { btree: DeletedInodes, pos: Bpos { inode: 0, offset: 2147483648, snapshot: 4294967295 }, rule: "deleted_inodes key on a clean volume" }, Key { btree: DeletedInodes, pos: Bpos { inode: 0, offset: 2147483649, snapshot: 4294967295 }, rule: "deleted_inodes key on a clean volume" }, Inode { ino: 2147483648, rule: "unlinked on a clean volume" }, Inode { ino: 2147483649, rule: "unlinked on a clean volume" }]
+ right: []
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    engine::tests::ops::a_clean_unmount_releases_every_orphan_first
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 152 filtered out; finished in 0.00s
+
+test exit: 101
+restored: hashes equal

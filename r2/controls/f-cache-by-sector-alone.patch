@@ -1,0 +1,11 @@
+--- a/lib/bcachefs/src/engine/mount/mod.rs
++++ b/lib/bcachefs/src/engine/mount/mod.rs
+@@ -579,7 +579,7 @@
+         let cached = |st: &mut State| {
+             st.cache.at_sector(ptr.ptr.sector).map(|id| {
+                 let n = st.cache.node(id);
+-                if (n.btree, n.level, n.seq, n.min, n.max) == (btree, level, ptr.seq, ptr.min, max) {
++                if n.sector == ptr.ptr.sector {
+                     Ok(id)
+                 } else {
+                     Err(Error::Corrupt("two btree pointers to one node"))

@@ -1,0 +1,11 @@
+--- a/lib/bcachefs/src/engine/mount/ops.rs
++++ b/lib/bcachefs/src/engine/mount/ops.rs
+@@ -94,7 +94,7 @@
+ /// field's 32 bits.
+ fn deeper(parent: &InodeValue) -> Result<u64> {
+     let depth = parent.field(inode_field::DEPTH) + 1;
+-    if depth > u64::from(u32::MAX) {
++    if depth > u64::MAX - 1 {
+         return Err(Error::NoSpace("a directory depth at its largest"));
+     }
+     Ok(depth)

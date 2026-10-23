@@ -1,0 +1,31 @@
+patch: $B5/controls/f-window-per-sequence.patch
+test: journal::a_window_spanning
+base: 298a57aa69162445a3fc159656627e1b74c62e6a plus the working tree
+files before: 6083f2175bee1d438ff35c1deb88ccc357b9d1fd5b5787a265aa33bb5be8a59f  lib/bcachefs/src/engine/journal.rs
+    Blocking waiting for file lock on package cache
+   Compiling bcachefs v0.1.0 ($WORKTREE/lib/bcachefs)
+warning: method `blacklisted_span` is never used
+   --> lib/bcachefs/src/engine/superblock.rs:410:19
+    |
+302 | impl Superblock {
+    | --------------- method in this implementation
+...
+410 |     pub(crate) fn blacklisted_span(&self, start: u64, end: u64) -> bool {
+    |                   ^^^^^^^^^^^^^^^^
+    |
+note: the lint level is defined here
+   --> lib/bcachefs/src/lib.rs:23:8
+    |
+ 23 | #[warn(dead_code)]
+    |        ^^^^^^^^^
+
+warning: `bcachefs` (lib test) generated 1 warning
+    Finished `test` profile [optimized + debuginfo] target(s) in 28.51s
+  Executable unittests src/lib.rs (target/debug/deps/bcachefs-f2c101278f6c619e)
+
+running 1 test
+test engine::tests::journal::a_window_spanning_2_62_sequences_is_checked_entry_by_entry has been running for over 60 seconds
+KILLED by the watchdog
+$B5/controls/run.sh: line 19: 56615 Terminated: 15          ./$B "$T" 2>&1
+test exit: 143
+restored: hashes equal

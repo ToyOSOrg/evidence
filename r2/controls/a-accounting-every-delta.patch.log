@@ -1,0 +1,30 @@
+patch: $B5/controls/a-accounting-every-delta.patch
+test: unclean_fixture
+base: 298a57aa69162445a3fc159656627e1b74c62e6a plus the working tree
+files before: 6083f2175bee1d438ff35c1deb88ccc357b9d1fd5b5787a265aa33bb5be8a59f  lib/bcachefs/src/engine/journal.rs
+   Compiling bcachefs v0.1.0 ($WORKTREE/lib/bcachefs)
+    Finished `test` profile [optimized + debuginfo] target(s) in 16.60s
+  Executable unittests src/lib.rs (target/debug/deps/bcachefs-f2c101278f6c619e)
+
+running 2 tests
+test engine::tests::mount::the_unclean_fixture_mounts_read_write_past_the_skip_and_unmounts_clean ... ok
+test engine::tests::journal::the_unclean_fixture_is_read_through_its_journal ... FAILED
+
+failures:
+
+---- engine::tests::journal::the_unclean_fixture_is_read_through_its_journal stdout ----
+
+thread 'engine::tests::journal::the_unclean_fixture_is_read_through_its_journal' (46098340) panicked at lib/bcachefs/src/engine/tests/journal.rs:38:5:
+assertion `left == right` failed
+  left: [Superblock("format's feature set"), Superblock("member discard off"), Superblock("member not rotational, and known"), Superblock("member device name, model and serial zero"), Superblock("no counters field"), Superblock("no errors_v2 field"), Superblock("no recovery_passes field"), Derived { btree: Accounting, pos: Bpos { inode: 144960716812582912, offset: 0, snapshot: 0 }, rule: "differs" }, Derived { btree: Accounting, pos: Bpos { inode: 216172782113783808, offset: 0, snapshot: 0 }, rule: "differs" }, Derived { btree: Accounting, pos: Bpos { inode: 216176080648667136, offset: 0, snapshot: 0 }, rule: "differs" }, Derived { btree: Accounting, pos: Bpos { inode: 216182677718433792, offset: 0, snapshot: 0 }, rule: "differs" }, Derived { btree: Accounting, pos: Bpos { inode: 432627039204278272, offset: 0, snapshot: 0 }, rule: "differs" }]
+ right: [Superblock("format's feature set"), Superblock("member discard off"), Superblock("member not rotational, and known"), Superblock("member device name, model and serial zero"), Superblock("no counters field"), Superblock("no errors_v2 field"), Superblock("no recovery_passes field")]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    engine::tests::journal::the_unclean_fixture_is_read_through_its_journal
+
+test result: FAILED. 1 passed; 1 failed; 0 ignored; 0 measured; 151 filtered out; finished in 0.07s
+
+test exit: 101
+restored: hashes equal

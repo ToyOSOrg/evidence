@@ -1,0 +1,33 @@
+--- a/lib/bcachefs/src/engine/cache.rs
++++ b/lib/bcachefs/src/engine/cache.rs
+@@ -199,7 +199,6 @@
+     /// make room for it, so its id holds until the next insert.
+     pub(crate) fn insert(&mut self, mut node: Cached) -> NodeId {
+         assert!(node.pin().is_none(), "a node enters the cache with nothing pinned");
+-        self.evict();
+         self.clock += 1;
+         node.used = self.clock;
+         let sector = node.sector;
+@@ -214,6 +213,7 @@
+             }
+         };
+         assert!(self.by_sector.insert(sector, id).is_none(), "two cached nodes at sector {sector}");
++        self.evict();
+         id
+     }
+ 
+@@ -230,12 +230,12 @@
+     /// is left to evict.
+     fn evict(&mut self) {
+         let live = self.nodes.len() - self.free.len();
+-        if live < self.capacity {
++        if live <= self.capacity {
+             return;
+         }
+         let mut clean: Vec<(u64, usize)> = self.nodes.iter().enumerate().filter_map(|(i, n)| n.as_ref().filter(|n| n.evictable()).map(|n| (n.used, i))).collect();
+         clean.sort_unstable();
+-        for (_, i) in clean.into_iter().take(live + 1 - self.capacity) {
++        for (_, i) in clean.into_iter().take(live - self.capacity) {
+             let node = self.nodes[i].take().unwrap();
+             self.by_sector.remove(&node.sector);
+             self.free.push(i);
