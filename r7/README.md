@@ -17,4 +17,4 @@ Conflicts resolved:
 | rows.log.gz | `session_lifecycle console_image_boots kernel_objects_refused_alone` | 0 |
 | t14-request.txt | `floorcase` staged at `38f3c282b` | 2, the staging-only exit |
 
-The T14 `floorcase` boot at `825114d83` was not requested. The rebase changes the kernel paths `floorcase` covers (pipe, scheduler, IPC), so it is restaged here.
+I requested the T14 `floorcase` boot at `825114d83` in round 6, and I have not seen its result. The rebase changes the kernel paths `floorcase` covers (pipe, scheduler, IPC), so it is restaged here.
