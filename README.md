@@ -15,3 +15,10 @@ Branch head measured: `7280e0970` (ToyOS `wt/virtio-console-userland`). Host: Ap
 - `stall/` — the stdout reader stopped 20 s after 20 KB, twice (`stall.patch` on `after.patch`): ready reached, 380 of 380 flood records once each, no torn line.
 - `measure/` — console cost per byte. `apply.py <tree> before|after` is the throwaway flood and arrival timestamps (`before.patch` on `origin/main` `3a19907ab`, `after.patch` on `6ecb8caab`); `hvf-before.py`/`hvf-after.py` give `virt` the console function; `rate.py` computes `rates.txt`. Five runs per cell, exit 0 each.
 - `metal/` — the T14's `shared-debug` boot at `7280e0970`, run by the orchestrator from `request.txt`: `pci_capability_walk` PASS (`judge-v.log`, verdict `passed`; `kernel.log` says `pci cap selftest 6/6`). The readback's text files only; partition GUIDs and the vendor, product and BIOS strings are masked, and the stick and log partition images are not published.
+
+## Review r1
+
+- `guest/suite-a2a172d47-4-red.log` — the whole q35/virt guest suite at `a2a172d47` (r1's fixes): exit 1, 75 of 79. Three reds were the rewired harness's (a machine that refuses every claim has no console carrier; `iommu_virtio_platform` counted kernel-driven virtio functions); `netstack_holders_exported_to_children` hung at `test_rs_socket_export`'s race.
+- `guest/socket-export-hang-base.log` — the same row on `origin/main` `2a5b446b0`: the same hang (965 s silent). On the branch it hung 2 of 3 (`socket-export-hang-branch-1.log`, the suite's) and passed once (`socket-export-pass-branch-2.log`). Recorded as `issues/socket-export-hangs-at-its-race.md`.
+- `guest/r1-fixed-rows*.log` — the three harness reds green after the fix.
+- `guest/suite-ebac17a93-green.log` — the whole guest suite at `ebac17a93`: exit 0, 79 of 79, at load averages 38 to 58.
