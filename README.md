@@ -16,6 +16,11 @@ Same probe and agreement checks as r1. Outputs `r2/t14`, `r2/amd` (every run exi
   - AMD: 64.6 and 67.9 ns.
   - Constant time passes on both benches.
 - `r4/toyos-disasm/`: `Gcm::open` and `secret::wipe` from `crypto_parity` for `x86_64-unknown-toyos`,
-  `[profile.toyos]`, built from the review-r1 head.
+  `[profile.toyos]`, built from 778ac04ee (the review-r1 code commit; `erase` is `wipe` over a value's bytes).
   - `open` calls no `memset`: its calls are the tag, CTR, stitch, digest, short path and panics.
   - The wipe is inlined as 16-byte stores.
+
+- At 16 KiB the 16-byte wipe costs more than the `memset` did.
+  - T14 reject/16384: 1898 and 2094 ns (0.988, 0.982), against 1462 and 1643 ns at 43690c542.
+  - AMD: 3916 and 4213 ns (1.135, 1.112), against 3556 and 3873 ns.
+  - Recorded in the track and the `memset` issue.
