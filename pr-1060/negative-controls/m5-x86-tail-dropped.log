@@ -1,0 +1,64 @@
+   Compiling bcachefs v0.1.0 (~/Dev/<user>/toyos-served-files/lib/bcachefs)
+warning: unused import: `_mm_crc32_u8`
+ --> lib/bcachefs/src/crc32c/x86_64.rs:6:41
+  |
+6 | use core::arch::x86_64::{_mm_crc32_u64, _mm_crc32_u8};
+  |                                         ^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: variable does not need to be mutable
+  --> lib/bcachefs/src/crc32c/x86_64.rs:24:9
+   |
+24 |     let mut crc = wide as u32;
+   |         ----^^^
+   |         |
+   |         help: remove this `mut`
+   |
+   = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+
+warning: `bcachefs` (lib test) generated 2 warnings (run `cargo fix --lib -p bcachefs --tests` to apply 2 suggestions)
+    Finished `test` profile [optimized + debuginfo] target(s) in 18.76s
+     Running unittests src/lib.rs (target/x86_64-apple-darwin/debug/deps/bcachefs-133079a65d4ef10c)
+
+running 6 tests
+test crc32c::tests::the_instruction_is_the_oracle_at_every_length_and_alignment ... FAILED
+test crc32c::tests::the_uninverted_register_has_its_own_check_value ... FAILED
+test crc32c::tests::rfc_3720_vectors ... FAILED
+test engine::tests::the_crc32c_fixture_derives_its_own_state ... ok
+test engine::tests::the_crc32c_fixture_reads_its_tree ... ok
+test engine::tests::the_fixtures_type_5_values_are_the_uninverted_crc32c ... ok
+
+failures:
+
+---- crc32c::tests::the_instruction_is_the_oracle_at_every_length_and_alignment stdout ----
+
+thread 'crc32c::tests::the_instruction_is_the_oracle_at_every_length_and_alignment' (53617372) panicked at lib/bcachefs/src/crc32c/mod.rs:90:17:
+assertion `left == right` failed: 1 bytes at 0
+  left: 0
+ right: 1327409700
+
+---- crc32c::tests::the_uninverted_register_has_its_own_check_value stdout ----
+
+thread 'crc32c::tests::the_uninverted_register_has_its_own_check_value' (53617373) panicked at lib/bcachefs/src/crc32c/mod.rs:69:9:
+assertion `left == right` failed
+  left: 3970904592
+ right: 1491335712
+
+---- crc32c::tests::rfc_3720_vectors stdout ----
+
+thread 'crc32c::tests::rfc_3720_vectors' (53617371) panicked at lib/bcachefs/src/crc32c/mod.rs:61:13:
+assertion `left == right` failed: [31, 32, 33, 34, 35, 36, 37, 38, 39]
+  left: 1619493018
+ right: 3808858755
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    crc32c::tests::rfc_3720_vectors
+    crc32c::tests::the_instruction_is_the_oracle_at_every_length_and_alignment
+    crc32c::tests::the_uninverted_register_has_its_own_check_value
+
+test result: FAILED. 3 passed; 3 failed; 0 ignored; 0 measured; 149 filtered out; finished in 0.07s
+
+error: test failed, to rerun pass `-p bcachefs --lib`

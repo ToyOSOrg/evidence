@@ -1,0 +1,27 @@
+# PR #1060 T14 A/B: 5 boots. Supersedes <scratch>/t14/request.txt.
+# osbench fs.served.* rows: base benchcase (32046264b, the merge base) against head benchcase (a0aba9cc8).
+# The head's testcases, testcases-readdir and proctreecase carry the file-semantics guest tests.
+
+## BASE 32046264b
+
+benchcase
+  image: <scratch>/t14-base/benchcase/image.img
+  cargo run -p toyos-metal -- --image <scratch>/t14-base/benchcase/image.img --readback <scratch>/t14-base/benchcase --fat32-check
+
+## HEAD a0aba9cc8
+
+benchcase
+  image: <scratch>/t14-head2/benchcase/image.img
+  cargo run -p toyos-metal -- --image <scratch>/t14-head2/benchcase/image.img --readback <scratch>/t14-head2/benchcase --fat32-check
+
+proctreecase
+  image: <scratch>/t14-head2/proctreecase/image.img
+  cargo run -p toyos-metal -- --image <scratch>/t14-head2/proctreecase/image.img --readback <scratch>/t14-head2/proctreecase --fat32-check
+
+testcases
+  image: <scratch>/t14-head2/testcases/image.img
+  cargo run -p toyos-metal -- --image <scratch>/t14-head2/testcases/image.img --readback <scratch>/t14-head2/testcases --fat32-check
+
+testcases-readdir
+  image: <scratch>/t14-head2/testcases-readdir/image.img
+  cargo run -p toyos-metal -- --image <scratch>/t14-head2/testcases-readdir/image.img --readback <scratch>/t14-head2/testcases-readdir --fat32-check

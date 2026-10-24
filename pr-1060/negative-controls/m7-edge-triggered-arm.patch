@@ -1,0 +1,15 @@
+--- <scratch>/mutations/inbox_answer.rs.good	2026-10-24 07:39:15
++++ kernel/loom/tests/inbox_answer.rs	2026-10-24 07:39:15
+@@ -129,11 +129,7 @@
+     /// Fired now if its object holds bytes, armed on its watch if not.
+     fn arm(&self, poll: Arc<Poll<Ring>>) {
+         let object = self.object(poll.handle);
+-        if object.bytes.get() {
+-            poll.fire(0);
+-        } else {
+-            object.armed.borrow_mut().push(poll);
+-        }
++        object.armed.borrow_mut().push(poll);
+     }
+ 
+     /// Bytes reach the object; its post has not run.

@@ -1,0 +1,11 @@
+--- <scratch>/mutations/aarch64.rs.good	2026-10-24 07:34:50
++++ <scratch>/mutations/m6-aarch64-word-big-endian.rs	2026-10-24 07:34:50
+@@ -17,7 +17,7 @@
+ unsafe fn accumulate(mut crc: u32, data: &[u8]) -> u32 {
+     let (words, tail) = data.as_chunks::<8>();
+     for word in words {
+-        crc = __crc32cd(crc, u64::from_le_bytes(*word));
++        crc = __crc32cd(crc, u64::from_be_bytes(*word));
+     }
+     for &byte in tail {
+         crc = __crc32cb(crc, byte);
