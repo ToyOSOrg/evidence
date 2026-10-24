@@ -1,0 +1,29 @@
+patch: $B6/controls/m-reuse-before-durable.patch
+test: buckets::a_bucket_emptied_by
+base: b6e8fc49cf54f638e2c5198f883bce82078bde30 plus the working tree
+files before: 813ccdb5a9789ed0e29459ff79e66410e5c77fb60637818af0f0c9faa2c386c1  lib/bcachefs/src/engine/mount/reclaim.rs
+   Compiling bcachefs v0.1.0 ($WORKTREE/lib/bcachefs)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1m 24s
+  Executable unittests src/lib.rs (target/debug/deps/bcachefs-f2c101278f6c619e)
+
+running 1 test
+test engine::tests::buckets::a_bucket_emptied_by_an_entry_not_yet_durable_is_not_written_again ... FAILED
+
+failures:
+
+---- engine::tests::buckets::a_bucket_emptied_by_an_entry_not_yet_durable_is_not_written_again stdout ----
+
+thread 'engine::tests::buckets::a_bucket_emptied_by_an_entry_not_yet_durable_is_not_written_again' (56080532) panicked at lib/bcachefs/src/engine/tests/buckets.rs:312:5:
+assertion `left == right` failed
+  left: Err(Corrupt("btree node of another sequence than its pointer's"))
+ right: Ok([])
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    engine::tests::buckets::a_bucket_emptied_by_an_entry_not_yet_durable_is_not_written_again
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 169 filtered out; finished in 0.01s
+
+test exit: 101
+restored: hashes equal

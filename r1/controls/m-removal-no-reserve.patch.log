@@ -1,0 +1,34 @@
+patch: $B6/controls/m-removal-no-reserve.patch
+test: buckets::a_full_volume
+base: b6e8fc49cf54f638e2c5198f883bce82078bde30 plus the working tree
+files before: b00896313883a9b286a752769226ff3b8f861c44947e3984ee43b1cdea0167fe  lib/bcachefs/src/engine/mount/allocator.rs
+   Compiling bcachefs v0.1.0 ($WORKTREE/lib/bcachefs)
+    Finished `test` profile [optimized + debuginfo] target(s) in 38.34s
+  Executable unittests src/lib.rs (target/debug/deps/bcachefs-f2c101278f6c619e)
+
+running 2 tests
+test engine::tests::buckets::a_full_volume_refuses_changes_by_name_and_still_removes_names_and_unmounts_clean ... FAILED
+test engine::tests::buckets::a_full_volume_crashed_mounts_read_write_and_still_removes_names ... FAILED
+
+failures:
+
+---- engine::tests::buckets::a_full_volume_refuses_changes_by_name_and_still_removes_names_and_unmounts_clean stdout ----
+
+thread 'engine::tests::buckets::a_full_volume_refuses_changes_by_name_and_still_removes_names_and_unmounts_clean' (56127586) panicked at lib/bcachefs/src/engine/tests/buckets.rs:192:75:
+called `Result::unwrap()` on an `Err` value: NoSpace("no room left for the btree nodes a removal may write")
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- engine::tests::buckets::a_full_volume_crashed_mounts_read_write_and_still_removes_names stdout ----
+
+thread 'engine::tests::buckets::a_full_volume_crashed_mounts_read_write_and_still_removes_names' (56127585) panicked at lib/bcachefs/src/engine/tests/buckets.rs:267:75:
+called `Result::unwrap()` on an `Err` value: NoSpace("no room left for the btree nodes a removal may write")
+
+
+failures:
+    engine::tests::buckets::a_full_volume_crashed_mounts_read_write_and_still_removes_names
+    engine::tests::buckets::a_full_volume_refuses_changes_by_name_and_still_removes_names_and_unmounts_clean
+
+test result: FAILED. 0 passed; 2 failed; 0 ignored; 0 measured; 168 filtered out; finished in 1.32s
+
+test exit: 101
+restored: hashes equal

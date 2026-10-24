@@ -1,0 +1,31 @@
+patch: $B6/controls/m-fsck-emptied-unchecked.patch
+test: buckets::a_bucket_emptied_past
+base: b6e8fc49cf54f638e2c5198f883bce82078bde30 plus the working tree
+files before: 3c0a146a41a7bc013deca8dc8b0f67b5408673d470f2c7ac7f32cf6ea96d5d16  lib/bcachefs/src/engine/fsck.rs
+   Compiling bcachefs v0.1.0 ($WORKTREE/lib/bcachefs)
+    Finished `test` profile [optimized + debuginfo] target(s) in 39.31s
+  Executable unittests src/lib.rs (target/debug/deps/bcachefs-f2c101278f6c619e)
+
+running 1 test
+test engine::tests::buckets::a_bucket_emptied_past_the_journal_is_found ... FAILED
+
+failures:
+
+---- engine::tests::buckets::a_bucket_emptied_past_the_journal_is_found stdout ----
+
+thread 'engine::tests::buckets::a_bucket_emptied_past_the_journal_is_found' (56150235) panicked at lib/bcachefs/src/engine/tests/buckets.rs:515:5:
+assertion failed: findings(&dev).contains(&Finding::Derived {
+            btree: Btree::Alloc,
+            pos: at,
+            rule: "emptied past the journal",
+        })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    engine::tests::buckets::a_bucket_emptied_past_the_journal_is_found
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 169 filtered out; finished in 0.02s
+
+test exit: 101
+restored: hashes equal

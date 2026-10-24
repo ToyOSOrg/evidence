@@ -1,0 +1,12 @@
+--- a/lib/bcachefs/src/engine/mount/mod.rs
++++ b/lib/bcachefs/src/engine/mount/mod.rs
+@@ -1165,7 +1165,8 @@
+     fn close(&self, st: &mut State, own: bool) {
+         let mut open = st.journal.open.take().expect("an entry open");
+         let pinned = st.cache.oldest_pin().map_or(open.seq, |p| p.min(open.seq));
+-        let last_seq = if own { pinned } else { pinned.min(st.journal.durable) };
++        let _ = own;
++        let last_seq = pinned;
+         assert!(last_seq >= st.journal.durable_last, "a journal entry's last sequence moved back");
+         let roots = encoded_roots(&st.roots);
+         journal::tail(&mut open.area, roots.iter().map(|(b, l, k)| (*b, *l, &k[..])), Some(st.now), st.key_version, st.clocks);

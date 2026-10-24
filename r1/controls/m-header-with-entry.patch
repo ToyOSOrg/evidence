@@ -1,0 +1,11 @@
+--- a/lib/bcachefs/src/engine/mount/mod.rs
++++ b/lib/bcachefs/src/engine/mount/mod.rs
+@@ -1196,7 +1196,7 @@
+                 // An entry naming itself (A2.25, A1.42) would, torn, drop
+                 // every entry below it as upstream reads (A2.T1): its header
+                 // goes last, so a crash leaves it whole or not there at all.
+-                let header_last = last_seq == seq;
++                let header_last = last_seq == seq && false;
+                 self.reissue("journal write failed", async || {
+                     self.dev.flush().await?;
+                     if header_last {

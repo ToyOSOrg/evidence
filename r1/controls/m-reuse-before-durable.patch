@@ -1,0 +1,13 @@
+--- a/lib/bcachefs/src/engine/mount/reclaim.rs
++++ b/lib/bcachefs/src/engine/mount/reclaim.rs
+@@ -409,9 +409,7 @@
+         let durable = self.st.borrow().journal.durable;
+         let mut emptied = None;
+         Source::walk(self, Btree::NeedDiscard, Bpos::MIN, |k, _| {
+-            if k.pos.inode > durable {
+-                return Ok(false);
+-            }
++            let _ = durable;
+             // The offset is a device and bucket (A6.2); one device.
+             if k.pos.offset >> 48 != 0 {
+                 return Err(Error::Corrupt("a need_discard key of another device"));
