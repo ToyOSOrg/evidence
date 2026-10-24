@@ -1,0 +1,66 @@
+llvm-objdump -d --no-show-raw-insn target/x86_64-unknown-uefi/toyos/bootloader.efi; each region from the instruction after the previous ret/int3 to the next ret around every crc32
+
+== 140050f40..140051043: 62 instructions, 16 crc32, 0 xmm/ymm operands
+140050f40:     	pushq	%rbp
+140050f41:     	movq	%rsp, %rbp
+140050f44:     	movl	%ecx, %eax
+140050f46:     	movabsq	$0x7ffffffffffffff8, %r10 # imm = 0x7FFFFFFFFFFFFFF8
+140050f50:     	andq	%r8, %r10
+140050f53:     	leaq	(%rdx,%r10), %rcx
+140050f57:     	movl	%r8d, %r9d
+140050f5a:     	andl	$0x7, %r9d
+140050f5e:     	testq	%r10, %r10
+140050f61:     	je	0x140050ff0 <.text+0x4fff0>
+140050f67:     	movl	%eax, %eax
+140050f69:     	addq	$-0x8, %r8
+140050f6d:     	movl	%r8d, %r10d
+140050f70:     	notl	%r10d
+140050f73:     	testb	$0x38, %r10b
+140050f77:     	je	0x140050f9f <.text+0x4ff9f>
+140050f79:     	movl	%r8d, %r10d
+140050f7c:     	shrl	$0x3, %r10d
+140050f80:     	incl	%r10d
+140050f83:     	andl	$0x7, %r10d
+140050f87:     	nopw	(%rax,%rax)
+140050f90:     	crc32q	(%rdx), %rax
+140050f96:     	addq	$0x8, %rdx
+140050f9a:     	decq	%r10
+140050f9d:     	jne	0x140050f90 <.text+0x4ff90>
+140050f9f:     	cmpq	$0x38, %r8
+140050fa3:     	jb	0x140050ff0 <.text+0x4fff0>
+140050fa5:     	nopw	%cs:(%rax,%rax)
+140050fb0:     	crc32q	(%rdx), %rax
+140050fb6:     	crc32q	0x8(%rdx), %rax
+140050fbd:     	crc32q	0x10(%rdx), %rax
+140050fc4:     	crc32q	0x18(%rdx), %rax
+140050fcb:     	crc32q	0x20(%rdx), %rax
+140050fd2:     	crc32q	0x28(%rdx), %rax
+140050fd9:     	crc32q	0x30(%rdx), %rax
+140050fe0:     	crc32q	0x38(%rdx), %rax
+140050fe7:     	addq	$0x40, %rdx
+140050feb:     	cmpq	%rcx, %rdx
+140050fee:     	jne	0x140050fb0 <.text+0x4ffb0>
+140050ff0:     	testq	%r9, %r9
+140050ff3:     	je	0x140051042 <.text+0x50042>
+140050ff5:     	crc32b	(%rcx), %eax
+140050ffa:     	cmpl	$0x1, %r9d
+140050ffe:     	je	0x140051042 <.text+0x50042>
+140051000:     	crc32b	0x1(%rcx), %eax
+140051006:     	cmpl	$0x2, %r9d
+14005100a:     	je	0x140051042 <.text+0x50042>
+14005100c:     	crc32b	0x2(%rcx), %eax
+140051012:     	cmpl	$0x3, %r9d
+140051016:     	je	0x140051042 <.text+0x50042>
+140051018:     	crc32b	0x3(%rcx), %eax
+14005101e:     	cmpl	$0x4, %r9d
+140051022:     	je	0x140051042 <.text+0x50042>
+140051024:     	crc32b	0x4(%rcx), %eax
+14005102a:     	cmpl	$0x5, %r9d
+14005102e:     	je	0x140051042 <.text+0x50042>
+140051030:     	crc32b	0x5(%rcx), %eax
+140051036:     	cmpl	$0x6, %r9d
+14005103a:     	je	0x140051042 <.text+0x50042>
+14005103c:     	crc32b	0x6(%rcx), %eax
+140051042:     	popq	%rbp
+140051043:     	retq
+

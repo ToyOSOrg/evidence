@@ -1,0 +1,15 @@
+--- <scratch>/mutations/data.rs.good2	2026-10-24 09:12:12
++++ <scratch>/mutations/m8-rename-moves-stale-copy.rs	2026-10-24 09:12:12
+@@ -764,10 +764,9 @@
+                     .collect();
+                 let pairs: Vec<(&str, &str)> = renames.iter().map(|(a, b)| (a.as_str(), b.as_str())).collect();
+                 mapped("rename", from, self.fs.rename_all(&pairs))?;
+-                for (name, _) in moving {
++                for (name, meta) in moving {
+                     let moved = format!("{to}{}", &name[from.len()..]);
+-                    // The record as it is now, which the persists above updated.
+-                    let meta = self.names.remove(&name).expect("a name the volume holds");
++                    self.names.remove(&name);
+                     self.names.insert(moved.clone(), meta);
+                     if let Some(node) = self.by_path.remove(&name) {
+                         self.open.get_mut(&node).expect("indexed").path = moved.clone();
