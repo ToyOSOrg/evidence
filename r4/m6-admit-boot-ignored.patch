@@ -1,0 +1,11 @@
+--- <scratch>/r4/orig.rs	2026-10-24 13:25:14
++++ tests/metal/src/lib.rs	2026-10-24 13:25:14
+@@ -1033,7 +1033,7 @@
+     let esp = one_partition(&mut file, toyos_gpt::Guid::EFI_SYSTEM, "ESP")?;
+     let log = one_partition(&mut file, toyos_gpt::Guid::MICROSOFT_BASIC, "TOYOS-LOG")?;
+     one_partition(&mut file, toyos_gpt::Guid::TOYOS_SLOTS, "TOYOS-SLOTS")?;
+-    for (what, kind) in [("TOYOS-BOOT", toyos_gpt::Guid::TOYOS_BOOT), ("TOYOS-ROOT", toyos_gpt::Guid::TOYOS_ROOT)] {
++    for (what, kind) in [("TOYOS-ROOT", toyos_gpt::Guid::TOYOS_ROOT)] {
+         let matched = toyos_gpt::locate_type(&mut toyos_build::image::FileSectors(&mut file), kind, &mut [])
+             .map_err(|e| Refusal::Table(format!("{e:?}")))?
+             .matched;

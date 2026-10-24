@@ -25,3 +25,18 @@ t14-477c14c21: the coordinator's T14 run with this PR's tool at 477c14c21,
 `acpi_server_death`. One boot, 1 passed. The judge log and the boot's
 readback, masked. The flashed image and the raw log partition are given by
 SHA-256 only.
+
+driver/: `toyos-metal`'s own output, masked.
+- t14-477c14c21.log and t14-a73258407.log: the coordinator's T14 runs
+  (`t14-run.sh`), both exit 0. Each shows the content-based selection line,
+  the stick found again after the boot, and every `sudo -n` line it ran.
+- amd-a73258407-summary.txt: the coordinator's summary of the two AMD dry
+  runs (image, and `--adopt-scratch /dev/sdb`), both rc=0. Only the
+  summary was kept.
+
+r4 (revision in r4/ci-host.rev):
+- ci-host.log: exit=0, 103 steps green.
+- m6: `admit`'s BOOT count removed; exits 101 at
+  an_image_admits_only_a_toyos_table.
+- admit-real-image.log: the real staged acpicase image is admitted, and the
+  run stops at the ssh step (127.0.0.1, connection refused).
