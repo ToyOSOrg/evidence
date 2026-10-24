@@ -26,3 +26,9 @@ Text only; paths masked (`<scratch>`, `<worktree>`). Binaries are not published:
 - `vm/*-035c36d30.log`: the suites at the rebased head on the AVX2 VM; `r2/qemu-crypto-instrument-035c36d30.log`:
   the parity instrument under QEMU with the fixed assertions (78 rows in each build).
 - `r3/`: the optional AMD run sheet on seal at 1 KiB, and its two variant patches.
+
+## Round 3 (head 035c36d30)
+- `r3/metal/{t14,amd}/`: the `cryptocase` readbacks (kernel.log, loader.log, boot.txt, verdict.txt, the image's
+  system.toml) and each judge's log; paths and the AMD bench's host masked. `crypto_instrument` passed on both
+  ("1 passed, 0 failed, 1 boot(s)").
+- `r3/amd/`: the optional seal probe: the head and the two variants (`r3/v-*.patch`), head run twice.
