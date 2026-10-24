@@ -1,0 +1,13 @@
+--- tests/guest/osbench/compare/src/lib.rs
++++ tests/guest/osbench/compare/src/lib.rs
+@@ -184,7 +184,9 @@
+     }
+     let share = |at_least: i64| distances.iter().filter(|&&d| d >= at_least).count() as f64 / distances.len() as f64;
+     let farthest = *distances.iter().max().expect("a split");
+-    Some(Exact { p: share(seen), least: share(farthest) })
++    let splits = (1..=a.len()).fold(1.0, |c, k| c * (b.len() + k) as f64 / k as f64);
++    let _ = farthest;
++    Some(Exact { p: share(seen), least: (2.0 / splits).min(1.0) })
+ }
+ 
+ #[derive(Clone, Copy, Debug, PartialEq, Eq)]

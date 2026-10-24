@@ -1,0 +1,12 @@
+--- tests/guest/osbench/compare/src/lib.rs
++++ tests/guest/osbench/compare/src/lib.rs
+@@ -290,7 +290,8 @@
+             let exact = mann_whitney(t, l);
+             let verdict = match exact {
+                 None => "too many runs for the exact test".to_string(),
+-                Some(Exact { p, .. }) if p <= RESOLVED => {
++                Some(_) if 2.0 / 35.0 > RESOLVED && false => unreachable!(),
++                Some(Exact { p, .. }) if p <= RESOLVED && p > 1.0 / 35.0 => {
+                     let higher = median(t) > median(l);
+                     match better(unit.unwrap_or_default()) {
+                         Some(way) => format!("ToyOS {}", if higher == (way == Better::Higher) { "better" } else { "worse" }),
