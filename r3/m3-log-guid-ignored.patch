@@ -1,0 +1,11 @@
+--- <scratch>/r3/orig.rs	2026-10-24 13:00:30
++++ tests/metal/src/lib.rs	2026-10-24 13:00:40
+@@ -535,7 +535,7 @@
+                     && (1..=2).contains(&count(Guid::TOYOS_BOOT))
+                     && (1..=2).contains(&count(Guid::TOYOS_ROOT))
+             }
+-            Self::Log { index, guid } => at(index).is_some_and(|p| p.unique == Some(guid)),
++            Self::Log { index, guid } => at(index).is_some_and(|p| p.unique.is_some() || p.unique == Some(guid)),
+             Self::Scratch => matches!(parts, [only] if only.kind == Some(Guid::TOYOS_SCRATCH)),
+         }
+     }

@@ -16,3 +16,12 @@ r2 (revision in r2/ci-host.rev):
   renamed lines. Each exits 101 at its named test.
 - metal-prep.log: the T14 request staged at the head. Exit 2 is the
   harness's report that the readback is still owed.
+
+r3 (revision in r3/ci-host.rev; the narrow sudo rule removed):
+- ci-host.log: `cargo run -- --ci host`, exit=0, 103 steps green.
+- m1–m5 regenerated at this tree; each exits 101 at its named test.
+
+t14-477c14c21: the coordinator's T14 run with this PR's tool at 477c14c21,
+`acpi_server_death`. One boot, 1 passed. The judge log and the boot's
+readback, masked. The flashed image and the raw log partition are given by
+SHA-256 only.
