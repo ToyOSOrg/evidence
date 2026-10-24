@@ -1,0 +1,87 @@
+diff --git a/kernel/src/actuator.rs b/kernel/src/actuator.rs
+index c4c79a0b1..4a7d23bac 100644
+--- a/kernel/src/actuator.rs
++++ b/kernel/src/actuator.rs
+@@ -39,6 +39,9 @@ actuators! {
+     /// control on `crate::deadline`: nothing else in this kernel ends it.
+     wedge_before_reset = "wedge-before-reset";
+ 
++    /// MEASUREMENT ONLY (throwaway): a fixed flood of kernel records.
++    console_flood = "console-flood";
++
+     /// Panic between arming the on-screen console and `mm::init`.
+     test_early_panic = "test-early-panic";
+ 
+diff --git a/kernel/src/main.rs b/kernel/src/main.rs
+index b7a26902b..550178cc7 100644
+--- a/kernel/src/main.rs
++++ b/kernel/src/main.rs
+@@ -474,6 +474,18 @@ pub(crate) unsafe extern "C" fn kernel_main(loader_args: &mut KernelArgs) -> ! {
+ 
+     virtio_console::init(&pci_devices);
+ 
++    #[cfg(feature = "boot-actuators")]
++    if actuator::console_flood() {
++        const LINES: u64 = 380;
++        const PAYLOAD: &str = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUV";
++        let t0 = clock::nanos_since_boot();
++        for i in 0..LINES {
++            log!("console-flood i={i:05} {PAYLOAD}");
++        }
++        let us = (clock::nanos_since_boot() - t0) / 1_000;
++        log!("console-flood: done, {LINES} records of a {}-byte message in {us} us", 21 + PAYLOAD.len());
++    }
++
+     if kernel_args.gop_framebuffer != 0 {
+         log!("GPU: using UEFI GOP");
+         match gop::init(
+diff --git a/tests/common/qemu.rs b/tests/common/qemu.rs
+index 1d868d7d8..ed8321160 100644
+--- a/tests/common/qemu.rs
++++ b/tests/common/qemu.rs
+@@ -2737,6 +2737,11 @@ fn publish_line(
+     tx: &mpsc::Sender<String>,
+ ) -> bool {
+     let Ok(line) = String::from_utf8(raw) else { return false };
++    if line.contains("console-flood") {
++        static T0: std::sync::OnceLock<Instant> = std::sync::OnceLock::new();
++        let t0 = *T0.get_or_init(Instant::now);
++        eprintln!("MEASURE_ARRIVAL us={} bytes={} {}", t0.elapsed().as_micros(), line.len() + 1, &line[..line.len().min(120)]);
++    }
+     full_log.push_str(&line);
+     full_log.push('\n');
+     if VERBOSE.load(Ordering::Relaxed) {
+diff --git a/tests/toyos.rs b/tests/toyos.rs
+index 2c963a88f..c8b3faf65 100644
+--- a/tests/toyos.rs
++++ b/tests/toyos.rs
+@@ -443,6 +443,7 @@ fn gop_edid_scale(loader: &str, log: &str, kernel: &str) -> Result<(), String> {
+ /// The tests whose machine shape *is* the test, each on a boot of its own.
+ /// `run_machine_test` dispatches them.
+ const MACHINE_TESTS: &[&str] = &[
++    "measure_console_flood",
+     // A `drives` row's one process per function, on QEMU x86-64's q35 with
+     // two `edu` (`Profile::HeadlessTwoEdu`): which functions get one is
+     // `toyos-supervisor`'s, host-tested, and this is the supervisor
+@@ -4307,6 +4308,21 @@ fn scanout_wc(console: &str) -> Result<(), String> {
+ /// test.
+ fn run_machine_test(name: &str, test_config: &Path) -> Result<(), String> {
+     match name {
++        "measure_console_flood" => {
++            let profile = match std::env::var("MEASURE_PROFILE").as_deref() {
++                Ok("virtits") => qemu::Profile::VirtIts,
++                _ => qemu::Profile::Headless,
++            };
++            let qemu = QemuInstance::boot_with_options(
++                test_config,
++                &[],
++                &[],
++                BootOptions { profile, kernel_params: &["console-flood"], ..Default::default() },
++            );
++            let done = qemu.boot_log().lines().find(|l| l.contains("console-flood: done")).unwrap_or("").to_string();
++            eprintln!("MEASURE_DONE {done}");
++            Ok(())
++        }
+         "iommu_virtio_platform" => common::iommu::iommu_virtio_platform(),
+         "a_virtio_function_without_access_platform_is_refused" => {
+             common::iommu::a_virtio_function_without_access_platform_is_refused()
