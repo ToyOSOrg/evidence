@@ -1,0 +1,22 @@
+diff --git a/lib/crypto/src/aead.rs b/lib/crypto/src/aead.rs
+index 4ce8bec6e..139e6f012 100644
+--- a/lib/crypto/src/aead.rs
++++ b/lib/crypto/src/aead.rs
+@@ -195,7 +195,7 @@ fn chacha_seal(
+     data: &mut [u8],
+ ) -> Result<[u8; 16], Error> {
+     check_chacha_length(data.len())?;
+-    let mac = match chacha::aead(key, nonce, aad, data, true) {
++    let mac = match if short(data.len()) { None } else { chacha::aead(key, nonce, aad, data, true) } {
+         Some(mac) => mac,
+         None if short(data.len()) => {
+             let mut stream = Secret([0u8; 256]);
+@@ -225,7 +225,7 @@ fn chacha_open(
+     let authentic = |mac: Poly1305, length: usize| crate::ct::equal(&chacha_finish(mac, aad.len(), length).0, tag);
+     // Without the one-pass path, the MAC comes first and only an authentic
+     // record is decrypted.
+-    let opened = match chacha::aead(key, nonce, aad, data, false) {
++    let opened = match if short(data.len()) { None } else { chacha::aead(key, nonce, aad, data, false) } {
+         Some(mac) => authentic(mac, data.len()),
+         None if short(data.len()) => {
+             let mut stream = Secret([0u8; 256]);

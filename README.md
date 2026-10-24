@@ -32,3 +32,15 @@ Text only; paths masked (`<scratch>`, `<worktree>`). Binaries are not published:
   system.toml) and each judge's log; paths and the AMD bench's host masked. `crypto_instrument` passed on both
   ("1 passed, 0 failed, 1 boot(s)").
 - `r3/amd/`: the optional seal probe: the head and the two variants (`r3/v-*.patch`), head run twice.
+
+## Review r1 fixes (head ca676da20)
+- `r4/inspect/chacha20_poly1305-ca676da20.s`: the AVX2 one-pass kernel and `keystream`, from the head's Linux probe
+  build. 40 MULX, no MUL. The bulk loop runs 0x30404e..0x3051e5; the only calls inside that range are on the tail
+  branch, `keystream` and `block::xor`, once per message. The full-batch path calls nothing. The other calls
+  (`Poly1305::update`/`update_padded`, the panic paths through the GOT) lie outside the loop.
+- `r4/vm/`: the one-pass test on QEMU TCG. `vm-w8-max.log` has AVX2 and BMI2 and passes. `vm-w8-nobmi2.log`
+  (`-cpu max,-bmi2`) fails by name: "this host's CPU lacks AVX2 or BMI2". The control, `vm-035c36d30-nobmi2.log`, is
+  the old test on the same CPU: it dies on an invalid opcode.
+- `r4/request-{t14,amd}.txt`: the `cryptoctcase` boots staged at ca676da20, whose instrument now times
+  ChaCha20-Poly1305 and OpenSSH at 1 KiB.
+- `r4/README-probe.txt`, `r4/v-short-first.patch`: the optional AMD probe on 0–192 B through `short()` first.
