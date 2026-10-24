@@ -1,0 +1,32 @@
+--- <scratch>/orig.rs	2026-10-24 12:25:46
++++ tests/metal/src/lib.rs	2026-10-24 12:25:46
+@@ -3583,6 +3583,29 @@
+         assert!(matches!(Args::parse(&words(&["--adopt-scratch", "/dev/mmcblk0"])), Err(Refusal::Usage(_))));
+     }
+ 
++    #[test]
++    fn bench_listings_adhoc() {
++        let bench = |name: &str| std::fs::read_to_string(format!("<scratch>/bench/{name}.txt")).unwrap();
++        let only = |text: String| text.lines().filter(|l| l.starts_with("NAME=")).map(|l| format!("{l}\n")).collect::<String>();
++        let t14 = only(bench("t14"));
++        let answer = "60062500\nSanDisk \nUltra           \n1\n";
++        let mut asked = Vec::new();
++        let got = located(&t14, LAYOUT, &ultra(), |sd| { asked.push(sd.node().whole()); Ok(answer.to_string()) });
++        assert_eq!(got, Ok(Sd(b'a')));
++        assert_eq!(asked, ["/dev/sda"]);
++        let refused = located(&t14, Carrying::Scratch, &ultra(), |_| Ok(answer.to_string()));
++        println!("t14 scratch: {}", refused.unwrap_err());
++        assert_eq!(adoptable(&t14, Sd(b'b'), LAYOUT), Ok(()));
++        println!("t14 adopt sda: {}", adoptable(&t14, Sd(b'a'), LAYOUT).unwrap_err());
++        let amd = only(bench("amd"));
++        let want = Disk { sectors: 240_328_704, vendor: "USB".to_string(), model: "SanDisk 3.2Gen1".to_string() };
++        let got = located(&amd, LAYOUT, &want, |sd| Ok(match sd.0 { b'a' => "240328704\n USB    \n SanDisk 3.2Gen1\n1\n", _ => "60874752\nTS-RDF5 \nSD  Transcend   \n1\n" }.to_string()));
++        assert_eq!(got, Ok(Sd(b'a')));
++        assert_eq!(adoptable(&amd, Sd(b'b'), LAYOUT), Ok(()));
++        let disks = sd_disks(&t14).unwrap();
++        println!("t14 sd disks: {:?}", disks);
++    }
++
+     /// **The home is the one the machine names**: the rule, the argv, the
+     /// mount point and the staged rule all sit under it, and a home the
+     /// machine answers that is no normal absolute path is refused.

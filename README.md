@@ -6,3 +6,6 @@ r1 (revision in r1/ci-host-2.rev):
   `adoptable`. Each patch was applied, built and run with
   `cargo test -p toyos-metal --lib`, then reverted. Each one exited 101 at
   the test its log names.
+- bench/adhoc-bench.{patch,log}: `located`, `adoptable` and `sd_disks` run
+  on the two benches' unprivileged `lsblk --pairs` listings, read by the
+  coordinator. The test was a throwaway and is not committed. Exit 0.
