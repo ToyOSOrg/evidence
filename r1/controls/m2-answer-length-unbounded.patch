@@ -1,0 +1,11 @@
+--- tests/guest/osbench/lan/src/lib.rs
++++ tests/guest/osbench/lan/src/lib.rs
+@@ -111,7 +111,7 @@
+ pub fn answered(datagram: &[u8]) -> Option<&str> {
+     let said = datagram.strip_prefix(ANSWER)?;
+     let printable = said.iter().all(|b| b.is_ascii_graphic() || *b == b' ');
+-    (said.len() <= MAX_SAID && printable).then(|| std::str::from_utf8(said).expect("ASCII"))
++    printable.then(|| std::str::from_utf8(said).expect("ASCII"))
+ }
+ 
+ /// The bench's end: broadcast [`HELLO`] to `to` once a second until an answer
