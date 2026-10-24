@@ -1,0 +1,11 @@
+--- a/lib/crypto/src/arch/x86_64/p256.rs
++++ b/lib/crypto/src/arch/x86_64/p256.rs
+@@ -486,7 +486,7 @@
+         count = _mm256_add_epi64(count, one);
+         let entry = words(&table[j]);
+         for w in 0..W {
+-            chosen[w] = _mm256_or_si256(_mm256_andnot_si256(m, chosen[w]), _mm256_and_si256(m, load(entry[w])));
++            chosen[w] = _mm256_or_si256(chosen[w], _mm256_and_si256(m, load(entry[w])));
+         }
+     }
+     // SAFETY: a vector and four words are the same 32 plain bytes.
