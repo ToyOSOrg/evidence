@@ -1,0 +1,11 @@
+--- a/system/supervisor/src/main.rs
++++ b/system/supervisor/src/main.rs
+@@ -2007,7 +2007,7 @@
+                     Ok(new) => say!("supervisor: {label} (pid {pid}) ended; started again as pid {new}"),
+                     Err((e, true)) => {
+                         let wanted = self.services[index].wanted();
+-                        self.services[index].starved = Some(Instant::now());
++                        self.services[index].ports.borrow_mut().clear();
+                         say!(
+                             "supervisor: {label} (pid {pid}) ended and could not start again for want of memory ({e}; it lacked {wanted}); \
+                              it starts again once memory comes back, and its clients wait on its ports meanwhile"

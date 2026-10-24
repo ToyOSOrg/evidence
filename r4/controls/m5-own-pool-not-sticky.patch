@@ -1,0 +1,11 @@
+--- a/kernel/pure/frames.rs
++++ b/kernel/pure/frames.rs
+@@ -912,7 +912,7 @@
+                 Ledger::sub(&l.own, bytes, "heap bytes of its own pool");
+                 let entitled = l.entitled.load(Ordering::Relaxed);
+                 let floor = entitled.min(l.floor().div_ceil(PER_SUPER as u64));
+-                let keep = l.own.load(Ordering::Relaxed).div_ceil(SUPER).max(floor);
++                let keep = l.own.load(Ordering::Relaxed).div_ceil(SUPER).max(0 * floor);
+                 if entitled > keep {
+                     self.unentitle(entitled - keep);
+                     self.give_back_for(l, |l| Ledger::sub(&l.entitled, entitled - keep, "entitled superframes"));
