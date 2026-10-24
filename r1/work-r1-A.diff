@@ -1,0 +1,825 @@
+diff --git a/lib/crypto/src/aead.rs b/lib/crypto/src/aead.rs
+index 3116ca48e..fdbf8887c 100644
+--- a/lib/crypto/src/aead.rs
++++ b/lib/crypto/src/aead.rs
+@@ -3,8 +3,10 @@
+ //! caller must not import the same key into independent sealing owners.
+ //!
+ //! Nonces are `iv XOR (0^32 || sequence_be64)`. Public lengths select buffering;
+-//! contents and keys do not select branches or addresses. Opening authenticates
+-//! ciphertext before modifying it; refusal leaves the ciphertext unchanged.
++//! contents and keys do not select branches or addresses. AES-GCM authenticates
++//! ciphertext before modifying it, and its refusal leaves the ciphertext
++//! unchanged. ChaCha20-Poly1305 may decrypt as it authenticates, and its refusal
++//! zeroes the buffer: no unauthenticated plaintext is returned either way.
+ 
+ use crate::{Error, chacha, poly1305::Poly1305, secret::Secret};
+ 
+@@ -192,16 +194,23 @@ fn chacha_seal(
+     data: &mut [u8],
+ ) -> Result<[u8; 16], Error> {
+     check_chacha_length(data.len())?;
+-    if short(data.len()) {
+-        let mut stream = Secret([0u8; 256]);
+-        chacha_short(key, nonce, data.len(), &mut stream.0);
+-        crate::block::xor(data, &stream.0[64..]);
+-        let mut mac = chacha_mac(stream.0[..32].try_into().unwrap(), aad);
+-        mac.update_padded(data);
+-        return Ok(chacha_finish(mac, aad.len(), data.len()).0);
+-    }
+-    let mut mac = chacha_mac(chacha::block(key, nonce, 0).0[..32].try_into().unwrap(), aad);
+-    chacha::seal(key, nonce, 1, data, &mut mac)?;
++    let mac = match chacha::aead(key, nonce, aad, data, true) {
++        Some(mac) => mac,
++        None if short(data.len()) => {
++            let mut stream = Secret([0u8; 256]);
++            chacha_short(key, nonce, data.len(), &mut stream.0);
++            crate::block::xor(data, &stream.0[64..]);
++            let mut mac = chacha_mac(stream.0[..32].try_into().unwrap(), aad);
++            mac.update_padded(data);
++            mac
++        }
++        None => {
++            let mut mac = chacha_mac(chacha::block(key, nonce, 0).0[..32].try_into().unwrap(), aad);
++            chacha::xor(key, nonce, 1, data)?;
++            mac.update_padded(data);
++            mac
++        }
++    };
+     Ok(chacha_finish(mac, aad.len(), data.len()).0)
+ }
+ fn chacha_open(
+@@ -212,26 +221,67 @@ fn chacha_open(
+     tag: &[u8],
+ ) -> Result<(), Error> {
+     check_chacha_length(data.len())?;
+-    let verify = |mac_key: &[u8], data: &[u8]| {
+-        let mut mac = chacha_mac(mac_key.try_into().unwrap(), aad);
+-        mac.update_padded(data);
+-        let expected = chacha_finish(mac, aad.len(), data.len());
+-        if crate::ct::equal(&expected.0, tag) { Ok(()) } else { Err(Error::Authentication) }
++    let authentic = |mac: Poly1305, length: usize| crate::ct::equal(&chacha_finish(mac, aad.len(), length).0, tag);
++    // Without the one-pass path, the MAC comes first and only an authentic
++    // record is decrypted.
++    let opened = match chacha::aead(key, nonce, aad, data, false) {
++        Some(mac) => authentic(mac, data.len()),
++        None if short(data.len()) => {
++            let mut stream = Secret([0u8; 256]);
++            chacha_short(key, nonce, data.len(), &mut stream.0);
++            let mut mac = chacha_mac(stream.0[..32].try_into().unwrap(), aad);
++            mac.update_padded(data);
++            let opened = authentic(mac, data.len());
++            if opened {
++                crate::block::xor(data, &stream.0[64..]);
++            }
++            opened
++        }
++        None => {
++            let mut mac = chacha_mac(chacha::block(key, nonce, 0).0[..32].try_into().unwrap(), aad);
++            mac.update_padded(data);
++            let opened = authentic(mac, data.len());
++            if opened {
++                chacha::xor(key, nonce, 1, data)?;
++            }
++            opened
++        }
+     };
+-    if short(data.len()) {
+-        let mut stream = Secret([0u8; 256]);
+-        chacha_short(key, nonce, data.len(), &mut stream.0);
+-        verify(&stream.0[..32], data)?;
+-        crate::block::xor(data, &stream.0[64..]);
+-        return Ok(());
+-    }
+-    verify(&chacha::block(key, nonce, 0).0[..32], data)?;
+-    chacha::xor(key, nonce, 1, data)
++    if !opened {
++        data.fill(0);
++        return Err(Error::Authentication);
++    }
++    Ok(())
+ }
+ 
+ #[cfg(test)]
+ mod tests {
+     use super::*;
++
++    /// A forged record's open returns zeros in place of its plaintext, at
++    /// every length the paths divide at: an AVX2 host decrypts as it
++    /// authenticates, so the zeros are all that stands between the caller and
++    /// the keystream.
++    #[test]
++    fn a_forged_chacha_record_opens_to_zeros() {
++        let key = [0x17; 32];
++        for len in [1, 63, 64, 192, 193, 447, 448, 449, 959, 960, 961, 1024, 4096, 16385] {
++            let plain: std::vec::Vec<u8> = (0..len).map(|i| (i * 13 + 1) as u8).collect();
++            let mut sealed = plain.clone();
++            let (nonce, tag) = SealingKey::chacha20_poly1305(key, [9; 12]).seal(b"aad", &mut sealed).unwrap();
++            let opener = OpeningKey::chacha20_poly1305(key);
++            let mut forgeries: [_; 3] = core::array::from_fn(|_| (sealed.clone(), tag, &b"aad"[..]));
++            forgeries[0].0[len / 2] ^= 0x80;
++            forgeries[1].1[15] ^= 1;
++            forgeries[2].2 = b"aae";
++            for (i, (mut record, tag, aad)) in forgeries.into_iter().enumerate() {
++                assert_eq!(opener.open(&nonce, aad, &mut record, &tag), Err(Error::Authentication), "{len} bytes, forgery {i}");
++                assert!(record.iter().all(|&b| b == 0), "{len} bytes, forgery {i}: the refusal left more than zeros");
++            }
++            opener.open(&nonce, b"aad", &mut sealed, &tag).unwrap();
++            assert_eq!(sealed, plain, "{len} bytes");
++        }
++    }
+     #[test]
+     fn nonce_sequence_exhaustion_is_terminal() {
+         let mut key = SealingKey::chacha20_poly1305([0; 32], [0; 12]);
+diff --git a/lib/crypto/src/arch/mod.rs b/lib/crypto/src/arch/mod.rs
+index 30c77fcaf..dfe65ca73 100644
+--- a/lib/crypto/src/arch/mod.rs
++++ b/lib/crypto/src/arch/mod.rs
+@@ -255,18 +255,21 @@ pub(crate) fn chacha_blocks(
+     })
+ }
+ 
+-/// [`chacha_xor`] over a prefix of whole batches, absorbing the ciphertext
+-/// into the Poly1305 accumulator `h` under `r` as it goes; returns its length.
+-pub(crate) fn chacha_seal(
++/// RFC 8439 §2.8's ChaCha20 and Poly1305 in one pass over `data`, sealing or
++/// opening it: block `counter` is the Poly1305 key, and `data` is XORed with
++/// the blocks after it. Returns the MAC over the zero-padded `aad` and
++/// ciphertext, ready for the length block, where an instruction path runs.
++/// The caller has checked counter bounds, as for [`chacha_xor`].
++pub(crate) fn chacha20_poly1305(
+     key: &[u8; 32],
+     counter: u64,
+     nonce: &[u8; 8],
++    aad: &[u8],
+     data: &mut [u8],
+-    r: &[u64; 3],
+-    h: &mut [u64; 3],
+-) -> usize {
+-    hosted!(x86_64::chacha_seal(key, counter, nonce, data, r, h), {
+-        let _ = (key, counter, nonce, data, r, h);
+-        0
++    seal: bool,
++) -> Option<crate::poly1305::Poly1305> {
++    hosted!(x86_64::chacha20_poly1305(key, counter, nonce, aad, data, seal), {
++        let _ = (key, counter, nonce, aad, data, seal);
++        None
+     })
+ }
+diff --git a/lib/crypto/src/arch/x86_64.rs b/lib/crypto/src/arch/x86_64.rs
+index b3efe861d..0bf423e01 100644
+--- a/lib/crypto/src/arch/x86_64.rs
++++ b/lib/crypto/src/arch/x86_64.rs
+@@ -343,6 +343,7 @@ pub(super) use hosted::*;
+ mod hosted {
+     //! Each function checks its own admission and reports whether it ran.
+     use super::{Powers, aesni, chacha, features, poly1305, sha, vaes512};
++    use crate::poly1305::Poly1305;
+ 
+     pub(in crate::arch) fn aes_expand(key: &[u8], keys: &mut [u8; 240]) -> bool {
+         if !features().aes() {
+@@ -447,24 +448,22 @@ mod hosted {
+         Some(unsafe { aesni::short(keys, rounds, powers, nonce, aad, data, stream) })
+     }
+ 
+-    pub(in crate::arch) fn chacha_seal(
++    pub(in crate::arch) fn chacha20_poly1305(
+         key: &[u8; 32],
+         counter: u64,
+         nonce: &[u8; 8],
++        aad: &[u8],
+         data: &mut [u8],
+-        r: &[u64; 3],
+-        h: &mut [u64; 3],
+-    ) -> usize {
+-        if !features().avx2() {
+-            return 0;
+-        }
+-        // With AVX-512VL's rounds the caller's vector Poly1305 after them is
+-        // faster than the stitch, as the T14 measures it.
+-        if features().avx512vl() {
+-            return 0;
++        seal: bool,
++    ) -> Option<Poly1305> {
++        // Block 0 alone is quicker in scalar code. With AVX-512VL's rounds the
++        // vector Poly1305 after them is faster than the stitch, as the T14
++        // measures it.
++        if data.is_empty() || !features().avx2() || features().avx512vl() {
++            return None;
+         }
+         // AVX2 under YMM state is admitted; the caller bounded the counter.
+-        unsafe { chacha::seal(key, counter, nonce, data, r, h) }
++        Some(unsafe { chacha::avx2::chacha20_poly1305(key, counter, nonce, aad, data, seal) })
+     }
+ 
+     pub(in crate::arch) fn chacha_blocks(
+diff --git a/lib/crypto/src/arch/x86_64/chacha.rs b/lib/crypto/src/arch/x86_64/chacha.rs
+index 1eba4858f..9aa630fe5 100644
+--- a/lib/crypto/src/arch/x86_64/chacha.rs
++++ b/lib/crypto/src/arch/x86_64/chacha.rs
+@@ -2,19 +2,18 @@
+ //! eight blocks run with each register holding one state word of all eight
+ //! (Goll and Gueron, "Vectorization on ChaCha Stream Cipher", ITNG 2014). On
+ //! AVX2 alone, and for shorter runs, blocks run in pairs with each 128-bit
+-//! lane holding one block's row; with AVX-512F, four blocks run in one
+-//! register set with a block per lane. Rows are built from the key bytes in
+-//! registers, never from a state in memory. Rounds, shuffles and addresses
+-//! depend only on public lengths and counters. Only hosted targets with
+-//! OS-enabled YMM state enter here. Hot loops index fixed-size arrays, as
+-//! `aesni`'s header explains.
++//! lane holding one block's row, eight blocks in four pairs; with AVX-512F,
++//! four blocks run in one register set with a block per lane. Rows are built
++//! from the key bytes in registers, never from a state in memory. Rounds,
++//! shuffles and addresses depend only on public lengths and counters. Only
++//! hosted targets with OS-enabled YMM state enter here. Hot loops index
++//! fixed-size arrays, as `aesni`'s header explains.
+ 
+ #![allow(clippy::needless_range_loop, reason = "see `aesni`'s header")]
+ 
+ use core::arch::x86_64::*;
+ 
+ use super::load;
+-use crate::poly1305::absorb;
+ 
+ const SIGMA: [u32; 4] = [0x61707865, 0x3320646e, 0x79622d32, 0x6b206574];
+ 
+@@ -31,15 +30,24 @@ fn key_row(key: &[u8; 32], row: usize) -> __m128i {
+     load(&halves[row - 1])
+ }
+ 
++/// `mask` through an assembly block LLVM cannot see into, which emits
++/// nothing. A shuffle by a known 16-bit rotation mask is otherwise lowered
++/// as VPSHUFLW and VPSHUFHW, two shuffle uops for VPSHUFB's one.
++#[inline]
++#[target_feature(enable = "avx2")]
++fn opaque(mut mask: __m256i) -> __m256i {
++    // SAFETY: the template reads and writes only the operand's register.
++    unsafe { core::arch::asm!("/* {0} */", inout(ymm_reg) mask, options(pure, nomem, nostack, preserves_flags)) };
++    mask
++}
++
+ #[inline]
+ #[target_feature(enable = "avx2")]
+ fn rotate16(x: __m256i) -> __m256i {
+-    _mm256_shuffle_epi8(
+-        x,
+-        _mm256_setr_epi8(
+-            2, 3, 0, 1, 6, 7, 4, 5, 10, 11, 8, 9, 14, 15, 12, 13, 2, 3, 0, 1, 6, 7, 4, 5, 10, 11, 8, 9, 14, 15, 12, 13,
+-        ),
+-    )
++    let mask = _mm256_setr_epi8(
++        2, 3, 0, 1, 6, 7, 4, 5, 10, 11, 8, 9, 14, 15, 12, 13, 2, 3, 0, 1, 6, 7, 4, 5, 10, 11, 8, 9, 14, 15, 12, 13,
++    );
++    _mm256_shuffle_epi8(x, opaque(mask))
+ }
+ 
+ #[inline]
+@@ -98,7 +106,7 @@ fn rotate7(x: __m256i) -> __m256i {
+ /// The vector rounds and their callers, every function compiled for
+ /// `$features` with the rotations given.
+ macro_rules! chacha256 {
+-    ($features:literal, $six:literal, $r16:ident, $r12:ident, $r8:ident, $r7:ident) => {
++    ($features:literal, $pairs:literal, $r16:ident, $r12:ident, $r8:ident, $r7:ident) => {
+         use core::arch::x86_64::*;
+ 
+         use super::super::{load_data, store_data};
+@@ -123,10 +131,12 @@ macro_rules! chacha256 {
+             store_data(bytes, _mm256_xor_si256(stream, load_data(bytes)));
+         }
+ 
+-        /// Eight blocks from `counter` on, XORed into `out`.
++        /// Eight blocks from `counter` on, a register per state word of all
++        /// eight, with `beside` run once in each double round. Returns the
++        /// words after the rounds and the feed-forward.
+         #[inline]
+         #[target_feature(enable = $features)]
+-        fn eight(key: &[u8; 32], nonce: u64, counter: u64, out: &mut [u8; 512]) {
++        fn eight(key: &[u8; 32], nonce: u64, counter: u64, mut beside: impl FnMut(usize)) -> [__m256i; 16] {
+             let mut lanes = [[0u32; 8]; 2];
+             for j in 0..8 {
+                 let c = counter.wrapping_add(j as u64);
+@@ -152,7 +162,8 @@ macro_rules! chacha256 {
+                     (v[$a], v[$b], v[$c], v[$d]) = (a, b, c, d);
+                 }};
+             }
+-            for _ in 0..10 {
++            for round in 0..10 {
++                beside(round);
+                 q!(0, 4, 8, 12);
+                 q!(1, 5, 9, 13);
+                 q!(2, 6, 10, 14);
+@@ -165,6 +176,13 @@ macro_rules! chacha256 {
+             for i in 0..16 {
+                 v[i] = _mm256_add_epi32(v[i], start[i]);
+             }
++            v
++        }
++
++        /// [`eight`]'s words as eight blocks of keystream XORed into `out`.
++        #[inline]
++        #[target_feature(enable = $features)]
++        fn emit_eight(v: [__m256i; 16], out: &mut [u8; 512]) {
+             // Transpose each group of four words: lane 0 of `t[g][q]` is words
+             // 4g..4g+4 of block q, lane 1 of block q + 4.
+             let mut t = [[_mm256_setzero_si256(); 4]; 4];
+@@ -193,17 +211,15 @@ macro_rules! chacha256 {
+         }
+ 
+         /// `2P` blocks, two per register: pair p holds blocks 2p and 2p + 1, each
+-        /// register one row of both, with `beside` run once in each of the first
+-        /// eight double rounds. Returns each pair's rows after the rounds and the
++        /// register one row of both, with `beside` run once in each double
++        /// round. Returns each pair's rows after the rounds and the
+         /// feed-forward.
+         #[inline]
+         #[target_feature(enable = $features)]
+         fn pairs<const P: usize>(start: [[__m256i; 4]; P], mut beside: impl FnMut(usize)) -> [[__m256i; 4]; P] {
+             let mut v = start;
+             for round in 0..10 {
+-                if round < 8 {
+-                    beside(round);
+-                }
++                beside(round);
+                 for p in 0..P {
+                     let [mut a, mut b, mut c, mut d] = v[p];
+                     quarter(&mut a, &mut b, &mut c, &mut d);
+@@ -268,14 +284,6 @@ macro_rules! chacha256 {
+             rows
+         }
+ 
+-        /// `2P` blocks of one key from `counter` on, XORed into `out`'s first
+-        /// `128P` bytes, with `beside` as [`pairs`] runs it.
+-        #[inline]
+-        #[target_feature(enable = $features)]
+-        pub(super) fn pairs_of<const P: usize>(key: &[u8; 32], nonce: u64, counter: u64, out: &mut [u8], beside: impl FnMut(usize)) {
+-            let (halves, _) = out.as_chunks_mut::<32>();
+-            emit(pairs::<P>(counter_rows::<P>(key, nonce, counter), beside), 2 * P, halves, true);
+-        }
+ 
+         /// The rows of the pair of lanes `2p` and `2p + 1`, one per register.
+         #[inline]
+@@ -304,21 +312,17 @@ macro_rules! chacha256 {
+         pub(in crate::arch) unsafe fn xor(key: &[u8; 32], counter: u64, nonce: &[u8; 8], data: &mut [u8]) -> usize {
+             let nonce = u64::from_le_bytes(*nonce);
+             let mut counter = counter;
+-            let done = if $six {
+-                let (sixes, _) = data.as_chunks_mut::<384>();
+-                for i in 0..sixes.len() {
+-                    pairs_of::<3>(key, nonce, counter, &mut sixes[i], |_| {});
+-                    counter = counter.wrapping_add(6);
+-                }
+-                384 * sixes.len()
+-            } else {
+-                let (eights, _) = data.as_chunks_mut::<512>();
+-                for i in 0..eights.len() {
+-                    eight(key, nonce, counter, &mut eights[i]);
+-                    counter = counter.wrapping_add(8);
++            let (eights, _) = data.as_chunks_mut::<512>();
++            for i in 0..eights.len() {
++                if $pairs {
++                    let (halves, _) = eights[i].as_chunks_mut::<32>();
++                    emit(pairs::<4>(counter_rows::<4>(key, nonce, counter), |_| {}), 8, halves, true);
++                } else {
++                    emit_eight(eight(key, nonce, counter, |_| {}), &mut eights[i]);
+                 }
+-                512 * eights.len()
+-            };
++                counter = counter.wrapping_add(8);
++            }
++            let done = 512 * eights.len();
+             let (fours, rest) = data[done..].as_chunks_mut::<256>();
+             for i in 0..fours.len() {
+                 four(key, nonce, counter, &mut fours[i], true);
+@@ -341,10 +345,12 @@ macro_rules! chacha256 {
+ }
+ 
+ pub(super) mod avx2 {
+-    // Sixteen YMM registers hold three pairs' rows and the rotation masks;
+-    // the word-per-register layout's eight blocks spill.
+     chacha256!("avx2", true, rotate16, rotate12, rotate8, rotate7);
+ 
++    use crate::block::{padded, xor as xor_bytes};
++    use crate::poly1305::{Poly1305, absorb};
++    use crate::secret::Secret;
++
+     /// Four blocks of one key from `counter` on, XORed into `out` or written
+     /// over it.
+     #[inline]
+@@ -370,6 +376,120 @@ pub(super) mod avx2 {
+             emit(pairs::<2>(lane_rows::<2>(keys, counters, nonce), |_| {}), n, halves, false);
+         }
+     }
++
++    /// Absorbs `blocks[3 round..3 round + 3]`, those there are, into `acc`.
++    #[inline(always)]
++    fn absorb_round(acc: &mut [u64; 3], blocks: &[[u8; 16]], r: [u64; 3], round: usize) {
++        for j in 3 * round..(3 * round + 3).min(blocks.len()) {
++            *acc = absorb(*acc, &blocks[j], r, true);
++        }
++    }
++
++    /// `2P` blocks from `counter` XORed into `out`'s first `128P` bytes, or
++    /// written over them, while `hashed` is absorbed into `acc` under `r`:
++    /// scalar multiplication on the integer units beside the vector rounds
++    /// (Gopal et al., "Fast Cryptographic Computation on Intel Architecture
++    /// Processors Via Function Stitching", Intel, 2010), three blocks in each
++    /// double round and any past thirty after them. With no `hashed`, `out`'s
++    /// own whole blocks are absorbed before the keystream overwrites them.
++    #[inline]
++    #[target_feature(enable = "avx2")]
++    fn batch<const P: usize>(
++        key: &[u8; 32],
++        nonce: u64,
++        counter: u64,
++        out: &mut [u8],
++        hashed: Option<&[[u8; 16]]>,
++        (acc, r): (&mut [u64; 3], [u64; 3]),
++        xor: bool,
++    ) {
++        let rows = {
++            let blocks = hashed.unwrap_or(out.as_chunks::<16>().0);
++            let rows = pairs::<P>(counter_rows::<P>(key, nonce, counter), |round| absorb_round(acc, blocks, r, round));
++            for j in 30..blocks.len() {
++                *acc = absorb(*acc, &blocks[j], r, true);
++            }
++            rows
++        };
++        let (halves, _) = out.as_chunks_mut::<32>();
++        emit(rows, 2 * P, halves, xor);
++    }
++
++    /// RFC 8439 §2.8's pass over `data` in one: block `counter` is the
++    /// Poly1305 key, computed with the first seven blocks of keystream, and
++    /// `data` is XORed with the blocks after it. Returns the MAC over the
++    /// zero-padded `aad` and ciphertext, ready for the length block.
++    /// Sealing absorbs each 512-byte batch's ciphertext beside the next
++    /// batch's rounds; opening absorbs a batch beside its own rounds, and the
++    /// first batch once the key is known.
++    ///
++    /// # Safety
++    /// AVX2 under YMM state is admitted, and the caller bounded `counter` plus
++    /// the block count.
++    #[target_feature(enable = "avx2")]
++    pub(in crate::arch) unsafe fn chacha20_poly1305(
++        key: &[u8; 32],
++        counter: u64,
++        nonce: &[u8; 8],
++        aad: &[u8],
++        data: &mut [u8],
++        seal: bool,
++    ) -> Poly1305 {
++        let nonce = u64::from_le_bytes(*nonce);
++        let mut stream = Secret([0u8; 512]);
++        let first = data.len().min(448);
++        {
++            let (halves, _) = stream.0.as_chunks_mut::<32>();
++            if first <= 192 {
++                emit(pairs::<2>(counter_rows::<2>(key, nonce, counter), |_| {}), 4, halves, false);
++            } else {
++                emit(pairs::<4>(counter_rows::<4>(key, nonce, counter), |_| {}), 8, halves, false);
++            }
++        }
++        let mut mac = Poly1305::new(stream.0[..32].try_into().unwrap());
++        mac.update_padded(aad);
++        if !seal {
++            mac.update_padded(&data[..first]);
++        }
++        xor_bytes(&mut data[..first], &stream.0[64..]);
++        let Some((r, h)) = mac.parts() else { unreachable!("whole blocks leave nothing buffered") };
++        let (r, mut acc) = (*r, *h);
++        // The bytes XORed and the ciphertext absorbed, which lags a batch
++        // when sealing.
++        let (mut done, mut hashed) = (first, if seal { 0 } else { first });
++        let mut counter = counter.wrapping_add(8);
++        while data.len() - done >= 512 {
++            let (before, after) = data.split_at_mut(done);
++            let previous = if seal { Some(before[hashed..].as_chunks::<16>().0) } else { None };
++            batch::<4>(key, nonce, counter, &mut after[..512], previous, (&mut acc, r), true);
++            hashed = if seal { done } else { done + 512 };
++            done += 512;
++            counter = counter.wrapping_add(8);
++        }
++        if done < data.len() {
++            let (before, tail) = data.split_at_mut(done);
++            let (whole, partial) = tail.as_chunks::<16>();
++            let blocks = if seal { before[hashed..].as_chunks::<16>().0 } else { whole };
++            if tail.len() <= 256 {
++                batch::<2>(key, nonce, counter, &mut stream.0, Some(blocks), (&mut acc, r), false);
++            } else {
++                batch::<4>(key, nonce, counter, &mut stream.0, Some(blocks), (&mut acc, r), false);
++            }
++            if seal {
++                hashed = done;
++            } else {
++                if !partial.is_empty() {
++                    acc = absorb(acc, &padded(partial), r, true);
++                }
++                hashed = data.len();
++            }
++            xor_bytes(&mut data[done..], &stream.0);
++        }
++        let Some((_, h)) = mac.parts() else { unreachable!("whole blocks leave nothing buffered") };
++        *h = acc;
++        mac.update_padded(&data[hashed..]);
++        mac
++    }
+ }
+ 
+ pub(super) mod avx512 {
+@@ -515,49 +635,97 @@ pub(super) mod avx512 {
+     }
+ }
+ 
+-/// The AVX2 `xor` over whole 384-byte batches, absorbing each batch's
+-/// ciphertext into the Poly1305 accumulator `h` under `r` in the next
+-/// batch's double rounds: scalar multiplication on the integer units beside
+-/// the vector rounds (Gopal et al., "Fast Cryptographic Computation on Intel
+-/// Architecture Processors Via Function Stitching", Intel, 2010). Returns the
+-/// bytes done.
+-///
+-/// Where AVX-512VL admits its own rounds, the vector Poly1305 after them
+-/// is faster than this.
+-///
+-/// # Safety
+-/// AVX2 under YMM state is admitted, and the caller bounded `counter` plus
+-/// the block count.
+-#[target_feature(enable = "avx2")]
+-pub(super) unsafe fn seal(
+-    key: &[u8; 32],
+-    counter: u64,
+-    nonce: &[u8; 8],
+-    data: &mut [u8],
+-    r: &[u64; 3],
+-    h: &mut [u64; 3],
+-) -> usize {
+-    let nonce = u64::from_le_bytes(*nonce);
+-    let (batches, _) = data.as_chunks_mut::<384>();
+-    let n = batches.len();
+-    if n == 0 {
+-        return 0;
++#[cfg(test)]
++mod tests {
++    use std::vec::Vec;
++
++    use crate::chacha::legacy_block;
++
++    /// Whether this host can test the AVX2 paths; a host without AVX2 says so
++    /// rather than passing.
++    fn avx2() -> bool {
++        assert!(
++            super::super::features().avx2() || cfg!(feature = "portable"),
++            "this host's CPU has no AVX2, so nothing here can test the AVX2 ChaCha20 paths"
++        );
++        !cfg!(feature = "portable")
++    }
++
++    /// `data` XORed with blocks `counter` on, one portable block at a time.
++    fn portable_stream(key: &[u8; 32], nonce: &[u8; 8], counter: u64, data: &[u8]) -> Vec<u8> {
++        let mut out = data.to_vec();
++        for (i, chunk) in out.chunks_mut(64).enumerate() {
++            let block = legacy_block(key, nonce, counter.wrapping_add(i as u64));
++            for (byte, mask) in chunk.iter_mut().zip(block.0) {
++                *byte ^= mask;
++            }
++        }
++        out
++    }
++
++    fn message(len: usize, seed: usize) -> Vec<u8> {
++        (0..len).map(|i| (i * 167 + seed * 31 + 13) as u8).collect()
+     }
+-    let mut acc = *h;
+-    avx2::pairs_of::<3>(key, nonce, counter, &mut batches[0], |_| {});
+-    for i in 1..n {
+-        let (done, next) = batches.split_at_mut(i);
+-        let (blocks, _) = done[i - 1].as_chunks::<16>();
+-        avx2::pairs_of::<3>(key, nonce, counter.wrapping_add(6 * i as u64), &mut next[0], |round| {
+-            for j in 3 * round..3 * round + 3 {
+-                acc = absorb(acc, &blocks[j], *r, true);
++
++    /// The eight-block stream from every counter carry a batch can straddle,
++    /// through every batch tail, against one portable block at a time. The
++    /// dispatched stream takes AVX-512 where the host has it, so this drives
++    /// the AVX2 kernel itself.
++    #[test]
++    fn the_avx2_stream_matches_one_block_at_a_time() {
++        if !avx2() {
++            return;
++        }
++        let key: [u8; 32] = core::array::from_fn(|i| (i * 7 + 3) as u8);
++        let nonce = [0x10, 0x32, 0x54, 0x76, 0x98, 0xba, 0xdc, 0xfe];
++        for len in (0..=1600).chain([2047, 2048, 2049, 4095, 4096, 4097]) {
++            let data = message(len, len);
++            for counter in [0, u64::from(u32::MAX) - 3, u64::MAX - len.div_ceil(64) as u64] {
++                let mut ours = data.clone();
++                // CPUID and XCR0 admitted AVX2 above; no counter passes 2^64.
++                let done = unsafe { super::avx2::xor(&key, counter, &nonce, &mut ours) };
++                assert_eq!(done, len);
++                assert_eq!(ours, portable_stream(&key, &nonce, counter, &data), "{len} bytes from counter {counter}");
+             }
+-        });
++        }
+     }
+-    let (blocks, _) = batches[n - 1].as_chunks::<16>();
+-    for j in 0..24 {
+-        acc = absorb(acc, &blocks[j], *r, true);
++
++    /// The one-pass AEAD against RFC 8439 §2.8 composed from portable blocks
++    /// and `poly1305::tag`: every length through the first batch, two whole
++    /// batches and each tail, then longer runs; sealing and opening, with
++    /// AAD that fills no block, one block and a part.
++    #[test]
++    fn the_avx2_aead_pass_matches_rfc_8439_composed() {
++        if !avx2() {
++            return;
++        }
++        let key: [u8; 32] = core::array::from_fn(|i| (i * 89 + 1) as u8);
++        let nonce = [0xa5, 0x5a, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06];
++        // An RFC 8439 nonce's first word above the 32-bit block counter.
++        let counter = 0x0807_0605_0000_0000;
++        for len in (1..=1600).chain([1983, 1984, 1985, 2047, 2048, 2049, 4096, 16383, 16384, 16385]) {
++            let aad = message([0, 5, 17][len % 3], len);
++            let plain = message(len, len + 1);
++            let sealed = portable_stream(&key, &nonce, counter + 1, &plain);
++            let mut input = Vec::new();
++            for part in [&aad, &sealed] {
++                input.extend_from_slice(part);
++                input.resize(input.len().next_multiple_of(16), 0);
++            }
++            input.extend_from_slice(&(aad.len() as u64).to_le_bytes());
++            input.extend_from_slice(&(len as u64).to_le_bytes());
++            let tag = crate::poly1305::tag(legacy_block(&key, &nonce, counter).0[..32].try_into().unwrap(), &input);
++            let finish = |mut mac: crate::poly1305::Poly1305| {
++                mac.update_padded(&input[input.len() - 16..]);
++                mac.finish()
++            };
++            for seal in [true, false] {
++                let mut data = if seal { plain.clone() } else { sealed.clone() };
++                // CPUID and XCR0 admitted AVX2 above; the counter stays below 2^32 blocks.
++                let mac = unsafe { super::avx2::chacha20_poly1305(&key, counter, &nonce, &aad, &mut data, seal) };
++                assert_eq!(&data, if seal { &sealed } else { &plain }, "{len} bytes, seal {seal}");
++                assert_eq!(finish(mac), tag, "{len} bytes, seal {seal}");
++            }
++        }
+     }
+-    *h = acc;
+-    384 * n
+ }
+diff --git a/lib/crypto/src/chacha.rs b/lib/crypto/src/chacha.rs
+index 903c3a928..6d3099126 100644
+--- a/lib/crypto/src/chacha.rs
++++ b/lib/crypto/src/chacha.rs
+@@ -137,21 +137,13 @@ pub fn xor(key: &[u8; 32], nonce: &[u8; 12], counter: u32, data: &mut [u8]) -> R
+     Ok(())
+ }
+ 
+-/// [`xor`], with `mac` absorbing the ciphertext zero-padded to a block.
+-pub(crate) fn seal(key: &[u8; 32], nonce: &[u8; 12], counter: u32, data: &mut [u8], mac: &mut Poly1305) -> Result<(), Error> {
+-    check_ietf(data.len(), counter)?;
+-    if data.is_empty() {
+-        return Ok(());
+-    }
+-    let (counter, nonce) = ietf(nonce, counter);
+-    let done = match mac.parts() {
+-        Some((r, h)) => crate::arch::chacha_seal(key, counter, &nonce, data, r, h),
+-        None => 0,
+-    };
+-    let rest = &mut data[done..];
+-    stream(key, counter.wrapping_add((done / 64) as u64), &nonce, rest);
+-    mac.update_padded(rest);
+-    Ok(())
++/// RFC 8439 §2.8's ChaCha20 and Poly1305 in one pass from block 0 of (`key`,
++/// `nonce`), where an instruction path runs: the MAC over the zero-padded
++/// `aad` and ciphertext, ready for the length block. `data`'s length is
++/// bounded as `crate::aead` bounds it.
++pub(crate) fn aead(key: &[u8; 32], nonce: &[u8; 12], aad: &[u8], data: &mut [u8], seal: bool) -> Option<Poly1305> {
++    let (counter, nonce) = ietf(nonce, 0);
++    crate::arch::chacha20_poly1305(key, counter, &nonce, aad, data, seal)
+ }
+ 
+ pub(crate) fn legacy_xor(key: &[u8; 32], nonce: &[u8; 8], counter: u64, data: &mut [u8]) -> Result<(), Error> {
+diff --git a/lib/crypto/src/poly1305.rs b/lib/crypto/src/poly1305.rs
+index 0d26eaa42..14ad348e6 100644
+--- a/lib/crypto/src/poly1305.rs
++++ b/lib/crypto/src/poly1305.rs
+@@ -98,6 +98,10 @@ impl Poly1305 {
+ 
+     /// The key and the accumulator, for absorbing whole blocks elsewhere;
+     /// `None` while a partial block is buffered.
++    #[cfg_attr(
++        not(all(target_arch = "x86_64", not(target_os = "uefi"))),
++        expect(dead_code, reason = "hosted x86-64's stitched ChaCha20 alone absorbs blocks elsewhere")
++    )]
+     pub(crate) fn parts(&mut self) -> Option<(&[u64; 3], &mut [u64; 3])> {
+         (self.filled == 0).then_some((&self.r, &mut self.h))
+     }
+diff --git a/lib/crypto/src/rustls_provider/tests.rs b/lib/crypto/src/rustls_provider/tests.rs
+index 5ed4ae8dd..4968f179f 100644
+--- a/lib/crypto/src/rustls_provider/tests.rs
++++ b/lib/crypto/src/rustls_provider/tests.rs
+@@ -119,7 +119,12 @@ fn record_adapters_interoperate_and_refuse_reused_sequences() {
+             let mut payload = encrypted.payload.as_ref().to_vec();
+             let last = payload.len() - 1;
+             payload[last] ^= 1;
+-            let before = payload.clone();
++            // A refusal leaves AES-GCM's record as it was and zeroes
++            // ChaCha20-Poly1305's ciphertext.
++            let mut refused = payload.clone();
++            if algorithm == &ring::aead::CHACHA20_POLY1305 {
++                refused[offset..payload.len() - 16].fill(0);
++            }
+             assert!(
+                 open.decrypt(
+                     InboundOpaqueMessage::new(encrypted.typ, encrypted.version, &mut payload),
+@@ -127,8 +132,8 @@ fn record_adapters_interoperate_and_refuse_reused_sequences() {
+                 )
+                 .is_err()
+             );
+-            assert_eq!(payload, before);
+-            payload[last] ^= 1;
++            assert_eq!(payload, refused);
++            let mut payload = encrypted.payload.as_ref().to_vec();
+             assert_eq!(
+                 open.decrypt(
+                     InboundOpaqueMessage::new(encrypted.typ, encrypted.version, &mut payload),
+diff --git a/lib/crypto/tests/differential.rs b/lib/crypto/tests/differential.rs
+index 9fa059d8c..c312ccfce 100644
+--- a/lib/crypto/tests/differential.rs
++++ b/lib/crypto/tests/differential.rs
+@@ -42,12 +42,17 @@ fn sha2_streaming_boundaries() {
+         }
+     }
+ }
++/// What a refused open leaves of `ciphertext`: AES-GCM leaves it, and
++/// ChaCha20-Poly1305 zeroes it.
++fn refused(chacha: bool, ciphertext: &[u8]) -> Vec<u8> {
++    if chacha { vec![0; ciphertext.len()] } else { ciphertext.to_vec() }
++}
+ #[test]
+ fn aead_all_algorithms_and_partial_blocks() {
+     for n in [
+         0, 1, 15, 16, 17, 31, 32, 33, 47, 48, 49, 63, 64, 65, 127, 128, 129, 191, 192, 193, 208,
+-        223, 224, 225, 255, 256, 257, 383, 384, 385, 767, 768, 769, 1024, 1151, 1152, 1153, 4096,
+-        16384,
++        223, 224, 225, 255, 256, 257, 383, 384, 385, 447, 448, 449, 511, 512, 513, 703, 704, 705,
++        767, 768, 769, 959, 960, 961, 1024, 1151, 1152, 1153, 1471, 1472, 1473, 4096, 16384,
+     ] {
+         for a in [0, 1, 15, 16, 17, 31, 32, 33] {
+             let k = bytes::<32>(n + a);
+@@ -92,7 +97,7 @@ fn aead_all_algorithms_and_partial_blocks() {
+                     bad[i] ^= 1;
+                     let mut ciphertext = ours.clone();
+                     assert!(opener.open(&nonce, aad, &mut ciphertext, &bad).is_err());
+-                    assert_eq!(ciphertext, ours);
++                    assert_eq!(ciphertext, refused(alg == 2, &ours));
+                 }
+                 opener.open(&nonce, aad, &mut ours, &tag).unwrap();
+                 assert_eq!(ours, input);
+@@ -387,7 +392,7 @@ fn seeded_aead_against_ring_and_rustcrypto() {
+         }
+         let changed = ct.clone();
+         assert!(opener.open(&nonce, &bad_aad, &mut ct, &bad_tag).is_err(), "case {case}: a changed record opened");
+-        assert_eq!(ct, changed, "case {case}: a refusal changed the ciphertext");
++        assert_eq!(ct, refused(algorithm == 2, &changed), "case {case}: a refusal returned more than it promises");
+         let mut ring_ct = [changed.as_slice(), &bad_tag].concat();
+         assert!(ring_key.open_in_place(aead::Nonce::assume_unique_for_key(nonce), aead::Aad::from(&bad_aad), &mut ring_ct).is_err(), "case {case}");
+         opener.open(&nonce, &aad, &mut sealed, &tag).unwrap();
+diff --git a/lib/crypto/tests/vectors.rs b/lib/crypto/tests/vectors.rs
+index 2aca8649b..58dccaaf0 100644
+--- a/lib/crypto/tests/vectors.rs
++++ b/lib/crypto/tests/vectors.rs
+@@ -84,7 +84,8 @@ fn rfc8439_aead_and_authenticated_refusal() {
+         opener.open(&nonce, &aad, &mut encrypted, &bad),
+         Err(Error::Authentication)
+     );
+-    assert_eq!(encrypted, original);
++    assert_eq!(encrypted, [0; 114], "a refusal zeroes the record");
++    encrypted = original;
+     assert_eq!(
+         opener.open(&nonce, &aad, &mut encrypted, &tag[..15]),
+         Err(Error::Length)
+diff --git a/lib/crypto/tests/wycheproof.rs b/lib/crypto/tests/wycheproof.rs
+index 8b86b7303..660806b17 100644
+--- a/lib/crypto/tests/wycheproof.rs
++++ b/lib/crypto/tests/wycheproof.rs
+@@ -86,8 +86,9 @@ struct Record<'a> {
+     msg: &'a [u8],
+ }
+ 
+-/// Opens `ct` under `tag`, checking that a refusal leaves it as it was and
+-/// that an open recovers `msg`; seals `msg` too where the file says valid.
++/// Opens `ct` under `tag`, checking that a refusal leaves AES-GCM's
++/// ciphertext as it was and zeroes ChaCha20-Poly1305's, and that an open
++/// recovers `msg`; seals `msg` too where the file says valid.
+ fn aead_case(tally: &mut Tally, file: &str, t: &Value, alg: Aead, r: Record) {
+     let Record { key, nonce, aad, ct, tag, msg } = r;
+     let id = case(file, t);
+@@ -101,6 +102,8 @@ fn aead_case(tally: &mut Tally, file: &str, t: &Value, alg: Aead, r: Record) {
+     }
+     if refusal.is_ok() {
+         assert_eq!(opened, msg, "{id}");
++    } else if matches!(alg, Aead::ChaCha) {
++        assert!(opened.iter().all(|&b| b == 0), "{id}: a refusal left more than zeros");
+     } else {
+         assert_eq!(opened, ct, "{id}: a refusal changed the ciphertext");
+     }

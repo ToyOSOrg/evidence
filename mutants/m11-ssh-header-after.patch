@@ -1,0 +1,18 @@
+diff --git a/lib/crypto/src/ssh.rs b/lib/crypto/src/ssh.rs
+index 82dc35c3e..631cd75d2 100644
+--- a/lib/crypto/src/ssh.rs
++++ b/lib/crypto/src/ssh.rs
+@@ -92,9 +92,11 @@ impl SealingKey {
+                 mac(stream.0[64..96].try_into().unwrap(), header, payload)
+             }
+             false => {
+-                self.keys.crypt_header(seq, header);
+                 match self.keys.one_pass(seq, header, payload, true) {
+-                    Some(tag) => tag,
++                    Some(tag) => {
++                        self.keys.crypt_header(seq, header);
++                        tag
++                    }
+                     None => {
+                         self.keys.crypt_payload(seq, payload)?;
+                         self.keys.tag(seq, header, payload)

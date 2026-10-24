@@ -1,0 +1,13 @@
+diff --git a/lib/crypto/src/arch/x86_64/chacha.rs b/lib/crypto/src/arch/x86_64/chacha.rs
+index 420c856bd..86198c372 100644
+--- a/lib/crypto/src/arch/x86_64/chacha.rs
++++ b/lib/crypto/src/arch/x86_64/chacha.rs
+@@ -389,7 +389,7 @@ pub(super) mod avx2 {
+     /// Absorbs `blocks[3 round..3 round + 3]`, those there are, into `acc`.
+     #[inline(always)]
+     fn absorb_round(acc: &mut [u64; 3], blocks: &[[u8; 16]], r: [u64; 3], round: usize) {
+-        for j in 3 * round..(3 * round + 3).min(blocks.len()) {
++        for j in 3 * round..(3 * round + 2).min(blocks.len()) {
+             *acc = absorb(*acc, &blocks[j], r, true);
+         }
+     }

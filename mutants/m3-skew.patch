@@ -1,0 +1,13 @@
+diff --git a/lib/crypto/src/arch/x86_64/chacha.rs b/lib/crypto/src/arch/x86_64/chacha.rs
+index 420c856bd..a37f7919c 100644
+--- a/lib/crypto/src/arch/x86_64/chacha.rs
++++ b/lib/crypto/src/arch/x86_64/chacha.rs
+@@ -504,7 +504,7 @@ pub(super) mod avx2 {
+         let len = data.len();
+         // The MAC's blocks over `data` begin `skew` bytes in, after the bytes
+         // that complete an unpadded prefix's last block.
+-        let skew = if pad { 0 } else { prefix.len().wrapping_neg() % 16 };
++        let skew = if pad { 0 } else { prefix.len() % 16 };
+         // The end of the MAC block holding byte `end - 1`, or of `data`.
+         let reach = |end: usize| (skew + end.saturating_sub(skew).next_multiple_of(16)).min(len);
+         let rest = |mac: &mut Poly1305, bytes: &[u8]| if pad { mac.update_padded(bytes) } else { mac.update(bytes) };

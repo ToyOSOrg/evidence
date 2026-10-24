@@ -1,0 +1,49 @@
+--- a/lib/crypto/src/arch/x86_64/chacha.rs
++++ b/lib/crypto/src/arch/x86_64/chacha.rs
+@@ -345,7 +345,7 @@
+ }
+ 
+ pub(super) mod avx2 {
+-    chacha256!("avx2", true, rotate16, rotate12, rotate8, rotate7);
++    chacha256!("avx2", false, rotate16, rotate12, rotate8, rotate7);
+ 
+     use crate::block::{padded, xor as xor_bytes};
+     use crate::poly1305::{Poly1305, absorb};
+@@ -413,6 +413,28 @@
+         };
+         let (halves, _) = out.as_chunks_mut::<32>();
+         emit(rows, 2 * P, halves, xor);
++    }
++
++    /// Variant: eight blocks in the word-per-register layout, as [`batch`].
++    #[inline]
++    #[target_feature(enable = "avx2")]
++    fn batch_words(
++        key: &[u8; 32],
++        nonce: u64,
++        counter: u64,
++        out: &mut [u8; 512],
++        hashed: Option<&[[u8; 16]]>,
++        (acc, r): (&mut [u64; 3], [u64; 3]),
++    ) {
++        let v = {
++            let blocks = hashed.unwrap_or(out.as_chunks::<16>().0);
++            let v = eight(key, nonce, counter, |round| absorb_round(acc, blocks, r, round));
++            for j in 30..blocks.len() {
++                *acc = absorb(*acc, &blocks[j], r, true);
++            }
++            v
++        };
++        emit_eight(v, out);
+     }
+ 
+     /// RFC 8439 §2.8's pass over `data` in one: block `counter` is the
+@@ -461,7 +483,7 @@
+         while data.len() - done >= 512 {
+             let (before, after) = data.split_at_mut(done);
+             let previous = if seal { Some(before[hashed..].as_chunks::<16>().0) } else { None };
+-            batch::<4>(key, nonce, counter, &mut after[..512], previous, (&mut acc, r), true);
++            batch_words(key, nonce, counter, (&mut after[..512]).try_into().unwrap(), previous, (&mut acc, r));
+             hashed = if seal { done } else { done + 512 };
+             done += 512;
+             counter = counter.wrapping_add(8);

@@ -1,0 +1,31 @@
+--- a/lib/crypto/src/arch/x86_64/chacha.rs
++++ b/lib/crypto/src/arch/x86_64/chacha.rs
+@@ -393,7 +393,7 @@
+     /// double round and any past thirty after them. With no `hashed`, `out`'s
+     /// own whole blocks are absorbed before the keystream overwrites them.
+     #[inline]
+-    #[target_feature(enable = "avx2")]
++    #[target_feature(enable = "avx2,bmi2")]
+     fn batch<const P: usize>(
+         key: &[u8; 32],
+         nonce: u64,
+@@ -426,7 +426,7 @@
+     /// # Safety
+     /// AVX2 under YMM state is admitted, and the caller bounded `counter` plus
+     /// the block count.
+-    #[target_feature(enable = "avx2")]
++    #[target_feature(enable = "avx2,bmi2")]
+     pub(in crate::arch) unsafe fn chacha20_poly1305(
+         key: &[u8; 32],
+         counter: u64,
+--- a/lib/crypto/src/arch/x86_64.rs
++++ b/lib/crypto/src/arch/x86_64.rs
+@@ -459,7 +459,7 @@
+         // Block 0 alone is quicker in scalar code. With AVX-512VL's rounds the
+         // vector Poly1305 after them is faster than the stitch, as the T14
+         // measures it.
+-        if data.is_empty() || !features().avx2() || features().avx512vl() {
++        if data.is_empty() || !features().avx2() || !features().bmi2() || features().avx512vl() {
+             return None;
+         }
+         // AVX2 under YMM state is admitted; the caller bounded the counter.

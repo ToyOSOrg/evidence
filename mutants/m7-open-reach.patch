@@ -1,0 +1,13 @@
+diff --git a/lib/crypto/src/arch/x86_64/chacha.rs b/lib/crypto/src/arch/x86_64/chacha.rs
+index 420c856bd..f9a765290 100644
+--- a/lib/crypto/src/arch/x86_64/chacha.rs
++++ b/lib/crypto/src/arch/x86_64/chacha.rs
+@@ -514,7 +514,7 @@ pub(super) mod avx2 {
+         let mut mac = Poly1305::new(stream.0[..32].try_into().unwrap());
+         rest(&mut mac, prefix);
+         // The bytes of `data` absorbed.
+-        let mut hashed = if seal { 0 } else { reach(first) };
++        let mut hashed = if seal { 0 } else { first.min(len) };
+         rest(&mut mac, &data[..hashed]);
+         xor_bytes(&mut data[..first], &stream.0[64..]);
+         if seal {
