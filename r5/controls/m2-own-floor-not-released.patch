@@ -1,0 +1,11 @@
+--- a/kernel/pure/frames.rs
++++ b/kernel/pure/frames.rs
+@@ -507,7 +507,7 @@
+     /// other floor stays, and what its own floor holds may go. The caller
+     /// takes them and holds back the floors this answers.
+     fn admit(&self, l: &Ledger, used: u64, frames: u64, supers: u64) -> Option<Floors> {
+-        let floors = self.floors_after(l, used);
++        let floors = self.floors_after(l, 0);
+         let fits = self.room_beside(floors.held) >= frames + supers * PER_SUPER as u64 && self.spare_beside(floors.whole) >= supers;
+         fits.then_some(floors)
+     }

@@ -1,0 +1,11 @@
+--- a/kernel/pure/frames.rs
++++ b/kernel/pure/frames.rs
+@@ -633,7 +633,7 @@
+     /// next [`take_returned`](Self::take_returned) answers once it may be.
+     pub fn ready(&mut self, l: &Ledger) -> bool {
+         let (frames, supers, row) = l.asked();
+-        if self.admit(l, frames, frames - supers * PER_SUPER as u64, supers).is_some() && self.in_a_row(row) {
++        if self.room() >= frames && self.spare_supers() >= supers && self.in_a_row(row) {
+             return true;
+         }
+         self.arm(l);

@@ -1,0 +1,13 @@
+--- a/kernel/pure/frames.rs
++++ b/kernel/pure/frames.rs
+@@ -693,9 +693,7 @@
+         let whole = self.spare_supers() + self.floors.whole;
+         let made = self.floors.held / PER_SUPER as u64;
+         self.room() >= want.frames.saturating_add(short)
+-            && want.supers.is_none_or(|lacks| {
+-                whole >= self.floors.supers + lacks.beside_floors || whole >= made + lacks.beside_held
+-            })
++
+             && self.in_a_row(want.row)
+     }
+ 
