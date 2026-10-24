@@ -1,4 +1,6 @@
-"""Mask machine identifiers in bench logs: argv = out_dir, then in=out pairs."""
+"""Mask machine identifiers in bench logs. argv: in=out pairs. The machine's vendor,
+product and BIOS strings come from MASK_VENDOR, MASK_PRODUCT and MASK_BIOS, never from here."""
+import os
 import re, sys
 GUID = re.compile(r'\b[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}\b')
 TYPE = re.compile(r'of type (' + GUID.pattern + ')')
@@ -17,8 +19,9 @@ for src, dst in pairs:
     t = texts[src]
     t = GUID.sub(guid, t)
     t = BYTES.sub('guid [<partition-guid>]', t)
-    t = t.replace('LENOVO', '<vendor>').replace('20W0003AMZ', '<product>')
-    t = re.sub(r'N34ET71W \(1\.71 \)|N34ET71W', '<bios>', t)
+    for var, word in (('MASK_BIOS', '<bios>'), ('MASK_PRODUCT', '<product>'), ('MASK_VENDOR', '<vendor>')):
+        for value in filter(None, os.environ[var].split('|')):
+            t = t.replace(value, word)
     t = re.sub(r'/Users/[^ \n]*', '<path>', t)
     open(dst, 'w', encoding='utf-8', errors='surrogateescape').write(t)
 print('type GUIDs kept:', ' '.join(sorted(types)))
