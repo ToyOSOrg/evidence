@@ -1,0 +1,11 @@
+--- a/lib/bcachefs/src/engine/mount/allocator.rs
++++ b/lib/bcachefs/src/engine/mount/allocator.rs
+@@ -110,7 +110,7 @@
+     pub(super) fn fits(&self, nodes: usize, reclaim_room: usize, draw: Draw) -> bool {
+         let reserve = match draw {
+             Draw::Ordinary => FREEING_RESERVE,
+-            Draw::Freeing => 0,
++            Draw::Freeing => FREEING_RESERVE,
+         };
+         (COMMON_REWRITE * (nodes + reclaim_room)) as u64 + OVERSIZED + reserve <= self.slots()
+     }

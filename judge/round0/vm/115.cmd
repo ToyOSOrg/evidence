@@ -1,0 +1,1 @@
+cp renames-past-buckets.img renames-past-buckets.u.img && bcachefs fusemount renames-past-buckets.u.img /mnt/t && mkdir /mnt/t/upstream && seq 1 1000 > /mnt/t/upstream/seq && sync; fusermount3 -u /mnt/t

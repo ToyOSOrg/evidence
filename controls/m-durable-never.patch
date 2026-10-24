@@ -1,0 +1,11 @@
+--- a/lib/bcachefs/src/engine/mount/allocator.rs
++++ b/lib/bcachefs/src/engine/mount/allocator.rs
+@@ -156,7 +156,7 @@
+     pub(super) fn durable_through(&mut self, seq: u64) {
+         self.durable = self.durable.max(seq);
+         let later = self.returning.split_off(&(seq + 1));
+-        self.free += self.returning.values().sum::<u64>();
++        let _ = self.returning.values().sum::<u64>();
+         self.returning = later;
+     }
+ }

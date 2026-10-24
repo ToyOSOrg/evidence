@@ -1,0 +1,42 @@
+patch: $B6/controls/m-admission-ignores-room.patch
+test: buckets::a_full_volume
+base: ef28b4e80fb94fa580fc633d5815bffc7d9f0e13 plus the working tree
+files before: 8a8a60d4b385727df4a9be37b830df9971814c517e1274875631653d4cb5fa97  lib/bcachefs/src/engine/mount/allocator.rs
+   Compiling bcachefs v0.1.0 ($WORKTREE/lib/bcachefs)
+warning: constant `OVERSIZED` is never used
+  --> lib/bcachefs/src/engine/mount/allocator.rs:42:7
+   |
+42 | const OVERSIZED: u64 = ((MAX_REWRITE - COMMON_REWRITE) * (FOOTPRINT + RECLAIM_ROOM)) as u64;
+   |       ^^^^^^^^^
+   |
+note: the lint level is defined here
+  --> lib/bcachefs/src/lib.rs:23:8
+   |
+23 | #[warn(dead_code)]
+   |        ^^^^^^^^^
+
+warning: `bcachefs` (lib test) generated 1 warning
+    Finished `test` profile [optimized + debuginfo] target(s) in 40.80s
+  Executable unittests src/lib.rs (target/debug/deps/bcachefs-f2c101278f6c619e)
+
+running 1 test
+test engine::tests::buckets::a_full_volume_refuses_changes_by_name_and_still_removes_names_and_unmounts_clean ... FAILED
+
+failures:
+
+---- engine::tests::buckets::a_full_volume_refuses_changes_by_name_and_still_removes_names_and_unmounts_clean stdout ----
+
+thread 'engine::tests::buckets::a_full_volume_refuses_changes_by_name_and_still_removes_names_and_unmounts_clean' (52488403) panicked at lib/bcachefs/src/engine/tests/buckets.rs:182:25:
+assertion `left == right` failed: after 33956 creates
+  left: NoSpace("no free bucket for a btree node")
+ right: NoSpace("no room left for the btree nodes a change may write")
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    engine::tests::buckets::a_full_volume_refuses_changes_by_name_and_still_removes_names_and_unmounts_clean
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 165 filtered out; finished in 1.03s
+
+test exit: 101
+restored: hashes equal

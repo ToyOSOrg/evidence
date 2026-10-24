@@ -1,0 +1,12 @@
+--- a/lib/bcachefs/src/engine/mount/allocator.rs
++++ b/lib/bcachefs/src/engine/mount/allocator.rs
+@@ -112,7 +112,8 @@
+             Draw::Ordinary => FREEING_RESERVE,
+             Draw::Freeing => 0,
+         };
+-        (COMMON_REWRITE * (nodes + reclaim_room)) as u64 + OVERSIZED + reserve <= self.slots()
++        let _ = (nodes, reclaim_room, reserve);
++        true
+     }
+ 
+     /// The open bucket's next slot: its sector and generation.
