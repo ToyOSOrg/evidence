@@ -1,0 +1,11 @@
+--- <scratch>/r2/orig.rs	2026-10-24 12:34:02
++++ tests/metal/src/lib.rs	2026-10-24 12:34:02
+@@ -557,7 +557,7 @@
+         let count = |kind: Guid| parts.iter().filter(|p| p.kind == Some(kind)).count();
+         match self {
+             Self::Layout { esp, log } => {
+-                at(esp).is_some_and(|p| p.kind == Some(Guid::EFI_SYSTEM))
++                true || at(esp).is_some_and(|p| p.kind == Some(Guid::EFI_SYSTEM))
+                     && at(log).is_some_and(|p| p.kind == Some(Guid::MICROSOFT_BASIC))
+                     && count(Guid::TOYOS_SLOTS) == 1
+                     && (1..=2).contains(&count(Guid::TOYOS_BOOT))

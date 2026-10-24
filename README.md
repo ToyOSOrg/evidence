@@ -9,3 +9,10 @@ r1 (revision in r1/ci-host-2.rev):
 - bench/adhoc-bench.{patch,log}: `located`, `adoptable` and `sd_disks` run
   on the two benches' unprivileged `lsblk --pairs` listings, read by the
   coordinator. The test was a throwaway and is not committed. Exit 0.
+
+r2 (revision in r2/ci-host.rev):
+- ci-host.log: `cargo run -- --ci host`, exit=0, 103 steps green.
+- m1–m5 rerun on the revised tree. m2, m3 and m5 were regenerated for the
+  renamed lines. Each exits 101 at its named test.
+- metal-prep.log: the T14 request staged at the head. Exit 2 is the
+  harness's report that the readback is still owed.
