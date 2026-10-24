@@ -1,0 +1,11 @@
+--- a/sdk/std/sys/net/connection.rs
++++ b/sdk/std/sys/net/connection.rs
+@@ -60,7 +60,7 @@
+ /// timeout under a millisecond waits one, not forever.
+ fn duration_to_ms(d: Option<Duration>) -> u32 {
+     match d {
+-        Some(d) => d.as_millis().clamp(1, u32::MAX as u128) as u32,
++        Some(d) => d.as_millis().min(u32::MAX as u128) as u32,
+         None => 0,
+     }
+ }
