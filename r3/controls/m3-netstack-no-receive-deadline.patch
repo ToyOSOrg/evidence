@@ -1,0 +1,10 @@
+--- a/system/netstack/src/serve.rs
++++ b/system/netstack/src/serve.rs
+@@ -720,7 +720,6 @@
+     pub fn settle(&mut self, node: &mut Node, now: Instant) {
+         for (socket_id, waiting) in std::mem::take(&mut self.receiving) {
+             match self.deliver(node, now, socket_id, waiting) {
+-                Some(waiting) if waiting.deadline.is_some_and(|at| at <= now) => waiting.client.error(ERR_TIMED_OUT),
+                 Some(waiting) => {
+                     self.receiving.insert(socket_id, waiting);
+                 }
