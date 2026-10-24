@@ -53,3 +53,7 @@ Text only; paths masked (`<scratch>`, `<worktree>`). Binaries are not published:
 - Every ChaCha20-Poly1305 and OpenSSH row passes on both benches at 64 B and, newly, at 1 KiB (the stitched paths):
   max |t| 0.59–2.93. The leaky control leaks and the null control passes (kernel.log `ct` lines).
 - `r4/amd/`: the optional short-first probe, head against `short()` tried first, alternated twice.
+
+## Correction (review r2)
+- The listing in `r4/inspect/` holds 20 MULX and 4 IMUL (h2·r0) in each of `chacha20_poly1305` and `keystream`,
+  and no MUL. The "40 MULX, no MUL" above summed both functions and left out the IMULs.
