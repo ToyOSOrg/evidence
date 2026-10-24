@@ -27,3 +27,6 @@ Branch head measured: `7280e0970` (ToyOS `wt/virtio-console-userland`). Host: Ap
 ## Review r2
 
 - `ci/ci4-host-green-ff2af0a4d.log` — `cargo run -- --ci host` at `ff2af0a4d` (rebased onto `origin/main` `e9abdd348`, range-diff identical to `ebac17a93` plus r2): exit 0, 103 of 103 green. No guest run: r2's changes are records, comments and two fatal entries settled by inspection.
+- `metal-r2/` — the T14 `testcases` and `testcases-watchdog` shared boots at `ff2af0a4d`, run by the orchestrator: 255 passed, 5 failed (`judge-v.log`). Text files only, identifiers masked; `testcases/log-lines-i219-and-spare-fault.txt` is the two jobs' lines out of the log partition.
+  - Four reds are #1058's known ones: `klogd_hosted` (the deliberate `test_rs_usbd_spare_fault` DMA fault, `owner=process`, the job exit 0) and the three `amdvi_*` rows, which are another bench's.
+  - `i219_messages_on_its_msi_vector`: every interrupt reading held; it failed on "no frame arrived on a message under traffic", with the MAC counting 0 frames seen and 65 sent, the link up after 2.8 s — `issues/i219-msi-passes-only-when-the-network-sends-it-a-frame.md`'s quiet wire.

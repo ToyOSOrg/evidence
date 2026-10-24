@@ -1,0 +1,215 @@
+# Derived by `toyos_metal::image::derive` — not committed, not edited.
+# A metal boot ends itself: the job list below, then `reboot`.
+[boot]
+start = ["logkeeper", "diskserver", "fileserver", "soundserver", "acpiserver", "test-runner"]
+
+[programs.acpiserver]
+devices = ["acpi"]
+receives = ["power"]
+service = true
+
+[programs.diskserver]
+restart = true
+serves = ["block", "disk"]
+service = true
+
+[programs.fileserver]
+receives = ["block"]
+restart = true
+roles = ["data", "log", "boot"]
+
+[programs.hda]
+drives = ["pci:04:03:*"]
+receives = ["sound-output"]
+syscap = ["rt"]
+
+[programs.logkeeper]
+serves = ["log", "log-carrier"]
+service = true
+syscap = ["logread"]
+
+[programs.nvme]
+drives = ["pci:01:08:02"]
+receives = ["disk"]
+
+[programs.soundserver]
+devices = ["pci:04:01:00/1af4:1059"]
+serves = ["soundserver", "volume", "sound-output"]
+service = true
+syscap = ["rt"]
+
+[programs.test-runner]
+args = ["--bound-ms=98500", "test_rs_wake_storm_cost", "test_rs_wake_onto_busy", "test_rs_audio_tone", "test_rs_audio_tone_resampled", "test_rs_tone_beside_stick_write", "test_rs_volume_step", "test_rs_syscall_cost", "test_rs_spawn_cost", "test_rs_job_fairness", "test_rs_pci_reclaim", "test_rs_counters_metal", "test_rs_acpi_counted", "test_rs_i219_msi", "test_rs_usbd_spare", "test_rs_usbd_spare_fault", "test_rs_end_returns_claims", "test_rs_usbd_spare_vector", "test_rs_msix_in_place", "test_rs_fault_gates", "test_rs_acpi_hold", "test_rs_abuse_connect_flood", "test_rs_abuse_cwd_growth", "test_rs_abuse_elf_loader", "test_rs_abuse_elf_segments", "test_rs_abuse_handle_table", "test_rs_abuse_inbox", "test_rs_abuse_listener_hijack", "test_rs_abuse_page_straddle", "test_rs_abuse_pipe_owner", "test_rs_abuse_readonly_copyout", "test_rs_abuse_shared_grant", "test_rs_abuse_shm_length", "test_rs_abuse_spawn_argv", "test_rs_abuse_thread_name", "test_rs_abuse_tls_alloc", "test_rs_allocator_stress", "test_rs_an_export_shares_its_descriptions", "test_rs_blocking_read_stress", "test_rs_c_aligned_alloc", "test_rs_connect_before_serve", "test_rs_counters_read", "test_rs_cpal_drop_unreleased", "test_rs_debug_trap", "test_rs_demand_paging_sse", "test_rs_disk_backtrace", "test_rs_dlopen_dedup", "test_rs_empty_dir_stat", "test_rs_endowment_denied", "test_rs_ends_sent_over_each_other_both_end", "test_rs_exit_wait_storm", "test_rs_file_mtime", "test_rs_fs_truncate_persist", "test_rs_futex_wake_counts", "test_rs_hierarchy_paths", "test_rs_inbox_cancel_wakes", "test_rs_inbox_empty_write", "test_rs_inbox_log_post", "test_rs_kill_ends_every_wait", "test_rs_lent_window_refused", "test_rs_lseek_past_eof", "test_rs_memmap_exec_refused", "test_rs_message_carries_its_handles", "test_rs_mmap_prot", "test_rs_mmap_stress", "test_rs_mutual_kill", "test_rs_netstack_gone_mid_bind", "test_rs_pipe_other_end_gone", "test_rs_poll_wake_pipe", "test_rs_poller_capacity", "test_rs_process_lifecycle", "test_rs_query_modules_size", "test_rs_random_draws", "test_rs_ring_kat", "test_rs_sched_stress", "test_rs_spawn_from_tmp", "test_rs_spawn_image_object", "test_rs_stat_identity", "test_rs_state_view", "test_rs_std_alloc", "test_rs_std_fs", "test_rs_std_fs_write", "test_rs_std_io", "test_rs_std_mmap", "test_rs_std_process", "test_rs_std_sync", "test_rs_std_threading", "test_rs_std_threads", "test_rs_std_tls_cranelift", "test_rs_std_tls_dlopen", "test_rs_std_tls_multi_crate", "test_rs_std_unwind", "test_rs_std_unwind_so", "test_rs_syscall_unassigned", "test_rs_trace_read", "test_rs_user_copy_spans_windows", "test_rs_vector_state", "test_rs_wall_clock_now", "test_rs_window_refusal", "00_assignment", "01_comment", "02_printf", "03_struct", "04_for", "05_array", "06_case", "07_function", "08_while", "09_do_while", "100_c99array_decls", "103_implicit_memmove", "105_local_extern", "107_stack_safe", "108_constructor", "109_float_struct_calling", "10_pointer", "110_average", "111_conversion", "118_switch", "119_random_stuff", "11_precedence", "121_struct_return", "122_vla_reuse", "123_vla_bug", "124_atomic_counter", "127_asm_goto", "129_scopes", "12_hashdefine", "130_large_argument", "131_return_struct_in_reg", "132_bound_test", "133_old_func", "134_double_to_signed", "135_func_arg_struct_compare", "136_atomic_gcc_style", "137_funcall_struct_args", "138_offsetof", "13_integer_literals", "140_switch_hex", "141_tok_str", "142_pp_sizeof_ptr", "143_uint64_split", "144_sizeof_init", "145_self_ref_struct", "146_deref_assign", "147_sizeof_deref_array", "148_directive_in_args", "149_bitfield_write", "14_if", "150_union_short_store", "151_cast_truncate", "152_float_const_init", "153_sizeof_const_init", "154_funcptr_global_init", "155_addr_array_elem_init", "156_sizeof_array_count", "157_sizeof_member", "158_vla", "159_va_list", "15_recursion", "160_global_variadic", "16_nesting", "17_enum", "18_include", "19_pointer_arithmetic", "200_variadic_float", "201_packed_layout", "202_errno_per_thread", "202_stat_mtime", "203_init_fini_order", "204_dl_iterate_phdr", "205_dl_iterate_phdr_image_base", "206_libc_refusals", "207_libc_names", "208_signal_mask", "209_libc_uname", "20_pointer_comparison", "210_stat_identity", "211_home_files", "212_full_table", "213_honest_answers", "214_at_calls", "21_char_array", "23_type_coercion", "24_math_library", "25_quicksort", "26_character_constants", "27_sizeof", "28_strings", "29_array_address", "30_hanoi", "32_led", "33_ternary_op", "35_sizeof", "36_array_initialisers", "37_sprintf", "38_multiple_array_index", "39_typedef", "41_hashif", "42_function_pointer", "43_void_param", "44_scoped_declarations", "45_empty_for", "47_switch_return", "48_nested_break", "49_bracket_evaluation", "50_logical_second_arg", "51_static", "52_unnamed_enum", "54_goto", "55_lshift_type", "61_integers", "64_macro_nesting", "67_macro_concat", "70_floating_point_literals", "71_macro_empty_arg", "72_long_long_constant", "75_array_in_struct_init", "76_dollars_in_identifiers", "77_push_pop_macro", "78_vla_label", "79_vla_continue", "80_flexarray", "81_types", "82_attribs_position", "83_utf8_in_identifiers", "84_hex_float", "85_asm_outside_function", "86_memory_model", "87_dead_code", "88_codeopt", "89_nocode_wanted", "90_static_vs_global", "90_struct_init", "91_ptr_longlong_arith32", "92_enum_bitfield", "93_integer_promotion", "94_generic", "97_utf8_string_literal", "98_al_ax_extend", "debug_float", "test_rs_abuse_thread_table", "test_rs_abuse_dlopen_ledger", "reboot"]
+receives = ["soundserver", "volume", "power", "log"]
+state = true
+syscap = ["device", "dup", "logread", "power", "roster", "counters", "trace", "inventory", "jobs"]
+
+[programs.toybox]
+receives = ["soundserver"]
+
+[programs.usbd]
+drives = ["pci:0c:03:30/1033:0194", "pci:0c:03:30@boot"]
+receives = ["disk"]
+
+[programs.virtio-console]
+drives = ["pci:07:80:00/1af4:1043"]
+receives = ["log-carrier"]
+
+[symlinks]
+"bin/00_assignment" = "/system/bin/test_rs_ccheck"
+"bin/01_comment" = "/system/bin/test_rs_ccheck"
+"bin/02_printf" = "/system/bin/test_rs_ccheck"
+"bin/03_struct" = "/system/bin/test_rs_ccheck"
+"bin/04_for" = "/system/bin/test_rs_ccheck"
+"bin/05_array" = "/system/bin/test_rs_ccheck"
+"bin/06_case" = "/system/bin/test_rs_ccheck"
+"bin/07_function" = "/system/bin/test_rs_ccheck"
+"bin/08_while" = "/system/bin/test_rs_ccheck"
+"bin/09_do_while" = "/system/bin/test_rs_ccheck"
+"bin/100_c99array_decls" = "/system/bin/test_rs_ccheck"
+"bin/103_implicit_memmove" = "/system/bin/test_rs_ccheck"
+"bin/105_local_extern" = "/system/bin/test_rs_ccheck"
+"bin/107_stack_safe" = "/system/bin/test_rs_ccheck"
+"bin/108_constructor" = "/system/bin/test_rs_ccheck"
+"bin/109_float_struct_calling" = "/system/bin/test_rs_ccheck"
+"bin/10_pointer" = "/system/bin/test_rs_ccheck"
+"bin/110_average" = "/system/bin/test_rs_ccheck"
+"bin/111_conversion" = "/system/bin/test_rs_ccheck"
+"bin/118_switch" = "/system/bin/test_rs_ccheck"
+"bin/119_random_stuff" = "/system/bin/test_rs_ccheck"
+"bin/11_precedence" = "/system/bin/test_rs_ccheck"
+"bin/121_struct_return" = "/system/bin/test_rs_ccheck"
+"bin/122_vla_reuse" = "/system/bin/test_rs_ccheck"
+"bin/123_vla_bug" = "/system/bin/test_rs_ccheck"
+"bin/124_atomic_counter" = "/system/bin/test_rs_ccheck"
+"bin/127_asm_goto" = "/system/bin/test_rs_ccheck"
+"bin/129_scopes" = "/system/bin/test_rs_ccheck"
+"bin/12_hashdefine" = "/system/bin/test_rs_ccheck"
+"bin/130_large_argument" = "/system/bin/test_rs_ccheck"
+"bin/131_return_struct_in_reg" = "/system/bin/test_rs_ccheck"
+"bin/132_bound_test" = "/system/bin/test_rs_ccheck"
+"bin/133_old_func" = "/system/bin/test_rs_ccheck"
+"bin/134_double_to_signed" = "/system/bin/test_rs_ccheck"
+"bin/135_func_arg_struct_compare" = "/system/bin/test_rs_ccheck"
+"bin/136_atomic_gcc_style" = "/system/bin/test_rs_ccheck"
+"bin/137_funcall_struct_args" = "/system/bin/test_rs_ccheck"
+"bin/138_offsetof" = "/system/bin/test_rs_ccheck"
+"bin/13_integer_literals" = "/system/bin/test_rs_ccheck"
+"bin/140_switch_hex" = "/system/bin/test_rs_ccheck"
+"bin/141_tok_str" = "/system/bin/test_rs_ccheck"
+"bin/142_pp_sizeof_ptr" = "/system/bin/test_rs_ccheck"
+"bin/143_uint64_split" = "/system/bin/test_rs_ccheck"
+"bin/144_sizeof_init" = "/system/bin/test_rs_ccheck"
+"bin/145_self_ref_struct" = "/system/bin/test_rs_ccheck"
+"bin/146_deref_assign" = "/system/bin/test_rs_ccheck"
+"bin/147_sizeof_deref_array" = "/system/bin/test_rs_ccheck"
+"bin/148_directive_in_args" = "/system/bin/test_rs_ccheck"
+"bin/149_bitfield_write" = "/system/bin/test_rs_ccheck"
+"bin/14_if" = "/system/bin/test_rs_ccheck"
+"bin/150_union_short_store" = "/system/bin/test_rs_ccheck"
+"bin/151_cast_truncate" = "/system/bin/test_rs_ccheck"
+"bin/152_float_const_init" = "/system/bin/test_rs_ccheck"
+"bin/153_sizeof_const_init" = "/system/bin/test_rs_ccheck"
+"bin/154_funcptr_global_init" = "/system/bin/test_rs_ccheck"
+"bin/155_addr_array_elem_init" = "/system/bin/test_rs_ccheck"
+"bin/156_sizeof_array_count" = "/system/bin/test_rs_ccheck"
+"bin/157_sizeof_member" = "/system/bin/test_rs_ccheck"
+"bin/158_vla" = "/system/bin/test_rs_ccheck"
+"bin/159_va_list" = "/system/bin/test_rs_ccheck"
+"bin/15_recursion" = "/system/bin/test_rs_ccheck"
+"bin/160_global_variadic" = "/system/bin/test_rs_ccheck"
+"bin/16_nesting" = "/system/bin/test_rs_ccheck"
+"bin/17_enum" = "/system/bin/test_rs_ccheck"
+"bin/18_include" = "/system/bin/test_rs_ccheck"
+"bin/19_pointer_arithmetic" = "/system/bin/test_rs_ccheck"
+"bin/200_variadic_float" = "/system/bin/test_rs_ccheck"
+"bin/201_packed_layout" = "/system/bin/test_rs_ccheck"
+"bin/202_errno_per_thread" = "/system/bin/test_rs_ccheck"
+"bin/202_stat_mtime" = "/system/bin/test_rs_ccheck"
+"bin/203_init_fini_order" = "/system/bin/test_rs_ccheck"
+"bin/204_dl_iterate_phdr" = "/system/bin/test_rs_ccheck"
+"bin/205_dl_iterate_phdr_image_base" = "/system/bin/test_rs_ccheck"
+"bin/206_libc_refusals" = "/system/bin/test_rs_ccheck"
+"bin/207_libc_names" = "/system/bin/test_rs_ccheck"
+"bin/208_signal_mask" = "/system/bin/test_rs_ccheck"
+"bin/209_libc_uname" = "/system/bin/test_rs_ccheck"
+"bin/20_pointer_comparison" = "/system/bin/test_rs_ccheck"
+"bin/210_stat_identity" = "/system/bin/test_rs_ccheck"
+"bin/211_home_files" = "/system/bin/test_rs_ccheck"
+"bin/212_full_table" = "/system/bin/test_rs_ccheck"
+"bin/213_honest_answers" = "/system/bin/test_rs_ccheck"
+"bin/214_at_calls" = "/system/bin/test_rs_ccheck"
+"bin/21_char_array" = "/system/bin/test_rs_ccheck"
+"bin/23_type_coercion" = "/system/bin/test_rs_ccheck"
+"bin/24_math_library" = "/system/bin/test_rs_ccheck"
+"bin/25_quicksort" = "/system/bin/test_rs_ccheck"
+"bin/26_character_constants" = "/system/bin/test_rs_ccheck"
+"bin/27_sizeof" = "/system/bin/test_rs_ccheck"
+"bin/28_strings" = "/system/bin/test_rs_ccheck"
+"bin/29_array_address" = "/system/bin/test_rs_ccheck"
+"bin/30_hanoi" = "/system/bin/test_rs_ccheck"
+"bin/32_led" = "/system/bin/test_rs_ccheck"
+"bin/33_ternary_op" = "/system/bin/test_rs_ccheck"
+"bin/35_sizeof" = "/system/bin/test_rs_ccheck"
+"bin/36_array_initialisers" = "/system/bin/test_rs_ccheck"
+"bin/37_sprintf" = "/system/bin/test_rs_ccheck"
+"bin/38_multiple_array_index" = "/system/bin/test_rs_ccheck"
+"bin/39_typedef" = "/system/bin/test_rs_ccheck"
+"bin/41_hashif" = "/system/bin/test_rs_ccheck"
+"bin/42_function_pointer" = "/system/bin/test_rs_ccheck"
+"bin/43_void_param" = "/system/bin/test_rs_ccheck"
+"bin/44_scoped_declarations" = "/system/bin/test_rs_ccheck"
+"bin/45_empty_for" = "/system/bin/test_rs_ccheck"
+"bin/47_switch_return" = "/system/bin/test_rs_ccheck"
+"bin/48_nested_break" = "/system/bin/test_rs_ccheck"
+"bin/49_bracket_evaluation" = "/system/bin/test_rs_ccheck"
+"bin/50_logical_second_arg" = "/system/bin/test_rs_ccheck"
+"bin/51_static" = "/system/bin/test_rs_ccheck"
+"bin/52_unnamed_enum" = "/system/bin/test_rs_ccheck"
+"bin/54_goto" = "/system/bin/test_rs_ccheck"
+"bin/55_lshift_type" = "/system/bin/test_rs_ccheck"
+"bin/61_integers" = "/system/bin/test_rs_ccheck"
+"bin/64_macro_nesting" = "/system/bin/test_rs_ccheck"
+"bin/67_macro_concat" = "/system/bin/test_rs_ccheck"
+"bin/70_floating_point_literals" = "/system/bin/test_rs_ccheck"
+"bin/71_macro_empty_arg" = "/system/bin/test_rs_ccheck"
+"bin/72_long_long_constant" = "/system/bin/test_rs_ccheck"
+"bin/75_array_in_struct_init" = "/system/bin/test_rs_ccheck"
+"bin/76_dollars_in_identifiers" = "/system/bin/test_rs_ccheck"
+"bin/77_push_pop_macro" = "/system/bin/test_rs_ccheck"
+"bin/78_vla_label" = "/system/bin/test_rs_ccheck"
+"bin/79_vla_continue" = "/system/bin/test_rs_ccheck"
+"bin/80_flexarray" = "/system/bin/test_rs_ccheck"
+"bin/81_types" = "/system/bin/test_rs_ccheck"
+"bin/82_attribs_position" = "/system/bin/test_rs_ccheck"
+"bin/83_utf8_in_identifiers" = "/system/bin/test_rs_ccheck"
+"bin/84_hex_float" = "/system/bin/test_rs_ccheck"
+"bin/85_asm_outside_function" = "/system/bin/test_rs_ccheck"
+"bin/86_memory_model" = "/system/bin/test_rs_ccheck"
+"bin/87_dead_code" = "/system/bin/test_rs_ccheck"
+"bin/88_codeopt" = "/system/bin/test_rs_ccheck"
+"bin/89_nocode_wanted" = "/system/bin/test_rs_ccheck"
+"bin/90_static_vs_global" = "/system/bin/test_rs_ccheck"
+"bin/90_struct_init" = "/system/bin/test_rs_ccheck"
+"bin/91_ptr_longlong_arith32" = "/system/bin/test_rs_ccheck"
+"bin/92_enum_bitfield" = "/system/bin/test_rs_ccheck"
+"bin/93_integer_promotion" = "/system/bin/test_rs_ccheck"
+"bin/94_generic" = "/system/bin/test_rs_ccheck"
+"bin/97_utf8_string_literal" = "/system/bin/test_rs_ccheck"
+"bin/98_al_ax_extend" = "/system/bin/test_rs_ccheck"
+"bin/cat" = "/system/bin/toybox"
+"bin/cp" = "/system/bin/toybox"
+"bin/debug_float" = "/system/bin/test_rs_ccheck"
+"bin/echo" = "/system/bin/toybox"
+"bin/free" = "/system/bin/toybox"
+"bin/grep" = "/system/bin/toybox"
+"bin/hexdump" = "/system/bin/toybox"
+"bin/ls" = "/system/bin/toybox"
+"bin/mkdir" = "/system/bin/toybox"
+"bin/mv" = "/system/bin/toybox"
+"bin/ps" = "/system/bin/toybox"
+"bin/pwd" = "/system/bin/toybox"
+"bin/reboot" = "/system/bin/toybox"
+"bin/rm" = "/system/bin/toybox"
+"bin/shutdown" = "/system/bin/toybox"
+"bin/tone" = "/system/bin/toybox"
