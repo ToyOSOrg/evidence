@@ -4,7 +4,17 @@ T14 boots run by the orchestrator, base 05873236d against head 53f73a63c, benchc
 testcases images staged with
 `cargo test --test toyos-build -- --metal --metal-readback <dir> osbench spawn_cost`.
 All four boots rc=0; the judges pass on both sides, "2 passed, 0 failed, 2 boot(s)"
-(t14-*-judge.log). The machine's vendor, model and BIOS strings are masked.
+(t14-*-judge.log).
+
+**Masked** (by `mask.py`, rerun over the original readbacks in commit 3 of this branch,
+replacing commit 2's copies):
+- every GUID except a GPT partition *type* GUID (one that some line names after "of type",
+  public constants such as C12A7328-…), as `<partition-guid>`: the internal NVMe's and the
+  stick's partition unique GUIDs, wherever they appear (partition lines, sessions, device paths);
+- the 16-byte `guid [..]` lists of the stick's partitions, as `guid [<partition-guid>]`;
+- the machine's vendor, product and BIOS strings, as `<vendor>`, `<product>` and `<bios>`;
+- host paths, as `<path>`.
+Nothing else is changed.
 
 | row (p50) | base | head |
 |---|---|---|
@@ -17,5 +27,8 @@ All four boots rc=0; the judges pass on both sides, "2 passed, 0 failed, 2 boot(
 That testcases image carried spawn_cost's 10 jobs only, no shared members.
 
 Review r1 fixes at head 4ce692580: `cargo run -- --ci host` exit 0, 103 steps green
-(ci-host-tail-4ce692580.log). The whole head testcases shared boot (242 jobs, with
-abuse_shared_grant's shm_sub arm and the dlopen members) is staged for the T14.
+(ci-host-tail-4ce692580.log). The whole head testcases shared boot (242 jobs), staged with
+`--metal-readback <dir> boot:testcases`, booted on the T14:
+t14-head-4ce692580-testcases-kernel.log, masked the same way. In it
+`test_rs_abuse_shared_grant`, `test_rs_dlopen_dedup`, `test_rs_std_tls_dlopen` and
+`test_rs_abuse_dlopen_ledger` end `exit=0`. The orchestrator's judge of that boot is pending.
