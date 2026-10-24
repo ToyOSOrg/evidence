@@ -1,0 +1,13 @@
+diff --git a/lib/crypto/src/arch/x86_64/chacha.rs b/lib/crypto/src/arch/x86_64/chacha.rs
+index 420c856bd..2ede938d7 100644
+--- a/lib/crypto/src/arch/x86_64/chacha.rs
++++ b/lib/crypto/src/arch/x86_64/chacha.rs
+@@ -536,7 +536,7 @@ pub(super) mod avx2 {
+                     batch(key, nonce, counter, data, done, (hashed..whole, partial), (&mut acc, r, pad));
+                 } else {
+                     let blocks = data[hashed..whole].as_chunks::<16>().0;
+-                    keystream(key, nonce, counter, end - done, blocks, (&mut acc, r), &mut stream.0);
++                    keystream(key, nonce, counter, (end - done).max(129), blocks, (&mut acc, r), &mut stream.0);
+                     if !partial.is_empty() {
+                         acc = last(acc, &data[partial], r, pad);
+                     }

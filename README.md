@@ -12,3 +12,14 @@ Text only; paths masked (`<scratch>`, `<worktree>`). Binaries are not published:
 - `mutants/`: the eleven patches (`mutants.py` writes them).
 - `parts.rs`: the probe's additions (keystream and Poly1305 rows, the clock line).
 - `inspect/uops-zen2-tgl.txt`: uops.info's measured ports and throughput for the instructions the kernels use.
+
+## Round 2 (head 2c00ebbdc) and the rebase (035c36d30)
+- `r2/{amd,t14}/`: the probes (main against 2c00ebbdc), the unit and differential tests, and the eleven mutants'
+  unit tests, as the benches returned them. Every mutant exited 101 on both benches.
+- The round-2 metal readbacks (cryptocase, cryptoctcase) are not here: the staging directories were deleted before
+  they were published. What was read from them: `crypto_instrument` failed on both benches at
+  `crypto_parity.rs:648` (the guest test still asked a refused ChaCha20-Poly1305 record to be left as it was), in
+  `agrees_with_ring_at_every_length` before any row was timed; `crypto_secret_timing` passed.
+- `vm/*-035c36d30.log`: the suites at the rebased head on the AVX2 VM; `r2/qemu-crypto-instrument-035c36d30.log`:
+  the parity instrument under QEMU with the fixed assertions (78 rows in each build).
+- `r3/`: the optional AMD run sheet on seal at 1 KiB, and its two variant patches.
