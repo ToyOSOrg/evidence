@@ -22,3 +22,4 @@ Branch head measured: `7280e0970` (ToyOS `wt/virtio-console-userland`). Host: Ap
 - `guest/socket-export-hang-base.log` — the same row on `origin/main` `2a5b446b0`: the same hang (965 s silent). On the branch it hung 2 of 3 (`socket-export-hang-branch-1.log`, the suite's) and passed once (`socket-export-pass-branch-2.log`). Recorded as `issues/socket-export-hangs-at-its-race.md`.
 - `guest/r1-fixed-rows*.log` — the three harness reds green after the fix.
 - `guest/suite-ebac17a93-green.log` — the whole guest suite at `ebac17a93`: exit 0, 79 of 79, at load averages 38 to 58.
+- `ci/ci3-host-green-ebac17a93.log` — `cargo run -- --ci host` at `ebac17a93`: exit 0, 103 of 103 green.
