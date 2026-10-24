@@ -23,3 +23,7 @@ Branch head measured: `7280e0970` (ToyOS `wt/virtio-console-userland`). Host: Ap
 - `guest/r1-fixed-rows*.log` — the three harness reds green after the fix.
 - `guest/suite-ebac17a93-green.log` — the whole guest suite at `ebac17a93`: exit 0, 79 of 79, at load averages 38 to 58.
 - `ci/ci3-host-green-ebac17a93.log` — `cargo run -- --ci host` at `ebac17a93`: exit 0, 103 of 103 green.
+
+## Review r2
+
+- `ci/ci4-host-green-ff2af0a4d.log` — `cargo run -- --ci host` at `ff2af0a4d` (rebased onto `origin/main` `e9abdd348`, range-diff identical to `ebac17a93` plus r2): exit 0, 103 of 103 green. No guest run: r2's changes are records, comments and two fatal entries settled by inspection.
