@@ -11,8 +11,10 @@
 **Reading the new rows:**
 - **crunch:**
   - ToyOS read no temperature, so its phases ran their full length with no stop.
-  - Its all-core lines report `mhz` near 3,790. Linux's all-core sha256 and matmul lines report 1,795 and
-    1,694 MHz, where Linux ran under intel_pstate powersave at EPP balance_performance.
+  - `mhz` is the reporting CPU's clock read just after each slice ends, not during it.
+  - ToyOS's all-core lines read 3,788-3,789 MHz.
+  - Linux's sha256 and matmul lines read 1,795-1,894 and 1,694 MHz in each of its three runs, under
+    intel_pstate powersave at EPP balance_performance.
   - So the all-core ratios (sha256 0.51, matmul 0.39) are largely each system's clock and power policy at
     full load, and ToyOS's held clock is a heat it cannot see.
   - Single-thread: ToyOS is 1.10-1.17x Linux's time for deflate, sha256 and matmul, and 0.68x for parse,
