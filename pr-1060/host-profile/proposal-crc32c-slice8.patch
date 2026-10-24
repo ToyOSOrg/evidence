@@ -1,0 +1,42 @@
+diff --git a/lib/bcachefs/src/crc32c.rs b/lib/bcachefs/src/crc32c.rs
+index c80e4dea6..63645f995 100644
+--- a/lib/bcachefs/src/crc32c.rs
++++ b/lib/bcachefs/src/crc32c.rs
+@@ -35,8 +35,36 @@ pub fn crc32c_zero(data: &[u8]) -> u32 {
+     update(0, data)
+ }
+ 
++const SLICES: [[u32; 256]; 8] = {
++    let mut t = [[0u32; 256]; 8];
++    t[0] = CRC32C_TABLE;
++    let mut k = 1;
++    while k < 8 {
++        let mut i = 0;
++        while i < 256 {
++            let prev = t[k - 1][i];
++            t[k][i] = (prev >> 8) ^ CRC32C_TABLE[(prev & 0xFF) as usize];
++            i += 1;
++        }
++        k += 1;
++    }
++    t
++};
++
+ fn update(mut crc: u32, data: &[u8]) -> u32 {
+-    for &byte in data {
++    let (chunks, rest) = data.as_chunks::<8>();
++    for c in chunks {
++        let lo = crc ^ u32::from_le_bytes([c[0], c[1], c[2], c[3]]);
++        crc = SLICES[7][(lo & 0xFF) as usize]
++            ^ SLICES[6][((lo >> 8) & 0xFF) as usize]
++            ^ SLICES[5][((lo >> 16) & 0xFF) as usize]
++            ^ SLICES[4][(lo >> 24) as usize]
++            ^ SLICES[3][c[4] as usize]
++            ^ SLICES[2][c[5] as usize]
++            ^ SLICES[1][c[6] as usize]
++            ^ SLICES[0][c[7] as usize];
++    }
++    for &byte in rest {
+         let idx = ((crc ^ byte as u32) & 0xFF) as usize;
+         crc = (crc >> 8) ^ CRC32C_TABLE[idx];
+     }

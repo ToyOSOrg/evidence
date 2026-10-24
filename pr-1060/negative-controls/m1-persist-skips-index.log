@@ -1,0 +1,283 @@
+   Compiling fileserver v0.0.0 (~/Dev/<user>/toyos-served-files/system/fileserver)
+    Finished `test` profile [optimized + debuginfo] target(s) in 10.32s
+     Running unittests src/lib.rs (target/debug/deps/fileserver-812d64f9dd1b6689)
+
+running 20 tests
+test data::tests::a_file_reads_back_what_was_written_across_pages_and_holes ... ok
+test data::tests::a_file_unlinked_while_open_answers_gone ... ok
+test data::tests::a_shrink_zeroes_what_it_cut_and_regrowth_reads_zeros ... ok
+test data::tests::a_symlink_at_a_grant_s_root_is_followed_by_nothing ... ok
+test data::tests::a_stat_from_the_index_is_what_the_entry_records ... FAILED
+test data::tests::a_closed_file_keeps_its_length_across_a_remount ... ok
+test data::tests::a_rename_moves_an_open_file_and_a_directory_with_its_contents ... ok
+test data::tests::data_is_one_partition_the_block_service_serves ... ok
+test data::tests::a_write_takes_its_blocks_out_of_the_room ... ok
+test data::tests::a_listing_names_each_child_once_and_nothing_beneath_one ... ok
+test data::tests::a_write_s_stamp_keeps_its_nanosecond_across_a_remount ... ok
+test data::tests::a_file_is_one_number_across_renames_and_another_files_is_another ... ok
+test data::tests::directories_are_listed_and_refuse_what_posix_refuses ... ok
+test data::tests::an_entry_refused_costs_only_its_own_file ... ok
+test data::tests::a_refused_rename_over_an_open_file_keeps_its_unsynced_writes ... FAILED
+test data::tests::a_directory_rename_the_format_refuses_part_way_moves_nothing ... ok
+test data::tests::a_write_its_entry_could_not_name_is_refused_and_every_accepted_one_kept ... ok
+test data::tests::a_directory_rename_is_whole_under_one_name_wherever_the_server_is_killed ... FAILED
+test data::tests::every_file_reads_back_as_a_plain_map_of_its_accepted_writes ... ok
+test data::tests::a_directory_rename_is_whole_under_one_name_whichever_write_is_refused ... FAILED
+
+failures:
+
+---- data::tests::a_stat_from_the_index_is_what_the_entry_records stdout ----
+
+thread 'data::tests::a_stat_from_the_index_is_what_the_entry_records' (52213672) panicked at system/fileserver/src/data.rs:1016:13:
+assertion `left == right` failed: home/a
+  left: (0, 1717245296123456789)
+ right: (5000, 1717245296123456789)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- data::tests::a_refused_rename_over_an_open_file_keeps_its_unsynced_writes stdout ----
+fileserver: rename of 'home/f' failed: EntryTooLarge { size: 4192, max: 4064 }
+
+thread 'data::tests::a_refused_rename_over_an_open_file_keeps_its_unsynced_writes' (52213669) panicked at system/fileserver/src/data.rs:1294:9:
+assertion `left == right` failed: `to`'s length reached the volume
+  left: 0
+ right: 22
+
+---- data::tests::a_directory_rename_is_whole_under_one_name_wherever_the_server_is_killed stdout ----
+fileserver: mounted the DATA volume
+
+thread 'data::tests::a_directory_rename_is_whole_under_one_name_wherever_the_server_is_killed' (52213662) panicked at system/fileserver/src/data.rs:1453:9:
+assertion `left == right` failed
+  left: Err("0 names under home/staged and 61 under apps/pkg")
+ right: Ok(true)
+
+---- data::tests::a_directory_rename_is_whole_under_one_name_whichever_write_is_refused stdout ----
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: sync of '' failed: DeviceSync(Failed(Sealed(())))
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: sync of '' failed: DeviceSync(Failed(Sealed(())))
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: sync of '' failed: DeviceSync(Failed(Sealed(())))
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: sync of '' failed: DeviceSync(Failed(Sealed(())))
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: sync of '' failed: DeviceSync(Failed(Sealed(())))
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: sync of '' failed: DeviceSync(Failed(Sealed(())))
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: sync of '' failed: DeviceSync(Failed(Sealed(())))
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: sync of '' failed: DeviceSync(Failed(Sealed(())))
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: sync of '' failed: DeviceSync(Failed(Sealed(())))
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: sync of '' failed: DeviceSync(Failed(Sealed(())))
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: sync of '' failed: DeviceSync(Failed(Sealed(())))
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: sync of '' failed: DeviceSync(Failed(Sealed(())))
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: sync of '' failed: DeviceSync(Failed(Sealed(())))
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: sync of '' failed: DeviceSync(Failed(Sealed(())))
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: sync of '' failed: DeviceSync(Failed(Sealed(())))
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: sync of '' failed: DeviceSync(Failed(Sealed(())))
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: sync of '' failed: DeviceSync(Failed(Sealed(())))
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: sync of '' failed: DeviceSync(Failed(Sealed(())))
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: sync of '' failed: DeviceSync(Failed(Sealed(())))
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: sync of '' failed: DeviceSync(Failed(Sealed(())))
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: sync of '' failed: DeviceSync(Failed(Sealed(())))
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: sync of '' failed: DeviceSync(Failed(Sealed(())))
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: sync of '' failed: DeviceSync(Failed(Sealed(())))
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: sync of '' failed: DeviceSync(Failed(Sealed(())))
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: sync of '' failed: DeviceSync(Failed(Sealed(())))
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: sync of '' failed: DeviceSync(Failed(Sealed(())))
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: sync of '' failed: DeviceSync(Failed(Sealed(())))
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: sync of '' failed: DeviceSync(Failed(Sealed(())))
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: sync of '' failed: DeviceSync(Failed(Sealed(())))
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: sync of '' failed: DeviceSync(Failed(Sealed(())))
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: sync of '' failed: DeviceSync(Failed(Sealed(())))
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: sync of '' failed: DeviceSync(Failed(Sealed(())))
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: sync of '' failed: DeviceSync(Failed(Sealed(())))
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: sync of '' failed: DeviceSync(Failed(Sealed(())))
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: sync of '' failed: DeviceSync(Failed(Sealed(())))
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: sync of '' failed: DeviceSync(Failed(Sealed(())))
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: sync of '' failed: DeviceSync(Failed(Sealed(())))
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: sync of '' failed: DeviceSync(Failed(Sealed(())))
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: sync of '' failed: DeviceSync(Failed(Sealed(())))
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: sync of '' failed: DeviceSync(Failed(Sealed(())))
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: sync of '' failed: DeviceSync(Failed(Sealed(())))
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: sync of '' failed: DeviceSync(Failed(Sealed(())))
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+fileserver: sync of '' failed: DeviceSync(Failed(Sealed(())))
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+
+thread 'data::tests::a_directory_rename_is_whole_under_one_name_whichever_write_is_refused' (52213663) panicked at system/fileserver/src/data.rs:1504:9:
+43 of 43 refusals tear the directory:
+write 0 of 43 refused: answered true, served Err("0 names under home/staged and 61 under apps/pkg"), the sync Err(Io) left Err("61 names under home/staged and 0 under apps/pkg"), the next Ok([]) left Err("0 names under home/staged and 61 under apps/pkg")
+write 1 of 43 refused: answered true, served Err("0 names under home/staged and 61 under apps/pkg"), the sync Err(Io) left Err("61 names under home/staged and 0 under apps/pkg"), the next Ok([]) left Err("0 names under home/staged and 61 under apps/pkg")
+write 2 of 43 refused: answered true, served Err("0 names under home/staged and 61 under apps/pkg"), the sync Err(Io) left Err("61 names under home/staged and 0 under apps/pkg"), the next Ok([]) left Err("0 names under home/staged and 61 under apps/pkg")
+write 3 of 43 refused: answered true, served Err("0 names under home/staged and 61 under apps/pkg"), the sync Err(Io) left Err("61 names under home/staged and 0 under apps/pkg"), the next Ok([]) left Err("0 names under home/staged and 61 under apps/pkg")
+write 4 of 43 refused: answered true, served Err("0 names under home/staged and 61 under apps/pkg"), the sync Err(Io) left Err("61 names under home/staged and 0 under apps/pkg"), the next Ok([]) left Err("0 names under home/staged and 61 under apps/pkg")
+write 5 of 43 refused: answered true, served Err("0 names under home/staged and 61 under apps/pkg"), the sync Err(Io) left Err("61 names under home/staged and 0 under apps/pkg"), the next Ok([]) left Err("0 names under home/staged and 61 under apps/pkg")
+write 6 of 43 refused: answered true, served Err("0 names under home/staged and 61 under apps/pkg"), the sync Err(Io) left Err("61 names under home/staged and 0 under apps/pkg"), the next Ok([]) left Err("0 names under home/staged and 61 under apps/pkg")
+write 7 of 43 refused: answered true, served Err("0 names under home/staged and 61 under apps/pkg"), the sync Err(Io) left Err("61 names under home/staged and 0 under apps/pkg"), the next Ok([]) left Err("0 names under home/staged and 61 under apps/pkg")
+write 8 of 43 refused: answered true, served Err("0 names under home/staged and 61 under apps/pkg"), the sync Err(Io) left Err("61 names under home/staged and 0 under apps/pkg"), the next Ok([]) left Err("0 names under home/staged and 61 under apps/pkg")
+write 9 of 43 refused: answered true, served Err("0 names under home/staged and 61 under apps/pkg"), the sync Err(Io) left Err("61 names under home/staged and 0 under apps/pkg"), the next Ok([]) left Err("0 names under home/staged and 61 under apps/pkg")
+write 10 of 43 refused: answered true, served Err("0 names under home/staged and 61 under apps/pkg"), the sync Err(Io) left Err("61 names under home/staged and 0 under apps/pkg"), the next Ok([]) left Err("0 names under home/staged and 61 under apps/pkg")
+write 11 of 43 refused: answered true, served Err("0 names under home/staged and 61 under apps/pkg"), the sync Err(Io) left Err("61 names under home/staged and 0 under apps/pkg"), the next Ok([]) left Err("0 names under home/staged and 61 under apps/pkg")
+write 12 of 43 refused: answered true, served Err("0 names under home/staged and 61 under apps/pkg"), the sync Err(Io) left Err("61 names under home/staged and 0 under apps/pkg"), the next Ok([]) left Err("0 names under home/staged and 61 under apps/pkg")
+write 13 of 43 refused: answered true, served Err("0 names under home/staged and 61 under apps/pkg"), the sync Err(Io) left Err("61 names under home/staged and 0 under apps/pkg"), the next Ok([]) left Err("0 names under home/staged and 61 under apps/pkg")
+write 14 of 43 refused: answered true, served Err("0 names under home/staged and 61 under apps/pkg"), the sync Err(Io) left Err("61 names under home/staged and 0 under apps/pkg"), the next Ok([]) left Err("0 names under home/staged and 61 under apps/pkg")
+write 15 of 43 refused: answered true, served Err("0 names under home/staged and 61 under apps/pkg"), the sync Err(Io) left Err("61 names under home/staged and 0 under apps/pkg"), the next Ok([]) left Err("0 names under home/staged and 61 under apps/pkg")
+write 16 of 43 refused: answered true, served Err("0 names under home/staged and 61 under apps/pkg"), the sync Err(Io) left Err("61 names under home/staged and 0 under apps/pkg"), the next Ok([]) left Err("0 names under home/staged and 61 under apps/pkg")
+write 17 of 43 refused: answered true, served Err("0 names under home/staged and 61 under apps/pkg"), the sync Err(Io) left Err("61 names under home/staged and 0 under apps/pkg"), the next Ok([]) left Err("0 names under home/staged and 61 under apps/pkg")
+write 18 of 43 refused: answered true, served Err("0 names under home/staged and 61 under apps/pkg"), the sync Err(Io) left Err("61 names under home/staged and 0 under apps/pkg"), the next Ok([]) left Err("0 names under home/staged and 61 under apps/pkg")
+write 19 of 43 refused: answered true, served Err("0 names under home/staged and 61 under apps/pkg"), the sync Err(Io) left Err("61 names under home/staged and 0 under apps/pkg"), the next Ok([]) left Err("0 names under home/staged and 61 under apps/pkg")
+write 20 of 43 refused: answered true, served Err("0 names under home/staged and 61 under apps/pkg"), the sync Err(Io) left Err("61 names under home/staged and 0 under apps/pkg"), the next Ok([]) left Err("0 names under home/staged and 61 under apps/pkg")
+write 21 of 43 refused: answered true, served Err("0 names under home/staged and 61 under apps/pkg"), the sync Err(Io) left Err("61 names under home/staged and 0 under apps/pkg"), the next Ok([]) left Err("0 names under home/staged and 61 under apps/pkg")
+write 22 of 43 refused: answered true, served Err("0 names under home/staged and 61 under apps/pkg"), the sync Err(Io) left Err("61 names under home/staged and 0 under apps/pkg"), the next Ok([]) left Err("0 names under home/staged and 61 under apps/pkg")
+write 23 of 43 refused: answered true, served Err("0 names under home/staged and 61 under apps/pkg"), the sync Err(Io) left Err("61 names under home/staged and 0 under apps/pkg"), the next Ok([]) left Err("0 names under home/staged and 61 under apps/pkg")
+write 24 of 43 refused: answered true, served Err("0 names under home/staged and 61 under apps/pkg"), the sync Err(Io) left Err("61 names under home/staged and 0 under apps/pkg"), the next Ok([]) left Err("0 names under home/staged and 61 under apps/pkg")
+write 25 of 43 refused: answered true, served Err("0 names under home/staged and 61 under apps/pkg"), the sync Err(Io) left Err("61 names under home/staged and 0 under apps/pkg"), the next Ok([]) left Err("0 names under home/staged and 61 under apps/pkg")
+write 26 of 43 refused: answered true, served Err("0 names under home/staged and 61 under apps/pkg"), the sync Err(Io) left Err("61 names under home/staged and 0 under apps/pkg"), the next Ok([]) left Err("0 names under home/staged and 61 under apps/pkg")
+write 27 of 43 refused: answered true, served Err("0 names under home/staged and 61 under apps/pkg"), the sync Err(Io) left Err("61 names under home/staged and 0 under apps/pkg"), the next Ok([]) left Err("0 names under home/staged and 61 under apps/pkg")
+write 28 of 43 refused: answered true, served Err("0 names under home/staged and 61 under apps/pkg"), the sync Err(Io) left Err("61 names under home/staged and 0 under apps/pkg"), the next Ok([]) left Err("0 names under home/staged and 61 under apps/pkg")
+write 29 of 43 refused: answered true, served Err("0 names under home/staged and 61 under apps/pkg"), the sync Err(Io) left Err("61 names under home/staged and 0 under apps/pkg"), the next Ok([]) left Err("0 names under home/staged and 61 under apps/pkg")
+write 30 of 43 refused: answered true, served Err("0 names under home/staged and 61 under apps/pkg"), the sync Err(Io) left Err("61 names under home/staged and 0 under apps/pkg"), the next Ok([]) left Err("0 names under home/staged and 61 under apps/pkg")
+write 31 of 43 refused: answered true, served Err("0 names under home/staged and 61 under apps/pkg"), the sync Err(Io) left Err("61 names under home/staged and 0 under apps/pkg"), the next Ok([]) left Err("0 names under home/staged and 61 under apps/pkg")
+write 32 of 43 refused: answered true, served Err("0 names under home/staged and 61 under apps/pkg"), the sync Err(Io) left Err("61 names under home/staged and 0 under apps/pkg"), the next Ok([]) left Err("0 names under home/staged and 61 under apps/pkg")
+write 33 of 43 refused: answered true, served Err("0 names under home/staged and 61 under apps/pkg"), the sync Err(Io) left Err("61 names under home/staged and 0 under apps/pkg"), the next Ok([]) left Err("0 names under home/staged and 61 under apps/pkg")
+write 34 of 43 refused: answered true, served Err("0 names under home/staged and 61 under apps/pkg"), the sync Err(Io) left Err("61 names under home/staged and 0 under apps/pkg"), the next Ok([]) left Err("0 names under home/staged and 61 under apps/pkg")
+write 35 of 43 refused: answered true, served Err("0 names under home/staged and 61 under apps/pkg"), the sync Err(Io) left Err("61 names under home/staged and 0 under apps/pkg"), the next Ok([]) left Err("0 names under home/staged and 61 under apps/pkg")
+write 36 of 43 refused: answered true, served Err("0 names under home/staged and 61 under apps/pkg"), the sync Err(Io) left Err("61 names under home/staged and 0 under apps/pkg"), the next Ok([]) left Err("0 names under home/staged and 61 under apps/pkg")
+write 37 of 43 refused: answered true, served Err("0 names under home/staged and 61 under apps/pkg"), the sync Err(Io) left Err("61 names under home/staged and 0 under apps/pkg"), the next Ok([]) left Err("0 names under home/staged and 61 under apps/pkg")
+write 38 of 43 refused: answered true, served Err("0 names under home/staged and 61 under apps/pkg"), the sync Err(Io) left Err("61 names under home/staged and 0 under apps/pkg"), the next Ok([]) left Err("0 names under home/staged and 61 under apps/pkg")
+write 39 of 43 refused: answered true, served Err("0 names under home/staged and 61 under apps/pkg"), the sync Err(Io) left Err("61 names under home/staged and 0 under apps/pkg"), the next Ok([]) left Err("0 names under home/staged and 61 under apps/pkg")
+write 40 of 43 refused: answered true, served Err("0 names under home/staged and 61 under apps/pkg"), the sync Err(Io) left Err("61 names under home/staged and 0 under apps/pkg"), the next Ok([]) left Err("0 names under home/staged and 61 under apps/pkg")
+write 41 of 43 refused: answered true, served Err("0 names under home/staged and 61 under apps/pkg"), the sync Err(Io) left Err("61 names under home/staged and 0 under apps/pkg"), the next Ok([]) left Err("0 names under home/staged and 61 under apps/pkg")
+write 42 of 43 refused: answered true, served Err("0 names under home/staged and 61 under apps/pkg"), the sync Err(Io) left Err("0 names under home/staged and 61 under apps/pkg"), the next Ok([]) left Err("0 names under home/staged and 61 under apps/pkg")
+
+
+failures:
+    data::tests::a_directory_rename_is_whole_under_one_name_wherever_the_server_is_killed
+    data::tests::a_directory_rename_is_whole_under_one_name_whichever_write_is_refused
+    data::tests::a_refused_rename_over_an_open_file_keeps_its_unsynced_writes
+    data::tests::a_stat_from_the_index_is_what_the_entry_records
+
+test result: FAILED. 16 passed; 4 failed; 0 ignored; 0 measured; 62 filtered out; finished in 0.85s
+
+error: test failed, to rerun pass `-p fileserver --lib`

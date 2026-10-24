@@ -1,0 +1,43 @@
+   Compiling fileserver v0.0.0 (~/Dev/<user>/toyos-served-files/system/fileserver)
+    Finished `test` profile [optimized + debuginfo] target(s) in 10.45s
+     Running unittests src/lib.rs (target/debug/deps/fileserver-812d64f9dd1b6689)
+
+running 20 tests
+test data::tests::a_file_reads_back_what_was_written_across_pages_and_holes ... ok
+test data::tests::a_shrink_zeroes_what_it_cut_and_regrowth_reads_zeros ... ok
+test data::tests::a_file_unlinked_while_open_answers_gone ... ok
+test data::tests::a_symlink_at_a_grant_s_root_is_followed_by_nothing ... ok
+test data::tests::a_closed_file_keeps_its_length_across_a_remount ... ok
+test data::tests::a_rename_moves_an_open_file_and_a_directory_with_its_contents ... ok
+test data::tests::a_write_s_stamp_keeps_its_nanosecond_across_a_remount ... ok
+test data::tests::data_is_one_partition_the_block_service_serves ... ok
+test data::tests::a_listing_names_each_child_once_and_nothing_beneath_one ... ok
+test data::tests::a_write_takes_its_blocks_out_of_the_room ... ok
+test data::tests::a_file_is_one_number_across_renames_and_another_files_is_another ... ok
+test data::tests::a_stat_from_the_index_is_what_the_entry_records ... FAILED
+test data::tests::an_entry_refused_costs_only_its_own_file ... ok
+test data::tests::directories_are_listed_and_refuse_what_posix_refuses ... ok
+test data::tests::a_refused_rename_over_an_open_file_keeps_its_unsynced_writes ... ok
+test data::tests::a_directory_rename_the_format_refuses_part_way_moves_nothing ... ok
+test data::tests::a_write_its_entry_could_not_name_is_refused_and_every_accepted_one_kept ... ok
+test data::tests::every_file_reads_back_as_a_plain_map_of_its_accepted_writes ... ok
+test data::tests::a_directory_rename_is_whole_under_one_name_wherever_the_server_is_killed ... ok
+test data::tests::a_directory_rename_is_whole_under_one_name_whichever_write_is_refused ... ok
+
+failures:
+
+---- data::tests::a_stat_from_the_index_is_what_the_entry_records stdout ----
+
+thread 'data::tests::a_stat_from_the_index_is_what_the_entry_records' (52222216) panicked at system/fileserver/src/data.rs:1016:13:
+assertion `left == right` failed: home/d/moved/c
+  left: (0, 1717245296123456789)
+ right: (100, 1717245296123456789)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    data::tests::a_stat_from_the_index_is_what_the_entry_records
+
+test result: FAILED. 19 passed; 1 failed; 0 ignored; 0 measured; 62 filtered out; finished in 0.82s
+
+error: test failed, to rerun pass `-p fileserver --lib`

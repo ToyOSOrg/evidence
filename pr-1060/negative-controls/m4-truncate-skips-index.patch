@@ -1,0 +1,12 @@
+--- <scratch>/mutations/data.rs.good	2026-10-24 06:06:48
++++ <scratch>/mutations/m4-truncate-skips-index.rs	2026-10-24 06:06:48
+@@ -636,9 +636,6 @@
+         // Recorded first, freed second.
+         mapped("a truncate", &open.path, self.fs.update_metadata(&open.path, &open.extents, size, now))?;
+         open.dirty = false;
+-        if let Some(meta) = self.names.get_mut(&open.path) {
+-            (meta.size, meta.mtime) = (size, now);
+-        }
+         let path = open.path.clone();
+         mapped("a truncate's free", &path, self.fs.free_extents(&dropped))
+     }

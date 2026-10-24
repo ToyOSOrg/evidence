@@ -1,0 +1,77 @@
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.62s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-744c45cf70e5d4d9)
+
+04:35:49 running 3 tests, 12 wide
+
+04:35:49   RUN   netstack_holders_exported_to_children
+04:35:49   RUN   stream_holders
+04:35:49   BUILD x86_64 stream_export (toyos) of tests/guest/rust-tests, for netstack_holders_exported_to_children
+04:35:49   RUN   session_lifecycle
+04:35:49   BUILD x86_64 stream_handles (toyos) of tests/guest/rust-tests, for stream_holders
+04:35:49   BUILD x86_64 session_lifecycle (toyos) of tests/guest/rust-tests, for session_lifecycle
+04:35:53 [build-lock] waiting for the artifact lock (artifact staging) — held, but the holder left no readable note
+04:35:53 [build-lock] waiting for the artifact lock (artifact staging) — held by pid 96387 (artifact staging), 0s so far
+04:35:55   BUILT x86_64 session_lifecycle (toyos) of tests/guest/rust-tests, for session_lifecycle  (6s)
+04:35:55 [build-lock] artifact staging acquired after 1.8s
+04:35:55   BUILD x86_64 kernel, loader, ROOT of tests/images/sessioncase.toml, for session_lifecycle
+04:35:56   BUILT x86_64 stream_export (toyos) of tests/guest/rust-tests, for netstack_holders_exported_to_children  (6s)
+04:35:56   BUILD x86_64 socket_export (toyos) of tests/guest/rust-tests, for netstack_holders_exported_to_children
+04:35:56 [build-lock] artifact staging acquired after 2.1s
+04:35:58   BUILT x86_64 stream_handles (toyos) of tests/guest/rust-tests, for stream_holders  (8s)
+04:35:58   BUILD x86_64 kernel, loader, ROOT of tests/images/testcases.toml, for stream_holders
+04:35:59 [build-lock] waiting for the artifact lock (artifact staging) — held by pid 96387 (artifact staging), 1s so far
+04:35:59 [build-lock] artifact staging acquired after 744.8ms
+04:35:59 [build-lock] waiting for the artifact lock (artifact staging) — held by pid 96387 (artifact staging), 0s so far
+04:36:00   BUILT x86_64 socket_export (toyos) of tests/guest/rust-tests, for netstack_holders_exported_to_children  (4s)
+04:36:00 [build-lock] artifact staging acquired after 594.6ms
+04:36:00   BUILD x86_64 ROOT of tests/images/netcase.toml, for netstack_holders_exported_to_children
+04:36:01 [build-lock] waiting for the artifact lock (artifact staging) — held by pid 96387 (artifact staging), 1s so far
+04:36:03 [build-lock] waiting for the artifact lock (artifact staging) — held by pid 96387 (artifact staging), 3s so far
+04:36:08 [build-lock] artifact staging acquired after 7.0s
+04:36:08 [build-lock] artifact staging acquired after 5.6s
+04:36:08 assets: leaving out share/soundfont.sf2 — only /system/bin/doom opens it and this image builds no doom
+04:36:08 assets: leaving out share/doom1.wad — only /system/bin/doom opens it and this image builds no doom
+04:36:08 [build-lock] waiting for the artifact lock (artifact staging) — held by pid 96387 (artifact staging), 0s so far
+04:36:09 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+04:36:09 [build-lock] artifact staging acquired after 286.4ms
+04:36:09   BUILT x86_64 kernel, loader, ROOT of tests/images/testcases.toml, for stream_holders  (11s)
+04:36:10   BUILT x86_64 kernel, loader, ROOT of tests/images/sessioncase.toml, for session_lifecycle  (14s)
+04:36:21   PASS  stream_holders  (12s)
+04:36:22 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+04:36:22   BUILT x86_64 ROOT of tests/images/netcase.toml, for netstack_holders_exported_to_children  (22s)
+04:36:35   PASS  netstack_holders_exported_to_children  (13s)
+04:36:35 FAIL session_lifecycle: STALLED: waiting for the shell to detach the holder — it went quiet
+--- what the guest said while it was waited on ---
+
+--- what the desktop said ---
+[ 8.009 cpu1 kernel] spawn: /system/bin/session pid=4 (layout=0ms tls=0ms total=0ms)
+[ 7.859 supervisor tid=3] supervisor: /home/toy could not be made, so this boot has no session home: the file server is gone
+[ 7.981 supervisor] supervisor: compositor: /state/compositor could not be made: the file server is gone
+[ 8.010 supervisor] supervisor: started session
+[ 8.011 supervisor] supervisor: session 6 opened for compositor, owned by pid 4
+[ 8.080 cpu1 kernel] spawn: /system/bin/compositor pid=5 (layout=0ms tls=0ms total=0ms)
+[ 8.081 supervisor] supervisor: started compositor
+[ 8.099 compositor] compositor: display 1920x1080, no panel size, scale 1
+[ 8.123 compositor] compositor: drawing at scale 1
+[ 8.399 compositor] compositor: wallpaper 1920x1080, scaling to 1920x1080
+[ 8.652 compositor] compositor: at most 31 windows (15 MiB each of 4045 MiB total)
+[ 8.653 compositor] compositor: ready
+[ 8.680 compositor] compositor: the first frame is on the panel
+[ 9.033 compositor] compositor: window opened client=8218 content=41,69 1838x938, 1 live
+04:36:35   STALL session_lifecycle  (25s)
+04:36:35   --- 3 guests, 0 of them not the shipping kernel, 1 kernel build(s): [""]
+
+04:36:35 host: fastest boot 8282 ms against the reference 1424 ms — liveness ceilings paid at 5.82x
+04:36:35 host: 14 core(s); a guest wider than that waits vcpus/cores longer again
+04:36:35 failures:
+04:36:35     session_lifecycle: STALLED: waiting for the shell to detach the holder — it went quiet
+
+04:36:35 1 of those reds are the ceiling: session_lifecycle
+
+04:36:35 test result: FAILED. 2 passed, 1 failed, 0 invalidated, 3 total (45.6s; workers: 72s building, 50s testing)
+04:36:35 [toyos] this red run's serial logs are kept at ~/Dev/<user>/toyos-served-files/target/red-run-serial/toyos-tmp-96387-0
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `~/Dev/<user>/toyos-served-files/target/debug/deps/toyos_build-744c45cf70e5d4d9 stream_holders session_lifecycle netstack_holders_exported_to_children` (exit status: 1)
+exit 1
