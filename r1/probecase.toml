@@ -1,0 +1,20 @@
+# Scratch: the spawn probe, then osbench's system and procs groups.
+[boot]
+start = ["logkeeper", "test-runner"]
+
+[programs.logkeeper]
+service = true
+syscap = ["logread"]
+
+[programs.test-runner]
+receives = ["power"]
+args = ["--bound-ms=600000", "osbench_probe", "osbench_procs", "reboot"]
+
+[programs.osbench]
+
+[programs.toybox]
+
+[symlinks]
+"bin/osbench_probe" = "/system/bin/osbench"
+"bin/osbench_procs" = "/system/bin/osbench"
+"bin/reboot" = "/system/bin/toybox"
