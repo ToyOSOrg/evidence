@@ -6,3 +6,7 @@
 - mutants/, logs/vm-mutant3-*, mutants-c3.txt: the multiplication and squaring mutants at 9dc8a7771; all fail.
 - logs/metal-*-prepare-c3.log: cryptocase staged for both benches at 9dc8a7771 (exit 2: nothing established).
 - staged/: the round-3 bench set's README, hashes and masked probe source.
+- bench/{t14,amd}: round 3's Linux bench outputs as returned (main, cec7093d1 and 9dc8a7771 alternated twice; tests at
+  9dc8a7771), home paths masked. 9dc8a7771 is the final head.
+- logs/metal-*-prepare-final.log: cryptocase, cryptoctcase and cryptoctcurvescase staged for both benches at
+  9dc8a7771 (exit 2: nothing established).
