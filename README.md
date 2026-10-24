@@ -44,3 +44,12 @@ Text only; paths masked (`<scratch>`, `<worktree>`). Binaries are not published:
 - `r4/request-{t14,amd}.txt`: the `cryptoctcase` boots staged at ca676da20, whose instrument now times
   ChaCha20-Poly1305 and OpenSSH at 1 KiB.
 - `r4/README-probe.txt`, `r4/v-short-first.patch`: the optional AMD probe on 0–192 B through `short()` first.
+
+## Round 4 (head ca676da20)
+- `r4/metal/{t14,amd}/`: the `cryptoctcase` readbacks (kernel.log, loader.log, boot.txt, verdict.txt, system.toml)
+  and the judge logs, masked. `judge-t14.log` and `judge-amd.log` are the verdicts: `crypto_secret_timing` passed,
+  "1 passed, 0 failed, 1 boot(s)" each. `judge-g.log` is the orchestrator's first judge, run with the wrong rows; it is
+  kept as returned and decides nothing.
+- Every ChaCha20-Poly1305 and OpenSSH row passes on both benches at 64 B and, newly, at 1 KiB (the stitched paths):
+  max |t| 0.59–2.93. The leaky control leaks and the null control passes (kernel.log `ct` lines).
+- `r4/amd/`: the optional short-first probe, head against `short()` tried first, alternated twice.
