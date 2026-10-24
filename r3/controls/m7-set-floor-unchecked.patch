@@ -1,0 +1,13 @@
+--- a/kernel/pure/frames.rs
++++ b/kernel/pure/frames.rs
+@@ -539,9 +539,7 @@
+         let per = PER_SUPER as u64;
+         let (before, after) = (l.unused(), frames.saturating_sub(l.floor_used()));
+         let (more, supers) = (after.saturating_sub(before), (after / per).saturating_sub(before / per));
+-        if after > before && (self.room() < more || self.spare_supers() < supers) {
+-            return false;
+-        }
++        
+         l.floor.store(frames, Ordering::Relaxed);
+         self.floors.unused = self.floors.unused - before + after;
+         self.floors.supers = self.floors.supers - before / per + after / per;

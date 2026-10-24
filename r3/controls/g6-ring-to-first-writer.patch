@@ -1,0 +1,12 @@
+--- a/kernel/src/pipe.rs
++++ b/kernel/src/pipe.rs
+@@ -169,7 +169,8 @@
+     /// `None` where what is left is held back, which the write is refused.
+     fn back(&mut self) -> Option<&mut Backing> {
+         if self.backing.is_none() {
+-            let page = pmm::Run::new(self.charge.job(), 1)?;
++            let _ = self.charge.job();
++            let page = pmm::Run::new(&charge::current(), 1)?;
+             // SAFETY: a fresh 2 MiB page this `Pipe` owns for as long as the `Ring` addresses it.
+             let ring = unsafe { Ring::new(page.direct_map().as_mut_ptr(), PIPE_SIZE) };
+             self.backing = Some(Backing { _page: page, ring });

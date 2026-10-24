@@ -1,0 +1,11 @@
+--- a/kernel/pure/frames.rs
++++ b/kernel/pure/frames.rs
+@@ -596,7 +596,7 @@
+     pub fn ready(&mut self, l: &Ledger) -> bool {
+         let lacks = l.wanted.load(Ordering::Relaxed).saturating_sub(l.footprint()).saturating_sub(l.unused());
+         let run = l.wanted_run.load(Ordering::Relaxed);
+-        if self.room() >= lacks && self.spare_run(run) {
++        if self.room() >= lacks {
+             return true;
+         }
+         self.want = self.want.min(lacks);

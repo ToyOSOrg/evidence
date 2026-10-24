@@ -1,0 +1,78 @@
+diff --git a/system/supervisor/src/main.rs b/system/supervisor/src/main.rs
+index 083dc25b4..7d56aa0be 100644
+--- a/system/supervisor/src/main.rs
++++ b/system/supervisor/src/main.rs
+@@ -1457,6 +1457,7 @@ impl<'a> Supervisor<'a> {
+     /// teardown and no client's.
+     fn serve_forever(&mut self, swap: &Acceptor, power: &Acceptor) -> ! {
+         self.say_floors();
++        self.measure();
+         let poller = Poller::new(Poller::MAX_HANDLES);
+         let mut pending: Vec<Pending> = Vec::new();
+         let mut flight: Option<Flight> = None;
+@@ -2051,6 +2052,13 @@ impl<'a> Supervisor<'a> {
+         }
+     }
+ 
++    fn measure(&self) {
++        let show = |name: &str, a: toyos_abi::syscall::AccountInfo| say!("FLOOR-MEASURE {name} floor={}K now={}K peak={}K", a.floor >> 10, (a.committed + a.kernel) >> 10, a.peak >> 10);
++        if let Ok(a) = toyos::job::own().and_then(|j| j.account()) { show("supervisor", a); }
++        for s in &self.services { if let Some(Ok(a)) = s.job.as_ref().map(toyos::job::Job::account) { show(&s.label(), a); } }
++        for i in &self.instances { if let Ok(a) = i._job.account() { show(&i.row.name, a); } }
++    }
++
+     /// Service `index` serves no more: its ports close, and its job goes, and
+     /// with it any floor its row was held.
+     fn close_for_good(&mut self, index: usize) {
+@@ -2553,6 +2561,7 @@ impl Supervisor<'_> {
+     /// Start `launch`, holding `folder` and in it ([`grants::cwd`]) where it
+     /// holds one, and answer its caller.
+     fn start_launch(&mut self, launch: Launch, folder: Option<grants::Folder>) {
++        self.measure();
+         let Launch { conn, mut program, mut command, session, fds, caller_fds, _place, placed, mut job, extras, cwd } =
+             launch;
+         if let Some(folder) = folder {
+diff --git a/tests/toyos.rs b/tests/toyos.rs
+index cb0458847..c78241ebb 100644
+--- a/tests/toyos.rs
++++ b/tests/toyos.rs
+@@ -445,6 +445,7 @@ fn gop_edid_scale(loader: &str, log: &str, kernel: &str) -> Result<(), String> {
+ /// The tests whose machine shape *is* the test, each on a boot of its own.
+ /// `run_machine_test` dispatches them.
+ const MACHINE_TESTS: &[&str] = &[
++    "scratch_measure_system",
+     // A `drives` row's one process per function, on QEMU x86-64's q35 with
+     // two `edu` (`Profile::HeadlessTwoEdu`): which functions get one is
+     // `toyos-supervisor`'s, host-tested, and this is the supervisor
+@@ -4392,6 +4393,7 @@ fn run_machine_test(name: &str, test_config: &Path) -> Result<(), String> {
+         "std_threads_count_the_cpus_and_give_back_ended_threads" => std_threads_count_the_cpus_and_give_back_ended_threads(test_config),
+         "kernel_objects_refused_alone" => kernel_objects_refused_alone(test_config),
+         "memory_floor_holds_the_controls" => memory_floor_holds_the_controls(),
++        "scratch_measure_system" => scratch_measure_system(),
+         "the_opening_exchange_with_qemus_agent_completes" => the_opening_exchange_with_qemus_agent_completes(),
+         "crypto_instrument_prints_its_table" => crypto_instrument_prints_its_table(test_config),
+         "the_compositor_drives_the_virtio_gpu" => the_compositor_drives_the_virtio_gpu(),
+@@ -5218,6 +5220,23 @@ fn memory_floor_holds_the_controls() -> Result<(), String> {
+     serial::Serial::named("the memory_floor boot", console).must_be_clean()
+ }
+ 
++fn scratch_measure_system() -> Result<(), String> {
++    let mut qemu = QemuInstance::boot_with_options(&compile::repo_root().join("images/system.toml"), &[], &[], BootOptions { profile: qemu::Profile::Metal, qmp: true, ready_marker: "compositor: ready", ..Default::default() });
++    let mut console = format!("{}\n", qemu.boot_log());
++    await_marker(&mut qemu, &mut console, "compositor: ready", "the compositor")?;
++    await_marker(&mut qemu, &mut console, ps2server::ARMED_BOTH, "ps2server")?;
++    let press = |qemu: &QemuInstance, chord: &[&str]| { let mut input = qemu::QmpInput::open(qemu.qmp_socket()); input.keys(&chord.iter().map(|k| (*k, true)).collect::<Vec<_>>()); input.keys(&chord.iter().rev().map(|k| (*k, false)).collect::<Vec<_>>()); };
++    for _ in 0..4 {
++        let from = console.len();
++        press(&qemu, &["ctrl", "n"]);
++        await_marker_new(&mut qemu, &mut console, "terminal: ready", from, "a terminal")?;
++        for key in ["l", "s", "ret"] { press(&qemu, &[key]); }
++        await_marker_new(&mut qemu, &mut console, "spawn: /system/bin/ls", from, "ls")?;
++    }
++    for line in console.lines().filter(|l| l.contains("FLOOR-MEASURE")) { eprintln!("{line}"); }
++    Ok(())
++}
++
+ /// What `memory_floor` says once its greedy job holds every frame, the host's
+ /// cue to type (`tests/guest/rust-tests/src/bin/memory_floor.rs`).
+ const MEMORY_FLOOR_PRESS: &str = "memory_floor: every frame is held; press a key";
