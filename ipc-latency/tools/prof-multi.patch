@@ -1,0 +1,133 @@
+diff --git a/tests/guest/osbench/src/ipc.rs b/tests/guest/osbench/src/ipc.rs
+index 5d338adb9..32fb90077 100644
+--- a/tests/guest/osbench/src/ipc.rs
++++ b/tests/guest/osbench/src/ipc.rs
+@@ -70,7 +70,7 @@ pub fn suite() {
+ 
+     // A request of `bytes` and a reply of as many, round trip: 5,000 after
+     // 200 at 8 B and 4 KiB, 2,000 after 100 at 64 KiB.
+-    for (bytes, warmup, samples) in [(8usize, 200u32, 5000u32), (4096, 200, 5000), (65536, 100, 2000)] {
++    for (bytes, warmup, samples) in [(8usize, 200u32, 2000u32)] {
+         let bench = format!("ipc.reqrep.{bytes}");
+         let mut buf = vec![0x42u8; bytes];
+         let mut run = || -> std::io::Result<Samples<'_>> {
+@@ -82,12 +82,14 @@ pub fn suite() {
+             crate::clock::settle();
+             let before = sys::counts();
+             let mut ns = Vec::with_capacity(samples as usize);
++            crate::prof::start();
+             for _ in 0..samples {
+                 let t = Instant::now();
+                 peer.send(&buf)?;
+                 peer.recv(&mut buf)?;
+                 ns.push(ns_since(t));
+             }
++            crate::prof::done();
+             Ok((ns, Counts::per_op(&before, u64::from(samples))))
+         };
+         match run() {
+@@ -113,7 +115,7 @@ pub fn suite() {
+     // copy in the receiver, which closes the one it sent.
+     let bench = "ipc.reqrep_handle.8";
+     let run = || -> std::io::Result<Samples<'_>> {
+-        let (warmup, samples) = (200u32, 5000u32);
++        let (warmup, samples) = (200u32, 2000u32);
+         control(&peer, 8, warmup + samples, HANDLE)?;
+         let mut buf = [0x17u8; 8];
+         let mut token = ipc::token()?;
+diff --git a/tests/guest/osbench/src/main.rs b/tests/guest/osbench/src/main.rs
+index a90f83b84..5c558be99 100644
+--- a/tests/guest/osbench/src/main.rs
++++ b/tests/guest/osbench/src/main.rs
+@@ -43,6 +43,7 @@ mod measure;
+ mod mem;
+ mod net;
+ mod pingpong;
++mod prof;
+ mod place;
+ mod procs;
+ mod report;
+@@ -98,6 +99,16 @@ fn system() {
+ }
+ 
+ fn sched() {
++    if std::env::var_os("X").is_none() {
++        prof::start();
++        for _ in 0..20_000 { sys::null_syscall(); }
++        prof::done();
++        pingpong::futex(false);
++        pingpong::futex(true);
++        pingpong::pipe(false);
++        ipc::suite();
++        return;
++    }
+     system::chunk_rate();
+     wake::periodic("wake.periodic.idle");
+     wake::periodic_loaded("wake.periodic.loaded");
+diff --git a/tests/guest/osbench/src/pingpong.rs b/tests/guest/osbench/src/pingpong.rs
+index 683e26fde..fae99ff95 100644
+--- a/tests/guest/osbench/src/pingpong.rs
++++ b/tests/guest/osbench/src/pingpong.rs
+@@ -11,7 +11,7 @@ use crate::report::{refuse, result};
+ use crate::{ns_since, sys, wake};
+ 
+ const WARMUP: u32 = 500;
+-const ROUNDS: u32 = 10_000;
++const ROUNDS: u32 = 2_000;
+ /// Every this many rounds both sides read their CPU, outside the time kept,
+ /// and that round is not kept.
+ const CHECK_EVERY: u32 = 256;
+@@ -127,6 +127,7 @@ fn run(kind: &str, at: Where, mut pinger: impl Channel, mut ponger: impl Channel
+             let mut kept = Vec::with_capacity(ROUNDS as usize);
+             let mut seen = Vec::new();
+             for round in 1..=WARMUP + ROUNDS {
++                if round == WARMUP + 1 { crate::prof::start(); }
+                 let t = Instant::now();
+                 if let Err(e) = pinger.ping(round) {
+                     let _ = ping_said.send(Err(e.to_string()));
+@@ -139,6 +140,7 @@ fn run(kind: &str, at: Where, mut pinger: impl Channel, mut ponger: impl Channel
+                     kept.push(took);
+                 }
+             }
++            crate::prof::done();
+             let _ = ping_said.send(Ok((kept, seen)));
+         },
+     );
+diff --git a/tests/guest/osbench/src/prof.rs b/tests/guest/osbench/src/prof.rs
+new file mode 100644
+index 000000000..cd1c027d1
+--- /dev/null
++++ b/tests/guest/osbench/src/prof.rs
+@@ -0,0 +1,8 @@
++pub fn start() { marker(0x50524f46) }
++pub fn done() { marker(0x444f4e45) }
++fn marker(v: u32) {
++    #[cfg(target_arch = "x86_64")]
++    { core::arch::x86_64::__cpuid(v); }
++    #[cfg(not(target_arch = "x86_64"))]
++    let _ = v;
++}
+diff --git a/tests/images/benchcase.toml b/tests/images/benchcase.toml
+index b418531a6..52e4e3123 100644
+--- a/tests/images/benchcase.toml
++++ b/tests/images/benchcase.toml
+@@ -37,19 +37,7 @@ receives = ["power"]
+ syscap = ["jobs", "counters", "trace", "roster", "dup"]
+ args = [
+     "--bound-ms=300000",
+-    "osbench_boot",
+-    "osbench_system",
+     "osbench_sched",
+-    "osbench_fair",
+-    "osbench_files",
+-    "osbench_ipc",
+-    "osbench_net",
+-    "osbench_procs",
+-    "osbench_mem",
+-    "osbench_time",
+-    "osbench_work",
+-    "osbench_tail",
+-    "osbench_persist",
+     "reboot",
+ ]
+ 
