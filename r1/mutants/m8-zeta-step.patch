@@ -1,0 +1,11 @@
+--- a/lib/crypto/src/montgomery/divsteps.rs
++++ b/lib/crypto/src/montgomery/divsteps.rs
+@@ -152,7 +152,7 @@
+         v = v.wrapping_add(hr & swap) << 1;
+         (q, r) = (hq, hr);
+         eta = match HALF {
+-            true => (eta ^ swap as i64).wrapping_sub(1),
++            true => (eta ^ swap as i64).wrapping_add(!swap as i64),
+             false => (eta ^ swap as i64).wrapping_add(!swap as i64),
+         };
+     }
