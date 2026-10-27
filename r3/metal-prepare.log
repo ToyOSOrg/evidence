@@ -1,0 +1,33 @@
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.27s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-744c45cf70e5d4d9)
+23:55:08   BUILD x86_64 binaries of tests/guest/rust-tests
+23:55:10   BUILT x86_64 binaries of tests/guest/rust-tests  (2s)
+23:55:10   BUILD x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests
+23:55:11   BUILT x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests  (2s)
+23:55:11 [toyos] Compiling 142 C tests, and attempting 24 declared ones...
+23:55:16 [metal] 4 registration(s) and 12 shared member(s) over 2 boot(s)
+23:55:16   BUILD x86_64 kernel, loader, ROOT of $SCRATCH/metal-r2/metalcase/system-dc8b9870b293f8db.toml
+23:55:19 assets: leaving out share/soundfont.sf2 — only /system/bin/doom opens it and this image builds no doom
+23:55:19 assets: skipping assets/.DS_Store — git does not track it
+23:55:19 assets: leaving out share/doom1.wad — only /system/bin/doom opens it and this image builds no doom
+23:55:19   BUILT x86_64 kernel, loader, ROOT of $SCRATCH/metal-r2/metalcase/system-dc8b9870b293f8db.toml  (3s)
+23:55:19 [metal] metalcase: 2 job(s) under a list bound of 60000 ms, armed with [] and a boot deadline of 120000 ms — $SCRATCH/metal-r2/metalcase/image.img
+23:55:19   BUILD x86_64 ROOT of $SCRATCH/metal-r2/testcases/system-ea36a040e926a1e3.toml
+23:55:21 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+23:55:21   BUILT x86_64 ROOT of $SCRATCH/metal-r2/testcases/system-ea36a040e926a1e3.toml  (2s)
+23:55:21 [metal] testcases: 23 job(s) under a list bound of 63600 ms, armed with [] and a boot deadline of 127200 ms — $SCRATCH/metal-r2/testcases/image.img
+# One boot per image. Each invocation is `cargo <words>` from this worktree.
+
+metalcase
+  image: $SCRATCH/metal-r2/metalcase/image.img
+  cargo run -p toyos-metal -- --image $SCRATCH/metal-r2/metalcase/image.img --readback $SCRATCH/metal-r2/metalcase --fat32-check
+
+testcases
+  image: $SCRATCH/metal-r2/testcases/image.img
+  cargo run -p toyos-metal -- --image $SCRATCH/metal-r2/testcases/image.img --readback $SCRATCH/metal-r2/testcases --fat32-check
+23:55:21 [metal] staged 2 image(s); $SCRATCH/metal-r2/request.txt lists them. The machine was not touched, so this run establishes nothing about it.
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `$HOME/Dev/jan/toyos-sdk-shm/target/debug/deps/toyos_build-744c45cf70e5d4d9 --metal --metal-readback $SCRATCH/metal-r2 lent_window_refused abuse_shared_grant mutual_kill spawn_image_object abuse_elf_loader abuse_elf_segments cpal_drop_unreleased std_fs_write fs_truncate_persist spawn_from_tmp user_copy_spans_windows window_refusal hda_tone hda_tone_resampled i219_messages_on_its_msi_vector gop_edid_scale` (exit status: 2)
+exit=2
