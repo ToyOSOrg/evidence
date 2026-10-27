@@ -1,0 +1,38 @@
+diff --git a/sdk/toyos/src/net/stream.rs b/sdk/toyos/src/net/stream.rs
+index 1c3f74fc1..4a8442352 100644
+--- a/sdk/toyos/src/net/stream.rs
++++ b/sdk/toyos/src/net/stream.rs
+@@ -63,15 +63,15 @@ pub use crate::transport::session::Way;
+ // ---- the region ----
+ 
+ /// The region a stream is: four 2 MiB pages.
+-pub const REGION_BYTES: usize = 8 << 20;
++pub const REGION_BYTES: usize = 2 << 20;
+ /// The header's words: its first 4 KiB.
+ pub const WORDS: usize = 1024;
+ const HEADER_BYTES: usize = WORDS * 4;
+ /// The receive ring, after the header.
+-pub const RECEIVE_BYTES: u32 = 4 << 20;
++pub const RECEIVE_BYTES: u32 = 1 << 20;
+ pub const RECEIVE_RING: usize = HEADER_BYTES;
+ /// The send ring, the rest.
+-pub const SEND_BYTES: u32 = (4 << 20) - HEADER_BYTES as u32;
++pub const SEND_BYTES: u32 = (1 << 20) - HEADER_BYTES as u32;
+ pub const SEND_RING: usize = RECEIVE_RING + RECEIVE_BYTES as usize;
+ 
+ /// Word `n` of the protocol's, on a 64-byte line of its own.
+diff --git a/system/netstack/src/main.rs b/system/netstack/src/main.rs
+index 66caebde1..a4c16ef2f 100644
+--- a/system/netstack/src/main.rs
++++ b/system/netstack/src/main.rs
+@@ -119,8 +119,8 @@ const PLACE_BYTES: u64 = {
+     let stream = toyos::net::stream::REGION_BYTES as u64 + HOLDER_BYTES;
+     let listener = toyos_net_tcp::limits::LISTEN_READY as u64 * toyos_net_tcp::limits::RECEIVE_BUFFER_INITIAL as u64 + SOCKET_HOLDER_BYTES;
+     let datagram = SOCKET_HOLDER_BYTES + (toyos_net_udp::limits::RX_BYTES + toyos_net_udp::limits::TX_BYTES) as u64;
+-    assert!(stream >= listener && stream >= datagram && stream >= HOLDER_BYTES && stream >= SOCKET_HOLDER_BYTES);
+-    stream
++    let most = if stream > listener { stream } else { listener };
++    if most > datagram { most } else { datagram }
+ };
+ 
+ /// Share of physical memory netstack lets its clients' places tie up.
