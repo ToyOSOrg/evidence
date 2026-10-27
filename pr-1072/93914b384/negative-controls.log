@@ -1,0 +1,135 @@
+head 93914b3844516884cc2afffa95b5706db1220fa3
+=== m1-no-reread
+  Executable unittests src/lib.rs ($WORKTREES/toyos-flash-settle/target/debug/deps/toyos_metal-cca15151033c3578)
+  Executable unittests src/main.rs ($WORKTREES/toyos-flash-settle/target/debug/deps/toyos_metal-3212f2f4da33ad00)
+build exit: 0
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.11s
+     Running unittests src/lib.rs ($WORKTREES/toyos-flash-settle/target/debug/deps/toyos_metal-cca15151033c3578)
+
+running 2 tests
+test tests::an_adopted_scratch_partition_carries_no_signature_the_old_image_left ... ok
+test tests::a_flash_reads_back_the_table_it_had_the_kernel_reread ... FAILED
+
+failures:
+
+---- tests::a_flash_reads_back_the_table_it_had_the_kernel_reread stdout ----
+
+thread 'tests::a_flash_reads_back_the_table_it_had_the_kernel_reread' (69425067) panicked at tests/metal/src/lib.rs:3362:61:
+the flash reads its table back: Landed { what: "TOYOS-LOG's first sector", want: 73728, got: 139264 }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    tests::a_flash_reads_back_the_table_it_had_the_kernel_reread
+
+test result: FAILED. 1 passed; 1 failed; 0 ignored; 0 measured; 82 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--lib`
+test exit: 101
+restored
+=== m2-reread-before-settle
+  Executable unittests src/lib.rs ($WORKTREES/toyos-flash-settle/target/debug/deps/toyos_metal-cca15151033c3578)
+  Executable unittests src/main.rs ($WORKTREES/toyos-flash-settle/target/debug/deps/toyos_metal-3212f2f4da33ad00)
+build exit: 0
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.16s
+     Running unittests src/lib.rs ($WORKTREES/toyos-flash-settle/target/debug/deps/toyos_metal-cca15151033c3578)
+
+running 2 tests
+test tests::an_adopted_scratch_partition_carries_no_signature_the_old_image_left ... FAILED
+test tests::a_flash_reads_back_the_table_it_had_the_kernel_reread ... FAILED
+
+failures:
+
+---- tests::an_adopted_scratch_partition_carries_no_signature_the_old_image_left stdout ----
+
+thread 'tests::an_adopted_scratch_partition_carries_no_signature_the_old_image_left' (69425741) panicked at tests/metal/src/lib.rs:3375:9:
+assertion `left == right` failed
+  left: Err(Remote { what: "re-reading the table", status: "exit status: 1", stderr: "BLKRRPART: Device or resource busy" })
+ right: Ok(true)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- tests::a_flash_reads_back_the_table_it_had_the_kernel_reread stdout ----
+
+thread 'tests::a_flash_reads_back_the_table_it_had_the_kernel_reread' (69425740) panicked at tests/metal/src/lib.rs:3363:61:
+the flash reads its table back: Remote { what: "re-reading the table", status: "exit status: 1", stderr: "BLKRRPART: Device or resource busy" }
+
+
+failures:
+    tests::a_flash_reads_back_the_table_it_had_the_kernel_reread
+    tests::an_adopted_scratch_partition_carries_no_signature_the_old_image_left
+
+test result: FAILED. 0 passed; 2 failed; 0 ignored; 0 measured; 82 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--lib`
+test exit: 101
+restored
+=== m3-no-partition-wipe
+  Executable unittests src/lib.rs ($WORKTREES/toyos-flash-settle/target/debug/deps/toyos_metal-cca15151033c3578)
+  Executable unittests src/main.rs ($WORKTREES/toyos-flash-settle/target/debug/deps/toyos_metal-3212f2f4da33ad00)
+build exit: 0
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.13s
+     Running unittests src/lib.rs ($WORKTREES/toyos-flash-settle/target/debug/deps/toyos_metal-cca15151033c3578)
+
+running 2 tests
+test tests::a_flash_reads_back_the_table_it_had_the_kernel_reread ... ok
+test tests::an_adopted_scratch_partition_carries_no_signature_the_old_image_left ... FAILED
+
+failures:
+
+---- tests::an_adopted_scratch_partition_carries_no_signature_the_old_image_left stdout ----
+
+thread 'tests::an_adopted_scratch_partition_carries_no_signature_the_old_image_left' (69426672) panicked at tests/metal/src/lib.rs:3377:9:
+[2048, 139264]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    tests::an_adopted_scratch_partition_carries_no_signature_the_old_image_left
+
+test result: FAILED. 1 passed; 1 failed; 0 ignored; 0 measured; 82 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--lib`
+test exit: 101
+restored
+=== m4-no-final-settle
+  Executable unittests src/lib.rs ($WORKTREES/toyos-flash-settle/target/debug/deps/toyos_metal-cca15151033c3578)
+  Executable unittests src/main.rs ($WORKTREES/toyos-flash-settle/target/debug/deps/toyos_metal-3212f2f4da33ad00)
+build exit: 0
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.12s
+     Running unittests src/lib.rs ($WORKTREES/toyos-flash-settle/target/debug/deps/toyos_metal-cca15151033c3578)
+
+running 2 tests
+test tests::a_flash_reads_back_the_table_it_had_the_kernel_reread ... ok
+test tests::an_adopted_scratch_partition_carries_no_signature_the_old_image_left ... FAILED
+
+failures:
+
+---- tests::an_adopted_scratch_partition_carries_no_signature_the_old_image_left stdout ----
+
+thread 'tests::an_adopted_scratch_partition_carries_no_signature_the_old_image_left' (69427553) panicked at tests/metal/src/lib.rs:3373:9:
+assertion `left == right` failed
+  left: Err(Adopt("/dev/sdb was written and does not read back as a scratch disk"))
+ right: Ok(true)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    tests::an_adopted_scratch_partition_carries_no_signature_the_old_image_left
+
+test result: FAILED. 1 passed; 1 failed; 0 ignored; 0 measured; 82 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--lib`
+test exit: 101
+restored
+=== unmutated
+   Compiling toyos-metal v0.1.0 ($WORKTREES/toyos-flash-settle/tests/metal)
+    Finished `test` profile [optimized + debuginfo] target(s) in 2.49s
+     Running unittests src/lib.rs ($WORKTREES/toyos-flash-settle/target/debug/deps/toyos_metal-cca15151033c3578)
+
+running 2 tests
+test tests::a_flash_reads_back_the_table_it_had_the_kernel_reread ... ok
+test tests::an_adopted_scratch_partition_carries_no_signature_the_old_image_left ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 82 filtered out; finished in 0.00s
+
+test exit: 0

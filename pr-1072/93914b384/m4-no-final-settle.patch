@@ -1,0 +1,13 @@
+diff --git a/tests/metal/src/lib.rs b/tests/metal/src/lib.rs
+index b84d524b2..f18c1b13f 100644
+--- a/tests/metal/src/lib.rs
++++ b/tests/metal/src/lib.rs
+@@ -1908,8 +1908,6 @@ fn make_scratch(remote: &impl Remote, sd: Sd) -> Result<bool, Refusal> {
+     }
+     reread(remote, sd)?;
+     remote.root("wiping the new partition's signatures", Job::WipePartition { sd, part: 1 }, None)?;
+-    // The listing is udev's record, of the re-read and the wipe.
+-    remote.root("settling udev", Job::Settle, None)?;
+     if !Carrying::Scratch.holds(&parts_of(&remote.read("listing the disks", DISKS)?, sd)?) {
+         return Err(Refusal::Adopt(format!("{} was written and does not read back as a scratch disk", sd.node().whole())));
+     }

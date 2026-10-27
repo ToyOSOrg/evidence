@@ -1,0 +1,12 @@
+diff --git a/tests/metal/src/lib.rs b/tests/metal/src/lib.rs
+index b84d524b2..0bf0ef13b 100644
+--- a/tests/metal/src/lib.rs
++++ b/tests/metal/src/lib.rs
+@@ -1257,7 +1257,6 @@ fn flash(remote: &impl Remote, image: &Flashable, sd: Sd) -> Result<Option<Flash
+     let feed = Feed { path: &image.path, at: 0, len: image.bytes };
+     let Some(out) = remote.root("flashing the stick", Job::Flash(sd), Some(feed))? else { return Ok(None) };
+     let dd = fed("flashing the stick", &out, image.bytes)?;
+-    reread(remote, sd)?;
+     for (name, part) in [("the ESP", image.esp), ("TOYOS-LOG", image.log)] {
+         let at = sd.node().part_sysfs(part.index);
+         let read = remote.read("reading the new table back", &format!("cat {at}/start {at}/size"))?;
