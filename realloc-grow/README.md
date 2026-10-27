@@ -11,3 +11,12 @@ Branch `realloc-grow`; base aeba59fb0. Paths, the host name and temp directories
   - `204243e7f-tree-*`: the C case.
 - `control/`: the promise-leak mutation (`m2-promise-whole-length.patch`, applied onto 204243e7f and reverted in the same run), and `mmap_stress` reddening on it. Memory in use grew 536870912 B, which is 32 moves x 16 MiB.
 - `ci/ci-host-204243e7f.log`: `cargo run -- --ci host`, exit 0. `ci-host-1-diskfull.log` is an earlier run whose only failures were the host disk filling up (`No space left on device`), kept because the PR mentions it.
+
+## Round 2 (review r1)
+
+- `t14-204243e7f/`: the coordinator's T14 readbacks at 204243e7f. MACs, IPv4 addresses and UUIDs are masked.
+  - `benchcase`: osbench, all groups. Verdict: passed.
+  - `testcases`: `allocator_stress`, `mmap_stress` and `215_large_realloc`. Verdict: passed. This is the retry; the first attempt failed in main's flasher read-back race.
+  - `linux-mem-{1,2}.txt`: the bench's Linux running the fixed osbench (sha256 2e47f53a...).
+- `qemu-dcb6c7855/`: `allocator_stress`, `std_alloc`, `std_mmap`, `215_large_realloc` and `mmap_stress` at dcb6c7855, in the same `--debug` guest as before. All exit 0.
+- `ci/ci-host-dcb6c7855.log`: `cargo run -- --ci host`, exit 0, 103 steps.
