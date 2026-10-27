@@ -1,0 +1,12 @@
++ grep . /sys/devices/system/cpu/cpu0/cpuidle/state0/name /sys/devices/system/cpu/cpu0/cpuidle/state1/name /sys/devices/system/cpu/cpu0/cpuidle/state2/name /sys/devices/system/cpu/cpu0/cpuidle/state3/name
+/sys/devices/system/cpu/cpu0/cpuidle/state0/name:POLL
+/sys/devices/system/cpu/cpu0/cpuidle/state1/name:C1_ACPI
+/sys/devices/system/cpu/cpu0/cpuidle/state2/name:C2_ACPI
+/sys/devices/system/cpu/cpu0/cpuidle/state3/name:C3_ACPI
++ spin
++ sudo -n turbostat --quiet --cpu 0 --show CPU,Busy%,Bzy_MHz --interval 1 --num_iterations 5
++ taskset -c 0 timeout 6 sh -c 'while :; do :; done'
+turbostat: Insanely slow TSC rate, TSC stops in idle?
+You can disable all c-states by booting with "idle=poll"
+or just the deep ones with "processor.max_cstate=1"
++ wait

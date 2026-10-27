@@ -30,3 +30,16 @@ own j1 was 922.6 ms on 2026-10-24, so B is slower than both bases.
 
 Files: per-arm `kernel-excerpt.log` (osbench rows, scout and HWP lines),
 `verdict.txt`, `image-sha256.txt`.
+
+## L, the Linux C1-only check: not obtained
+
+`L/linux-L.txt`. turbostat printed "Insanely slow TSC rate, TSC stops in
+idle?" and exited before the first spin's reading. Because the request's
+command ran turbostat without `</dev/null`, it also consumed the rest of the
+orchestrator's ssh heredoc. So the idle states were never disabled and the
+second spin never ran. That was a defect in the request I wrote. The
+orchestrator checked that every cpuidle state still reads enabled. L is no
+evidence either way, and it was not rerun: B establishes the cause on ToyOS
+itself.
+
+Host checks at cpu-freq `020413eeb` (docs scope): `checks/ci-host-020413eeb.log`, exit 0.
