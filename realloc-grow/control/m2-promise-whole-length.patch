@@ -1,0 +1,11 @@
+--- a/kernel/src/mm/space.rs	2026-10-27 21:48:12
++++ b/kernel/src/mm/space.rs	2026-10-27 21:48:12
+@@ -627,7 +627,7 @@
+             return Err(SyscallError::ResourceExhausted);
+         };
+         let added = (new - old) / PAGE_SIZE;
+-        if !pmm::promise(added) {
++        if !pmm::promise(new / PAGE_SIZE) {
+             return Err(SyscallError::ResourceExhausted);
+         }
+         let built = if in_place { self.build(end, start + new) } else { self.build(to, to + new) };
