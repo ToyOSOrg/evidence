@@ -1,0 +1,11 @@
+--- a/system/fileserver/src/fat.rs
++++ b/system/fileserver/src/fat.rs
+@@ -134,7 +134,7 @@
+     /// it changed since the entry was last written.
+     fn level(&mut self, node: Node) -> Result<(), fs::Error> {
+         match self.open.get(&node) {
+-            Some(open) if !open.gone && (open.dirty || open.file.needs_reconcile()) => {}
++            Some(open) if !open.gone => {}
+             _ => return Ok(()),
+         }
+         let time = self.time();
