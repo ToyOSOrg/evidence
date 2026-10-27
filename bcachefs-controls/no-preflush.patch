@@ -1,0 +1,10 @@
+--- a/lib/bcachefs/src/engine/mount/mod.rs
++++ b/lib/bcachefs/src/engine/mount/mod.rs
+@@ -1198,7 +1198,6 @@
+                 // goes last, so a crash leaves it whole or not there at all.
+                 let header_last = last_seq == seq;
+                 self.reissue("journal write failed", async || {
+-                    self.dev.flush().await?;
+                     if header_last {
+                         let mut headless = bytes.clone();
+                         headless[..SECTOR].fill(0);
