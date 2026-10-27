@@ -1,1 +1,8 @@
-Evidence for ToyOSOrg/ToyOS pull requests: run logs, patches and measurements, one branch per pull request (pr-<N>), linked from the pull request by commit hash. Every branch is append-only.
+Evidence for ToyOSOrg/ToyOS#1071 (branch sdk-shm-safety).
+Revisions: host/ci-host.log, guest/, metal/ at e35151536; build-only at e35151536's tree but for one doc comment in shm.rs.
+host/: cargo run -- --ci host (exit 0, 103 steps green); the first run was killed by an app restart and is kept as such.
+guest/: cargo test --test toyos-build -- <8 machine tests> on QEMU x86-64 (exit 0, 8 passed). The filter-refused logs are attempts whose names were metal or shared-boot members.
+controls/: negative-control patches, applied, tested (exit 101) and reverted.
+bench/: copy throughput on an arm64 host: memcpy vs relaxed-atomic/volatile word loops vs the asm loop. word-loops-vs-memcpy.txt came from an earlier revision of the same program (atomic/volatile/byte loops).
+metal/: the staged request, no machine touched.
+Paths are masked: $HOME, $SCRATCH, $TMP.
