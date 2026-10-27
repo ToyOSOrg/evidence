@@ -1,0 +1,11 @@
+--- a/system/fileserver/src/fat.rs
++++ b/system/fileserver/src/fat.rs
+@@ -134,7 +134,7 @@
+     fn level(&mut self, node: Node) -> Result<(), fs::Error> {
+         let time = self.time();
+         let Some(open) = self.open.get_mut(&node) else { return Ok(()) };
+-        if open.gone || !open.dirty {
++        if open.gone {
+             return Ok(());
+         }
+         // The chain and the data on the disk before the entry that reaches
