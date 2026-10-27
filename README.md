@@ -19,3 +19,8 @@ The T14's MSR dump under Ubuntu (turbostat --debug, MSR_TURBO_RATIO_LIMIT
 https://github.com/ToyOSOrg/ToyOS/pull/866#issuecomment-6119512404.
 
 Paths are masked as `<scratchpad>` and `<home>`.
+
+The first staging's images were deleted by something outside this
+assignment at 21:56 CET on 2026-10-27, while the host ran out of disk. Both
+were staged again from the same commits (`readback-*-2.log`);
+`image-sha256.txt` and `request.txt` name the second staging's images.

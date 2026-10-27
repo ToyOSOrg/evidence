@@ -1,0 +1,33 @@
+# PR #1066: T14 only. Two ToyOS boots of the osbench row (benchcase image),
+# then one short Linux check. Read: cpu.clock (every group), crunch.single.*,
+# work.* ; and the scout boot's "scout_idle:" lines.
+# Each invocation is `cargo <words>` from <home>/toyos-cpu-freq.
+# Heat: ToyOS skips crunch's all-core phase (no package temperature), so both
+# boots are the usual osbench load; the Linux check is two 6 s one-thread spins.
+
+A  base, main aeba59fb0 (the negative control; same base as the 2026-10-24 session)
+  image: <scratchpad>/agents/cpu-freq/t14/base/benchcase/image.img
+  sha256 9aee0b0dc1333fce23be5128c236fffcbb27243af5597e27040badb26457dd54
+  cargo run -p toyos-metal -- --image <scratchpad>/agents/cpu-freq/t14/base/benchcase/image.img --readback <scratchpad>/agents/cpu-freq/t14/base/benchcase --fat32-check
+
+B  scout, branch cpu-freq-scout 3cdfa1a97 (measurement only): idle CPUs wait in MWAIT 0x31, not hlt
+  image: <scratchpad>/agents/cpu-freq/t14/scout/benchcase/image.img
+  sha256 c321adf687b0b02d803d26d477ffbf94fe24e2a9450cb69362aa6117112ff8c9
+  cargo run -p toyos-metal -- --image <scratchpad>/agents/cpu-freq/t14/scout/benchcase/image.img --readback <scratchpad>/agents/cpu-freq/t14/scout/benchcase --fat32-check
+
+Expected if hlt's C1 is what holds the bin: A's cpu.clock max 3789 MHz as on
+2026-10-24; B's near 4190 and B's crunch.single rows about 1.10x faster than A's.
+B at 3789 refutes it. B must log "scout_idle: cpu<N> ... taken=true" on cpu0, or it
+measured nothing.
+
+L  Linux on the T14 (Ubuntu), the same question without ToyOS. Not read-only:
+   it disables idle states 2 and up through sysfs and restores them.
+   turbostat is already installed there (#866 used it); no msr-tools needed.
+
+  grep . /sys/devices/system/cpu/cpu0/cpuidle/state*/name      # expect POLL C1_ACPI C2_ACPI C3_ACPI
+  spin() { taskset -c 0 timeout 6 sh -c 'while :; do :; done' & sudo turbostat --quiet --cpu 0 --show CPU,Busy%,Bzy_MHz --interval 1 --num_iterations 5; wait; }
+  spin                                                         # default idle: expect Bzy_MHz ~4190
+  for f in /sys/devices/system/cpu/cpu*/cpuidle/state[2-9]/disable; do echo 1 | sudo tee $f >/dev/null; done
+  spin                                                         # C1 only: hypothesis says ~3790
+  for f in /sys/devices/system/cpu/cpu*/cpuidle/state[2-9]/disable; do echo 0 | sudo tee $f >/dev/null; done
+  grep . /sys/devices/system/cpu/cpu*/cpuidle/state*/disable | grep -v ':0$'   # expect no output: restored
