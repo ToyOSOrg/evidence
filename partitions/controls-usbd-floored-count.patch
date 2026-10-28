@@ -1,0 +1,11 @@
+--- a/system/usbd/xhci/src/msc.rs
++++ b/system/usbd/xhci/src/msc.rs
+@@ -441,7 +441,7 @@
+     /// the read until it asks for none it has not been given.
+     async fn table(&mut self, geometry: &Geometry) -> Result<T, Dead> {
+         let per = HOST_BLOCK / geometry.sector_bytes();
+-        let mut cache = Cache { lba_bytes: geometry.sector_bytes(), lbas: geometry.sectors(), have: BTreeMap::new(), missed: Vec::new() };
++        let mut cache = Cache { lba_bytes: geometry.sector_bytes(), lbas: geometry.blocks() * u64::from(per), have: BTreeMap::new(), missed: Vec::new() };
+         let mut reads = 0;
+         loop {
+             cache.missed.clear();

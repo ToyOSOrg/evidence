@@ -6,3 +6,10 @@ Logs and negative controls; paths masked to `<home>` and `<tmp>`.
   and the bench sector counts read from earlier boot logs.
 - `logs-*`: host tests, the image build, the QEMU run, the metal staging.
 - `controls-*`: each negative control as a patch and its run.
+
+Round 1, continued:
+- `logs-ci-host-r0.log`: `cargo run -- --ci host` at `a72018eb9`, exit 1: the
+  uncovered designation image and a redundant clone, both fixed in `33617eeff`.
+- `logs-ci-host.log`: `cargo run -- --ci host` at `fe22e03c6`, exit 0, 105 steps green.
+- `logs-build-only.log`: `cargo run -- --build-only` at `fe22e03c6`, exit 0.
+- `controls-usbd-floored-count.*`: the floored count put back; the tail-read test reds.
