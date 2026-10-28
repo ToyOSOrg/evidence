@@ -1,0 +1,11 @@
+--- a/kernel/pure/sched/cpu.rs
++++ b/kernel/pure/sched/cpu.rs
+@@ -2127,7 +2127,7 @@
+         // with, and its own wake joins the same plan: one write of the timer.
+         let deadline = TimerPlan::compute(None, self.cpu.earliest_deadline()).no_later_than(rearm).armed();
+         let idle = self.env.hw.idle_plan(deadline, self.now);
+-        let timer = self.apply_timer_no_later_than(match (rearm, idle.wake_at().map(Nanos)) {
++        let timer = self.apply_timer_no_later_than(match (rearm, idle.wake_at().map(Nanos).filter(|_| false)) {
+             (Some(a), Some(b)) => Some(a.min(b)),
+             (a, b) => a.or(b),
+         });

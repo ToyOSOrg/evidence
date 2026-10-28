@@ -1,0 +1,11 @@
+--- a/kernel/pure/sched/cpu.rs
++++ b/kernel/pure/sched/cpu.rs
+@@ -2189,7 +2189,7 @@
+         fence(Ordering::SeqCst);
+         for &sibling in self.env.cpus.topology().core(self.cpu.id) {
+             let handle = self.env.cpus.get(sibling);
+-            if sibling != self.cpu.id && handle.held_by_sibling() && handle.poke() == Kick::Send {
++            if sibling != self.cpu.id && handle.held_by_sibling() && false && handle.poke() == Kick::Send {
+                 self.env.hw.kick(sibling);
+             }
+         }

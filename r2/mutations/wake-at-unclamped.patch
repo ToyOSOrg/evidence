@@ -1,0 +1,11 @@
+--- a/kernel/pure/sched/idle.rs
++++ b/kernel/pure/sched/idle.rs
+@@ -149,7 +149,7 @@
+ pub fn wake_at(choice: &Choice, armed: Option<u64>, now: u64) -> Option<u64> {
+     let early = deadline_fires(choice, armed).filter(|_| choice.wake_early_by > 0);
+     let revisit = choice.revisit_after.map(|after| now.saturating_add(after));
+-    early.into_iter().chain(revisit).min().filter(|&at| armed.is_none_or(|armed| at < armed))
++    early.into_iter().chain(revisit).min()
+ }
+ 
+ /// Whether a period that ended at `woke` was ended by the scheduler's own

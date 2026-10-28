@@ -1,0 +1,11 @@
+--- a/kernel/pure/sched/cpu.rs
++++ b/kernel/pure/sched/cpu.rs
+@@ -2176,7 +2176,7 @@
+         let handle = self.env.cpus.get(self.cpu.id);
+         handle.held_by_sibling.store(true, Ordering::Relaxed);
+         fence(Ordering::SeqCst);
+-        if self.env.cpus.busy_siblings(self.cpu.id) == 0 {
++        if self.env.cpus.busy_siblings(self.cpu.id) < usize::MAX {
+             handle.held_by_sibling.store(false, Ordering::Relaxed);
+             return plan;
+         }

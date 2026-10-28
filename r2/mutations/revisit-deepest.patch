@@ -1,0 +1,11 @@
+--- a/kernel/pure/sched/idle.rs
++++ b/kernel/pure/sched/idle.rs
+@@ -119,7 +119,7 @@
+         limit.is_none_or(|limit| cost.exit <= limit) && horizon.is_none_or(|horizon| cost.residency <= horizon)
+     };
+     let state = states.clone().rev().find(|&s| permitted(s) && history.admits(s));
+-    let next_deeper = states.filter(|&s| state.is_none_or(|chosen| s > chosen)).find(|&s| permitted(s));
++    let next_deeper = states.filter(|&s| state.is_none_or(|chosen| s > chosen)).rev().find(|&s| permitted(s));
+     Choice {
+         state,
+         wake_early_by: match (state, horizon) {
