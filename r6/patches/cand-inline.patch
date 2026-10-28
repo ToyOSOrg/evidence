@@ -1,0 +1,48 @@
+diff --git a/kernel/pure/pipe.rs b/kernel/pure/pipe.rs
+index 14859242b..405a0931d 100644
+--- a/kernel/pure/pipe.rs
++++ b/kernel/pure/pipe.rs
+@@ -214,6 +214,7 @@ impl<F> Bytes<F> {
+     /// handed each run of them as its frame, where they go in it, and where
+     /// they start among the `len`. They are held once [`Self::commit`] counts
+     /// them.
++    #[inline(always)]
+     pub fn place(&mut self, at: usize, len: usize, mut copy: impl FnMut(&mut F, Range<usize>, usize)) {
+         let end = self.head + self.len + at + len;
+         assert!(end <= self.frames.len() * FRAME, "pipe: bytes placed past the frames it was given");
+@@ -243,6 +244,7 @@ impl<F> Bytes<F> {
+ 
+     /// The `len` held bytes `at` past the oldest, handed to `copy` as
+     /// [`Self::place`] hands them out; [`Self::consume`] lets them go.
++    #[inline(always)]
+     pub fn peek(&self, at: usize, len: usize, mut copy: impl FnMut(&F, Range<usize>, usize)) {
+         assert!(at + len <= self.len, "pipe: {len} bytes at {at} of {} held", self.len);
+         let (mut done, mut pos) = (0, self.head + at);
+diff --git a/kernel/src/pipe.rs b/kernel/src/pipe.rs
+index 1c3ab5b1c..04fc1439c 100644
+--- a/kernel/src/pipe.rs
++++ b/kernel/src/pipe.rs
+@@ -145,6 +145,7 @@ impl Copy {
+     /// # Safety
+     /// `from` is readable and `to` writable for `len` bytes, and stay so
+     /// until the next [`Self::flush`]; the two never overlap.
++    #[inline(always)]
+     unsafe fn add(&mut self, from: *const u8, to: *mut u8, len: usize) {
+         if self.len > 0 && self.from.wrapping_add(self.len) == from && self.to.wrapping_add(self.len) == to {
+             self.len += len;
+@@ -159,6 +160,7 @@ impl Copy {
+     ///
+     /// # Safety
+     /// As [`Self::add`] for every run gathered.
++    #[inline(always)]
+     unsafe fn flush(&mut self) {
+         if self.len > 0 {
+             // SAFETY: the runs gathered are contiguous on both sides and
+@@ -171,6 +173,7 @@ impl Copy {
+ 
+ /// `within` of a frame a pipe holds, which no process maps and only that
+ /// pipe's lock reaches.
++#[inline(always)]
+ fn frame_bytes(frame: &u64, within: Range<usize>) -> *mut u8 {
+     assert!(within.end <= kernel::pipe::FRAME, "pipe: bytes {within:?} past a frame");
+     // SAFETY: inside the frame, which the direct map covers.

@@ -1,0 +1,135 @@
+diff --git a/kernel/src/pipe.rs b/kernel/src/pipe.rs
+index f64bd07be..f08a28319 100644
+--- a/kernel/src/pipe.rs
++++ b/kernel/src/pipe.rs
+@@ -161,6 +161,7 @@ impl Copy {
+     /// As [`Self::add`] for every run gathered.
+     unsafe fn flush(&mut self) {
+         if self.len > 0 {
++            MEMCPYS.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
+             // SAFETY: the runs gathered are contiguous on both sides and
+             // each met `add`'s contract.
+             unsafe { core::ptr::copy_nonoverlapping(self.from, self.to, self.len) };
+@@ -195,6 +196,9 @@ struct Pipe {
+ 
+ /// Measurement only, never lands: per direction, calls, bytes, ticks spun for
+ /// the lock, held, in the user walk, taking or giving frames, and memcpy runs.
++/// Measurement only, never lands: memcpys the pipe's copies issued.
++static MEMCPYS: core::sync::atomic::AtomicU64 = core::sync::atomic::AtomicU64::new(0);
++
+ #[derive(Default)]
+ struct Diag {
+     w: [core::sync::atomic::AtomicU64; 7],
+@@ -212,9 +216,12 @@ impl Drop for Pipe {
+         let (w, r) = (get(&self.diag.w), get(&self.diag.r));
+         if w[1] >= 32 << 20 {
+             let (reach, copy, calls) = crate::user_ptr::diag();
++            let pmu = crate::user_ptr::pmu_totals();
+             crate::log!(
+-                "pipediag head: w n={} bytes={} spin={} hold={} walk={} frames={} runs={} | r n={} bytes={} spin={} hold={} walk={} give={} runs={} | pieces reach={reach} copy={copy} calls={calls}",
+-                w[0], w[1], w[2], w[3], w[4], w[5], w[6], r[0], r[1], r[2], r[3], r[4], r[5], r[6]
++                "pipediag pmuhead: w n={} bytes={} spin={} hold={} walk={} frames={} runs={} | r n={} bytes={} spin={} hold={} walk={} give={} runs={} | pieces reach={reach} copy={copy} calls={calls} memcpys={} | pmu inst={} cyc={} alias={} l1drepl={} l2miss={} sbstall={}",
++                w[0], w[1], w[2], w[3], w[4], w[5], w[6], r[0], r[1], r[2], r[3], r[4], r[5], r[6],
++                MEMCPYS.load(Relaxed),
++                pmu[0], pmu[1], pmu[2], pmu[3], pmu[4], pmu[5]
+             );
+         }
+     }
+diff --git a/kernel/src/user_ptr.rs b/kernel/src/user_ptr.rs
+index a52d6ac45..9578d203b 100644
+--- a/kernel/src/user_ptr.rs
++++ b/kernel/src/user_ptr.rs
+@@ -134,6 +134,77 @@ pub fn diag() -> (u64, u64, u64) {
+     (get(0), get(1), get(2))
+ }
+ 
++
++/// Measurement only, never lands: the core's counters around each walk's copy
++/// phase, programmed once per CPU beside the hard-lockup watchdog's fixed
++/// counter 2 (`arch::pmu`), which keeps its bits.
++///
++/// Programming per Intel SDM Vol. 3B §20.2.2 (architectural performance
++/// monitoring version 2+: `IA32_PERFEVTSELx` 0x186+ with event in bits 7:0,
++/// umask 15:8, OS bit 17, EN bit 22; `IA32_FIXED_CTR_CTRL` 0x38D, a nibble
++/// per fixed counter, bit 0 of each enabling ring 0; `IA32_PERF_GLOBAL_CTRL`
++/// 0x38F, PMCs in bits 3:0 and fixed counters from bit 32) and §20.2.1.1
++/// (RDPMC, bit 30 of ECX selecting a fixed counter). Event codes from Intel's
++/// Tiger Lake core event table (perfmon `TGL/events/tigerlake_core.json`):
++/// fixed 0 `INST_RETIRED.ANY`, fixed 1 `CPU_CLK_UNHALTED.THREAD`, PMC0
++/// `LD_BLOCKS_PARTIAL.ADDRESS_ALIAS` (0x07/0x01), PMC1 `L1D.REPLACEMENT`
++/// (0x51/0x01), PMC2 `L2_RQSTS.MISS` (0x24/0x3F), PMC3 `RESOURCE_STALLS.SB`
++/// (0xA2/0x08).
++mod pmu_diag {
++    use core::sync::atomic::{AtomicU64, Ordering::Relaxed};
++
++    static PROGRAMMED: AtomicU64 = AtomicU64::new(0);
++    pub static TOTALS: [AtomicU64; 6] = [const { AtomicU64::new(0) }; 6];
++
++    const EVENTS: [u64; 4] = [0x07 | 0x01 << 8, 0x51 | 0x01 << 8, 0x24 | 0x3F << 8, 0xA2 | 0x08 << 8];
++
++    fn ready() {
++        let cpu = crate::arch::percpu::cpu_id();
++        let bit = 1u64 << (cpu % 64);
++        if PROGRAMMED.load(Relaxed) & bit != 0 {
++            return;
++        }
++        for (i, event) in EVENTS.iter().enumerate() {
++            // SAFETY: an architectural PMU MSR, written with what §20.2.2 defines.
++            unsafe { crate::arch::cpu::wrmsr(0x186 + i as u32, event | 1 << 17 | 1 << 22) };
++        }
++        let fixed = crate::arch::cpu::rdmsr(0x38D) | 0x11;
++        let global = crate::arch::cpu::rdmsr(0x38F) | 0xF | 1 << 32 | 1 << 33;
++        // SAFETY: as above; the watchdog's bits are kept.
++        unsafe {
++            crate::arch::cpu::wrmsr(0x38D, fixed);
++            crate::arch::cpu::wrmsr(0x38F, global);
++        }
++        PROGRAMMED.fetch_or(bit, Relaxed);
++    }
++
++    fn rdpmc(ecx: u32) -> u64 {
++        let (lo, hi): (u32, u32);
++        // SAFETY: reads a counter `ready` enabled; ring 0 may always.
++        unsafe { core::arch::asm!("rdpmc", in("ecx") ecx, out("eax") lo, out("edx") hi, options(nomem, nostack)) };
++        u64::from(hi) << 32 | u64::from(lo)
++    }
++
++    pub fn read() -> [u64; 6] {
++        ready();
++        [rdpmc(1 << 30), rdpmc(1 << 30 | 1), rdpmc(0), rdpmc(1), rdpmc(2), rdpmc(3)]
++    }
++
++    pub fn add(before: [u64; 6], after: [u64; 6]) {
++        for i in 0..6 {
++            TOTALS[i].fetch_add(after[i].wrapping_sub(before[i]) & ((1 << 48) - 1), Relaxed);
++        }
++    }
++
++    pub fn totals() -> [u64; 6] {
++        core::array::from_fn(|i| TOTALS[i].load(Relaxed))
++    }
++}
++
++pub fn pmu_totals() -> [u64; 6] {
++    pmu_diag::totals()
++}
++
+ /// What a page a sibling took away reads as.
+ static ZEROS: [u8; PAGE_SIZE as usize] = [0; PAGE_SIZE as usize];
+ 
+@@ -180,6 +251,7 @@ impl View {
+             }
+             let t1 = crate::arch::cpu::rdtsc();
+             crate::sched::driver::preempt_off(|_| {
++                let pmu_before = pmu_diag::read();
+                 for (frame, &(phys, at, n)) in frames[..count].iter().zip(&pieces[..count]) {
+                     match (frame, self.access) {
+                         (Some(_), _) => copy(crate::mm::DirectMap::from_phys(phys).as_mut_ptr(), at, n),
+@@ -187,6 +259,7 @@ impl View {
+                         (None, Access::Write) => {}
+                     }
+                 }
++                pmu_diag::add(pmu_before, pmu_diag::read());
+             });
+             let t2 = crate::arch::cpu::rdtsc();
+             for phys in frames[..count].iter().flatten() {
