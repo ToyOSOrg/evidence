@@ -1,0 +1,45 @@
+## HEAD b6a717df8013109f38505d003722ff2b054c2abe plus the uncommitted must_use move
+## invocation: (cd sdk/toyos && cargo check)
+--- a/sdk/toyos/src/net/socket.rs	2026-10-28 10:36:54
++++ b/sdk/toyos/src/net/socket.rs	2026-10-28 10:36:54
+@@ -446,7 +446,8 @@
+ pub fn recv_from(handle: RawHandle, buf: &mut [u8], wait: Wait) -> Result<Received, NetError> {
+     call_on(handle, Kind::Datagram, |slot, end| {
+         look(&EndBell { slot, bell: end.bell }, wait, |drain| {
+-            drain.now().receive(end.connection).map_err(hangup)?;
++            drain.now();
++            ipc::signal(end.connection, RECEIVE).map_err(hangup)?;
+             let header = answer(end.connection)?;
+             let mut frame = [0u8; MAX_FRAME];
+             let n = ipc::recv_bytes(end.connection, &header, &mut frame).map_err(hangup)?;
+## applied
+    Checking toyos v0.18.0 (<dev>/toyos-socket-wake/sdk/toyos)
+warning: method `receive` is never used
+   --> sdk/toyos/src/net/socket.rs:237:19
+    |
+230 | impl Drained {
+    | ------------ method in this implementation
+...
+237 |     pub(super) fn receive(self, connection: RawHandle) -> Result<(), ipc::IpcError> {
+    |                   ^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused `Drained` that must be used
+   --> sdk/toyos/src/net/socket.rs:449:13
+    |
+449 |             drain.now();
+    |             ^^^^^^^^^^^
+    |
+    = note: the bell was read for a request: send it
+    = note: `#[warn(unused_must_use)]` (part of `#[warn(unused)]`) on by default
+help: use `let _ = ...` to ignore the resulting value
+    |
+449 |             let _ = drain.now();
+    |             +++++++
+
+warning: `toyos` (lib) generated 2 warnings
+    Finished `dev` profile [optimized + debuginfo] target(s) in 1.08s
+check exit 0
+## restored
+## identical to the unmutated file
