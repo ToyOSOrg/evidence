@@ -61,3 +61,11 @@ Files are in `r3/metal-amd/`. The panic page is excerpted; the full logs are not
 - Host CI exit 0, 106 steps green (`r3/checks/`).
 - `a_stepped_tsc_panics` exit 0 (`r3/qemu/`).
 - The T14 run is restaged (`r3/metal-request-t14.txt`). The AMD run is held until the 1.7 ms event is understood.
+
+## r4, at ca40a7e50 (the ACPI PM timer tiebreak)
+
+- Host CI: exit 0, 106 steps green (`r4/ci-host-ca40a7e50.log`).
+- QEMU x86-64 TCG: `a_stepped_tsc_panics` and `a_stalled_hpet_is_left_out` both pass. The QEMU run's tree differs from ca40a7e50 by one test-literal regrouping.
+  - A staged TSC step: the PM timer reads 10.001 ms apart from the TSC, as the HPET does, and the kernel panics.
+  - A staged HPET stall: the PM timer reads 847 ns apart, so the span is left out and the clock reports again.
+- No metal run at this head. The owner paused before staging.
