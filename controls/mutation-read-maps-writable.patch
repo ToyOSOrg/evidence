@@ -1,0 +1,10 @@
+--- a/kernel/src/syscall/ipc.rs
++++ b/kernel/src/syscall/ipc.rs
+@@ -398,6 +398,7 @@
+         matches!(prot, Prot::Read) || shm.immutable().is_none(),
+         "shm: a handle to memory nobody writes carries WRITE"
+     );
++    let prot = if shm.immutable().is_none() { Prot::ReadWrite } else { prot };
+     let pt = process::current_address_space();
+     let len = shm.size();
+     let mapped = pt.lock().map(alloc::sync::Arc::clone(&shm), 0, len, prot, crate::mm::space::At::ANYWHERE);

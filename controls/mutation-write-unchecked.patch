@@ -1,0 +1,11 @@
+--- a/kernel/src/syscall/ipc.rs
++++ b/kernel/src/syscall/ipc.rs
+@@ -385,7 +385,7 @@
+ pub(super) fn sys_shm_map(h: RawHandle, prot: u64) -> u64 {
+     let (prot, need) = match VmProt::from_u64(prot) {
+         Some(VmProt::Read) => (Prot::Read, Rights::MAP),
+-        Some(VmProt::ReadWrite) => (Prot::ReadWrite, Rights::MAP.union(Rights::WRITE)),
++        Some(VmProt::ReadWrite) => (Prot::ReadWrite, Rights::MAP),
+         Some(VmProt::None | VmProt::ReadExec) | None => return SyscallError::InvalidArgument.to_u64(),
+     };
+     let shm = match process::with_process_data(|data| {

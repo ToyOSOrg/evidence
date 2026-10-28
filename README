@@ -1,1 +1,9 @@
-Evidence for ToyOSOrg/ToyOS pull requests: run logs, patches and measurements, one branch per pull request (pr-<N>), linked from the pull request by commit hash. Every branch is append-only.
+Evidence for ToyOSOrg/ToyOS#1076 (branch shm-rights).
+Revision: 76df90fda unless a file says otherwise. Paths are masked: $HOME, $DEV, $WORKTREE, $SCRATCH, $TMP.
+host/ci-host.log: cargo run -- --ci host at 76df90fda, exit 0, 104 steps green.
+host/ci-host-first-red.log: the same on the uncommitted tree before 76df90fda, exit 1: one step red, framebuffer.rs's new tests compared font::Color with assert_eq! (no Debug). Fixed by comparing with assert!; host/guest-libraries-after-test-fix.log is that step's cargo test rerun, exit 0.
+host/build-only.log: cargo run -- --build-only, exit 0, on the tree committed as 76df90fda but for that test-only fix.
+guest/qemu-machine-tests.log: cargo test --test toyos-build -- <8 machine tests> on QEMU x86-64, exit 0, 8 passed, on the tree committed as 76df90fda but for that test-only fix.
+guest/filter-refused-shared-members.log: the first attempt, exit 1 before booting anything: shm_read_only, abuse_shared_grant and lent_window_refused are shared-boot members, run only on metal.
+controls/: the two negative-control patches against 76df90fda's kernel/src/syscall/ipc.rs, each applied, staged as its own metal image (prepare logs, exit 2 = staged), and reverted; image hashes differ from each other and from metal/.
+metal/: staged T14 requests (no machine touched): metal/ is the change (metalcase + testcases), metal-mut-*/ the controls, each expected to red shm_read_only.
