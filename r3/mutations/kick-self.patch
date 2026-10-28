@@ -1,0 +1,13 @@
+diff --git a/kernel/pure/sched/cpu.rs b/kernel/pure/sched/cpu.rs
+index 927399329..43c74b991 100644
+--- a/kernel/pure/sched/cpu.rs
++++ b/kernel/pure/sched/cpu.rs
+@@ -2570,7 +2570,7 @@ impl<M: SchedMsg> CpuHandles<M> {
+     /// chooses again under the bound. The caller has stored the bound and
+     /// fenced.
+     pub fn wake_slower_than(&self, me: CpuId, bound: u64, kicker: &impl Kicker) {
+-        for handle in self.handles.iter().filter(|handle| handle.id != me) {
++        for handle in self.handles.iter().filter(|_| true) {
+             if handle.idle_exit() > bound && handle.poke() == Kick::Send {
+                 kicker.kick(handle.id);
+             }

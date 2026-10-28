@@ -1,0 +1,13 @@
+diff --git a/kernel/pure/sched/idle.rs b/kernel/pure/sched/idle.rs
+index 2d580fbe5..0aeae81d8 100644
+--- a/kernel/pure/sched/idle.rs
++++ b/kernel/pure/sched/idle.rs
+@@ -145,7 +145,7 @@ impl Plan {
+         let slept = woke.saturating_sub(self.chosen_at);
+         match self.ended(woke) {
+             Ended::Deadline => {}
+-            Ended::Revisit => history.quiet(costs, slept.max(self.choice.revisit_after.unwrap_or(0))),
++            Ended::Revisit => history.quiet(costs, slept),
+             Ended::Unforeseen => history.unforeseen(costs, slept),
+         }
+     }

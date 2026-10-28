@@ -1,0 +1,99 @@
+   Compiling kernel v0.1.0 (<worktree>/kernel)
+warning: unused `sched::mailbox::Kick` that must be used
+    --> kernel/pure/sched/cpu.rs:2574:48
+     |
+2574 |             if handle.idle_exit() > bound && { handle.poke(); true } {
+     |                                                ^^^^^^^^^^^^^
+     |
+     = note: an elided kick is a decision; a required kick must be sent
+     = note: `#[warn(unused_must_use)]` (part of `#[warn(unused)]`) on by default
+help: use `let _ = ...` to ignore the resulting value
+     |
+2574 |             if handle.idle_exit() > bound && { let _ = handle.poke(); true } {
+     |                                                +++++++
+
+warning: `kernel` (lib test) generated 1 warning
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.91s
+     Running unittests pure/lib.rs (target/debug/deps/kernel-fa45b686f8e87f8e)
+
+running 62 tests
+test sched::cpu::tests::a_killed_rt_thread_unwinds_in_the_normal_band ... ok
+test sched::cpu::tests::a_killed_task_that_expires_its_quantum_yields_to_a_ready_rt_task ... ok
+test sched::cpu::tests::a_dying_task_is_picked_before_the_fair_queue ... ok
+test sched::cpu::tests::a_killed_task_loses_the_cpu_before_its_quantum_expires ... ok
+test sched::cpu::tests::a_killed_task_does_not_starve_a_ready_rt_task ... ok
+test sched::cpu::tests::a_dying_task_resumes_when_the_rt_band_empties ... ok
+test sched::cpu::tests::a_fair_thread_is_decided_again_at_its_armed_request_end ... ok
+test sched::cpu::tests::a_killed_task_that_expires_its_quantum_goes_back_to_the_dying_list ... ok
+test sched::cpu::tests::a_killed_task_that_yields_goes_back_to_the_dying_list ... ok
+test sched::cpu::tests::a_corpse_is_not_starved_for_ever_by_a_spinning_rt_task ... ok
+test sched::cpu::tests::a_burst_of_wakes_forwards_one_per_idle_sibling ... ok
+test sched::cpu::tests::a_cpu_does_not_hand_over_the_context_it_is_still_standing_on ... ok
+test sched::cpu::tests::a_dying_task_that_exits_is_released_by_its_own_death ... ok
+test sched::cpu::tests::a_live_fair_task_loses_the_cpu_to_a_ready_rt_task ... ok
+test sched::cpu::tests::a_lone_queued_task_is_published_and_given_to_a_probe ... ok
+test sched::cpu::tests::a_probe_for_the_task_the_cpu_stands_on_is_answered_a_pass_later ... ok
+test sched::cpu::tests::a_retire_moves_a_ready_task_to_the_dying_list ... ok
+test sched::cpu::tests::a_retire_of_the_running_task_asks_for_a_safe_point ... ok
+test sched::cpu::tests::a_hold_kicks_each_other_cpu_slower_to_wake_than_its_bound_once ... FAILED
+test sched::cpu::tests::a_retire_that_loses_the_claim_leaves_the_wake_in_flight ... ok
+test sched::cpu::tests::a_retire_wakes_a_parked_task_so_it_can_unwind ... ok
+test sched::cpu::tests::a_running_task_refuses_the_parked_mark ... ok
+test sched::cpu::tests::a_second_wake_due_first_does_not_cut_inside_the_minimum_run ... ok
+test sched::cpu::tests::a_spawn_goes_to_a_free_core_before_a_busy_cores_thread ... ok
+test sched::cpu::tests::a_spawn_lands_where_it_would_whatever_the_sleepers_exits ... ok
+test sched::cpu::tests::a_spawned_task_is_adopted_and_dispatched ... ok
+test sched::cpu::tests::a_steal_probe_asks_the_nearest_surplus_first ... ok
+test sched::cpu::tests::a_steal_probe_goes_to_surplus_and_not_to_a_cpu_full_of_corpses ... ok
+test sched::cpu::tests::a_stopped_task_is_never_picked_again ... ok
+test sched::cpu::tests::a_stopped_task_is_not_published_as_load ... ok
+test sched::cpu::tests::a_wake_due_first_takes_the_cpu_once_the_running_thread_has_its_minimum_run ... ok
+test sched::cpu::tests::a_wake_for_a_stopped_task_lands_in_the_band_and_not_the_run_queue ... ok
+test sched::cpu::tests::a_wake_to_a_busy_cpu_is_handed_to_an_idle_sibling ... ok
+test sched::cpu::tests::a_wake_with_no_claim_ahead_waits_for_the_running_request ... ok
+test sched::cpu::tests::among_equally_near_free_cores_the_shallowest_sleeper_is_woken ... ok
+test sched::cpu::tests::an_adopt_of_a_killed_task_dispatches_it_on_arrival ... ok
+test sched::cpu::tests::an_aged_grant_is_not_undone_by_a_pass_inside_its_chunk ... ok
+test sched::cpu::tests::an_idle_cpu_is_chosen_near_and_on_a_free_core_first ... ok
+test sched::cpu::tests::an_idle_pass_arms_its_plans_wake_in_its_one_timer_write ... ok
+test sched::cpu::tests::an_unwind_under_saturated_rt_is_stretched_by_the_age_ratio ... ok
+test sched::cpu::tests::placement_believes_a_cpu_that_answers_and_no_other ... ok
+test sched::cpu::tests::stopping_outranks_killing ... ok
+test sched::cpu::tests::the_balance_path_keeps_a_killed_task_rather_than_migrating_it ... ok
+test sched::cpu::tests::the_dying_list_is_served_oldest_first ... ok
+test sched::cpu::tests::the_pick_dispatches_a_killed_task_so_it_can_unwind ... ok
+test sched::idle::tests::a_cpu_held_shallow_by_its_history_alone_revisits_after_the_deeper_states_residency ... ok
+test sched::idle::tests::a_cpu_left_idle_after_short_idles_climbs_a_state_per_revisit ... ok
+test sched::idle::tests::a_cpu_with_nothing_due_and_no_bound_waits_deepest ... ok
+test sched::idle::tests::a_held_bound_excludes_every_state_slower_to_wake_than_it ... ok
+test sched::idle::tests::a_period_is_ended_by_the_deadline_the_revisit_or_neither ... ok
+test sched::idle::tests::a_quiet_period_clears_the_states_it_covers_and_no_deeper ... ok
+test sched::idle::tests::a_revisit_a_tick_early_clears_the_state_it_was_armed_for ... ok
+test sched::idle::tests::a_state_entered_before_a_timer_wakes_early_by_its_exit_and_without_one_does_not ... ok
+test sched::idle::tests::a_wake_is_the_schedulers_timer_from_a_tick_before_it_on_and_unforeseen_before_that ... ok
+test sched::idle::tests::idles_between_the_two_residencies_settle_on_the_shallower_state ... ok
+test sched::idle::tests::long_idles_after_short_ones_return_the_cpu_to_the_deepest_state ... ok
+test sched::idle::tests::no_declared_state_is_c1 ... ok
+test sched::idle::tests::short_unforeseen_idles_bring_the_cpu_to_c1_within_the_allowance ... ok
+test sched::idle::tests::releasing_a_bound_never_held_is_a_kernel_bug - should panic ... ok
+test sched::idle::tests::the_least_bound_held_is_the_machines_and_goes_with_its_last_hold ... ok
+test sched::idle::tests::the_timer_fires_at_the_deadline_less_the_exit_or_the_revisit_whichever_is_sooner ... ok
+test sched::idle::tests::the_timer_horizon_admits_only_what_fits_before_it ... ok
+
+failures:
+
+---- sched::cpu::tests::a_hold_kicks_each_other_cpu_slower_to_wake_than_its_bound_once stdout ----
+
+thread 'sched::cpu::tests::a_hold_kicks_each_other_cpu_slower_to_wake_than_its_bound_once' (73863127) panicked at kernel/pure/sched/cpu.rs:4444:9:
+assertion `left == right` failed: a kick already coming is not sent twice
+  left: [CpuId(1), CpuId(3), CpuId(1), CpuId(3)]
+ right: [CpuId(1), CpuId(3)]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    sched::cpu::tests::a_hold_kicks_each_other_cpu_slower_to_wake_than_its_bound_once
+
+test result: FAILED. 61 passed; 1 failed; 0 ignored; 0 measured; 280 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p kernel --lib`
