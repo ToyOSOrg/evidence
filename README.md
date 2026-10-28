@@ -113,3 +113,23 @@ The third cycles boot's log partition, recovered later, agrees with its run log:
 | r4/qemu.log | `vtd_firmware_left iommu_virtio_platform hda_plays_to_the_controller_that_reaches_an_output a_drives_row_holds_one_process_per_function` | tree of c6a9c9970 | 0 |
 | r4/judge-control-r3-boot-has-no-arm-line.log | `iommu_firmware_left` judged on r3's T14 shared-debug-1 boot, which armed without the new arm line | c6a9c9970 | 1 (expected red) |
 | r4/metal-prepare.log | staging `boot:shared-debug boot:iommu-firmware-left boot:testcases` | c6a9c9970 | 2 (staged) |
+
+## r4 on the T14 at c6a9c9970 (8 boots, each exit 0, each `Boot: complete`)
+
+**Every boot** logs, with no `hand-over is unguarded` line:
+- `protected memory for the hand-over on 4 unit(s): low 0x100000..0x8ef00000 high 0x100000000..0x45f800000, aligned to 0x100000 and 0x100000`;
+- `the regions cover the hand-over's tables and this kernel: [(1a00000, 1c00000), (<kernel image>)]`;
+- the bus masters at arm: `00:00.0 00:02.0 00:06.0 00:0d.0 00:14.0 00:1f.0 00:1f.3 00:1f.6 04:00.0`;
+- `protected memory on for 4 unit(s)`, then `protected memory released on 4 unit(s)`.
+
+**`iommu-firmware-left` ×3** (judge, exit 0 on each): `iommu_firmware_left` passes "inside protected memory". No 00:02.0 fault in any boot.
+
+**`shared-debug` ×3** (judge, exit 1 on each): 9 rows pass. Only the 5 shared-member reds fail, the same as on main 576bebf3a. `iommu_firmware_left` now rides its own boot, so there are 9 rows rather than 10.
+
+**`testcases` + `testcases-watchdog`:**
+- **The 26 rows that ride only `testcases`** (r4/t14/judge-testcases-rows.log): 22 pass, with the same 4 known reds as r3: `klogd_hosted`, the two `amdvi_*` rows, and `nvme_leaves_the_benchs_disk_alone`.
+- **The whole boot** (`boot:testcases`, r4/t14/judge-testcases-1.log): 33 rows pass and 225 of 225 members complete. Six rows fail:
+  - the four above;
+  - `amdvi_usbd_drives_its_own_entry`, an AMD-bench row that reds with the same reason in 29 other T14 judges, #1080's included;
+  - `i219_messages_on_its_msi_vector`: "the burst never filled the ring, or the transmit wake it asked for never came", seconds after the regions were released. #1080's boot at 141055d74, which has no protected-memory code, logged the same failure, and this row reds intermittently in many branches' T14 judges.
+- **The one `DMA FAULT`** is `00:0d.0 owner=process addr=0x50200000`, the fault a test in this boot stages. It is the same signature as in earlier T14 testcases boots at main revisions.
