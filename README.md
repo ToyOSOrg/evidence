@@ -50,4 +50,4 @@ The `iommu-cycles` boots did not run: main's flasher has no FLASHABLE row for th
 
 ## Errata check
 
-r2/errata/631123-034.txt is the text of Intel's 11th Generation Intel Core Processor Specification Update, 631123-034 (April 2026), fetched from https://cdrdv2.intel.com/v1/dl/getContent/631123. Errata TGL001 to TGL075: none concerns VT-d, DMA remapping or iGPU DMA translation. TGL004 (posted-interrupt descriptors in PRMRR) is the nearest and does not apply.
+r2/errata/631123-034-titles.txt lists the erratum titles (the document itself is Intel's and not redistributed here) of Intel's 11th Generation Intel Core Processor Specification Update, 631123-034 (April 2026), fetched from https://cdrdv2.intel.com/v1/dl/getContent/631123. Errata TGL001 to TGL075: none concerns VT-d, DMA remapping or iGPU DMA translation. TGL004 (posted-interrupt descriptors in PRMRR) is the nearest and does not apply.
