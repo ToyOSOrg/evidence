@@ -1,0 +1,32 @@
+diff --git a/kernel/src/arch/x86_64/vtd/mod.rs b/kernel/src/arch/x86_64/vtd/mod.rs
+index f62169572..be15abde3 100644
+--- a/kernel/src/arch/x86_64/vtd/mod.rs
++++ b/kernel/src/arch/x86_64/vtd/mod.rs
+@@ -279,6 +279,9 @@ enum InFlight {
+ }
+ 
+ fn in_flight(flags: u8, regions_identity: bool) -> InFlight {
++    if true {
++        return InFlight::Identical;
++    }
+     if flags & dmar::FLAG_DMA_CTRL_OPT_IN == 0 {
+         InFlight::Unknown("firmware does not declare its DMA confined to its reserved regions")
+     } else if !regions_identity {
+diff --git a/tests/common/iommu.rs b/tests/common/iommu.rs
+index d0789965c..bedf0977a 100644
+--- a/tests/common/iommu.rs
++++ b/tests/common/iommu.rs
+@@ -356,9 +356,12 @@ pub(crate) fn amdvi_left_on(unit: &str) -> [String; 3] {
+ /// translation with the reason, and the unit ends translating through this
+ /// kernel's root with the boot stick's DMA behind it.
+ pub fn vtd_firmware_left(test_config: &Path) -> Result<(), String> {
+-    let options = BootOptions { profile: Profile::Metal, kernel_params: &["iommu-firmware-left"], ..Default::default() };
++    let options = BootOptions { profile: Profile::Metal, kernel_params: &["iommu-firmware-left", "iommu-handover-cycles"], ..Default::default() };
+     let qemu = QemuInstance::boot_with_options(test_config, &[], &[], options);
+     let log = Serial::boot(&qemu);
++    for line in log.text().lines().filter(|l| l.contains("iommu") || l.contains("Boot: complete") || l.contains("panic")) {
++        eprintln!("MUT| {line}");
++    }
+     log.must_be_clean()?;
+     log.must_say("dma_ctrl_opt_in=n")?;
+     let off = log.must_say(
