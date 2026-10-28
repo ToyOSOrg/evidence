@@ -83,3 +83,23 @@ Measurement branch `igpu-fault-measure` at e3b1562e7 (never lands), booted 3 tim
 | r3/metal-prepare.log | `--metal --metal-readback <dir> boot:shared-debug boot:testcases` (staging) | 902bffb40 | 2 (staged) |
 
 The third cycles boot's log partition, recovered later, agrees with its run log: off-on 7 of 200 with 38 records, switch 0 of 200.
+
+## r3 on the T14 at 902bffb40
+
+`shared-debug` was booted 3 times and `testcases` once. All four exited 0 and logged `Boot: complete`.
+
+**Protected memory.** Every boot logs `protected memory for the hand-over on 4 unit(s): low 0x1000000..0x8ef00000 high 0x100000000..0x45f800000, aligned to 0x100000 and 0x100000`, then `protected memory released on 4 unit(s)`. The low region stops where the firmware map breaks at 0x8ef00000. That leaves 0x8ef00000..0x9c000000 unprotected below the RMRR, plus everything below 16 MiB.
+
+**iGPU faults.** No boot logs a `DMA FAULT` for 00:02.0. Blocked DMA cannot be observed: §11.4.8.1 has the hardware record none.
+
+**shared-debug judges** (r3/t14/judge-shared-debug-N.log, exit 1 each):
+- 10 rows pass, among them `iommu_firmware_left` ("inside protected memory").
+- The same 5 shared members fail as on main 576bebf3a.
+
+**testcases judge** (r3/t14/judge-testcases-rows.log: the 26 rows that ride only `testcases`; `boot:testcases` would also need the `testcases-watchdog` readback):
+- 22 rows pass, 4 fail, none of them from this branch:
+  - `amdvi_translates_the_stick_controller` and `amdvi_remaps_the_stick_controller`: the T14 has no AMD-Vi unit.
+  - `nvme_leaves_the_benchs_disk_alone`: the fileserver's message about the bench disk; this row reds on other branches too.
+  - `klogd_hosted`: objects to the `00:0d.0 owner=process` fault a test in this boot stages. The same red appears in other branches' T14 judges, including a judge of main (`proc/p1/r2/base-metal`).
+
+**Correction to r2:** r2's `shared-debug` judges passed 10 rows, not the 12 stated earlier.
