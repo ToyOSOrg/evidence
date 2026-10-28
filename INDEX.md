@@ -30,3 +30,14 @@ Earlier reds kept as findings:
 ## Metal
 
 Not run by the implementer. `r1/metal-request.txt` stages `testcases` and `benchcase` for the rows `smp_roster_and_tsc_trail`, `timer_calibration` and `clock_holds_over_minutes` on the T14 and the AMD bench.
+
+## r2
+
+- **T14 metal**, judged from the pinned tree at 378995d9d: `cargo test --test toyos-build -- --metal --metal-readback <dir> smp_roster_and_tsc_trail timer_calibration clock_holds_over_minutes`, exit 0, all three PASS (`r2/metal-t14/judge-378995d9d.log`). The clock lines of both boots are in `r2/metal-t14/`; whole logs are not published.
+  - The TSC is kept at CPUID 15H's 2,419,200,000 Hz.
+  - The HPET measured 2,419,200,017.015 Hz over 128 s, within 118 ppb: 7 ppb from the stated rate. The `testcases` boot measured 39 ppb over 8 s, within 1,785 ppb.
+  - Every AP's TSC is within 181 cycles (75 ns) of cpu0's over 256 round trips. `IA32_TSC_ADJUST` is 0. Neither boot recorded a step or a drift.
+  - One HPET read brackets 35,690 TSC cycles (14.8 µs). Over 50 ms that is 285 ppm, the old calibration's cluster.
+- **Spec**: `r2/hpet-spec-clause.txt` quotes the clause, with the PDF's hash.
+- **Rebased onto main** (#1096), plus a commit for the spec's two drift figures and one runtime read: host CI at 68afed54f, exit 0, 106 steps green (`r2/checks/`). `a_stepped_tsc_panics` rerun at that head's kernel, exit 0 (`r2/qemu/`).
+- The AMD run is staged at 68afed54f (`r2/metal-request-amd.txt`).
