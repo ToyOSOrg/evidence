@@ -1,0 +1,13 @@
+diff --git a/tests/metal/src/lib.rs b/tests/metal/src/lib.rs
+index 32a9acad7..62b15a30c 100644
+--- a/tests/metal/src/lib.rs
++++ b/tests/metal/src/lib.rs
+@@ -2220,7 +2220,7 @@ fn wedged_boot(watched: bool, loader: &str, log: &str) -> Result<u64, Refusal> {
+             why: "it reached the shutdown's own last word, so nothing about it was wedged",
+         });
+     }
+-    let Some(said) = sealed_by(loader).or_else(|| watched.then(|| reset_by_the_chipset(loader)).flatten()) else {
++    let Some(said) = sealed_by(loader).or_else(|| reset_by_the_chipset(loader)) else {
+         return Err(Refusal::Wedge {
+             why: "the pass after the reset reports neither of this kernel's bounds, nor a reset \
+                   by the chipset watchdog it may be armed with, so what ended this boot was not \
