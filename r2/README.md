@@ -1,0 +1,1 @@
+# r2: #1074 at 46848c491 (review r1). logs/: host suite, QEMU 7/7, both builds, each exit 0. t14/: the first session's valid readbacks judged by the harness (exit 0 each), and the rows read from them.
