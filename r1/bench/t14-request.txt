@@ -1,0 +1,46 @@
+# T14 scratch-stick reset reproduction (branch stick-hang, worktree <worktree>)
+# S=<scratch>
+# Every command runs from the worktree. Bench-side scripts: $S/linux/check.sh, $S/linux/arm.sh
+# (ssh <t14> 'bash -s' < check.sh ; ssh <t14> 'bash -s -- <mode>' < arm.sh).
+
+## 0. Once, before the first cycle
+# a) Which disk is the scratch stick, and which controller and port hold each stick.
+#    Record the output. Expect one disk carrying one partition of type 51cc09f9-...-0fd8718b0fb5.
+ssh <t14> 'lsblk -o NAME,TRAN,RM,SIZE,MODEL,SERIAL,PARTTYPE; for d in /sys/block/sd*; do echo "$d -> $(readlink -f $d)"; done; lsusb -t'
+# b) Re-adopt it with this branch's --adopt-scratch, which lays the partition on whole MiB.
+#    The stick adopted before is not served by usbd (issues/the-scratch-disk-adopt-scratch-makes-is-not-served.md).
+#    /dev/sdX is the scratch disk from (a). The tool refuses the boot stick and any non-removable disk.
+cargo run -p toyos-metal -- --adopt-scratch /dev/sdX --dry-run
+cargo run -p toyos-metal -- --adopt-scratch /dev/sdX
+# c) A baseline check, which must print SCRATCH=PRESENT and "read 16 MiB: ok".
+ssh <t14> 'bash -s' < $S/linux/check.sh
+
+## 1. The cycles. Rotate the four arms in this order, one cycle each, and repeat
+##    the rotation as long as the session allows (10 rotations = 40 cycles is ~2.5 h,
+##    estimated). After EVERY cycle, once ssh answers again, run check.sh and keep its whole output
+##    as $S/runs/<cycle>/check.txt, with the cycle's start time (UTC).
+# D<n>: ToyOS deadline reset while scratch_load writes the scratch stick.
+cargo run -p toyos-metal -- --image $S/metal/scratchdeadline/image.img --readback $S/runs/D<n>/scratchdeadline --fat32-check
+# R<n>: ToyOS orderly reboot asked by scratch_load after 64 MiB, writes still going.
+cargo run -p toyos-metal -- --image $S/metal/scratchreboot/image.img --readback $S/runs/R<n>/scratchreboot --fat32-check
+# L<n>: Ubuntu restart while dd writes the scratch partition (systemctl reboot after 64 MiB).
+ssh <t14> 'bash -s -- restart' < $S/linux/arm.sh
+# I<n>: Ubuntu restart with the scratch stick idle.
+ssh <t14> 'bash -s -- idle' < $S/linux/arm.sh
+# Optional fifth arm, only if the owner's standing rules allow an abrupt reset of the bench's Ubuntu
+# (it syncs first; ext4 recovers its journal): S<n>, sysrq-b with dd writing, no device shutdown,
+# Linux's closest reset to ToyOS's deadline reset.
+# ssh <t14> 'bash -s -- sysrq' < $S/linux/arm.sh
+# Judge the ToyOS cycles (exit 0 = the stimulus happened as designed; it does NOT judge the stick's return):
+cargo test --test toyos-build -- --metal --metal-readback $S/runs/D<n> scratch_written_through_a_deadline_reset
+cargo test --test toyos-build -- --metal --metal-readback $S/runs/R<n> scratch_written_through_a_reboot
+
+## 2. Stop rules
+# - The first SCRATCH=ABSENT ends the reproduction: the stick then needs a hand on it, and every
+#   later cycle would measure nothing. Record which cycle, the check.txt, and for a ToyOS cycle whether
+#   its log shows "scratch_load: writing disk" (the stick was alive inside ToyOS).
+#   Do NOT try rtcwake/poweroff to clear it: whether the T14 wakes from S5 by RTC is unverified,
+#   and a T14 that stays off is stranded for the owner's absence.
+# - A boot-stick loss (toyos-metal: "the stick carrying this image did not [come back]") ends it too.
+# - A judge red on a ToyOS cycle: keep going only if the cycle's stimulus still happened (look at the log);
+#   send me the readback.

@@ -1,0 +1,31 @@
+   Compiling toyos-build v0.1.0 (<worktree>)
+    Finished `test` profile [optimized + debuginfo] target(s) in 9.11s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-040be7639b65fd4e)
+14:25:40   BUILD x86_64 binaries of tests/guest/rust-tests
+14:25:45   BUILT x86_64 binaries of tests/guest/rust-tests  (5s)
+14:25:45   BUILD x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests
+14:25:47   BUILT x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests  (2s)
+14:25:47 [toyos] Compiling 143 C tests, and attempting 24 declared ones...
+14:25:51 [metal] 2 registration(s) and 0 shared member(s) over 2 boot(s)
+14:25:51   BUILD x86_64 kernel, loader, ROOT of <scratch>/metal/scratchdeadline/system-c3a4ffc41346fe3c.toml
+14:25:53 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+14:25:53   BUILT x86_64 kernel, loader, ROOT of <scratch>/metal/scratchdeadline/system-c3a4ffc41346fe3c.toml  (2s)
+14:25:53 [metal] scratchdeadline: 1 job(s) under a list bound of 60000 ms, armed with [] and a boot deadline of 40000 ms — <scratch>/metal/scratchdeadline/image.img
+14:25:53   BUILD x86_64 ROOT of <scratch>/metal/scratchreboot/system-8ec96df023a79676.toml
+14:25:54 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+14:25:54   BUILT x86_64 ROOT of <scratch>/metal/scratchreboot/system-8ec96df023a79676.toml  (1s)
+14:25:54 [metal] scratchreboot: 1 job(s) under a list bound of 60000 ms, armed with [] and a boot deadline of 120000 ms — <scratch>/metal/scratchreboot/image.img
+# One boot per image. Each invocation is `cargo <words>` from this worktree.
+
+scratchdeadline
+  image: <scratch>/metal/scratchdeadline/image.img
+  cargo run -p toyos-metal -- --image <scratch>/metal/scratchdeadline/image.img --readback <scratch>/metal/scratchdeadline --fat32-check
+
+scratchreboot
+  image: <scratch>/metal/scratchreboot/image.img
+  cargo run -p toyos-metal -- --image <scratch>/metal/scratchreboot/image.img --readback <scratch>/metal/scratchreboot --fat32-check
+14:25:54 [metal] staged 2 image(s); <scratch>/metal/request.txt lists them. The machine was not touched, so this run establishes nothing about it.
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `<worktree>/target/debug/deps/toyos_build-040be7639b65fd4e --metal --metal-readback <scratch>/metal scratch_written_through_a_deadline_reset scratch_written_through_a_reboot` (exit status: 2)
