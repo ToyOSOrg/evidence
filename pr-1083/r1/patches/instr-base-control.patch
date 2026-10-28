@@ -1,0 +1,99 @@
+diff --git a/tests/guest/rust-tests/src/bin/socket_export.rs b/tests/guest/rust-tests/src/bin/socket_export.rs
+index 8c580c3fc..4abccfd9a 100644
+--- a/tests/guest/rust-tests/src/bin/socket_export.rs
++++ b/tests/guest/rust-tests/src/bin/socket_export.rs
+@@ -35,6 +35,7 @@ const HOST: Ipv4Addr = Ipv4Addr::new(10, 0, 2, 2);
+ const LISTENING: u16 = 7070;
+ 
+ /// The descriptors the child is given its holders under.
++const ROUNDS: usize = 40;
+ const LISTENER_FD: i32 = 3;
+ const DATAGRAM_FD: i32 = 4;
+ 
+@@ -72,6 +73,8 @@ fn main() {
+     serve("parent", &listener, &socket, port);
+     println!("a listener and a datagram socket exported to a child: it accepted and spoke on them, and so did the parent after it");
+ 
++    for round in 0..ROUNDS {
++    eprintln!("DBG parent round {round} spawning racer");
+     let mut racer = spawn("racer");
+     let mine = race("parent", &listener, &socket, port);
+     let mut theirs = String::new();
+@@ -80,6 +83,8 @@ fn main() {
+     let mut taken = [mine, theirs.trim().to_string()];
+     taken.sort();
+     assert_eq!(taken, ["one", "two"], "each process takes one datagram of the two");
++    eprintln!("DBG parent round {round} done");
++    }
+     println!("two holders blocked on one queue: each took one connection and one datagram");
+ }
+ 
+@@ -93,12 +98,16 @@ fn race(who: &str, listener: &TcpListener, socket: &UdpSocket, port: u16) -> Str
+         socket.send_to(line.as_bytes(), peer).unwrap_or_else(|e| panic!("{who}'s datagram: {e}"));
+     };
+     say("racing");
++    eprintln!("DBG {who} sent racing, accepting");
+     let (mut stream, _) = listener.accept().unwrap_or_else(|e| panic!("{who}'s accept in the race: {e}"));
++    eprintln!("DBG {who} accepted");
+     writeln!(stream, "accepted by a racer").unwrap_or_else(|e| panic!("{who}'s line: {e}"));
+     drop(stream);
+     say("receiving");
++    eprintln!("DBG {who} sent receiving, receiving");
+     let mut heard = [0u8; 64];
+     let (n, _) = socket.recv_from(&mut heard).unwrap_or_else(|e| panic!("{who}'s receive in the race: {e}"));
++    eprintln!("DBG {who} received");
+     String::from_utf8_lossy(&heard[..n]).into_owned()
+ }
+ 
+diff --git a/tests/toyos.rs b/tests/toyos.rs
+index d5173fa98..dfdb87cbf 100644
+--- a/tests/toyos.rs
++++ b/tests/toyos.rs
+@@ -5444,7 +5444,8 @@ fn sockets_exported_to_a_child(qemu: &mut QemuInstance, forwarded: u16) -> Resul
+             let mut from = None;
+             for _ in 0..2 {
+                 let mut line = [0u8; 64];
+-                let (n, at) = datagrams.recv_from(&mut line).map_err(|e| format!("a racer's {what}: {e}"))?;
++                let (n, at) = datagrams.recv_from(&mut line).map_err(|e| format!("a racer's {what}: {e} after {said:?}"))?;
++                eprintln!("PEER heard {:?}", String::from_utf8_lossy(&line[..n]));
+                 said.push(String::from_utf8_lossy(&line[..n]).into_owned());
+                 from = Some(at);
+             }
+@@ -5454,7 +5455,10 @@ fn sockets_exported_to_a_child(qemu: &mut QemuInstance, forwarded: u16) -> Resul
+             }
+             from.ok_or_else(|| "no racer spoke".to_string())
+         };
++        for round in 0..40 {
++        let t0 = std::time::Instant::now();
+         both("racing")?;
++        eprintln!("PEER round {round}: both racing at {:?}", t0.elapsed());
+         let conns: Vec<std::net::TcpStream> = (0..2)
+             .map(|_| std::net::TcpStream::connect(("127.0.0.1", forwarded)).map_err(|e| format!("a racer's connect: {e}")))
+             .collect::<Result<_, _>>()?;
+@@ -5462,19 +5466,24 @@ fn sockets_exported_to_a_child(qemu: &mut QemuInstance, forwarded: u16) -> Resul
+             conn.set_read_timeout(Some(CEILING)).map_err(|e| e.to_string())?;
+             let mut line = Vec::new();
+             conn.read_to_end(&mut line).map_err(|e| format!("a racer's line: {e} after {line:?}"))?;
++            eprintln!("PEER read a line");
+             if line != b"accepted by a racer\n" {
+                 return Err(format!("a racer wrote {:?}", String::from_utf8_lossy(&line)));
+             }
+         }
++        eprintln!("PEER round {round}: both lines read at {:?}", t0.elapsed());
+         let socket = both("receiving")?;
++        eprintln!("PEER round {round}: both receiving at {:?}", t0.elapsed());
+         for datagram in [&b"one"[..], b"two"] {
+             datagrams.send_to(datagram, socket).map_err(|e| format!("a racer's datagram: {e}"))?;
+         }
++        }
+         Ok(())
+     });
+-    let result = qemu.run_test(&format!("test_rs_socket_export {port}"), Duration::from_secs(300));
++    let result = qemu.run_test(&format!("test_rs_socket_export {port}"), Duration::from_secs(30));
+     if let Some(why) = &result.error {
+-        return Err(format!("{why}\nthe job said:\n{}", result.stdout));
++        if heard.is_finished() { eprintln!("PEER ended: {:?}", heard.join()); }
++        return Err(format!("{why}\nthe job said:\n{}\nserial:\n{}", result.stdout, result.serial));
+     }
+     if result.exit_code != Some(0) {
+         return Err(format!("the job ended {:?}:\n{}", result.exit_code, result.stdout));
