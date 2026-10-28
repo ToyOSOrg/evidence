@@ -20,3 +20,8 @@ Branch `realloc-grow`; base aeba59fb0. Paths, the host name and temp directories
   - `linux-mem-{1,2}.txt`: the bench's Linux running the fixed osbench (sha256 2e47f53a...).
 - `qemu-dcb6c7855/`: `allocator_stress`, `std_alloc`, `std_mmap`, `215_large_realloc` and `mmap_stress` at dcb6c7855, in the same `--debug` guest as before. All exit 0.
 - `ci/ci-host-dcb6c7855.log`: `cargo run -- --ci host`, exit 0, 103 steps.
+
+## Round 3 (merge of main 0e7ecd0c8, ea7bbb1b7)
+
+- `qemu-ea7bbb1b7/`: `mmap_stress`, `allocator_stress` and `215_large_realloc`, all exit 0.
+- `ci/ci-host-ea7bbb1b7.log`: host CI, exit 0, 104 steps.
