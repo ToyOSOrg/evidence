@@ -1,0 +1,13 @@
+diff --git a/system/netstack/shard/tcp/src/conn.rs b/system/netstack/shard/tcp/src/conn.rs
+index 7bc214618..2853b93bd 100644
+--- a/system/netstack/shard/tcp/src/conn.rs
++++ b/system/netstack/shard/tcp/src/conn.rs
+@@ -1298,7 +1298,7 @@ impl Sync {
+             // cwnd in flight it grows anyway, as RFC 7661 §4.3's validated window, which §4.6
+             // admits. cwnd then stays within twice the flight, and a loss sets ssthresh from the
+             // flight (§4.6).
+-            self.cc.limited = self.in_flight() >= self.cwnd() / 2;
++            self.cc.limited = self.in_flight() >= (self.cwnd() / 2).saturating_sub(self.smss());
+         }
+         let data_end = start.add(len);
+         if data_end.after(old) {

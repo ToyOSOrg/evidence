@@ -17,3 +17,6 @@ r2/ab/  #1102's A/B (T14, osbench_lan, 2026-10-28). Order: Linux L1, a1 b1 a2 b2
   A = f895223a2 (the instrument; the fix reverted), B = 94e3ee70d (the fix). Images: image-sha256.txt. Peer and T14 Linux from
   linux-94e3ee70d.SHA256SUMS (osbench-lan/3).
   session/t14-linux-{1,2}.{txt,err}, toyos/<arm>.{txt,verdict.txt,judge.log} as in r1.
+
+r3/review-1/  Review round 1 at ToyOS ae8e78b4e: ci-host-ae8e78b4e.log (105 steps, all green, EXIT=0); controls/ the five new negative controls
+  (s_cc_017 boundary: strict, half less a segment, a quarter; s_cc_023: first never reset, always first), each exit 101 failing its test.
