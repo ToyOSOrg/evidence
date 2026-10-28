@@ -6,11 +6,11 @@
 - `run5-out.txt` and `readback-notes/*-B5.osbench.txt`: the B5 benchcase readings.
   - T14: deflate 54.80 ms; `cpu.clock` above 4100 at 5 of 17 group starts (sched, files, ipc, work, crunch).
   - AMD: deflate 63.70 ms; above 4100 at 17 of 17.
-- `readback-notes/*.audio.txt`: soundserver's per-window `worst_irq_late_us` and `underruns`, with the deep states (r2 B2t, r4 B4) and without them (r5 A\*). Ranges by bench:
+- `readback-notes/*.audio.txt`: soundserver's per-window (ranges over every window line; corrected after review r4) `worst_irq_late_us` and `underruns`, with the deep states (r2 B2t, r4 B4) and without them (r5 A\*). Ranges by bench:
 
   | Bench | Deep states | A\* (all idle CPUs in C1) |
   |---|---|---|
-  | T14 | 166-564 µs | 457-572 µs |
+  | T14 | 0-564 µs | 181-572 µs |
   | AMD | 0-2661 µs | 0-2661 µs (2661 and 2651) |
 
   No window underran in any boot.
