@@ -1,0 +1,56 @@
+diff --git a/system/netstack/shard/tcp/src/cc.rs b/system/netstack/shard/tcp/src/cc.rs
+index 094029b6a..962334834 100644
+--- a/system/netstack/shard/tcp/src/cc.rs
++++ b/system/netstack/shard/tcp/src/cc.rs
+@@ -97,7 +97,7 @@ impl Cc {
+ 
+     /// An ACK that newly acknowledges `acked` bytes outside loss recovery.
+     pub fn on_ack(&mut self, now: Instant, acked: u32, srtt: Option<Duration>) {
+-        let grow = self.limited;
++        let grow = core::mem::replace(&mut self.limited, false);
+         let since_last = self.last_ack.replace(now).map_or(Duration::ZERO, |last| now.since(last));
+         if self.cwnd < self.ssthresh {
+             if grow {
+diff --git a/system/netstack/shard/tcp/src/conn.rs b/system/netstack/shard/tcp/src/conn.rs
+index ac53d2770..9139375ce 100644
+--- a/system/netstack/shard/tcp/src/conn.rs
++++ b/system/netstack/shard/tcp/src/conn.rs
+@@ -1176,9 +1176,6 @@ impl Sync {
+         } else {
+             Some(self.declined)
+         };
+-        if let Some(limit) = held {
+-            self.cc.limited = limit == SendLimit::Congestion;
+-        }
+         let was = self.held_by.map(|(limit, _)| limit);
+         if let Some((limit, since)) = self.held_by.filter(|_| held != was) {
+             ctx.log.add(limit.counter(), u64::try_from(now.since(since).as_nanos()).unwrap_or(u64::MAX));
+@@ -1277,10 +1274,6 @@ impl Sync {
+             self.last_data_sent = Some(now);
+             self.sws = None;
+             self.sws_fired = false;
+-            // Until the next stop says otherwise: an opportunity that ends on the caller's credit
+-            // ends here, and cwnd limited it only if this left it full.
+-            let in_flight = self.in_flight();
+-            self.cc.limited = self.cwnd().saturating_sub(in_flight) < self.smss();
+         }
+         let data_end = start.add(len);
+         if data_end.after(old) {
+@@ -1352,6 +1345,7 @@ impl Sync {
+         let len = if pos.before(stop) { stop.since(pos) } else { 0 };
+         let fin = self.fin_fits(pos.add(len)) && (len > 0 || fin_resend);
+         if len == 0 && !fin {
++            self.cc.limited = true;
+             self.retransmission_held =
+                 Some(if self.cwnd() <= self.tx.window() { SendLimit::Congestion } else { SendLimit::Window });
+             return Ok(false);
+@@ -1464,6 +1458,9 @@ impl Sync {
+             d.min(w_rcv).min(w_cc) >= mss || (nagle && d <= w_rcv.min(w_cc)) || (nagle && d.min(w_rcv) >= half && w_cc > 0)
+         };
+         let go = usable > 0 && (rules(w_rcv, w_cc) || self.sws_fired || self.tx.fin.is_some());
++        if w_cc < d.min(w_rcv).min(mss) {
++            self.cc.limited = true;
++        }
+         if !go {
+             // Whichever window alone stands in the way; where both do, the smaller; where neither
+             // does, the sender's own Nagle hold.
