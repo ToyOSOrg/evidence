@@ -1,0 +1,38 @@
+# PR #1073 round 2. One boot per line, in this order per machine (alternated to separate limiter state and drift).
+# Each is `cargo <words>` from /Users/jan/Dev/jan/toyos-deep-idle (branch deep-idle at f8749dc69, tree clean). Nothing here touched a machine.
+#
+# Images:
+#   A       main ea6414e53                               A/benchcase       sha256 51fae10c5f3ac667bc462ef83c1613eda0917c053cdcc6a9fd97bba359d46419
+#   B2      deep-idle f8749dc69                          B2/benchcase      sha256 669a6efd68e27c59ec6749c1b623587486032c9dfa8ee9e55d373e98a1e1fc04
+#   B2t     deep-idle f8749dc69 (hda_tone + acpi_tables_loaded)  B2/testcases  sha256 816e764f44d62ad3ddb36abc6e6da225871f2f93544a26ccb8db2a9634a83273
+#   A* (optional, offered) f8749dc69 + control-c1-only.patch: this branch, instruments and all, never choosing a deep state
+#                                                        Astar/benchcase   sha256 b62850b5be3557116e9ebc5ae747347e80592ebe8c61948a92f31fb477b79941
+#   A carries main's osbench, without the around-row instruments; A* carries them, so A* vs B2 compares each churn/crunch row CPU by CPU.
+
+T14
+ 1 A
+  cargo run -p toyos-metal -- --image <scratch>/metal/A/benchcase/image.img --readback <scratch>/metal/run2/t14-1-A --fat32-check
+ 2 B2
+  cargo run -p toyos-metal -- --image <scratch>/metal/B2/benchcase/image.img --readback <scratch>/metal/run2/t14-2-B2 --fat32-check
+ 3 B2t
+  cargo run -p toyos-metal -- --image <scratch>/metal/B2/testcases/image.img --readback <scratch>/metal/run2/t14-3-B2t --fat32-check
+ 4 A
+  cargo run -p toyos-metal -- --image <scratch>/metal/A/benchcase/image.img --readback <scratch>/metal/run2/t14-4-A --fat32-check
+ 5 B2
+  cargo run -p toyos-metal -- --image <scratch>/metal/B2/benchcase/image.img --readback <scratch>/metal/run2/t14-5-B2 --fat32-check
+ (optional) A*
+  cargo run -p toyos-metal -- --image <scratch>/metal/Astar/benchcase/image.img --readback <scratch>/metal/run2/t14-6-Astar --fat32-check
+
+AMD
+ 1 A
+  cargo run -p toyos-metal -- --image <scratch>/metal/A/benchcase/image.img --readback <scratch>/metal/run2/amd-1-A --fat32-check
+ 2 B2
+  cargo run -p toyos-metal -- --image <scratch>/metal/B2/benchcase/image.img --readback <scratch>/metal/run2/amd-2-B2 --fat32-check
+ 3 A
+  cargo run -p toyos-metal -- --image <scratch>/metal/A/benchcase/image.img --readback <scratch>/metal/run2/amd-3-A --fat32-check
+ 4 B2
+  cargo run -p toyos-metal -- --image <scratch>/metal/B2/benchcase/image.img --readback <scratch>/metal/run2/amd-4-B2 --fat32-check
+ 5 B2t
+  cargo run -p toyos-metal -- --image <scratch>/metal/B2/testcases/image.img --readback <scratch>/metal/run2/amd-5-B2t --fat32-check
+ (optional) A*
+  cargo run -p toyos-metal -- --image <scratch>/metal/Astar/benchcase/image.img --readback <scratch>/metal/run2/amd-6-Astar --fat32-check
