@@ -9,3 +9,7 @@ guest/qemu.log: at the committed e33b248a2, stream_holders, netstack_holders_exp
 controls/mutation-export-once.{patch,log}: on a92abf9ef plus the same uncommitted diff, `inherit_handle` exporting one holder at the call, which every spawn then duplicates (round 1's behaviour), applied, run and reverted. stream_holders red, exit 1: the second spawn asks netstack for no holder.
 forks/mio-toyos-check.log: mio f7620928 checked for x86_64-unknown-toyos against e33b248a2's toyos-abi. The log's head names the revision, target, sysroot and command; exit 0.
 metal/: the T14 images staged at e33b248a2, exit 2 = staged (7 images, 54 registrations, 232 shared members); no machine touched.
+metal/judge.log: chain-1080r4's seven T14 readbacks of the images staged at e33b248a2, judged at 141055d74 (comments only past e33b248a2), exit 1. 275 passed, 11 failed:
+- osbench_lan: no peer answered on the link within 60 s. The AMD peer bench was down; this is unmeasured, not a regression.
+- klogd_hosted, i219_messages_on_its_msi_vector and the three amdvi_* rows: the standing reds of round 0, recurring on main-based judges.
+- test_rs_handle_lifetime and the four shared-debug members after it: main's hang, also seen at 576bebf3a and 7ef0a48c8.
