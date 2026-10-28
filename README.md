@@ -103,3 +103,13 @@ The third cycles boot's log partition, recovered later, agrees with its run log:
   - `klogd_hosted`: objects to the `00:0d.0 owner=process` fault a test in this boot stages. The same red appears in other branches' T14 judges, including a judge of main (`proc/p1/r2/base-metal`).
 
 **Correction to r2:** r2's `shared-debug` judges passed 10 rows, not the 12 stated earlier.
+
+## r4 (review r3): PR head c6a9c9970
+
+| file | command | revision | exit |
+|---|---|---|---|
+| r4/ci-host-lint.log | `cargo run -- --ci host lint` | tree of c6a9c9970 | 0 |
+| r4/dmaguard-host.log | `cargo test -p kernel --lib dmaguard` | c6a9c9970 | 0 |
+| r4/qemu.log | `vtd_firmware_left iommu_virtio_platform hda_plays_to_the_controller_that_reaches_an_output a_drives_row_holds_one_process_per_function` | tree of c6a9c9970 | 0 |
+| r4/judge-control-r3-boot-has-no-arm-line.log | `iommu_firmware_left` judged on r3's T14 shared-debug-1 boot, which armed without the new arm line | c6a9c9970 | 1 (expected red) |
+| r4/metal-prepare.log | staging `boot:shared-debug boot:iommu-firmware-left boot:testcases` | c6a9c9970 | 2 (staged) |

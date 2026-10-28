@@ -1,0 +1,48 @@
+c6a9c9970ff40701fc6cf2f58c5f11c7bd79664f
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.16s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-744c45cf70e5d4d9)
+13:35:35   BUILD x86_64 binaries of tests/guest/rust-tests
+13:35:37   BUILT x86_64 binaries of tests/guest/rust-tests  (2s)
+13:35:37   BUILD x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests
+13:35:38   BUILT x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests  (1s)
+13:35:38 [toyos] Compiling 143 C tests, and attempting 24 declared ones...
+13:35:41 [metal] 47 registration(s) and 232 shared member(s) over 4 boot(s)
+13:35:41   BUILD x86_64 kernel boot-actuators,test-actuators, loader, ROOT of $SCRATCH/metal-r4/stage/iommu-firmware-left/system-bd8df1487135d595.toml
+13:35:43 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+13:35:44   BUILT x86_64 kernel boot-actuators,test-actuators, loader, ROOT of $SCRATCH/metal-r4/stage/iommu-firmware-left/system-bd8df1487135d595.toml  (2s)
+13:35:44 [metal] iommu-firmware-left: 0 job(s) under a list bound of 60000 ms, armed with ["iommu-firmware-left"] and a boot deadline of 120000 ms — $SCRATCH/metal-r4/stage/iommu-firmware-left/image.img
+13:35:44   BUILD x86_64 ROOT of $SCRATCH/metal-r4/stage/shared-debug/system-ceed8bf72fcae218.toml
+13:35:45 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+13:35:45   BUILT x86_64 ROOT of $SCRATCH/metal-r4/stage/shared-debug/system-ceed8bf72fcae218.toml  (1s)
+13:35:45 [metal] shared-debug: 12 job(s) under a list bound of 62100 ms, armed with ["pci-cap-selftest", "revoked-backing-selftest", "lapic-spurious-selftest", "unclaimed-vector-selftest", "sysret-ss-probe"] and a boot deadline of 124200 ms — $SCRATCH/metal-r4/stage/shared-debug/image.img
+13:35:45   BUILD x86_64 kernel, ROOT of $SCRATCH/metal-r4/stage/testcases/system-340c68b17cc28b7f.toml
+13:35:47 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+13:35:47   BUILT x86_64 kernel, ROOT of $SCRATCH/metal-r4/stage/testcases/system-340c68b17cc28b7f.toml  (2s)
+13:35:48 [metal] testcases: 244 job(s) under a list bound of 98900 ms, armed with [] and a boot deadline of 197800 ms — $SCRATCH/metal-r4/stage/testcases/image.img
+13:35:48   BUILD x86_64 ROOT of $SCRATCH/metal-r4/stage/testcases-watchdog/system-bd8df1487135d595.toml
+13:35:49 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+13:35:49   BUILT x86_64 ROOT of $SCRATCH/metal-r4/stage/testcases-watchdog/system-bd8df1487135d595.toml  (1s)
+13:35:49 [metal] testcases-watchdog: 0 job(s) under a list bound of 60000 ms, armed with ["watchdog"] and a boot deadline of 120000 ms — $SCRATCH/metal-r4/stage/testcases-watchdog/image.img
+# One boot per image. Each invocation is `cargo <words>` from this worktree.
+
+iommu-firmware-left
+  image: $SCRATCH/metal-r4/stage/iommu-firmware-left/image.img
+  cargo run -p toyos-metal -- --image $SCRATCH/metal-r4/stage/iommu-firmware-left/image.img --readback $SCRATCH/metal-r4/stage/iommu-firmware-left --fat32-check
+
+shared-debug
+  image: $SCRATCH/metal-r4/stage/shared-debug/image.img
+  cargo run -p toyos-metal -- --image $SCRATCH/metal-r4/stage/shared-debug/image.img --readback $SCRATCH/metal-r4/stage/shared-debug --fat32-check
+
+testcases
+  image: $SCRATCH/metal-r4/stage/testcases/image.img
+  cargo run -p toyos-metal -- --image $SCRATCH/metal-r4/stage/testcases/image.img --readback $SCRATCH/metal-r4/stage/testcases --fat32-check
+
+testcases-watchdog
+  image: $SCRATCH/metal-r4/stage/testcases-watchdog/image.img
+  cargo run -p toyos-metal -- --image $SCRATCH/metal-r4/stage/testcases-watchdog/image.img --readback $SCRATCH/metal-r4/stage/testcases-watchdog --fat32-check
+13:35:49 [metal] staged 4 image(s); $SCRATCH/metal-r4/stage/request.txt lists them. The machine was not touched, so this run establishes nothing about it.
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `$WORKTREE/target/debug/deps/toyos_build-744c45cf70e5d4d9 --metal --metal-readback $SCRATCH/metal-r4/stage 'boot:shared-debug' 'boot:iommu-firmware-left' 'boot:testcases'` (exit status: 2)
+exit=2
