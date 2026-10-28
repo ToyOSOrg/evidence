@@ -64,3 +64,11 @@ Masking: boot IDs, MAC and IPv4 addresses, partition GUIDs and the shell's trace
 - `checks/ci-host-6be1ab62b.log`: exit 0, 104 steps green.
 - `controls/`: m8 removes `probe_mhz`'s minimum, putting back the old saturating difference. It was applied, built, tested and reverted in one run (`run5.sh`, `run5.log`), and the probe test fails, exit 101.
 - Nothing in the settle, `mhz_settled`, `mhz_after` or any p50 changed since fa7258221, so that head's metal runs stand for them.
+
+## r7: the AMD run at fa7258221 (the difference probe on metal)
+
+- `amd-fa7258221/`: the orchestrator's run, Linux, ToyOS, Linux, all rc=0, judge `1 passed`. `compare.md` exits 0, 176 rows: 0 unsettled, 0 apart, 0 fell, and 6 "media differ".
+  - Linux's `mhz_settled` runs 4166 to 4292 MHz, median 4217 and 4216; ToyOS's 4166 to 4291, median 4241: 0.6% apart.
+  - Both Linux boots chose `clocksource=tsc` (`time.now` 22.7 ns), so this run does not show the probe cancelling an HPET read; the host test does (`probe_mhz` with 1.21 µs added to both chains). That needs a Linux boot on the HPET, some 57% of boots on record.
+  - With the timestamp cheap, `cpu.chunk@system` is 2926/2936 ns (Linux) against 2936 ns (ToyOS).
+  - This boot's DATA was the AMD's newly designated p4 (#1085), mounted (`fileserver: mounted the DATA volume`). Its `fs.served.*` rows are the file server over that volume; `persist` stays on the stick's LOG volume in this PR.
