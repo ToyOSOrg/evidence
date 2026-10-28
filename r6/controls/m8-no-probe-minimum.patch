@@ -1,0 +1,11 @@
+--- a/tests/guest/osbench/rules/src/lib.rs
++++ b/tests/guest/osbench/rules/src/lib.rs
+@@ -413,7 +413,7 @@
+     /// long chain took no longer, as when the short one was preempted, which
+     /// would otherwise read as a clock of many THz.
+     pub fn probe_mhz(cycles: u64, short_ns: u64, long_ns: u64) -> Option<u64> {
+-        long_ns.checked_sub(short_ns).filter(|&ns| ns > 0).map(|ns| cycles * 1000 / ns)
++        Some(cycles * 1000 / long_ns.saturating_sub(short_ns).max(1))
+     }
+ 
+     /// The readings since the last one that disagreed.

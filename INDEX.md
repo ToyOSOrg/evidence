@@ -58,3 +58,9 @@ Masking: boot IDs, MAC and IPv4 addresses, partition GUIDs and the shell's trace
 - `controls/`: m7 sets the settle tolerance to 10%. It was applied, built, tested and reverted in one run, exit 101, and the measured-step test fails at 3789 to 4189 MHz.
 - `followup/`: regenerated at fa7258221. `check.log`: both Linux targets and the compare tests exit 0. Judged: memory refused, mounted PASS, format refused. Reverted.
 - `amd-a6a4c60d8/`: the orchestrator's AMD run at a6a4c60d8: Linux, ToyOS, Linux, with the judge PASS. These are the old probe's readings, with the 5% rule. No settle was capped on either system (Linux 86 and 84, ToyOS 92). Linux's median `mhz_settled` is 4044 MHz against ToyOS's 4241: the HPET read's 1.21 µs on a 25 µs probe, 4.6% low, which fa7258221's difference probe removes.
+
+## r6 (branch head 6be1ab62b): the probe's minimum
+
+- `checks/ci-host-6be1ab62b.log`: exit 0, 104 steps green.
+- `controls/`: m8 removes `probe_mhz`'s minimum, putting back the old saturating difference. It was applied, built, tested and reverted in one run (`run5.sh`, `run5.log`), and the probe test fails, exit 101.
+- Nothing in the settle, `mhz_settled`, `mhz_after` or any p50 changed since fa7258221, so that head's metal runs stand for them.
