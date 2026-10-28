@@ -1,0 +1,12 @@
+diff --git a/lib/tco/src/fch.rs b/lib/tco/src/fch.rs
+index 7325c6e1a..c195c955e 100644
+--- a/lib/tco/src/fch.rs
++++ b/lib/tco/src/fch.rs
+@@ -239,7 +239,6 @@ pub fn arm(fch: &mut (impl AcpiMmio + Window)) -> Result<Armed, Refused> {
+     fch.write(Register::Count, u32::from(TIMER));
+     // Two writes: one setting both bits does not start the count, which an
+     // AMD engineer measured and the register text implies.
+-    fch.write(Register::Control, stopped | Control::RUN);
+     fch.write(Register::Control, stopped | Control::RUN | Control::TRIGGER);
+ 
+     let control = Control(fch.read(Register::Control));

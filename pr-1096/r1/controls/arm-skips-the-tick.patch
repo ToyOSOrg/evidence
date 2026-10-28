@@ -1,0 +1,15 @@
+diff --git a/lib/tco/src/fch.rs b/lib/tco/src/fch.rs
+index 7325c6e1a..df3b2ce34 100644
+--- a/lib/tco/src/fch.rs
++++ b/lib/tco/src/fch.rs
+@@ -216,9 +216,7 @@ pub fn arm(fch: &mut (impl AcpiMmio + Window)) -> Result<Armed, Refused> {
+     }
+     let byte3 = (decode_en >> 24) as u8;
+     let wanted = byte3 & !OPTIONS_AND_FREQ | TICK as u8;
+-    if byte3 != wanted {
+-        fch.write_u8(DECODE_EN_BYTE3, wanted);
+-    }
++    let _ = wanted;
+     let decode_en = fch.read_u32(PM_DECODE_EN);
+     if decode_en & WATCHDOG_TMR_EN == 0 {
+         return Err(Refused::DecodeStuck(decode_en));

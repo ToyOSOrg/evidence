@@ -1,0 +1,14 @@
+diff --git a/lib/tco/src/fch.rs b/lib/tco/src/fch.rs
+index 7325c6e1a..c04cb5eef 100644
+--- a/lib/tco/src/fch.rs
++++ b/lib/tco/src/fch.rs
+@@ -252,7 +252,8 @@ pub fn arm(fch: &mut (impl AcpiMmio + Window)) -> Result<Armed, Refused> {
+ /// Restart the count from [`TIMER`].
+ pub fn feed(wdt: &mut impl Window) {
+     let control = Control(wdt.read(Register::Control));
+-    wdt.write(Register::Control, control.kept() | Control::TRIGGER);
++    let _ = control;
++    wdt.write(Register::Control, Control::RUN | Control::TRIGGER);
+ }
+ 
+ pub fn stop(wdt: &mut impl Window) {

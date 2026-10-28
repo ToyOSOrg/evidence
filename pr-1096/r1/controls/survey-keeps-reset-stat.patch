@@ -1,0 +1,15 @@
+diff --git a/lib/tco/src/fch.rs b/lib/tco/src/fch.rs
+index 7325c6e1a..36f24054a 100644
+--- a/lib/tco/src/fch.rs
++++ b/lib/tco/src/fch.rs
+@@ -339,9 +339,7 @@ pub fn survey(fch: &mut (impl AcpiMmio + Window)) -> Option<Survey> {
+         match fch.read_u32(PM_S5_RESET_STAT) {
+             u32::MAX => ResetStat::Absent,
+             stat => {
+-                if stat != 0 {
+-                    fch.write_u32(PM_S5_RESET_STAT, stat);
+-                }
++                let _ = stat;
+                 ResetStat::Read(stat)
+             }
+         }
