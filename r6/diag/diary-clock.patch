@@ -1,0 +1,77 @@
+diff --git a/tests/guest/osbench/src/main.rs b/tests/guest/osbench/src/main.rs
+index bd1beaa1f..70ed5491a 100644
+--- a/tests/guest/osbench/src/main.rs
++++ b/tests/guest/osbench/src/main.rs
+@@ -177,12 +177,72 @@ const BY_NAME: [(&str, fn()); 2] = [("lan", lan::suite), ("internet", internet::
+ fn group(name: &str, run: fn()) {
+     report::group(name, "start");
+     conditions();
++    // Diagnostic: what each CPU ran across the clock window, from the scheduler's diary.
++    #[cfg(target_os = "toyos")]
++    let mut diary = crate::sys::diag::open().filter(|d| d.has_diary());
++    #[cfg(target_os = "toyos")]
++    if let Some(d) = diary.as_mut() {
++        d.diary();
++    }
++    let from = crate::sys::monotonic_ns();
+     around::ran_during(&format!("{name}.cpu.clock"), clock::distribution);
++    let to = crate::sys::monotonic_ns();
++    #[cfg(target_os = "toyos")]
++    if let Some(d) = diary.as_mut() {
++        window_diary(&format!("{name}.cpu.clock"), d, from, to);
++    }
++    #[cfg(not(target_os = "toyos"))]
++    let _ = (from, to);
+     let t = Instant::now();
+     run();
+     report::group(name, &format!("done secs={}", t.elapsed().as_secs()));
+ }
+ 
++/// Per CPU, the nanoseconds of `from..to` each process ran and the CPU idled,
++/// walked from the diary's picks and idle entries; and the events seen.
++#[cfg(target_os = "toyos")]
++fn window_diary(bench: &str, d: &mut crate::sys::diag::Diag, from: u64, to: u64) {
++    use toyos_trace::Event;
++    let (records, lost, failed) = d.diary();
++    let mut cpus: std::collections::BTreeMap<u16, Vec<(u64, Option<u32>, &'static str)>> = Default::default();
++    for (at, e) in &records {
++        let mark = match e.event {
++            Event::Pick => Some((e.thread.map(|t| t.pid), "pick")),
++            Event::IdleEnter => Some((None, "idle")),
++            _ => None,
++        };
++        if let Some((pid, what)) = mark {
++            cpus.entry(e.cpu).or_default().push((*at, pid, what));
++        }
++    }
++    for (cpu, marks) in cpus {
++        let mut by: std::collections::BTreeMap<String, u64> = Default::default();
++        let mut picks = 0u32;
++        let mut current: Option<(u64, String)> = None;
++        for &(at, pid, what) in marks.iter().chain(std::iter::once(&(to, None, "end"))) {
++            if let Some((since, who)) = current.take() {
++                let span = at.min(to).saturating_sub(since.max(from));
++                if at > from {
++                    *by.entry(who).or_default() += span;
++                }
++            }
++            if what == "pick" && (from..to).contains(&at) {
++                picks += 1;
++            }
++            current = match what {
++                "pick" => Some((at, pid.map_or("kernel".into(), |p| p.to_string()))),
++                "idle" => Some((at, "idle".into())),
++                _ => None,
++            };
++        }
++        let ran: Vec<String> = by.iter().filter(|(_, ns)| **ns > 0).map(|(who, ns)| format!("{who}:{}", ns / 1000)).collect();
++        report::note(
++            &format!("{bench}.diary"),
++            &[("cpu", cpu.to_string()), ("picks", picks.to_string()), ("us", ran.join(",")), ("lost", lost.to_string()), ("failed", failed.clone().unwrap_or_else(|| "no".into()))],
++        );
++    }
++}
++
+ fn main() {
+     let args: Vec<String> = std::env::args().collect();
+     let invoked = args.first().and_then(|a| a.rsplit('/').next()).unwrap_or_default();
