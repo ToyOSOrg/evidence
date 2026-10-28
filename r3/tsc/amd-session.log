@@ -1,0 +1,46 @@
++ grep -o -w 'constant_tsc\|nonstop_tsc\|tsc_reliable\|tsc_known_freq' /proc/cpuinfo
++ sort
++ uniq -c
+     16 constant_tsc
+     16 nonstop_tsc
++ sudo -n dmesg
++ grep -iE 'tsc|hpet|clocksource|MHz processor'
+[    0.000000] tsc: Fast TSC calibration using PIT
+[    0.000000] tsc: Detected 1796.494 MHz processor
+[    0.005618] ACPI: HPET 0x00000000CDFEC000 000038 (v01 LENOVO CB-01    00000001      01000013)
+[    0.005679] ACPI: Reserving HPET table memory at [mem 0xcdfec000-0xcdfec037]
+[    0.036503] ACPI: HPET id: 0x10228210 base: 0xfed00000
+[    0.036557] clocksource: refined-jiffies: mask: 0xffffffff max_cycles: 0xffffffff, max_idle_ns: 1910969940391419 ns
+[    0.107094] clocksource: hpet: mask: 0xffffffff max_cycles: 0xffffffff, max_idle_ns: 133484873504 ns
+[    0.114123] clocksource: tsc-early: mask: 0xffffffffffffffff max_cycles: 0x19e5397e320, max_idle_ns: 440795226971 ns
+[    0.276487] clocksource: jiffies: mask: 0xffffffff max_cycles: 0xffffffff, max_idle_ns: 1911260446275000 ns
+[    0.393184] hpet0: at MMIO 0xfed00000, IRQs 2, 8, 0
+[    0.393193] hpet0: 3 comparators, 32-bit 14.318180 MHz counter
+[    0.395207] clocksource: Switched to clocksource tsc-early
+[    0.405169] clocksource: acpi_pm: mask: 0xffffff max_cycles: 0xffffff, max_idle_ns: 2085701024 ns
+[    0.482990] rtc_cmos 00:01: alarms up to one month, 114 bytes nvram, hpet irqs
+[    1.483740] tsc: Refined TSC clocksource calibration: 1796.617 MHz
+[    1.483793] clocksource: tsc: mask: 0xffffffffffffffff max_cycles: 0x19e5ade6ca6, max_idle_ns: 440795284310 ns
+[    1.484102] clocksource: Switched to clocksource tsc
+[    2.619718] clocksource: timekeeping watchdog on CPU4: Marking clocksource 'tsc' as unstable because the skew is too large:
+[    2.619728] clocksource:                       'hpet' wd_nsec: 502290025 wd_now: 228cbee wd_last: 1bb0ea7 mask: ffffffff
+[    2.619735] clocksource:                       'tsc' cs_nsec: 503988596 cs_now: 40afb74c0 cs_last: 3d50302fa mask: ffffffffffffffff
+[    2.619741] clocksource:                       Clocksource 'tsc' skewed 1698571 ns (1 ms) over watchdog 'hpet' interval of 502290025 ns (502 ms)
+[    2.624878] clocksource:                       'tsc' is current clocksource.
+[    2.624892] tsc: Marking TSC unstable due to clocksource watchdog
+[    2.624920] TSC found unstable after boot, most likely due to broken BIOS. Use 'tsc=unstable'.
+[    2.631253] clocksource: Checking clocksource tsc synchronization from CPU 15 to CPUs 0,4-6,11-12.
+[    2.633791] clocksource: Switched to clocksource hpet
+[    4.339667] kvm_amd: TSC scaling supported
+hpet
++ cat /sys/devices/system/clocksource/clocksource0/current_clocksource
++ osb/tsc-drift 600
++ echo acpi_pm
++ sudo -n tee /sys/devices/system/clocksource/clocksource0/current_clocksource
+acpi_pm
++ osb/tsc-drift 300
++ echo hpet
++ sudo -n tee /sys/devices/system/clocksource/clocksource0/current_clocksource
+hpet
+hpet
++ cat /sys/devices/system/clocksource/clocksource0/current_clocksource

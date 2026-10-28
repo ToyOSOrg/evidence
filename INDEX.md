@@ -21,3 +21,15 @@
   - `t14-mounted.log`: the mount line substituted, exit 0, PASS.
   - `t14-formatting.log`: the format line substituted, exit 1, refused as the format boot with its duration. The substitution's lines share one timestamp, so it reads 0.000 s.
 - `tsc/amd-dmesg-clocksource.txt`: the AMD bench's Linux watchdog, UUIDs masked. Derived from it: 905,474,502 TSC cycles over 502,290,025 ns of HPET, which is 1802.69 MHz. Linux's conversion assumed 1796.62 MHz, and ToyOS's calibration against the same HPET reads 1796.52 MHz (kernel.log, 2026-10-24), about 3400 ppm apart. `tsc-drift.rs` is the requested measurement, scratch evidence code with no repository home; its binary's sha256 is in `SHA256SUMS`.
+
+## r3 (branch head 2eb28ee65): the split, review r1, and the AMD TSC
+
+- `checks/ci-host-1d23f49ea.log` (the merge of main at b0164b262) and `checks/ci-host-2eb28ee65.log`: `cargo run -- --ci host`, exit 0, 104 steps green each. Between the two, only Markdown changed.
+- `checks/qemu-osbench-capability-groups-1d23f49ea.log`: `cargo test --test toyos-build -- osbench_capability_groups_exit_0`, exit 0. It runs `osbench identity` and `osbench fair` (renamed groupings, the ToyOS Job path) on QEMU x86-64 under ToyOS.
+- `checks/linux-build-2eb28ee65.log`, `linux-osbench-SHA256SUMS`: the Linux half at 2eb28ee65, exit 0.
+- `checks/stage-*.log`: `--metal-readback` of the `osbench` row at 2eb28ee65 for the T14 and the AMD, exit 2, staged. Image sha256: T14 c3982639b4c6f815ed42d6512d863f8dc18fea2551bfaf32de3d2464d0ed9dc4, AMD fb9767152834acc815f684d41faa3f4731edf93ff3dc4ca85550cd8c222c2257.
+- `controls/`: m5 (media never differ) and m6 (settled clocks never apart). Each was applied, built, tested and reverted in one run (`run3.sh`, `run3.log`), and each turned its test red, exit 101.
+- `judge/`: the `osbench` row at 2eb28ee65 on the substituted 2026-10-24 T14 logs. Memory DATA: exit 0, PASS. Mounted: exit 0, PASS. Formatting: exit 1, refused as the format boot. No ordinary boot goes red.
+- `followup/`: `data-on-the-nvme.patch`, which waits for ToyOS-native designation. `check.sh` and `check.log` applied it at 2eb28ee65, checked both Linux targets (exit 0) and the compare tests (exit 0), and judged the three logs: memory refused (exit 1), mounted PASS (exit 0), formatting refused (exit 1). Then it was reverted, leaving the tree clean.
+- `stamp/`: the orchestrator's `--designate-data` run on the AMD at ba76f730a, dry and write, before the tool was removed. UUIDs masked.
+- `tsc/`: the AMD's `tsc-drift` runs (2026-10-28) and its session log, masked: 1796.6248 MHz against the HPET over 601 s and against the ACPI PM timer over 300 s, in every phase. `toyos-calibrations.txt` holds ToyOS's own 50 ms calibrations in the session's boot logs, by count of log files, some of them copies of one boot. `tsc-probe.rs` and `SHA256SUMS` are the next measurement's (cross-core warp, and steps after idle gaps).
