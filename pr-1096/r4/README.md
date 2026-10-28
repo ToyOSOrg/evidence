@@ -2,7 +2,7 @@
 
 The orchestrator ran the images staged at 7a77fa390 (`../r3/metal-request.txt`) on the AMD bench through #1095's NVMe runner, pinned at 7bfbea26d. `testcases` and `testcases-watchdog` exited 0. `watchdogwedge` exited 1 only because that runner's loop verdict predates this PR's round-2 rule (`watchdogwedge-flasher-verdict.txt`).
 
-The rebase changes no ToyOS code this PR touches; the boots' loader and kernel are 7a77fa390's, and ce75c008c only narrows a doc comment in `lib/tco/src/fch.rs`. The rebase moved the `rust` pin, and this worktree's fork checkout was moved to it with the command the build named (`git -C rust checkout --detach 8004d62da`; the old head is an ancestor and the checkout was clean).
+Correction to this file's first version: main's commits between this PR's old base and 370d7d9f6 touch eight files this PR also changes. Those are `loader/src/main.rs` (#1095's panic-reset choice at the loader's entry, 16 lines independent of the watchdog path), the metal harness files and two issue files. The rebase applied without conflict. The boots ran 7a77fa390's images, built before the rebase. The judge, host checks and builds ran at the rebased head; ce75c008c itself only narrows a doc comment in `lib/tco/src/fch.rs`. The rebase moved the `rust` pin, and this worktree's fork checkout was moved to it with the command the build named (`git -C rust checkout --detach 8004d62da`; the old head is an ancestor and the checkout was clean).
 
 | file | command | exit |
 |---|---|---|
