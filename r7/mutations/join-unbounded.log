@@ -1,0 +1,42 @@
+   Compiling osbench-rules v0.1.0 (<worktree>/tests/guest/osbench/rules)
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.44s
+     Running unittests src/lib.rs (target/debug/deps/osbench_rules-4ccac8656243f952)
+
+running 19 tests
+test energy::tests::a_counter_that_did_not_wrap_spans_the_difference ... ok
+test energy::tests::a_wrap_counts_the_steps_to_the_range_and_on_from_zero ... ok
+test energy::tests::a_reading_past_the_range_is_refused ... ok
+test heat::tests::a_sensor_without_one_takes_the_vendors_figure_for_the_model ... ok
+test heat::tests::an_implausible_critical_temperature_is_not_a_tjmax ... ok
+test heat::tests::an_unknown_cpu_stops_at_the_assumed_limit ... ok
+test heat::tests::cooled_is_within_the_slack_of_the_start ... ok
+test heat::tests::the_sensors_tjmax_comes_first ... ok
+test pair::tests::a_pair_apart_and_still_stands ... ok
+test pair::tests::a_pair_on_one_cpu_is_refused ... ok
+test pair::tests::a_sibling_that_moved_elsewhere_is_refused ... ok
+test pair::tests::a_sibling_that_moved_onto_the_initiators_cpu_inside_the_window_is_refused ... ok
+test pair::tests::an_initiator_that_moved_is_refused_even_when_it_stayed_apart ... ok
+test window::tests::a_stale_or_unstamped_reading_is_refused ... ok
+test window::tests::a_window_inside_the_row_by_less_than_its_reads_stands ... ok
+test window::tests::a_window_shorter_than_the_row_less_its_reads_is_refused ... ok
+test window::tests::a_before_served_from_a_joined_round_stands_within_the_join ... FAILED
+test window::tests::one_reading_served_twice_is_refused ... ok
+test window::tests::residency_is_a_fraction_of_the_window_and_the_pair_a_ratio ... ok
+
+failures:
+
+---- window::tests::a_before_served_from_a_joined_round_stands_within_the_join stdout ----
+
+thread 'window::tests::a_before_served_from_a_joined_round_stands_within_the_join' (77352541) panicked at tests/guest/osbench/rules/src/lib.rs:362:13:
+assertion `left == right` failed
+  left: Ok((2020000002, 1010000001))
+ right: Err(NotTheRow { window_ns: 1010000001, row_ns: 1000000000, reads_ns: 200000 })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    window::tests::a_before_served_from_a_joined_round_stands_within_the_join
+
+test result: FAILED. 18 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p osbench-rules --lib`
