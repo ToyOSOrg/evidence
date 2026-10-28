@@ -12,3 +12,8 @@ r1/host/  At ToyOS 94e3ee70d (B's code; head 13d4af819 differs only in issues/ a
   controls/summary.txt             twelve negative controls: each patch applied, `cargo test --no-fail-fast` in
                                    system/netstack/shard/tcp, reverted; exit and the failing tests per control
 Paths are masked as <worktree>, <primary>, <scratch>, <home>.
+
+r2/ab/  #1102's A/B (T14, osbench_lan, 2026-10-28). Order: Linux L1, a1 b1 a2 b2 a3 b3, Linux L2; every boot rc=0, every judge exit 0.
+  A = f895223a2 (the instrument; the fix reverted), B = 94e3ee70d (the fix). Images: image-sha256.txt. Peer and T14 Linux from
+  linux-94e3ee70d.SHA256SUMS (osbench-lan/3).
+  session/t14-linux-{1,2}.{txt,err}, toyos/<arm>.{txt,verdict.txt,judge.log} as in r1.
