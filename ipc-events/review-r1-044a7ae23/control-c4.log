@@ -1,0 +1,84 @@
+control c4 (watch the rung while a connect is unanswered) on 20e0c546c23c1a891064f9cc56122b0038d1c6bb + review fixes, two-child test
+ system/netstack/src/serve.rs | 25 ++++++++++++++++---------
+ 1 file changed, 16 insertions(+), 9 deletions(-)
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.25s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-040be7639b65fd4e)
+
+23:41:25 running 1 tests, 12 wide
+
+23:41:25   RUN   a_client_killed_mid_connect_gives_its_place_back
+23:41:25   BUILD x86_64 netstack_connect_killed (toyos) of tests/guest/rust-tests, for a_client_killed_mid_connect_gives_its_place_back
+23:41:27   BUILT x86_64 netstack_connect_killed (toyos) of tests/guest/rust-tests, for a_client_killed_mid_connect_gives_its_place_back  (2s)
+23:41:27   BUILD x86_64 kernel, loader, ROOT of tests/images/netcase.toml, for a_client_killed_mid_connect_gives_its_place_back
+23:41:30 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+23:41:30   BUILT x86_64 kernel, loader, ROOT of tests/images/netcase.toml, for a_client_killed_mid_connect_gives_its_place_back  (3s)
+23:41:54 FAIL a_client_killed_mid_connect_gives_its_place_back: the job ended Some(101):
+netstack: DHCP: lease 10.0.2.15/24 from 10.0.2.2, gateway 10.0.2.2, dns [10.0.2.3], 220 ms after netstack came up
+netstack: ready, at most 42 places (12 MiB each of 4051 MiB total)
+netstack: mDNS: no host answered for toyos-t14.local; this machine answers as it
+netstack: a connect ended Unreachable(Unreachable(Host))
+netstack: a stream's client left before its answer: Syscall(Gone)
+netstack: a connect ended Unreachable(Unreachable(Host))
+
+thread 'main' (1) panicked at src/bin/netstack_connect_killed.rs:40:13:
+a connect to 10.0.2.77:80 answered Err(Custom { kind: Other, error: "netstack error" })
+stack backtrace:
+   0:           0x28a5a0 - _Unwind_Backtrace
+   1:           0x25dd93 - <<std[de96a2109eedd948]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[73b405bef30eeff1]::fmt::Display>::fmt
+   2:           0x28ef37 - core[73b405bef30eeff1]::fmt::write
+   3:           0x2620db - <std[de96a2109eedd948]::sys::stdio::toyos::Stderr as core[73b405bef30eeff1]::io::write::Write>::write_fmt
+   4:           0x241223 - std[de96a2109eedd948]::panicking::default_hook::{closure#0}
+   5:           0x25a90e - std[de96a2109eedd948]::panicking::default_hook
+   6:           0x25aac9 - std[de96a2109eedd948]::panicking::panic_with_hook
+   7:           0x2412dd - std[de96a2109eedd948]::panicking::panic_handler::{closure#0}
+   8:           0x2391f9 - std[de96a2109eedd948]::sys::backtrace::__rust_end_short_backtrace::<std[de96a2109eedd948]::panicking::panic_handler::{closure#0}, !>
+   9:           0x2419e8 - __rustc[d0c72ce299f394e5]::rust_begin_unwind
+  10:           0x28f65b - core[73b405bef30eeff1]::panicking::panic_fmt
+  11:           0x226a68 - netstack_connect_killed[3d2ede64f7212dd9]::main
+  12:           0x225f56 - std[de96a2109eedd948]::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  13:           0x228020 - std[de96a2109eedd948]::rt::lang_start::<()>::{closure#0}
+  14:           0x259db6 - std[de96a2109eedd948]::rt::lang_start_internal
+  15:           0x227311 - main
+  16:           0x25bd33 - std[de96a2109eedd948]::sys::pal::toyos::start_rust
+  17:           0x22cc06 - _start
+
+thread 'main' (1) panicked at src/bin/netstack_connect_killed.rs:78:9:
+the killed child's place came back not within 20s: netstack holds Some(U64(0)) place(s)
+stack backtrace:
+   0:           0x28a5a0 - _Unwind_Backtrace
+   1:           0x25dd93 - <<std[de96a2109eedd948]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[73b405bef30eeff1]::fmt::Display>::fmt
+   2:           0x28ef37 - core[73b405bef30eeff1]::fmt::write
+   3:           0x2620db - <std[de96a2109eedd948]::sys::stdio::toyos::Stderr as core[73b405bef30eeff1]::io::write::Write>::write_fmt
+   4:           0x241223 - std[de96a2109eedd948]::panicking::default_hook::{closure#0}
+   5:           0x25a90e - std[de96a2109eedd948]::panicking::default_hook
+   6:           0x25aac9 - std[de96a2109eedd948]::panicking::panic_with_hook
+   7:           0x2412dd - std[de96a2109eedd948]::panicking::panic_handler::{closure#0}
+   8:           0x2391f9 - std[de96a2109eedd948]::sys::backtrace::__rust_end_short_backtrace::<std[de96a2109eedd948]::panicking::panic_handler::{closure#0}, !>
+   9:           0x2419e8 - __rustc[d0c72ce299f394e5]::rust_begin_unwind
+  10:           0x28f65b - core[73b405bef30eeff1]::panicking::panic_fmt
+  11:           0x228b34 - netstack_connect_killed[3d2ede64f7212dd9]::until::<netstack_connect_killed[3d2ede64f7212dd9]::test::{closure#3}>
+  12:           0x22676e - netstack_connect_killed[3d2ede64f7212dd9]::main
+  13:           0x225f56 - std[de96a2109eedd948]::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  14:           0x228020 - std[de96a2109eedd948]::rt::lang_start::<()>::{closure#0}
+  15:           0x259db6 - std[de96a2109eedd948]::rt::lang_start_internal
+  16:           0x227311 - main
+  17:           0x25bd33 - std[de96a2109eedd948]::sys::pal::toyos::start_rust
+  18:           0x22cc06 - _start
+
+23:41:54   FAIL  a_client_killed_mid_connect_gives_its_place_back  (24s)
+23:41:54   --- 1 guests, 0 of them not the shipping kernel, 1 kernel build(s): [""]
+
+23:41:54 host: fastest boot 3875 ms against the reference 1424 ms — liveness ceilings paid at 2.72x
+23:41:54 host: 14 core(s); a guest wider than that waits vcpus/cores longer again
+23:41:54 failures:
+23:41:54     a_client_killed_mid_connect_gives_its_place_back: the job ended Some(101):
+
+23:41:54 test result: FAILED. 0 passed, 1 failed, 0 invalidated, 1 total (29.3s; workers: 5s building, 24s testing)
+23:41:54 [toyos] this red run's serial logs are kept at $WORKTREE/target/red-run-serial/toyos-tmp-76732-0
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `$WORKTREE/target/debug/deps/toyos_build-040be7639b65fd4e a_client_killed_mid_connect_gives_its_place_back` (exit status: 1)
+exit=1
+netstack built 00:41:30
+restored
