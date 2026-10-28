@@ -1,0 +1,15 @@
+3498a3499,3512
+>     }
+> }
+> 
+> #[cfg(test)]
+> mod rejudge_once {
+>     #[test]
+>     fn rejudge_watchdogwedge() {
+>         let dir = std::path::Path::new("<home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/amd-wdt/rejudge-r3/watchdogwedge");
+>         let armed = toyos_build::image::params_of(&dir.join("image.img")).expect("params");
+>         let loader = std::fs::read_to_string(dir.join(super::READBACK_LOADER)).unwrap();
+>         let log = std::fs::read_to_string(dir.join(super::READBACK_KERNEL)).unwrap();
+>         let verdict = super::boot_verdict(&armed, &loader, &log);
+>         eprintln!("armed {armed:?}\nverdict {verdict:?}");
+>         std::fs::write(dir.join(super::READBACK_VERDICT), super::verdict_file(verdict.as_ref().err())).unwrap();
