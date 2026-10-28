@@ -21,4 +21,4 @@
   - `persist.write_4k_fsync`: 2,906,019 ns against 3,568,240 and 3,012,576.
   - `persist.seq_write_fsync`: 337 MB/s against 506 and 520.
   - `fs.disk.read_4k_at`: 16,903 ns against 2,375 and 1,463.
-  - The same ToyOS rows on 2026-10-24's in-memory DATA (`fs.served.*`, `pr-1079`'s full-final run) read `read_4k_at` 16,822, `stat` 10,450, `rename` 58,002 ns, against 16,903, 10,530 and 59,154 here. So the file server's round trip, not the NVMe, sets them.
+  - The same ToyOS rows on 2026-10-24's in-memory DATA (`fs.served.*`, the orchestrator's full-final session, `compare-2026-10-24-full-final.md` here) read `read_4k_at` 16,822, `stat` 10,450, `rename` 58,002 ns, against 16,903, 10,530 and 59,154 here. So the file server's round trip, not the NVMe, sets them.
