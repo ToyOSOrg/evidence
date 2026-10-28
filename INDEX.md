@@ -79,3 +79,14 @@ Masking: boot IDs, MAC and IPv4 addresses, partition GUIDs and the shell's trace
 - Every group reads `clocksource=hpet`, and `time.now` p50 is 1,211,480 ps: each timestamp costs the HPET read's 1.21 µs.
 - `mhz_settled` over all 85 lines is 4186 to 4312 MHz, median 4236, 0.1% from ToyOS's 4241 in r7, with 0 unsettled. Under the old probe, a6a4c60d8 read 4044 on the HPET. So the two-chain difference cancels a 1.21 µs read on metal.
 - `cpu.chunk` p50 is 4330 ns there, against 2936 ns for ToyOS: that row times each chunk with two timestamps, which the HPET makes 2.4 µs dearer. It is the clocksource's cost to a per-operation row, as the README says, not the probe's.
+
+## r9: the T14 run at fa7258221
+
+- `t14-fa7258221/`: the orchestrator's run, Linux, ToyOS, Linux, all rc=0, judge exit 0. `compare.md` exits 0 over 176 rows: 6 media differ, 4 unsettled, 1 fell, 2 apart. Linux per run: `clocksource=tsc,tsc`.
+- ToyOS settled at 4188 MHz in all 92 rows, none unsettled. Linux's medians are 4189 in both runs.
+- L1's four unsettled rows, and why 3% stays right:
+  - `mem.munmap_touched_remote.4k` (unsettled before: 3791, after 4189). Its settle runs while the sibling spins on another core. The T14's two turbo bins are 3.79 and 4.19 GHz, the 9.5% step `osbench_rules::settle` pins. A third core intermittently active flips them (an inference). L2's same row settled at 4189.
+  - `crunch.all.{deflate,sha256,matmul}` (unsettled after). These follow 8-thread slices at 64 °C, so not hot: the clock fell between rows (3891, then 3392) and read 1.8 to 1.9 GHz just after each. That is a package power limit recovering through the settle. In L2 the package reached 87 °C, and the phase stopped for heat before a settle could cap.
+- `crunch.single.matmul` fell in L1, 4190 to 3592 at 71 °C after 4 s of one-thread load.
+- `mem.malloc_churn.{1048576,4096}.t8` are flagged "settled clocks apart": Linux 3641 to 3690 against ToyOS's 4188. The likely cause is a lower turbo bin with more cores active around an eight-thread row, an inference.
+- So each mark is a real change of the clock's state, which the marks exist to show, and none is the reading's noise.
