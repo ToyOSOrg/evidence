@@ -181,7 +181,7 @@ Neither boot was a lone outlier: the slow mode recurs. ToyOS's `persist` rows ac
 | scoreboard r3 (17:39) | 0.50 ms | 1.08 ms | 1.04 ms | **7.10 ms** | 167 MB/s |
 | scoreboard r4 (17:48) | 0.58 ms | 1.08 ms | 1.09 ms | 1.23 ms | 311 MB/s |
 
-Linux's are 0.81 to 1.20 ms for the durable writes in every run. Two of five boots ran slow throughout `persist`, and a third (r3) turned slow partway, between `append_4k_fsync` and `create_fsync_unlink`. The boot logs' NVMe and DATA lines do not tell the slow boots apart. The cause is unknown; `issues/toyos-durable-writes-on-the-t14s-nvme-took-1-to-6-ms-across-two-boots.md` is to carry this.
+Linux's are 0.81 to 1.20 ms for the durable writes in every run. Two of five boots ran slow throughout `persist`, and a third (r3) turned slow partway, between `append_4k_fsync` and `create_fsync_unlink`. The boot logs' NVMe and DATA lines do not tell the slow boots apart. The cause is unknown. `issues/toyos-durable-writes-on-the-t14s-nvme-run-six-times-slower-in-some-boots.md` (PR #1097, 61baeec07) carries this table.
 
 
 ## Files
