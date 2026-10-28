@@ -68,3 +68,18 @@ Measurement branch `igpu-fault-measure` at e3b1562e7 (never lands), booted 3 tim
 - **When:** faults land 546 to 598 µs after translation comes back on (a few at about 1.23 ms).
 - **Odds:** the probability that the 22 faulted cycles all fall in the off-on phase by chance, with 600 cycles in each phase, is about 2^-22.
 - **Errata:** no documented erratum covers this (r2/errata).
+
+## r3: protected-memory hand-over, PR head 902bffb40
+
+| file | command | revision | exit |
+|---|---|---|---|
+| r3/ci-host.log | `cargo run -- --ci host` | before two kernel-binary fixes (a self-deadlock and the dead `invalidate_all`) | 1: the one red step is kernel clippy on that dead code; the FAILED lines are the loom controls, which must fail |
+| r3/ci-host-lint.log | `cargo run -- --ci host lint` | tree of 902bffb40 | 0 |
+| r3/dmaguard-host.log | `cargo test -p kernel --lib dmaguard` | tree of 902bffb40 | 0 |
+| r3/dmaguard-host-arm-removed.log | the same with r3/dmaguard-arm-removed.patch applied, restored after | mutation | 101 (expected red) |
+| r3/qemu-iommu_virtio_platform-deadlock.log | `iommu_virtio_platform` before the deadlock fix | tree before 902bffb40 | 1: the shipping kernel hung, `translate` taking `TABLES` twice when it built the identity domain |
+| r3/qemu-vtd_firmware_left-and-iommu_virtio_platform.log | both, after the fix | tree of 902bffb40 | 0 |
+| r3/qemu-claims.log | `hda_plays_to_the_controller_that_reaches_an_output a_drives_row_holds_one_process_per_function` | tree of 902bffb40 | 0 |
+| r3/metal-prepare.log | `--metal --metal-readback <dir> boot:shared-debug boot:testcases` (staging) | 902bffb40 | 2 (staged) |
+
+The third cycles boot's log partition, recovered later, agrees with its run log: off-on 7 of 200 with 38 records, switch 0 of 200.

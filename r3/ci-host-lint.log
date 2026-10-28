@@ -1,0 +1,102 @@
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.45s
+     Running `target/debug/toyos-build --ci host lint`
+
+12:42:14 === [ci] the change's scope
+12:42:14 [ci] the change's scope: not a merge group, so everything
+
+12:42:14 === [ci] the licences of what ships
+12:42:15   NOTICE section tests/corpus/tinycc/ (LGPL-2.1-or-later AND BSD-3-Clause AND (MIT OR Apache-2.0)) is not shipped
+12:42:15   NOTICE section "Rust crates and the forks" names no files: every crate, fork or not, is judged by the crate half of this gate
+12:42:15   NOTICE section "licenses/CDLA-Permissive-2.0-webpki-root-certs.txt — the Mozilla roots, CDLA-Permissive-2.0" names no files: the roots the build writes out of a crate are judged, with this text beside them, by `judge_trust_roots`
+12:42:15   crate fortanix-sgx-abi 0.6.1 (registry+https://github.com/rust-lang/crates.io-index) is MPL-2.0, via std → fortanix-sgx-abi [x86_64-fortanix-unknown-sgx]
+12:42:15   crate doom 0.1.0 ($WORKTREE/apps/doom/Cargo.toml) is "GPL-2.0-only": not allowed: GPL-2.0-only; pulled in by doom
+    EXCEPTED, pending the owner, issues/a-package-is-a-directory-under-apps-and-the-installer-is-a-program.md: /system/bin/doom links doomgeneric, id's Doom source by way of Chocolate Doom (NOTICE); it leaves the image as a package at the stage where the apps leave this repository
+12:42:15   crate windows-sys 0.61.100 ($WORKTREE/rust/library/windows-sys/Cargo.toml) is "": declares no licence; pulled in by std → dlmalloc [cfg(any(all(target_family = "wasm", not(any(unix, target_os = "wasi"))), target_os = "xous", target_os = "vexos", target_os = "toyos", all(target_vendor = "fortanix", target_env = "sgx")))] → windows-sys [cfg(target_os = "windows")]
+    EXCEPTED, reached only under cfg(target_os = "windows"): std's empty in-tree stand-in for windows-sys, which declares no licence
+12:42:15   crate windows-link 0.0.0 ($WORKTREE/rust/library/windows_link/Cargo.toml) is "": declares no licence; pulled in by std → windows-link [cfg(any(windows, target_os = "cygwin"))]
+    EXCEPTED, reached only under cfg(any(windows, target_os = "cygwin")): std's in-tree stand-in for windows-link, which declares no licence
+12:42:15   file assets/DOOM1.WAD is "LicenseRef-id-Software-DOOM1-Shareware": not allowed: LicenseRef-id-Software-DOOM1-Shareware; pulled in by COMMITTED_FILES
+    EXCEPTED, pending the owner, issues/a-package-is-a-directory-under-apps-and-the-installer-is-a-program.md: id's shareware terms: redistributable unmodified and not for consideration, so an image carrying it may not be sold (NOTICE); it leaves with doom
+12:42:15   file assets/soundfont.sf2 is "LicenseRef-GeneralUser-GS-2.0": not allowed: LicenseRef-GeneralUser-GS-2.0; pulled in by COMMITTED_FILES
+    EXCEPTED, pending the owner, issues/a-package-is-a-directory-under-apps-and-the-installer-is-a-program.md: GeneralUser GS's own permissive licence, no standard one, with its author's caveat on where the samples came from (NOTICE); doom alone opens it, and it leaves with doom
+12:42:15   NOTICE section apps/doom is "GPL-2.0-or-later": not allowed: GPL-2.0-or-later; pulled in by NOTICE
+    EXCEPTED, pending the owner, issues/a-package-is-a-directory-under-apps-and-the-installer-is-a-program.md: doomgeneric, the C half of the doom crate, fetched at build time and compiled into it; it leaves with doom
+12:42:15 [ci] the licences of what ships: 6 exception(s) stand, and nothing else is refused
+
+12:42:15 === [ci] clippy and its targets
+info: component clippy is up to date
+info: component rust-std for target x86_64-unknown-none is up to date
+info: component rust-std for target x86_64-unknown-uefi is up to date
+info: component rust-std for target aarch64-unknown-none-softfloat is up to date
+info: component rust-std for target aarch64-unknown-uefi is up to date
+info: component rust-std for target x86_64-unknown-linux-musl is up to date
+info: component rust-std for target aarch64-unknown-linux-musl is up to date
+12:42:15 [ci] clippy and its targets: installed
+
+12:42:15 === [ci] clippy, warnings denied
+12:42:15 === clippy: cargo clippy --workspace $GUESTS --all-targets --keep-going -- $ADOPTED -D warnings
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.53s
+12:42:16 === clippy: cargo clippy --workspace $GUESTS --all-targets --keep-going --features $CONTROLS -- $ADOPTED -D warnings
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.23s
+12:42:16 === clippy: cargo clippy -p kernel --lib --tests --features sched-check -- $ADOPTED -D warnings
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.09s
+12:42:16 === clippy: cargo clippy -p kernel --lib --tests --features sched-check,protocol-port --features $KERNEL_CONTROLS -- $ADOPTED -D warnings
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.08s
+12:42:16 === clippy: cargo clippy -p kernel --target x86_64-unknown-none -- $ADOPTED -D warnings
+    Checking kernel v0.1.0 ($WORKTREE/kernel)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 1.42s
+12:42:18 === clippy: cargo clippy -p kernel --target x86_64-unknown-none --features boot-actuators,test-actuators -- $ADOPTED -D warnings
+    Checking kernel v0.1.0 ($WORKTREE/kernel)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.99s
+12:42:19 === clippy: cargo clippy -p kernel --target x86_64-unknown-none --features boot-actuators -- $ADOPTED -D warnings
+    Checking kernel v0.1.0 ($WORKTREE/kernel)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.95s
+12:42:20 === clippy: cargo clippy -p kernel --target x86_64-unknown-none --features debug-wait,sched-check,sched-tripwire,heap-tripwire,heap-sweep,pass-spin,stack-witness,switch-witness,switch-witness-mutate-frame,switch-witness-mutate-rsp,df-witness,df-witness-mutate,entry-df-unclean,mask-windows -- $ADOPTED -D warnings
+    Checking kernel v0.1.0 ($WORKTREE/kernel)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.94s
+12:42:21 === clippy: cargo clippy -p kernel --target x86_64-unknown-none --features heap-band-notail,heap-lockspin -- $ADOPTED -D warnings
+    Checking kernel v0.1.0 ($WORKTREE/kernel)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.95s
+12:42:22 === clippy: cargo clippy -p kernel --target x86_64-unknown-none --features heap-band-nohead -- $ADOPTED -D warnings
+    Checking kernel v0.1.0 ($WORKTREE/kernel)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.96s
+12:42:23 === clippy: cargo clippy -p kernel --target aarch64-unknown-none-softfloat -- $ADOPTED -D warnings
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.13s
+12:42:23 === clippy: cargo clippy -p kernel --target aarch64-unknown-none-softfloat --features boot-actuators,test-actuators -- $ADOPTED -D warnings
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.09s
+12:42:23 === clippy: cargo clippy -p kernel --target aarch64-unknown-none-softfloat --features boot-actuators -- $ADOPTED -D warnings
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.09s
+12:42:24 === clippy: cargo clippy -p kernel --target aarch64-unknown-none-softfloat --features debug-wait,sched-check,sched-tripwire,heap-tripwire,heap-sweep,pass-spin,stack-witness,switch-witness,switch-witness-mutate-frame,switch-witness-mutate-rsp,mask-windows -- $ADOPTED -D warnings
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.09s
+12:42:24 === clippy: cargo clippy -p bootloader --target x86_64-unknown-uefi -- $ADOPTED -W clippy::undocumented_unsafe_blocks -D warnings
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.11s
+12:42:24 === clippy: cargo clippy -p bootloader --target aarch64-unknown-uefi -- $ADOPTED -W clippy::undocumented_unsafe_blocks -D warnings
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.11s
+12:42:24 === clippy: cargo clippy -p toyos-crypto --all-targets --features std,sign,wpa2,rustls-provider -- $ADOPTED -D warnings
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.14s
+12:42:24 === clippy: cargo clippy -p toyos-crypto --all-targets --all-features -- $ADOPTED -D warnings
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.11s
+12:42:24 === clippy: cargo clippy -p toyos-crypto --all-targets -- $ADOPTED -D warnings
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.12s
+12:42:25 === clippy: cargo clippy -p toyos-pci-claim --all-targets --features host-grant --no-deps --target-dir target/clippy-pci-claim -- $ADOPTED -D warnings
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.08s
+12:42:25 === clippy: cargo clippy -p kernel-loom --test loom_mailbox --features victim-retires-mid-probe -- $ADOPTED -D warnings
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.08s
+12:42:25 === clippy: cargo clippy -p toyos-font --no-default-features --all-targets --target-dir target/clippy-font -- $ADOPTED -D warnings
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.08s
+12:42:25 === clippy: cargo clippy -p toyos --all-targets -- $ADOPTED -D warnings
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.09s
+12:42:25 === clippy: cargo clippy -p toyos --lib --features fd-table -- $ADOPTED -D warnings
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.08s
+12:42:25 === clippy: cargo clippy -p osbench --target x86_64-unknown-linux-musl -- $ADOPTED -D warnings
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.13s
+12:42:26 === clippy: cargo clippy -p osbench --target aarch64-unknown-linux-musl -- $ADOPTED -D warnings
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.13s
+12:42:26 === clippy: cargo clippy -p toyos-abi --all-targets --keep-going --target-dir target/clippy-abi -- -W clippy::undocumented_unsafe_blocks -D warnings
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.08s
+12:42:26 [ci] clippy, warnings denied: clean
+
+12:42:26 === [ci] nothing left in $TMPDIR or /tmp
+12:42:26 [ci] nothing left in $TMPDIR or /tmp: every test took its scratch with it
+12:42:26 [ci] Host(Some(Lint)): 5 step(s), all green
+exit=0
