@@ -1,0 +1,42 @@
+## HEAD b6a717df8013109f38505d003722ff2b054c2abe, git status --porcelain: ''
+--- a/sdk/toyos/src/net/socket.rs	2026-10-28 10:25:04
++++ b/sdk/toyos/src/net/socket.rs	2026-10-28 10:25:04
+@@ -282,7 +282,7 @@
+     loop {
+         if let Some(answer) = bell.look_now(|rung| rung.then(|| ask(Drain(&drain)))) {
+             match answer {
+-                Err(NetError::WouldBlock) => {}
++                Err(NetError::WouldBlock) => bell.drain(),
+                 answer => return answer,
+             }
+         }
+## applied
+   Compiling toyos v0.18.0 (<dev>/toyos-socket-wake/sdk/toyos)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.16s
+     Running unittests src/lib.rs (<dev>/toyos-socket-wake/target/debug/deps/toyos-757a17a5e3c64085)
+
+running 4 tests
+test net::socket::tests::a_kind_is_its_word_and_no_other_word_is_one ... ok
+test net::socket::tests::what_no_datagram_carries_is_refused_both_ways ... ok
+test net::socket::tests::a_datagram_is_one_frame_read_back_whole ... ok
+test net::socket::tests::the_holder_that_found_nothing_takes_the_next_arrival ... FAILED
+
+failures:
+
+---- net::socket::tests::the_holder_that_found_nothing_takes_the_next_arrival stdout ----
+
+thread 'net::socket::tests::the_holder_that_found_nothing_takes_the_next_arrival' (83249674) panicked at sdk/toyos/src/net/socket.rs:677:21:
+holder 1 waits for good with [2] queued
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    net::socket::tests::the_holder_that_found_nothing_takes_the_next_arrival
+
+test result: FAILED. 3 passed; 1 failed; 0 ignored; 0 measured; 141 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--lib`
+mutated exit 101
+## restored
+## identical to the unmutated file
+## after: git status --porcelain: ''

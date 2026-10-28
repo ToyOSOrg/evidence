@@ -1,0 +1,24 @@
+## r2 drain-after-ask control's unmutated socket.rs against 9a26dea93
+--- <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/socket-wake/r2-head-socket.rs	2026-10-28 10:15:53
++++ <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/socket-wake/mut/a/sdk/toyos/src/net/socket.rs	2026-10-28 09:52:49
+@@ -216,12 +216,14 @@
+     answered
+ }
+ 
+-/// One request's leave to read the bell. Only the [`Drained`] it is spent for sends an accept or
+-/// a receive, so the bell is read once, before the request goes. Spend it after every step that
+-/// can fail, so a call refused before its request leaves the ring in the bell.
++/// One look's leave to read the bell, spent once: what an accept's or a receive's request is
++/// sent with ([`Drained`]), so a request goes only after its bell was read, and the bell is not
++/// read again after it.
+ pub(super) struct Drain<'a>(&'a dyn Fn());
+ 
+ impl Drain<'_> {
++    /// Reads the bell empty. Call it after every step of the request that can fail, so a call
++    /// refused before its request leaves the ring in the bell.
+     pub(super) fn now(self) -> Drained {
+         (self.0)();
+         Drained(())
+diff exit 1
+## r2 rearm-only-on-take control's unmutated datagram.rs against 9a26dea93
+diff exit 0

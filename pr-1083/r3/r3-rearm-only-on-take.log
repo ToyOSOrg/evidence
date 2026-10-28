@@ -1,0 +1,50 @@
+## HEAD b6a717df8013109f38505d003722ff2b054c2abe, git status --porcelain: ''
+--- a/system/netstack/node/src/datagram.rs	2026-10-28 10:25:06
++++ b/system/netstack/node/src/datagram.rs	2026-10-28 10:25:06
+@@ -202,11 +202,14 @@
+     /// `holder`'s receive: the oldest datagram that reached the socket, in `out`, or `None` when
+     /// none waits. One longer than `out` is cut to it and the rest is gone, as [udp] counts.
+     pub fn udp_recv_from(&mut self, id: DatagramId, holder: HolderId, out: &mut [u8]) -> Result<Option<Datagram>, Refused> {
+-        if !self.datagrams.get_mut(&id).is_some_and(|holders| holders.asked(holder)) {
++        if !self.datagrams.get_mut(&id).is_some_and(|holders| holders.holds(holder)) {
+             return Err(Refused::NotConnected);
+         }
+         // Told whatever it answers: a pending error answered leaves the datagrams behind it.
+         let received = self.stack.recv_from(id.0, out);
++        if matches!(received, Ok(Some(_))) {
++            self.datagrams.get_mut(&id).map(|holders| holders.asked(holder));
++        }
+         self.tell_datagram_holders();
+         Ok(received.map_err(refused)?.map(|received| Datagram { len: received.len, source: received.source, source_port: received.source_port }))
+     }
+## applied
+   Compiling toyos v0.18.0 (<dev>/toyos-socket-wake/sdk/toyos)
+   Compiling toyos-net-node v0.1.0 (<dev>/toyos-socket-wake/system/netstack/node)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.58s
+     Running tests/datagram.rs (<dev>/toyos-socket-wake/target/debug/deps/datagram-9ba9f03b71f092b5)
+
+running 2 tests
+test a_connected_sockets_peer_is_every_holders ... ok
+test every_holder_receives_from_one_queue_each_datagram_once_and_whole ... FAILED
+
+failures:
+
+---- every_holder_receives_from_one_queue_each_datagram_once_and_whole stdout ----
+
+thread 'every_holder_receives_from_one_queue_each_datagram_once_and_whole' (83251499) panicked at system/netstack/node/tests/datagram.rs:360:5:
+assertion `left == right` failed: both looked since, the one that found nothing too, and both are told
+  left: (2, 2)
+ right: (2, 3)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    every_holder_receives_from_one_queue_each_datagram_once_and_whole
+
+test result: FAILED. 1 passed; 1 failed; 0 ignored; 0 measured; 12 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--test datagram`
+mutated exit 101
+## restored
+## identical to the unmutated file
+## after: git status --porcelain: ''

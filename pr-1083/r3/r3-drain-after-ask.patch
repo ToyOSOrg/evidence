@@ -1,0 +1,11 @@
+--- a/sdk/toyos/src/net/socket.rs	2026-10-28 10:25:04
++++ b/sdk/toyos/src/net/socket.rs	2026-10-28 10:25:04
+@@ -282,7 +282,7 @@
+     loop {
+         if let Some(answer) = bell.look_now(|rung| rung.then(|| ask(Drain(&drain)))) {
+             match answer {
+-                Err(NetError::WouldBlock) => {}
++                Err(NetError::WouldBlock) => bell.drain(),
+                 answer => return answer,
+             }
+         }
