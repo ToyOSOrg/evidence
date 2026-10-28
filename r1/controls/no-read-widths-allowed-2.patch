@@ -1,0 +1,37 @@
+diff --git a/kernel/pure/clock/reference.rs b/kernel/pure/clock/reference.rs
+index fba98320a..a25ba6c7f 100644
+--- a/kernel/pure/clock/reference.rs
++++ b/kernel/pure/clock/reference.rs
+@@ -129,7 +129,7 @@ pub fn agree(reference: Reference, a: Sample, b: Sample, mult: u64, tolerance_pp
+     Agreement {
+         reference_ns,
+         apart_ns: (counter_ns - reference_ns as i128).clamp(i64::MIN as i128, i64::MAX as i128) as i64,
+-        allowed_ns: readings + tick + rated + 2,
++        allowed_ns: tick + rated + 2,
+     }
+ }
+ 
+@@ -455,6 +455,23 @@ mod tests {
+         Watch::new(HPET, sample(1_000), Kept { mult: (1_000_000_000u128 << 32).div_ceil(HZ) as u64, bound_ppb: 10, measured: true })
+     }
+ 
++    /// Two CPUs' samples 100 µs apart, each read slowed to 20 µs by an SMI and
++    /// latched at opposite ends of its bracket: a still counter, which the
++    /// readings' own widths must allow, since the reference's tolerance over
++    /// that span is 50 ns.
++    #[test]
++    fn close_samples_hold_across_wide_reads() {
++        let mut watch = watch(true);
++        run(&mut watch, HZ, 1..3, 0).unwrap();
++        let wide = 35_932;
++        let n = watch.last().reference + 1_432;
++        let latch = |n: u64| sample_at(HZ, n, 0, 0).before;
++        let early = Sample { before: latch(n), after: latch(n) + wide, reference: n };
++        let late = Sample { before: latch(n + 1_432) - wide, after: latch(n + 1_432), reference: n + 1_432 };
++        assert_eq!(watch.take(early).map(|_| ()), Ok(()));
++        assert_eq!(watch.take(late).map(|_| ()), Ok(()));
++    }
++
+     /// A reference that reads backwards is a disagreement, never a span.
+     #[test]
+     fn a_reference_that_goes_back_fails() {

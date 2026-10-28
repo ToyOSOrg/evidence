@@ -1,0 +1,47 @@
+
+running 13 tests
+test clock::reference::tests::a_32_bit_reference_is_extended_across_its_wrap ... ok
+test clock::reference::tests::a_long_span_bounds_the_rate_tightly ... ok
+test clock::reference::tests::a_reference_that_goes_back_fails ... ok
+test clock::reference::tests::a_stated_rate_is_kept ... ok
+test clock::reference::tests::a_rate_that_moves_past_the_reference_tolerance_fails ... ok
+test clock::reference::tests::a_step_at_runtime_fails ... ok
+test clock::reference::tests::a_still_window_calibrates ... ok
+test clock::reference::tests::a_step_inside_the_window_is_refused ... ok
+test clock::reference::tests::samples_out_of_order_or_too_wide_measure_nothing ... ok
+test clock::reference::tests::round_trips_bound_an_offset_or_prove_one ... ok
+test clock::reference::tests::a_measured_rate_is_refined ... ok
+test clock::reference::tests::a_rate_is_within_its_bound_wherever_the_latches_land ... ok
+test clock::reference::tests::close_samples_hold_across_wide_reads ... FAILED
+
+failures:
+
+---- clock::reference::tests::close_samples_hold_across_wide_reads stdout ----
+
+thread 'clock::reference::tests::close_samples_hold_across_wide_reads' (95329445) panicked at kernel/pure/clock/reference.rs:471:9:
+assertion `left == right` failed
+  left: Err(Step { from: Sample { before: 3593373139, after: 3593375295, reference: 28637360 }, to: Sample { before: 3593554778, after: 3593590710, reference: 28638792 }, agreement: Agreement { reference_ns: 100012, apart_ns: 10488, allowed_ns: 123 } })
+ right: Ok(())
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    clock::reference::tests::close_samples_hold_across_wide_reads
+
+test result: FAILED. 12 passed; 1 failed; 0 ignored; 0 measured; 350 filtered out; finished in 0.00s
+
+   Compiling kernel v0.1.0 (<worktree>/kernel)
+warning: unused variable: `readings`
+   --> kernel/pure/clock/reference.rs:126:9
+    |
+126 |     let readings = nanos(a.width() as u128 + b.width() as u128) as u64;
+    |         ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_readings`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `kernel` (lib test) generated 1 warning (run `cargo fix --lib -p kernel --tests` to apply 1 suggestion)
+    Finished `test` profile [optimized + debuginfo] target(s) in 2.85s
+     Running unittests pure/lib.rs (target/debug/deps/kernel-fa45b686f8e87f8e)
+error: test failed, to rerun pass `-p kernel --lib`
+
+exit 101
