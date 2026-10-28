@@ -1,0 +1,12 @@
+--- a/kernel/src/idle.rs
++++ b/kernel/src/idle.rs
+@@ -151,7 +151,8 @@
+ pub fn plan(deadline: Option<Nanos>, now: Nanos) -> idle::Plan {
+     let (deadline, now) = (deadline.map(|d| d.0), now.0);
+     let local = &crate::cpu_local::here().idle;
+-    let Some(d) = declared(local).filter(|d| d.len > 0) else { return idle::Plan::c1(deadline, now) };
++    // Control: every idle period in C1, as on main, all else this branch's.
++    let Some(d) = declared(local).filter(|d| d.len > 0 && d.len == usize::MAX) else { return idle::Plan::c1(deadline, now) };
+     let costs = &d.costs[..d.len];
+     let choice = idle::choose(costs, &history(local, d.generation), deadline.map(|at| at.saturating_sub(now)), limit());
+     idle::Plan { choice, exit: choice.state.map_or(0, |state| costs[state].exit), declaration: d.generation, chosen_at: now, deadline }

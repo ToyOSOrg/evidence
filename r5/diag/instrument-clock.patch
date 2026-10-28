@@ -1,0 +1,13 @@
+--- a/tests/guest/osbench/src/main.rs
++++ b/tests/guest/osbench/src/main.rs
+@@ -177,7 +177,10 @@
+ fn group(name: &str, run: fn()) {
+     report::group(name, "start");
+     conditions();
++    // Diagnostic: the counters around the clock window; the first read kicks every CPU once.
++    let around = around::begin();
+     around::ran_during(&format!("{name}.cpu.clock"), clock::distribution);
++    around.end(&format!("{name}.cpu.clock"), &[]);
+     let t = Instant::now();
+     run();
+     report::group(name, &format!("done secs={}", t.elapsed().as_secs()));
