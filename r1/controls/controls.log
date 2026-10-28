@@ -1,0 +1,393 @@
+c8a8247c929e4fbcf3dcf89676fefdb95aff0a21
+=== control drop-removed
+diff --git a/sdk/toyos/src/shm.rs b/sdk/toyos/src/shm.rs
+index fab6b4cdd..427fff541 100644
+--- a/sdk/toyos/src/shm.rs
++++ b/sdk/toyos/src/shm.rs
+@@ -452,14 +452,6 @@ impl fmt::Display for NotImmutable {
+     }
+ }
+ 
+-impl Drop for Immutable {
+-    fn drop(&mut self) {
+-        // SAFETY: the mapping `map` made, which nothing reaches once this drops;
+-        // the handle closes after it.
+-        let _ = unsafe { syscall::vm_release(self.ptr.cast_mut(), self.len) };
+-    }
+-}
+-
+ impl AsHandle for Immutable {
+     fn as_handle(&self) -> RawHandle {
+         self.handle.raw()
+   Compiling toyos v0.18.0 ($WORKTREE/sdk/toyos)
+   Compiling toyos-manifest v0.1.0 ($WORKTREE/lib/manifest)
+   Compiling toyos-session v0.1.0 ($WORKTREE/lib/session)
+   Compiling toyos-swap v0.1.0 ($WORKTREE/lib/swap)
+   Compiling toyos-build v0.1.0 ($WORKTREE)
+   Compiling toyos-metal v0.1.0 ($WORKTREE/tests/metal)
+    Finished `test` profile [optimized + debuginfo] target(s) in 7.01s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-040be7639b65fd4e)
+
+14:56:52 running 1 tests, 12 wide
+
+14:56:52   RUN   a_spawn_from_an_image_frees_it_when_the_child_ends
+14:56:52   BUILD x86_64 spawn_returns_the_census (toyos) of tests/guest/rust-tests, for a_spawn_from_an_image_frees_it_when_the_child_ends
+14:56:56 external deps changed: cleaning $WORKTREE/tests/guest/rust-tests/target/x86_64-unknown-toyos
+14:57:33   BUILT x86_64 spawn_returns_the_census (toyos) of tests/guest/rust-tests, for a_spawn_from_an_image_frees_it_when_the_child_ends  (41s)
+14:57:33   BUILD x86_64 kernel boot-actuators,test-actuators, loader, ROOT of tests/images/testcases.toml, for a_spawn_from_an_image_frees_it_when_the_child_ends
+14:57:35 external deps changed: cleaning $WORKTREE/target/x86_64-unknown-toyos
+14:58:23 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+14:58:23   BUILT x86_64 kernel boot-actuators,test-actuators, loader, ROOT of tests/images/testcases.toml, for a_spawn_from_an_image_frees_it_when_the_child_ends  (50s)
+14:58:37 FAIL a_spawn_from_an_image_frees_it_when_the_child_ends: the job ended Some(101):
+acpiserver: table 1 of 1 (DSDT) loaded
+acpiserver: 1 of 1 tables loaded in 26 ms
+acpiserver: the tables' bytes took 1189 reads of firmware memory, in pages: 11 of type 9
+acpiserver: the tables' AML read SystemMemory 0 times, SystemIO 0 and PCI_Config 0, its memory in pages: none; took the Global Lock 0 times, 0 of them from the firmware; the firmware held it 0ns at the longest against a take; and ran Notify 0 times
+acpiserver: \_S5 evaluated: SLP_TYPa=0 SLP_TYPb=0
+acpiserver: \_S5 handed to the kernel: SLP_TYPa=0
+acpiserver: embedded controller none: no PNP0C09 device is present
+acpiserver: 0 table(s) loaded at run time and 0 refused; the namespace holds 266 objects in 512 slots, and the interpreter 154899 bytes of heap, of the 16777216 it holds between evaluations and the 34155580 while one runs
+acpiserver: the namespace initialised: \_SB._INI absent; 0 _STA read, 0 _INI run, no _REG run; the longest wait an evaluation asked 0 µs; evaluations refused, by kind: none
+acpiserver: the processors' idle states: 0 kept, 0 naming no CPU, 0 refused by the kernel; kept: none; withheld: none; unread: none
+acpiserver: GPEs: 2 with a method in GPE0, 2 of them runtime and enabled, 0 wake events left disabled, 0 past GPE0, 0 naming both triggers
+acpiserver: (this machine's own, quoted in no record) the runtime GPEs are [1, 2]
+acpiserver: no battery: 0 of 0 control-method batteries present, 0 AC adapter(s), with no embedded controller attached; the Global Lock taken 0 times on the way and given back 0 times, the firmware found holding it by 0 of the takes
+held
+held
+held
+held
+held
+held
+held
+held
+
+thread 'main' (1) panicked at src/bin/../census_wait.rs:51:9:
+census_wait: still grown since the first reading after 10s: SharedMem 73 -> 81
+stack backtrace:
+   0:           0x2817c0 - _Unwind_Backtrace
+   1:           0x257483 - <<std[5e4cb337456f6d2c]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[73b405bef30eeff1]::fmt::Display>::fmt
+   2:           0x2858a7 - core[73b405bef30eeff1]::fmt::write
+   3:           0x25b86b - <std[5e4cb337456f6d2c]::sys::stdio::toyos::Stderr as core[73b405bef30eeff1]::io::write::Write>::write_fmt
+   4:           0x23b2f3 - std[5e4cb337456f6d2c]::panicking::default_hook::{closure#0}
+   5:           0x2540ee - std[5e4cb337456f6d2c]::panicking::default_hook
+   6:           0x2542a9 - std[5e4cb337456f6d2c]::panicking::panic_with_hook
+   7:           0x23b3ad - std[5e4cb337456f6d2c]::panicking::panic_handler::{closure#0}
+   8:           0x233159 - std[5e4cb337456f6d2c]::sys::backtrace::__rust_end_short_backtrace::<std[5e4cb337456f6d2c]::panicking::panic_handler::{closure#0}, !>
+   9:           0x23bb48 - __rustc[d0c72ce299f394e5]::rust_begin_unwind
+  10:           0x285fcb - core[73b405bef30eeff1]::panicking::panic_fmt
+  11:           0x223696 - spawn_returns_the_census[feb332cbe5ae37d]::census_wait::released_to
+  12:           0x225eec - spawn_returns_the_census[feb332cbe5ae37d]::spawns_return_the_census
+  13:           0x2261cf - spawn_returns_the_census[feb332cbe5ae37d]::main
+  14:           0x225966 - std[5e4cb337456f6d2c]::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  15:           0x2241b0 - std[5e4cb337456f6d2c]::rt::lang_start::<()>::{closure#0}
+  16:           0x253596 - std[5e4cb337456f6d2c]::rt::lang_start_internal
+  17:           0x226791 - main
+  18:           0x255833 - std[5e4cb337456f6d2c]::sys::pal::toyos::start_rust
+  19:           0x226c5a - _start
+
+14:58:37   FAIL  a_spawn_from_an_image_frees_it_when_the_child_ends  (14s)
+14:58:37   --- 1 guests, 1 of them not the shipping kernel, 1 kernel build(s): ["boot-actuators,test-actuators"]
+
+14:58:37 host: fastest boot 3713 ms against the reference 1424 ms — liveness ceilings paid at 2.61x
+14:58:37 host: 14 core(s); a guest wider than that waits vcpus/cores longer again
+14:58:37 failures:
+14:58:37     a_spawn_from_an_image_frees_it_when_the_child_ends: the job ended Some(101):
+
+14:58:37 test result: FAILED. 0 passed, 1 failed, 0 invalidated, 1 total (104.7s; workers: 90s building, 14s testing)
+14:58:37 [toyos] this red run's serial logs are kept at $WORKTREE/target/red-run-serial/toyos-tmp-53323-0
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `$WORKTREE/target/debug/deps/toyos_build-040be7639b65fd4e a_spawn_from_an_image_frees_it_when_the_child_ends` (exit status: 1)
+control drop-removed exit 1
+=== control leak-read
+diff --git a/sdk/toyos/src/process.rs b/sdk/toyos/src/process.rs
+index fd39ec34c..0097487b2 100644
+--- a/sdk/toyos/src/process.rs
++++ b/sdk/toyos/src/process.rs
+@@ -164,6 +164,7 @@ impl Image {
+                 n => done += n,
+             }
+         }
++        let _ = syscall::dup(object.as_handle());
+         Ok(Self { object: Object::Read(object), len })
+     }
+ 
+   Compiling toyos v0.18.0 ($WORKTREE/sdk/toyos)
+   Compiling toyos-manifest v0.1.0 ($WORKTREE/lib/manifest)
+   Compiling toyos-session v0.1.0 ($WORKTREE/lib/session)
+   Compiling toyos-swap v0.1.0 ($WORKTREE/lib/swap)
+   Compiling toyos-build v0.1.0 ($WORKTREE)
+   Compiling toyos-metal v0.1.0 ($WORKTREE/tests/metal)
+    Finished `test` profile [optimized + debuginfo] target(s) in 6.42s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-040be7639b65fd4e)
+
+14:58:45 running 1 tests, 12 wide
+
+14:58:45   RUN   a_spawn_from_an_image_frees_it_when_the_child_ends
+14:58:45   BUILD x86_64 spawn_returns_the_census (toyos) of tests/guest/rust-tests, for a_spawn_from_an_image_frees_it_when_the_child_ends
+14:58:48 Building sysroot b9965cb0883a3166: ToyOS's std from $WORKTREE/rust, the compiler $HOME/.cache/toyos/compilers/03f1d8d1575264f0/stage2, the freestanding libraries 371a3d6fbb372298
+14:58:49 Building bootstrap
+14:58:49     Finished `dev` profile [unoptimized] target(s) in 0.15s
+14:58:52 WARNING: running build in stage 0. This might not work as expected.
+14:58:53 Building stage0 library artifacts{alloc, compiler_builtins, core, panic_abort, panic_unwind, proc_macro, rustc-std-workspace-core, std, std_detect, sysroot, test, unwind} (stage0:aarch64-apple-darwin -> stage0:x86_64-unknown-toyos)
+14:58:53    Compiling compiler_builtins v0.1.160 ($WORKTREE/rust/library/compiler-builtins/compiler-builtins)
+14:58:53    Compiling core v0.0.0 ($WORKTREE/rust/library/core)
+14:58:53    Compiling libc v0.2.189
+14:58:53    Compiling object v0.39.1
+14:58:53    Compiling std v0.0.0 ($WORKTREE/rust/library/std)
+14:58:53    Compiling test v0.0.0 ($WORKTREE/rust/library/test)
+14:59:06    Compiling rustc-std-workspace-core v1.99.0 ($WORKTREE/rust/library/rustc-std-workspace-core)
+14:59:06    Compiling alloc v0.0.0 ($WORKTREE/rust/library/alloc)
+14:59:06    Compiling toyos-abi v0.16.0 ($WORKTREE/sdk/abi)
+14:59:06    Compiling memchr v2.8.3
+14:59:06    Compiling adler2 v2.0.1
+14:59:06    Compiling cfg-if v1.0.4
+14:59:06    Compiling panic_abort v0.0.0 ($WORKTREE/rust/library/panic_abort)
+14:59:06    Compiling rustc-demangle v0.1.28
+14:59:06    Compiling rustc-literal-escaper v0.0.8
+14:59:06    Compiling dlmalloc v0.2.14
+14:59:09    Compiling rustc-std-workspace-alloc v1.99.0 ($WORKTREE/rust/library/rustc-std-workspace-alloc)
+14:59:09    Compiling gimli v0.34.0
+14:59:09    Compiling toyos v0.18.0 ($WORKTREE/sdk/toyos)
+14:59:09    Compiling std_detect v0.1.5 ($WORKTREE/rust/library/std_detect)
+14:59:09    Compiling miniz_oxide v0.9.1
+14:59:09    Compiling hashbrown v0.17.1
+14:59:09 warning: unused extern crate
+14:59:09   --> $WORKTREE/sdk/toyos/src/lib.rs:15:1
+14:59:09    |
+14:59:09 15 | extern crate alloc;
+14:59:09    | ^^^^^^^^^^^^^^^^^^^ unused
+14:59:09    |
+14:59:09    = note: `-W unused-extern-crates` implied by `-W rust-2018-idioms`
+14:59:09    = help: to override `-W rust-2018-idioms` add `#[allow(unused_extern_crates)]`
+14:59:09 help: remove the unused `extern crate`
+14:59:09    |
+14:59:09 15 - extern crate alloc;
+14:59:09    |
+
+14:59:12    Compiling unwinding v0.2.10
+14:59:12    Compiling addr2line v0.27.1
+14:59:12    Compiling unwind v0.0.0 ($WORKTREE/rust/library/unwind)
+14:59:12    Compiling panic_unwind v0.0.0 ($WORKTREE/rust/library/panic_unwind)
+14:59:15 warning: `toyos` (lib) generated 1 warning (run `cargo fix --lib -p toyos` to apply 1 suggestion)
+14:59:17 warning: function `exit` is never used
+14:59:17    --> library/std/src/sys/pal/../../../../../../sdk/std/sys/pal/os.rs:113:8
+14:59:17     |
+14:59:17 113 | pub fn exit(code: i32) -> ! {
+14:59:17     |        ^^^^
+14:59:17     |
+14:59:17     = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+14:59:17 warning: function `getpid` is never used
+14:59:17    --> library/std/src/sys/pal/../../../../../../sdk/std/sys/pal/os.rs:117:8
+14:59:17     |
+14:59:17 117 | pub fn getpid() -> u32 {
+14:59:17     |        ^^^^^^
+
+14:59:17 warning: field `eh_frame_hdr_size` is never read
+14:59:17    --> library/std/src/sys/pal/../../../../../../sdk/std/sys/pal/mod.rs:258:9
+14:59:17     |
+14:59:17 254 |     struct Module {
+14:59:17     |            ------ field in this struct
+14:59:17 ...
+14:59:17 258 |         eh_frame_hdr_size: usize,
+14:59:17     |         ^^^^^^^^^^^^^^^^^
+
+14:59:17 warning: methods `raw_fd` and `with_handle` are never used
+14:59:17    --> library/std/src/sys/fs/../../../../../../sdk/std/sys/fs.rs:315:12
+14:59:17     |
+14:59:17 309 | impl File {
+14:59:17     | --------- methods in this implementation
+14:59:17 ...
+14:59:17 315 |     pub fn raw_fd(&self) -> i32 {
+14:59:17     |            ^^^^^^
+14:59:17 ...
+14:59:17 332 |     pub fn with_handle<T>(&self, f: impl FnOnce(toyos_abi::RawHandle) -> T) -> io::Result<T> {
+14:59:17     |            ^^^^^^^^^^^
+
+14:59:23 warning: `std` (lib) generated 4 warnings
+14:59:23    Compiling rustc-std-workspace-std v1.99.0 ($WORKTREE/rust/library/rustc-std-workspace-std)
+14:59:23    Compiling proc_macro v0.0.0 ($WORKTREE/rust/library/proc_macro)
+14:59:23    Compiling getopts v0.2.24
+14:59:24    Compiling sysroot v0.0.0 ($WORKTREE/rust/library/sysroot)
+14:59:27     Finished `dist` profile [optimized + debuginfo] target(s) in 33.68s
+14:59:27 Building stage0 library artifacts{alloc, compiler_builtins, core, panic_abort, panic_unwind, proc_macro, rustc-std-workspace-core, std, std_detect, sysroot, test, unwind} (stage0:aarch64-apple-darwin -> stage0:aarch64-unknown-toyos)
+14:59:27    Compiling compiler_builtins v0.1.160 ($WORKTREE/rust/library/compiler-builtins/compiler-builtins)
+14:59:27    Compiling core v0.0.0 ($WORKTREE/rust/library/core)
+14:59:27    Compiling libc v0.2.189
+14:59:27    Compiling object v0.39.1
+14:59:27    Compiling std v0.0.0 ($WORKTREE/rust/library/std)
+14:59:27    Compiling test v0.0.0 ($WORKTREE/rust/library/test)
+14:59:42    Compiling rustc-std-workspace-core v1.99.0 ($WORKTREE/rust/library/rustc-std-workspace-core)
+14:59:42    Compiling alloc v0.0.0 ($WORKTREE/rust/library/alloc)
+14:59:42    Compiling toyos-abi v0.16.0 ($WORKTREE/sdk/abi)
+14:59:42    Compiling memchr v2.8.3
+14:59:42    Compiling adler2 v2.0.1
+14:59:42    Compiling cfg-if v1.0.4
+14:59:42    Compiling panic_abort v0.0.0 ($WORKTREE/rust/library/panic_abort)
+14:59:42    Compiling rustc-demangle v0.1.28
+14:59:42    Compiling rustc-literal-escaper v0.0.8
+14:59:42    Compiling dlmalloc v0.2.14
+14:59:45    Compiling rustc-std-workspace-alloc v1.99.0 ($WORKTREE/rust/library/rustc-std-workspace-alloc)
+14:59:45    Compiling gimli v0.34.0
+14:59:45    Compiling toyos v0.18.0 ($WORKTREE/sdk/toyos)
+14:59:45    Compiling std_detect v0.1.5 ($WORKTREE/rust/library/std_detect)
+14:59:45    Compiling miniz_oxide v0.9.1
+14:59:45    Compiling hashbrown v0.17.1
+14:59:45 warning: unused extern crate
+14:59:45   --> $WORKTREE/sdk/toyos/src/lib.rs:15:1
+14:59:45    |
+14:59:45 15 | extern crate alloc;
+14:59:45    | ^^^^^^^^^^^^^^^^^^^ unused
+14:59:45    |
+14:59:45    = note: `-W unused-extern-crates` implied by `-W rust-2018-idioms`
+14:59:45    = help: to override `-W rust-2018-idioms` add `#[allow(unused_extern_crates)]`
+14:59:45 help: remove the unused `extern crate`
+14:59:45    |
+14:59:45 15 - extern crate alloc;
+14:59:45    |
+
+14:59:48    Compiling unwinding v0.2.10
+14:59:48    Compiling addr2line v0.27.1
+14:59:49    Compiling unwind v0.0.0 ($WORKTREE/rust/library/unwind)
+14:59:49    Compiling panic_unwind v0.0.0 ($WORKTREE/rust/library/panic_unwind)
+14:59:52 warning: `toyos` (lib) generated 1 warning (run `cargo fix --lib -p toyos` to apply 1 suggestion)
+14:59:53 warning: function `exit` is never used
+14:59:53    --> library/std/src/sys/pal/../../../../../../sdk/std/sys/pal/os.rs:113:8
+14:59:53     |
+14:59:53 113 | pub fn exit(code: i32) -> ! {
+14:59:53     |        ^^^^
+14:59:53     |
+14:59:53     = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+14:59:53 warning: function `getpid` is never used
+14:59:53    --> library/std/src/sys/pal/../../../../../../sdk/std/sys/pal/os.rs:117:8
+14:59:53     |
+14:59:53 117 | pub fn getpid() -> u32 {
+14:59:53     |        ^^^^^^
+
+14:59:53 warning: field `eh_frame_hdr_size` is never read
+14:59:53    --> library/std/src/sys/pal/../../../../../../sdk/std/sys/pal/mod.rs:258:9
+14:59:53     |
+14:59:53 254 |     struct Module {
+14:59:53     |            ------ field in this struct
+14:59:53 ...
+14:59:53 258 |         eh_frame_hdr_size: usize,
+14:59:53     |         ^^^^^^^^^^^^^^^^^
+
+14:59:53 warning: methods `raw_fd` and `with_handle` are never used
+14:59:53    --> library/std/src/sys/fs/../../../../../../sdk/std/sys/fs.rs:315:12
+14:59:53     |
+14:59:53 309 | impl File {
+14:59:53     | --------- methods in this implementation
+14:59:53 ...
+14:59:53 315 |     pub fn raw_fd(&self) -> i32 {
+14:59:53     |            ^^^^^^
+14:59:53 ...
+14:59:53 332 |     pub fn with_handle<T>(&self, f: impl FnOnce(toyos_abi::RawHandle) -> T) -> io::Result<T> {
+14:59:53     |            ^^^^^^^^^^^
+
+14:59:59 warning: `std` (lib) generated 4 warnings
+14:59:59    Compiling rustc-std-workspace-std v1.99.0 ($WORKTREE/rust/library/rustc-std-workspace-std)
+14:59:59    Compiling proc_macro v0.0.0 ($WORKTREE/rust/library/proc_macro)
+14:59:59    Compiling getopts v0.2.24
+15:00:00    Compiling sysroot v0.0.0 ($WORKTREE/rust/library/sysroot)
+15:00:03     Finished `dist` profile [optimized + debuginfo] target(s) in 36.16s
+15:00:03 Build completed successfully in 0:01:14
+15:00:03 Checking that the compilers of $HOME/.cache/toyos/sysroots/b9965cb0883a3166.partial keep a loop's last exit
+15:00:09 Building toyos-libc for sysroot...
+   Compiling toyos-abi v0.16.0 ($WORKTREE/sdk/abi)
+   Compiling cfg-if v1.0.4
+   Compiling toyos-osrelease v0.1.0 ($WORKTREE/sdk/osrelease)
+   Compiling toyos-elf v0.1.0 ($WORKTREE/lib/elf)
+   Compiling dlmalloc v0.2.13
+   Compiling toyos v0.18.0 ($WORKTREE/sdk/toyos)
+   Compiling toyos-libc v0.1.0 ($WORKTREE/sdk/libc)
+    Finished `release` profile [optimized] target(s) in 4.24s
+15:00:18 Building toyos-libc for sysroot...
+   Compiling toyos-abi v0.16.0 ($WORKTREE/sdk/abi)
+   Compiling cfg-if v1.0.4
+   Compiling toyos-osrelease v0.1.0 ($WORKTREE/sdk/osrelease)
+   Compiling toyos-elf v0.1.0 ($WORKTREE/lib/elf)
+   Compiling dlmalloc v0.2.13
+   Compiling toyos v0.18.0 ($WORKTREE/sdk/toyos)
+   Compiling toyos-libc v0.1.0 ($WORKTREE/sdk/libc)
+    Finished `release` profile [optimized] target(s) in 3.44s
+15:00:25 Building the C++ runtime for x86_64-unknown-toyos under $WORKTREE/target/n2/172fb458445ac68d/bin/ninja
+15:00:37 Building the C++ runtime for aarch64-unknown-toyos under $WORKTREE/target/n2/172fb458445ac68d/bin/ninja
+15:00:54 Removed sysroot $HOME/.cache/toyos/sysroots/bc3522d9622ec8c3: it is not among the 24 last used, or it was never whole
+15:00:54 external deps changed: cleaning $WORKTREE/tests/guest/rust-tests/target/x86_64-unknown-toyos
+15:01:16   BUILT x86_64 spawn_returns_the_census (toyos) of tests/guest/rust-tests, for a_spawn_from_an_image_frees_it_when_the_child_ends  (152s)
+15:01:16   BUILD x86_64 kernel boot-actuators,test-actuators, loader, ROOT of tests/images/testcases.toml, for a_spawn_from_an_image_frees_it_when_the_child_ends
+15:01:19 external deps changed: cleaning $WORKTREE/target/x86_64-unknown-toyos
+15:01:54 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+15:01:54   BUILT x86_64 kernel boot-actuators,test-actuators, loader, ROOT of tests/images/testcases.toml, for a_spawn_from_an_image_frees_it_when_the_child_ends  (38s)
+15:02:09 FAIL a_spawn_from_an_image_frees_it_when_the_child_ends: the job ended Some(101):
+acpiserver: \_S5 evaluated: SLP_TYPa=0 SLP_TYPb=0
+acpiserver: \_S5 handed to the kernel: SLP_TYPa=0
+acpiserver: embedded controller none: no PNP0C09 device is present
+acpiserver: 0 table(s) loaded at run time and 0 refused; the namespace holds 266 objects in 512 slots, and the interpreter 154899 bytes of heap, of the 16777216 it holds between evaluations and the 34155580 while one runs
+acpiserver: the namespace initialised: \_SB._INI absent; 0 _STA read, 0 _INI run, no _REG run; the longest wait an evaluation asked 0 µs; evaluations refused, by kind: none
+acpiserver: the processors' idle states: 0 kept, 0 naming no CPU, 0 refused by the kernel; kept: none; withheld: none; unread: none
+acpiserver: GPEs: 2 with a method in GPE0, 2 of them runtime and enabled, 0 wake events left disabled, 0 past GPE0, 0 naming both triggers
+acpiserver: (this machine's own, quoted in no record) the runtime GPEs are [1, 2]
+acpiserver: no battery: 0 of 0 control-method batteries present, 0 AC adapter(s), with no embedded controller attached; the Global Lock taken 0 times on the way and given back 0 times, the firmware found holding it by 0 of the takes
+held
+held
+held
+held
+held
+held
+held
+held
+8 spawns from the served /system: the census came back to its first reading
+held
+held
+held
+held
+held
+held
+held
+held
+
+thread 'main' (1) panicked at src/bin/../census_wait.rs:51:9:
+census_wait: still grown since the first reading after 10s: SharedMem 74 -> 82
+stack backtrace:
+   0:           0x281720 - _Unwind_Backtrace
+   1:           0x2573b3 - <<std[5e4cb337456f6d2c]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[73b405bef30eeff1]::fmt::Display>::fmt
+   2:           0x285807 - core[73b405bef30eeff1]::fmt::write
+   3:           0x25b79b - <std[5e4cb337456f6d2c]::sys::stdio::toyos::Stderr as core[73b405bef30eeff1]::io::write::Write>::write_fmt
+   4:           0x23b313 - std[5e4cb337456f6d2c]::panicking::default_hook::{closure#0}
+   5:           0x25401e - std[5e4cb337456f6d2c]::panicking::default_hook
+   6:           0x2541d9 - std[5e4cb337456f6d2c]::panicking::panic_with_hook
+   7:           0x23b3cd - std[5e4cb337456f6d2c]::panicking::panic_handler::{closure#0}
+   8:           0x233179 - std[5e4cb337456f6d2c]::sys::backtrace::__rust_end_short_backtrace::<std[5e4cb337456f6d2c]::panicking::panic_handler::{closure#0}, !>
+   9:           0x23bb68 - __rustc[d0c72ce299f394e5]::rust_begin_unwind
+  10:           0x285f2b - core[73b405bef30eeff1]::panicking::panic_fmt
+  11:           0x2236b6 - spawn_returns_the_census[feb332cbe5ae37d]::census_wait::released_to
+  12:           0x225eec - spawn_returns_the_census[feb332cbe5ae37d]::spawns_return_the_census
+  13:           0x2262d2 - spawn_returns_the_census[feb332cbe5ae37d]::main
+  14:           0x225966 - std[5e4cb337456f6d2c]::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  15:           0x2241d0 - std[5e4cb337456f6d2c]::rt::lang_start::<()>::{closure#0}
+  16:           0x2534c6 - std[5e4cb337456f6d2c]::rt::lang_start_internal
+  17:           0x226791 - main
+  18:           0x255763 - std[5e4cb337456f6d2c]::sys::pal::toyos::start_rust
+  19:           0x226c5a - _start
+
+15:02:09   FAIL  a_spawn_from_an_image_frees_it_when_the_child_ends  (15s)
+15:02:09   --- 1 guests, 1 of them not the shipping kernel, 1 kernel build(s): ["boot-actuators,test-actuators"]
+
+15:02:09 host: fastest boot 3951 ms against the reference 1424 ms — liveness ceilings paid at 2.77x
+15:02:09 host: 14 core(s); a guest wider than that waits vcpus/cores longer again
+15:02:09 failures:
+15:02:09     a_spawn_from_an_image_frees_it_when_the_child_ends: the job ended Some(101):
+
+15:02:09 test result: FAILED. 0 passed, 1 failed, 0 invalidated, 1 total (204.3s; workers: 189s building, 15s testing)
+15:02:09 [toyos] this red run's serial logs are kept at $WORKTREE/target/red-run-serial/toyos-tmp-96990-0
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `$WORKTREE/target/debug/deps/toyos_build-040be7639b65fd4e a_spawn_from_an_image_frees_it_when_the_child_ends` (exit status: 1)
+control leak-read exit 1
+restored
