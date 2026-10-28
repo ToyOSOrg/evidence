@@ -51,3 +51,10 @@ Masking: boot IDs, MAC and IPv4 addresses, partition GUIDs and the shell's trace
 - `checks/ci-host-a6a4c60d8.log`: exit 0, 104 steps green. `checks/stage-*.log`: staged at a6a4c60d8. Image sha256: T14 6fe08955e5433defba36525065f94bd3881d9c0735d1bc67351e3244a7b90a12, AMD a4c6196a2c1112b51dac21cd4c7c7fb7d9e13f6028fb328e669cbdc627e6e484. The Linux half's sha256 is in `checks/linux-osbench-SHA256SUMS`.
 - `judge/`: the `osbench` row at a6a4c60d8 on the three substituted logs. All PASS: the format-boot refusal moved to the follow-up.
 - `followup/`: the patch regenerated at a6a4c60d8, now with the format-boot refusal. `check.log`: both Linux targets and the compare tests exit 0. Judged: memory exit 1, mounted exit 0, formatting exit 1. Reverted, tree clean.
+
+## r5 (branch head fa7258221): review r2
+
+- `checks/ci-host-fa7258221.log`: exit 0, 104 steps green. `checks/stage-*.log`: `osbench` staged for the T14 and the AMD, exit 2. Image sha256: T14 336a2a468929848e75a40f54c35538535bc05b27ca6955449acb638b9c46ffa5, AMD 4ce0d0de88a6029fece02422b197e88532c9de542bd30a1e4ecf4f3b342c15ed. The Linux half's sha256 is in `checks/linux-osbench-SHA256SUMS`.
+- `controls/`: m7 sets the settle tolerance to 10%. It was applied, built, tested and reverted in one run, exit 101, and the measured-step test fails at 3789 to 4189 MHz.
+- `followup/`: regenerated at fa7258221. `check.log`: both Linux targets and the compare tests exit 0. Judged: memory refused, mounted PASS, format refused. Reverted.
+- `amd-a6a4c60d8/`: the orchestrator's AMD run at a6a4c60d8: Linux, ToyOS, Linux, with the judge PASS. These are the old probe's readings, with the 5% rule. No settle was capped on either system (Linux 86 and 84, ToyOS 92). Linux's median `mhz_settled` is 4044 MHz against ToyOS's 4241: the HPET read's 1.21 µs on a 25 µs probe, 4.6% low, which fa7258221's difference probe removes.
