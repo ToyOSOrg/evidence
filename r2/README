@@ -1,0 +1,11 @@
+Review round 2 of ToyOSOrg/ToyOS#1080: head e33b248a2 on main b0164b262. Paths are masked as before. Each log's last line is the exit code; a log that begins with a hash begins with `git rev-parse HEAD`.
+
+host/ci-host.log: cargo run -- --ci host at e33b248a2, exit 0, 104 steps green.
+host/build-only.log: cargo run -- --build-only at e33b248a2, exit 0.
+guest/check-x86_64.log, guest/check-aarch64.log: the guest workspace at e33b248a2 (committed, clean tree) with its sysroot 960d15b9aa8f0bce, exit 101. Each target's error set is identical to main b0164b262's (r1/guest/base-check-*.log). The crates that fail at both: build/root and filetime (a host tool), bootloader (the UEFI loader), generator (loom's dependency), update (an image key the build sets), doom (its build script wants the C compiler the build names), kernelprobe (AArch64 only) and osbench (x86-64 only).
+guest/check-rust-tests.log: tests/guest/rust-tests at e33b248a2, exit 0.
+guest/qemu-stream.log: stream_holders at e33b248a2, exit 0. Its new arm spawns one Command bound to a stream twice, and each child writes through a holder of its own.
+guest/qemu.log: stream_holders, netstack_holders_exported_to_children, udp_receive_times_out, libc_children, session_lifecycle and a_launch_gives_each_unsent_stdio_slot_a_null at e33b248a2, exit 0, 6 passed.
+controls/mutation-export-once.{patch,log}: `inherit_handle` exporting one holder at the call, which every spawn then duplicates (round 1's behaviour), applied, run and reverted. stream_holders red, exit 1: the second spawn asks netstack for no holder.
+forks/mio-toyos-check.log: mio f7620928 checked for x86_64-unknown-toyos against e33b248a2's toyos-abi. The log's head names the revision, target, sysroot and command; exit 0.
+metal/: the T14 images staged at e33b248a2, exit 2 = staged (7 images, 54 registrations, 232 shared members); no machine touched.

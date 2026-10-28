@@ -1,0 +1,280 @@
+a92abf9eff058a8723f22f9211b568612e846c6c
+ sdk/std/os/process.rs                            |  8 ++--
+ sdk/std/sys/process.rs                           | 54 +++++++++++++++---------
+ sdk/toyos/src/net.rs                             | 38 +++++++++++++++++
+ sdk/toyos/src/net/ends.rs                        |  8 ++++
+ sdk/toyos/src/net/socket.rs                      | 20 +++++++++
+ sdk/toyos/src/net/stream.rs                      | 21 +++++++++
+ sdk/toyos/src/spawn.rs                           |  6 +--
+ tests/guest/rust-tests/src/bin/stream_handles.rs | 52 ++++++++++++++++++++++-
+ tests/toyos.rs                                   |  1 +
+ 9 files changed, 180 insertions(+), 28 deletions(-)
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.19s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-744c45cf70e5d4d9)
+
+09:48:26 running 1 tests, 12 wide
+
+09:48:26   RUN   stream_holders
+09:48:26   BUILD x86_64 stream_handles (toyos) of tests/guest/rust-tests, for stream_holders
+09:48:27 Building sysroot 0cc1b6f4e8470115: ToyOS's std from $WORKTREE/rust, the compiler $HOME/.cache/toyos/compilers/9c2bf5e34b010595/stage2, the freestanding libraries 31324d9ea252d33c
+09:48:27 Building bootstrap
+09:48:28     Finished `dev` profile [unoptimized] target(s) in 0.15s
+09:48:30 WARNING: running build in stage 0. This might not work as expected.
+09:48:30 Building stage0 library artifacts{alloc, compiler_builtins, core, panic_abort, panic_unwind, proc_macro, rustc-std-workspace-core, std, std_detect, sysroot, test, unwind} (stage0:aarch64-apple-darwin -> stage0:x86_64-unknown-toyos)
+09:48:30    Compiling compiler_builtins v0.1.160 ($WORKTREE/rust/library/compiler-builtins/compiler-builtins)
+09:48:30    Compiling core v0.0.0 ($WORKTREE/rust/library/core)
+09:48:30    Compiling libc v0.2.189
+09:48:30    Compiling object v0.39.1
+09:48:30    Compiling std v0.0.0 ($WORKTREE/rust/library/std)
+09:48:30    Compiling test v0.0.0 ($WORKTREE/rust/library/test)
+09:48:42    Compiling rustc-std-workspace-core v1.99.0 ($WORKTREE/rust/library/rustc-std-workspace-core)
+09:48:42    Compiling alloc v0.0.0 ($WORKTREE/rust/library/alloc)
+09:48:42    Compiling memchr v2.8.3
+09:48:42    Compiling adler2 v2.0.1
+09:48:42    Compiling cfg-if v1.0.4
+09:48:42    Compiling toyos-abi v0.16.0 ($WORKTREE/sdk/abi)
+09:48:42    Compiling panic_abort v0.0.0 ($WORKTREE/rust/library/panic_abort)
+09:48:42    Compiling rustc-demangle v0.1.28
+09:48:42    Compiling rustc-literal-escaper v0.0.8
+09:48:42    Compiling dlmalloc v0.2.14
+09:48:44    Compiling rustc-std-workspace-alloc v1.99.0 ($WORKTREE/rust/library/rustc-std-workspace-alloc)
+09:48:44    Compiling gimli v0.34.0
+09:48:44    Compiling miniz_oxide v0.9.1
+09:48:44    Compiling hashbrown v0.17.1
+09:48:44    Compiling toyos v0.18.0 ($WORKTREE/sdk/toyos)
+09:48:44    Compiling std_detect v0.1.5 ($WORKTREE/rust/library/std_detect)
+09:48:44 warning: unused extern crate
+09:48:44   --> $WORKTREE/sdk/toyos/src/lib.rs:15:1
+09:48:44    |
+09:48:44 15 | extern crate alloc;
+09:48:44    | ^^^^^^^^^^^^^^^^^^^ unused
+09:48:44    |
+09:48:44    = note: `-W unused-extern-crates` implied by `-W rust-2018-idioms`
+09:48:44    = help: to override `-W rust-2018-idioms` add `#[allow(unused_extern_crates)]`
+09:48:44 help: remove the unused `extern crate`
+09:48:44    |
+09:48:44 15 - extern crate alloc;
+09:48:44    |
+
+09:48:46    Compiling unwinding v0.2.10
+09:48:46    Compiling addr2line v0.27.1
+09:48:46    Compiling unwind v0.0.0 ($WORKTREE/rust/library/unwind)
+09:48:46    Compiling panic_unwind v0.0.0 ($WORKTREE/rust/library/panic_unwind)
+09:48:48 warning: `toyos` (lib) generated 1 warning (run `cargo fix --lib -p toyos` to apply 1 suggestion)
+09:48:50 warning: function `exit` is never used
+09:48:50    --> library/std/src/sys/pal/../../../../../../sdk/std/sys/pal/os.rs:113:8
+09:48:50     |
+09:48:50 113 | pub fn exit(code: i32) -> ! {
+09:48:50     |        ^^^^
+09:48:50     |
+09:48:50     = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+09:48:50 warning: function `getpid` is never used
+09:48:50    --> library/std/src/sys/pal/../../../../../../sdk/std/sys/pal/os.rs:117:8
+09:48:50     |
+09:48:50 117 | pub fn getpid() -> u32 {
+09:48:50     |        ^^^^^^
+
+09:48:50 warning: field `eh_frame_hdr_size` is never read
+09:48:50    --> library/std/src/sys/pal/../../../../../../sdk/std/sys/pal/mod.rs:258:9
+09:48:50     |
+09:48:50 254 |     struct Module {
+09:48:50     |            ------ field in this struct
+09:48:50 ...
+09:48:50 258 |         eh_frame_hdr_size: usize,
+09:48:50     |         ^^^^^^^^^^^^^^^^^
+
+09:48:50 warning: methods `raw_fd` and `with_handle` are never used
+09:48:50    --> library/std/src/sys/fs/../../../../../../sdk/std/sys/fs.rs:315:12
+09:48:50     |
+09:48:50 309 | impl File {
+09:48:50     | --------- methods in this implementation
+09:48:50 ...
+09:48:50 315 |     pub fn raw_fd(&self) -> i32 {
+09:48:50     |            ^^^^^^
+09:48:50 ...
+09:48:50 332 |     pub fn with_handle<T>(&self, f: impl FnOnce(toyos_abi::RawHandle) -> T) -> io::Result<T> {
+09:48:50     |            ^^^^^^^^^^^
+
+09:48:50 warning: variant `Holder` is never constructed
+09:48:50   --> library/std/src/sys/process/../../../../../../sdk/std/sys/process.rs:57:5
+09:48:50    |
+09:48:50 51 | enum Given {
+09:48:50    |      ----- variant in this enum
+09:48:50 ...
+09:48:50 57 |     Holder(toyos::net::Exporter),
+09:48:50    |     ^^^^^^
+
+09:48:56 warning: `std` (lib) generated 5 warnings
+09:48:56    Compiling rustc-std-workspace-std v1.99.0 ($WORKTREE/rust/library/rustc-std-workspace-std)
+09:48:56    Compiling proc_macro v0.0.0 ($WORKTREE/rust/library/proc_macro)
+09:48:56    Compiling getopts v0.2.24
+09:48:57    Compiling sysroot v0.0.0 ($WORKTREE/rust/library/sysroot)
+09:48:59     Finished `dist` profile [optimized + debuginfo] target(s) in 29.37s
+09:49:00 Building stage0 library artifacts{alloc, compiler_builtins, core, panic_abort, panic_unwind, proc_macro, rustc-std-workspace-core, std, std_detect, sysroot, test, unwind} (stage0:aarch64-apple-darwin -> stage0:aarch64-unknown-toyos)
+09:49:00    Compiling compiler_builtins v0.1.160 ($WORKTREE/rust/library/compiler-builtins/compiler-builtins)
+09:49:00    Compiling core v0.0.0 ($WORKTREE/rust/library/core)
+09:49:00    Compiling libc v0.2.189
+09:49:00    Compiling object v0.39.1
+09:49:00    Compiling std v0.0.0 ($WORKTREE/rust/library/std)
+09:49:00    Compiling test v0.0.0 ($WORKTREE/rust/library/test)
+09:49:13    Compiling rustc-std-workspace-core v1.99.0 ($WORKTREE/rust/library/rustc-std-workspace-core)
+09:49:13    Compiling alloc v0.0.0 ($WORKTREE/rust/library/alloc)
+09:49:13    Compiling memchr v2.8.3
+09:49:13    Compiling adler2 v2.0.1
+09:49:13    Compiling cfg-if v1.0.4
+09:49:13    Compiling toyos-abi v0.16.0 ($WORKTREE/sdk/abi)
+09:49:13    Compiling rustc-demangle v0.1.28
+09:49:13    Compiling panic_abort v0.0.0 ($WORKTREE/rust/library/panic_abort)
+09:49:13    Compiling rustc-literal-escaper v0.0.8
+09:49:13    Compiling dlmalloc v0.2.14
+09:49:16    Compiling rustc-std-workspace-alloc v1.99.0 ($WORKTREE/rust/library/rustc-std-workspace-alloc)
+09:49:16    Compiling gimli v0.34.0
+09:49:16    Compiling miniz_oxide v0.9.1
+09:49:16    Compiling hashbrown v0.17.1
+09:49:16    Compiling toyos v0.18.0 ($WORKTREE/sdk/toyos)
+09:49:16    Compiling std_detect v0.1.5 ($WORKTREE/rust/library/std_detect)
+09:49:16 warning: unused extern crate
+09:49:16   --> $WORKTREE/sdk/toyos/src/lib.rs:15:1
+09:49:16    |
+09:49:16 15 | extern crate alloc;
+09:49:16    | ^^^^^^^^^^^^^^^^^^^ unused
+09:49:16    |
+09:49:16    = note: `-W unused-extern-crates` implied by `-W rust-2018-idioms`
+09:49:16    = help: to override `-W rust-2018-idioms` add `#[allow(unused_extern_crates)]`
+09:49:16 help: remove the unused `extern crate`
+09:49:16    |
+09:49:16 15 - extern crate alloc;
+09:49:16    |
+
+09:49:18    Compiling unwinding v0.2.10
+09:49:18    Compiling addr2line v0.27.1
+09:49:18    Compiling unwind v0.0.0 ($WORKTREE/rust/library/unwind)
+09:49:18    Compiling panic_unwind v0.0.0 ($WORKTREE/rust/library/panic_unwind)
+09:49:20 warning: `toyos` (lib) generated 1 warning (run `cargo fix --lib -p toyos` to apply 1 suggestion)
+09:49:22 warning: function `exit` is never used
+09:49:22    --> library/std/src/sys/pal/../../../../../../sdk/std/sys/pal/os.rs:113:8
+09:49:22     |
+09:49:22 113 | pub fn exit(code: i32) -> ! {
+09:49:22     |        ^^^^
+09:49:22     |
+09:49:22     = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+09:49:22 warning: function `getpid` is never used
+09:49:22    --> library/std/src/sys/pal/../../../../../../sdk/std/sys/pal/os.rs:117:8
+09:49:22     |
+09:49:22 117 | pub fn getpid() -> u32 {
+09:49:22     |        ^^^^^^
+
+09:49:22 warning: field `eh_frame_hdr_size` is never read
+09:49:22    --> library/std/src/sys/pal/../../../../../../sdk/std/sys/pal/mod.rs:258:9
+09:49:22     |
+09:49:22 254 |     struct Module {
+09:49:22     |            ------ field in this struct
+09:49:22 ...
+09:49:22 258 |         eh_frame_hdr_size: usize,
+09:49:22     |         ^^^^^^^^^^^^^^^^^
+
+09:49:22 warning: methods `raw_fd` and `with_handle` are never used
+09:49:22    --> library/std/src/sys/fs/../../../../../../sdk/std/sys/fs.rs:315:12
+09:49:22     |
+09:49:22 309 | impl File {
+09:49:22     | --------- methods in this implementation
+09:49:22 ...
+09:49:22 315 |     pub fn raw_fd(&self) -> i32 {
+09:49:22     |            ^^^^^^
+09:49:22 ...
+09:49:22 332 |     pub fn with_handle<T>(&self, f: impl FnOnce(toyos_abi::RawHandle) -> T) -> io::Result<T> {
+09:49:22     |            ^^^^^^^^^^^
+
+09:49:22 warning: variant `Holder` is never constructed
+09:49:22   --> library/std/src/sys/process/../../../../../../sdk/std/sys/process.rs:57:5
+09:49:22    |
+09:49:22 51 | enum Given {
+09:49:22    |      ----- variant in this enum
+09:49:22 ...
+09:49:22 57 |     Holder(toyos::net::Exporter),
+09:49:22    |     ^^^^^^
+
+09:49:28 warning: `std` (lib) generated 5 warnings
+09:49:28    Compiling rustc-std-workspace-std v1.99.0 ($WORKTREE/rust/library/rustc-std-workspace-std)
+09:49:28    Compiling proc_macro v0.0.0 ($WORKTREE/rust/library/proc_macro)
+09:49:28    Compiling getopts v0.2.24
+09:49:29    Compiling sysroot v0.0.0 ($WORKTREE/rust/library/sysroot)
+09:49:33     Finished `dist` profile [optimized + debuginfo] target(s) in 33.04s
+09:49:33 Build completed successfully in 0:01:05
+09:49:33 Checking that the compilers of $HOME/.cache/toyos/sysroots/0cc1b6f4e8470115.partial keep a loop's last exit
+09:49:37 Building toyos-libc for sysroot...
+   Compiling toyos-abi v0.16.0 ($WORKTREE/sdk/abi)
+   Compiling cfg-if v1.0.4
+   Compiling toyos-osrelease v0.1.0 ($WORKTREE/sdk/osrelease)
+   Compiling toyos-elf v0.1.0 ($WORKTREE/lib/elf)
+   Compiling dlmalloc v0.2.13
+   Compiling toyos v0.18.0 ($WORKTREE/sdk/toyos)
+   Compiling toyos-libc v0.1.0 ($WORKTREE/sdk/libc)
+    Finished `release` profile [optimized] target(s) in 3.16s
+09:49:44 Building toyos-libc for sysroot...
+   Compiling cfg-if v1.0.4
+   Compiling toyos-abi v0.16.0 ($WORKTREE/sdk/abi)
+   Compiling toyos-elf v0.1.0 ($WORKTREE/lib/elf)
+   Compiling toyos-osrelease v0.1.0 ($WORKTREE/sdk/osrelease)
+   Compiling dlmalloc v0.2.13
+   Compiling toyos v0.18.0 ($WORKTREE/sdk/toyos)
+   Compiling toyos-libc v0.1.0 ($WORKTREE/sdk/libc)
+    Finished `release` profile [optimized] target(s) in 2.92s
+09:49:50 Building the C++ runtime for x86_64-unknown-toyos under $WORKTREE/target/n2/172fb458445ac68d/bin/ninja
+09:50:01 Building the C++ runtime for aarch64-unknown-toyos under $WORKTREE/target/n2/172fb458445ac68d/bin/ninja
+09:50:12 Removed sysroot $HOME/.cache/toyos/sysroots/5214e3627e6f13a0: it is not among the 24 last used, or it was never whole
+09:50:12 external deps changed: cleaning $WORKTREE/tests/guest/rust-tests/target/x86_64-unknown-toyos
+09:50:34   BUILT x86_64 stream_handles (toyos) of tests/guest/rust-tests, for stream_holders  (128s)
+09:50:34   BUILD x86_64 kernel, loader, ROOT of tests/images/testcases.toml, for stream_holders
+09:50:37 external deps changed: cleaning $WORKTREE/target/x86_64-unknown-toyos
+09:51:08 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+09:51:08   BUILT x86_64 kernel, loader, ROOT of tests/images/testcases.toml, for stream_holders  (34s)
+09:51:12 FAIL stream_holders: the job ended Some(101):
+  a holder killed inside the gate: its hang-up came after it, and the parent wrote and read
+  netstack's exit: a blocked read in each holder answered ConnectionAborted
+
+thread 'main' (1) panicked at src/bin/stream_handles.rs:440:9:
+assertion `left == right` failed: the spawn asks for a holder
+  left: None
+ right: Some(2)
+stack backtrace:
+   0:           0x2b6170 - _Unwind_Backtrace
+   1:           0x287c63 - <<std[4131b9ebe79e0f19]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[73b405bef30eeff1]::fmt::Display>::fmt
+   2:           0x2bafb7 - core[73b405bef30eeff1]::fmt::write
+   3:           0x28ce7b - <std[4131b9ebe79e0f19]::sys::stdio::toyos::Stderr as core[73b405bef30eeff1]::io::write::Write>::write_fmt
+   4:           0x2683f3 - std[4131b9ebe79e0f19]::panicking::default_hook::{closure#0}
+   5:           0x28343e - std[4131b9ebe79e0f19]::panicking::default_hook
+   6:           0x2835f9 - std[4131b9ebe79e0f19]::panicking::panic_with_hook
+   7:           0x2684ad - std[4131b9ebe79e0f19]::panicking::panic_handler::{closure#0}
+   8:           0x25ffa9 - std[4131b9ebe79e0f19]::sys::backtrace::__rust_end_short_backtrace::<std[4131b9ebe79e0f19]::panicking::panic_handler::{closure#0}, !>
+   9:           0x268d78 - __rustc[d0c72ce299f394e5]::rust_begin_unwind
+  10:           0x2bb73b - core[73b405bef30eeff1]::panicking::panic_fmt
+  11:           0x2bb64f - core[73b405bef30eeff1]::panicking::assert_failed_inner
+  12:           0x24cbb9 - core[73b405bef30eeff1]::panicking::assert_failed::<core[73b405bef30eeff1]::option::Option<u32>, core[73b405bef30eeff1]::option::Option<u32>>
+  13:           0x248025 - <stream_handles[8a80a0417514970f]::Netstack>::serve_export
+  14:           0x2436a7 - stream_handles[8a80a0417514970f]::test
+  15:           0x242a3b - stream_handles[8a80a0417514970f]::main
+  16:           0x24ced6 - std[4131b9ebe79e0f19]::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  17:           0x24c740 - std[4131b9ebe79e0f19]::rt::lang_start::<()>::{closure#0}
+  18:           0x282876 - std[4131b9ebe79e0f19]::rt::lang_start_internal
+  19:           0x248f11 - main
+  20:           0x284d63 - std[4131b9ebe79e0f19]::sys::pal::toyos::start_rust
+  21:           0x25261a - _start
+
+09:51:12   FAIL  stream_holders  (4s)
+09:51:12   --- 1 guests, 0 of them not the shipping kernel, 1 kernel build(s): [""]
+
+09:51:12 host: fastest boot 3665 ms against the reference 1424 ms — liveness ceilings paid at 2.57x
+09:51:12 host: 14 core(s); a guest wider than that waits vcpus/cores longer again
+09:51:12 failures:
+09:51:12     stream_holders: the job ended Some(101):
+
+09:51:12 test result: FAILED. 0 passed, 1 failed, 0 invalidated, 1 total (166.8s; workers: 163s building, 4s testing)
+09:51:12 [toyos] this red run's serial logs are kept at $WORKTREE/target/red-run-serial/toyos-tmp-16965-0
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `$WORKTREE/target/debug/deps/toyos_build-744c45cf70e5d4d9 stream_holders` (exit status: 1)
+exit 1

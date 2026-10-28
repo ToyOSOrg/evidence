@@ -1,0 +1,11 @@
+--- a/sdk/std/sys/process.rs	2026-10-28 10:51:51
++++ b/sdk/std/sys/process.rs	2026-10-28 10:51:51
+@@ -231,7 +231,7 @@
+     /// exports for its child alone.
+     pub fn inherit_handle(&mut self, child_fd: u32, parent_handle: crate::os::toyos::io::BorrowedHandle<'_>) {
+         let given = match toyos::net::Exporter::of(parent_handle.inner()) {
+-            Some(kept) => Given::Holder(kept),
++            Some(kept) => Given::Copy(kept.export().map(|end| (end, toyos::fd::Kind::Exported)).map_err(|e| refused(toyos::spawn::Refused::Export(e)))),
+             None => Given::Copy(copy(parent_handle).map(|h| (h, toyos::fd::Kind::Handle))),
+         };
+         self.inherit(child_fd, given);
