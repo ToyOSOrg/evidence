@@ -1,0 +1,22 @@
+# ipc-events metal request. One boot per image, both benches (T14 and AMD) unless noted.
+# Each invocation is `cargo <words>` from $WORKTREE.
+# Head 6250464e8 (on main a5b330f39). Readback dirs are the image's own dir.
+
+# 1. members, head 6250464e8: testcases shared boot.
+#    event_sides, mio_waker_coalesces, cpal_drop_unreleased (members);
+#    hda_tone, hda_tone_resampled (rows; master muted per harness): the realtime
+#    loan's audio through events on both benches. Judge with the same members/rows.
+cargo run -p toyos-metal -- --image $SCRATCH/members/testcases/image.img --readback $SCRATCH/members/testcases --fat32-check
+
+# 2. mio negative control: head 6250464e8 with only tests/guest/rust-tests/Cargo.lock's
+#    mio pin set back to f762092 (pre-fork-commit). Expect mio_waker_coalesces to FAIL.
+#    One bench suffices (T14).
+cargo run -p toyos-metal -- --image $SCRATCH/mio-control/testcases/image.img --readback $SCRATCH/mio-control/testcases --fat32-check
+
+# 3+4. A/B, osbench row (benchcase). Alternate head/base per bench; repeat as boots allow.
+#    head = 6250464e8 + measurement-only waitone rows (waitone.ready.*, waitone.pingpong.*:
+#    fresh_poller / cached_poller / handle_wait), never committed.
+#    base = a5b330f39 unmodified (the merge base: includes #1074 and #1097, unlike metal7).
+#    Rows of interest: ipc.reqrep.*, pingpong.*, futex*, waitone.*.
+cargo run -p toyos-metal -- --image $SCRATCH/ab-head/benchcase/image.img --readback $SCRATCH/ab-head/benchcase --fat32-check
+cargo run -p toyos-metal -- --image $SCRATCH/ab-base/benchcase/image.img --readback $SCRATCH/ab-base/benchcase --fat32-check

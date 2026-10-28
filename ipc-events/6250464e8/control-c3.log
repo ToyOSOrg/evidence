@@ -1,0 +1,52 @@
+control c3: an end reads as a signal
+a80c52280beed8690a9623ee4af03db89549f836
+diff --git a/kernel/pure/event.rs b/kernel/pure/event.rs
+index fca7420f3..422ccccc1 100644
+--- a/kernel/pure/event.rs
++++ b/kernel/pure/event.rs
+@@ -64,7 +64,7 @@ impl State {
+     /// Take the pending signal, if any.
+     pub fn take(&self) -> Taken {
+         let was = self.0.fetch_and(!PENDING, Ordering::AcqRel);
+-        if was & PENDING != 0 {
++        if was & (PENDING | SIGNALERS_GONE) != 0 {
+             Taken::Signal
+         } else if was & SIGNALERS_GONE != 0 {
+             Taken::Gone
+   Compiling kernel v0.1.0 ($WORKTREE/kernel)
+    Finished `test` profile [optimized + debuginfo] target(s) in 2.96s
+     Running unittests pure/lib.rs (target/debug/deps/kernel-fa45b686f8e87f8e)
+
+running 5 tests
+test event::tests::a_signal_with_no_waiter_left_says_so ... ok
+test event::tests::readiness_observes_and_does_not_take ... ok
+test event::tests::signals_before_a_take_are_one ... ok
+test event::tests::an_end_with_nothing_pending_is_gone_at_once ... FAILED
+test event::tests::signalers_gone_is_ready_but_never_a_signal ... FAILED
+
+failures:
+
+---- event::tests::an_end_with_nothing_pending_is_gone_at_once stdout ----
+
+thread 'event::tests::an_end_with_nothing_pending_is_gone_at_once' (96679225) panicked at kernel/pure/event.rs:137:9:
+assertion `left == right` failed
+  left: Signal
+ right: Gone
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- event::tests::signalers_gone_is_ready_but_never_a_signal stdout ----
+
+thread 'event::tests::signalers_gone_is_ready_but_never_a_signal' (96679227) panicked at kernel/pure/event.rs:128:9:
+assertion `left == right` failed
+  left: Signal
+ right: Gone
+
+
+failures:
+    event::tests::an_end_with_nothing_pending_is_gone_at_once
+    event::tests::signalers_gone_is_ready_but_never_a_signal
+
+test result: FAILED. 3 passed; 2 failed; 0 ignored; 0 measured; 351 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p kernel --lib`
+exit 101

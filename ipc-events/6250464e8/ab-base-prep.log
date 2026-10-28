@@ -1,0 +1,46 @@
+A/B base: a5b330f392caa6342b324c00681587f09d35a19e, unmodified
+   Compiling toyos-abi v0.16.0 ($WORKTREE/sdk/abi)
+   Compiling toyos-quiesce v0.1.0 ($WORKTREE/lib/quiesce)
+   Compiling toyos v0.18.0 ($WORKTREE/sdk/toyos)
+   Compiling toyos-symbols v0.1.0 ($WORKTREE/lib/symbols)
+   Compiling toyos-logstream v0.1.0 ($WORKTREE/lib/logstream)
+   Compiling toyos-input v0.1.0 ($WORKTREE/lib/input)
+   Compiling toyos-bootmap v0.1.0 ($WORKTREE/lib/bootmap)
+   Compiling kernel v0.1.0 ($WORKTREE/kernel)
+   Compiling toyos-acpi v0.1.0 ($WORKTREE/lib/acpi)
+   Compiling toyos-userbound v0.1.0 ($WORKTREE/lib/userbound)
+   Compiling toyos-manifest v0.1.0 ($WORKTREE/lib/manifest)
+   Compiling toyos-session v0.1.0 ($WORKTREE/lib/session)
+   Compiling toyos-swap v0.1.0 ($WORKTREE/lib/swap)
+   Compiling toyos-build v0.1.0 ($WORKTREE)
+   Compiling toyos-metal v0.1.0 ($WORKTREE/tests/metal)
+    Finished `test` profile [optimized + debuginfo] target(s) in 17.69s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-040be7639b65fd4e)
+21:53:01   BUILD x86_64 binaries of tests/guest/rust-tests
+21:53:04 external deps changed: cleaning $WORKTREE/tests/guest/rust-tests/target/x86_64-unknown-toyos
+21:53:06 external deps changed: cleaning $WORKTREE/tests/guest/rust-tests/tls-dlopen-lib/target/x86_64-unknown-toyos
+21:53:06 external deps changed: cleaning $WORKTREE/tests/guest/rust-tests/tls-lib/target/x86_64-unknown-toyos
+21:53:06 external deps changed: cleaning $WORKTREE/tests/guest/rust-tests/tls-multi-crate/target/x86_64-unknown-toyos
+21:53:06 external deps changed: cleaning $WORKTREE/tests/guest/rust-tests/tls-cranelift/target/x86_64-unknown-toyos
+21:54:32   BUILT x86_64 binaries of tests/guest/rust-tests  (91s)
+21:54:32   BUILD x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests
+21:55:00   BUILT x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests  (28s)
+21:55:00 [toyos] Compiling 143 C tests, and attempting 24 declared ones...
+21:55:05 [metal] 1 registration(s) and 0 shared member(s) over 1 boot(s)
+21:55:05   BUILD x86_64 kernel, loader, ROOT of $SCRATCH/ab-base/benchcase/system-06016510e012b851.toml
+21:55:06 external deps changed: cleaning $WORKTREE/target/x86_64-unknown-toyos
+21:56:21 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+21:56:21   BUILT x86_64 kernel, loader, ROOT of $SCRATCH/ab-base/benchcase/system-06016510e012b851.toml  (77s)
+21:56:22 [metal] benchcase: 17 job(s) under a list bound of 525000 ms, armed with [] and a boot deadline of 1050000 ms — $SCRATCH/ab-base/benchcase/image.img
+# One boot per image. Each invocation is `cargo <words>` from this worktree.
+
+benchcase
+  image: $SCRATCH/ab-base/benchcase/image.img
+  cargo run -p toyos-metal -- --image $SCRATCH/ab-base/benchcase/image.img --readback $SCRATCH/ab-base/benchcase --fat32-check
+21:56:22 [metal] staged 1 image(s); $SCRATCH/ab-base/request.txt lists them. The machine was not touched, so this run establishes nothing about it.
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `$WORKTREE/target/debug/deps/toyos_build-040be7639b65fd4e --metal --metal-readback $SCRATCH/ab-base osbench` (exit status: 2)
+exit=2
+back on: ipc-events 6250464e886582e841331779de39c17a697ea0a1

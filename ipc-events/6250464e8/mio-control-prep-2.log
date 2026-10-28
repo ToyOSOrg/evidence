@@ -1,0 +1,29 @@
+control: mio at the old pin f762092 on 6250464e886582e841331779de39c17a697ea0a1
+ tests/guest/rust-tests/Cargo.lock | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+-source = "git+https://github.com/ToyOSOrg/mio?branch=toyos#fe42def7bec9a1f01bfff764256fcdce77e7f7e1"
++source = "git+https://github.com/ToyOSOrg/mio?branch=toyos#f76209283c8133df0e56be2cd402e05ebdec41c8"
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.37s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-040be7639b65fd4e)
+21:49:37   BUILD x86_64 binaries of tests/guest/rust-tests
+21:49:45   BUILT x86_64 binaries of tests/guest/rust-tests  (8s)
+21:49:45   BUILD x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests
+21:49:48   BUILT x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests  (3s)
+21:49:48 [toyos] Compiling 143 C tests, and attempting 24 declared ones...
+21:49:53 [metal] 0 registration(s) and 1 shared member(s) over 1 boot(s)
+21:49:53   BUILD x86_64 kernel, loader, ROOT of $SCRATCH/mio-control/testcases/system-2a770b4231e3d3e1.toml
+21:49:56 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+21:49:56   BUILT x86_64 kernel, loader, ROOT of $SCRATCH/mio-control/testcases/system-2a770b4231e3d3e1.toml  (2s)
+21:49:56 [metal] testcases: 1 job(s) under a list bound of 60300 ms, armed with [] and a boot deadline of 120600 ms — $SCRATCH/mio-control/testcases/image.img
+# One boot per image. Each invocation is `cargo <words>` from this worktree.
+
+testcases
+  image: $SCRATCH/mio-control/testcases/image.img
+  cargo run -p toyos-metal -- --image $SCRATCH/mio-control/testcases/image.img --readback $SCRATCH/mio-control/testcases --fat32-check
+21:49:56 [metal] staged 1 image(s); $SCRATCH/mio-control/request.txt lists them. The machine was not touched, so this run establishes nothing about it.
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `$WORKTREE/target/debug/deps/toyos_build-040be7639b65fd4e --metal --metal-readback $SCRATCH/mio-control mio_waker_coalesces` (exit status: 2)
+exit=2
+restored:

@@ -1,0 +1,29 @@
+A/B head: 6250464e886582e841331779de39c17a697ea0a1 + measurement-only waitone rows (uncommitted, restored after)
+ tests/guest/osbench/src/main.rs | 11 ++++++++++-
+ 1 file changed, 10 insertions(+), 1 deletion(-)
+ M tests/guest/osbench/src/main.rs
+?? tests/guest/osbench/src/waitone.rs
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.63s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-040be7639b65fd4e)
+21:50:39   BUILD x86_64 binaries of tests/guest/rust-tests
+21:50:49   BUILT x86_64 binaries of tests/guest/rust-tests  (10s)
+21:50:49   BUILD x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests
+21:50:51   BUILT x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests  (2s)
+21:50:51 [toyos] Compiling 143 C tests, and attempting 24 declared ones...
+21:50:56 [metal] 1 registration(s) and 0 shared member(s) over 1 boot(s)
+21:50:56   BUILD x86_64 kernel, loader, ROOT of $SCRATCH/ab-head/benchcase/system-06016510e012b851.toml
+21:52:02 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+21:52:02   BUILT x86_64 kernel, loader, ROOT of $SCRATCH/ab-head/benchcase/system-06016510e012b851.toml  (66s)
+21:52:02 [metal] benchcase: 17 job(s) under a list bound of 525000 ms, armed with [] and a boot deadline of 1050000 ms — $SCRATCH/ab-head/benchcase/image.img
+# One boot per image. Each invocation is `cargo <words>` from this worktree.
+
+benchcase
+  image: $SCRATCH/ab-head/benchcase/image.img
+  cargo run -p toyos-metal -- --image $SCRATCH/ab-head/benchcase/image.img --readback $SCRATCH/ab-head/benchcase --fat32-check
+21:52:02 [metal] staged 1 image(s); $SCRATCH/ab-head/request.txt lists them. The machine was not touched, so this run establishes nothing about it.
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `$WORKTREE/target/debug/deps/toyos_build-040be7639b65fd4e --metal --metal-readback $SCRATCH/ab-head osbench` (exit status: 2)
+exit=2
+restored:
