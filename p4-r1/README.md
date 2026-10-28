@@ -16,3 +16,4 @@ Host: macOS arm64, QEMU x86-64 guests. Home and temporary paths masked as `~` an
 | ci-host-2.log | `cargo run -- --ci host` | 98c23c396 | 134: the host's disk filled; clippy's `ends_loom` findings fixed in 8bdf49156 |
 | ci-host-3.log | `cargo run -- --ci host` | 8bdf49156 | 0, 107 steps |
 | metal-prep.log, metal-t14-request.txt | `cargo test --test toyos-build -- --metal --metal-readback <dir> i219_carries_netstacks_link i219_leaves_ulp_unarmed` | 8bdf49156 | 2: staged, no machine touched |
+| metal-t14-judge.log | the readback of the orchestrator's T14 boot of metal-t14-request.txt (rc=0; Linux found the I219 afterwards), judged with `cargo test --test toyos-build -- --metal --metal-readback <dir> i219_carries_netstacks_link i219_leaves_ulp_unarmed` | 8bdf49156 | 0, both rows passed |
