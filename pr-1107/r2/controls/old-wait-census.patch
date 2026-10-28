@@ -1,0 +1,77 @@
+diff --git a/tests/toyos.rs b/tests/toyos.rs
+index a994f9f1a..50bed2a85 100644
+--- a/tests/toyos.rs
++++ b/tests/toyos.rs
+@@ -2954,12 +2954,10 @@ fn the_log_lands_on_the_boot_stick(test_config: &Path) -> Result<(), String> {
+     // power button is pressed, as the metal row's deadline finds it.
+     writeln!(qemu.stdin_mut(), "run {}", metal::STICK_LOAD_JOB).map_err(|e| e.to_string())?;
+     qemu.flush_stdin();
+-    // Any line past the first 1500, not one exact line: logkeeper sheds its
+-    // oldest console lines when the console falls behind the load.
+     let from = console.len();
+-    qemu::await_guest(&mut qemu, &mut console, "the load to write the stick", |log| {
+-        log[from..].lines().any(|l| stick_load_line(l).is_some_and(|n| n >= 1500))
+-    })?;
++    let waited = qemu::await_marker(&mut qemu, &mut console, "stick_load: line 1500 ", "the load to write the stick");
++    stick_console_census(&console[from..]);
++    waited?;
+     qemu::QmpShutdown::open(qemu.qmp_socket(), qemu.budget(qemu::GUEST_QUIET)).power_button();
+     let by = qemu.budget(Duration::from_secs(60));
+     console.push_str(&qemu.await_exit(by)?);
+@@ -2986,6 +2984,56 @@ fn the_log_lands_on_the_boot_stick(test_config: &Path) -> Result<(), String> {
+     usb_stopped_before_the_reset(&log, &console)
+ }
+ 
++/// TEMPORARY diagnostic: what the console delivered during the wait.
++fn stick_console_census(since: &str) {
++    let lines: Vec<&str> = since.lines().collect();
++    let mut unshown_reports = 0u64;
++    let mut unshown_lines = 0u64;
++    let mut stick = 0u64;
++    let mut partial = 0u64;
++    let mut gaps = 0u64;
++    let mut gap_lines = 0u64;
++    let mut prev: Option<u64> = None;
++    let (mut first, mut last) = (None, None);
++    for (i, l) in lines.iter().enumerate() {
++        if l.contains("went unshown") {
++            unshown_reports += 1;
++            let n = l.split_once("logkeeper: ").and_then(|(_, r)| r.split(' ').next()?.parse::<u64>().ok());
++            unshown_lines += n.unwrap_or(0);
++            eprintln!("  [census] {}", &l[..l.len().min(200)]);
++        }
++        if let Some(at) = l.find("stick_load: line ") {
++            stick += 1;
++            let whole = l.len() - at == 900 && l.matches("stick_load:").count() == 1;
++            if !whole && i + 1 != lines.len() {
++                partial += 1;
++                if partial <= 5 {
++                    eprintln!("  [census] partial ({} bytes): {}", l.len() - at, &l[..l.len().min(at + 60)]);
++                }
++            }
++            if let Some(n) = stick_load_line(l) {
++                first.get_or_insert(n);
++                last = Some(n);
++                if let Some(p) = prev {
++                    if n != p + 1 {
++                        gaps += 1;
++                        gap_lines += n.saturating_sub(p + 1);
++                        if gaps <= 10 {
++                            eprintln!("  [census] gap after line {p}: next is {n}");
++                        }
++                    }
++                }
++                prev = Some(n);
++            }
++        }
++    }
++    eprintln!(
++        "  [census] {} lines; stick_load {stick} (first {first:?}, last {last:?}); partial {partial}; gaps {gaps} ({gap_lines} lines); unshown reports {unshown_reports} ({unshown_lines} lines); line 1500 seen {}",
++        lines.len(),
++        since.contains("stick_load: line 1500 ")
++    );
++}
++
+ /// The number of a `stick_load` line. A line cut short reads as a prefix of
+ /// its number, never more than it.
+ fn stick_load_line(line: &str) -> Option<u64> {
