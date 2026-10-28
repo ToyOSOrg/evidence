@@ -4,7 +4,7 @@ Each boot's `hda_tone` row was judged by `cargo test --test toyos-build -- --met
 
 | Boot | Tree | hda_tone |
 |---|---|---|
-| early4 (session 2) | #1074 head 1f828f331 | pass |
+| early4 (session 2) | #1074 head 46848c491 | pass |
 | early6 (session 3) | #1074 head | pass |
 | early8 (session 4) | #1074 head | pass |
 | early9 (session 5) | #1074 head 0a48bf8b4 | pass |
