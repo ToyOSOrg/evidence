@@ -9,3 +9,4 @@ Head `b6a717df8`, rebased onto `717baf3ac`; same host as r1. Paths, user, LAN ad
 - `compile-fail-second-read.{patch,log}`: a second `drain.now()` in one attempt is refused, E0382 (cargo check exit 101). Run on `262855361` plus the uncommitted r3 change, whose code is `b6a717df8`'s except the `Drain` doc's first line.
 - `compiles-raw-bypass.{patch,log}`: a raw `ipc::signal(end.connection, RECEIVE)` that ignores the `Drain` compiles (exit 0), with unused-variable and dead-code warnings. This is the bypass the doc comment names. Same tree as the line above.
 - `r2-control-trees.diff`: r2's controls ran on a socket.rs that differs from `9a26dea93` by doc comments only, and on a datagram.rs identical to it. r2's `ci-host-2.log` and `r2-guest.log` are superseded by the two runs above at a recorded head.
+- Correction to r2's README: the host run it calls `ci-host.log` is the file `ci-host-2.log`.
