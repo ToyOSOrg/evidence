@@ -1,0 +1,9 @@
+--- a/kernel/src/counters.rs
++++ b/kernel/src/counters.rs
+@@ -206,5 +206,5 @@
+             match *last {
+                 // Strictly after: every answer to it is taken after its issue, and so after this call.
+-                Some((generation, issued)) if issued > called => break (generation, issued, false),
++                Some((generation, issued)) if issued > called || now < issued + JOIN.duration() => break (generation, issued, false),
+                 Some((_, issued)) if now < issued + JOIN.duration() => issued + JOIN.duration(),
+                 _ => {
