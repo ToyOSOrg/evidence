@@ -1,0 +1,20 @@
+--- a/lib/blockserve/src/designate.rs
++++ b/lib/blockserve/src/designate.rs
+@@ -106,7 +106,7 @@
+             }
+             Phase::Write => {
+                 self.phase = Phase::Flush;
+-                self.issue(Ask::Write { block: 0, at: STAMP })
++                self.issue(Ask::Write { block: 1, at: STAMP })
+             }
+             Phase::Flush => {
+                 self.phase = Phase::Back;
+@@ -114,7 +114,7 @@
+             }
+             Phase::Back => {
+                 self.phase = Phase::Compare;
+-                self.issue(Ask::Read { block: 0, count: 1, at: BACK })
++                self.issue(Ask::Read { block: 1, count: 1, at: BACK })
+             }
+             Phase::Compare => {
+                 let (mut back, mut stamp) = ([0u8; BLOCK_BYTES], [0u8; BLOCK_BYTES]);

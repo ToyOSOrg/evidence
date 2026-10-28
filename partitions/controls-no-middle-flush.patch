@@ -1,0 +1,11 @@
+--- a/lib/gpt/src/edit.rs
++++ b/lib/gpt/src/edit.rs
+@@ -297,7 +297,7 @@
+         let protective = mbr.then_some(Step::Write { lba: 0, bytes: block(&self.mbr) });
+         let primary_array = Step::Write { lba: 2, bytes: &self.array };
+         let primary_header = Step::Write { lba: 1, bytes: block(&self.primary) };
+-        [Some(backup_array), Some(backup_header), Some(Step::Flush), protective, Some(primary_array), Some(primary_header), Some(Step::Flush)]
++        [Some(backup_array), Some(backup_header), None, protective, Some(primary_array), Some(primary_header), Some(Step::Flush)]
+             .into_iter()
+             .flatten()
+     }

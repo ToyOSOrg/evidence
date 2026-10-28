@@ -1,0 +1,17 @@
+gpt.txt: text of UEFI 2.10 chapter 5 (GUID Partition Table Format), extracted from
+http://web.archive.org/web/20260918003715id_/https://uefi.org/specs/UEFI/2.10/05_GUID_Partition_Table_Format.html
+(uefi.org itself answers this host with a Cloudflare challenge). Fetched 2026-10-28.
+Load-bearing quotes:
+- 5.3.2 (line 370): "Software must update the backup GPT before the primary GPT, so if the size of device has changed (e.g. volume expansion) and the update is interrupted, the backup GPT is in the proper location on the disk"
+- line 370: "Software may update the GPT Header and GPT Partition Entry Array in any order, since all the CRCs are stored in the GPT Header."
+- line 371: "If the primary GPT is valid and the backup GPT is invalid software must restore the backup GPT."
+- line 368/369: restoring the primary "if allowed by platform policy settings"; "Software must report whenever it restores a GPT."
+- 5.3.3 Attributes bits 48-63: "Only the owner of the PartitionTypeGUID is allowed to modify these bits. They must be preserved if Bits 0-47 are modified."
+- 5.3.3: "Any time a new partition entry is created a new GUID must be generated"; "If GPT-cognizant software encounters two disks or partitions with identical GUIDs, results will be indeterminate."
+- 5.3.1: 512-byte blocks: First Usable LBA >= 34; 4096-byte: >= 6; minimum 16,384 bytes of entry array.
+- 5.3.1 alignment: "it may use LBAs that are multiples of 2,048 to align to 1,048,576 byte (1 MiB) boundaries".
+Sector counts (from earlier boot logs under agents/*/metal*/*/kernel.log):
+- T14 NVMe 04:00.0: 512-byte sectors, 500118192 sectors (multiple of 8)
+- AMD NVMe 02:00.0: 512-byte sectors, 2000409264 sectors (multiple of 8)
+- USB sticks: 7507812 blocks of 512 (NOT a multiple of 8: 4 sectors past the last whole 4 KiB block), 30041088 blocks of 512
+- usbd log: a scratch partition sgdisk made "is not served: LBA 2048+60060419 is not whole 4 KiB blocks of 512"
