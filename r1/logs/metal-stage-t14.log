@@ -1,0 +1,39 @@
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.23s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-040be7639b65fd4e)
+17:37:26   BUILD x86_64 binaries of tests/guest/rust-tests
+17:41:52   BUILT x86_64 binaries of tests/guest/rust-tests  (266s)
+17:41:52   BUILD x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests
+17:42:52   BUILT x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests  (61s)
+17:42:52 [toyos] Compiling 143 C tests, and attempting 24 declared ones...
+17:42:59 [metal] 2 registration(s) and 2 shared member(s) over 3 boot(s)
+17:42:59   BUILD x86_64 kernel, loader, ROOT of <scratch>/metal-t14/energybenchcase/system-6859ece27e658796.toml
+17:43:02 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+17:43:02   BUILT x86_64 kernel, loader, ROOT of <scratch>/metal-t14/energybenchcase/system-6859ece27e658796.toml  (3s)
+17:43:02 [metal] energybenchcase: 1 job(s) under a list bound of 360000 ms, armed with [] and a boot deadline of 720000 ms — <scratch>/metal-t14/energybenchcase/image.img
+17:43:02   BUILD x86_64 kernel boot-actuators,test-actuators, ROOT of <scratch>/metal-t14/shared-debug/system-3f03704dd8d64164.toml
+17:44:16 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+17:44:16   BUILT x86_64 kernel boot-actuators,test-actuators, ROOT of <scratch>/metal-t14/shared-debug/system-3f03704dd8d64164.toml  (74s)
+17:44:16 [metal] shared-debug: 1 job(s) under a list bound of 60300 ms, armed with ["pci-cap-selftest", "revoked-backing-selftest", "lapic-spurious-selftest", "unclaimed-vector-selftest", "sysret-ss-probe"] and a boot deadline of 120600 ms — <scratch>/metal-t14/shared-debug/image.img
+17:44:16   BUILD x86_64 ROOT of <scratch>/metal-t14/testcases/system-0762c7fc4643a43c.toml
+17:44:21 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+17:44:21   BUILT x86_64 ROOT of <scratch>/metal-t14/testcases/system-0762c7fc4643a43c.toml  (5s)
+17:44:21 [metal] testcases: 2 job(s) under a list bound of 60300 ms, armed with [] and a boot deadline of 120600 ms — <scratch>/metal-t14/testcases/image.img
+# One boot per image. Each invocation is `cargo <words>` from this worktree.
+
+energybenchcase
+  image: <scratch>/metal-t14/energybenchcase/image.img
+  cargo run -p toyos-metal -- --image <scratch>/metal-t14/energybenchcase/image.img --readback <scratch>/metal-t14/energybenchcase --fat32-check
+
+shared-debug
+  image: <scratch>/metal-t14/shared-debug/image.img
+  cargo run -p toyos-metal -- --image <scratch>/metal-t14/shared-debug/image.img --readback <scratch>/metal-t14/shared-debug --fat32-check
+
+testcases
+  image: <scratch>/metal-t14/testcases/image.img
+  cargo run -p toyos-metal -- --image <scratch>/metal-t14/testcases/image.img --readback <scratch>/metal-t14/testcases --fat32-check
+17:44:21 [metal] staged 3 image(s); <scratch>/metal-t14/request.txt lists them. The machine was not touched, so this run establishes nothing about it.
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `<home>/toyos-power/target/debug/deps/toyos_build-040be7639b65fd4e --metal --metal-readback <scratch>/metal-t14 osbench_energy counters` (exit status: 2)
+exit=2
