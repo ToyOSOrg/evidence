@@ -1,0 +1,79 @@
+   Compiling toyos-blockring v0.1.0 ($WORKTREE/lib/blockring)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.39s
+     Running unittests src/lib.rs ($WORKTREE/target/debug/deps/toyos_blockring-c95fa1b5df2af05a)
+
+running 26 tests
+test client::tests::a_request_without_arena_room_waits_for_it ... ok
+test client::tests::a_write_holds_arena_blocks_only_on_the_wire ... ok
+test client::tests::read_only_answers_a_write_alone ... ok
+test client::tests::a_second_answer_for_one_tag_is_a_violation ... ok
+test client::tests::nothing_goes_out_before_a_session ... ok
+test client::tests::what_was_on_the_wire_at_the_end_is_refused_and_what_was_not_waits ... ok
+test disk::tests::every_frame_survives_its_bytes_and_nothing_else_decodes ... ok
+test entry::tests::a_completion_survives_its_words_and_refuses_what_it_does_not_define ... ok
+test entry::tests::a_request_outside_its_bounds_is_refused_by_tag ... ok
+test entry::tests::a_request_survives_its_words ... ok
+test client::tests::overlapping_writes_go_out_again_in_order ... FAILED
+test client::tests::a_write_given_up_poisons_every_later_flush ... FAILED
+test client::tests::a_lost_flush_reissues_then_asks_again ... FAILED
+test model::tests::a_used_page_reads_fresh_once_a_servers_ends_are_made_over_it ... ok
+test server::tests::a_flush_after_a_loss_answers_lost_once ... ok
+test server::tests::a_read_only_session_refuses_a_write_unissued ... ok
+test server::tests::a_reset_answers_in_the_order_taken ... ok
+test server::tests::a_reset_answers_once_and_the_late_device_answer_is_dropped ... ok
+test server::tests::a_tag_in_flight_twice_is_refused_unissued ... ok
+test wire::tests::a_grant_reaches_its_own_partitions_and_decodes_only_whole ... ok
+test wire::tests::opened_and_refusal_survive_their_bytes_and_nothing_else_decodes ... ok
+test model::tests::states_named_alike_act_alike ... ok
+test model::tests::the_model_reaches_the_end_it_should ... ok
+test model::tests::the_model_reaches_a_write_given_up ... FAILED
+test model::tests::what_a_flush_calls_durable_is_on_the_medium ... FAILED
+test model::tests::every_request_is_answered_exactly_once ... ok
+
+failures:
+
+---- client::tests::overlapping_writes_go_out_again_in_order stdout ----
+
+thread 'client::tests::overlapping_writes_go_out_again_in_order' (99653194) panicked at lib/blockring/src/client.rs:608:39:
+called `Option::unwrap()` on a `None` value
+
+---- client::tests::a_write_given_up_poisons_every_later_flush stdout ----
+
+thread 'client::tests::a_write_given_up_poisons_every_later_flush' (99653191) panicked at lib/blockring/src/client.rs:629:43:
+called `Option::unwrap()` on a `None` value
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- client::tests::a_lost_flush_reissues_then_asks_again stdout ----
+
+thread 'client::tests::a_lost_flush_reissues_then_asks_again' (99653188) panicked at lib/blockring/src/client.rs:580:9:
+assertion `left == right` failed
+  left: []
+ right: [Placing { ticket: 1, write: true, blocks: 2 }]
+
+---- model::tests::the_model_reaches_a_write_given_up stdout ----
+Failures { resets: 0, crashes: 1, errors: 5 }: 290 end states, 18 with a flush given up, Some((Durable, "flush 1 was answered durable with block 0 holding 0, not the 1 acknowledged before it (or a later one of [1]), after ask 0 > take Write { run: Run { first: 0, count: 1 }, lba: 0 }#4 > done Write { run: Run { first: 0, count: 1 }, lba: 0 }#4 > read #4 Ok > ask 1 > take Flush#8 > fail Flush#8 > read #8 Device > take Flush#12 > fail Flush#12 > read #12 Device > take Flush#16 > fail Flush#16 > read #16 Device > take Flush#20 > fail Flush#20 > read #20 Device > take Flush#24 > fail Flush#24 > crash([None, None] [0, 0]) > notice > reconnect > take Flush#28 > done Flush#28 > read #28 Ok"))
+
+thread 'model::tests::the_model_reaches_a_write_given_up' (99653204) panicked at lib/blockring/src/model.rs:770:9:
+assertion `left == right` failed
+  left: Some((Durable, "flush 1 was answered durable with block 0 holding 0, not the 1 acknowledged before it (or a later one of [1]), after ask 0 > take Write { run: Run { first: 0, count: 1 }, lba: 0 }#4 > done Write { run: Run { first: 0, count: 1 }, lba: 0 }#4 > read #4 Ok > ask 1 > take Flush#8 > fail Flush#8 > read #8 Device > take Flush#12 > fail Flush#12 > read #12 Device > take Flush#16 > fail Flush#16 > read #16 Device > take Flush#20 > fail Flush#20 > read #20 Device > take Flush#24 > fail Flush#24 > crash([None, None] [0, 0]) > notice > reconnect > take Flush#28 > done Flush#28 > read #28 Ok"))
+ right: None
+
+---- model::tests::what_a_flush_calls_durable_is_on_the_medium stdout ----
+Failures { resets: 0, crashes: 0, errors: 0 }: 28 end states, 0 with a flush given up, None
+Failures { resets: 1, crashes: 0, errors: 0 }: 20 end states, 0 with a flush given up, Some((Durable, "flush 4 was answered durable with block 0 holding 1, not the 3 acknowledged before it (or a later one of [3]), after ask 0 > ask 1 > ask 2 > take Write { run: Run { first: 0, count: 1 }, lba: 0 }#4 > take Write { run: Run { first: 1, count: 1 }, lba: 1 }#5 > take Flush#6 > done Write { run: Run { first: 0, count: 1 }, lba: 0 }#4 > done Write { run: Run { first: 1, count: 1 }, lba: 1 }#5 > done Flush#6 > read #4 Ok > ask 3 > take Write { run: Run { first: 3, count: 1 }, lba: 0 }#8 > done Write { run: Run { first: 3, count: 1 }, lba: 0 }#8 > read #5 Ok > read #6 Ok > read #8 Ok > ask 4 > take Flush#12 > reset([] [None, None] [1, 2]) > read #12 Device > take Flush#16 > done Flush#16 > read #16 Lost > take Flush#20 > done Flush#20 > read #20 Ok"))
+
+thread 'model::tests::what_a_flush_calls_durable_is_on_the_medium' (99653206) panicked at lib/blockring/src/model.rs:747:17:
+Failures { resets: 1, crashes: 0, errors: 0 }: flush 4 was answered durable with block 0 holding 1, not the 3 acknowledged before it (or a later one of [3]), after ask 0 > ask 1 > ask 2 > take Write { run: Run { first: 0, count: 1 }, lba: 0 }#4 > take Write { run: Run { first: 1, count: 1 }, lba: 1 }#5 > take Flush#6 > done Write { run: Run { first: 0, count: 1 }, lba: 0 }#4 > done Write { run: Run { first: 1, count: 1 }, lba: 1 }#5 > done Flush#6 > read #4 Ok > ask 3 > take Write { run: Run { first: 3, count: 1 }, lba: 0 }#8 > done Write { run: Run { first: 3, count: 1 }, lba: 0 }#8 > read #5 Ok > read #6 Ok > read #8 Ok > ask 4 > take Flush#12 > reset([] [None, None] [1, 2]) > read #12 Device > take Flush#16 > done Flush#16 > read #16 Lost > take Flush#20 > done Flush#20 > read #20 Ok
+
+
+failures:
+    client::tests::a_lost_flush_reissues_then_asks_again
+    client::tests::a_write_given_up_poisons_every_later_flush
+    client::tests::overlapping_writes_go_out_again_in_order
+    model::tests::the_model_reaches_a_write_given_up
+    model::tests::what_a_flush_calls_durable_is_on_the_medium
+
+test result: FAILED. 21 passed; 5 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.52s
+
+error: test failed, to rerun pass `--lib`
+exit 101

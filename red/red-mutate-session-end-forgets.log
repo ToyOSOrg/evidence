@@ -1,0 +1,68 @@
+   Compiling toyos-blockring v0.1.0 ($WORKTREE/lib/blockring)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.73s
+     Running unittests src/lib.rs ($WORKTREE/target/debug/deps/toyos_blockring-6d2afb64af488f63)
+
+running 26 tests
+test client::tests::a_lost_flush_reissues_then_asks_again ... ok
+test client::tests::a_second_answer_for_one_tag_is_a_violation ... ok
+test client::tests::a_write_given_up_poisons_every_later_flush ... ok
+test client::tests::a_write_holds_arena_blocks_only_on_the_wire ... ok
+test client::tests::nothing_goes_out_before_a_session ... ok
+test client::tests::overlapping_writes_go_out_again_in_order ... ok
+test client::tests::a_request_without_arena_room_waits_for_it ... ok
+test client::tests::read_only_answers_a_write_alone ... ok
+test client::tests::what_was_on_the_wire_at_the_end_is_refused_and_what_was_not_waits ... FAILED
+test disk::tests::every_frame_survives_its_bytes_and_nothing_else_decodes ... ok
+test entry::tests::a_completion_survives_its_words_and_refuses_what_it_does_not_define ... ok
+test entry::tests::a_request_outside_its_bounds_is_refused_by_tag ... ok
+test model::tests::a_used_page_reads_fresh_once_a_servers_ends_are_made_over_it ... ok
+test entry::tests::a_request_survives_its_words ... ok
+test server::tests::a_reset_answers_in_the_order_taken ... ok
+test model::tests::states_named_alike_act_alike ... ok
+test server::tests::a_flush_after_a_loss_answers_lost_once ... ok
+test server::tests::a_read_only_session_refuses_a_write_unissued ... ok
+test server::tests::a_reset_answers_once_and_the_late_device_answer_is_dropped ... ok
+test server::tests::a_tag_in_flight_twice_is_refused_unissued ... ok
+test wire::tests::a_grant_reaches_its_own_partitions_and_decodes_only_whole ... ok
+test wire::tests::opened_and_refusal_survive_their_bytes_and_nothing_else_decodes ... ok
+test model::tests::the_model_reaches_a_write_given_up ... FAILED
+test model::tests::the_model_reaches_the_end_it_should ... ok
+test model::tests::every_request_is_answered_exactly_once ... FAILED
+test model::tests::what_a_flush_calls_durable_is_on_the_medium ... ok
+
+failures:
+
+---- client::tests::what_was_on_the_wire_at_the_end_is_refused_and_what_was_not_waits stdout ----
+
+thread 'client::tests::what_was_on_the_wire_at_the_end_is_refused_and_what_was_not_waits' (99649191) panicked at lib/blockring/src/client.rs:672:9:
+assertion `left == right` failed
+  left: []
+ right: [(1, Refused)]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- model::tests::the_model_reaches_a_write_given_up stdout ----
+Failures { resets: 0, crashes: 1, errors: 5 }: 28 end states, 2 with a flush given up, Some((Answers, "ticket 0 ended answered None, after ask 0 > ask 1 > take Write { run: Run { first: 0, count: 1 }, lba: 0 }#4 > take Flush#5 > done Write { run: Run { first: 0, count: 1 }, lba: 0 }#4 > done Flush#5 > crash([None, None] [1, 0]) > notice > reconnect > take Flush#8 > done Flush#8 > read #8 Ok"))
+
+thread 'model::tests::the_model_reaches_a_write_given_up' (99649199) panicked at lib/blockring/src/model.rs:770:9:
+assertion `left == right` failed
+  left: Some((Answers, "ticket 0 ended answered None, after ask 0 > ask 1 > take Write { run: Run { first: 0, count: 1 }, lba: 0 }#4 > take Flush#5 > done Write { run: Run { first: 0, count: 1 }, lba: 0 }#4 > done Flush#5 > crash([None, None] [1, 0]) > notice > reconnect > take Flush#8 > done Flush#8 > read #8 Ok"))
+ right: None
+
+---- model::tests::every_request_is_answered_exactly_once stdout ----
+Failures { resets: 0, crashes: 0, errors: 0 }: 28 end states, 0 with a flush given up, None
+Failures { resets: 1, crashes: 0, errors: 0 }: 492 end states, 0 with a flush given up, None
+Failures { resets: 0, crashes: 1, errors: 0 }: 4 end states, 0 with a flush given up, Some((Answers, "ticket 3 ended answered None, after ask 0 > ask 1 > ask 2 > take Write { run: Run { first: 0, count: 1 }, lba: 0 }#4 > take Write { run: Run { first: 1, count: 1 }, lba: 1 }#5 > take Flush#6 > done Write { run: Run { first: 0, count: 1 }, lba: 0 }#4 > done Write { run: Run { first: 1, count: 1 }, lba: 1 }#5 > done Flush#6 > read #4 Ok > ask 3 > ask 4 > take Write { run: Run { first: 3, count: 1 }, lba: 0 }#8 > take Flush#7 > done Write { run: Run { first: 3, count: 1 }, lba: 0 }#8 > done Flush#7 > read #5 Ok > read #6 Ok > crash([None, None] [3, 2]) > notice > reconnect > take Write { run: Run { first: 0, count: 1 }, lba: 0 }#12 > take Write { run: Run { first: 1, count: 1 }, lba: 1 }#9 > done Write { run: Run { first: 0, count: 1 }, lba: 0 }#12 > done Write { run: Run { first: 1, count: 1 }, lba: 1 }#9 > read #12 Ok > read #9 Ok > take Flush#16 > done Flush#16 > read #16 Ok"))
+
+thread 'model::tests::every_request_is_answered_exactly_once' (99649197) panicked at lib/blockring/src/model.rs:736:17:
+Failures { resets: 0, crashes: 1, errors: 0 }: ticket 3 ended answered None, after ask 0 > ask 1 > ask 2 > take Write { run: Run { first: 0, count: 1 }, lba: 0 }#4 > take Write { run: Run { first: 1, count: 1 }, lba: 1 }#5 > take Flush#6 > done Write { run: Run { first: 0, count: 1 }, lba: 0 }#4 > done Write { run: Run { first: 1, count: 1 }, lba: 1 }#5 > done Flush#6 > read #4 Ok > ask 3 > ask 4 > take Write { run: Run { first: 3, count: 1 }, lba: 0 }#8 > take Flush#7 > done Write { run: Run { first: 3, count: 1 }, lba: 0 }#8 > done Flush#7 > read #5 Ok > read #6 Ok > crash([None, None] [3, 2]) > notice > reconnect > take Write { run: Run { first: 0, count: 1 }, lba: 0 }#12 > take Write { run: Run { first: 1, count: 1 }, lba: 1 }#9 > done Write { run: Run { first: 0, count: 1 }, lba: 0 }#12 > done Write { run: Run { first: 1, count: 1 }, lba: 1 }#9 > read #12 Ok > read #9 Ok > take Flush#16 > done Flush#16 > read #16 Ok
+
+
+failures:
+    client::tests::what_was_on_the_wire_at_the_end_is_refused_and_what_was_not_waits
+    model::tests::every_request_is_answered_exactly_once
+    model::tests::the_model_reaches_a_write_given_up
+
+test result: FAILED. 23 passed; 3 failed; 0 ignored; 0 measured; 0 filtered out; finished in 6.54s
+
+error: test failed, to rerun pass `--lib`
+exit 101

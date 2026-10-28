@@ -1,0 +1,2027 @@
+diff --git a/issues/a-short-memset-on-x86-64-costs-a-rep-stosb-start-up.md b/issues/a-short-memset-on-x86-64-costs-a-rep-stosb-start-up.md
+index 295d960a8..1ed1b3caf 100644
+--- a/issues/a-short-memset-on-x86-64-costs-a-rep-stosb-start-up.md
++++ b/issues/a-short-memset-on-x86-64-costs-a-rep-stosb-start-up.md
+@@ -24,4 +24,4 @@ any program makes pays the instruction's start-up.
+ - That wipe costs more than `rep stosb` on long records. reject at 16 KiB reads 0.98 against ring on the T14 (0.76 with the `memset`) and 1.11–1.14 on the AMD bench (1.03).
+ - Evidence for those readings: the r4 judge logs linked above.
+ 
+-**Exit.** `fill` takes a short-length path, or selects by the fast short `rep stosb` feature where the CPU has it. The crate's workarounds then go: the refusal returns to `fill(0)`, and `block.rs`'s header drops its reason. `memcpy`'s `rep movsb` may share it: `mem.memcpy.64` reads 0.61 of Linux's on the AMD bench (`issues/a-small-memcpy-on-the-amd-bench-runs-at-as-little-as-six-tenths-of-linuxs.md`). The T14 reads a 0 B and a 64 B `memset` within a few nanoseconds of a store loop's. The kernel's counterpart is `issues/kernel-forward-copies-and-fills-are-one-rep-movsb-or-stosb-on-every-cpu.md`.
++**Exit.** `fill` takes a short-length path, or selects by the fast short `rep stosb` feature where the CPU has it. The crate's workarounds then go: the refusal returns to `fill(0)`, and `block.rs`'s header drops its reason. `memcpy`'s `rep movsb` may share the cost; it is unmeasured. The T14 reads a 0 B and a 64 B `memset` within a few nanoseconds of a store loop's. The kernel's counterpart is `issues/kernel-forward-copies-and-fills-are-one-rep-movsb-or-stosb-on-every-cpu.md`.
+diff --git a/issues/a-small-memcpy-on-the-amd-bench-runs-at-as-little-as-six-tenths-of-linuxs.md b/issues/a-small-memcpy-on-the-amd-bench-runs-at-as-little-as-six-tenths-of-linuxs.md
+deleted file mode 100644
+index d4c2897dd..000000000
+--- a/issues/a-small-memcpy-on-the-amd-bench-runs-at-as-little-as-six-tenths-of-linuxs.md
++++ /dev/null
+@@ -1,44 +0,0 @@
+----
+-status: open
+-kind: defect
+-opened: 2026-10-28
+----
+-
+-# A small memcpy on the AMD bench runs at as little as six tenths of Linux's
+-
+-`osbench mem`'s `mem.memcpy.<bytes>` copies a buffer of that size with each
+-system's own `memcpy`. On ToyOS that is `sdk/libc`'s, whose `copy_forward` is
+-one `rep movsb` at every length (`sdk/libc/src/arch/x86_64.rs`). On Linux it
+-is the static musl build's.
+-
+-From the 2026-10-28 scoreboard (evidence branch `scoreboard-2026-10-28`):
+-ToyOS at 069cbbeb8, four boots off the internal NVMe, against five runs of
+-each bench's Linux as installed, interleaved. A cell is the p50 with its
+-run-to-run range.
+-
+-| row | AMD ToyOS | AMD Linux | T14 ToyOS | T14 Linux |
+-|---|---|---|---|---|
+-| `mem.memcpy.64` | 3,942 MB/s (0.7%) | 6,492 MB/s (1.7%) | 18,507 MB/s (6.9%) | 6,226 MB/s (1.2%) |
+-| `mem.memcpy.256` | 14,493 MB/s (0.7%) | 16,158 MB/s (1.7%) | 29,720 MB/s (11.1%) | 24,932 MB/s (1.5%) |
+-| `mem.memcpy.16384` | 75,330 MB/s (1.2%) | 73,707 MB/s (3.0%) | 185,364 MB/s (0.3%) | 201,387 MB/s (17.9%) |
+-| `mem.memcpy.262144` | 25,696 MB/s (45.1%) | 36,472 MB/s (3.4%) | 55,722 MB/s (0.0%) | 55,634 MB/s (0.1%) |
+-| `mem.memcpy.67108864` | 6,140 MB/s (0.5%) | 6,302 MB/s (4.5%) | 9,257 MB/s (0.6%) | 9,677 MB/s (1.2%) |
+-
+-On the AMD (Ryzen 7 4800U) ToyOS loses 64 bytes at 0.61 of Linux's, 256 at
+-0.90 and 256 KiB at 0.70, each resolved. Zen 2 lacks ERMS
+-(`issues/kernel-forward-copies-and-fills-are-one-rep-movsb-or-stosb-on-every-cpu.md`),
+-and a `rep movsb` start-up is the cost
+-`issues/a-short-memset-on-x86-64-costs-a-rep-stosb-start-up.md` records for
+-`memset`. This row is that record's `memcpy` measurement. On the T14
+-(i5-1135G7) ToyOS wins 64 bytes threefold. It loses 16 KiB (1.09x) and
+-64 MiB (1.05x), both resolved, and matches at 256 KiB. The sweep asks for
+-huge pages, which Linux gives and ToyOS does not; the 64 MiB row's 0.95 of
+-Linux's equals `mem.bw.copy`'s under the same difference
+-(`issues/user-memory-hot-paths-are-slower-than-2-mib-pages.md`). The 256 KiB row's 45%
+-ToyOS range on the AMD is unexplained.
+-
+-**Exit**: `mem.memcpy.*` within Linux's on both benches in a labelled
+-current-state comparison, or each remaining difference measured and
+-justified against the vendors' guidance.
+-
+-**Owner**: userland's copy (`sdk/libc/src/memory.rs` and its `arch`).
+diff --git a/issues/a-small-message-round-trip-over-a-native-connection-costs-twice-linuxs-on-the-t14.md b/issues/a-small-message-round-trip-over-a-native-connection-costs-twice-linuxs-on-the-t14.md
+deleted file mode 100644
+index cd61c5a15..000000000
+--- a/issues/a-small-message-round-trip-over-a-native-connection-costs-twice-linuxs-on-the-t14.md
++++ /dev/null
+@@ -1,40 +0,0 @@
+----
+-status: open
+-kind: defect
+-opened: 2026-10-28
+----
+-
+-# A small message's round trip over a native connection costs twice Linux's on the T14
+-
+-`osbench ipc`'s `ipc.reqrep.8` sends 8 bytes to a server process and waits
+-for its 8-byte answer, over ToyOS's native connection and over a Unix stream
+-socket on Linux. `ipc.reqrep_handle.8` also moves a handle with each request.
+-
+-From the 2026-10-28 scoreboard (evidence branch `scoreboard-2026-10-28`):
+-ToyOS at 069cbbeb8, four boots off the internal NVMe, against five runs of
+-each bench's Linux as installed, interleaved. A cell is the p50 with its
+-run-to-run range. The AMD's Linux runs 1 to 3 timed through the TSC and 4
+-and 5 through the HPET, at 1.2 µs a timestamp.
+-
+-| row | T14 ToyOS | T14 Linux | AMD ToyOS | AMD Linux |
+-|---|---|---|---|---|
+-| `ipc.reqrep.8` | 7,184 ns (1.9%) | 3,515 ns (22.1%) | 7,324 ns (25.3%) | 13,829 ns (58.1%) |
+-| `ipc.reqrep_handle.8` | 8,789 ns (2.5%) | 7,260 ns (3.7%) | 8,887 ns (23.4%) | 21,077 ns (42.7%) |
+-
+-On the T14 ToyOS loses both rows, 2.04x and 1.21x, and both resolve. On the
+-AMD it does not lose:
+-- `reqrep_handle.8` resolves ToyOS better (0.42x). ToyOS's slowest boot,
+-  9,959 ns, beats every TSC Linux run, 20,238 to 21,099 ns.
+-- `reqrep.8` is unresolved. Linux's runs spread within the TSC runs
+-  themselves, 7,684, 14,983 and 15,719 ns, and the HPET runs read 13,829 and
+-  10,551, so the median is an HPET run's.
+-
+-The bulk-copy rows (`ipc.reqrep.4096`, `65536`) are
+-`issues/user-memory-hot-paths-are-slower-than-2-mib-pages.md`'s. What the
+-T14's 8-byte round trip spends its time on is unmeasured.
+-
+-**Exit**: `ipc.reqrep.8` and `ipc.reqrep_handle.8` within Linux's on both
+-benches in a labelled current-state comparison, or each remaining difference
+-measured to its parts and justified.
+-
+-**Owner**: native IPC (`sdk/toyos/src/ipc.rs` and the kernel's message path).
+diff --git a/issues/a-tlb-shootdown-reaches-only-the-cpus-that-ran-the-space.md b/issues/a-tlb-shootdown-reaches-only-the-cpus-that-ran-the-space.md
+index e36fbdd29..e75186e5b 100644
+--- a/issues/a-tlb-shootdown-reaches-only-the-cpus-that-ran-the-space.md
++++ b/issues/a-tlb-shootdown-reaches-only-the-cpus-that-ran-the-space.md
+@@ -31,10 +31,5 @@ another space runs there, and faults touching the page again after the
+ initiator unmapped it meanwhile. The TCG model has no PCID
+ (`build/arch.rs`), so only metal can show a switched-out CPU's entries.
+ 
+-In the 2026-10-28 scoreboard (evidence branch `scoreboard-2026-10-28`) the
+-T14 lost `mem.munmap_part.4k` at 1.22x Linux's (1,558 against 1,280 ns) and
+-`mem.munmap_touched_remote.4k` at 1.32x (3,028 against 2,290 ns), each
+-resolved; the AMD won both.
+-
+ **Exit**: that case, on each proving machine with PCID, red with the flush on
+ entry removed; and the T14's munmap and `vm_protect` figures against Linux.
+diff --git a/issues/a-tmpfs-metadata-call-costs-toyos-up-to-six-times-linuxs.md b/issues/a-tmpfs-metadata-call-costs-toyos-up-to-six-times-linuxs.md
+deleted file mode 100644
+index 30f31aa39..000000000
+--- a/issues/a-tmpfs-metadata-call-costs-toyos-up-to-six-times-linuxs.md
++++ /dev/null
+@@ -1,54 +0,0 @@
+----
+-status: open
+-kind: defect
+-opened: 2026-10-28
+----
+-
+-# A tmpfs metadata call costs ToyOS up to six times Linux's
+-
+-`osbench files` runs the same operations under each system's memory
+-filesystem: ToyOS's `/tmp`, which the kernel serves through syscalls today,
+-and Linux's `/dev/shm`, tmpfs through the VFS.
+-
+-From the 2026-10-28 scoreboard (evidence branch `scoreboard-2026-10-28`):
+-ToyOS at 069cbbeb8, four boots off the internal NVMe, against five runs of
+-each bench's Linux as installed, interleaved. A cell is the p50 with its
+-run-to-run range. The AMD's Linux runs 1 to 3 timed through the TSC and 4
+-and 5 through the HPET, at 1.2 µs a timestamp.
+-
+-| row | T14 ToyOS | T14 Linux | AMD ToyOS | AMD Linux |
+-|---|---|---|---|---|
+-| `fs.mem.open_close` | 7,291 ns (7.7%) | 1,114 ns (8.1%) | 6,157 ns (0.8%) | 2,946 ns (48.4%) |
+-| `fs.mem.stat` | 3,115 ns (5.3%) | 584 ns (2.6%) | 2,616 ns (1.1%) | 1,513 ns (90.7%) |
+-| `fs.mem.rename` | 7,374 ns (6.3%) | 1,624 ns (2.3%) | 6,282 ns (1.1%) | 4,538 ns (35.7%) |
+-| `fs.mem.mkdir_rmdir` | 9,011 ns (9.1%) | 2,213 ns (1.5%) | 7,705 ns (3.1%) | 6,702 ns (23.3%) |
+-| `fs.mem.tree.100` | 1,505,195 ns (4.1%) | 548,925 ns (1.1%) | 1,384,280 ns (1.3%) | 1,457,995 ns (2.6%) |
+-| `fs.mem.create_write_unlink` | 12,832 ns (4.7%) | 4,715 ns (2.1%) | 10,801 ns (0.6%) | 12,743 ns (13.7%) |
+-| `fs.mem.write_4k_at` | 1,237 ns (4.0%) | 625 ns (5.0%) | 1,563 ns (7.7%) | 1,823 ns (61.0%) |
+-| `fs.mem.read_4k_at` | 1,222 ns (2.3%) | 710 ns (4.5%) | 1,422 ns (3.5%) | 1,403 ns (70.8%) |
+-
+-On the T14 ToyOS loses all eight, 1.7x to 6.5x, each resolved. On the AMD it
+-loses `open_close` (2.1x) and `rename` (1.4x), both resolved, wins
+-`tree.100`, `create_write_unlink` and `write_4k_at`, and is unresolved on the
+-other three. There the HPET explains Linux's spread: its TSC runs read
+-`open_close` at 2.9 µs and its HPET runs at 4.3 µs. The listing
+-(`fs.mem.readdir.1000`) is `issues/a-listing-still-scans-the-whole-mount.md`'s,
+-and the sequential copies are
+-`issues/user-memory-hot-paths-are-slower-than-2-mib-pages.md`'s.
+-
+-**The kernel's tmpfs is not where this is fixed.** Step 9 of
+-`issues/the-kernel-is-small-interrupts-post-and-threads-wait.md`, under the
+-owner's rulings of 2026-09-25 and 2026-10-03, deletes `tmpfs.rs`,
+-`fs_rename.rs`, `file_cache.rs` and `vfs.rs`, and moves `/tmp` to
+-userland per session. An `fs.mem` call then becomes a file server request,
+-which costs 3 to 12 times a kernel file call today
+-(`issues/a-file-server-request-costs-three-to-twelve-times-a-kernel-file-call.md`).
+-So the move makes this gap larger, unless the file server's round trip
+-shrinks first.
+-
+-**Exit**: once `/tmp` is served from userland, these eight rows within
+-Linux's on both benches in a labelled current-state comparison, or each
+-remaining difference measured to its parts and justified.
+-
+-**Owner**: whatever serves `/tmp` through step 9's migration. Until then,
+-nothing in the kernel's tmpfs is owed this work.
+diff --git a/issues/a-two-thread-ping-pong-costs-toyos-up-to-twice-linuxs-on-the-t14.md b/issues/a-two-thread-ping-pong-costs-toyos-up-to-twice-linuxs-on-the-t14.md
+deleted file mode 100644
+index dc3a01c71..000000000
+--- a/issues/a-two-thread-ping-pong-costs-toyos-up-to-twice-linuxs-on-the-t14.md
++++ /dev/null
+@@ -1,47 +0,0 @@
+----
+-status: open
+-kind: defect
+-opened: 2026-10-28
+----
+-
+-# A two-thread ping-pong costs ToyOS up to twice Linux's on the T14
+-
+-`osbench sched`'s `pingpong.*` passes a turn between two threads, by futex
+-wait and wake (`futex`) and by a pipe's write and read (`pipe`). It runs on
+-one CPU (`same_cpu`) and across cores (`cross_core`). Each sample is one
+-round trip as the pinger sees it.
+-
+-From the 2026-10-28 scoreboard (evidence branch `scoreboard-2026-10-28`):
+-ToyOS at 069cbbeb8, four boots off the internal NVMe, against five runs of
+-each bench's Linux as installed, interleaved. A cell is the p50 with its
+-run-to-run range. The AMD's Linux runs 1 to 3 timed through the TSC and 4
+-and 5 through the HPET, at 1.2 µs a timestamp.
+-
+-| row | T14 ToyOS | T14 Linux | AMD ToyOS | AMD Linux |
+-|---|---|---|---|---|
+-| `pingpong.futex.same_cpu` | 4,580 ns (10.1%) | 2,279 ns (4.4%) | 5,015 ns (31.3%) | 6,248 ns (27.1%) |
+-| `pingpong.futex.cross_core` | 4,574 ns (2.5%) | 3,341 ns (0.9%) | 5,662 ns (26.7%) | 9,864 ns (43.5%) |
+-| `pingpong.pipe.same_cpu` | 6,186 ns (1.3%) | 4,504 ns (54.4%) | 5,656 ns (1.2%) | 7,739 ns (24.9%) |
+-| `pingpong.pipe.cross_core` | 6,802 ns (7.1%) | 3,712 ns (6.0%) | 5,746 ns (30.5%) | 15,021 ns (57.8%) |
+-
+-On the T14 ToyOS loses all four, 1.37x to 2.01x, each resolved. On the AMD
+-ToyOS is faster in all four, and against Linux's TSC runs alone too: the
+-futex rows read 6,141 to 6,248 ns (`same_cpu`) and 9,648 to 9,864 ns
+-(`cross_core`) there, both above ToyOS's medians. The T14's Linux timed every
+-run through the TSC. Where its round trip's time goes, the wait, the wake or the
+-switch, is unmeasured.
+-
+-#1074 has since changed the pipe on main and reads `pingpong.pipe.*` lower
+-on its head than its base
+-(`issues/a-64-kib-pipe-write-is-two-percent-below-the-two-mebibyte-ring.md`),
+-so the `pipe` rows' current state against Linux is owed a new reading.
+-The scheduler's pair-wake records bear on both kinds:
+-`issues/a-wake-whose-waker-parks-next-is-forwarded-to-an-idle-cpu.md` and
+-`issues/an-ordinary-wake-posted-on-its-own-cpu-waits-for-that-cpus-next-pass.md`.
+-
+-**Exit**: `pingpong.*` within Linux's on both benches in a labelled
+-current-state comparison, or each remaining difference measured to its parts
+-and justified.
+-
+-**Owner**: the kernel's futex and wake path (`kernel/src/sched/futex.rs`,
+-`kernel/src/sched/`), and the pipe (`kernel/src/pipe.rs`) for its rows.
+diff --git a/issues/anonymous-memory-swaps-to-an-encrypted-partition.md b/issues/anonymous-memory-swaps-to-an-encrypted-partition.md
+index 1f6372e69..1529e4f63 100644
+--- a/issues/anonymous-memory-swaps-to-an-encrypted-partition.md
++++ b/issues/anonymous-memory-swaps-to-an-encrypted-partition.md
+@@ -134,18 +134,21 @@ The symbols:
+     atomically, and is refused whole if any is not free. A referenced block is
+     never written.
+   - **Free after durable.** `clean_end` comes only after a flush answers durable
+-    for every write of the batch. The block client keeps acknowledged writes and
+-    reissues them after a loss (`lib/blockring/src/client.rs`), and durable rests
+-    on that.
++    for every write of the batch. The block client reissues an acknowledged
++    write after a loss until a flush covers it (`lib/blockring/src/client.rs`),
++    from the blocks the service hands the session shared, which the session
++    keeps until then; durable rests on that.
+   - **Install before freeing.** Swap-in installs the frame and frees the block in
+     one hold of the space lock.
+   - **Re-dirtying.** A store, a kernel write copy, or a `mem_write` into a page
+     being cleaned keeps it dirty, and keeps its frame.
+ - **Arena reserve.** A swap session's arena has 511 blocks and its ring has 64
+-  entries.
+-  - Writes hold at most 447 blocks and 48 entries, leaving 64 blocks and 16
+-    entries for swap-in reads.
+-  - The service flushes once 223 acknowledged writes are held.
++  entries, and both carry only requests on the wire: an acknowledged write
++  holds neither.
++  - Writes on the wire hold at most 447 blocks and 48 entries, leaving 64
++    blocks and 16 entries for swap-in reads.
++  - The service flushes once it keeps the ciphertext of 223 acknowledged
++    writes, which bounds what the session holds shared for it.
+ - **`CLEANING` on private leaves.**
+   - A store faults and clears it. So does a kernel write copy, which takes its
+     pin under the space lock. A read copy leaves it.
+diff --git a/issues/no-published-run-compares-toyos-with-linux-on-one-machine.md b/issues/no-published-run-compares-toyos-with-linux-on-one-machine.md
+index c07acd6f3..723a6c4f1 100644
+--- a/issues/no-published-run-compares-toyos-with-linux-on-one-machine.md
++++ b/issues/no-published-run-compares-toyos-with-linux-on-one-machine.md
+@@ -82,8 +82,7 @@ comparison until it can:
+   AX200, are measured under Linux alone.
+ - **USB, NVMe and cpuidle identity**: their owners serve no program that
+   reads them.
+-- **Loopback** (`net.*`): netstack refuses 127/8 as a destination
+-  (`issues/toyos-has-no-loopback-so-osbench-net-measures-nothing.md`).
++- **Loopback** (`net.*`): netstack refuses 127/8 as a destination.
+ 
+ **Exit**: both systems' outputs on the T14 and the AMD bench published in
+ evidence, Linux's run before the T14's wipe. Linux's outputs are a goal
+diff --git a/issues/spawning-a-process-costs-toyos-up-to-four-times-linuxs-on-the-t14.md b/issues/spawning-a-process-costs-toyos-up-to-four-times-linuxs-on-the-t14.md
+deleted file mode 100644
+index 40f2d220f..000000000
+--- a/issues/spawning-a-process-costs-toyos-up-to-four-times-linuxs-on-the-t14.md
++++ /dev/null
+@@ -1,75 +0,0 @@
+----
+-status: open
+-kind: defect
+-opened: 2026-10-28
+----
+-
+-# Spawning a process costs ToyOS up to four times Linux's on the T14
+-
+-`osbench`'s spawn rows spawn a program, wait for it, and time the whole.
+-`proc.spawn_wait.*` uses std's `Command`, `proc.posix_spawn_wait.*` C's
+-`posix_spawn` and `waitpid`, and `process.spawn_wait` spawns osbench itself.
+-`tiny` is a minimal program written to `/tmp`, `large` the same with 32 MiB
+-of data it never reads, and `std` the osbench binary. `thread.spawn_join.*`
+-creates and joins an empty thread. `work.build_shaped.j<cpus>` compresses 256
+-files, one child process each, as many at once as there are CPUs.
+-
+-From the 2026-10-28 scoreboard (evidence branch `scoreboard-2026-10-28`):
+-ToyOS at 069cbbeb8, four boots off the internal NVMe, against five runs of
+-each bench's Linux as installed, interleaved. A cell is the p50 with its
+-run-to-run range. The AMD's Linux runs 1 to 3 timed through the TSC and 4
+-and 5 through the HPET, at 1.2 µs a timestamp.
+-
+-| row | T14 ToyOS | T14 Linux | AMD ToyOS | AMD Linux |
+-|---|---|---|---|---|
+-| `proc.spawn_wait.tiny` | 52,548 ns (19.8%) | 52,094 ns (1.2%) | 69,724 ns (11.8%) | 266,663 ns (64.7%) |
+-| `proc.spawn_wait.large` | 202,300 ns (13.0%) | 54,906 ns (3.0%) | 170,284 ns (18.2%) | 273,444 ns (10.2%) |
+-| `proc.posix_spawn_wait.tiny` | 55,722 ns (10.1%) | 43,698 ns (2.4%) | 75,015 ns (4.2%) | 92,704 ns (150.0%) |
+-| `proc.posix_spawn_wait.std` | 451,798 ns (1.7%) | 169,630 ns (2.1%) | 504,838 ns (6.8%) | 327,668 ns (158.1%) |
+-| `process.spawn_wait` | 452,918 ns (4.7%) | 179,133 ns (6.0%) | 534,832 ns (3.8%) | 911,540 ns (64.2%) |
+-| `thread.spawn_join` | 28,144 ns (1.0%) | 25,040 ns (2.6%) | 41,094 ns (4.4%) | 72,607 ns (34.6%) |
+-| `thread.spawn_join.stack64k` | 28,562 ns (0.9%) | 23,441 ns (1.1%) | 40,322 ns (3.3%) | 65,844 ns (22.2%) |
+-
+-| row | ToyOS | Linux |
+-|---|---|---|
+-| T14 `work.build_shaped.j8` | 166,245,528 ns (2.4%) | 99,148,404 ns (1.2%) |
+-| AMD `work.build_shaped.j16` | 270,675,582 ns (1.0%) | 116,739,823 ns (13.4%) |
+-
+-**On the T14** ToyOS loses every spawn and thread row but one. The
+-like-for-like pair is std's `Command` with the two programs: `tiny` reads
+-1.01x, unresolved, and `large` 3.68x, resolved. Under `Command`, then, what
+-costs ToyOS on that bench is what `large` adds, its 32 MiB in `/tmp`
+-(8,192 pages). `posix_spawn` of the osbench binary reads 2.66x and
+-`process.spawn_wait` 2.53x.
+-
+-**On the AMD** ToyOS resolves better on `spawn_wait.large`,
+-`posix_spawn_wait.tiny`, `spawn_wait.tiny` and every thread row, and stays
+-better against Linux's TSC runs alone (`large`: Linux 259 to 273 µs, ToyOS
+-155 to 186 µs). It reads better, unresolved, on `process.spawn_wait`, and
+-1.54x worse, unresolved, on `posix_spawn_wait.std`.
+-Linux's spreads there are its own: bimodal within the TSC runs
+-(`posix_spawn_wait.std` run 2 reads 740 µs), and a 1.2 µs timestamp is under
+-1% of a spawn.
+-
+-**The all-CPU build loses on both benches**, 1.68x on the T14 (`j8`) and
+-2.32x on the AMD (`j16`), where ToyOS's one-at-a-time build (`j1`) beats
+-Linux's on both.
+-
+-What `large` exercises is recorded. A spawn from a `/tmp` file snapshots it,
+-taking a reference to each resident page under the file cache's lock and 16
+-bytes a page (`issues/user-memory-hot-paths-are-slower-than-2-mib-pages.md`,
+-"Spawn"), and shared text is stage 5 of
+-`issues/process-memory-in-4-kib-pages-still-copies-each-programs-text.md`.
+-This record adds the measured cost of that mechanism against Linux, the
+-osbench binary's spawn on the T14, the thread rows, and the parallel build,
+-whose loss where the serial build wins is unmeasured.
+-`issues/idle-cpus-enter-the-c-states-cst-names.md` records the T14's `j1`
+-under deep idle.
+-
+-**Exit**: these rows within Linux's on both benches in a labelled
+-current-state comparison, or each remaining difference measured to its parts
+-and justified.
+-
+-**Owner**: process creation (`kernel/src/process.rs`, `kernel/src/elf/`, the
+-SDK's spawn and `sdk/libc/src/spawn.rs`) and, for the parallel build, the
+-scheduler (`kernel/src/sched/`).
+diff --git a/issues/std-yield-now-on-toyos-yields-nothing.md b/issues/std-yield-now-on-toyos-yields-nothing.md
+deleted file mode 100644
+index 9b44422dc..000000000
+--- a/issues/std-yield-now-on-toyos-yields-nothing.md
++++ /dev/null
+@@ -1,30 +0,0 @@
+----
+-status: open
+-kind: defect
+-opened: 2026-10-28
+----
+-
+-# std's `yield_now` on ToyOS yields nothing
+-
+-ToyOS has no yield syscall, and its std's `thread::yield_now` is a spin-loop
+-hint (`sdk/std/sys/thread.rs`). A Rust program that yields to let another
+-runnable thread go keeps its CPU instead, and spin-wait loops written against
+-`yield_now` behave unlike they do on every other platform. `osbench`'s
+-`time.yield` therefore reports `unsupported` on ToyOS rather than time a hint
+-against Linux's `sched_yield`.
+-
+-From the 2026-10-28 scoreboard (evidence branch `scoreboard-2026-10-28`):
+-ToyOS at 069cbbeb8, four boots off the internal NVMe, against five runs of
+-each bench's Linux as installed, interleaved. A cell is the p50 with its
+-run-to-run range.
+-
+-| row | T14 Linux | AMD Linux | ToyOS |
+-|---|---|---|---|
+-| `time.yield` | 190,677 ps (0.6%) | 552,167 ps (1.9%) | unsupported, all 4 boots on both benches |
+-
+-**Exit**: a yield that gives the CPU to another runnable thread of the
+-caller's band, std's `yield_now` on it, and `time.yield` measured on
+-ToyOS within Linux's on both benches.
+-
+-**Owner**: the scheduler's syscall surface (`kernel/src/sched/`, `sdk/abi`)
+-and ToyOS's std (`sdk/std/sys/thread.rs`).
+diff --git a/issues/toyos-durable-writes-on-the-t14s-nvme-run-six-times-slower-in-some-boots.md b/issues/toyos-durable-writes-on-the-t14s-nvme-run-six-times-slower-in-some-boots.md
+deleted file mode 100644
+index dac95da62..000000000
+--- a/issues/toyos-durable-writes-on-the-t14s-nvme-run-six-times-slower-in-some-boots.md
++++ /dev/null
+@@ -1,44 +0,0 @@
+----
+-status: open
+-kind: defect
+-opened: 2026-10-28
+----
+-
+-# ToyOS's durable writes on the T14's NVMe run six times slower in some boots
+-
+-On the T14 (SK hynix BC501, volatile write cache present, so ToyOS's NVMe
+-driver issues Flush), five boots of PR #1097's storage code on 2026-10-28,
+-all off the internal NVMe with DATA on it, read these p50s:
+-
+-| boot | `fsync_clean` | `write_4k_fsync` | `append_4k_fsync` | `create_fsync_unlink` | `seq_write_fsync` |
+-|---|---|---|---|---|---|
+-| c8f3fbfb0 (16:08) | 3.02 ms | 6.13 ms | 6.18 ms | 6.87 ms | 162 MB/s |
+-| 069cbbeb8 (16:47) | 0.46 ms | 1.10 ms | 1.01 ms | 1.17 ms | 347 MB/s |
+-| 069cbbeb8 (17:31) | 3.42 ms | 6.65 ms | 6.85 ms | 5.05 ms | 149 MB/s |
+-| 069cbbeb8 (17:39) | 0.50 ms | 1.08 ms | 1.04 ms | 7.10 ms | 167 MB/s |
+-| 069cbbeb8 (17:48) | 0.58 ms | 1.08 ms | 1.09 ms | 1.23 ms | 311 MB/s |
+-
+-The bench's Linux, on ext4 on the same NVMe, read these rows in the runs
+-interleaved with each set of boots. The c8f3fbfb0 boot had its own
+-validation's two Linux runs: `write_4k_fsync` 0.81 to 1.01 ms,
+-`append_4k_fsync` 0.80 to 1.04 ms, `create_fsync_unlink` 0.86 to 0.93 ms, and
+-`seq_write_fsync` 587 to 598 MB/s. The four 069cbbeb8 boots were interleaved
+-with five Linux runs: `write_4k_fsync` 0.99 to 1.04 ms, `append_4k_fsync` 0.83
+-to 1.25 ms, `create_fsync_unlink` 0.94 to 0.98 ms, and `seq_write_fsync` 486 to
+-600 MB/s. Two of the five ToyOS boots ran slow through all of `persist`.
+-A third turned slow partway, between `append_4k_fsync` and
+-`create_fsync_unlink`. No change to the NVMe driver, the block service, the
+-file server or the DATA format lies between the two heads. The boots' NVMe
+-and DATA log lines do not tell the slow ones apart, and the cause is
+-unknown. A fast boot's clean fsync, a superblock write and a Flush, takes
+-0.46 to 0.58 ms where Linux's takes 23 µs
+-(`issues/a-clean-fsync-on-data-writes-the-superblock-and-flushes-the-disk.md`).
+-The figures are evidence branch `scoreboard-2026-10-28`'s and PR #1097's.
+-
+-**Exit**: repeated boots on the T14 read every durable `persist` row
+-(`write_4k_fsync`, `append_4k_fsync`, `create_fsync_unlink` and
+-`seq_write_fsync`) within Linux's, in every boot and for the whole of each
+-boot's run. Or the slow mode is explained by a measured cause.
+-
+-**Owner**: the NVMe driver (`system/nvme/`) and the DATA volume's commit
+-(`lib/bcachefs/src/fs.rs`).
+diff --git a/issues/toyos-durable-writes-on-the-t14s-nvme-took-1-to-6-ms-across-two-boots.md b/issues/toyos-durable-writes-on-the-t14s-nvme-took-1-to-6-ms-across-two-boots.md
+new file mode 100644
+index 000000000..fb0341082
+--- /dev/null
++++ b/issues/toyos-durable-writes-on-the-t14s-nvme-took-1-to-6-ms-across-two-boots.md
+@@ -0,0 +1,32 @@
++---
++status: open
++kind: defect
++opened: 2026-10-28
++---
++
++# ToyOS's durable writes on the T14's NVMe took 1 to 6 ms across two boots
++
++On the T14 (SK hynix BC501, volatile write cache present, so ToyOS's NVMe
++driver issues Flush), two boots of PR #1097, both off the internal NVMe with
++DATA on it, read these p50s. Linux is two runs on ext4 on the same NVMe in
++each validation:
++
++| row | ToyOS, c8f3fbfb0 | ToyOS, 069cbbeb8 | Linux (both validations) |
++|---|---|---|---|
++| `persist.fsync_clean` | 3,019,602 ns | 464,505 ns | 22,970 to 23,012 ns |
++| `persist.write_4k_fsync` | 6,125,947 ns | 1,099,737 ns | 811,313 to 1,035,997 ns |
++| `persist.append_4k_fsync` | 6,182,133 ns | 1,012,768 ns | 796,449 to 1,200,332 ns |
++| `persist.seq_write_fsync` | 162 MB/s | 347 MB/s | 527 to 598 MB/s |
++
++No change to the NVMe driver, the block service, the file server or the
++DATA format lies between the two heads; the second rebased onto #1095's
++boot path, and both booted off the NVMe. Why one boot's durable writes cost
++six times the other's is unknown. The clean fsync's remaining 20x, a
++superblock write and a Flush where Linux's clean fsync takes 23 µs, is
++`issues/a-clean-fsync-on-data-writes-the-superblock-and-flushes-the-disk.md`.
++
++**Exit**: repeated boots on the T14 read ToyOS's `persist.write_4k_fsync`
++within Linux's, or the boots that do not are explained by a measured cause.
++
++**Owner**: the NVMe driver (`system/nvme/`) and the DATA volume's commit
++(`lib/bcachefs/src/fs.rs`).
+diff --git a/issues/toyos-has-no-loopback-so-osbench-net-measures-nothing.md b/issues/toyos-has-no-loopback-so-osbench-net-measures-nothing.md
+deleted file mode 100644
+index e302991ba..000000000
+--- a/issues/toyos-has-no-loopback-so-osbench-net-measures-nothing.md
++++ /dev/null
+@@ -1,53 +0,0 @@
+----
+-status: open
+-kind: defect
+-opened: 2026-10-28
+----
+-
+-# ToyOS has no loopback, so `osbench net` measures nothing
+-
+-netstack treats 127/8 as a destination that never exists (`is_martian`,
+-`system/netstack/wire/src/addr.rs`), and so does each of its paths:
+-- **TCP connect.** `shard::connect` asks the route first, and the route
+-  refuses a martian (`system/netstack/ip/src/route.rs`,
+-  `Counter::RouteInvalidDestination`) before it would match the host's own
+-  address.
+-- **TCP listen.** `shard::listen` refuses an address the host does not hold,
+-  127.0.0.1 among them, as `NotLocal`, answered `ERR_INVALID_INPUT`
+-  (`system/netstack/src/serve.rs`). So `TcpListener::bind("127.0.0.1:0")`,
+-  a loopback program's first call, fails.
+-- **UDP.** `unusable` refuses a loopback destination and a send to the
+-  host's own address by name (`system/netstack/udp/src/lib.rs`,
+-  `Counter::SendLoopback`, `SendToSelf`).
+-- **Tests.** The unit tests hold these refusals: the route's
+-  `s_ip_rte_006_invalid_and_local_destinations` (127.0.0.1 is
+-  `RouteInvalidDestination`, `system/netstack/ip/tests/addr.rs`) and UDP's
+-  `s_udp_us_003_only_an_assigned_address_binds`.
+-
+-**The connect's refusal is misreported.** `serve.rs`'s `connect_refused`
+-answers any route refusal `ERR_NOT_CONNECTED`, whose contract is "a machine
+-with no address or no route yet … which clears when a lease lands". For
+-127/8 it never clears. A program connecting to localhost is told it is
+-waiting for a lease, not that the destination is refused.
+-
+-`osbench net` measures TCP and UDP between two local processes over
+-127.0.0.1, and reports all five rows unsupported on ToyOS without trying. From
+-the 2026-10-28 scoreboard (evidence branch `scoreboard-2026-10-28`), five
+-runs of each bench's Linux:
+-
+-| row | T14 ToyOS | T14 Linux | AMD ToyOS | AMD Linux |
+-|---|---|---|---|---|
+-| `net.tcp.connect_accept_close` | unsupported | 20,913 ns (1.0%) | unsupported | 49,002 ns (59.0%) |
+-| `net.tcp.reqrep.64` | unsupported | 8,935 ns (8.5%) | unsupported | 27,241 ns (30.8%) |
+-| `net.tcp.stream.65536` | unsupported | 6,719 MB/s (2.3%) | unsupported | 2,894 MB/s (25.1%) |
+-| `net.udp.reqrep.64` | unsupported | 7,287 ns (2.3%) | unsupported | 22,642 ns (78.6%) |
+-
+-A program that talks to itself or a sibling over 127.0.0.1, as many servers
+-and tests do, cannot run unchanged on ToyOS.
+-
+-**Exit**: netstack carries a loopback path, and a connect it still refuses is
+-answered by what it is, not as a missing lease. `osbench net` attempts its
+-rows on ToyOS, and they are within Linux's on both benches in a labelled
+-current-state comparison.
+-
+-**Owner**: netstack (`system/netstack/`).
+diff --git a/issues/user-memory-hot-paths-are-slower-than-2-mib-pages.md b/issues/user-memory-hot-paths-are-slower-than-2-mib-pages.md
+index 958c3edfa..497c7d6c1 100644
+--- a/issues/user-memory-hot-paths-are-slower-than-2-mib-pages.md
++++ b/issues/user-memory-hot-paths-are-slower-than-2-mib-pages.md
+@@ -82,12 +82,6 @@ The copies (`fs.tmp`, `ipc`, `pipe`) point at the user-copy path above.
+ "With runs" is `a75abd3f6` against `b48c7dd9d` on the T14, one run each;
+ `6d826e313` gave 500, 521 and 132,434 for the first three rows.
+ 
+-`mem.bw.copy` streams two 64 MiB buffers it asks to be huge. In the
+-2026-10-28 scoreboard (evidence branch `scoreboard-2026-10-28`) Linux gave
+-131,072 KiB of huge pages and ToyOS none; ToyOS read 0.95 of Linux's on the
+-T14 (6,651 against 6,992 MB/s) and 0.98 on the AMD (8,352 against 8,550),
+-each resolved worse.
+-
+ `mem.realloc_grow` no longer copies. std and libc map a block of 256 KiB or
+ more on its own (`sdk/libc/src/mapped.rs`) and grow it by `vm_remap`, which
+ moves pages. On the T14 at 204243e7f, `1m_256m` took 45.9 us, its last
+diff --git a/lib/blockdev/src/lib.rs b/lib/blockdev/src/lib.rs
+index 92d476ec2..95d4c2e81 100644
+--- a/lib/blockdev/src/lib.rs
++++ b/lib/blockdev/src/lib.rs
+@@ -33,6 +33,11 @@ pub const BLOCK: usize = 4096;
+ /// One block.
+ pub type Block = [u8; BLOCK];
+ 
++/// A block's bytes shared between whoever wrote them and a device that may
++/// write them again: a served disk keeps a write's until a flush covers it.
++/// The block is boxed on its own so its owner can allocate it fallibly.
++pub type SharedBlock = Rc<alloc::boxed::Box<Block>>;
++
+ /// Why a device did not do what it was asked.
+ #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+ pub enum Error {
+diff --git a/lib/blockring/src/client.rs b/lib/blockring/src/client.rs
+index 8d65fec48..062b73a2b 100644
+--- a/lib/blockring/src/client.rs
++++ b/lib/blockring/src/client.rs
+@@ -7,11 +7,16 @@
+ //! that is not on the wire is the server breaking the session
+ //! ([`Violation::Tag`]), not a second answer.
+ //!
+-//! **An acknowledged write is kept until a flush covers it.** Its arena blocks
+-//! stay pinned ([`Client::take_released`] is when they come back) because a
+-//! loss — a flush answered [`Status::Lost`] or [`Status::Device`], or a session
+-//! that ended — means the device may no longer hold it, and the only copy left
+-//! is the client's. After a loss every such write is issued again, in the order
++//! **The arena holds only what is on the wire.** A read or a write is given
++//! its arena blocks as it goes out ([`Client::next_request`]'s `place`) and
++//! gives them back when it is answered ([`Client::take_released`]); nothing
++//! waiting to go out, and nothing acknowledged, holds any.
++//!
++//! **An acknowledged write is kept until a flush covers it**, by its ticket:
++//! the caller keeps its bytes until [`Client::take_retired`] names it, because
++//! a loss — a flush answered [`Status::Lost`] or [`Status::Device`], or a
++//! session that ended — means the device may no longer hold it, and the only
++//! copy left is the caller's. After a loss every such write is issued again, in the order
+ //! it was first acknowledged and never beside an earlier one it overlaps, and
+ //! nothing else goes on the wire until they are all acknowledged again; the
+ //! flush that was waiting is then asked again. A flush is answered
+@@ -32,6 +37,11 @@
+ //! **Requests in flight at once are unordered.** A caller must not have two in
+ //! flight whose ranges overlap when either is a write, nor reuse arena blocks
+ //! before they are released.
++//!
++//! **A write's bytes are the caller's to keep** from [`Client::submit`] until
++//! the write is answered anything but [`Outcome::Done`], or until
++//! [`Client::take_retired`] names its ticket; `place` copies them into the
++//! arena each time the write goes out.
+ 
+ use alloc::collections::{BTreeMap, VecDeque};
+ use alloc::vec::Vec;
+@@ -39,6 +49,25 @@ use alloc::vec::Vec;
+ use toyos::transport::{Inflight, Run, Violation};
+ 
+ use crate::entry::{Completion, Op, Request, Status};
++
++/// What a caller asks for. A transfer names its blocks, not the arena blocks
++/// it will move through: those are given as it goes on the wire.
++#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
++pub enum Ask {
++    Read { lba: u64, blocks: u32 },
++    Write { lba: u64, blocks: u32 },
++    Flush,
++}
++
++/// A transfer going on the wire, for `place` to give arena blocks: a write's
++/// are filled with the bytes the caller keeps for `ticket`, the write's own,
++/// when it is the caller's or issued again.
++#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
++pub struct Placing {
++    pub ticket: Ticket,
++    pub write: bool,
++    pub blocks: u32,
++}
+ use crate::layout::DEPTH;
+ 
+ /// The caller's name for one thing it asked for.
+@@ -74,7 +103,9 @@ pub enum Outcome {
+ #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+ struct Acked {
+     lba: u64,
+-    run: Run,
++    blocks: u32,
++    /// The caller's ticket for it, by which the caller keeps its bytes.
++    ticket: Ticket,
+     /// When it was first acknowledged, which is the order it is issued again
+     /// in.
+     first: u64,
+@@ -85,7 +116,7 @@ struct Acked {
+ 
+ impl Acked {
+     fn overlaps_range(&self, lba: u64, blocks: u32) -> bool {
+-        self.lba < lba + u64::from(blocks) && lba < self.lba + u64::from(self.run.count())
++        self.lba < lba + u64::from(blocks) && lba < self.lba + u64::from(self.blocks)
+     }
+ }
+ 
+@@ -103,19 +134,39 @@ enum Kind {
+ /// A request not yet on the wire.
+ #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+ struct Queued {
+-    op: Op,
++    ask: Ask,
+     kind: Kind,
+ }
+ 
+-/// A request on the wire, and for a flush the acknowledgement it covers below
+-/// and the losses it was sent after.
++impl Queued {
++    /// The ticket whose bytes a write carries.
++    fn ticket(&self) -> Ticket {
++        match self.kind {
++            Kind::User(ticket) | Kind::Flush(ticket) => ticket,
++            Kind::Reissue(acked) => acked.ticket,
++        }
++    }
++}
++
++/// A request on the wire, the op it went as, and for a flush the
++/// acknowledgement it covers below and the losses it was sent after.
+ #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+ struct Sent {
+     queued: Queued,
++    op: Op,
+     covers: u64,
+     losses: u64,
+ }
+ 
++impl Sent {
++    fn run(&self) -> Option<Run> {
++        match self.op {
++            Op::Read { run, .. } | Op::Write { run, .. } => Some(run),
++            Op::Flush => None,
++        }
++    }
++}
++
+ /// `D` is the most requests it has on the wire at once: a session's [`DEPTH`].
+ #[derive(Clone, Debug, PartialEq, Eq, Hash, Default)]
+ pub struct Client<const D: usize = { DEPTH as usize }> {
+@@ -132,6 +183,8 @@ pub struct Client<const D: usize = { DEPTH as usize }> {
+     attempts: BTreeMap<Ticket, u32>,
+     answers: VecDeque<(Ticket, Outcome)>,
+     released: VecDeque<Run>,
++    /// Write tickets whose bytes nothing will send again.
++    retired: VecDeque<Ticket>,
+     /// Writes put on the wire again after a loss, over the client's life.
+     reissued: u64,
+     /// An acknowledged write was given up: no flush is durable again.
+@@ -146,12 +199,12 @@ impl<const D: usize> Client<D> {
+     }
+ 
+     /// Ask for a read, a write or a flush.
+-    pub fn submit(&mut self, ticket: Ticket, op: Op) {
+-        let kind = match op {
+-            Op::Flush => Kind::Flush(ticket),
+-            Op::Read { .. } | Op::Write { .. } => Kind::User(ticket),
++    pub fn submit(&mut self, ticket: Ticket, ask: Ask) {
++        let kind = match ask {
++            Ask::Flush => Kind::Flush(ticket),
++            Ask::Read { .. } | Ask::Write { .. } => Kind::User(ticket),
+         };
+-        self.outbox.push_back(Queued { op, kind });
++        self.outbox.push_back(Queued { ask, kind });
+     }
+ 
+     fn reissuing(&self) -> bool {
+@@ -159,11 +212,13 @@ impl<const D: usize> Client<D> {
+             || self.outbox.front().is_some_and(|q| matches!(q.kind, Kind::Reissue(_)))
+     }
+ 
+-    /// The next request to put on the wire, tagged; `None` while there is no
+-    /// session, nothing to send, `D` on the wire, or what is next must
+-    /// wait for writes being issued again.
+-    pub fn next_request(&mut self) -> Option<Request> {
+-        if !self.up {
++    /// The next request to put on the wire, tagged, its transfer placed in the
++    /// arena by `place`; `None` while there is no session, nothing to send,
++    /// `D` on the wire, what is next must wait for writes being issued again,
++    /// or `place` has no room for it, which a request on the wire answered
++    /// makes.
++    pub fn next_request(&mut self, mut place: impl FnMut(Placing) -> Option<Run>) -> Option<Request> {
++        if !self.up || self.wire.values().count() == D {
+             return None;
+         }
+         let front = *self.outbox.front()?;
+@@ -174,7 +229,7 @@ impl<const D: usize> Client<D> {
+             // later one of the caller's.
+             Kind::Reissue(acked) => {
+                 let blocked = self.wire.values().any(|sent| {
+-                    matches!(sent.queued.op, Op::Write { run, lba } if acked.overlaps_range(lba, run.count()))
++                    matches!(sent.op, Op::Write { run, lba } if acked.overlaps_range(lba, run.count()))
+                 });
+                 if blocked {
+                     return None;
+@@ -186,24 +241,37 @@ impl<const D: usize> Client<D> {
+                 }
+             }
+         }
+-        let tag = self.wire.insert(Sent { queued: front, covers: self.next_seq, losses: self.losses }).ok()?;
++        let op = match front.ask {
++            Ask::Flush => Op::Flush,
++            Ask::Read { lba, blocks } => {
++                Op::Read { run: place(Placing { ticket: front.ticket(), write: false, blocks })?, lba }
++            }
++            Ask::Write { lba, blocks } => {
++                Op::Write { run: place(Placing { ticket: front.ticket(), write: true, blocks })?, lba }
++            }
++        };
++        let sent = Sent { queued: front, op, covers: self.next_seq, losses: self.losses };
++        let tag = self.wire.insert(sent).expect("blockring: a slot counted free was taken");
+         self.outbox.pop_front();
+         if matches!(front.kind, Kind::Reissue(_)) {
+             self.reissued += 1;
+         }
+-        Some(Request { op: front.op, tag })
++        Some(Request { op, tag })
+     }
+ 
+     /// What the server answered.
+     pub fn complete(&mut self, completion: Completion) -> Result<(), Violation> {
+         let sent = self.wire.answer(completion.tag)?;
+         let q = sent.queued;
++        // Answered, whatever the word: its arena blocks are free once a read's
++        // data has been taken, which the caller does before it releases them.
++        self.released.extend(sent.run());
+         match (q.kind, completion.status) {
+             (Kind::User(ticket), Status::Ok) => {
+-                match q.op {
++                match sent.op {
+                     Op::Write { run, lba } => {
+                         let seq = self.bump();
+-                        let acked = Acked { lba, run, first: seq, seq, attempts: 0 };
++                        let acked = Acked { lba, blocks: run.count(), ticket, first: seq, seq, attempts: 0 };
+                         // Sent before a loss it did not see: the device may
+                         // have taken it and lost it, and an earlier write it
+                         // overlaps is being issued again — so it is issued
+@@ -214,19 +282,16 @@ impl<const D: usize> Client<D> {
+                             self.acked.push_back(acked);
+                         }
+                     }
+-                    Op::Read { run, .. } => self.released.push_back(run),
++                    Op::Read { .. } => {}
+                     Op::Flush => return Err(Violation::Entry),
+                 }
+                 self.answers.push_back((ticket, Outcome::Done));
+             }
+             (Kind::User(ticket), status) => {
+-                if let Op::Read { run, .. } | Op::Write { run, .. } = q.op {
+-                    self.released.push_back(run);
+-                }
+                 let outcome = match status {
+                     Status::Invalid => Outcome::Invalid,
+                     Status::Device => Outcome::Device,
+-                    Status::ReadOnly if matches!(q.op, Op::Write { .. }) => Outcome::ReadOnly,
++                    Status::ReadOnly if matches!(sent.op, Op::Write { .. }) => Outcome::ReadOnly,
+                     // A read or a write answered `Lost`, or a read answered
+                     // `ReadOnly`, is a server that does not know which op it
+                     // was.
+@@ -253,7 +318,7 @@ impl<const D: usize> Client<D> {
+                 if acked.attempts > MAX_ATTEMPTS {
+                     // The device will not take the only copy there is: every
+                     // flush waiting is told so, and the write is gone.
+-                    self.released.push_back(acked.run);
++                    self.retired.push_back(acked.ticket);
+                     self.gave_up = true;
+                     self.fail_waiting_flushes();
+                 } else {
+@@ -268,7 +333,7 @@ impl<const D: usize> Client<D> {
+             (Kind::Flush(ticket), Status::Ok) => {
+                 while self.acked.front().is_some_and(|a| a.seq < sent.covers) {
+                     let a = self.acked.pop_front().expect("just seen");
+-                    self.released.push_back(a.run);
++                    self.retired.push_back(a.ticket);
+                 }
+                 self.attempts.remove(&ticket);
+                 let outcome = if self.gave_up { Outcome::Device } else { Outcome::Durable };
+@@ -297,15 +362,11 @@ impl<const D: usize> Client<D> {
+         let mut flushes = Vec::new();
+         for sent in wire {
+             let q = sent.queued;
++            self.released.extend(sent.run());
+             match q.kind {
+                 Kind::User(ticket) => {
+                     #[cfg(not(feature = "mutate-session-end-forgets"))]
+-                    {
+-                        if let Op::Read { run, .. } | Op::Write { run, .. } = q.op {
+-                            self.released.push_back(run);
+-                        }
+-                        self.answers.push_back((ticket, Outcome::Refused));
+-                    }
++                    self.answers.push_back((ticket, Outcome::Refused));
+                     #[cfg(feature = "mutate-session-end-forgets")]
+                     let _ = ticket;
+                 }
+@@ -340,6 +401,12 @@ impl<const D: usize> Client<D> {
+         self.released.drain(..)
+     }
+ 
++    /// Acknowledged writes, by ticket, that nothing will send again: a flush
++    /// covered them, or they were given up.
++    pub fn take_retired(&mut self) -> impl Iterator<Item = Ticket> + '_ {
++        self.retired.drain(..)
++    }
++
+     /// Nothing is waiting, on the wire, or held for a flush.
+     pub fn quiet(&self) -> bool {
+         self.outbox.is_empty() && self.wire.values().next().is_none() && self.acked.is_empty()
+@@ -377,7 +444,7 @@ impl<const D: usize> Client<D> {
+                 Kind::User(_) | Kind::Flush(_) => true,
+             })
+             .unwrap_or(self.outbox.len());
+-        self.outbox.insert(at, Queued { op: Op::Write { run: acked.run, lba: acked.lba }, kind: Kind::Reissue(acked) });
++        self.outbox.insert(at, Queued { ask: Ask::Write { lba: acked.lba, blocks: acked.blocks }, kind: Kind::Reissue(acked) });
+     }
+ 
+     /// Ask the flush `ticket` again, once every write being issued again is
+@@ -388,7 +455,7 @@ impl<const D: usize> Client<D> {
+             .iter()
+             .position(|q| !matches!(q.kind, Kind::Reissue(_) | Kind::Flush(_)))
+             .unwrap_or(self.outbox.len());
+-        self.outbox.insert(at, Queued { op: Op::Flush, kind: Kind::Flush(ticket) });
++        self.outbox.insert(at, Queued { ask: Ask::Flush, kind: Kind::Flush(ticket) });
+     }
+ 
+     /// The device may no longer hold any write acknowledged and not covered:
+@@ -426,8 +493,18 @@ mod tests {
+     use super::*;
+     use crate::layout::ARENA;
+ 
+-    fn run(first: u32, count: u32) -> Run {
+-        ARENA.run(first, count).unwrap()
++    /// The arena blocks every test gives a transfer: four from its ticket's
++    /// fourth, so each ticket's are its own and a test can name them.
++    fn run_of(ticket: Ticket, blocks: u32) -> Run {
++        ARENA.run(ticket as u32 * 4, blocks).unwrap()
++    }
++
++    fn place(p: Placing) -> Option<Run> {
++        Some(run_of(p.ticket, p.blocks))
++    }
++
++    fn next(client: &mut Client) -> Option<Request> {
++        client.next_request(place)
+     }
+ 
+     fn answer(client: &mut Client, request: Request, status: Status) {
+@@ -437,45 +514,80 @@ mod tests {
+     #[test]
+     fn nothing_goes_out_before_a_session() {
+         let mut client: Client = Client::new();
+-        client.submit(1, Op::Read { run: run(0, 1), lba: 0 });
+-        assert_eq!(client.next_request(), None);
++        client.submit(1, Ask::Read { lba: 0, blocks: 1 });
++        assert_eq!(next(&mut client), None);
+         client.session_started();
+-        assert!(client.next_request().is_some());
++        assert!(next(&mut client).is_some());
+     }
+ 
+     #[test]
+     fn a_second_answer_for_one_tag_is_a_violation() {
+         let mut client: Client = Client::new();
+         client.session_started();
+-        client.submit(1, Op::Read { run: run(0, 1), lba: 0 });
+-        let r = client.next_request().unwrap();
++        client.submit(1, Ask::Read { lba: 0, blocks: 1 });
++        let r = next(&mut client).unwrap();
+         answer(&mut client, r, Status::Ok);
+         assert_eq!(client.complete(Completion { tag: r.tag, status: Status::Ok }), Err(Violation::Tag));
+     }
+ 
++    /// An acknowledged write gives its arena blocks back at once, and its
++    /// ticket is retired only by the flush that covers it.
++    #[test]
++    fn a_write_holds_arena_blocks_only_on_the_wire() {
++        let mut client: Client = Client::new();
++        client.session_started();
++        client.submit(1, Ask::Write { lba: 5, blocks: 2 });
++        let w = next(&mut client).unwrap();
++        assert_eq!(w.op, Op::Write { run: run_of(1, 2), lba: 5 });
++        answer(&mut client, w, Status::Ok);
++        assert_eq!(client.take_released().collect::<Vec<_>>(), [run_of(1, 2)]);
++        assert_eq!(client.take_retired().count(), 0, "acknowledged, not yet covered");
++        client.submit(2, Ask::Flush);
++        let f = next(&mut client).unwrap();
++        answer(&mut client, f, Status::Ok);
++        assert_eq!(client.take_retired().collect::<Vec<_>>(), [1]);
++        assert!(client.quiet());
++    }
++
++    /// A request `place` has no room for waits, unsent and unanswered, and
++    /// goes once there is room.
++    #[test]
++    fn a_request_without_arena_room_waits_for_it() {
++        let mut client: Client = Client::new();
++        client.session_started();
++        client.submit(1, Ask::Write { lba: 0, blocks: 1 });
++        assert_eq!(client.next_request(|_| None), None);
++        assert_eq!(client.take_answers().count(), 0);
++        let w = next(&mut client).unwrap();
++        assert_eq!(w.op, Op::Write { run: run_of(1, 1), lba: 0 });
++    }
++
+     /// A write acknowledged, then a flush answered `Lost`: the write goes out
+-    /// again before the flush is asked again, and the flush's caller hears
+-    /// `Durable` only from the second.
++    /// again, placed again under its own ticket, before the flush is asked
++    /// again, and the flush's caller hears `Durable` only from the second.
+     #[test]
+     fn a_lost_flush_reissues_then_asks_again() {
+         let mut client: Client = Client::new();
+         client.session_started();
+-        client.submit(1, Op::Write { run: run(3, 2), lba: 5 });
+-        let w = client.next_request().unwrap();
++        client.submit(1, Ask::Write { lba: 5, blocks: 2 });
++        let w = next(&mut client).unwrap();
+         answer(&mut client, w, Status::Ok);
+-        client.submit(2, Op::Flush);
+-        let f = client.next_request().unwrap();
++        client.submit(2, Ask::Flush);
++        let f = next(&mut client).unwrap();
+         answer(&mut client, f, Status::Lost);
+-        let again = client.next_request().unwrap();
+-        assert_eq!(again.op, Op::Write { run: run(3, 2), lba: 5 });
+-        assert_eq!(client.next_request(), None, "the flush waits for the write");
++        let mut placed = Vec::new();
++        let again = client.next_request(|p| { placed.push(p); place(p) }).unwrap();
++        assert_eq!(placed, [Placing { ticket: 1, write: true, blocks: 2 }]);
++        assert_eq!(again.op, Op::Write { run: run_of(1, 2), lba: 5 });
++        assert_eq!(next(&mut client), None, "the flush waits for the write");
+         answer(&mut client, again, Status::Ok);
+-        let f2 = client.next_request().unwrap();
++        let f2 = next(&mut client).unwrap();
+         assert_eq!(f2.op, Op::Flush);
+         answer(&mut client, f2, Status::Ok);
+         let answers: Vec<_> = client.take_answers().collect();
+         assert_eq!(answers, [(1, Outcome::Done), (2, Outcome::Durable)]);
+-        assert_eq!(client.take_released().collect::<Vec<_>>(), [run(3, 2)]);
++        assert_eq!(client.take_released().collect::<Vec<_>>(), [run_of(1, 2), run_of(1, 2)]);
++        assert_eq!(client.take_retired().collect::<Vec<_>>(), [1]);
+         assert!(client.quiet());
+     }
+ 
+@@ -485,46 +597,47 @@ mod tests {
+     fn overlapping_writes_go_out_again_in_order() {
+         let mut client: Client = Client::new();
+         client.session_started();
+-        client.submit(1, Op::Write { run: run(0, 2), lba: 0 });
+-        let a = client.next_request().unwrap();
++        client.submit(1, Ask::Write { lba: 0, blocks: 2 });
++        let a = next(&mut client).unwrap();
+         answer(&mut client, a, Status::Ok);
+-        client.submit(2, Op::Write { run: run(2, 1), lba: 1 });
+-        let b = client.next_request().unwrap();
++        client.submit(2, Ask::Write { lba: 1, blocks: 1 });
++        let b = next(&mut client).unwrap();
+         answer(&mut client, b, Status::Ok);
+         client.session_ended();
+         client.session_started();
+-        let first = client.next_request().unwrap();
+-        assert_eq!(first.op, Op::Write { run: run(0, 2), lba: 0 });
+-        assert_eq!(client.next_request(), None, "the overlapping one waits");
++        let first = next(&mut client).unwrap();
++        assert_eq!(first.op, Op::Write { run: run_of(1, 2), lba: 0 });
++        assert_eq!(next(&mut client), None, "the overlapping one waits");
+         answer(&mut client, first, Status::Ok);
+-        let second = client.next_request().unwrap();
+-        assert_eq!(second.op, Op::Write { run: run(2, 1), lba: 1 });
++        let second = next(&mut client).unwrap();
++        assert_eq!(second.op, Op::Write { run: run_of(2, 1), lba: 1 });
+     }
+ 
+     /// A write the device refused on every reissue is gone, and its caller was
+-    /// told it was done: a flush asked for after that is answered the loss,
+-    /// never durable.
++    /// told it was done: its ticket is retired, and a flush asked for after
++    /// that is answered the loss, never durable.
+     #[test]
+     fn a_write_given_up_poisons_every_later_flush() {
+         let mut client: Client = Client::new();
+         client.session_started();
+-        client.submit(1, Op::Write { run: run(0, 1), lba: 0 });
+-        let w = client.next_request().unwrap();
++        client.submit(1, Ask::Write { lba: 0, blocks: 1 });
++        let w = next(&mut client).unwrap();
+         answer(&mut client, w, Status::Ok);
+         client.session_ended();
+         for _ in 0..=MAX_ATTEMPTS {
+             client.session_started();
+-            let again = client.next_request().unwrap();
+-            assert_eq!(again.op, Op::Write { run: run(0, 1), lba: 0 });
++            let again = next(&mut client).unwrap();
++            assert_eq!(again.op, Op::Write { run: run_of(1, 1), lba: 0 });
+             answer(&mut client, again, Status::Device);
+         }
+-        client.submit(2, Op::Flush);
+-        let f = client.next_request().unwrap();
++        assert_eq!(client.take_retired().collect::<Vec<_>>(), [1]);
++        client.submit(2, Ask::Flush);
++        let f = next(&mut client).unwrap();
+         assert_eq!(f.op, Op::Flush);
+         answer(&mut client, f, Status::Ok);
+         assert_eq!(client.take_answers().collect::<Vec<_>>(), [(1, Outcome::Done), (2, Outcome::Device)]);
+-        client.submit(3, Op::Flush);
+-        let f = client.next_request().unwrap();
++        client.submit(3, Ask::Flush);
++        let f = next(&mut client).unwrap();
+         answer(&mut client, f, Status::Ok);
+         assert_eq!(client.take_answers().collect::<Vec<_>>(), [(3, Outcome::Device)]);
+     }
+@@ -536,14 +649,14 @@ mod tests {
+     fn read_only_answers_a_write_alone() {
+         let mut client: Client = Client::new();
+         client.session_started();
+-        client.submit(1, Op::Write { run: run(0, 1), lba: 0 });
+-        let w = client.next_request().unwrap();
++        client.submit(1, Ask::Write { lba: 0, blocks: 1 });
++        let w = next(&mut client).unwrap();
+         answer(&mut client, w, Status::ReadOnly);
+         assert_eq!(client.take_answers().collect::<Vec<_>>(), [(1, Outcome::ReadOnly)]);
+-        assert_eq!(client.take_released().collect::<Vec<_>>(), [run(0, 1)]);
+-        for op in [Op::Read { run: run(1, 1), lba: 0 }, Op::Flush] {
+-            client.submit(2, op);
+-            let r = client.next_request().unwrap();
++        assert_eq!(client.take_released().collect::<Vec<_>>(), [run_of(1, 1)]);
++        for ask in [Ask::Read { lba: 0, blocks: 1 }, Ask::Flush] {
++            client.submit(2, ask);
++            let r = next(&mut client).unwrap();
+             assert_eq!(client.complete(Completion { tag: r.tag, status: Status::ReadOnly }), Err(Violation::Entry));
+         }
+     }
+@@ -552,14 +665,14 @@ mod tests {
+     fn what_was_on_the_wire_at_the_end_is_refused_and_what_was_not_waits() {
+         let mut client: Client = Client::new();
+         client.session_started();
+-        client.submit(1, Op::Write { run: run(0, 1), lba: 0 });
+-        client.submit(2, Op::Read { run: run(1, 1), lba: 4 });
+-        let _ = client.next_request().unwrap();
++        client.submit(1, Ask::Write { lba: 0, blocks: 1 });
++        client.submit(2, Ask::Read { lba: 4, blocks: 1 });
++        let _ = client.next_request(place).unwrap();
+         client.session_ended();
+         assert_eq!(client.take_answers().collect::<Vec<_>>(), [(1, Outcome::Refused)]);
+-        assert_eq!(client.take_released().collect::<Vec<_>>(), [run(0, 1)]);
++        assert_eq!(client.take_released().collect::<Vec<_>>(), [run_of(1, 1)]);
+         client.session_started();
+-        let r = client.next_request().unwrap();
+-        assert_eq!(r.op, Op::Read { run: run(1, 1), lba: 4 });
++        let r = next(&mut client).unwrap();
++        assert_eq!(r.op, Op::Read { run: run_of(2, 1), lba: 4 });
+     }
+ }
+diff --git a/lib/blockring/src/model.rs b/lib/blockring/src/model.rs
+index 18337cdfd..61a379778 100644
+--- a/lib/blockring/src/model.rs
++++ b/lib/blockring/src/model.rs
+@@ -37,7 +37,7 @@ use std::collections::HashSet;
+ use toyos_blockhold::Holds;
+ use toyos::transport::{Consumer, Place, Producer, Violation, Word};
+ 
+-use crate::client::{Client, Outcome, Ticket, MAX_ATTEMPTS};
++use crate::client::{Ask, Client, Outcome, Ticket, MAX_ATTEMPTS};
+ use crate::entry::{Completion, Op, Request};
+ use crate::layout::{ARENA, CQE_WORDS, SQE_WORDS};
+ use crate::server::{ServerSession, Taken};
+@@ -294,7 +294,9 @@ fn connect(world: &mut World) {
+ 
+ /// Every request the client will send goes onto the ring.
+ fn pump(world: &mut World) {
+-    while let Some(request) = world.client.next_request() {
++    // A transfer's arena block is its ticket, a write's issued again too, so
++    // the device knows a write's value by the block it carries.
++    while let Some(request) = world.client.next_request(|p| ARENA.run(p.ticket as u32, p.blocks)) {
+         world.queues.send(request);
+     }
+ }
+@@ -371,6 +373,7 @@ fn fail(run: &mut Run, law: Law, why: String) {
+ fn settle(script: &[Step], world: &mut World) -> Result<(), (Law, String)> {
+     let answers: Vec<_> = world.client.take_answers().collect();
+     let _ = world.client.take_released().count();
++    let _ = world.client.take_retired().count();
+     for (ticket, outcome) in answers {
+         let had = world.answers.entry(ticket).or_default();
+         had.push(outcome);
+@@ -518,8 +521,7 @@ fn next(script: &[Step], world: &World) -> Vec<(String, After)> {
+             let mut w = world.clone();
+             match script[world.next] {
+                 Step::Write { block, .. } => {
+-                    let run = ARENA.run(ticket as u32, 1).expect("a script's ticket is an arena block");
+-                    w.client.submit(ticket, Op::Write { run, lba: block });
++                    w.client.submit(ticket, Ask::Write { lba: block, blocks: 1 });
+                 }
+                 Step::Flush => {
+                     let acked = w
+@@ -529,7 +531,7 @@ fn next(script: &[Step], world: &World) -> Vec<(String, After)> {
+                         .map(|(t, _)| *t)
+                         .collect();
+                     w.acked_before.insert(ticket, acked);
+-                    w.client.submit(ticket, Op::Flush);
++                    w.client.submit(ticket, Ask::Flush);
+                 }
+             }
+             w.next += 1;
+diff --git a/system/diskserver/src/disk.rs b/system/diskserver/src/disk.rs
+index 85a2f3406..5350b1fba 100644
+--- a/system/diskserver/src/disk.rs
++++ b/system/diskserver/src/disk.rs
+@@ -21,18 +21,19 @@ use std::collections::{BTreeMap, BTreeSet};
+ use std::future::poll_fn;
+ use std::task::{Poll, Waker};
+ 
+-use toyos_blockdev::{within, Block, BlockDev, Error, BLOCK};
++use toyos_blockdev::{within, Block, BlockDev, Error, SharedBlock, BLOCK};
++use toyos_blockring::layout::{ARENA, DEPTH};
+ use toyos_blockring::MAX_REQUEST_BLOCKS;
+ 
+ use crate::session::{Answer, Error as SessionError, Session, Unsent, Waited};
+ use crate::{Outcome, Ticket};
+ 
+ /// What [`Served`] drives: a session's requests and their answers, as
+-/// [`Session`] keeps them, whose contract this is. A flush takes no arena.
++/// [`Session`] keeps them, whose contract this is.
+ pub trait Link {
+     fn blocks(&self) -> u64;
+     fn submit_read(&mut self, lba: u64, blocks: u32) -> Result<Ticket, Unsent>;
+-    fn submit_write(&mut self, lba: u64, data: &[u8]) -> Result<Ticket, Unsent>;
++    fn submit_write(&mut self, lba: u64, blocks: &[SharedBlock]) -> Result<Ticket, Unsent>;
+     fn submit_flush(&mut self) -> Result<Ticket, Unsent>;
+     fn wait(&mut self, block: bool) -> Waited;
+     fn reconnect(&mut self) -> Result<(), SessionError>;
+@@ -45,8 +46,8 @@ impl Link for Session {
+     fn submit_read(&mut self, lba: u64, blocks: u32) -> Result<Ticket, Unsent> {
+         Session::submit_read(self, lba, blocks)
+     }
+-    fn submit_write(&mut self, lba: u64, data: &[u8]) -> Result<Ticket, Unsent> {
+-        Session::submit_write(self, lba, data)
++    fn submit_write(&mut self, lba: u64, blocks: &[SharedBlock]) -> Result<Ticket, Unsent> {
++        Session::submit_write(self, lba, blocks)
+     }
+     fn submit_flush(&mut self) -> Result<Ticket, Unsent> {
+         Session::submit_flush(self)
+@@ -81,13 +82,8 @@ struct State {
+     gone: bool,
+ }
+ 
+-/// Why a request was not answered.
+-enum NotAnswered {
+-    /// The session's arena has no room: a flush releases what acknowledged
+-    /// writes hold.
+-    Full,
+-    Gone,
+-}
++/// Why a request was not answered: the disk is gone.
++struct Gone;
+ 
+ impl<L: Link> Served<L> {
+     pub fn new(link: L) -> Self {
+@@ -132,21 +128,23 @@ impl<L: Link> Served<L> {
+         self.progress(true);
+     }
+ 
++    /// How many requests of [`MAX_REQUEST_BLOCKS`] the session carries at
++    /// once: the most a caller gains by having in flight.
++    pub fn depth(&self) -> usize {
++        (DEPTH as usize).min(ARENA.slots() as usize / MAX_REQUEST_BLOCKS as usize)
++    }
++
+     /// One request, asked again after each session end it was on the wire
+     /// for.
+-    async fn ask(&self, mut submit: impl FnMut(&mut L) -> Result<Ticket, Unsent>) -> Result<Answer, NotAnswered> {
++    async fn ask(&self, mut submit: impl FnMut(&mut L) -> Result<Ticket, Unsent>) -> Result<Answer, Gone> {
+         let mut refusals = 0;
+         loop {
+             if self.state.borrow().gone {
+-                return Err(NotAnswered::Gone);
++                return Err(Gone);
+             }
+-            let ticket = match submit(&mut self.link.borrow_mut()) {
+-                Ok(ticket) => ticket,
+-                Err(Unsent::ArenaFull) => return Err(NotAnswered::Full),
+-                // `progress` reconnects as it finds an end, so a session
+-                // still ended is one that would not reconnect.
+-                Err(Unsent::Ended) => return Err(NotAnswered::Gone),
+-            };
++            // `progress` reconnects as it finds an end, so a session still
++            // ended is one that would not reconnect.
++            let Ok(ticket) = submit(&mut self.link.borrow_mut()) else { return Err(Gone) };
+             self.state.borrow_mut().asked.insert(ticket);
+             let answer = self.answer(ticket).await?;
+             if answer.outcome != Outcome::Refused {
+@@ -155,12 +153,12 @@ impl<L: Link> Served<L> {
+             refusals += 1;
+             if refusals > MAX_RECONNECTS {
+                 println!("a block request was refused across {refusals} session ends; the disk is gone");
+-                return Err(NotAnswered::Gone);
++                return Err(Gone);
+             }
+         }
+     }
+ 
+-    async fn answer(&self, ticket: Ticket) -> Result<Answer, NotAnswered> {
++    async fn answer(&self, ticket: Ticket) -> Result<Answer, Gone> {
+         poll_fn(|cx| {
+             let mut state = self.state.borrow_mut();
+             if let Some(answer) = state.answered.remove(&ticket) {
+@@ -169,7 +167,7 @@ impl<L: Link> Served<L> {
+             }
+             if state.gone {
+                 state.asked.remove(&ticket);
+-                return Poll::Ready(Err(NotAnswered::Gone));
++                return Poll::Ready(Err(Gone));
+             }
+             state.waiting.insert(ticket, cx.waker().clone());
+             Poll::Pending
+@@ -177,15 +175,20 @@ impl<L: Link> Served<L> {
+         .await
+     }
+ 
+-    /// [`Served::ask`], flushing first wherever the arena has no room.
+-    async fn ask_room(&self, mut submit: impl FnMut(&mut L) -> Result<Ticket, Unsent>) -> Result<Answer, Error> {
+-        loop {
+-            match self.ask(&mut submit).await {
+-                Ok(answer) => return Ok(answer),
+-                Err(NotAnswered::Full) => self.flush().await?,
+-                Err(NotAnswered::Gone) => return Err(Error::Gone),
++    /// `blocks` written at `lba`, shared: the session keeps them until a
++    /// flush covers the write, rather than a copy of them.
++    pub async fn write_shared(&self, lba: u64, blocks: &[SharedBlock]) -> Result<(), Error> {
++        within(lba, blocks.len(), self.blocks)?;
++        let per = MAX_REQUEST_BLOCKS as usize;
++        for (i, chunk) in blocks.chunks(per).enumerate() {
++            let at = lba + (i * per) as u64;
++            match self.ask(|link| link.submit_write(at, chunk)).await.map_err(|Gone| Error::Gone)?.outcome {
++                Outcome::Done => {}
++                Outcome::ReadOnly => return Err(Error::ReadOnly),
++                _ => return Err(Error::Device),
+             }
+         }
++        Ok(())
+     }
+ }
+ 
+@@ -199,7 +202,7 @@ impl<L: Link> BlockDev for Served<L> {
+         let per = MAX_REQUEST_BLOCKS as usize;
+         for (i, chunk) in out.chunks_mut(per).enumerate() {
+             let (at, n) = (lba + (i * per) as u64, chunk.len() as u32);
+-            let answer = self.ask_room(|link| link.submit_read(at, n)).await?;
++            let answer = self.ask(|link| link.submit_read(at, n)).await.map_err(|Gone| Error::Gone)?;
+             let chunk = chunk.as_flattened_mut();
+             match (answer.outcome, answer.data) {
+                 (Outcome::Done, Some(data)) if data.len() == chunk.len() => chunk.copy_from_slice(&data),
+@@ -209,26 +212,17 @@ impl<L: Link> BlockDev for Served<L> {
+         Ok(())
+     }
+ 
++    /// A copy of `data`, which the session keeps until a flush covers it.
+     async fn write(&self, lba: u64, data: &[Block]) -> Result<(), Error> {
+-        within(lba, data.len(), self.blocks)?;
+-        let per = MAX_REQUEST_BLOCKS as usize;
+-        for (i, chunk) in data.chunks(per).enumerate() {
+-            let at = lba + (i * per) as u64;
+-            match self.ask_room(|link| link.submit_write(at, chunk.as_flattened())).await?.outcome {
+-                Outcome::Done => {}
+-                Outcome::ReadOnly => return Err(Error::ReadOnly),
+-                _ => return Err(Error::Device),
+-            }
+-        }
+-        Ok(())
++        let shared: Vec<SharedBlock> = data.iter().map(|block| std::rc::Rc::new(Box::new(*block))).collect();
++        self.write_shared(lba, &shared).await
+     }
+ 
+     async fn flush(&self) -> Result<(), Error> {
+         match self.ask(Link::submit_flush).await {
+             Ok(Answer { outcome: Outcome::Durable, .. }) => Ok(()),
+             Ok(_) => Err(Error::Device),
+-            Err(NotAnswered::Gone) => Err(Error::Gone),
+-            Err(NotAnswered::Full) => unreachable!("diskserver: a flush took arena room"),
++            Err(Gone) => Err(Error::Gone),
+         }
+     }
+ }
+diff --git a/system/diskserver/src/disk/tests.rs b/system/diskserver/src/disk/tests.rs
+index fa70af1b8..4da6d8d51 100644
+--- a/system/diskserver/src/disk/tests.rs
++++ b/system/diskserver/src/disk/tests.rs
+@@ -6,7 +6,7 @@ use std::cell::Cell;
+ use std::collections::VecDeque;
+ use std::rc::Rc;
+ 
+-use toyos_blockdev::{block_on, Block, BlockDev, Error, Executor, BLOCK};
++use toyos_blockdev::{block_on, Block, BlockDev, Error, Executor, SharedBlock, BLOCK};
+ 
+ use super::{Link, Served, MAX_RECONNECTS};
+ use crate::session::{Answer, Error as SessionError, Unsent, Waited};
+@@ -36,8 +36,6 @@ struct Script {
+     /// Each reconnect's answer, in turn; `Ok` once they run out.
+     reconnects: VecDeque<Result<(), SessionError>>,
+     reconnected: u32,
+-    /// Writes the next this many write submissions refuse for want of room.
+-    full: u32,
+     read_only: bool,
+ }
+ 
+@@ -53,7 +51,6 @@ impl Script {
+             up: true,
+             reconnects: VecDeque::new(),
+             reconnected: 0,
+-            full: 0,
+             read_only: false,
+         }
+     }
+@@ -96,12 +93,8 @@ impl Link for Script {
+         self.ask(Asked::Read { lba, blocks })
+     }
+ 
+-    fn submit_write(&mut self, lba: u64, data: &[u8]) -> Result<Ticket, Unsent> {
+-        if self.full > 0 && self.up {
+-            self.full -= 1;
+-            return Err(Unsent::ArenaFull);
+-        }
+-        self.ask(Asked::Write { lba, data: data.to_vec() })
++    fn submit_write(&mut self, lba: u64, blocks: &[SharedBlock]) -> Result<Ticket, Unsent> {
++        self.ask(Asked::Write { lba, data: blocks.iter().flat_map(|b| b.iter().copied()).collect() })
+     }
+ 
+     fn submit_flush(&mut self) -> Result<Ticket, Unsent> {
+@@ -197,17 +190,6 @@ fn a_refused_reconnect_makes_the_disk_gone_for_every_request() {
+     assert_eq!((script.log.len(), script.reconnected), (1, 1));
+ }
+ 
+-/// A write the arena has no room for is asked again after a flush, which is
+-/// what releases the room acknowledged writes hold.
+-#[test]
+-fn a_write_without_arena_room_is_asked_again_after_a_flush() {
+-    let mut script = Script::new(4);
+-    script.full = 1;
+-    let disk = Served::new(script);
+-    now(&disk, disk.write(2, &blocks(7, 1))).unwrap();
+-    assert_eq!(disk.link.borrow().log, [Asked::Flush, Asked::Write { lba: 2, data: vec![7; BLOCK] }]);
+-}
+-
+ /// A transfer longer than one request carries is asked in requests of at
+ /// most `MAX_REQUEST_BLOCKS`; one past the partition's end is refused before
+ /// anything is asked; a write the grant does not make is `ReadOnly`.
+diff --git a/system/diskserver/src/session.rs b/system/diskserver/src/session.rs
+index 587715fd4..12f2f16dd 100644
+--- a/system/diskserver/src/session.rs
++++ b/system/diskserver/src/session.rs
+@@ -3,9 +3,11 @@
+ //!
+ //! **What a request means is `toyos_blockring::client::Client`'s to decide**;
+ //! this is the mapping, the arena, the doorbell and the connection around it.
+-//! A write's data is copied into the arena and stays there until a flush
+-//! covers it, because after a loss it is the only copy there is; a read's is
+-//! copied out when it is answered.
++//! A request takes arena blocks only while it is on the wire. A write's blocks
++//! are the caller's, shared: the session keeps them from submit until a flush
++//! covers the write, because after a loss they are the only copy there is,
++//! and copies them into the arena each time the write goes out. A read's data
++//! is copied out when it is answered.
+ //!
+ //! **A service that ends is survivable and not invisible.** [`Session::wait`]
+ //! reads every completion the server posted before it hung up, answers what
+@@ -21,8 +23,9 @@ use toyos::ipc::Connection;
+ use toyos::namespace::Namespace;
+ use toyos::poller::{Poller, READABLE};
+ use toyos_abi::syscall::SyscallError;
+-use toyos_blockring::client::{Client, Outcome, Ticket};
+-use toyos_blockring::entry::{Completion, Op};
++use toyos_blockdev::SharedBlock;
++use toyos_blockring::client::{Ask, Client, Outcome, Placing, Ticket};
++use toyos_blockring::entry::Completion;
+ use toyos_blockring::layout::{self, ClientRings, ARENA, MAX_REQUEST_BLOCKS};
+ use toyos_blockring::wire::{self, Opened, Refusal};
+ use toyos_blockring::{Run, BLOCK_BYTES};
+@@ -69,8 +72,6 @@ pub struct Waited {
+ /// caller that gave up on it would find it done under writes it made since.
+ #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+ pub enum Unsent {
+-    /// The arena has no room: a flush releases what acknowledged writes hold.
+-    ArenaFull,
+     /// The session has ended: [`Session::reconnect`] first.
+     Ended,
+ }
+@@ -109,7 +110,7 @@ impl Arena {
+ }
+ 
+ enum Pending {
+-    Read { run: Run },
++    Read,
+     Write,
+     Flush,
+ }
+@@ -126,6 +127,11 @@ pub struct Session {
+     arena: Arena,
+     next_ticket: Ticket,
+     pending: BTreeMap<Ticket, Pending>,
++    /// Each write's blocks, until it is answered anything but done or the
++    /// client retires it.
++    held: BTreeMap<Ticket, Vec<SharedBlock>>,
++    /// Each read on the wire's arena blocks.
++    reads: BTreeMap<Ticket, Run>,
+     poller: Poller,
+     /// The most requests this session has had on the wire at once.
+     peak: usize,
+@@ -152,6 +158,8 @@ impl Session {
+             arena: Arena::new(),
+             next_ticket: 0,
+             pending: BTreeMap::new(),
++            held: BTreeMap::new(),
++            reads: BTreeMap::new(),
+             poller: Poller::new(1),
+             peak: 0,
+         })
+@@ -178,30 +186,29 @@ impl Session {
+         t
+     }
+ 
+-    /// Ask for `data` (whole blocks) written at `lba`.
+-    pub fn submit_write(&mut self, lba: u64, data: &[u8]) -> Result<Ticket, Unsent> {
+-        let blocks = whole_blocks(data.len());
++    /// Ask for `blocks` written at `lba`, which the session keeps a share of
++    /// until a flush covers the write.
++    pub fn submit_write(&mut self, lba: u64, blocks: &[SharedBlock]) -> Result<Ticket, Unsent> {
++        let count = transfer_blocks(blocks.len());
+         if self.conn.is_none() {
+             return Err(Unsent::Ended);
+         }
+-        let run = self.arena.alloc(blocks).ok_or(Unsent::ArenaFull)?;
+-        self.region.arena(&run).copy_in(0, data);
+         let ticket = self.ticket();
+-        self.client.submit(ticket, Op::Write { run, lba });
++        self.held.insert(ticket, blocks.to_vec());
++        self.client.submit(ticket, Ask::Write { lba, blocks: count });
+         self.pending.insert(ticket, Pending::Write);
+         Ok(ticket)
+     }
+ 
+     /// Ask for `blocks` read from `lba`; the answer carries the data.
+     pub fn submit_read(&mut self, lba: u64, blocks: u32) -> Result<Ticket, Unsent> {
+-        assert!((1..=MAX_REQUEST_BLOCKS).contains(&blocks), "a read of {blocks} blocks");
++        transfer_blocks(blocks as usize);
+         if self.conn.is_none() {
+             return Err(Unsent::Ended);
+         }
+-        let run = self.arena.alloc(blocks).ok_or(Unsent::ArenaFull)?;
+         let ticket = self.ticket();
+-        self.client.submit(ticket, Op::Read { run, lba });
+-        self.pending.insert(ticket, Pending::Read { run });
++        self.client.submit(ticket, Ask::Read { lba, blocks });
++        self.pending.insert(ticket, Pending::Read);
+         Ok(ticket)
+     }
+ 
+@@ -211,7 +218,7 @@ impl Session {
+             return Err(Unsent::Ended);
+         }
+         let ticket = self.ticket();
+-        self.client.submit(ticket, Op::Flush);
++        self.client.submit(ticket, Ask::Flush);
+         self.pending.insert(ticket, Pending::Flush);
+         Ok(ticket)
+     }
+@@ -219,10 +226,26 @@ impl Session {
+     /// Put what the client will send on the ring, and ring the doorbell once
+     /// for all of it.
+     fn pump(&mut self) {
+-        let Some(conn) = &self.conn else { return };
+-        let page = self.region.words();
++        let Self { conn, region, rings, client, arena, held, reads, .. } = self;
++        if conn.is_none() {
++            return;
++        }
++        let page = region.words();
++        let mut place = |p: Placing| {
++            let run = arena.alloc(p.blocks)?;
++            if p.write {
++                let blocks = held.get(&p.ticket).expect("diskserver: a write going out whose blocks are gone");
++                let window = region.arena(&run);
++                for (k, block) in blocks.iter().enumerate() {
++                    window.copy_in(k * BLOCK_BYTES, &***block);
++                }
++            } else {
++                reads.insert(p.ticket, run);
++            }
++            Some(run)
++        };
+         loop {
+-            match self.rings.0.space(page) {
++            match rings.0.space(page) {
+                 Ok(0) => break,
+                 Ok(_) => {}
+                 // The server wrote an index no server writes: the session is
+@@ -230,11 +253,12 @@ impl Session {
+                 // acted on.
+                 Err(_) => break,
+             }
+-            let Some(request) = self.client.next_request() else { break };
+-            let pushed = self.rings.0.push(page, request.encode());
++            let Some(request) = client.next_request(&mut place) else { break };
++            let pushed = rings.0.push(page, request.encode());
+             assert_eq!(pushed, Ok(true), "diskserver: a request past the room just counted");
+         }
+         self.peak = self.peak.max(self.client.on_the_wire().count());
++        let Some(conn) = &self.conn else { return };
+         if self.rings.0.publish(page) {
+             // A full pipe is a doorbell already rung; a gone one is a server
+             // that has ended, which the wait finds.
+@@ -325,15 +349,31 @@ impl Session {
+         for (ticket, outcome) in decided {
+             let pending = self.pending.remove(&ticket).expect("diskserver: an answer for no ticket");
+             let data = match (pending, outcome) {
+-                (Pending::Read { run }, Outcome::Done) => {
+-                    let mut data = vec![0u8; run.span().len];
+-                    self.region.arena(&run).copy_out(0, &mut data);
+-                    Some(data)
++                (Pending::Read, outcome) => {
++                    let run = self.reads.remove(&ticket);
++                    match (run, outcome) {
++                        (Some(run), Outcome::Done) => {
++                            let mut data = vec![0u8; run.span().len];
++                            self.region.arena(&run).copy_out(0, &mut data);
++                            Some(data)
++                        }
++                        _ => None,
++                    }
+                 }
+-                _ => None,
++                (Pending::Write, Outcome::Done) => None,
++                // Refused, or never taken: nothing will send it again.
++                (Pending::Write, _) => {
++                    self.held.remove(&ticket);
++                    None
++                }
++                (Pending::Flush, _) => None,
+             };
+             answers.push(Answer { ticket, outcome, data });
+         }
++        let retired: Vec<_> = self.client.take_retired().collect();
++        for ticket in retired {
++            self.held.remove(&ticket);
++        }
+         let released: Vec<_> = self.client.take_released().collect();
+         for run in released {
+             self.arena.release(run);
+@@ -369,11 +409,9 @@ impl Session {
+     }
+ }
+ 
+-fn whole_blocks(len: usize) -> u32 {
+-    assert!(len > 0 && len % BLOCK_BYTES == 0, "diskserver: a transfer of {len} bytes is no whole blocks");
+-    let blocks = (len / BLOCK_BYTES) as u32;
+-    assert!(blocks <= MAX_REQUEST_BLOCKS, "diskserver: a transfer of {blocks} blocks");
+-    blocks
++fn transfer_blocks(blocks: usize) -> u32 {
++    assert!((1..=MAX_REQUEST_BLOCKS as usize).contains(&blocks), "diskserver: a transfer of {blocks} blocks");
++    blocks as u32
+ }
+ 
+ pub(crate) fn connect(names: &Namespace, service: &str) -> Result<Connection, Error> {
+diff --git a/system/fileserver/src/cache.rs b/system/fileserver/src/cache.rs
+index 901a85bd4..b7064e202 100644
+--- a/system/fileserver/src/cache.rs
++++ b/system/fileserver/src/cache.rs
+@@ -2,8 +2,9 @@
+ //! metadata and its files' data alike. It is a [`BlockDev`] over the disk.
+ //!
+ //! **A write lands here and reaches the disk at a flush.** A flush writes
+-//! every dirty block, lowest first and in runs, then asks the disk to make
+-//! them durable; a volume's sync is its own metadata written into the cache
++//! every dirty block in runs, as many at once as the disk takes
++//! ([`Disk::depth`]), handing the disk the cache's own blocks to share
++//! ([`Disk::write_shared`]), then asks the disk to make them durable; a volume's sync is its own metadata written into the cache
+ //! and then this. A write that would take the cache past [`DIRTY_LIMIT`] dirty
+ //! blocks flushes first, and is refused whole when that flush is, so memory
+ //! bounds the write-back and not the other way round.
+@@ -24,24 +25,48 @@
+ use std::cell::RefCell;
+ use std::collections::{BTreeMap, VecDeque};
+ use std::future::{poll_fn, Future};
++use std::pin::Pin;
++use std::rc::Rc;
+ use std::task::{Poll, Waker};
+ 
+-use toyos_blockdev::{within, Block, BlockDev, Error, BLOCK};
++use toyos_blockdev::{within, Block, BlockDev, Error, SharedBlock, BLOCK};
+ 
+ /// A disk this server owns, and what to do when nothing can go on until it
+ /// answers.
++// Every future runs on the server's one thread, as `BlockDev`'s do.
++#[allow(async_fn_in_trait)]
+ pub trait Disk: BlockDev {
+     /// Returns once a request asked of this disk may have been answered. A
+     /// disk that answers every request as it is asked is never waited on.
+     fn wait(&self) {
+         panic!("fileserver: a disk that answers as it is asked was waited on");
+     }
++
++    /// How many writes a flush keeps in flight at once.
++    fn depth(&self) -> usize {
++        1
++    }
++
++    /// `blocks` written at `lba`: shared by a disk that keeps a write's bytes
++    /// until a flush covers it, copied by one that does not.
++    async fn write_shared(&self, lba: u64, blocks: &[SharedBlock]) -> Result<(), Error> {
++        let data: Vec<Block> = blocks.iter().map(|block| ***block).collect();
++        self.write(lba, &data).await
++    }
+ }
+ 
+ impl Disk for diskserver::disk::Served {
+     fn wait(&self) {
+         diskserver::disk::Served::wait(self)
+     }
++
++    fn depth(&self) -> usize {
++        diskserver::disk::Served::depth(self)
++    }
++
++    async fn write_shared(&self, lba: u64, blocks: &[SharedBlock]) -> Result<(), Error> {
++        diskserver::disk::Served::write_shared(self, lba, blocks).await
++    }
+ }
+ 
+ /// Clean blocks kept: 64 MiB.
+@@ -54,7 +79,9 @@ pub const DIRTY_LIMIT: usize = 8 * 1024;
+ const RUN: usize = 32;
+ 
+ struct Slot {
+-    data: Box<Block>,
++    /// Shared with the disk while it keeps a write of it: a write here then
++    /// takes a block of its own.
++    data: SharedBlock,
+     dirty: bool,
+     /// Which write put `data` here, so a flush that carried an older copy
+     /// leaves the block dirty.
+@@ -141,7 +168,7 @@ impl<D: Disk> Cache<D> {
+                 let mut inner = self.inner.borrow_mut();
+                 inner.reads += 1;
+                 if let Some(slot) = inner.slots.get(&block) {
+-                    put(i, &slot.data);
++                    put(i, &**slot.data);
+                     inner.hits += 1;
+                     i += 1;
+                     continue;
+@@ -168,10 +195,10 @@ impl<D: Disk> Cache<D> {
+                 // disk answered, and stays held until a flush that waited for
+                 // this fetch has written it.
+                 match inner.slots.get(&at) {
+-                    Some(slot) => put(i + k, &slot.data),
++                    Some(slot) => put(i + k, &**slot.data),
+                     None => {
+                         put(i + k, data);
+-                        inner.slots.insert(at, Slot { data: Box::new(*data), dirty: false, version: 0 });
++                        inner.slots.insert(at, Slot { data: Rc::new(Box::new(*data)), dirty: false, version: 0 });
+                         inner.order.push_back(at);
+                     }
+                 }
+@@ -241,12 +268,15 @@ impl<D: Disk> BlockDev for Cache<D> {
+             let version = inner.versions;
+             let newly = match inner.slots.get_mut(&block) {
+                 Some(slot) => {
+-                    *slot.data = *chunk;
++                    match Rc::get_mut(&mut slot.data) {
++                        Some(data) => **data = *chunk,
++                        None => slot.data = Rc::new(Box::new(*chunk)),
++                    }
+                     slot.version = version;
+                     !std::mem::replace(&mut slot.dirty, true)
+                 }
+                 None => {
+-                    inner.slots.insert(block, Slot { data: Box::new(*chunk), dirty: true, version });
++                    inner.slots.insert(block, Slot { data: Rc::new(Box::new(*chunk)), dirty: true, version });
+                     true
+                 }
+             };
+@@ -257,52 +287,40 @@ impl<D: Disk> BlockDev for Cache<D> {
+         Ok(())
+     }
+ 
+-    /// Every dirty block to the disk, lowest first and in runs, then the disk
+-    /// made durable. A block the disk refused stays dirty. A disk written
++    /// Every dirty block to the disk in runs, up to [`Disk::depth`] of them in
++    /// flight, then the disk made durable. A block the disk refused stays
++    /// dirty, and once one run is refused no other is begun. A disk written
+     /// nothing since the last flush it answered is asked nothing: every write
+     /// it took is already durable.
+     async fn flush(&self) -> Result<(), Error> {
+         self.until(|inner| !inner.flushing).await;
+         self.inner.borrow_mut().flushing = true;
+         let _flushing = Flushing(self);
+-        let dirty: Vec<u64> = self.inner.borrow().slots.iter().filter(|(_, s)| s.dirty).map(|(b, _)| *b).collect();
+-        let mut buf: Vec<Block> = vec![[0; BLOCK]; RUN];
+-        let mut i = 0;
+-        while i < dirty.len() {
+-            let first = dirty[i];
+-            let mut run = 1;
+-            while i + run < dirty.len() && run < RUN && dirty[i + run] == first + run as u64 {
+-                run += 1;
++        let mut runs = self.dirty_runs().into_iter();
++        let mut flight: Vec<Pin<Box<dyn Future<Output = Result<(), Error>> + '_>>> = Vec::new();
++        let mut refused = Ok(());
++        poll_fn(|cx| loop {
++            while refused.is_ok() && flight.len() < self.disk.depth().max(1) {
++                let Some((first, count)) = runs.next() else { break };
++                flight.push(Box::pin(self.write_run(first, count)));
+             }
+-            let end = first + run as u64;
+-            self.until(|inner| !inner.fetches.values().any(|f| f.first < end && first < f.first + f.count as u64))
+-                .await;
+-            let versions: Vec<u64> = {
+-                let inner = self.inner.borrow();
+-                (0..run)
+-                    .map(|k| {
+-                        // Only a flush cleans a block, and this is the one.
+-                        let slot = inner.slots.get(&(first + k as u64)).expect("fileserver: a dirty block left the cache during its flush");
+-                        buf[k] = *slot.data;
+-                        slot.version
+-                    })
+-                    .collect()
+-            };
+-            self.inner.borrow_mut().unflushed = true;
+-            self.disk.write(first, &buf[..run]).await?;
+-            let mut inner = self.inner.borrow_mut();
+-            for (k, version) in versions.into_iter().enumerate() {
+-                let block = first + k as u64;
+-                // A block written again meanwhile stays dirty.
+-                let slot = inner.slots.get_mut(&block).expect("fileserver: a dirty block left the cache during its flush");
+-                if slot.version == version {
+-                    slot.dirty = false;
+-                    inner.dirty -= 1;
+-                    inner.order.push_back(block);
++            let before = flight.len();
++            flight.retain_mut(|run| match run.as_mut().poll(cx) {
++                Poll::Ready(done) => {
++                    refused = std::mem::replace(&mut refused, Ok(())).and(done);
++                    false
+                 }
++                Poll::Pending => true,
++            });
++            if flight.is_empty() && (refused.is_err() || runs.len() == 0) {
++                return Poll::Ready(());
+             }
+-            i += run;
+-        }
++            if flight.len() == before {
++                return Poll::Pending;
++            }
++        })
++        .await;
++        refused?;
+         if self.inner.borrow().unflushed {
+             self.disk.flush().await?;
+             self.inner.borrow_mut().unflushed = false;
+@@ -312,6 +330,50 @@ impl<D: Disk> BlockDev for Cache<D> {
+     }
+ }
+ 
++impl<D: Disk> Cache<D> {
++    /// The dirty blocks as runs of consecutive blocks, each at most [`RUN`].
++    fn dirty_runs(&self) -> Vec<(u64, usize)> {
++        let mut runs: Vec<(u64, usize)> = Vec::new();
++        for (&block, _) in self.inner.borrow().slots.iter().filter(|(_, s)| s.dirty) {
++            match runs.last_mut() {
++                Some((first, count)) if *first + *count as u64 == block && *count < RUN => *count += 1,
++                _ => runs.push((block, 1)),
++            }
++        }
++        runs
++    }
++
++    /// One run of a flush: written once no fetch is reading it, and each block
++    /// clean afterwards unless written again meanwhile.
++    async fn write_run(&self, first: u64, count: usize) -> Result<(), Error> {
++        let end = first + count as u64;
++        self.until(|inner| !inner.fetches.values().any(|f| f.first < end && first < f.first + f.count as u64)).await;
++        let (blocks, versions): (Vec<SharedBlock>, Vec<u64>) = {
++            let inner = self.inner.borrow();
++            (first..end)
++                .map(|block| {
++                    // Only a flush cleans a block, and this is the one.
++                    let slot = inner.slots.get(&block).expect("fileserver: a dirty block left the cache during its flush");
++                    (Rc::clone(&slot.data), slot.version)
++                })
++                .unzip()
++        };
++        self.inner.borrow_mut().unflushed = true;
++        self.disk.write_shared(first, &blocks).await?;
++        let mut inner = self.inner.borrow_mut();
++        for (block, version) in (first..).zip(versions) {
++            // A block written again meanwhile stays dirty.
++            let slot = inner.slots.get_mut(&block).expect("fileserver: a dirty block left the cache during its flush");
++            if slot.version == version {
++                slot.dirty = false;
++                inner.dirty -= 1;
++                inner.order.push_back(block);
++            }
++        }
++        Ok(())
++    }
++}
++
+ impl Inner {
+     /// Drop the oldest clean blocks past [`CLEAN_LIMIT`].
+     fn evict(&mut self) {
+@@ -601,6 +663,15 @@ mod tests {
+         /// `(first, count, write)` of each request in flight.
+         flight: RefCell<Vec<(u64, u64, bool)>>,
+         overlaps: Cell<u32>,
++        /// What [`Disk::depth`] answers.
++        depth: Cell<usize>,
++        /// Every write is refused while this is set.
++        refusing: Cell<bool>,
++        /// Requests the closed gate still lets through, one each.
++        passes: Cell<u32>,
++        writes: Cell<u32>,
++        /// Every block handed to [`Disk::write_shared`], as handed.
++        kept: RefCell<Vec<(u64, SharedBlock)>>,
+     }
+ 
+     impl Held {
+@@ -611,20 +682,35 @@ mod tests {
+                 waiting: RefCell::default(),
+                 flight: RefCell::default(),
+                 overlaps: Cell::new(0),
++                depth: Cell::new(1),
++                refusing: Cell::new(false),
++                passes: Cell::new(0),
++                writes: Cell::new(0),
++                kept: RefCell::default(),
+             }
+         }
+ 
+         async fn gate(&self) {
+-            poll_fn(|cx| match self.open.get() {
+-                true => Poll::Ready(()),
+-                false => {
+-                    self.waiting.borrow_mut().push(cx.waker().clone());
+-                    Poll::Pending
++            poll_fn(|cx| {
++                if self.open.get() {
++                    return Poll::Ready(());
+                 }
++                if self.passes.get() > 0 {
++                    self.passes.set(self.passes.get() - 1);
++                    return Poll::Ready(());
++                }
++                self.waiting.borrow_mut().push(cx.waker().clone());
++                Poll::Pending
+             })
+             .await
+         }
+ 
++        /// Let one request waiting at the gate through, the first polled.
++        fn release_one(&self) {
++            self.passes.set(self.passes.get() + 1);
++            self.waiting.take().into_iter().for_each(Waker::wake);
++        }
++
+         fn release(&self) {
+             self.open.set(true);
+             self.waiting.take().into_iter().for_each(Waker::wake);
+@@ -664,9 +750,13 @@ mod tests {
+             Ok(())
+         }
+         async fn write(&self, lba: u64, data: &[Block]) -> Result<(), Error> {
++            self.writes.set(self.writes.get() + 1);
+             self.send(lba, data.len(), true);
+             self.gate().await;
+             self.landed(lba, true);
++            if self.refusing.get() {
++                return Err(Error::Device);
++            }
+             self.ram.write(lba, data).await
+         }
+         async fn flush(&self) -> Result<(), Error> {
+@@ -675,7 +765,81 @@ mod tests {
+         }
+     }
+ 
+-    impl Disk for Held {}
++    impl Disk for Held {
++        fn depth(&self) -> usize {
++            self.depth.get()
++        }
++
++        async fn write_shared(&self, lba: u64, blocks: &[SharedBlock]) -> Result<(), Error> {
++            self.kept.borrow_mut().extend((lba..).zip(blocks.iter().cloned()));
++            let data: Vec<Block> = blocks.iter().map(|block| ***block).collect();
++            self.write(lba, &data).await
++        }
++    }
++
++    /// Blocks 1, 3, 5, … written, one run each: `runs` of them.
++    fn runs_apart(c: &Cache<Held>, runs: u64) {
++        for k in 0..runs {
++            block_on_ready(c.write(2 * k + 1, &[[k as u8 + 1; BLOCK]])).unwrap();
++        }
++    }
++
++    /// A flush keeps as many runs in flight as the disk takes, and no more.
++    #[test]
++    fn a_flush_keeps_as_many_runs_in_flight_as_the_disk_takes() {
++        let c = Cache::new(Held::new(16));
++        c.disk.depth.set(3);
++        runs_apart(&c, 5);
++        c.disk.open.set(false);
++        let exec = Executor::new();
++        exec.spawn(async { c.flush().await.unwrap() });
++        exec.run_until_stalled();
++        assert_eq!(c.disk.writes_in_flight(), 3);
++        c.disk.release();
++        assert_eq!(exec.run_until_stalled(), 0);
++        assert_eq!(c.disk.overlaps.get(), 0);
++        assert_eq!(c.counts().dirty, 0);
++        for k in 0..5 {
++            assert_eq!(on_disk(&c.disk, 2 * k + 1), [k as u8 + 1; BLOCK]);
++        }
++    }
++
++    /// The disk is handed the cache's own blocks, not copies of them.
++    #[test]
++    fn a_flush_shares_the_cache_s_blocks_with_the_disk() {
++        let c = Cache::new(Held::new(16));
++        block_on_ready(c.write(3, &[[1; BLOCK]])).unwrap();
++        block_on_ready(c.flush()).unwrap();
++        let kept = c.disk.kept.borrow();
++        let inner = c.inner.borrow();
++        assert_eq!(kept.len(), 1);
++        assert!(Rc::ptr_eq(&kept[0].1, &inner.slots[&3].data), "the disk was handed a copy");
++    }
++
++    /// Once a run is refused no other is begun, though another is still in
++    /// flight, and every block not written stays dirty for the next flush.
++    #[test]
++    fn a_refused_run_begins_no_other_and_leaves_the_rest_dirty() {
++        let c = Cache::new(Held::new(16));
++        c.disk.depth.set(2);
++        runs_apart(&c, 4);
++        c.disk.refusing.set(true);
++        c.disk.open.set(false);
++        let exec = Executor::new();
++        exec.spawn(async { assert_eq!(c.flush().await, Err(Error::Device)) });
++        exec.run_until_stalled();
++        assert_eq!(c.disk.writes_in_flight(), 2);
++        c.disk.release_one();
++        exec.run_until_stalled();
++        assert_eq!(c.disk.writes_in_flight(), 1, "the refused run's place was taken");
++        c.disk.release();
++        assert_eq!(exec.run_until_stalled(), 0);
++        assert_eq!(c.disk.writes.get(), 2, "a run was begun after one was refused");
++        assert_eq!(c.counts().dirty, 4);
++        c.disk.refusing.set(false);
++        block_on_ready(c.flush()).unwrap();
++        assert_eq!(c.counts().dirty, 0);
++    }
+ 
+     /// What block `block` holds on the disk.
+     fn on_disk(disk: &Held, block: u64) -> Block {
