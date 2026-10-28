@@ -1,0 +1,13 @@
+diff --git a/system/netstack/i219/src/lib.rs b/system/netstack/i219/src/lib.rs
+index c51e51483..46f93ccbf 100644
+--- a/system/netstack/i219/src/lib.rs
++++ b/system/netstack/i219/src/lib.rs
+@@ -1145,7 +1145,7 @@ impl<R: Registers, C: Clock, D: DmaBuffers, I: Interrupts> I219<R, C, D, I> {
+         // `TCTL` would clear the NVM's `MULR` and the reset's `RRTHRESH`, and
+         // the part would fetch each frame's data one request at a time. §10.2.6.1
+         // allows the write: the head is the tail, nothing being published yet.
+-        let tx = (nic.regs.read32(regs::TCTL) & tctl::LOADED) | TX_CONTROL;
++        let tx = TX_CONTROL;
+         nic.regs.write32(regs::TCTL, tx);
+         nic.accepted(regs::TCTL, tx)?;
+         nic.brought_up.transmit_control = nic.regs.read32(regs::TCTL);
