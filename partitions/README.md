@@ -15,3 +15,5 @@ Round 1, continued:
 - `controls-usbd-floored-count.*`: the floored count put back; the tail-read test reds.
 
 Round 2 (review r1), at `0343c0aa8`: `r2/`: host CI exit 0 (105 steps), image build exit 0, the QEMU pair exit 0, per-crate host tests, the login-gate control (reds without the check), and both benches staged (exit 2, staged).
+
+AMD session at `0343c0aa8` (`amd/`): bench_data_designated judged PASS (judge.log exit 0). Kernel logs of both boots and their verdicts.
