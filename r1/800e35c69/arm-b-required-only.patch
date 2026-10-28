@@ -1,0 +1,78 @@
+diff --git a/system/netstack/i219/src/lib.rs b/system/netstack/i219/src/lib.rs
+index a0e2824e7..4432f03b4 100644
+--- a/system/netstack/i219/src/lib.rs
++++ b/system/netstack/i219/src/lib.rs
+@@ -173,9 +173,6 @@ pub const RX_RING: usize = 1000;
+ /// so what this bounds is how many may be in flight at once: one fewer than
+ /// this, [`I219::tx_room`]'s most.
+ pub const TX_RING: usize = 16;
+-
+-// `txdctl::PREFETCH` prefetches below every on-chip count this ring can leave.
+-const _: () = assert!(TX_RING as u32 <= (txdctl::PREFETCH >> txdctl::PTHRESH_SHIFT) & 0x3f);
+ /// Free receive descriptors at which the part reports itself short:
+ /// `RCTL.RDMTS = 00b`, "1/2" of `RDLEN` (§10.2.5.1), raising `RXDMT0`.
+ const RX_SHORT: usize = RX_RING / 2;
+@@ -1170,7 +1167,7 @@ impl<R: Registers, C: Clock, D: DmaBuffers, I: Interrupts> I219<R, C, D, I> {
+ 
+         // §4.6.6, in its order: the write-back policy, the gap, then the
+         // transmitter.
+-        nic.regs.write32(regs::TXDCTL, txdctl::SUGGESTED | txdctl::PREFETCH);
++        nic.regs.write32(regs::TXDCTL, txdctl::SUGGESTED);
+         nic.regs.write32(regs::TIPG, regs::TIPG_DEFAULT);
+         let tarc0 = nic.regs.read32(regs::TARC0) | tarc::ENABLE;
+         nic.regs.write32(regs::TARC0, tarc0);
+diff --git a/system/netstack/i219/src/regs.rs b/system/netstack/i219/src/regs.rs
+index 370524eee..08ff39b48 100644
+--- a/system/netstack/i219/src/regs.rs
++++ b/system/netstack/i219/src/regs.rs
+@@ -507,19 +507,6 @@ pub mod txdctl {
+     /// descriptors, and bit 22. A larger `WTHRESH` holds a completion back
+     /// until the ring fills.
+     pub const SUGGESTED: u32 = GRAN | (1 << WTHRESH_SHIFT) | MUST_BE_SET;
+-    /// Prefetch Threshold (bits 5:0) and Host Threshold (bits 13:8), counted in
+-    /// descriptors under `GRAN`. §7.2.4.1 fetches "as soon as any descriptors
+-    /// are made available" only "when the on-chip descriptor queue is empty",
+-    /// and prefetches more "if the number of on-chip descriptors drop below
+-    /// TXDCTL.PTHRESH", with "at least HTHRESH valid descriptors in host
+-    /// memory"; "HTHRESH should be given a non-zero value when ever PTHRESH is
+-    /// used".
+-    pub const PTHRESH_SHIFT: u32 = 0;
+-    pub const HTHRESH_SHIFT: u32 = 8;
+-    /// A choice, not a datasheet value, which publishes no on-chip capacity:
+-    /// every count a 16-descriptor ring can leave on chip is below a `PTHRESH`
+-    /// of 16, and one descriptor waiting in memory is enough to fetch.
+-    pub const PREFETCH: u32 = (16 << PTHRESH_SHIFT) | (1 << HTHRESH_SHIFT);
+ }
+ 
+ /// Transmit Arbitration Count bits (§10.2.6.9).
+diff --git a/system/netstack/i219/src/tests.rs b/system/netstack/i219/src/tests.rs
+index 4a10dfdb3..fd859d6ec 100644
+--- a/system/netstack/i219/src/tests.rs
++++ b/system/netstack/i219/src/tests.rs
+@@ -107,7 +107,7 @@ fn bring_up_programs_what_the_initialization_sections_name() {
+         nic.because("TCTL is not §4.6.6's fields with MULR and RRTHRESH at §10.2.6.1's initial values")
+     );
+     assert_eq!(nic.peek(regs::TIPG), regs::TIPG_DEFAULT);
+-    assert_eq!(nic.peek(regs::TXDCTL), regs::txdctl::SUGGESTED | regs::txdctl::PREFETCH);
++    assert_eq!(nic.peek(regs::TXDCTL), regs::txdctl::SUGGESTED);
+     assert_eq!(
+         nic.peek(regs::IMS),
+         cause::ENABLED | cause::ENABLED_MSIX,
+@@ -3112,7 +3112,7 @@ fn the_pchs_mac_gets_its_registers_and_the_82574_none() {
+     assert!(has(regs::CTRL_EXT, ctrl_ext::PHY_POWER_DOWN_ENABLE));
+     assert_eq!(nic.peek(regs::WAKE_UP) & wake_up::APM_WAKE, 0);
+     assert_eq!(nic.peek(regs::PCIE_CONTROL) & pcie_control::NO_SNOOP, 0);
+-    assert_eq!(nic.peek(regs::TXDCTL), txdctl::SUGGESTED | txdctl::PREFETCH, "{}", nic.because("§4.6.6's policy"));
++    assert_eq!(nic.peek(regs::TXDCTL), txdctl::SUGGESTED, "{}", nic.because("§4.6.6's policy"));
+     assert!(has(regs::PBECCSTS, pbeccsts::ECC_ENABLE), "{}", nic.because("the buffer's ECC is off"));
+     assert!(has(regs::CTRL, ctrl::MEMORY_ERROR_HANDLING), "{}", nic.because("memory error handling is off"));
+     for reg in [regs::WAKE_UP, regs::PCIE_CONTROL] {
+@@ -3121,7 +3121,7 @@ fn the_pchs_mac_gets_its_registers_and_the_82574_none() {
+ 
+     let nic = Nic::new(131);
+     let _driver = open(&nic);
+-    assert_eq!(nic.peek(regs::TXDCTL), txdctl::SUGGESTED | txdctl::PREFETCH);
++    assert_eq!(nic.peek(regs::TXDCTL), txdctl::SUGGESTED);
+     let pch_only = ctrl_ext::STRICT_WRITE_ORDER | ctrl_ext::DRIVER_HOLDS_THE_FUNCTION;
+     assert_eq!(nic.peek(regs::CTRL_EXT) & pch_only, 0, "{}", nic.because("the 82574 had the PCH's CTRL_EXT bits"));
+     assert_eq!(nic.peek(regs::CTRL) & ctrl::MEMORY_ERROR_HANDLING, 0);

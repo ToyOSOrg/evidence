@@ -1,0 +1,490 @@
+diff --git a/system/netstack/i219/src/lib.rs b/system/netstack/i219/src/lib.rs
+index a0e2824e7..639b10067 100644
+--- a/system/netstack/i219/src/lib.rs
++++ b/system/netstack/i219/src/lib.rs
+@@ -3,10 +3,8 @@
+ //!
+ //! The part is the T14's onboard `8086:15fc` at `00:1f.6`, or the `8086:10d3`
+ //! that QEMU's `e1000e` models. Every `§` in this file and in [`regs`] is a
+-//! section of the *Intel 82574 GbE Controller Family Datasheet*, document
+-//! 317694, revision 3.4 (June 2014). The citations were first written against
+-//! revision 2.7 (317694-018); those compared sit at the same numbers in 3.4,
+-//! where `TXDCTL` is §10.2.6.11.
++//! section of the *Intel 82574 GbE Controller Family Datasheet* (317694-018,
++//! rev 2.7).
+ //!
+ //! **Below the register file the two parts are not one.** §3.2.1 puts the
+ //! 82574's PHY on the controller's own die; the T14's is a MAC in the PCH whose
+@@ -125,7 +123,7 @@ mod tests;
+ use toyos_device_memory::{DmaBuffers, Registers};
+ 
+ pub use delivery::{Delivery, NoDelivery};
+-use regs::{cause, ctrl, ctrl_ext, ivar, rah, rctl, rx_desc, status, tarc, tctl, tx_desc, txdctl};
++use regs::{cause, ctrl, ctrl_ext, ivar, rah, rctl, rx_desc, status, tctl, tx_desc, txdctl};
+ 
+ /// The clock, and the one way this driver gives the processor away.
+ pub trait Clock {
+@@ -173,9 +171,6 @@ pub const RX_RING: usize = 1000;
+ /// so what this bounds is how many may be in flight at once: one fewer than
+ /// this, [`I219::tx_room`]'s most.
+ pub const TX_RING: usize = 16;
+-
+-// `txdctl::PREFETCH` prefetches below every on-chip count this ring can leave.
+-const _: () = assert!(TX_RING as u32 <= (txdctl::PREFETCH >> txdctl::PTHRESH_SHIFT) & 0x3f);
+ /// Free receive descriptors at which the part reports itself short:
+ /// `RCTL.RDMTS = 00b`, "1/2" of `RDLEN` (§10.2.5.1), raising `RXDMT0`.
+ const RX_SHORT: usize = RX_RING / 2;
+@@ -913,30 +908,12 @@ pub struct BringUp {
+     pub phy: Result<phy::Phy, phy::PhyRefusal>,
+     /// The message the claim was proven to deliver.
+     pub delivered: Delivered,
+-    /// What the reset left in the registers the bring-up then writes, and in
+-    /// the receive addresses it leaves to firmware.
+-    pub out_of_reset: OutOfReset,
++    /// `TCTL` as the reset left it, before the bring-up wrote its fields.
++    pub reset_transmit_control: u32,
+     /// `TCTL` as the bring-up left it.
+     pub transmit_control: u32,
+ }
+ 
+-/// Registers as the reset left them, for the boot log: what this part's reset
+-/// gives, which the bring-up does not rely on.
+-#[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
+-pub struct OutOfReset {
+-    pub tctl: u32,
+-    pub txdctl: u32,
+-    pub tarc0: u32,
+-    pub rxcsum: u32,
+-    pub mrqc: u32,
+-    pub rfctl: u32,
+-    /// Bit `n` set where receive address entry `n`, 1 and up, is valid
+-    /// (`RAH.AV`). The addresses themselves are not read: entries past the
+-    /// first are manageability's (82574 §8's RAL15/RAH15; the I219's shared
+-    /// receive addresses, 612523 §7.4.2.3.1), and this driver leaves them.
+-    pub receive_addresses_valid: u16,
+-}
+-
+ /// The function, brought up and driving.
+ ///
+ /// **Dropping it lets the function go**: on the I219, [`pch::release`] takes
+@@ -1137,7 +1114,7 @@ impl<R: Registers, C: Clock, D: DmaBuffers, I: Interrupts> I219<R, C, D, I> {
+             dma,
+             irq,
+             mac,
+-            brought_up: BringUp { master_quiet, woke, reset: full, phy, delivered, out_of_reset: OutOfReset::default(), transmit_control: 0 },
++            brought_up: BringUp { master_quiet, woke, reset: full, phy, delivered, reset_transmit_control: 0, transmit_control: 0 },
+             link: Link::default(),
+             opened_at: 0,
+             link_up_at: None,
+@@ -1153,16 +1130,13 @@ impl<R: Registers, C: Clock, D: DmaBuffers, I: Interrupts> I219<R, C, D, I> {
+             wire: Wire::default(),
+         };
+ 
+-        nic.brought_up.out_of_reset = nic.out_of_reset();
+-
+         // The throttle alone: the two receive timers hold back every frame's
+         // interrupt, the first after a quiet spell too, and the throttle none
+-        // of those. `TIDV` is left alone: §10.2.6.10 says "Setting the value to
+-        // 0b is not allowed", and it delays only a descriptor with `IDE` set,
+-        // which this driver sets on none.
++        // of those.
+         nic.regs.write32(regs::ITR, THROTTLE);
+         nic.regs.write32(regs::RDTR, 0);
+         nic.regs.write32(regs::RADV, 0);
++        nic.regs.write32(regs::TIDV, 0);
+         nic.regs.write32(regs::TADV, 0);
+ 
+         nic.arm_rx_ring();
+@@ -1170,23 +1144,13 @@ impl<R: Registers, C: Clock, D: DmaBuffers, I: Interrupts> I219<R, C, D, I> {
+ 
+         // §4.6.6, in its order: the write-back policy, the gap, then the
+         // transmitter.
+-        nic.regs.write32(regs::TXDCTL, txdctl::SUGGESTED | txdctl::PREFETCH);
++        nic.regs.write32(regs::TXDCTL, txdctl::SUGGESTED);
+         nic.regs.write32(regs::TIPG, regs::TIPG_DEFAULT);
+-        let tarc0 = nic.regs.read32(regs::TARC0) | tarc::ENABLE;
+-        nic.regs.write32(regs::TARC0, tarc0);
++        nic.brought_up.reset_transmit_control = nic.regs.read32(regs::TCTL);
+         nic.regs.write32(regs::TCTL, TX_CONTROL);
+         nic.accepted(regs::TCTL, TX_CONTROL)?;
+         nic.brought_up.transmit_control = nic.regs.read32(regs::TCTL);
+ 
+-        // No receive offload, no second queue and no header filtering: the
+-        // three registers' documented fields, all 0 but `RXCSUM`'s two
+-        // checksum offloads, which §10.2.5.15 sets at reset and this driver
+-        // reads nothing of. `MRQC` "can be modified only when receive to host
+-        // is not enabled".
+-        nic.regs.write32(regs::RXCSUM, 0);
+-        nic.regs.write32(regs::MRQC, 0);
+-        nic.regs.write32(regs::RFCTL, 0);
+-
+         // §4.6.5.1: the receiver last, "only after all other setup is
+         // accomplished".
+         let rx = rctl::EN | rctl::BAM | rctl::SECRC | rctl::BSIZE_2048;
+@@ -1226,24 +1190,6 @@ impl<R: Registers, C: Clock, D: DmaBuffers, I: Interrupts> I219<R, C, D, I> {
+         }
+     }
+ 
+-    /// The registers the bring-up writes, as the reset left them, and which
+-    /// receive addresses past the first are valid.
+-    fn out_of_reset(&self) -> OutOfReset {
+-        let read = |reg| self.regs.read32(reg);
+-        let receive_addresses_valid = (1..regs::RECEIVE_ADDRESSES)
+-            .filter(|&n| read(regs::rah(n)) & rah::AV != 0)
+-            .fold(0u16, |valid, n| valid | 1 << n);
+-        OutOfReset {
+-            tctl: read(regs::TCTL),
+-            txdctl: read(regs::TXDCTL),
+-            tarc0: read(regs::TARC0),
+-            rxcsum: read(regs::RXCSUM),
+-            mrqc: read(regs::MRQC),
+-            rfctl: read(regs::RFCTL),
+-            receive_addresses_valid,
+-        }
+-    }
+-
+     /// Publish every receive descriptor and hand the ring to the device.
+     ///
+     /// §4.6.5.1: base, length, head, then "the tail pointer should be set to
+diff --git a/system/netstack/i219/src/regs.rs b/system/netstack/i219/src/regs.rs
+index 370524eee..a872f783b 100644
+--- a/system/netstack/i219/src/regs.rs
++++ b/system/netstack/i219/src/regs.rs
+@@ -109,25 +109,10 @@ pub const TDLEN: usize = 0x03808;
+ pub const TDH: usize = 0x03810;
+ pub const TDT: usize = 0x03818;
+ /// Transmit Interrupt Delay Value (`0x03820`), Transmit Descriptor Control
+-/// (§10.2.6.11, `0x03828`) and the absolute delay (`0x0382C`).
++/// (§10.2.6.10, `0x03828`) and the absolute delay (`0x0382C`).
+ pub const TIDV: usize = 0x03820;
+ pub const TXDCTL: usize = 0x03828;
+ pub const TADV: usize = 0x0382C;
+-/// Transmit Arbitration Count, queue 0 (§10.2.6.9).
+-pub const TARC0: usize = 0x03840;
+-/// Receive Checksum Control (§10.2.5.15), Receive Filter Control (§10.2.5.16)
+-/// and Multiple Receive Queues Command (§10.2.5.25).
+-pub const RXCSUM: usize = 0x05000;
+-pub const RFCTL: usize = 0x05008;
+-pub const MRQC: usize = 0x05818;
+-/// Receive Address entries past the first, Low and High, eight bytes apart.
+-pub const RECEIVE_ADDRESSES: usize = 16;
+-pub const fn ral(n: usize) -> usize {
+-    RAL0 + 8 * n
+-}
+-pub const fn rah(n: usize) -> usize {
+-    RAH0 + 8 * n
+-}
+ /// Extended Configuration Control (§10.2.2.15, `0x00F00`), which carries
+ /// §4.5.2's arbitration for the MDIO interface — and which §8.2.4 gives one
+ /// writable bit and no more.
+@@ -183,8 +168,6 @@ const _: () = {
+     assert!(MTA + MTA_DWORDS * 4 <= REGISTER_BYTES);
+     assert!(RAH0 < REGISTER_BYTES);
+     assert!(TADV < REGISTER_BYTES);
+-    assert!(TARC0 < REGISTER_BYTES && MRQC < REGISTER_BYTES);
+-    assert!(rah(RECEIVE_ADDRESSES - 1) < REGISTER_BYTES);
+     assert!(EXTCNF_CTRL < REGISTER_BYTES);
+     assert!(CTRL_EXT < REGISTER_BYTES);
+     assert!(PHY_CTRL < REGISTER_BYTES);
+@@ -496,38 +479,14 @@ pub mod tctl {
+ /// "the minimum legal IPG".
+ pub const TIPG_DEFAULT: u32 = 8 | (2 << 10) | (10 << 20);
+ 
+-/// Transmit Descriptor Control bits (§10.2.6.11).
++/// Transmit Descriptor Control bits (§10.2.6.10).
+ pub mod txdctl {
+     pub const WTHRESH_SHIFT: u32 = 16;
+     pub const GRAN: u32 = 1 << 24;
+-    /// Bit 22 (§10.2.6.11): "Reserved. Must be set to 1b for proper
+-    /// operation", though its initial value is 0x0.
+-    pub const MUST_BE_SET: u32 = 1 << 22;
+-    /// §4.6.6's suggested write-back policy, one descriptor's worth counted in
+-    /// descriptors, and bit 22. A larger `WTHRESH` holds a completion back
+-    /// until the ring fills.
+-    pub const SUGGESTED: u32 = GRAN | (1 << WTHRESH_SHIFT) | MUST_BE_SET;
+-    /// Prefetch Threshold (bits 5:0) and Host Threshold (bits 13:8), counted in
+-    /// descriptors under `GRAN`. §7.2.4.1 fetches "as soon as any descriptors
+-    /// are made available" only "when the on-chip descriptor queue is empty",
+-    /// and prefetches more "if the number of on-chip descriptors drop below
+-    /// TXDCTL.PTHRESH", with "at least HTHRESH valid descriptors in host
+-    /// memory"; "HTHRESH should be given a non-zero value when ever PTHRESH is
+-    /// used".
+-    pub const PTHRESH_SHIFT: u32 = 0;
+-    pub const HTHRESH_SHIFT: u32 = 8;
+-    /// A choice, not a datasheet value, which publishes no on-chip capacity:
+-    /// every count a 16-descriptor ring can leave on chip is below a `PTHRESH`
+-    /// of 16, and one descriptor waiting in memory is enough to fetch.
+-    pub const PREFETCH: u32 = (16 << PTHRESH_SHIFT) | (1 << HTHRESH_SHIFT);
+-}
+-
+-/// Transmit Arbitration Count bits (§10.2.6.9).
+-pub mod tarc {
+-    /// Descriptor Enable (bit 10), initially 1b: "The Enable bit of transmit
+-    /// queue 0 should always be set." The register's other fields on the PCH's
+-    /// MAC are unpublished, so this bit is set alone.
+-    pub const ENABLE: u32 = 1 << 10;
++    /// §4.6.6's suggested write-back policy: one descriptor's worth, counted in
++    /// descriptors. Anything larger holds a completion back until the ring
++    /// fills.
++    pub const SUGGESTED: u32 = GRAN | (1 << WTHRESH_SHIFT);
+ }
+ 
+ /// [`super::LANPHYPC_TIMING`]'s one field this driver sets.
+@@ -581,9 +540,8 @@ pub mod rx_desc {
+         pub const RXE: u8 = 1 << 7;
+         /// The ones that say the frame's own bytes are wrong. The two checksum
+         /// bits are left out: §7.1.3.4 says "if receive checksum offloading is
+-        /// disabled [...] the IPE and TCPE bits are 0b", and the bring-up
+-        /// writes `RXCSUM` 0, where §10.2.5.15 has both offloads set out of
+-        /// reset.
++        /// disabled [...] the IPE and TCPE bits are 0b", and this driver asks
++        /// for none.
+         pub const FRAME_IS_BAD: u8 = CE | SE | SEQ | CXE | RXE;
+     }
+ }
+diff --git a/system/netstack/i219/src/stub.rs b/system/netstack/i219/src/stub.rs
+index b9f2c72f9..6de165980 100644
+--- a/system/netstack/i219/src/stub.rs
++++ b/system/netstack/i219/src/stub.rs
+@@ -53,12 +53,8 @@ use std::{format, vec};
+ use crate::phy::{advertise, control, control_1000t, custom_mode, oem_bits, reg};
+ use crate::regs::{
+     self, cause, ctrl, ctrl_ext, extcnf, fwsm, lanphypc_timing, mdic, pbeccsts, phy_ctrl, rah, rctl,
+-    rx_desc, status, tarc, tctl, tx_desc, txdctl,
++    rx_desc, status, tctl, tx_desc,
+ };
+-
+-/// §10.2.5.15: `RXCSUM`'s `IPOFLD` (bit 8) and `TUOFLD` (bit 9), 1b out of
+-/// reset.
+-const RXCSUM_OFFLOADS: u32 = 0b11 << 8;
+ use crate::{phy, wake, Clock, Delivery, DmaBuffers, Interrupts, Part, Registers};
+ 
+ /// Where the device reaches the grant. Not zero and not a small number: a
+@@ -111,15 +107,12 @@ pub struct Permits {
+     /// moment the frame arrived, and the order inside a chunk is the
+     /// hardware's.
+     pub batched_writeback: bool,
+-    /// What a reset leaves in the registers the bring-up writes whole or by a
+-    /// bit: `TCTL`, `TARC0`, `RXCSUM`, `MRQC` and `RFCTL`, and the receive
+-    /// addresses past the first. Off: the datasheet's initial values, as §4.2
+-    /// has a software reset re-read the NVM and reset the rest. On: the values
+-    /// before the reset, which is what the T14 reads after it for `TCTL`;
+-    /// whether its reset keeps `TCTL` or this MAC's own reset value is that
+-    /// one, no reading says, the 82574's table does not describe the PCH's
+-    /// MAC, and the others are unread.
+-    pub reset_leaves_last_holders: bool,
++    /// What a reset leaves in `TCTL`. Off: §10.2.6.1's initial values, as §4.2
++    /// has a software reset re-read the NVM and reset the rest. On: the value
++    /// before the reset, which is what the T14 reads after it; whether its reset
++    /// keeps `TCTL` or this MAC's own reset value is that one, no reading says,
++    /// and the 82574's table does not describe the PCH's MAC.
++    pub reset_leaves_tctl: bool,
+     /// §7.1.8: the head register "includes those descriptors completed but not
+     /// yet stored in memory", so `RDH` may be ahead of what a driver can read.
+     pub shadow_head: bool,
+@@ -251,7 +244,7 @@ impl Default for Permits {
+     fn default() -> Self {
+         Self {
+             batched_writeback: true,
+-            reset_leaves_last_holders: true,
++            reset_leaves_tctl: true,
+             shadow_head: true,
+             null_padding: true,
+             spurious_interrupts: true,
+@@ -791,16 +784,13 @@ impl Model {
+     /// What the register file holds out of reset: the fields the documents give
+     /// a value, which are the fields a driver has to carry.
+     fn power_on(&mut self) {
+-        let kept = [regs::TCTL, regs::TARC0, regs::RXCSUM, regs::MRQC, regs::RFCTL];
+-        let last_holders = kept.map(|reg| self.get(reg));
+-        let last_holders_addresses: Vec<(u32, u32)> =
+-            (1..regs::RECEIVE_ADDRESSES).map(|n| (self.get(regs::ral(n)), self.get(regs::rah(n)))).collect();
++        let last_holders_tctl = self.get(regs::TCTL);
+         for word in self.file.iter_mut() {
+             *word = 0;
+         }
+         self.set(regs::CTRL, CTRL_RESERVED_SET);
+-        let tctl = if self.permits.reset_leaves_last_holders {
+-            last_holders[0]
++        let tctl = if self.permits.reset_leaves_tctl {
++            last_holders_tctl
+         } else {
+             // §10.2.6.1's initial values: `PSP`, `MULR` and `RRTHRESH` set,
+             // every other field it gives a value 0; `UNORTX` and `TXDSCMT` it
+@@ -808,20 +798,6 @@ impl Model {
+             tctl::PSP | tctl::MULR | tctl::RRTHRESH_INITIAL
+         };
+         self.set(regs::TCTL, tctl);
+-        // §10.2.6.9's `TARC0`: `COUNT` 0x3 and `ENABLE` 1b. §10.2.5.15's
+-        // `RXCSUM`: `IPOFLD` and `TUOFLD` 1b. `TXDCTL`, `MRQC` and `RFCTL` are
+-        // all 0 out of reset (§10.2.6.11, §10.2.5.25, §10.2.5.16).
+-        self.set(regs::TARC0, 0x3 | tarc::ENABLE);
+-        self.set(regs::RXCSUM, RXCSUM_OFFLOADS);
+-        if self.permits.reset_leaves_last_holders {
+-            for (reg, value) in kept.into_iter().zip(last_holders).skip(1) {
+-                self.set(reg, value);
+-            }
+-            for (n, (low, high)) in (1..).zip(last_holders_addresses) {
+-                self.set(regs::ral(n), low);
+-                self.set(regs::rah(n), high);
+-            }
+-        }
+         if self.permits.extcnf_carries_firmware_fields {
+             self.set(regs::EXTCNF_CTRL, EXTCNF_FIRMWARE_FIELDS);
+         }
+@@ -1355,16 +1331,6 @@ impl Model {
+                     self.run();
+                 }
+             }
+-            regs::TXDCTL => {
+-                assert_ne!(
+-                    value & txdctl::MUST_BE_SET,
+-                    0,
+-                    "seed {}: the driver wrote TXDCTL {value:#010x}, and §10.2.6.11 says bit 22 \
+-                     \"Must be set to 1b for proper operation\"",
+-                    self.seed
+-                );
+-                self.set(regs::TXDCTL, value);
+-            }
+             _ => self.set(reg, value),
+         }
+     }
+@@ -2597,12 +2563,6 @@ impl Nic {
+         self.0.borrow_mut().held = true;
+     }
+ 
+-    /// One register written as a driver writes it, for a test of what the part
+-    /// does with a value no change of this driver's should write.
+-    pub fn write_register(&self, reg: usize, value: u32) {
+-        self.0.borrow_mut().write(reg, value);
+-    }
+-
+     /// One register written as a previous holder left it, before this driver
+     /// takes the function.
+     pub fn inherit(&self, reg: usize, value: u32) {
+diff --git a/system/netstack/i219/src/tests.rs b/system/netstack/i219/src/tests.rs
+index 4a10dfdb3..7e3f32f0d 100644
+--- a/system/netstack/i219/src/tests.rs
++++ b/system/netstack/i219/src/tests.rs
+@@ -107,7 +107,7 @@ fn bring_up_programs_what_the_initialization_sections_name() {
+         nic.because("TCTL is not §4.6.6's fields with MULR and RRTHRESH at §10.2.6.1's initial values")
+     );
+     assert_eq!(nic.peek(regs::TIPG), regs::TIPG_DEFAULT);
+-    assert_eq!(nic.peek(regs::TXDCTL), regs::txdctl::SUGGESTED | regs::txdctl::PREFETCH);
++    assert_eq!(nic.peek(regs::TXDCTL), regs::txdctl::SUGGESTED);
+     assert_eq!(
+         nic.peek(regs::IMS),
+         cause::ENABLED | cause::ENABLED_MSIX,
+@@ -3112,7 +3112,7 @@ fn the_pchs_mac_gets_its_registers_and_the_82574_none() {
+     assert!(has(regs::CTRL_EXT, ctrl_ext::PHY_POWER_DOWN_ENABLE));
+     assert_eq!(nic.peek(regs::WAKE_UP) & wake_up::APM_WAKE, 0);
+     assert_eq!(nic.peek(regs::PCIE_CONTROL) & pcie_control::NO_SNOOP, 0);
+-    assert_eq!(nic.peek(regs::TXDCTL), txdctl::SUGGESTED | txdctl::PREFETCH, "{}", nic.because("§4.6.6's policy"));
++    assert_eq!(nic.peek(regs::TXDCTL), txdctl::SUGGESTED, "{}", nic.because("§4.6.6's policy"));
+     assert!(has(regs::PBECCSTS, pbeccsts::ECC_ENABLE), "{}", nic.because("the buffer's ECC is off"));
+     assert!(has(regs::CTRL, ctrl::MEMORY_ERROR_HANDLING), "{}", nic.because("memory error handling is off"));
+     for reg in [regs::WAKE_UP, regs::PCIE_CONTROL] {
+@@ -3121,7 +3121,7 @@ fn the_pchs_mac_gets_its_registers_and_the_82574_none() {
+ 
+     let nic = Nic::new(131);
+     let _driver = open(&nic);
+-    assert_eq!(nic.peek(regs::TXDCTL), txdctl::SUGGESTED | txdctl::PREFETCH);
++    assert_eq!(nic.peek(regs::TXDCTL), txdctl::SUGGESTED);
+     let pch_only = ctrl_ext::STRICT_WRITE_ORDER | ctrl_ext::DRIVER_HOLDS_THE_FUNCTION;
+     assert_eq!(nic.peek(regs::CTRL_EXT) & pch_only, 0, "{}", nic.because("the 82574 had the PCH's CTRL_EXT bits"));
+     assert_eq!(nic.peek(regs::CTRL) & ctrl::MEMORY_ERROR_HANDLING, 0);
+@@ -3403,68 +3403,13 @@ fn bring_up_sets_tctl_whatever_the_last_holder_left() {
+     let wanted = tctl::EN | tctl::PSP | tctl::CT | tctl::COLD_FULL_DUPLEX | tctl::MULR | tctl::RRTHRESH_INITIAL;
+     for reset_leaves_tctl in [true, false] {
+         for inherited in [0x3003_f0f8, 0x0003_f0f8, 0] {
+-            let nic = Nic::with(7, Part::I219, Permits { reset_leaves_last_holders: reset_leaves_tctl, ..Permits::default() });
++            let nic = Nic::with(7, Part::I219, Permits { reset_leaves_tctl, ..Permits::default() });
+             nic.inherit(regs::TCTL, inherited);
+             let driver = open(&nic);
+             assert_eq!(nic.peek(regs::TCTL), wanted, "{}", nic.because("the bring-up left a TCTL of the last holder's"));
+             assert_eq!(driver.brought_up().transmit_control, wanted);
+             let out_of_reset = if reset_leaves_tctl { inherited } else { tctl::PSP | tctl::MULR | tctl::RRTHRESH_INITIAL };
+-            assert_eq!(driver.brought_up().out_of_reset.tctl, out_of_reset, "the bring-up reported another TCTL out of reset");
++            assert_eq!(driver.brought_up().reset_transmit_control, out_of_reset, "the bring-up reported another TCTL out of reset");
+         }
+     }
+ }
+-
+-/// The bring-up sets `TARC0`'s `ENABLE`, which §10.2.6.9 says "should always be
+-/// set", as one bit and keeps the rest of the register, and writes `RXCSUM`,
+-/// `MRQC` and `RFCTL` to 0, whatever a last holder left and whichever way the
+-/// reset goes. It reports each as the reset left it.
+-#[test]
+-fn bring_up_owns_tarc0_enable_and_the_receive_filters() {
+-    for reset_leaves_last_holders in [true, false] {
+-        let nic = Nic::with(7, Part::I219, Permits { reset_leaves_last_holders, ..Permits::default() });
+-        nic.inherit(regs::TARC0, 0x5);
+-        nic.inherit(regs::RXCSUM, 0x0000_0300);
+-        nic.inherit(regs::MRQC, 0x0001_0001);
+-        nic.inherit(regs::RFCTL, 0x0000_8000);
+-        let driver = open(&nic);
+-        let reset = driver.brought_up().out_of_reset;
+-        let (tarc0, rxcsum, mrqc, rfctl) = if reset_leaves_last_holders {
+-            (0x5, 0x300, 0x0001_0001, 0x8000)
+-        } else {
+-            (0x3 | tarc::ENABLE, 0x300, 0, 0)
+-        };
+-        assert_eq!((reset.tarc0, reset.rxcsum, reset.mrqc, reset.rfctl), (tarc0, rxcsum, mrqc, rfctl));
+-        assert_eq!(nic.peek(regs::TARC0), tarc0 | tarc::ENABLE, "{}", nic.because("TARC0 is not ENABLE over what the reset left"));
+-        for reg in [regs::RXCSUM, regs::MRQC, regs::RFCTL] {
+-            assert_eq!(nic.peek(reg), 0, "{}", nic.because("a receive filter register was left to the reset"));
+-        }
+-    }
+-}
+-
+-/// `TIDV` is never written: §10.2.6.10 allows no 0, and this driver sets `IDE`
+-/// on no descriptor. Nor is any receive address past the first, which are
+-/// manageability's; the reset's valid ones are reported.
+-#[test]
+-fn bring_up_leaves_tidv_and_the_receive_addresses_past_the_first() {
+-    let nic = Nic::with(7, Part::I219, Permits::default());
+-    nic.inherit(regs::rah(3), rah::AV | 0x1234);
+-    nic.inherit(regs::rah(15), rah::AV);
+-    let driver = open(&nic);
+-    let written = |reg| nic.trace().iter().any(|a| matches!(a, Access::Write { reg: r } if *r == reg));
+-    assert!(!written(regs::TIDV), "{}", nic.because("the bring-up wrote TIDV"));
+-    for n in 1..regs::RECEIVE_ADDRESSES {
+-        assert!(!written(regs::ral(n)) && !written(regs::rah(n)), "receive address {n} was written");
+-    }
+-    assert_eq!(driver.brought_up().out_of_reset.receive_addresses_valid, 1 << 3 | 1 << 15);
+-}
+-
+-/// §10.2.6.11: bit 22 "Must be set to 1b for proper operation", and the model
+-/// refuses a `TXDCTL` write that clears it, so no driver change can.
+-#[test]
+-#[should_panic(expected = "Must be set to 1b")]
+-fn the_model_refuses_txdctl_without_bit_22() {
+-    let nic = Nic::with(7, Part::I219, Permits::default());
+-    let mut driver = open(&nic);
+-    let _ = driver.tx_room();
+-    nic.write_register(regs::TXDCTL, txdctl::SUGGESTED & !txdctl::MUST_BE_SET);
+-}
+diff --git a/system/netstack/src/i219.rs b/system/netstack/src/i219.rs
+index 9c68dad47..74a3d2589 100644
+--- a/system/netstack/src/i219.rs
++++ b/system/netstack/src/i219.rs
+@@ -159,17 +159,8 @@ fn brought_up_words(brought_up: toyos_i219::BringUp) -> Vec<String> {
+     let mut words = vec![
+         brought_up.delivered.to_string(),
+         format!(
+-            "out of the reset: TCTL {:#010x} TXDCTL {:#010x} TARC0 {:#010x} RXCSUM {:#010x} MRQC \
+-             {:#010x} RFCTL {:#010x}, receive addresses past the first valid {:#06x} (left to \
+-             firmware); TCTL {:#010x} after the bring-up",
+-            brought_up.out_of_reset.tctl,
+-            brought_up.out_of_reset.txdctl,
+-            brought_up.out_of_reset.tarc0,
+-            brought_up.out_of_reset.rxcsum,
+-            brought_up.out_of_reset.mrqc,
+-            brought_up.out_of_reset.rfctl,
+-            brought_up.out_of_reset.receive_addresses_valid,
+-            brought_up.transmit_control
++            "TCTL {:#010x} out of the reset and {:#010x} after the bring-up",
++            brought_up.reset_transmit_control, brought_up.transmit_control
+         ),
+     ];
+     match brought_up.woke {
