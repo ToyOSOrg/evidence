@@ -1,0 +1,11 @@
+--- a/system/netstack/i219/src/phy.rs
++++ b/system/netstack/i219/src/phy.rs
+@@ -1041,7 +1041,7 @@
+     woke.ulp = match woke.answered() {
+         None => Disarm::Unreached,
+         Some(_) if firmware & fwsm::FIRMWARE_VALID != 0 => Disarm::FirmwareOwns,
+-        Some(_) => match mdi.disarm_ulp() {
++        Some(_) => match mdi.ulp_state() {
+             Ok(found) => Disarm::Disarmed { found },
+             Err(why) => Disarm::Refused(why),
+         },
