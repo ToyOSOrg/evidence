@@ -22,3 +22,22 @@
   - `persist.seq_write_fsync`: 337 MB/s against 506 and 520.
   - `fs.disk.read_4k_at`: 16,903 ns against 2,375 and 1,463.
   - The same ToyOS rows on 2026-10-24's in-memory DATA (`fs.served.*`, the orchestrator's full-final session, `compare-2026-10-24-full-final.md` here) read `read_4k_at` 16,822, `stat` 10,450, `rename` 58,002 ns, against 16,903, 10,530 and 59,154 here. So the file server's round trip, not the NVMe, sets them.
+
+## r3 (branch head 069cbbeb8, rebased on #1095 at 370d7d9f6): review r1
+
+- `checks/ci-host-b4121ccc0.log`: `cargo run -- --ci host`, exit 0, 105 steps green. 069cbbeb8 adds only an issue record.
+- `checks/stage-*.log`: the `osbench` row staged at 069cbbeb8 for the T14 and the AMD, exit 2. Image sha256: T14 53622cdcd690522cedd64c953a415f0a64d86633fd5f3a44ae0758baf3507304, AMD 5f188265750b7467cd6bffa539330fd87398288996033071b0f293d9bd424594. The Linux half's sha256 is in `checks/linux-osbench-SHA256SUMS`.
+- `judge/`: the rebuilt judge (`hostdisk::left_alone` with the loader's volumes) at b4121ccc0 on four readbacks:
+  - `amd-nvme-runner.log`: the AMD's c8f3fbfb0 boot through #1095's NVMe runner, which the old harness could not read. Exit 0, PASS.
+  - `amd-designated.log`: the AMD's fa7258221 boot, DATA designated and mounted. Exit 0, PASS.
+  - `t14.log`: the 2026-10-24 boot with DATA in memory. Exit 1, refused.
+  - `t14-formatting.log`: the format substitution. Exit 1, refused as the format boot.
+- `probe/`: the fileserver cache probe for review B2's seq_read cause. Applied, run and reverted in one script, exit 0. A file of `CLEAN_LIMIT + 16` blocks made 16,400 disk requests on each of five passes, and `CLEAN_LIMIT - 16` made none. Filed as `issues/a-sequential-read-of-a-file-as-large-as-datas-clean-cache-reads-the-disk.md`.
+- `t14/`: the orchestrator's T14 validation at c8f3fbfb0, before the rebase. Linux, ToyOS, Linux, all rc=0, judge PASS. `persist` completed in 11 s with DATA mounted, and the 64 MiB `fs.disk.seq_write` ran without a file server restart. `compare.md` exits 0, with `clocksource=tsc,tsc`. The disk rows, ToyOS against Linux:
+  - `persist.fsync_clean`: 3.02 ms against 23 µs;
+  - `persist.write_4k_fsync`: 6.13 ms against 0.81 to 1.01 ms;
+  - `persist.seq_write_fsync`: 162 against 587 to 598 MB/s;
+  - `fs.disk.read_4k_at`: 18.0 µs against 0.74 to 0.76 µs;
+  - `fs.disk.seq_read.4096`: 435 against 7,760 MB/s.
+
+  The flush cost is filed as `issues/a-durable-write-on-the-t14s-nvme-costs-toyos-six-times-linuxs.md`. This run predates the rebase's image and the Linux half's new fields, so B5's landing-head runs are the ones staged above.
