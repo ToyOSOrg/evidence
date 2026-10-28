@@ -19,3 +19,5 @@ The two loader excerpts are the bench's own lines. On the first pass, `PMx000=0x
 |---|---|
 | `unwatched`: the chipset's reset accepted for an image not armed with the watchdog | `a_watched_wedge_is_ended_by_the_chipsets_reset` |
 | `any-pass`: the reset line read off the whole `loader.log`, the first pass's survey included | the same |
+
+`judge-arm-fed-4.log`: the same judge over the original readback once the orchestrator had restored the record's `[stick]` (it had stripped it for #1095's run): exit 0, both rows PASS, 6 numbers within their record.
