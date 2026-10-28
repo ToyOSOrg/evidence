@@ -1,0 +1,218 @@
+commit f2ceadc7ac28db979fb97d56efe8de08c54766f8
+Author: japabu <japa.busse@gmail.com>
+Date:   Wed Oct 28 22:50:27 2026 +0100
+
+    S2 scout, never landing: the link hop's cost on the T14
+
+diff --git a/tests/guest/rust-tests/src/bin/s2_link_hop.rs b/tests/guest/rust-tests/src/bin/s2_link_hop.rs
+new file mode 100644
+index 000000000..c0f600e65
+--- /dev/null
++++ b/tests/guest/rust-tests/src/bin/s2_link_hop.rs
+@@ -0,0 +1,206 @@
++//! S2, a scout that never lands: the link hop's cost. Two processes over one
++//! `toyos-link` region and one connection, each copying each 1,514-byte frame
++//! once, a doorbell after every batch of 1, 8 or 32, in both directions: the
++//! driver's received frames to the stack, and the stack's to the driver.
++//!
++//! For each run the parent prints the frames, the elapsed TSC cycles per
++//! frame from the producer's first frame to the consumer's last, the two
++//! processes' CPU time per frame in TSC cycles, and frames a second.
++
++use std::io::{BufRead, BufReader};
++use std::os::toyos::process::CommandExt;
++use std::process::{Command, Stdio};
++
++use toyos::endow::{Endowments, FromHandle};
++use toyos::ipc::Connection;
++use toyos::poller::{Poller, READABLE};
++use toyos::process::Process;
++use toyos::{namespace, port, OwnedHandle};
++use toyos_abi::syscall::SyscallError;
++use toyos_link::ends::{Driver, Stack};
++use toyos_link::region::Region;
++
++#[path = "../arch/counter.rs"]
++mod counter;
++
++const SELF_PATH: &str = "/system/bin/test_rs_s2_link_hop";
++const FRAME: usize = 1514;
++const FRAMES: u32 = 1 << 18;
++const BATCHES: [u32; 3] = [1, 8, 32];
++
++fn main() {
++    let mut args = std::env::args().skip(1);
++    match args.next().as_deref() {
++        None => parent(),
++        Some(role) => {
++            let way = args.next().expect("a direction");
++            let batch: u32 = args.next().and_then(|b| b.parse().ok()).expect("a batch");
++            child(role, &way, batch);
++        }
++    }
++}
++
++fn now_ns() -> u64 {
++    toyos_abi::clock::nanos_since_boot()
++}
++
++fn parent() {
++    for way in ["rx", "tx"] {
++        for batch in BATCHES {
++            run(way, batch);
++        }
++    }
++    println!("s2: done");
++}
++
++/// One run: a producer and a consumer over a fresh region and connection.
++fn run(way: &str, batch: u32) {
++    let region = Region::create().expect("s2: a region");
++    let (acceptor, connector) = port::create().expect("s2: a port");
++    let ns = namespace::build().add("hop", &connector).finish().expect("s2: a namespace");
++    let near = ns.open("hop").expect("s2: a connection");
++    let far = acceptor.accept().expect("s2: its far end");
++    let spawn = |role: &str, conn: Connection| {
++        Command::new(SELF_PATH)
++            .args([role, way, &batch.to_string()])
++            .endow("region", region.share().expect("s2: share the region").into())
++            .endow("conn", conn.into_owned().into())
++            .stdout(Stdio::piped())
++            .spawn()
++            .expect("s2: spawn a side")
++    };
++    let mut consumer = spawn("consume", far);
++    let mut producer = spawn("produce", near);
++    let said = |child: &mut std::process::Child| {
++        let mut line = String::new();
++        BufReader::new(child.stdout.take().expect("piped")).read_line(&mut line).expect("s2: a side's line");
++        line.trim().split(' ').map(|w| w.parse::<u64>().expect("s2: a number")).collect::<Vec<u64>>()
++    };
++    let p = said(&mut producer);
++    let c = said(&mut consumer);
++    let stats = |child: std::process::Child| {
++        let process = Process::from_handle(OwnedHandle::from(std::os::toyos::io::OwnedHandle::from(child)));
++        process.wait().expect("s2: a side's end");
++        process.stats().expect("s2: a side's stats").cpu_ns
++    };
++    let (p_cpu, c_cpu) = (stats(producer), stats(consumer));
++    // Each side said: tsc, ns at its first (producer) or last (consumer) frame.
++    let (cycles, ns) = (c[0] - p[0], c[1] - p[1]);
++    let hz = cycles as f64 / ns as f64 * 1e9;
++    let frames = f64::from(FRAMES);
++    let cpu_cycles = |cpu_ns: u64| cpu_ns as f64 * hz / 1e9 / frames;
++    println!(
++        "s2: {way} batch {batch}: {FRAMES} frames, {:.0} elapsed cycles/frame, {:.0} CPU cycles/frame (producer {:.0}, consumer {:.0}), {:.0} frames/s, TSC {:.3} GHz",
++        cycles as f64 / frames,
++        cpu_cycles(p_cpu + c_cpu),
++        cpu_cycles(p_cpu),
++        cpu_cycles(c_cpu),
++        frames / (ns as f64 / 1e9),
++        hz / 1e9,
++    );
++}
++
++/// The two ends' calls, whichever side each is.
++enum End {
++    Driver(Driver),
++    Stack(Stack),
++}
++
++fn child(role: &str, way: &str, batch: u32) {
++    let endowed = Endowments::get();
++    let region = Region::lent(endowed.take::<OwnedHandle>("region").expect("s2: the region")).ok().expect("s2: a region");
++    let conn = Connection::received(endowed.take::<OwnedHandle>("conn").expect("s2: the connection"));
++    let page = region.words();
++    let driver_side = (role == "produce") == (way == "rx");
++    let mut end = if driver_side { End::Driver(Driver::new(page)) } else { End::Stack(Stack::new(page)) };
++    let poller = Poller::new(1);
++    let wait = || {
++        poller.watch(&conn, READABLE, 0);
++        poller.wait(1, u64::MAX, |_| {});
++        let mut sink = [0u8; 64];
++        loop {
++            match conn.read_nonblock(&mut sink) {
++                Ok(0) => panic!("s2: the other side hung up"),
++                Ok(_) => {}
++                Err(SyscallError::WouldBlock) => return,
++                Err(e) => panic!("s2: a doorbell read: {e:?}"),
++            }
++        }
++    };
++    let ring = || match conn.write_nonblock(&[1]) {
++        Ok(_) | Err(SyscallError::WouldBlock) => {}
++        Err(e) => panic!("s2: a doorbell: {e:?}"),
++    };
++    let bytes = region.bytes();
++    let mut frame = vec![0x5au8; FRAME];
++    if role == "produce" {
++        let (tsc, ns) = (counter::start(), now_ns());
++        let mut sent = 0;
++        while sent < FRAMES {
++            for _ in 0..batch {
++                loop {
++                    let room = match &mut end {
++                        End::Driver(d) => d.room(page).unwrap(),
++                        End::Stack(s) => s.room(page).unwrap(),
++                    };
++                    if room > 0 {
++                        break;
++                    }
++                    let room = match &mut end {
++                        End::Driver(d) => d.want_room(page).unwrap(),
++                        End::Stack(s) => s.want_room(page).unwrap(),
++                    };
++                    if room > 0 {
++                        break;
++                    }
++                    wait();
++                }
++                frame[0] = sent as u8;
++                match &mut end {
++                    End::Driver(d) => {
++                        bytes.write(d.slot().offset, &frame);
++                        d.receive(page, FRAME).unwrap();
++                    }
++                    End::Stack(s) => {
++                        bytes.write(s.slot().offset, &frame);
++                        s.send(page, FRAME).unwrap();
++                    }
++                }
++                sent += 1;
++            }
++            let published = match &mut end {
++                End::Driver(d) => d.publish(page),
++                End::Stack(s) => s.publish(page),
++            };
++            if published {
++                ring();
++            }
++        }
++        println!("{tsc} {ns}");
++    } else {
++        let mut taken = 0;
++        while taken < FRAMES {
++            loop {
++                let next = match &mut end {
++                    End::Driver(d) => d.to_send(page).unwrap(),
++                    End::Stack(s) => s.received(page).unwrap(),
++                };
++                let Some(span) = next else { break };
++                bytes.read(span.offset, &mut frame[..span.len]);
++                assert_eq!(frame[0], taken as u8, "s2: frames in order");
++                taken += 1;
++            }
++            let wanted = match &mut end {
++                End::Driver(d) => d.release(page),
++                End::Stack(s) => s.release(page),
++            };
++            if wanted {
++                ring();
++            }
++            if taken < FRAMES {
++                wait();
++            }
++        }
++        println!("{} {}", counter::stop(), now_ns());
++    }
++}
