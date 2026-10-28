@@ -41,3 +41,23 @@ Not run by the implementer. `r1/metal-request.txt` stages `testcases` and `bench
 - **Spec**: `r2/hpet-spec-clause.txt` quotes the clause, with the PDF's hash.
 - **Rebased onto main** (#1096), plus a commit for the spec's two drift figures and one runtime read: host CI at 68afed54f, exit 0, 106 steps green (`r2/checks/`). `a_stepped_tsc_panics` rerun at that head's kernel, exit 0 (`r2/qemu/`).
 - The AMD run is staged at 68afed54f (`r2/metal-request-amd.txt`).
+
+## r3
+
+**AMD benchcase at 68afed54f** (early evidence only, not the landing run): the verdict is refused.
+- The runtime check panicked at 17.585 s. Its message, at 68afed54f's wording: "cpu14's TSC stepped: 1723545 ns apart from the HPET over 680209977 ns since the last sample, 346277 allowed".
+- The panic path then reset the machine itself.
+- `S5ResetStat` = 0x00080800, so bit 25 is clear and the FCH watchdog did not fire.
+
+What the boot measured before the panic:
+- The calibration read 1,796,611,234.697 Hz ±20,235 ppb. That is 7.5 ppm from Linux's 1796.6248 MHz, inside its bound.
+- The refinements read 1 s ±2,647 ppb, then 2 s, 4 s, and 8 s at 1,796,624,243.085 Hz ±425 ppb.
+- The APs sit within ±36 to ±288 cycles of the BSP.
+- The TSC read 16.9 s since its zero at the event.
+
+Files are in `r3/metal-amd/`. The panic page is excerpted; the full logs are not published.
+
+**Head 5cb43438a** (review r1 fixes):
+- Host CI exit 0, 106 steps green (`r3/checks/`).
+- `a_stepped_tsc_panics` exit 0 (`r3/qemu/`).
+- The T14 run is restaged (`r3/metal-request-t14.txt`). The AMD run is held until the 1.7 ms event is understood.
