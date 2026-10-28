@@ -21,3 +21,12 @@ and the change of the p50 means, from lines/*.lines by ab.py. head carries the
 measurement-only waitone rows; base has none.
 
 lines/: the osbench result lines and test markers extracted from each boot's kernel.log.
+
+## Correction (review round 1)
+
+The T14's `fs.disk.*` rows are the ones the block-doorbell change touches,
+and not single-boot outliers: `fs.disk.create_write_unlink` reads 126515 and
+158385 ns on the two base boots and 160975 and 159504 on the two head boots,
+so both heads match base2 and base1 is the low one; its base is bimodal
+across two boots, and two boots do not separate the change from that.
+`fs.disk.mkdir_rmdir` differs in head2 alone (109720 against 85755 to 88011).
