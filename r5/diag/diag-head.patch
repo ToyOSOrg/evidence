@@ -1,0 +1,184 @@
+diff --git a/kernel/src/pipe.rs b/kernel/src/pipe.rs
+index 3ed5b0661..410a1329f 100644
+--- a/kernel/src/pipe.rs
++++ b/kernel/src/pipe.rs
+@@ -148,6 +148,34 @@ struct Pipe {
+     /// Its own heap and its watches, charged to the job that made it, which
+     /// what it holds is counted to as well.
+     _charge: Charge,
++    diag: Diag,
++}
++
++/// Measurement only, never lands: per direction, calls, bytes, ticks spun for
++/// the lock, held, in the user walk, taking or giving frames, and memcpy runs.
++#[derive(Default)]
++struct Diag {
++    w: [core::sync::atomic::AtomicU64; 7],
++    r: [core::sync::atomic::AtomicU64; 7],
++}
++
++fn diag_add(of: &[core::sync::atomic::AtomicU64; 7], at: usize, n: u64) {
++    of[at].fetch_add(n, core::sync::atomic::Ordering::Relaxed);
++}
++
++impl Drop for Pipe {
++    fn drop(&mut self) {
++        use core::sync::atomic::Ordering::Relaxed;
++        let get = |of: &[core::sync::atomic::AtomicU64; 7]| of.each_ref().map(|c| c.load(Relaxed));
++        let (w, r) = (get(&self.diag.w), get(&self.diag.r));
++        if w[1] >= 32 << 20 {
++            let (reach, copy, calls) = crate::user_ptr::diag();
++            crate::log!(
++                "pipediag head: w n={} bytes={} spin={} hold={} walk={} frames={} runs={} | r n={} bytes={} spin={} hold={} walk={} give={} runs={} | pieces reach={reach} copy={copy} calls={calls}",
++                w[0], w[1], w[2], w[3], w[4], w[5], w[6], r[0], r[1], r[2], r[3], r[4], r[5], r[6]
++            );
++        }
++    }
+ }
+ 
+ /// What a pipe's lock holds.
+@@ -183,6 +211,7 @@ pub fn create() -> Result<(PipeReader, PipeWriter), Exhausted> {
+         write_watch: Arc::new(Watch::new()),
+         left: [Arc::new(Watch::new()), Arc::new(Watch::new())],
+         _charge: charge,
++        diag: Diag::default(),
+     }));
+     Ok((PipeReader::acquire(&pipe), PipeWriter::acquire(&pipe)))
+ }
+@@ -221,7 +250,9 @@ impl PipeRef {
+         window: impl FnOnce(u64, usize) -> Window,
+     ) -> Option<Result<usize, AtBatch>> {
+         let (result, boost) = {
++            let t0 = crate::arch::cpu::rdtsc();
+             let mut pipe = self.0.state.lock();
++            let t1 = crate::arch::cpu::rdtsc();
+             let available = pipe.held.bytes.len();
+             let limit = match window(pipe.read, available) {
+                 Window::AtBatch => return Some(Err(AtBatch)),
+@@ -231,10 +262,13 @@ impl PipeRef {
+                 let len = buf.len().min(limit);
+                 let n = len.min(available);
+                 let bytes = &mut pipe.held.bytes;
++                let mut runs = 0u64;
++                let tw = crate::arch::cpu::rdtsc();
+                 // One walk of the user window, each pinned piece copied out of
+                 // the frames it covers.
+                 buf.write_pieces(0, n, |to, at, piece| {
+                     bytes.peek(at, piece, |frame, within, from| {
++                        runs += 1;
+                         // SAFETY: `to` is valid for `piece` bytes until this
+                         // walk's callback returns, and `from + within.len()` is
+                         // at most `piece`; the frame is this pipe's alone,
+@@ -242,8 +276,18 @@ impl PipeRef {
+                         unsafe { core::ptr::copy_nonoverlapping(frame_bytes(frame, within.clone()), to.add(from), within.len()) }
+                     });
+                 });
++                let tg = crate::arch::cpu::rdtsc();
+                 bytes.consume(n);
+                 pipe.held.give_back_surplus();
++                let te = crate::arch::cpu::rdtsc();
++                let d = &self.0.diag.r;
++                diag_add(d, 0, 1);
++                diag_add(d, 1, n as u64);
++                diag_add(d, 2, t1 - t0);
++                diag_add(d, 3, te - t1);
++                diag_add(d, 4, tg - tw);
++                diag_add(d, 5, te - tg);
++                diag_add(d, 6, runs);
+                 pipe.read += n as u64;
+                 let boost = core::mem::take(&mut pipe.rt_boost_pending);
+                 (Some(Ok(n)), boost)
+@@ -267,7 +311,9 @@ impl PipeRef {
+ 
+     /// Write `buf` as `landing` has it land, under the one lock hold.
+     pub fn write(&self, buf: &UserBytes, landing: Landing) -> PipeWrite {
++        let t0 = crate::arch::cpu::rdtsc();
+         let mut pipe = self.0.state.lock();
++        let t1 = crate::arch::cpu::rdtsc();
+         if !pipe.holders.held(End::Read) {
+             return PipeWrite::BrokenPipe;
+         }
+@@ -275,11 +321,14 @@ impl PipeRef {
+         if pipe.held.take_frames(n).is_err() {
+             return PipeWrite::NoMemory;
+         }
++        let tw = crate::arch::cpu::rdtsc();
+         let bytes = &mut pipe.held.bytes;
++        let mut runs = 0u64;
+         // One walk of the user window, each pinned piece copied into the
+         // frames it covers.
+         buf.read_pieces(0, n, |from, at, piece| {
+             bytes.place(at, piece, |frame, within, to| {
++                runs += 1;
+                 // SAFETY: `from` is valid for `piece` bytes until this walk's
+                 // callback returns, and `to + within.len()` is at most `piece`;
+                 // the frame is this pipe's alone, as above.
+@@ -287,6 +336,15 @@ impl PipeRef {
+             });
+         });
+         bytes.commit(n);
++        let te = crate::arch::cpu::rdtsc();
++        let d = &self.0.diag.w;
++        diag_add(d, 0, 1);
++        diag_add(d, 1, n as u64);
++        diag_add(d, 2, t1 - t0);
++        diag_add(d, 3, te - t1);
++        diag_add(d, 4, te - tw);
++        diag_add(d, 5, tw - t1);
++        diag_add(d, 6, runs);
+         pipe.written += n as u64;
+         PipeWrite::Wrote { n, end: pipe.written }
+     }
+diff --git a/kernel/src/user_ptr.rs b/kernel/src/user_ptr.rs
+index ffdcb802c..a52d6ac45 100644
+--- a/kernel/src/user_ptr.rs
++++ b/kernel/src/user_ptr.rs
+@@ -124,6 +124,16 @@ struct View {
+     access: Access,
+ }
+ 
++
++/// Measurement only, never lands: ticks in the walk's reach-and-pin phase,
++/// in its copy phase, and its calls, across every window.
++static DIAG: [core::sync::atomic::AtomicU64; 3] = [const { core::sync::atomic::AtomicU64::new(0) }; 3];
++
++pub fn diag() -> (u64, u64, u64) {
++    let get = |i: usize| DIAG[i].load(core::sync::atomic::Ordering::Relaxed);
++    (get(0), get(1), get(2))
++}
++
+ /// What a page a sibling took away reads as.
+ static ZEROS: [u8; PAGE_SIZE as usize] = [0; PAGE_SIZE as usize];
+ 
+@@ -148,7 +158,9 @@ impl View {
+         assert!(off.checked_add(len).is_some_and(|end| end <= self.len), "{what} {off}+{len} past a {}-byte window", self.len);
+         let space = crate::process::current_address_space();
+         let mut done = 0;
++        DIAG[2].fetch_add(1, core::sync::atomic::Ordering::Relaxed);
+         while done < len {
++            let t0 = crate::arch::cpu::rdtsc();
+             let mut frames = [None::<u64>; CHUNK_PAGES];
+             let mut pieces = [(0u64, 0usize, 0usize); CHUNK_PAGES];
+             let mut count = 0;
+@@ -166,6 +178,7 @@ impl View {
+                     done += n;
+                 }
+             }
++            let t1 = crate::arch::cpu::rdtsc();
+             crate::sched::driver::preempt_off(|_| {
+                 for (frame, &(phys, at, n)) in frames[..count].iter().zip(&pieces[..count]) {
+                     match (frame, self.access) {
+@@ -175,9 +188,13 @@ impl View {
+                     }
+                 }
+             });
++            let t2 = crate::arch::cpu::rdtsc();
+             for phys in frames[..count].iter().flatten() {
+                 crate::mm::pmm::unpin_range(phys & !(PAGE_SIZE - 1), PAGE_SIZE as usize);
+             }
++            let t3 = crate::arch::cpu::rdtsc();
++            DIAG[0].fetch_add((t1 - t0) + (t3 - t2), core::sync::atomic::Ordering::Relaxed);
++            DIAG[1].fetch_add(t2 - t1, core::sync::atomic::Ordering::Relaxed);
+         }
+     }
+ 
