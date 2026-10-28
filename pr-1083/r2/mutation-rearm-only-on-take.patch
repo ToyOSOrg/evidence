@@ -1,0 +1,18 @@
+--- a/system/netstack/node/src/datagram.rs	2026-10-28 09:53:22
++++ b/system/netstack/node/src/datagram.rs	2026-10-28 09:53:22
+@@ -202,11 +202,14 @@
+     /// `holder`'s receive: the oldest datagram that reached the socket, in `out`, or `None` when
+     /// none waits. One longer than `out` is cut to it and the rest is gone, as [udp] counts.
+     pub fn udp_recv_from(&mut self, id: DatagramId, holder: HolderId, out: &mut [u8]) -> Result<Option<Datagram>, Refused> {
+-        if !self.datagrams.get_mut(&id).is_some_and(|holders| holders.asked(holder)) {
++        if !self.datagrams.get_mut(&id).is_some_and(|holders| holders.holds(holder)) {
+             return Err(Refused::NotConnected);
+         }
+         // Told whatever it answers: a pending error answered leaves the datagrams behind it.
+         let received = self.stack.recv_from(id.0, out);
++        if matches!(received, Ok(Some(_))) {
++            self.datagrams.get_mut(&id).map(|holders| holders.asked(holder));
++        }
+         self.tell_datagram_holders();
+         Ok(received.map_err(refused)?.map(|received| Datagram { len: received.len, source: received.source, source_port: received.source_port }))
+     }

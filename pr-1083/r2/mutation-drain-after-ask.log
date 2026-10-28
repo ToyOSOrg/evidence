@@ -1,0 +1,189 @@
+## tree: bde3e08ba228a95ae6983b92f08b75cbe4505aca plus the uncommitted r2 change
+## applied
+-    let drained = || drain(end.bell);
++    /// Reads the bell empty. Call it after every step of the request that can fail, so a call
++    /// refused before its request leaves the ring in the bell.
++    pub(super) fn now(self) -> Drained {
++        (self.0)();
++        Drained(())
++    }
++    pub(super) fn signal(self, connection: RawHandle, msg_type: u32) -> Result<(), ipc::IpcError> {
++        ipc::signal(connection, msg_type)
++    }
++    pub(super) fn signal_with(self, connection: RawHandle, msg_type: u32, handles: impl IntoIterator<Item = OwnedHandle>) -> Result<(), ipc::IpcError> {
++        ipc::signal_with(connection, msg_type, handles)
++    }
++    /// `f` under the end's turn, told whether the bell is rung now.
++    fn look_now<R>(&self, f: impl FnOnce(bool) -> R) -> R;
++    /// Until the bell is rung, or for at most `nanos`, out of the turn.
++    fn wait(&self, nanos: u64) -> Result<(), NetError>;
++    fn drain(&self);
++    slot: usize,
++    bell: RawHandle,
++    fn look_now<R>(&self, f: impl FnOnce(bool) -> R) -> R {
++        let turn = TURNS[self.slot].lock();
++        let Some(poller) = turn.as_ref() else { unreachable!("a live end has its poller") };
++        f(rung(poller, self.bell, 0))
++    }
++    fn wait(&self, nanos: u64) -> Result<(), NetError> {
++        // Netstack gone hangs the bell up, which is readable, and the next look says so.
++        let poller = Poller::try_new(1).map_err(|_| NetError::ResourceExhausted)?;
++        rung(&poller, self.bell, nanos);
++        Ok(())
++    }
++    fn drain(&self) {
++        drain(self.bell)
++    }
++    let drain = || bell.drain();
+-        {
+-            let turn = TURNS[slot].lock();
+-            let Some(poller) = turn.as_ref() else { unreachable!("a live end has its poller") };
+-            if rung(poller, end.bell, 0) {
+-                match ask(&drained) {
+-                    Err(NetError::WouldBlock) => {}
+-                    answer => return answer,
+-                }
++        if let Some(answer) = bell.look_now(|rung| rung.then(|| ask(Drain(&drain)))) {
++            match answer {
++                Err(NetError::WouldBlock) => bell.drain(),
++                answer => return answer,
+-        // Out of the turn, which the end's other calls take meanwhile, so on a poller of the
+-        // wait's own. Netstack gone hangs the bell up, which is readable, and the next look says
+-        // so.
+-        let poller = Poller::try_new(1).map_err(|_| NetError::ResourceExhausted)?;
+-        rung(&poller, end.bell, left);
++        bell.wait(left)?;
+-    call_on(handle, Kind::Listener, |slot, end| look(slot, end, wait, |drain| stream::accept(end.connection, drain)))
++    call_on(handle, Kind::Listener, |slot, end| look(&EndBell { slot, bell: end.bell }, wait, |drain| stream::accept(end.connection, drain)))
+-        look(slot, end, wait, |drain| {
+-            drain();
+-            ipc::signal(end.connection, RECEIVE).map_err(hangup)?;
++        look(&EndBell { slot, bell: end.bell }, wait, |drain| {
++            drain.now().signal(end.connection, RECEIVE).map_err(hangup)?;
++    /// netstack's side of two holders' bells over one queue (`toyos-net-node`'s `holders`):
++    /// each holder is rung while something waits and it has not been rung since it last asked,
++    /// and every ask, whatever it takes, is followed by that telling.
++    #[derive(Default)]
++    struct Server {
++        queue: alloc::collections::VecDeque<u32>,
++        told: [bool; 2],
++        /// The rings in each holder's bell, unread.
++        bells: [u32; 2],
++        /// What happens while holder 1 waits, a batch a wait.
++        while_waiting: alloc::collections::VecDeque<alloc::vec::Vec<Event>>,
++        /// What arrives once an ask that found nothing is answered, before its holder reads
++        /// the answer.
++        after_nothing: Option<u32>,
++        taken: [Option<u32>; 2],
++    }
++    enum Event {
++        Arrives(u32),
++        /// Holder 0 makes its whole call, which must take something.
++        Looks,
++    }
++    impl Server {
++        fn tell(&mut self) {
++            for holder in 0..2 {
++                if !self.queue.is_empty() && !self.told[holder] {
++                    self.bells[holder] += 1;
++                    self.told[holder] = true;
++                }
++            }
++        }
++        fn arrives(&mut self, item: u32) {
++            self.queue.push_back(item);
++            self.tell();
++        }
++        fn ask(&mut self, holder: usize, _: Drained) -> Result<u32, NetError> {
++            self.told[holder] = false;
++            let taken = self.queue.pop_front();
++            self.tell();
++            if taken.is_none() {
++                if let Some(item) = self.after_nothing.take() {
++                    self.arrives(item);
++                }
++            }
++            taken.ok_or(NetError::WouldBlock)
++        }
++    }
++    struct Held<'a> {
++        holder: usize,
++        server: &'a core::cell::RefCell<Server>,
++    }
++    impl Bell for Held<'_> {
++        fn look_now<R>(&self, f: impl FnOnce(bool) -> R) -> R {
++            let rung = self.server.borrow().bells[self.holder] > 0;
++            f(rung)
++        }
++        /// Runs what the scenario says happens meanwhile; a holder still unrung when nothing is
++        /// left to happen would wait for good.
++        fn wait(&self, _: u64) -> Result<(), NetError> {
++            while self.server.borrow().bells[self.holder] == 0 {
++                let Some(batch) = self.server.borrow_mut().while_waiting.pop_front() else {
++                    panic!("holder {} waits for good with {:?} queued", self.holder, self.server.borrow().queue)
++                };
++                for event in batch {
++                    match event {
++                        Event::Arrives(item) => self.server.borrow_mut().arrives(item),
++                        Event::Looks => {
++                            let taken = call(0, self.server).expect("holder 0 takes what it was rung for");
++                            self.server.borrow_mut().taken[0] = Some(taken);
++                        }
++                    }
++                }
++            }
++            Ok(())
++        }
++        fn drain(&self) {
++            self.server.borrow_mut().bells[self.holder] = 0;
++        }
++    }
++    fn call(holder: usize, server: &core::cell::RefCell<Server>) -> Result<u32, NetError> {
++        look(&Held { holder, server }, Wait::Blocking(None), |drain| {
++            let drained = drain.now();
++            server.borrow_mut().ask(holder, drained)
++        })
++    }
++    /// Two holders blocked on one queue: both are rung for the first arrival, the other takes
++    /// it, and holder 1's ask finds nothing. The second arrives as that answer goes, before
++    /// holder 1 reads it, so its ring is already in the bell: a holder that read its bell after
++    /// asking would wait for good.
++    #[test]
++    fn the_holder_that_found_nothing_takes_the_next_arrival() {
++        let server = core::cell::RefCell::new(Server {
++            while_waiting: [alloc::vec![Event::Arrives(1), Event::Looks]].into(),
++            after_nothing: Some(2),
++            ..Server::default()
++        });
++        let taken = call(1, &server).expect("holder 1 takes the second arrival");
++        assert_eq!((server.borrow().taken[0], taken), (Some(1), 2));
++        assert!(server.borrow().queue.is_empty());
++    }
+   Compiling toyos v0.18.0 (<dev>/toyos-socket-wake/sdk/toyos)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.47s
+     Running unittests src/lib.rs (<dev>/toyos-socket-wake/target/debug/deps/toyos-757a17a5e3c64085)
+
+running 4 tests
+test net::socket::tests::a_datagram_is_one_frame_read_back_whole ... ok
+test net::socket::tests::a_kind_is_its_word_and_no_other_word_is_one ... ok
+test net::socket::tests::what_no_datagram_carries_is_refused_both_ways ... ok
+test net::socket::tests::the_holder_that_found_nothing_takes_the_next_arrival ... FAILED
+
+failures:
+
+---- net::socket::tests::the_holder_that_found_nothing_takes_the_next_arrival stdout ----
+
+thread 'net::socket::tests::the_holder_that_found_nothing_takes_the_next_arrival' (81874554) panicked at sdk/toyos/src/net/socket.rs:680:21:
+holder 1 waits for good with [2] queued
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    net::socket::tests::the_holder_that_found_nothing_takes_the_next_arrival
+
+test result: FAILED. 3 passed; 1 failed; 0 ignored; 0 measured; 141 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--lib`
+mutated exit 101
+## restored
+## identical to the unmutated file
