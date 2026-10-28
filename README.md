@@ -15,3 +15,9 @@ r2: head 7c9cf910f (review r1 fixes).
 - r2/logs/qemu-3.*: the same four QEMU tests, exit 0.
 - r2/mutations/restore-join-r2.*: the join restored, `virt_smp` exit 1 at counters_read, reverted.
 - r2/metal/: benchcase, testcases (counters_metal, counters_read) and shared-debug (counters_silent) staged (exit 2); crunch-B7-t14.txt is the T14 crunch reference from #1073's B7.
+
+r3: the T14 session's judgement at 7c9cf910f.
+
+- r3/judge-session.log: `cargo test --test toyos-build -- --metal --metal-readback <dir> osbench counters counters_read counters_silent`, exit 1: PASS osbench, counters_read and counters_silent; FAIL counters (an EC query line inside counters_metal's idle second).
+- r3/testcases/excerpt.txt: the EC queries against the idle second; r3/prior-testcases.txt: earlier testcases boots, where 0x4f was always the first query.
+- r3/request.txt: the staging request with the judge command.
