@@ -34,3 +34,20 @@
 - `stamp/`: the orchestrator's `--designate-data` run on the AMD at ba76f730a, dry and write, before the tool was removed. UUIDs masked.
 - `tsc/`: the AMD's `tsc-drift` runs (2026-10-28) and its session log, masked: 1796.6248 MHz against the HPET over 601 s and against the ACPI PM timer over 300 s, in every phase. `toyos-calibrations.txt` holds ToyOS's own 50 ms calibrations in the session's boot logs, by count of log files, some of them copies of one boot. `tsc-probe.rs` and `SHA256SUMS` are the next measurement's (cross-core warp, and steps after idle gaps).
 - Correction (2026-10-28, after r3): the orchestrator restored the AMD's p4. No ToyOS boot had run since the stamp, so it zeroed the first 4 KiB block, which had read `TOYOS-FORMAT-ME`; its first 1 MiB is zero again, as before. Neither bench's p4 is designated, and main's `nvme_leaves_the_benchs_disk_alone` holds on both.
+
+## r4 (branch head a6a4c60d8): the validation run, and the TSC's investigation
+
+Masking: boot IDs, MAC and IPv4 addresses, partition GUIDs and the shell's trace lines are removed.
+
+- `validation/{t14,amd}/`: the orchestrator's validation run at 2eb28ee65 (2026-10-28). Each bench has two baseline Linux runs (`osbench all`, as booted), one ToyOS benchcase boot and its `judge.log` (`1 passed, 0 failed` on both), and `compare.md` from `osbench-compare` over the three, exit 0. Every row pairs or says why not. `persist` reads "the media differ: Linux nvme, ToyOS usb". On the AMD's Linux 84 rows read unsettled: its boosting clock dithers 4022 to 4126 MHz, so the 1% rule never held, and a6a4c60d8 holds at 5%.
+- `tsc/amd/boots.txt`: 30 boots' kernel lines. Linux's watchdog fired in 18. In 13, Linux's refined calibration read 1799.54 to 1799.61 MHz (true 1796.62). In 5, a correct calibration came with a 1.698 to 1.722 ms step over 494 to 502 ms.
+- `tsc/amd/tsc-warp.txt`: 15 CPU pairs through 1 ms, 100 ms and 1 s idle. Every worst step is positive, 54 to 342 cycles, so no CPU's TSC read behind another's.
+- `tsc/amd/tsc-jumps-*.txt`: 600 s against the HPET and 300 s against the ACPI PM timer, 1796.6248 MHz. The worst step between consecutive samples on a CPU is 1.2 µs (HPET) and 0.2 µs (ACPI PM) after any idle gap, within the reads' brackets.
+- `tsc/t14/`:
+  - `tsc-drift-hpet.txt`: 2419.2002 MHz over 300 s, CPUID 15H's rate within 0.1 ppm;
+  - jumps: no step above 0.05 µs;
+  - warp;
+  - `hwp-request.txt`: IA32_HWP_REQUEST 0x80002a04 on all 8 CPUs.
+- `checks/ci-host-a6a4c60d8.log`: exit 0, 104 steps green. `checks/stage-*.log`: staged at a6a4c60d8. Image sha256: T14 6fe08955e5433defba36525065f94bd3881d9c0735d1bc67351e3244a7b90a12, AMD a4c6196a2c1112b51dac21cd4c7c7fb7d9e13f6028fb328e669cbdc627e6e484. The Linux half's sha256 is in `checks/linux-osbench-SHA256SUMS`.
+- `judge/`: the `osbench` row at a6a4c60d8 on the three substituted logs. All PASS: the format-boot refusal moved to the follow-up.
+- `followup/`: the patch regenerated at a6a4c60d8, now with the format-boot refusal. `check.log`: both Linux targets and the compare tests exit 0. Judged: memory exit 1, mounted exit 0, formatting exit 1. Reverted, tree clean.

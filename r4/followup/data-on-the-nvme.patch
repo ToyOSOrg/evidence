@@ -1,0 +1,386 @@
+diff -ru a/issues/a-64-mib-write-to-the-in-memory-data-volume-runs-its-file-server-out-of-memory.md b/issues/a-64-mib-write-to-the-in-memory-data-volume-runs-its-file-server-out-of-memory.md
+--- a/issues/a-64-mib-write-to-the-in-memory-data-volume-runs-its-file-server-out-of-memory.md	2026-10-28 10:40:15
++++ b/issues/a-64-mib-write-to-the-in-memory-data-volume-runs-its-file-server-out-of-memory.md	2026-10-28 09:09:14
+@@ -42,6 +42,9 @@
+ The server also refuses nothing on the way: every request answered until the
+ allocator aborted the process, and the client saw `the file server is gone`.
+ 
++The same write is now `osbench persist`'s `fs.disk.seq_write.*`, which
++reaches the in-memory volume on a boot whose DATA is not designated.
++
+ **Exit**: the server's memory for a 64 MiB file written to the in-memory volume
+ is bounded by the file's size plus a stated overhead, shown by the same write
+ under QEMU with its peak in the kernel's exit record; or the server refuses
+diff -ru a/issues/no-published-run-compares-toyos-with-linux-on-one-machine.md b/issues/no-published-run-compares-toyos-with-linux-on-one-machine.md
+--- a/issues/no-published-run-compares-toyos-with-linux-on-one-machine.md	2026-10-28 10:40:15
++++ b/issues/no-published-run-compares-toyos-with-linux-on-one-machine.md	2026-10-28 10:40:15
+@@ -36,10 +36,10 @@
+ 
+ `tests/guest/osbench/README.md` is how a comparison is run: both halves from
+ one revision, interleaved runs, Linux as installed for the baseline, and
+-Linux under ToyOS's frequency request as a labelled experiment. `persist` is
+-not yet one disk: ToyOS writes the boot stick's LOG volume, and moves to the
+-bench's NVMe once ToyOS designates its DATA partition itself. The README
+-says why the AMD bench's Linux keeps time on the HPET.
++Linux under ToyOS's frequency request as a labelled experiment. `persist`
++runs on the bench's NVMe under both: the `osbench` row refuses a boot whose
++DATA is not the NVMe's TOYOS-DATA partition. The README says why the AMD
++bench's Linux keeps time on the HPET.
+ 
+ `internet.*`, HTTPS to Cloudflare's speed test, is exploratory evidence of a
+ path neither system owns, run only when a pass names its row: no automated
+diff -ru a/tests/common/hostdisk.rs b/tests/common/hostdisk.rs
+--- a/tests/common/hostdisk.rs	2026-10-28 10:40:15
++++ b/tests/common/hostdisk.rs	2026-10-28 09:09:04
+@@ -1,5 +1,6 @@
+ //! Another system's disk, as a bench's internal disk is before ToyOS is
+-//! installed on it, and the judge of what ToyOS did to it.
++//! installed on it, and the judge of what ToyOS did to it, there and on a
++//! bench whose DATA is designated.
+ //!
+ //! The layout is the benches': the host's ESP, its `/boot` and its root, and
+ //! the owner's ToyOS DATA, unformatted. Every block of every partition carries
+@@ -54,12 +55,24 @@
+     (at.len() == 7 && at[2] == b':' && at[5] == b'.').then_some(said)
+ }
+ 
+-/// A boot off a stick drove an NVMe disk that is another system's and left
+-/// it alone: a driver brought a controller up and offered its partitions, it
+-/// opened at least one session and each on a ToyOS DATA partition, and the file server
+-/// found that DATA neither ours nor designated, and so neither mounted nor
+-/// formatted it. Answers how many partitions the disks' tables named.
+-pub fn left_alone(log: &Serial) -> Result<usize, String> {
++/// What the bench's DATA partition is to the file server: another system's,
++/// as this module's disk is, or designated for ToyOS, as a bench's is once
++/// ToyOS has designated it.
++#[derive(Clone, Copy, Debug, PartialEq, Eq)]
++pub enum Data {
++    Foreign,
++    Designated,
++}
++
++/// A boot off a stick drove an NVMe disk that is another system's but for
++/// its DATA and left it alone: a driver brought a controller up and offered
++/// its partitions, it opened at least one session and each on a ToyOS DATA
++/// partition, and the file server found that DATA as `data` says: neither
++/// ours nor designated, so neither mounted nor formatted, or designated, so
++/// mounted or formatted off its stamp, and neither memory nor absent in its
++/// place.
++/// Answers how many partitions the disks' tables named.
++pub fn left_alone(log: &Serial, data: Data) -> Result<usize, String> {
+     log.must_say("diskserver: every disk driver has settled")?;
+     let said: Vec<&str> = log.text().lines().filter_map(said_by_nvme).collect();
+     if !said.iter().any(|s| s.starts_with("up: ")) {
+@@ -74,7 +87,7 @@
+     if kinds.is_empty() {
+         return Err(format!("no nvme driver named a partition of its disk\n{}", log.text()));
+     }
+-    let data = Guid::TOYOS_DATA.to_string();
++    let data_type = Guid::TOYOS_DATA.to_string();
+     let opened: Vec<&str> = said
+         .iter()
+         .filter_map(|s| s.strip_prefix("session "))
+@@ -86,12 +99,25 @@
+     }
+     for guid in opened {
+         match kinds.iter().find(|(g, _)| *g == guid) {
+-            Some((_, kind)) if *kind == data => {}
++            Some((_, kind)) if *kind == data_type => {}
+             other => return Err(format!("an nvme driver opened a session on {guid}, of type {other:?}, which is no ToyOS DATA")),
+         }
+     }
+-    log.must_say("fileserver: no volume of ours and no designation stamp; nothing will be written to this partition")?;
+-    log.must_not_say("fileserver: mounted the DATA volume")?;
+-    log.must_not_say("designates this partition for ToyOS; formatting it")?;
++    const MOUNTED: &str = "fileserver: mounted the DATA volume";
++    const FORMATTED: &str = "fileserver: block 0 designates this partition for ToyOS; formatting it";
++    match data {
++        Data::Foreign => {
++            log.must_say("fileserver: no volume of ours and no designation stamp; nothing will be written to this partition")?;
++            log.must_not_say(MOUNTED)?;
++            log.must_not_say(FORMATTED)?;
++        }
++        Data::Designated => {
++            if !log.text().contains(MOUNTED) && !log.text().contains(FORMATTED) {
++                return Err(format!("the designated DATA was neither mounted nor formatted\n{}", log.text()));
++            }
++            log.must_not_say("are in memory and will not survive a reboot")?;
++            log.must_not_say("it is absent this boot")?;
++        }
++    }
+     Ok(kinds.len())
+ }
+diff -ru a/tests/guest/osbench/README.md b/tests/guest/osbench/README.md
+--- a/tests/guest/osbench/README.md	2026-10-28 10:40:15
++++ b/tests/guest/osbench/README.md	2026-10-28 10:40:15
+@@ -134,14 +134,16 @@
+ (2026-10-28): EPP 0x80 and highest 0x2a as ToyOS asks, and lowest 4 where
+ ToyOS asks 1.
+ 
+-## The disk is not yet one disk
++## Both write the bench's NVMe
+ 
+-`persist` writes each system's persistent filesystem. On Linux that is the
+-runner's home, ext4 on the bench's NVMe. On ToyOS it is still the boot
+-stick's LOG volume, FAT32 over USB 2.0, because ToyOS's DATA is the bench's
+-partition only once ToyOS has designated it, and ToyOS cannot yet do that
+-itself. So `persist` compares two media. Its lines name theirs, and
+-`osbench-compare` refuses a verdict on any row whose media differ.
++`persist` and `fs.disk` run on each system's persistent filesystem on the
++bench's NVMe. On Linux that is the runner's home, ext4 on the bench's root
++partition. On ToyOS it is DATA: the bench's TOYOS-DATA partition, its fourth,
++named `ToyOS data`, which ToyOS designates itself. It is served through the
++DATA file server and the NVMe driver. The `osbench` row refuses a boot whose
++DATA was anything else, and refuses the boot that formats a newly
++designated DATA as a run, saying how long the format took. Every row's
++`served_by` and `medium` name the filesystem and the disk it measured.
+ 
+ ## What is not a comparison
+ 
+diff -ru a/tests/guest/osbench/compare/src/lib.rs b/tests/guest/osbench/compare/src/lib.rs
+--- a/tests/guest/osbench/compare/src/lib.rs	2026-10-28 10:40:15
++++ b/tests/guest/osbench/compare/src/lib.rs	2026-10-28 09:09:04
+@@ -290,7 +290,7 @@
+     "clocksource",
+     "smt_active",
+     "fs.mem.served_by",
+-    "fs.served.served_by",
++    "fs.disk.served_by",
+     "persist.served_by",
+ ];
+ 
+diff -ru a/tests/guest/osbench/src/files.rs b/tests/guest/osbench/src/files.rs
+--- a/tests/guest/osbench/src/files.rs	2026-10-28 10:40:15
++++ b/tests/guest/osbench/src/files.rs	2026-10-28 09:08:30
+@@ -1,12 +1,12 @@
+ //! Files, through std's `fs` on both systems: the same operations under a
+-//! filesystem each keeps in memory (`mem`), and on ToyOS under `/home`
+-//! (`served`). Persistent storage is `storage`'s.
++//! filesystem each keeps in memory (`mem`) and under the one on the bench's
++//! disk (`disk`, which `storage` runs beside its durable writes). Nothing here
++//! asks for durability, so on the disk these are the cached path.
+ //!
+ //! `mem` is Linux's `/dev/shm` through the VFS, and ToyOS's `/tmp`, which the
+-//! kernel serves through syscalls. `served` is ToyOS's DATA file server,
+-//! through IPC per request: on the volume the bench's DATA partition holds
+-//! where it holds one of ours, and in memory where it does not (the file
+-//! server says which in the log).
++//! kernel serves through syscalls. `disk` is each system's
++//! [`crate::sys::persistent_dir`]: Linux's VFS and page cache over the
++//! runner's home, and ToyOS's DATA file server, through IPC per request.
+ 
+ use std::fs::{self, File, OpenOptions};
+ use std::io::{Read, Seek, SeekFrom, Write};
+@@ -42,17 +42,6 @@
+         ("/dev/shm", "tmpfs, through the VFS")
+     };
+     Target { name: "mem", dir: dir.into(), served_by: served_by.into(), medium: Some("memory".into()) }
+-}
+-
+-/// Every directory `files` measures under.
+-pub fn targets() -> Vec<Target> {
+-    let mut targets = vec![memory()];
+-    if cfg!(target_os = "toyos") {
+-        // Memory or the DATA partition's volume: the program cannot tell which.
+-        let served_by = "the DATA file server, through IPC".into();
+-        targets.push(Target { name: "served", dir: "/home".into(), served_by, medium: None });
+-    }
+-    targets
+ }
+ 
+ /// The persistent filesystem's directory, or `None` where the system has none.
+diff -ru a/tests/guest/osbench/src/main.rs b/tests/guest/osbench/src/main.rs
+--- a/tests/guest/osbench/src/main.rs	2026-10-28 10:40:15
++++ b/tests/guest/osbench/src/main.rs	2026-10-28 09:08:30
+@@ -126,9 +126,7 @@
+ }
+ 
+ fn files() {
+-    for target in files::targets() {
+-        files::suite(&target);
+-    }
++    files::suite(&files::memory());
+ }
+ 
+ /// Every group the machine alone runs, in the order `all` and the ToyOS job
+diff -ru a/tests/guest/osbench/src/storage.rs b/tests/guest/osbench/src/storage.rs
+--- a/tests/guest/osbench/src/storage.rs	2026-10-28 10:40:15
++++ b/tests/guest/osbench/src/storage.rs	2026-10-28 09:08:38
+@@ -1,14 +1,15 @@
+-//! Persistent storage, each system on the medium a measured boot has, so
+-//! **not like for like** until ToyOS's DATA is the bench's partition: what
+-//! these say is what a durable write costs there, each line naming it.
++//! The bench's disk, through each system's persistent filesystem
++//! ([`crate::files::disk`]): durable writes first, each made durable by
++//! `sync_all` or `sync_data` before the next, then `files`' cached operations
++//! under the same directory as `fs.disk.*`. Every line names what served it
++//! and its medium.
+ //!
+-//! On a ToyOS benchcase boot that is the boot USB stick's `TOYOS-LOG`
+-//! partition, FAT32, through the LOG file server and usbd: the stick's other
+-//! volumes are read-only, and DATA is the bench's partition only once ToyOS
+-//! has designated it. On Linux it is a directory in the runner's home, on
+-//! whatever disk and filesystem hold it. Every file here is removed at the
+-//! end; the most alive at once is under 10 MiB, inside what the log volume
+-//! leaves free.
++//! On Linux that is the runner's home, on whatever filesystem and disk hold
++//! it. On ToyOS it is `/home`, on the DATA volume: the bcachefs crate's
++//! format, through the DATA file server, the block service and the disk's
++//! driver. A ToyOS boot whose DATA is in memory measures memory here, which
++//! the `osbench` metal row refuses (`tests/toyos.rs`). Every file here is
++//! removed at the end.
+ 
+ use std::fs::{self, File, OpenOptions};
+ use std::io::{Read, Seek, SeekFrom, Write};
+@@ -23,6 +24,11 @@
+     let Some(disk) = files::disk() else {
+         return refuse("persist", "no persistent directory to write in");
+     };
++    durable(&disk);
++    files::suite(&disk);
++}
++
++fn durable(disk: &files::Target) {
+     let scratch = match Scratch::new(&disk.dir) {
+         Ok(s) => s,
+         Err(e) => return refuse("persist", format!("no scratch directory: {e}")),
+diff -ru a/tests/guest/osbench/src/sys/toyos.rs b/tests/guest/osbench/src/sys/toyos.rs
+--- a/tests/guest/osbench/src/sys/toyos.rs	2026-10-28 10:40:15
++++ b/tests/guest/osbench/src/sys/toyos.rs	2026-10-28 09:08:30
+@@ -389,11 +389,13 @@
+     map_anon(len)
+ }
+ 
+-/// The one writable volume a benchcase boot certainly has on a disk, what
+-/// serves it, and its medium.
++/// DATA's `/home`, what serves it, and its medium. A program cannot ask
++/// which disk DATA is on, or whether it is memory instead; the `osbench` row
++/// refuses a boot whose DATA was not the NVMe's partition, so that is the
++/// medium a measured run's lines name.
+ pub fn persistent_dir() -> Option<(String, String, String)> {
+-    let served_by = "boot USB stick TOYOS-LOG partition, FAT32, LOG file server over usbd mass storage";
+-    Some(("/log".into(), served_by.into(), "usb".into()))
++    let served_by = "DATA volume, bcachefs crate's format, DATA file server over the block service";
++    Some(("/home".into(), served_by.into(), "nvme".into()))
+ }
+ 
+ /// What a transfer row reports of the stack beneath it, as netstack's `inspect` answers it:
+diff -ru a/tests/images/benchcase.toml b/tests/images/benchcase.toml
+--- a/tests/images/benchcase.toml	2026-10-28 10:40:15
++++ b/tests/images/benchcase.toml	2026-10-28 09:09:04
+@@ -5,8 +5,8 @@
+ # ACPI server, and netstack for `osbench lan` and `osbench internet`, each its
+ # own metal row (`tests/toyos.rs`): no compositor or sound, so little but the
+ # measurement asks for a CPU. The stick has no DATA partition, so DATA is the
+-# bench's TOYOS-DATA partition where ToyOS has designated it, and memory where
+-# it has not; the log volume is what `osbench persist` writes.
++# bench's: the TOYOS-DATA partition on its NVMe, which `osbench persist`
++# writes, and which the `osbench` row refuses a boot to be without.
+ #
+ # The runner's capability carries `jobs`, for the fairness run that starts each
+ # workload as a job of its own; `counters`, `trace` and `roster`, so `osbench
+diff -ru a/tests/toyos.rs b/tests/toyos.rs
+--- a/tests/toyos.rs	2026-10-28 10:40:15
++++ b/tests/toyos.rs	2026-10-28 09:09:04
+@@ -1113,10 +1113,19 @@
+     (
+         // The numbers compared with the same program on the bench's own Linux.
+         // Evidence and not a verdict: they are read off the log, and the row
+-        // holds only that every group ran to its end. The T14 and the AMD bench.
+-        // One boot runs the whole suite, so three readbacks are three runs.
++        // holds only that every group ran to its end on the bench's NVMe, on
++        // a boot that did not spend itself formatting DATA. The T14 and the
++        // AMD bench. One boot runs the whole suite, so three readbacks are
++        // three runs.
+         "osbench",
+-        metal::Metal { arms: BENCHCASE, judge: |b| osbench_ran(b[0], &OSBENCH_GROUPS) },
++        metal::Metal {
++            arms: BENCHCASE,
++            judge: |b| {
++                not_the_format_boot(b[0])?;
++                data_on_the_nvme(b[0])?;
++                osbench_ran(b[0], &OSBENCH_GROUPS)
++            },
++        },
+     ),
+     (
+         // `osbench lan` against the `osbench-peer` the other bench's Linux runs,
+@@ -1406,12 +1415,16 @@
+         metal::Metal { arms: TESTCASES, judge: |b| usbd_serves_the_boot_stick(&b[0].kernel(), &b[0].log()) },
+     ),
+     (
+-        // The bench's own NVMe disk, its host's partitions and the owner's
+-        // unformatted ToyOS DATA, driven beside the stick by the row's class
+-        // and left alone (`hostdisk::left_alone`). The T14 and the AMD bench;
+-        // the metal loop's next boot of the host off that disk is the other half.
++        // The bench's own NVMe disk, driven beside the stick by the row's
++        // class: its host's partitions left alone, and the owner's ToyOS DATA,
++        // which ToyOS designated, the one partition a session opened
++        // (`hostdisk::left_alone`). The T14 and the AMD bench; the metal
++        // loop's next boot of the host off that disk is the other half.
+         "nvme_leaves_the_benchs_disk_alone",
+-        metal::Metal { arms: TESTCASES, judge: |b| common::hostdisk::left_alone(&b[0].log()).map(|_| ()) },
++        metal::Metal {
++            arms: TESTCASES,
++            judge: |b| common::hostdisk::left_alone(&b[0].log(), common::hostdisk::Data::Designated).map(|_| ()),
++        },
+     ),
+     (
+         // The stick written through usbd while the boot deadline resets the
+@@ -1695,6 +1708,47 @@
+     Ok(())
+ }
+ 
++/// The boot that formats a freshly designated DATA partition is no measured
++/// run: its start went to the format, and the volume it leaves is new. It
++/// says how long the format took.
++fn not_the_format_boot(boot: &metal::Readback) -> Result<(), String> {
++    const FORMATTING: &str = "fileserver: block 0 designates this partition for ToyOS; formatting it";
++    const SERVING: &str = "fileserver: Data serving ";
++    let log = boot.log();
++    let text = log.text();
++    let Some(began) = text.lines().find(|l| l.contains(FORMATTING)) else {
++        return Ok(());
++    };
++    let ended = text.lines().find(|l| l.contains(SERVING));
++    let secs = ended.and_then(since_boot).zip(since_boot(began)).map(|(end, start)| end - start);
++    let took = secs.map_or("its end unlogged".to_string(), |s| format!("{s:.3} s"));
++    Err(format!("this boot formatted DATA off its designation ({took}), and the format's boot is no measured run"))
++}
++
++/// DATA, which `osbench persist` writes, was a volume on a TOYOS-DATA
++/// partition the NVMe driver serves, mounted, and not memory standing in for
++/// a partition that is not ours. The file server refuses DATA where the block
++/// service offers two TOYOS-DATA partitions, so a mount beside the NVMe's
++/// partition is that partition's.
++fn data_on_the_nvme(boot: &metal::Readback) -> Result<(), String> {
++    let log = boot.log();
++    let text = log.text();
++    let served = format!(" of type {} at block ", toyos_gpt::Guid::TOYOS_DATA);
++    if !text.lines().any(|l| l.contains("nvme] nvme ") && l.contains(&served)) {
++        return Err("the NVMe driver served no TOYOS-DATA partition, so persist measured no disk of the bench's".into());
++    }
++    if !text.contains("fileserver: mounted the DATA volume") || text.contains("it is absent this boot") {
++        let why = text.lines().find(|l| l.contains("fileserver: the DATA")).unwrap_or("the file server said nothing of DATA");
++        return Err(format!("DATA was not the NVMe's partition, so persist measured no disk: {why}"));
++    }
++    Ok(())
++}
++
++/// A log line's seconds since boot: `[2026-10-24 14:17:17 12.664 fileserver]`.
++fn since_boot(line: &str) -> Option<f64> {
++    line.strip_prefix('[')?.split_whitespace().nth(2)?.parse().ok()
++}
++
+ /// A timing boot was in ACPI mode before its first job and stayed there, as a
+ /// shipped image and the bench's Linux are. In legacy mode the T14's firmware
+ /// stops every CPU every 2.2 s, and its time would be measured as ToyOS's
+@@ -4691,7 +4745,7 @@
+     console.push_str(&qemu.await_exit(by)?);
+     let log = serial::Serial::named("the boot", console);
+     log.must_say("vendor=8086 device=5845 prog_if=02")?;
+-    match common::hostdisk::left_alone(&log)? {
++    match common::hostdisk::left_alone(&log, common::hostdisk::Data::Foreign)? {
+         4 => {}
+         named => return Err(format!("the driver named {named} partitions of a disk that has 4")),
+     }

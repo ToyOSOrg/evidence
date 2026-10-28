@@ -1,0 +1,35 @@
+# What the AMD's boot-time watchdog interval was. All read-only on the bench's default
+# Linux (clocksource hpet). tsc-probe sha256 in SHA256SUMS; source tsc-probe.rs. Stage it in osb/.
+
+AMD:
+  # 1. The watchdog's figures and the TSC calibrations across every boot journald kept:
+  #    does the 1.7 ms/502 ms skew recur, at the same time and size, or vary?
+  journalctl --list-boots --no-pager | tail -30
+  for b in $(journalctl --list-boots --no-pager | awk 'NR>1{print $1}' | tail -30); do echo "== boot $b"; journalctl -k -b $b --no-pager | grep -E "Fast TSC|Detected .* MHz processor|Refined TSC|skew|wd_nsec|cs_nsec|Marking TSC|Switched to clocksource"; done
+  # 2. Cross-core offsets, through idle gaps of 1 ms, 100 ms and 1 s: 30 bursts a pair, about 3 min.
+  osb/tsc-probe warp 30 </dev/null > tsc-warp.txt
+  # 3. Steps between consecutive (HPET, TSC) pairs per CPU after idle gaps up to 1 s: 10 min.
+  osb/tsc-probe jumps 600 </dev/null > tsc-jumps-hpet.txt
+  #    and the same against the ACPI PM timer, the clocksource put back after:
+  echo acpi_pm | sudo tee /sys/devices/system/clocksource/clocksource0/current_clocksource
+  osb/tsc-probe jumps 300 </dev/null > tsc-jumps-acpipm.txt
+  echo hpet | sudo tee /sys/devices/system/clocksource/clocksource0/current_clocksource
+
+T14 control (its clocksource is tsc, so jumps runs against hpet for the run, then tsc goes back):
+  osb/tsc-probe warp 30 </dev/null > tsc-warp.txt
+  echo hpet | sudo tee /sys/devices/system/clocksource/clocksource0/current_clocksource
+  osb/tsc-drift 300 </dev/null > tsc-drift-hpet.txt
+  osb/tsc-probe jumps 300 </dev/null > tsc-jumps-hpet.txt
+  echo tsc | sudo tee /sys/devices/system/clocksource/clocksource0/current_clocksource
+  # The T14's HWP request under its default Linux, for the README's EPP claim (r1 B6):
+  sudo modprobe msr; for c in 0 1 2 3 4 5 6 7; do printf "cpu$c "; sudo dd if=/dev/cpu/$c/msr bs=8 count=1 skip=$((0x774)) iflag=skip_bytes status=none | od -An -tx8; done
+
+Reading:
+  warp: a worst step under 0 is a CPU whose TSC read behind another's after seeing it; its
+  size against the median turn says the offset. Every pair's worst step >= 0 means the CPUs
+  agree to within one turn.
+  jumps: "step" is the TSC's time minus the clock's between one CPU's consecutive pairs, at
+  the fitted rate. Brackets are under 5 us, so a step of tens of us after a given idle gap,
+  on a given CPU, is a discontinuity; steps all within a few us mean none in that run.
+  The boot listing says whether the skew is a fixed event of every boot (its size and time
+  alike) or varies, which separates a boot-time step from a calibration's error.
