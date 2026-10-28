@@ -4,7 +4,28 @@
          let mut out = [[0; BLOCK]];
          block_on_ready(c.read(block, &mut out))?;
          Ok(out[0])
++    }
 +
++    /// Probe, not kept: disk requests per sequential pass over a file just
++    /// over and just under CLEAN_LIMIT, written in 4 KiB calls and flushed.
++    #[test]
++    fn probe_sequential_passes_against_the_clean_limit() {
++        for blocks in [CLEAN_LIMIT as u64 + 16, CLEAN_LIMIT as u64 - 16] {
++            let c = Cache::new(Counting::new(blocks + 64));
++            for b in 0..blocks {
++                block_on_ready(c.write(b, &[[b as u8; BLOCK]])).unwrap();
++            }
++            block_on_ready(c.flush()).unwrap();
++            let mut passes = Vec::new();
++            for _ in 0..5 {
++                let before = c.disk.reads.get();
++                for b in 0..blocks {
++                    read_one(&c, b).unwrap();
++                }
++                passes.push(c.disk.reads.get() - before);
++            }
++            println!("PROBE blocks={blocks} clean_limit={CLEAN_LIMIT} disk_read_requests_per_pass={passes:?}");
++        }
      }
  
      #[test]

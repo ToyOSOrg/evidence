@@ -57,3 +57,7 @@
   | `fs.disk.seq_read.4096` | 431 vs 7,760–7,780 MB/s | 151 vs 5,084–5,089 MB/s |
 
 - The T14's durable writes read 1.10 ms here against 6.1 ms in r3's boot at c8f3fbfb0, with no storage-path change between them. The record now states both: `issues/toyos-durable-writes-on-the-t14s-nvme-took-1-to-6-ms-across-two-boots.md`.
+
+## Correction: r3's probe patch republished whole
+
+`r3/probe/probe-clean-limit.patch` as first published held 10 of its 31 lines: the publishing step dropped every line beginning `+ `, meant for shell trace lines, and so the patch's added test too. It is replaced with the patch that ran, which defines `probe_sequential_passes_against_the_clean_limit`, the test `probe.log` reports. The result is unchanged: 16,400 disk requests a pass over the limit, none under.
