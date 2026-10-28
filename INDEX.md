@@ -41,3 +41,19 @@
   - `fs.disk.seq_read.4096`: 435 against 7,760 MB/s.
 
   The flush cost is filed as `issues/a-durable-write-on-the-t14s-nvme-costs-toyos-six-times-linuxs.md`. This run predates the rebase's image and the Linux half's new fields, so B5's landing-head runs are the ones staged above.
+
+## r4: the landing head's validation, 069cbbeb8 (orchestrator, 2026-10-28)
+
+- `t14/`, `amd/`: each is Linux, ToyOS benchcase (booted off the internal NVMe), Linux, then the `osbench` row judged from a tree pinned at 069cbbeb8. Judge exit 0 and PASS on both. `compare.md` exits 0. Linux per run: `clocksource=tsc,tsc` on both. Linux's `fs.disk.served_by` now ends `write cache write back` on both.
+- Disk rows, ToyOS against Linux:
+
+  | row | T14 | AMD |
+  |---|---|---|
+  | `persist.fsync_clean` | 0.46 ms vs 23 µs | 1.26 ms vs 64–66 µs |
+  | `persist.write_4k_fsync` | 1.10 vs 1.01–1.04 ms | 2.60 vs 2.99–3.58 ms |
+  | `persist.append_4k_fsync` | 1.01 vs 0.91–1.20 ms | 2.93 vs 3.30–3.78 ms |
+  | `persist.seq_write_fsync` | 347 vs 527–585 MB/s | 298 vs 544–548 MB/s |
+  | `fs.disk.read_4k_at` | 18.2 vs 0.72–0.74 µs | 20.5 vs 1.46–1.47 µs |
+  | `fs.disk.seq_read.4096` | 431 vs 7,760–7,780 MB/s | 151 vs 5,084–5,089 MB/s |
+
+- The T14's durable writes read 1.10 ms here against 6.1 ms in r3's boot at c8f3fbfb0, with no storage-path change between them. The record now states both: `issues/toyos-durable-writes-on-the-t14s-nvme-took-1-to-6-ms-across-two-boots.md`.
