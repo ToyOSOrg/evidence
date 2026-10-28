@@ -1,0 +1,11 @@
+--- a/kernel/pure/sched/cpu.rs
++++ b/kernel/pure/sched/cpu.rs
+@@ -1118,7 +1118,7 @@
+         };
+         let task = entry.task.wake(self.id, cause, entry.class, now);
+         self.trace(env, now, TraceKind::Wake { task: key, name: task.ext().name() });
+-        match cause.parker.filter(|&parker| self.joins_its_parker(&task, parker, env)) {
++        match cause.parker.filter(|_| false) {
+             Some(parker) => self.hand_off(task, parker, env, now),
+             None => self.place(task, env, now),
+         }
