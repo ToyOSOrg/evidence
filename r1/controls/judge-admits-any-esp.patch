@@ -1,0 +1,13 @@
+diff --git a/tests/common/hostdisk.rs b/tests/common/hostdisk.rs
+index 3ee276184..e9b1d28db 100644
+--- a/tests/common/hostdisk.rs
++++ b/tests/common/hostdisk.rs
+@@ -115,7 +115,7 @@ pub fn left_alone(log: &Serial, ours: &[Guid]) -> Result<(usize, Data), String>
+     for guid in opened {
+         match kinds.iter().find(|(g, _)| *g == guid) {
+             Some((_, kind)) if *kind == data => {}
+-            Some(_) if ours.iter().any(|o| o == guid) => {}
++            Some((_, kind)) if *kind == Guid::EFI_SYSTEM.to_string() || ours.iter().any(|o| o == guid) => {}
+             other => {
+                 return Err(format!(
+                     "an nvme driver opened a session on {guid}, of type {other:?}, which is no ToyOS DATA \

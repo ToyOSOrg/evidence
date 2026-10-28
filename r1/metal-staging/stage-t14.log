@@ -1,0 +1,56 @@
+head 7ccd44caf94618a5a79e0daefb88b953458b9054
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.29s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-040be7639b65fd4e)
+14:26:45   BUILD x86_64 binaries of tests/guest/rust-tests
+14:27:01   BUILT x86_64 binaries of tests/guest/rust-tests  (17s)
+14:27:01   BUILD x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests
+14:27:30   BUILT x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests  (29s)
+14:27:30 [toyos] Compiling 143 C tests, and attempting 24 declared ones...
+14:27:35 [metal] 6 registration(s) and 0 shared member(s) over 5 boot(s)
+14:27:35   BUILD x86_64 kernel boot-actuators,test-actuators, loader, ROOT of <path>
+14:28:22 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+14:28:22   BUILT x86_64 kernel boot-actuators,test-actuators, loader, ROOT of <path>  (47s)
+14:28:22 [metal] deadlinewedge: 0 job(s) under a list bound of 60000 ms, armed with ["wedge-before-reset"] and a boot deadline of 10000 ms — <path>
+14:28:22   BUILD x86_64 ROOT of <path>
+14:28:28 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+14:28:28   BUILT x86_64 ROOT of <path>  (6s)
+14:28:29 [metal] foreignrecord: 0 job(s) under a list bound of 60000 ms, armed with ["blackbox-foreign-identity"] and a boot deadline of 120000 ms — <path>
+14:28:29   BUILD x86_64 ROOT of <path>
+14:28:31 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+14:28:31   BUILT x86_64 ROOT of <path>  (2s)
+14:28:31 [metal] hardlockup: 0 job(s) under a list bound of 60000 ms, armed with ["hard-lockup-probe"] and a boot deadline of 10000 ms — <path>
+14:28:31   BUILD x86_64 kernel, ROOT of <path>
+14:28:33 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+14:28:33   BUILT x86_64 kernel, ROOT of <path>  (2s)
+14:28:33 [metal] testcases: 12 job(s) under a list bound of 60000 ms, armed with [] and a boot deadline of 120000 ms — <path>
+14:28:33   BUILD x86_64 ROOT of <path>
+14:28:35 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+14:28:35   BUILT x86_64 ROOT of <path>  (2s)
+14:28:35 [metal] usbload: 1 job(s) under a list bound of 60000 ms, armed with [] and a boot deadline of 40000 ms — <path>
+# One boot per image. Each invocation is `cargo <words>` from this worktree.
+
+deadlinewedge
+  image: <path>
+  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check
+
+foreignrecord
+  image: <path>
+  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check
+
+hardlockup
+  image: <path>
+  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check
+
+testcases
+  image: <path>
+  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check
+
+usbload
+  image: <path>
+  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check
+14:28:35 [metal] staged 5 image(s); <path> lists them. The machine was not touched, so this run establishes nothing about it.
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `<path> --metal --metal-readback <path> nvme_leaves_the_benchs_disk_alone usbd_drives_the_type_c_controller boot_deadline_ends_a_wedge hard_lockup_ends_a_deaf_cpu the_disk_survives_a_reset_under_load blackbox_foreign_record` (exit status: 2)
+EXIT=2
