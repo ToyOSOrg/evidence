@@ -17,3 +17,4 @@ Controls:
 - `paced-hold.patch`: LANPHYPC released at the 100 ms arbitration pace, as before. The stub refuses it on every test that cycles the pin: "held LANPHYPC low 100000238 ns, outside the 10 to 20 us a power cycle takes".
 
 The edits after the host-ci run are the `tests/toyos.rs` row (compiled and linted separately above) and a doc comment in `stub.rs` (unit.log at head).
+| build-only.log | `cargo run -- --build-only` | 0 | head |
