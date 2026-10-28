@@ -1,0 +1,85 @@
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.43s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-040be7639b65fd4e)
+
+17:57:08 running 1 tests, 12 wide
+
+17:57:08   RUN   a_link_ends_under_a_held_stream_and_comes_back
+17:57:08   BUILD x86_64 link_restart (toyos) of tests/guest/rust-tests, for a_link_ends_under_a_held_stream_and_comes_back
+17:57:12   BUILT x86_64 link_restart (toyos) of tests/guest/rust-tests, for a_link_ends_under_a_held_stream_and_comes_back  (4s)
+17:57:12   BUILD x86_64 kernel, loader, ROOT of tests/images/linkcase.toml, for a_link_ends_under_a_held_stream_and_comes_back
+17:57:17 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+17:57:17   BUILT x86_64 kernel, loader, ROOT of tests/images/linkcase.toml, for a_link_ends_under_a_held_stream_and_comes_back  (5s)
+17:58:54 FAIL a_link_ends_under_a_held_stream_and_comes_back: the job ended Some(101):
+virtio-net: VirtIO: PCI 00:03.0 features device=0x10330bf8024 negotiated=0x300000020 access_platform=y
+virtio-net: MAC 52:54:00:12:34:56
+netstack: virtio-net's link is open
+virtio-net: the link is open
+netstack: DHCP: lease 10.0.2.15/24 from 10.0.2.2, gateway 10.0.2.2, dns [10.0.2.3], 225 ms after netstack came up
+netstack: ready, at most 31 places (16 MiB each of 4051 MiB total)
+  PASS: a line answered on the stream over the first link
+netstack: virtio-net's link ended: it hung up
+
+thread 'main' (1) panicked at system/netstack/src/main.rs:497:13:
+mutation: netstack ends with its link
+stack backtrace:
+virtio-net: VirtIO: PCI 00:03.0 features device=0x10330bf8024 negotiated=0x300000020 access_platform=y
+virtio-net: MAC 52:54:00:12:34:56
+   0:           0x388c50 - _Unwind_Backtrace
+   1:           0x364523 - <<std[d087fc4ce196320e]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[73b405bef30eeff1]::fmt::Display>::fmt
+   2:           0x38da67 - core[73b405bef30eeff1]::fmt::write
+   3:           0x36772b - <std[d087fc4ce196320e]::sys::stdio::toyos::Stderr as core[73b405bef30eeff1]::io::write::Write>::write_fmt
+   4:           0x34ec93 - std[d087fc4ce196320e]::panicking::default_hook::{closure#0}
+   5:           0x361efe - std[d087fc4ce196320e]::panicking::default_hook
+   6:           0x3620b9 - std[d087fc4ce196320e]::panicking::panic_with_hook
+   7:           0x34ed88 - std[d087fc4ce196320e]::panicking::panic_handler::{closure#0}
+   8:           0x347049 - std[d087fc4ce196320e]::sys::backtrace::__rust_end_short_backtrace::<std[d087fc4ce196320e]::panicking::panic_handler::{closure#0}, !>
+   9:           0x34f3b8 - __rustc[d0c72ce299f394e5]::rust_begin_unwind
+  10:           0x38e21b - core[73b405bef30eeff1]::panicking::panic_fmt
+  11:           0x295ea1 - netstack[c035b5f8cd9ff735]::main
+  12:           0x2a3b46 - std[d087fc4ce196320e]::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  13:           0x2925e0 - std[d087fc4ce196320e]::rt::lang_start::<()>::{closure#0}
+  14:           0x361946 - std[d087fc4ce196320e]::rt::lang_start_internal
+  15:           0x296f61 - main
+  16:           0x362fb3 - std[d087fc4ce196320e]::sys::pal::toyos::start_rust
+  17:           0x33c256 - _start
+virtio-net: the stack's connection ended (its process ended before it answered); connecting again
+virtio-net: the stack's port is closed for good; this device carries nothing
+
+thread 'main' (1) panicked at src/bin/../served_log.rs:33:36:
+the log did not show the link's end and a link opened after it within 90s
+stack backtrace:
+   0:           0x28c400 - _Unwind_Backtrace
+   1:           0x25f383 - <<std[d087fc4ce196320e]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[73b405bef30eeff1]::fmt::Display>::fmt
+   2:           0x290517 - core[73b405bef30eeff1]::fmt::write
+   3:           0x2634ab - <std[d087fc4ce196320e]::sys::stdio::toyos::Stderr as core[73b405bef30eeff1]::io::write::Write>::write_fmt
+   4:           0x242a83 - std[d087fc4ce196320e]::panicking::default_hook::{closure#0}
+   5:           0x25c1ce - std[d087fc4ce196320e]::panicking::default_hook
+   6:           0x25c389 - std[d087fc4ce196320e]::panicking::panic_with_hook
+   7:           0x242b3d - std[d087fc4ce196320e]::panicking::panic_handler::{closure#0}
+   8:           0x23aa59 - std[d087fc4ce196320e]::sys::backtrace::__rust_end_short_backtrace::<std[d087fc4ce196320e]::panicking::panic_handler::{closure#0}, !>
+   9:           0x243248 - __rustc[d0c72ce299f394e5]::rust_begin_unwind
+  10:           0x290c3b - core[73b405bef30eeff1]::panicking::panic_fmt
+  11:           0x2287eb - <link_restart[139b0da8e86924ba]::served_log::Log>::until::<link_restart[139b0da8e86924ba]::main::{closure#2}>
+  12:           0x227ac1 - link_restart[139b0da8e86924ba]::main
+  13:           0x22b316 - std[d087fc4ce196320e]::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  14:           0x226d00 - std[d087fc4ce196320e]::rt::lang_start::<()>::{closure#0}
+  15:           0x25b676 - std[d087fc4ce196320e]::rt::lang_start_internal
+  16:           0x2283b1 - main
+  17:           0x25d5c3 - std[d087fc4ce196320e]::sys::pal::toyos::start_rust
+  18:           0x22e466 - _start
+
+17:58:54   FAIL  a_link_ends_under_a_held_stream_and_comes_back  (98s)
+17:58:54   --- 1 guests, 0 of them not the shipping kernel, 1 kernel build(s): [""]
+
+17:58:54 host: fastest boot 6685 ms against the reference 1424 ms — liveness ceilings paid at 4.69x
+17:58:54 host: 14 core(s); a guest wider than that waits vcpus/cores longer again
+17:58:54 failures:
+17:58:54     a_link_ends_under_a_held_stream_and_comes_back: the job ended Some(101):
+
+17:58:54 test result: FAILED. 0 passed, 1 failed, 0 invalidated, 1 total (106.3s; workers: 9s building, 98s testing)
+17:58:54 [toyos] this red run's serial logs are kept at ~/Dev/jan/toyos-wifi/target/red-run-serial/toyos-tmp-53809-0
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `~/Dev/jan/toyos-wifi/target/debug/deps/toyos_build-040be7639b65fd4e a_link_ends_under_a_held_stream_and_comes_back` (exit status: 1)
+EXIT=1
