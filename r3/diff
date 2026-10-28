@@ -1,0 +1,672 @@
+diff --git a/issues/a-sequential-read-of-a-file-as-large-as-datas-clean-cache-reads-the-disk.md b/issues/a-sequential-read-of-a-file-as-large-as-datas-clean-cache-reads-the-disk.md
+index 4bbdbc468..fbc048d41 100644
+--- a/issues/a-sequential-read-of-a-file-as-large-as-datas-clean-cache-reads-the-disk.md
++++ b/issues/a-sequential-read-of-a-file-as-large-as-datas-clean-cache-reads-the-disk.md
+@@ -6,12 +6,14 @@ opened: 2026-10-28
+ 
+ # A sequential read of a file as large as DATA's clean cache reads the disk
+ 
+-The file server's cache (`system/fileserver/src/cache.rs`) keeps
+-`CLEAN_LIMIT` clean blocks, 16,384 of 4 KiB (64 MiB), and evicts them in
+-the order they arrived. A hit does not move a block. So once a file and the
+-volume's metadata together pass that limit, a sequential read evicts, at
+-each miss, the block it is about to read next, and every pass misses every
+-block.
++The file server's cache (`system/fileserver/src/cache.rs`) keeps clean
++blocks up to the limit the server gives it, and evicts them in the order
++they arrived. A hit does not move a block. So once a file and the volume's
++metadata together pass that limit, a sequential read evicts, at each miss,
++the block it is about to read next, and every pass misses every block.
++The limit was a fixed 16,384 blocks (64 MiB) when this was measured; it is
++now most of an eighth of physical memory for DATA (#1099), so the 64 MiB
++file below fits, and a file larger than that limit falls off the same cliff.
+ 
+ Measured on the AMD bench (2026-10-28, `osbench persist` at PR #1097's
+ c8f3fbfb0, DATA on its NVMe): `fs.disk.seq_read.4096`, a 64 MiB file read in
+@@ -28,6 +30,6 @@ made none.
+ **Exit**: a sequential read of a file larger than the clean limit keeps
+ hitting what the cache can hold, rather than missing everything. A host test
+ of the cache shows it, by counting the disk reads of repeated passes over
+-`CLEAN_LIMIT + 16` blocks.
++16 blocks more than the cache's limit.
+ 
+ **Owner**: the file server's cache (`system/fileserver/src/cache.rs`).
+diff --git a/issues/metalprobes-usb-read-is-answered-from-fileservers-cache.md b/issues/metalprobes-usb-read-is-answered-from-fileservers-cache.md
+index 554dc2a3f..b018f7419 100644
+--- a/issues/metalprobes-usb-read-is-answered-from-fileservers-cache.md
++++ b/issues/metalprobes-usb-read-is-answered-from-fileservers-cache.md
+@@ -10,8 +10,8 @@ opened: 2026-09-27
+ and times reading it back as "a cache miss the stick has to answer" — true
+ while the kernel's write-back dropped a closed file from its cache. `/log` is
+ served by a file server now, whose block cache
+-(`system/fileserver/src/cache.rs`) keeps clean blocks until it holds
+-`CLEAN_LIMIT` of them and drops nothing at a close. So the timed read is the
++(`system/fileserver/src/cache.rs`) keeps clean blocks up to an eighth of
++physical memory and drops nothing at a close. So the timed read is the
+ file server's memory, and the `usbread` span is no longer the stick's.
+ 
+ **Exit**: the timed read is one the stick answers — a file the file server has
+diff --git a/issues/no-physical-memory-fairness.md b/issues/no-physical-memory-fairness.md
+index 9cacfae75..bc5dc7ef1 100644
+--- a/issues/no-physical-memory-fairness.md
++++ b/issues/no-physical-memory-fairness.md
+@@ -100,7 +100,9 @@ memory is counted to whichever job made it: a client's own connection is
+ its job's, but a pipe a server makes and hands out (fileserver's stream
+ pipes, netstack's bells) is the server's, which the server bounds. With no
+ per-job limit a cap is still the only thing between one client and the
+-machine.
++machine. The file servers' block caches hold an eighth between them, and no
++other job gets it back
++(`issues/the-file-servers-clean-blocks-are-given-back-to-no-other-job.md`).
+ 
+ **Promoted to `defect` 2026-08-25** (finding-lifecycle ruling: isolation
+ findings are security-adjacent and are promoted, never folded). One job
+diff --git a/issues/the-file-servers-clean-blocks-are-given-back-to-no-other-job.md b/issues/the-file-servers-clean-blocks-are-given-back-to-no-other-job.md
+new file mode 100644
+index 000000000..3bc117b3b
+--- /dev/null
++++ b/issues/the-file-servers-clean-blocks-are-given-back-to-no-other-job.md
+@@ -0,0 +1,38 @@
++---
++status: open
++kind: defect
++opened: 2026-10-29
++---
++
++# The file servers' clean blocks are given back to no other job
++
++Each file server's block cache (`system/fileserver/src/cache.rs`) keeps clean
++blocks up to the limit its server gives it (`system/fileserver/src/main.rs`,
++`clean_limit`). Together the DATA, log and boot servers keep at most an
++eighth of physical memory clean: 16 MiB each for log and boot, the rest of
++the eighth for DATA. Reads fill it, and so do writes, since a flushed block
++stays cached as clean. Nothing drops a clean block for another job's sake: a
++block leaves only to make room for another in the same cache, or when the
++server ends. So with every cache full, an ordinary job can be refused memory
++while an eighth of the machine holds blocks that could be read again from
++the disk.
++
++The eighth is the bound netstack and the compositor take for want of a
++kernel memory limit (`issues/no-physical-memory-fairness.md`); it is an
++interim, not a sizing.
++
++A clean block the allocator refuses, or whose place in the eviction order it
++refuses, is not kept, and the read is still answered. Three allocations
++still have no refusal path, so a server whose job is out of memory can still
++abort at them:
++- the block map's node, a small one every few inserts of a clean or a dirty
++  block;
++- a dirty block;
++- a fetch's staging buffer.
++
++**Exit**: the file servers drop clean blocks when the memory service reports
++pressure, and `CLEAN_SHARE` is deleted.
++
++**Owner**: the file server (`system/fileserver/`) and the memory track
++(`issues/anonymous-memory-swaps-to-an-encrypted-partition.md`'s memory
++service).
+diff --git a/sdk/toyos/src/system.rs b/sdk/toyos/src/system.rs
+index f7783066f..0b64c14d0 100644
+--- a/sdk/toyos/src/system.rs
++++ b/sdk/toyos/src/system.rs
+@@ -32,6 +32,14 @@ pub fn sysinfo(buf: &mut [u8; SYSINFO_HEADER_SIZE]) -> usize {
+     syscall::sysinfo(toyos_abi::handle::HANDLE_INVALID, buf)
+ }
+ 
++/// The machine's physical memory in bytes, as the kernel reports it.
++pub fn memory_total() -> u64 {
++    let mut buf = [0u8; SYSINFO_HEADER_SIZE];
++    let n = sysinfo(&mut buf);
++    assert!(n >= SYSINFO_HEADER_SIZE, "sysinfo returned {n} bytes");
++    syscall::SysinfoHeader::decode(&buf).memory_total
++}
++
+ // Powering the machine off used to be a free function here, over a syscall that
+ // took no argument. It is [`crate::syscap::SysCap::shutdown`] now: it is an
+ // authority over the whole machine, and every one of those is a bit on a
+diff --git a/system/compositor/src/session.rs b/system/compositor/src/session.rs
+index a2370baa1..9924ecb1b 100644
+--- a/system/compositor/src/session.rs
++++ b/system/compositor/src/session.rs
+@@ -352,7 +352,7 @@ impl Session {
+         let apps = launcher_apps();
+         let desk = Desk::new(mode_rect(mode), scale, apps.len());
+         let font = shapes.font(&desk);
+-        let total_mem = total_memory();
++        let total_mem = toyos::system::memory_total();
+         let max_windows =
+             toyos_desktop::max_windows(total_mem, desk.screen, MAX_WINDOW_SLOTS as usize);
+         println!(
+@@ -2167,14 +2167,6 @@ fn blit(screen: &Screen, back: &Framebuffer, regions: &[Rect]) -> u64 {
+     pixels
+ }
+ 
+-/// Total physical memory, as the kernel reports it.
+-fn total_memory() -> u64 {
+-    let mut buf = [0u8; system::SYSINFO_HEADER_SIZE];
+-    let n = system::sysinfo(&mut buf);
+-    assert!(n >= system::SYSINFO_HEADER_SIZE, "sysinfo returned {n} bytes");
+-    toyos_abi::syscall::SysinfoHeader::decode(&buf).memory_total
+-}
+-
+ /// The mode a window toggles into when it is maximized by button or chord.
+ fn toggled(mode: WindowMode) -> WindowMode {
+     if mode == WindowMode::Normal {
+diff --git a/system/fileserver/src/cache.rs b/system/fileserver/src/cache.rs
+index 901a85bd4..476eb50b1 100644
+--- a/system/fileserver/src/cache.rs
++++ b/system/fileserver/src/cache.rs
+@@ -8,8 +8,12 @@
+ //! blocks flushes first, and is refused whole when that flush is, so memory
+ //! bounds the write-back and not the other way round.
+ //!
+-//! **Clean blocks are kept up to [`CLEAN_LIMIT`]** and the oldest-read goes
+-//! first; a dirty block is never dropped.
++//! **Clean blocks are kept up to the limit the cache is made with** and the
++//! oldest-read goes first; a dirty block is never dropped. A block read in
++//! is kept only if the allocator gives it and its place in the eviction order
++//! room: refused, the read is answered from the disk's bytes and nothing is
++//! cached. The block map's node, a small allocation every few inserts, is the
++//! one part of keeping it that still cannot be refused.
+ //!
+ //! **Several tasks may use it at once**, and the disk never has two requests
+ //! for one block in flight when either is a write, which the block service's
+@@ -44,9 +48,6 @@ impl Disk for diskserver::disk::Served {
+     }
+ }
+ 
+-/// Clean blocks kept: 64 MiB.
+-pub const CLEAN_LIMIT: usize = 16 * 1024;
+-
+ /// Dirty blocks held before the cache flushes by itself: 32 MiB.
+ pub const DIRTY_LIMIT: usize = 8 * 1024;
+ 
+@@ -69,6 +70,8 @@ struct Fetch {
+ 
+ #[derive(Default)]
+ struct Inner {
++    /// The most clean blocks kept.
++    clean_limit: usize,
+     slots: BTreeMap<u64, Slot>,
+     /// Clean blocks in the order they were read or cleaned; stale entries are
+     /// skipped when popped.
+@@ -104,8 +107,9 @@ pub struct Counts {
+ }
+ 
+ impl<D: Disk> Cache<D> {
+-    pub fn new(disk: D) -> Self {
+-        Self { disk, inner: RefCell::new(Inner { unflushed: true, ..Inner::default() }) }
++    /// A cache over `disk` keeping at most `clean_limit` clean blocks.
++    pub fn new(disk: D, clean_limit: usize) -> Self {
++        Self { disk, inner: RefCell::new(Inner { clean_limit, unflushed: true, ..Inner::default() }) }
+     }
+ 
+     /// The disk, once nothing else holds the cache: what it holds is what the
+@@ -171,8 +175,12 @@ impl<D: Disk> Cache<D> {
+                     Some(slot) => put(i + k, &slot.data),
+                     None => {
+                         put(i + k, data);
+-                        inner.slots.insert(at, Slot { data: Box::new(*data), dirty: false, version: 0 });
+-                        inner.order.push_back(at);
++                        if inner.order.try_reserve(1).is_ok() {
++                            if let Some(data) = boxed(data) {
++                                inner.slots.insert(at, Slot { data, dirty: false, version: 0 });
++                                inner.order.push_back(at);
++                            }
++                        }
+                     }
+                 }
+             }
+@@ -202,6 +210,14 @@ impl<D: Disk> Cache<D> {
+     }
+ }
+ 
++/// `data` in a block of its own, or `None` where the allocator has no room.
++fn boxed(data: &Block) -> Option<Box<Block>> {
++    let mut bytes = Vec::new();
++    bytes.try_reserve_exact(BLOCK).ok()?;
++    bytes.extend_from_slice(data);
++    Some(bytes.into_boxed_slice().try_into().expect("a block's bytes"))
++}
++
+ /// The one flush running, until this is dropped: when it finishes, is refused
+ /// or is abandoned.
+ struct Flushing<'a, D: Disk>(&'a Cache<D>);
+@@ -313,9 +329,9 @@ impl<D: Disk> BlockDev for Cache<D> {
+ }
+ 
+ impl Inner {
+-    /// Drop the oldest clean blocks past [`CLEAN_LIMIT`].
++    /// Drop the oldest clean blocks past the limit.
+     fn evict(&mut self) {
+-        while self.slots.len() - self.dirty > CLEAN_LIMIT {
++        while self.slots.len() - self.dirty > self.clean_limit {
+             let Some(block) = self.order.pop_front() else { break };
+             if self.slots.get(&block).is_some_and(|s| !s.dirty) {
+                 self.slots.remove(&block);
+@@ -323,7 +339,7 @@ impl Inner {
+         }
+         // A queue of mostly stale entries is compacted, so it stays the size
+         // of what it orders.
+-        if self.order.len() > 4 * (CLEAN_LIMIT + DIRTY_LIMIT) {
++        if self.order.len() > 4 * (self.clean_limit + DIRTY_LIMIT) {
+             let slots = &self.slots;
+             self.order.retain(|b| slots.get(b).is_some_and(|s| !s.dirty));
+         }
+@@ -381,6 +397,9 @@ mod tests {
+     use crate::ram::Ram;
+     use toyos_blockdev::{block_on_ready, Executor};
+ 
++    /// The clean blocks every cache here keeps.
++    const CLEAN_LIMIT: usize = 4096;
++
+     /// A disk that counts what reaches it, and refuses its flushes while
+     /// `refusing_flush` is set.
+     struct Counting {
+@@ -427,7 +446,7 @@ mod tests {
+     impl Disk for Counting {}
+ 
+     fn cache() -> Cache<Counting> {
+-        Cache::new(Counting::new(1024))
++        Cache::new(Counting::new(1024), CLEAN_LIMIT)
+     }
+ 
+     fn read_one<D: Disk>(c: &Cache<D>, block: u64) -> Result<Block, Error> {
+@@ -505,7 +524,7 @@ mod tests {
+ 
+     #[test]
+     fn clean_blocks_are_bounded_and_dirty_ones_are_kept() {
+-        let c = Cache::new(Counting::new((CLEAN_LIMIT + 64) as u64));
++        let c = Cache::new(Counting::new((CLEAN_LIMIT + 64) as u64), CLEAN_LIMIT);
+         block_on_ready(c.write(0, &[[1; BLOCK]])).unwrap();
+         for b in 1..(CLEAN_LIMIT as u64 + 32) {
+             read_one(&c, b).unwrap();
+@@ -530,7 +549,7 @@ mod tests {
+     #[test]
+     fn every_evicted_clean_block_reads_back_off_the_disk_byte_for_byte() {
+         let blocks = (CLEAN_LIMIT + 2048) as u64;
+-        let c = Cache::new(Counting::new(blocks));
++        let c = Cache::new(Counting::new(blocks), CLEAN_LIMIT);
+         for b in 0..blocks {
+             block_on_ready(c.write(b, &[pattern(b)])).unwrap();
+         }
+@@ -574,7 +593,7 @@ mod tests {
+     #[test]
+     fn at_the_dirty_limit_a_refused_flush_refuses_the_write_and_the_cache_grows_no_larger() {
+         let limit = DIRTY_LIMIT as u64;
+-        let c = Cache::new(Refusing { ram: Ram::new(limit + 16), refusing: Cell::new(false) });
++        let c = Cache::new(Refusing { ram: Ram::new(limit + 16), refusing: Cell::new(false) }, CLEAN_LIMIT);
+         for b in 0..limit {
+             block_on_ready(c.write(b, &[[1; BLOCK]])).unwrap();
+         }
+@@ -686,7 +705,7 @@ mod tests {
+ 
+     #[test]
+     fn a_block_written_while_a_flush_carries_its_older_copy_stays_dirty() {
+-        let c = Cache::new(Held::new(16));
++        let c = Cache::new(Held::new(16), CLEAN_LIMIT);
+         block_on_ready(c.write(3, &[[1; BLOCK]])).unwrap();
+         c.disk.open.set(false);
+         let exec = Executor::new();
+@@ -705,7 +724,7 @@ mod tests {
+     /// whose landing order nothing fixes.
+     #[test]
+     fn a_flush_asked_during_another_waits_and_then_writes_the_newer_copy() {
+-        let c = Cache::new(Held::new(16));
++        let c = Cache::new(Held::new(16), CLEAN_LIMIT);
+         block_on_ready(c.write(3, &[[1; BLOCK]])).unwrap();
+         c.disk.open.set(false);
+         let exec = Executor::new();
+@@ -727,7 +746,7 @@ mod tests {
+     /// block, and the cache keeps the write's copy, not the fetch's.
+     #[test]
+     fn a_flush_waits_for_a_fetch_of_its_block_and_the_write_is_kept() {
+-        let c = Cache::new(Held::new(16));
++        let c = Cache::new(Held::new(16), CLEAN_LIMIT);
+         block_on_ready(c.disk.ram.write(5, &[[1; BLOCK]])).unwrap();
+         c.disk.open.set(false);
+         let exec = Executor::new();
+diff --git a/system/fileserver/src/data.rs b/system/fileserver/src/data.rs
+index a19b3eb3c..06f011d05 100644
+--- a/system/fileserver/src/data.rs
++++ b/system/fileserver/src/data.rs
+@@ -211,8 +211,8 @@ fn designated<D: Disk>(cache: &Cache<D>) -> bool {
+ impl<D: Disk> DataVolume<D> {
+     /// Mount the volume on `disk`, format it if it is designated, and refuse
+     /// it otherwise — the kernel's DATA mount's decisions, unchanged.
+-    pub fn probe(disk: D, roots: &[&str], clock: fn() -> u64) -> Probed<D> {
+-        let cache = Rc::new(Cache::new(disk));
++    pub fn probe(disk: D, clean_limit: usize, roots: &[&str], clock: fn() -> u64) -> Probed<D> {
++        let cache = Rc::new(Cache::new(disk, clean_limit));
+         match Mounted::<Shared<D>, ReadWrite>::open(Shared(Rc::clone(&cache))) {
+             Ok(fs) => {
+                 println!("fileserver: mounted the DATA volume");
+@@ -233,8 +233,8 @@ impl<D: Disk> DataVolume<D> {
+     }
+ 
+     /// A fresh volume on `disk`, which holds nothing of anyone's: memory.
+-    pub fn format(disk: D, roots: &[&str], clock: fn() -> u64) -> Result<Self, String> {
+-        let cache = Rc::new(Cache::new(disk));
++    pub fn format(disk: D, clean_limit: usize, roots: &[&str], clock: fn() -> u64) -> Result<Self, String> {
++        let cache = Rc::new(Cache::new(disk, clean_limit));
+         let fs = Formatted::format(Shared(Rc::clone(&cache))).map_err(|e| format!("{e:?}"))?;
+         Self::over(fs.mount(), cache, roots, clock)
+     }
+@@ -831,8 +831,11 @@ mod tests {
+         1_000_000_000
+     }
+ 
++    /// The clean blocks every volume's cache here keeps: 64 MiB.
++    const CLEAN_LIMIT: usize = 16 * 1024;
++
+     fn vol() -> DataVolume<Ram> {
+-        DataVolume::format(Ram::new(4096), &["home", "apps"], clock).unwrap()
++        DataVolume::format(Ram::new(4096), CLEAN_LIMIT, &["home", "apps"], clock).unwrap()
+     }
+ 
+     const CREATE: OpenHow = OpenHow { create: true, create_new: false, truncate: false };
+@@ -1025,7 +1028,7 @@ mod tests {
+ 
+     #[test]
+     fn a_stat_from_the_index_is_what_the_entry_records() {
+-        let mut v = DataVolume::format(Ram::new(4096), &["home"], advancing_clock).unwrap();
++        let mut v = DataVolume::format(Ram::new(4096), CLEAN_LIMIT, &["home"], advancing_clock).unwrap();
+         let a = v.open("home/a", CREATE).unwrap();
+         v.write(a, 0, &[1; 5000]).unwrap();
+         assert_eq!(v.lstat("home/a").unwrap().size, 5000, "an open file's own length, before its entry has it");
+@@ -1058,7 +1061,7 @@ mod tests {
+         let DataVolume { fs, cache, .. } = v;
+         drop(fs);
+         let disk = Rc::try_unwrap(cache).ok().expect("one owner").into_disk();
+-        let Probed::Mounted(again) = DataVolume::probe(disk, &["home"], advancing_clock) else { panic!("remount") };
++        let Probed::Mounted(again) = DataVolume::probe(disk, CLEAN_LIMIT, &["home"], advancing_clock) else { panic!("remount") };
+         let after: Vec<(String, Meta)> = again.names.iter().map(|(n, m)| (n.clone(), *m)).collect();
+         assert_eq!(after, before, "the index a mount reads is the one the server kept");
+         assert_index_is_the_format_s(&again);
+@@ -1097,7 +1100,7 @@ mod tests {
+     /// it away.
+     #[test]
+     fn a_write_s_stamp_keeps_its_nanosecond_across_a_remount() {
+-        let mut v = DataVolume::format(Ram::new(4096), &["home"], nanosecond_clock).unwrap();
++        let mut v = DataVolume::format(Ram::new(4096), CLEAN_LIMIT, &["home"], nanosecond_clock).unwrap();
+         let n = v.open("home/stamped", CREATE).unwrap();
+         v.write(n, 0, b"stamped").unwrap();
+         v.close(n).unwrap();
+@@ -1105,7 +1108,7 @@ mod tests {
+         let DataVolume { fs, cache, .. } = v;
+         drop(fs);
+         let disk = Rc::try_unwrap(cache).ok().expect("one owner").into_disk();
+-        let Probed::Mounted(mut again) = DataVolume::probe(disk, &["home"], nanosecond_clock) else { panic!("remount") };
++        let Probed::Mounted(mut again) = DataVolume::probe(disk, CLEAN_LIMIT, &["home"], nanosecond_clock) else { panic!("remount") };
+         assert_eq!(again.lstat("home/stamped").unwrap().mtime, nanosecond_clock());
+     }
+ 
+@@ -1113,7 +1116,7 @@ mod tests {
+         let DataVolume { fs, cache, .. } = v;
+         drop(fs);
+         let disk = Rc::try_unwrap(cache).ok().expect("one owner").into_disk();
+-        let Probed::Mounted(again) = DataVolume::probe(disk, &["home"], clock) else { panic!("remount") };
++        let Probed::Mounted(again) = DataVolume::probe(disk, CLEAN_LIMIT, &["home"], clock) else { panic!("remount") };
+         again
+     }
+ 
+@@ -1122,7 +1125,7 @@ mod tests {
+     /// every other one given back, and the run the reserve kept
+     /// (`bcachefs`'s `NODE_RESERVE`, 16) taken after.
+     fn fragmented() -> DataVolume<Ram> {
+-        let mut v = DataVolume::format(Ram::new(1024), &["home"], clock).unwrap();
++        let mut v = DataVolume::format(Ram::new(1024), CLEAN_LIMIT, &["home"], clock).unwrap();
+         let mut run = Vec::new();
+         let mut page = 0;
+         while v.fs.resolve_or_alloc_block(&mut run, page).is_ok() {
+@@ -1318,6 +1321,7 @@ mod tests {
+         blocks: u64,
+         /// Shared, so a test reads what the disk holds while the server runs.
+         image: Rc<std::cell::RefCell<Image>>,
++        reads: std::cell::Cell<usize>,
+         writes: std::cell::Cell<usize>,
+         keep: usize,
+         refuse: Option<usize>,
+@@ -1325,11 +1329,11 @@ mod tests {
+ 
+     impl Stops {
+         fn new(blocks: u64) -> Self {
+-            Self { blocks, image: Rc::default(), writes: Default::default(), keep: usize::MAX, refuse: None }
++            Self { blocks, image: Rc::default(), reads: Default::default(), writes: Default::default(), keep: usize::MAX, refuse: None }
+         }
+ 
+         fn from(image: &Image, blocks: u64, keep: usize, refuse: Option<usize>) -> Self {
+-            Self { blocks, image: Rc::new(image.clone().into()), writes: Default::default(), keep, refuse }
++            Self { blocks, image: Rc::new(image.clone().into()), reads: Default::default(), writes: Default::default(), keep, refuse }
+         }
+     }
+ 
+@@ -1339,6 +1343,7 @@ mod tests {
+         }
+ 
+         async fn read(&self, lba: u64, out: &mut [Block]) -> Result<(), toyos_blockdev::Error> {
++            self.reads.set(self.reads.get() + out.len());
+             let image = self.image.borrow();
+             for (block, out) in (lba..).zip(out) {
+                 match image.get(&block) {
+@@ -1370,6 +1375,37 @@ mod tests {
+ 
+     impl Disk for Stops {}
+ 
++    /// `osbench`'s `fs.disk.seq_read.4096`: a 64 MiB file written in 4 KiB
++    /// calls and synced, then opened, read whole in 4 KiB calls and closed,
++    /// in rounds, on a volume whose cache holds twice the file. A round after
++    /// the first is answered from the cache, without one disk read: an open,
++    /// a read and a close neither bypass the cache nor drop its blocks.
++    #[test]
++    fn a_file_the_cache_holds_is_read_again_from_the_cache() {
++        const MIB: usize = 1 << 20;
++        let mut v = DataVolume::format(Stops::new(20_000), 2 * 64 * MIB / BLOCK, &["home", "apps"], clock).unwrap();
++        let n = v.open("home/seq", CREATE).unwrap();
++        let page: Vec<u8> = (0..BLOCK).map(|i| (i % 253) as u8).collect();
++        for k in 0..64 * MIB / BLOCK {
++            v.write(n, (k * BLOCK) as u64, &page).unwrap();
++        }
++        v.close(n).unwrap();
++        assert_eq!(v.sync(), Ok(Vec::new()));
++        let mut out = vec![0u8; BLOCK];
++        let mut round = |v: &mut DataVolume<Stops>| {
++            let before = v.cache.disk().reads.get();
++            let n = v.open("home/seq", PLAIN).unwrap();
++            for k in 0..64 * MIB / BLOCK {
++                assert_eq!(v.read(n, (k * BLOCK) as u64, &mut Buf(&mut out)).unwrap(), BLOCK);
++            }
++            v.close(n).unwrap();
++            v.cache.disk().reads.get() - before
++        };
++        round(&mut v);
++        let again: Vec<usize> = (0..3).map(|_| round(&mut v)).collect();
++        assert_eq!(again, [0; 3], "blocks each round after the first read from the disk");
++    }
++
+     fn take(v: DataVolume<Stops>) -> Stops {
+         let DataVolume { fs, cache, .. } = v;
+         drop(fs);
+@@ -1427,7 +1463,7 @@ mod tests {
+     /// A staged package: files enough to fill several leaves, a subdirectory,
+     /// an empty one, and names beside it the rename must not move; synced.
+     fn staged() -> (Image, BTreeMap<String, Vec<u8>>) {
+-        let mut v = DataVolume::format(Stops::new(1024), &["home", "apps"], clock).unwrap();
++        let mut v = DataVolume::format(Stops::new(1024), CLEAN_LIMIT, &["home", "apps"], clock).unwrap();
+         for i in 0..80 {
+             let n = v.open(&format!("home/beside{i}"), CREATE).unwrap();
+             v.write(n, 0, format!("beside {i}").as_bytes()).unwrap();
+@@ -1447,7 +1483,7 @@ mod tests {
+     }
+ 
+     fn mounted(disk: Stops) -> Result<DataVolume<Stops>, String> {
+-        match DataVolume::probe(disk, &["home", "apps"], clock) {
++        match DataVolume::probe(disk, CLEAN_LIMIT, &["home", "apps"], clock) {
+             Probed::Mounted(v) => Ok(v),
+             Probed::Unmountable(why) => Err(format!("unmountable: {why}")),
+             Probed::Foreign => Err("foreign".into()),
+diff --git a/system/fileserver/src/fat.rs b/system/fileserver/src/fat.rs
+index 06eca1886..b191f81a6 100644
+--- a/system/fileserver/src/fat.rs
++++ b/system/fileserver/src/fat.rs
+@@ -95,8 +95,8 @@ fn logged(what: &str, path: &str, e: Error) -> fs::Error {
+ impl<D: Disk> FatVolume<D> {
+     /// Mount the FAT32 volume on `disk`, or say why not; nothing is written
+     /// before the volume is known to be FAT32.
+-    pub fn mount(disk: D, writable: bool, clock: fn() -> u64) -> Result<Self, String> {
+-        let cache = Rc::new(Cache::new(disk));
++    pub fn mount(disk: D, clean_limit: usize, writable: bool, clock: fn() -> u64) -> Result<Self, String> {
++        let cache = Rc::new(Cache::new(disk, clean_limit));
+         let fs = cache.block_on(Fat32::mount(Rc::clone(&cache))).map_err(|e| format!("no FAT32 here: {e}"))?;
+         let geom = fs.geometry();
+         println!(
+@@ -455,12 +455,14 @@ mod tests {
+     use std::cell::Cell;
+ 
+     use super::*;
+-    use crate::cache::CLEAN_LIMIT;
+     use crate::ram::Ram;
+     use toyos_blockdev::{block_on_ready, Block, Bytes, BLOCK};
+ 
+     impl Disk for Bytes<Vec<u8>> {}
+ 
++    /// The clean blocks every volume's cache here keeps.
++    const CLEAN_LIMIT: usize = 4096;
++
+     /// A disk that refuses every read of one block, after the fixture's own
+     /// bytes are on it.
+     struct Refusing {
+@@ -508,7 +510,7 @@ mod tests {
+         let spec = spec_volume::fixture();
+         let ram = ram_with(&spec.bytes, spec.bytes.len().div_ceil(BLOCK) + 2 * CLEAN_LIMIT);
+         let refused = Rc::new(Cell::new(u64::MAX));
+-        let v = FatVolume::mount(Refusing { ram, refused: Rc::clone(&refused) }, true, clock).unwrap();
++        let v = FatVolume::mount(Refusing { ram, refused: Rc::clone(&refused) }, CLEAN_LIMIT, true, clock).unwrap();
+         (v, refused, spec)
+     }
+ 
+@@ -552,7 +554,7 @@ mod tests {
+         let epochs: Epochs = Rc::new(std::cell::RefCell::new(vec![Vec::new()]));
+         let disk = Traced { image: Bytes::new(image), epochs: Rc::clone(&epochs) };
+         LATER.store(1_717_245_296 * NANOS_PER_SEC, Relaxed);
+-        let mut v = FatVolume::mount(disk, true, || LATER.load(Relaxed)).unwrap();
++        let mut v = FatVolume::mount(disk, CLEAN_LIMIT, true, || LATER.load(Relaxed)).unwrap();
+         let a = v.open("a.txt", CREATE).unwrap();
+         v.write(a, 0, &[1; 3000]).unwrap();
+         assert_eq!(v.sync(), Ok(Vec::new()));
+@@ -722,7 +724,7 @@ mod tests {
+         const OPEN: OpenHow = OpenHow { create: false, create_new: false, truncate: false };
+         let spec = spec_volume::fixture();
+         let ram = ram_with(&spec.bytes, spec.bytes.len().div_ceil(BLOCK));
+-        let mut v = FatVolume::mount(Granted(ram), false, || 1_717_245_296 * NANOS_PER_SEC).unwrap();
++        let mut v = FatVolume::mount(Granted(ram), CLEAN_LIMIT, false, || 1_717_245_296 * NANOS_PER_SEC).unwrap();
+ 
+         assert_eq!(v.lstat("short.txt").unwrap().size, 100);
+         v.list("sub").unwrap();
+@@ -795,7 +797,7 @@ mod tests {
+         let mut image = spec.bytes.clone();
+         image.resize(spec.bytes.len().div_ceil(BLOCK) * BLOCK, 0);
+         let epochs: Epochs = Rc::new(std::cell::RefCell::new(vec![Vec::new()]));
+-        let mut v = FatVolume::mount(Traced { image: Bytes::new(image.clone()), epochs: Rc::clone(&epochs) }, true, clock)
++        let mut v = FatVolume::mount(Traced { image: Bytes::new(image.clone()), epochs: Rc::clone(&epochs) }, CLEAN_LIMIT, true, clock)
+             .unwrap();
+         let held: Vec<u8> = (0..3000u32).map(|i| (i % 251 + 1) as u8).collect();
+         let appended: Vec<u8> = (0..3 * BLOCK as u32).map(|i| (i % 241 + 2) as u8).collect();
+@@ -833,7 +835,7 @@ mod tests {
+                     })
+                     .collect();
+                 assert!(refused.is_empty(), "{stop}: {}", describe(&refused));
+-                let mut after = FatVolume::mount(Bytes::new(bytes), false, clock).unwrap_or_else(|e| panic!("{stop}: {e}"));
++                let mut after = FatVolume::mount(Bytes::new(bytes), CLEAN_LIMIT, false, clock).unwrap_or_else(|e| panic!("{stop}: {e}"));
+                 let n = after.open("a.txt", OPEN).unwrap();
+                 let size = after.lstat("a.txt").unwrap().size as usize;
+                 let mut out = vec![0u8; size];
+diff --git a/system/fileserver/src/main.rs b/system/fileserver/src/main.rs
+index 34ab3b009..a63133bfb 100644
+--- a/system/fileserver/src/main.rs
++++ b/system/fileserver/src/main.rs
+@@ -106,6 +106,19 @@ const NO_SUCH_OPERATION: &str = "it asked for an operation this protocol does no
+ /// blocks, of which only what is written costs anything.
+ const RAM_BLOCKS: u64 = 1 << 18;
+ 
++/// The share of physical memory the file servers' caches together may keep
++/// in clean blocks, read or written: the log and boot roles take
++/// [`SMALL_CLEAN_BYTES`] each, DATA the rest ([`data_clean_limit`]).
++///
++/// An interim bound and nothing more: no clean block is given back to
++/// another job, since nothing reports memory pressure
++/// (`issues/the-file-servers-clean-blocks-are-given-back-to-no-other-job.md`).
++const CLEAN_SHARE: u64 = 8;
++
++/// What the log and boot roles keep clean: their FAT and directories, and
++/// little of what logkeeper writes is read again.
++const SMALL_CLEAN_BYTES: u64 = 16 << 20;
++
+ const TOKEN_ACCEPTOR: u64 = 0;
+ const TOKEN_CLIENT: u64 = 1 << 32;
+ const TOKEN_STREAM: u64 = 2 << 32;
+@@ -340,7 +353,7 @@ fn absent(roots: &[&str], why: String) -> Box<dyn Volume> {
+ }
+ 
+ fn data_on<D: Disk + 'static>(disk: D, roots: &[&str]) -> Box<dyn Volume> {
+-    match DataVolume::probe(disk, roots, fileserver::volume::now_nanos) {
++    match DataVolume::probe(disk, data_clean_limit(), roots, fileserver::volume::now_nanos) {
+         Probed::Mounted(volume) => Box::new(volume),
+         Probed::Unmountable(why) => {
+             println!("fileserver: the DATA volume is ours and does not mount ({why}); it is absent this boot");
+@@ -355,14 +368,25 @@ fn data_on<D: Disk + 'static>(disk: D, roots: &[&str]) -> Box<dyn Volume> {
+ 
+ fn ram(roots: &[&str], why: &str) -> Box<dyn Volume> {
+     println!("fileserver: {why}; /apps, /config, /home and /state are in memory and will not survive a reboot");
+-    match DataVolume::format(Ram::new(RAM_BLOCKS), roots, fileserver::volume::now_nanos) {
++    match DataVolume::format(Ram::new(RAM_BLOCKS), data_clean_limit(), roots, fileserver::volume::now_nanos) {
+         Ok(volume) => Box::new(volume),
+         Err(why) => panic!("fileserver: a volume in memory would not format: {why}"),
+     }
+ }
+ 
+ fn fat_on<D: Disk + 'static>(disk: D, writable: bool) -> Result<Box<dyn Volume>, String> {
+-    FatVolume::mount(disk, writable, fileserver::volume::now_nanos).map(|v| Box::new(v) as Box<dyn Volume>)
++    FatVolume::mount(disk, blocks_of(SMALL_CLEAN_BYTES), writable, fileserver::volume::now_nanos)
++        .map(|v| Box::new(v) as Box<dyn Volume>)
++}
++
++/// The clean blocks DATA's cache keeps: [`CLEAN_SHARE`] of physical memory,
++/// less what the log and boot roles keep.
++fn data_clean_limit() -> usize {
++    blocks_of((toyos::system::memory_total() / CLEAN_SHARE).saturating_sub(2 * SMALL_CLEAN_BYTES))
++}
++
++fn blocks_of(bytes: u64) -> usize {
++    usize::try_from(bytes / toyos_blockdev::BLOCK as u64).expect("a block count fits a usize")
+ }
+ 
+ struct Server {
+diff --git a/system/netstack/src/main.rs b/system/netstack/src/main.rs
+index 813a4dfc8..343eae167 100644
+--- a/system/netstack/src/main.rs
++++ b/system/netstack/src/main.rs
+@@ -149,14 +149,6 @@ fn places_for(total_mem: u64) -> usize {
+     (total_mem / PLACE_BUDGET_SHARE / PLACE_BYTES).clamp(1, u64::from(MAX_PLACES)) as usize
+ }
+ 
+-/// Total physical memory, as the kernel reports it.
+-fn total_memory() -> u64 {
+-    let mut buf = [0u8; toyos::system::SYSINFO_HEADER_SIZE];
+-    let n = toyos::system::sysinfo(&mut buf);
+-    assert!(n >= toyos::system::SYSINFO_HEADER_SIZE, "sysinfo returned {n} bytes");
+-    toyos_abi::syscall::SysinfoHeader::decode(&buf).memory_total
+-}
+-
+ /// One draw of the kernel's random source.
+ fn draw() -> u32 {
+     let mut bytes = [0u8; 4];
+@@ -359,7 +351,7 @@ fn main() {
+     node.answer_as(clock(), name, draw)
+         .unwrap_or_else(|why| panic!("netstack: a new node refused the multicast DNS port: {why:?}"));
+ 
+-    let total_mem = total_memory();
++    let total_mem = toyos::system::memory_total();
+     let places = places_for(total_mem);
+     node.set_places(places);
+     let mut sockets = serve::Sockets::new(places);
