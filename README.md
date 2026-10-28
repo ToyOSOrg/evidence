@@ -14,3 +14,17 @@ Branch `igpu-fault` of ToyOSOrg/ToyOS. Logs are full command output. Each comman
 | t14/boot-counts.txt | per orchestrator T14 log: unit0 translating lines, cycled hand-overs, iGPU fault lines (to 2026-10-28) | — | — |
 
 Totals from boot-counts: 787 boots with one off-to-on transition on unit0 and no iGPU fault; 46 cycled (`iommu-firmware-left`) boots with one fault.
+
+## r2 (review r1)
+
+PR head 5fb75fc8b, with the measurement code removed. Measurement branch `igpu-fault-measure` at e3b1562e7, which is that head plus the reproducer, with switches run before off-on.
+
+| file | command | revision | exit |
+|---|---|---|---|
+| r2/ci-host-lint-head.log | `cargo run -- --ci host lint` | tree of 5fb75fc8b, before its commit | 0 |
+| r2/vtd_firmware_left-head.log | `cargo test --test toyos-build -- vtd_firmware_left` | 5fb75fc8b | 0 |
+| r2/ci-host-lint-measure.log | `cargo run -- --ci host lint` | tree of e3b1562e7, before its commit | 0 |
+| r2/metal-prepare-measure.log | `--metal --metal-readback <dir> iommu_handover_cycles` (staging) | e3b1562e7 | 2 (staged) |
+| r2/metal-prepare-head.log | `--metal --metal-readback <dir> boot:shared-debug` (staging) | 5fb75fc8b | 2 (staged) |
+
+The first round's `host/` logs stand for unchanged host code: r2 changes only kernel `vtd/`, issues and the removal of test-harness rows, and lint compiles all of it. The r1 control logs remain valid: the decision function and the judge they exercise are unchanged in shape.

@@ -1,0 +1,26 @@
+5fb75fc8b36a35f7535f78bfa229a24c81e0c8d1
+   Compiling toyos-metal v0.1.0 ($WORKTREE/tests/metal)
+   Compiling toyos-build v0.1.0 ($WORKTREE)
+    Finished `test` profile [optimized + debuginfo] target(s) in 8.37s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-744c45cf70e5d4d9)
+09:57:01   BUILD x86_64 binaries of tests/guest/rust-tests
+09:57:02   BUILT x86_64 binaries of tests/guest/rust-tests  (2s)
+09:57:02   BUILD x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests
+09:57:04   BUILT x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests  (1s)
+09:57:04 [toyos] Compiling 143 C tests, and attempting 24 declared ones...
+09:57:07 [metal] 10 registration(s) and 7 shared member(s) over 1 boot(s)
+09:57:07   BUILD x86_64 kernel boot-actuators,test-actuators, loader, ROOT of $SCRATCH/metal-r2/head/shared-debug/system-ceed8bf72fcae218.toml
+09:57:17 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+09:57:17   BUILT x86_64 kernel boot-actuators,test-actuators, loader, ROOT of $SCRATCH/metal-r2/head/shared-debug/system-ceed8bf72fcae218.toml  (9s)
+09:57:17 [metal] shared-debug: 12 job(s) under a list bound of 62100 ms, armed with ["pci-cap-selftest", "revoked-backing-selftest", "lapic-spurious-selftest", "unclaimed-vector-selftest", "sysret-ss-probe", "iommu-firmware-left"] and a boot deadline of 124200 ms — $SCRATCH/metal-r2/head/shared-debug/image.img
+# One boot per image. Each invocation is `cargo <words>` from this worktree.
+
+shared-debug
+  image: $SCRATCH/metal-r2/head/shared-debug/image.img
+  cargo run -p toyos-metal -- --image $SCRATCH/metal-r2/head/shared-debug/image.img --readback $SCRATCH/metal-r2/head/shared-debug --fat32-check
+09:57:17 [metal] staged 1 image(s); $SCRATCH/metal-r2/head/request.txt lists them. The machine was not touched, so this run establishes nothing about it.
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `$WORKTREE/target/debug/deps/toyos_build-744c45cf70e5d4d9 --metal --metal-readback $SCRATCH/metal-r2/head 'boot:shared-debug'` (exit status: 2)
+exit=2
