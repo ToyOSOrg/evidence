@@ -1,0 +1,88 @@
+   Compiling kernel v0.1.0 (<worktree>/kernel)
+warning: unused variable: `history`
+   --> kernel/pure/sched/idle.rs:100:31
+    |
+100 | pub fn choose(costs: &[Cost], history: &History, horizon: Option<u64>, limit: Option<u64>) -> Choice {
+    |                               ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_history`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: method `admits` is never used
+  --> kernel/pure/sched/idle.rs:77:8
+   |
+53 | impl History {
+   | ------------ method in this implementation
+...
+77 |     fn admits(&self, state: usize) -> bool {
+   |        ^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `kernel` (lib test) generated 2 warnings (run `cargo fix --lib -p kernel --tests` to apply 1 suggestion)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.16s
+     Running unittests pure/lib.rs (target/debug/deps/kernel-fa45b686f8e87f8e)
+
+running 13 tests
+test sched::idle::tests::a_held_bound_excludes_every_state_slower_to_wake_than_it ... ok
+test sched::idle::tests::a_cpu_with_nothing_due_and_no_bound_waits_deepest ... ok
+test sched::idle::tests::a_new_declaration_starts_with_nothing_learned ... ok
+test sched::idle::tests::a_state_entered_before_a_timer_wakes_early_by_its_exit_and_without_one_does_not ... ok
+test sched::idle::tests::no_declared_state_is_c1 ... ok
+test sched::idle::tests::the_timer_horizon_admits_only_what_fits_before_it ... ok
+test sched::idle::tests::idles_between_the_two_residencies_settle_on_the_shallower_state ... FAILED
+test sched::idle::tests::the_least_bound_held_is_the_machines_and_goes_with_its_last_hold ... ok
+test sched::idle::tests::a_cpu_left_idle_after_short_idles_reaches_the_deepest_state_on_its_revisits_alone ... FAILED
+test sched::idle::tests::short_unforeseen_idles_bring_the_cpu_to_c1_within_the_allowance ... FAILED
+test sched::idle::tests::a_cpu_held_shallow_by_its_history_alone_revisits_after_the_deeper_states_residency ... FAILED
+test sched::idle::tests::releasing_a_bound_never_held_is_a_kernel_bug - should panic ... ok
+test sched::idle::tests::long_idles_after_short_ones_return_the_cpu_to_the_deepest_state ... FAILED
+
+failures:
+
+---- sched::idle::tests::idles_between_the_two_residencies_settle_on_the_shallower_state stdout ----
+
+thread 'sched::idle::tests::idles_between_the_two_residencies_settle_on_the_shallower_state' (70990558) panicked at kernel/pure/sched/idle.rs:217:9:
+assertion `left == right` failed
+  left: Some(1)
+ right: Some(0)
+
+---- sched::idle::tests::a_cpu_left_idle_after_short_idles_reaches_the_deepest_state_on_its_revisits_alone stdout ----
+
+thread 'sched::idle::tests::a_cpu_left_idle_after_short_idles_reaches_the_deepest_state_on_its_revisits_alone' (70990553) panicked at kernel/pure/sched/idle.rs:284:9:
+assertion `left == right` failed
+  left: 0
+ right: 5
+
+---- sched::idle::tests::short_unforeseen_idles_bring_the_cpu_to_c1_within_the_allowance stdout ----
+
+thread 'sched::idle::tests::short_unforeseen_idles_bring_the_cpu_to_c1_within_the_allowance' (70990562) panicked at kernel/pure/sched/idle.rs:207:9:
+assertion `left == right` failed: a CPU turned to short idles pays at most the allowance and one more deep exit
+  left: 16
+ right: 4
+
+---- sched::idle::tests::a_cpu_held_shallow_by_its_history_alone_revisits_after_the_deeper_states_residency stdout ----
+
+thread 'sched::idle::tests::a_cpu_held_shallow_by_its_history_alone_revisits_after_the_deeper_states_residency' (70990552) panicked at kernel/pure/sched/idle.rs:259:9:
+assertion `left == right` failed
+  left: None
+ right: Some(2096000)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- sched::idle::tests::long_idles_after_short_ones_return_the_cpu_to_the_deepest_state stdout ----
+
+thread 'sched::idle::tests::long_idles_after_short_ones_return_the_cpu_to_the_deepest_state' (70990559) panicked at kernel/pure/sched/idle.rs:226:9:
+assertion `left == right` failed
+  left: Some(1)
+ right: None
+
+
+failures:
+    sched::idle::tests::a_cpu_held_shallow_by_its_history_alone_revisits_after_the_deeper_states_residency
+    sched::idle::tests::a_cpu_left_idle_after_short_idles_reaches_the_deepest_state_on_its_revisits_alone
+    sched::idle::tests::idles_between_the_two_residencies_settle_on_the_shallower_state
+    sched::idle::tests::long_idles_after_short_ones_return_the_cpu_to_the_deepest_state
+    sched::idle::tests::short_unforeseen_idles_bring_the_cpu_to_c1_within_the_allowance
+
+test result: FAILED. 8 passed; 5 failed; 0 ignored; 0 measured; 323 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p kernel --lib`

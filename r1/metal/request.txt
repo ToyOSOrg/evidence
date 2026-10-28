@@ -1,0 +1,38 @@
+# PR #1073 (deep idle): T14 and AMD bench. Nothing here touched a machine.
+# Each invocation is `cargo <words>` from <worktree>
+# (branch deep-idle; toyos-metal there is main's, unchanged by the branch).
+# Batching: one boot per image is the floor here. A, B and M are three kernels,
+# so osbench takes three boots on the T14 and two on the AMD; B's `testcases`
+# image carries both hda_tone and acpi_tables_loaded in one boot.
+
+A  control: main ea6414e53 (this branch's merge base), the whole change reverted
+  image: <scratch>/metal/A/benchcase/image.img
+  sha256 51fae10c5f3ac667bc462ef83c1613eda0917c053cdcc6a9fd97bba359d46419
+  cargo run -p toyos-metal -- --image <scratch>/metal/A/benchcase/image.img --readback <scratch>/metal/A/benchcase --fat32-check
+  machines: T14, AMD
+
+B  the branch, deep-idle 59dcd1f03
+  osbench:
+  image: <scratch>/metal/B/benchcase/image.img
+  sha256 2a8bff46b3252c27f9646f24532e742cbc8519f64f54beff022ef5800f64ced4
+  cargo run -p toyos-metal -- --image <scratch>/metal/B/benchcase/image.img --readback <scratch>/metal/B/benchcase --fat32-check
+  machines: T14, AMD
+  hda_tone + acpi_tables_loaded (the testcases boot):
+  image: <scratch>/metal/B/testcases/image.img
+  sha256 d76f61cb4360c3228f7accac8edc3319e2ee9f3f8339848bd973b44b49e4ddbc
+  cargo run -p toyos-metal -- --image <scratch>/metal/B/testcases/image.img --readback <scratch>/metal/B/testcases --fat32-check
+  machines: T14, AMD (both rows are registered for both)
+
+M  the negative control: B with always-deepest-metal.patch (every idle period in the deepest declared state, whatever the timer, the bound or the history)
+  image: <scratch>/metal/M/benchcase/image.img
+  sha256 90ce6f6ee87cecd0bb73913f56303de3c3cb60fbb10e3d54f964e384c2ec6a46
+  cargo run -p toyos-metal -- --image <scratch>/metal/M/benchcase/image.img --readback <scratch>/metal/M/benchcase --fat32-check
+  machines: T14 only
+
+What each reading should show (expectations, not results):
+- B, kernel log: one `idle: cpuN (processor UID u) waits in C1 or MWAIT 0x31 (exit 253 µs, residency 506 µs), MWAIT 0x60 (exit 1048 µs, residency 2096 µs)` per T14 CPU; on the AMD `port 0x414 (exit 400 µs, residency 800 µs)`. Any `declaration ... refused` line is a finding (CPUID.5 or CStateBaseAddr disagreeing with the tables).
+- B, acpiserver: `the processors' idle states: 8 kept, 16 naming no CPU, 0 refused by the kernel; kept: 8 with MWAIT 0x31 253 µs + MWAIT 0x60 1048 µs; ...` on the T14 (the count of CPUs is the MADT's).
+- T14 B vs A: cpu.clock max at 4185-4190 MHz where A reads 3789; crunch.single ~1.10x A. sched/time/ipc/tail no worse than A beyond noise. fair/net/procs/mem: if B still reads 3789 there, three or more cores were running at those group starts (the scout read the same with every idle CPU deep), which no idle state lifts.
+- T14 M vs B: ipc/tail/time worse (deep exits on every wake, timer lateness up to 1048 µs). If M is no worse, the history and the early wake are untested on metal.
+- AMD B vs A: energy group package power, and cpu.clock; no latency regression in sched/time/ipc/tail.
+- B testcases: hda_tone green (no underrun with idle CPUs deep); acpi_tables_loaded green, its `[acpi]` line printing the idle census.

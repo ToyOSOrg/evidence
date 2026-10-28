@@ -1,0 +1,13 @@
+--- a/kernel/pure/sched/idle.rs
++++ b/kernel/pure/sched/idle.rs
+@@ -104,7 +104,9 @@
+         limit.is_none_or(|limit| cost.exit <= limit) && horizon.is_none_or(|horizon| cost.residency <= horizon)
+     };
+     let deepest_permitted = states.clone().rev().find(|&s| permitted(s));
+-    let state = states.rev().find(|&s| permitted(s) && history.admits(s));
++    // Mutation: always the deepest declared state, whatever the horizon, the bound or the history say.
++    let state = states.clone().last();
++    let _ = (states.rev().find(|&s| permitted(s)), history.admits(0));
+     Choice {
+         state,
+         wake_early_by: match (state, horizon) {

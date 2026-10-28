@@ -1,0 +1,11 @@
+--- a/system/acpiserver/src/osc.rs
++++ b/system/acpiserver/src/osc.rs
+@@ -212,7 +212,7 @@
+     }
+     for processor in processors {
+         let path = format!("{processor}._OSC");
+-        let answered = commit(aml, &path, &PROCESSOR);
++        let answered = negotiate(aml, &path, &PROCESSOR).map(|a| Committed { status: a.commit.map_or(a.query, |c| c.0), granted: a.commit.map_or(0, |c| c.1) });
+         match &answered {
+             Ok(c) => println!("{OWN}{path} committed {:#x}: it answered {} and acknowledged {:#x}", PROCESSOR.capabilities, status(c.status), c.granted),
+             Err(why) => println!("{OWN}{path} was refused: {why}"),

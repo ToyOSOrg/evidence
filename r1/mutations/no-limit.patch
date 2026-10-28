@@ -1,0 +1,11 @@
+--- a/kernel/pure/sched/idle.rs
++++ b/kernel/pure/sched/idle.rs
+@@ -92,7 +92,7 @@
+     let states = 0..costs.len().min(MAX_STATES);
+     let permitted = |state: usize| {
+         let cost = costs[state];
+-        limit.is_none_or(|limit| cost.exit <= limit) && horizon.is_none_or(|horizon| cost.residency <= horizon)
++        limit.is_none_or(|_| true) && horizon.is_none_or(|horizon| cost.residency <= horizon)
+     };
+     let deepest_permitted = states.clone().rev().find(|&s| permitted(s));
+     let state = states.rev().find(|&s| permitted(s) && history.admits(s));

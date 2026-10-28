@@ -1,0 +1,44 @@
+   Compiling kernel v0.1.0 (<worktree>/kernel)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.27s
+     Running unittests pure/lib.rs (target/debug/deps/kernel-fa45b686f8e87f8e)
+
+running 13 tests
+test sched::idle::tests::idles_between_the_two_residencies_settle_on_the_shallower_state ... ok
+test sched::idle::tests::a_new_declaration_starts_with_nothing_learned ... ok
+test sched::idle::tests::no_declared_state_is_c1 ... ok
+test sched::idle::tests::a_cpu_with_nothing_due_and_no_bound_waits_deepest ... ok
+test sched::idle::tests::a_cpu_left_idle_after_short_idles_reaches_the_deepest_state_on_its_revisits_alone ... ok
+test sched::idle::tests::long_idles_after_short_ones_return_the_cpu_to_the_deepest_state ... ok
+test sched::idle::tests::short_unforeseen_idles_bring_the_cpu_to_c1_within_the_allowance ... ok
+test sched::idle::tests::the_timer_horizon_admits_only_what_fits_before_it ... ok
+test sched::idle::tests::a_state_entered_before_a_timer_wakes_early_by_its_exit_and_without_one_does_not ... ok
+test sched::idle::tests::the_least_bound_held_is_the_machines_and_goes_with_its_last_hold ... ok
+test sched::idle::tests::a_cpu_held_shallow_by_its_history_alone_revisits_after_the_deeper_states_residency ... FAILED
+test sched::idle::tests::a_held_bound_excludes_every_state_slower_to_wake_than_it ... FAILED
+test sched::idle::tests::releasing_a_bound_never_held_is_a_kernel_bug - should panic ... ok
+
+failures:
+
+---- sched::idle::tests::a_cpu_held_shallow_by_its_history_alone_revisits_after_the_deeper_states_residency stdout ----
+
+thread 'sched::idle::tests::a_cpu_held_shallow_by_its_history_alone_revisits_after_the_deeper_states_residency' (70992976) panicked at kernel/pure/sched/idle.rs:261:9:
+assertion `left == right` failed: C2 alone fits the bound
+  left: Some(2096000)
+ right: Some(506000)
+
+---- sched::idle::tests::a_held_bound_excludes_every_state_slower_to_wake_than_it stdout ----
+
+thread 'sched::idle::tests::a_held_bound_excludes_every_state_slower_to_wake_than_it' (70992979) panicked at kernel/pure/sched/idle.rs:181:9:
+assertion `left == right` failed
+  left: Some(1)
+ right: Some(0)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    sched::idle::tests::a_cpu_held_shallow_by_its_history_alone_revisits_after_the_deeper_states_residency
+    sched::idle::tests::a_held_bound_excludes_every_state_slower_to_wake_than_it
+
+test result: FAILED. 11 passed; 2 failed; 0 ignored; 0 measured; 323 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p kernel --lib`
