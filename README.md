@@ -51,3 +51,20 @@ The `iommu-cycles` boots did not run: main's flasher has no FLASHABLE row for th
 ## Errata check
 
 r2/errata/631123-034-titles.txt lists the erratum titles (the document itself is Intel's and not redistributed here) of Intel's 11th Generation Intel Core Processor Specification Update, 631123-034 (April 2026), fetched from https://cdrdv2.intel.com/v1/dl/getContent/631123. Errata TGL001 to TGL075: none concerns VT-d, DMA remapping or iGPU DMA translation. TGL004 (posted-interrupt descriptors in PRMRR) is the nearest and does not apply.
+
+## r2 measurement on the T14 (chain-igpu3): iommu-handover-cycles
+
+Measurement branch `igpu-fault-measure` at e3b1562e7 (never lands), booted 3 times. Each boot completed (`Boot: complete`). Boots 1 and 2 were read from the log partitions saved before the following flash; boot 3 from its streamed serial and run log. r2/t14-cycles/boot-N-kernel-iommu-lines.log holds each boot's kernel `iommu` lines. The run logs themselves are not published, since they carry host and network lines.
+
+| boot | switch: cycles with a fault | off-on: cycles with a fault | off-on records | soonest record after the transition |
+|---|---|---|---|---|
+| 1 | 0 / 200 | 9 / 200 | 41 | 551 837 ns |
+| 2 | 0 / 200 | 6 / 200 | 15 | 546 142 ns |
+| 3 | 0 / 200 | 7 / 200 | 38 | 554 510 ns |
+| all | **0 / 600** | **22 / 600** | 94 | |
+
+- **Where the faults are:** every record is unit0, stream 00:02.0 (the iGPU), a read, reason 6h. Every address is inside the firmware framebuffer in data stolen memory: the host bridge reads BDSM=0x9c800000, BGSM=0x9c000000 and TOLUD=0xa0800000, and the GOP framebuffer is 0x7e9000 bytes.
+- **The tables were intact:** each printed walk reads a present root entry, a present context entry, and second-stage entries down to a read-write 2 MiB leaf (`0x9c?00083`). The unit therefore faulted against intact tables.
+- **When:** faults land 546 to 598 µs after translation comes back on (a few at about 1.23 ms).
+- **Odds:** the probability that the 22 faulted cycles all fall in the off-on phase by chance, with 600 cycles in each phase, is about 2^-22.
+- **Errata:** no documented erratum covers this (r2/errata).
