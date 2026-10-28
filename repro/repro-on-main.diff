@@ -1,0 +1,71 @@
+diff --git a/system/fileserver/src/data.rs b/system/fileserver/src/data.rs
+index a19b3eb3c..206a911e2 100644
+--- a/system/fileserver/src/data.rs
++++ b/system/fileserver/src/data.rs
+@@ -1318,6 +1318,7 @@ mod tests {
+         blocks: u64,
+         /// Shared, so a test reads what the disk holds while the server runs.
+         image: Rc<std::cell::RefCell<Image>>,
++        reads: std::cell::Cell<usize>,
+         writes: std::cell::Cell<usize>,
+         keep: usize,
+         refuse: Option<usize>,
+@@ -1325,11 +1326,11 @@ mod tests {
+ 
+     impl Stops {
+         fn new(blocks: u64) -> Self {
+-            Self { blocks, image: Rc::default(), writes: Default::default(), keep: usize::MAX, refuse: None }
++            Self { blocks, image: Rc::default(), reads: Default::default(), writes: Default::default(), keep: usize::MAX, refuse: None }
+         }
+ 
+         fn from(image: &Image, blocks: u64, keep: usize, refuse: Option<usize>) -> Self {
+-            Self { blocks, image: Rc::new(image.clone().into()), writes: Default::default(), keep, refuse }
++            Self { blocks, image: Rc::new(image.clone().into()), reads: Default::default(), writes: Default::default(), keep, refuse }
+         }
+     }
+ 
+@@ -1339,6 +1340,7 @@ mod tests {
+         }
+ 
+         async fn read(&self, lba: u64, out: &mut [Block]) -> Result<(), toyos_blockdev::Error> {
++            self.reads.set(self.reads.get() + out.len());
+             let image = self.image.borrow();
+             for (block, out) in (lba..).zip(out) {
+                 match image.get(&block) {
+@@ -1370,6 +1372,36 @@ mod tests {
+ 
+     impl Disk for Stops {}
+ 
++    /// `osbench`'s `fs.disk.seq_read.4096`: a 64 MiB file written in 4 KiB
++    /// calls and synced, then opened, read whole in 4 KiB calls and closed,
++    /// in rounds. A round after the first is answered from the cache,
++    /// without one disk read.
++    #[test]
++    fn a_64_mib_file_read_again_is_read_from_the_cache() {
++        const MIB: usize = 1 << 20;
++        let mut v = DataVolume::format(Stops::new(20_000), &["home", "apps"], clock).unwrap();
++        let n = v.open("home/seq", CREATE).unwrap();
++        let page: Vec<u8> = (0..BLOCK).map(|i| (i % 253) as u8).collect();
++        for k in 0..64 * MIB / BLOCK {
++            v.write(n, (k * BLOCK) as u64, &page).unwrap();
++        }
++        v.close(n).unwrap();
++        assert_eq!(v.sync(), Ok(Vec::new()));
++        let mut out = vec![0u8; BLOCK];
++        let mut round = |v: &mut DataVolume<Stops>| {
++            let before = v.cache.disk().reads.get();
++            let n = v.open("home/seq", PLAIN).unwrap();
++            for k in 0..64 * MIB / BLOCK {
++                assert_eq!(v.read(n, (k * BLOCK) as u64, &mut Buf(&mut out)).unwrap(), BLOCK);
++            }
++            v.close(n).unwrap();
++            v.cache.disk().reads.get() - before
++        };
++        round(&mut v);
++        let again: Vec<usize> = (0..3).map(|_| round(&mut v)).collect();
++        assert_eq!(again, [0; 3], "blocks each round after the first read from the disk");
++    }
++
+     fn take(v: DataVolume<Stops>) -> Stops {
+         let DataVolume { fs, cache, .. } = v;
+         drop(fs);
