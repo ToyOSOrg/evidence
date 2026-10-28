@@ -1,0 +1,16 @@
+diff --git a/system/netstack/i219/src/phy.rs b/system/netstack/i219/src/phy.rs
+index 273166741..580b73961 100644
+--- a/system/netstack/i219/src/phy.rs
++++ b/system/netstack/i219/src/phy.rs
+@@ -845,9 +845,8 @@ impl<'a, R: Registers, C: Clock> Owned<'a, R, C> {
+         let held = self.mdio.read_at(regs::CTRL);
+         let low = wake::lanphypc_low(held);
+         self.mdio.write_at(regs::CTRL, low);
+-        self.mdio.flush();
+-        let held_low =
+-            self.mdio.write_after(regs::CTRL, wake::lanphypc_released(low), wake::LANPHYPC_HOLD_NANOS);
++        self.mdio.write_at(regs::CTRL, wake::lanphypc_released(low));
++        let held_low = crate::phy::ARBITRATION_PACE_NANOS;
+         let released_at = self.mdio.clock.nanos();
+         loop {
+             let ext = self.mdio.read_at(regs::CTRL_EXT);

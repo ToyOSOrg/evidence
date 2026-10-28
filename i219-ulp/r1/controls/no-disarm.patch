@@ -1,0 +1,13 @@
+diff --git a/system/netstack/i219/src/phy.rs b/system/netstack/i219/src/phy.rs
+index 273166741..d8933925c 100644
+--- a/system/netstack/i219/src/phy.rs
++++ b/system/netstack/i219/src/phy.rs
+@@ -1049,7 +1049,7 @@ pub(crate) fn wake<R: Registers, C: Clock>(
+     woke.ulp = match woke.answered() {
+         None => Disarm::Unreached,
+         Some(_) if firmware & fwsm::FIRMWARE_VALID != 0 => Disarm::FirmwareOwns,
+-        Some(_) => match mdi.disarm_ulp() {
++        Some(_) => match mdi.ulp_state() {
+             Ok(found) => Disarm::Disarmed { found },
+             Err(why) => Disarm::Refused(why),
+         },
