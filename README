@@ -22,3 +22,5 @@ r1/host/ci-host.log: cargo run -- --ci host at c8a8247c9, exit 0, 105 steps gree
 r1/guest/qemu.log: a_spawn_from_an_image_frees_it_when_the_child_ends at c8a8247c9, exit 0 (the harness requires all three sources' lines). qemu-uncommitted.log: the same before the commit, exit 0.
 r1/guest/check-rust-tests.log: every tests/guest/rust-tests binary checked at c8a8247c9 (handle_lifetime and shm_release_reclaims share census_wait), exit 0.
 r1/controls/controls.{sh,log}: two mutations at c8a8247c9 on a clean tree, each checked, applied, run and restored in the one script. drop-removed (../controls/fix.patch reverse-applied): exit 1 in 14 s, the job panics `census_wait: still grown since the first reading after 10s: SharedMem 73 -> 81` in the served /system arm. leak-read (leak-read.patch: a copy-read image keeps one extra handle to its region): exit 1 in 15 s, the served /system arm passes and the /state arm panics `SharedMem 74 -> 82`, which shows that arm takes the copy-read path.
+
+r1/metal/: shared-debug staged at c8a8247c9 (merges cleanly with main 9d818b3ed and contains #1085), exit 2 = staged, 1 image, 8 shared members; no machine touched.
