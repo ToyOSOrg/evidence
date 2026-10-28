@@ -1,4 +1,4 @@
-# PR #1069, round 5: the per-ACK fix against a control, interleaved (2026-10-29)
+# PR #1069, round 5: the per-ACK fix against a control, interleaved (2026-10-28)
 
 One session on the T14: Linux, then A1 B1 A2 B2 A3 B3 A4 B4, then Linux (`session/t14-linux-1`, `-2`).
 B is `3599f5bb3`. A is `3599f5bb3` with only the per-ACK fix reverted (`control-per-ack-reverted.patch`):

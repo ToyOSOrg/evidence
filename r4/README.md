@@ -1,4 +1,4 @@
-# PR #1069, round 4: the corrected head, d184223b0, on both rings (2026-10-29)
+# PR #1069, round 4: the corrected head, d184223b0, on both rings (2026-10-28)
 
 Four ToyOS runs at `d184223b0` (16-descriptor ring), interleaved with four Linux runs of osbench built
 at the same revision (`session/`, `linux-d184223b0.SHA256SUMS`), then two runs with 256 descriptors
