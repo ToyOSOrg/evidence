@@ -1,0 +1,313 @@
+diff --git a/issues/a-clean-fsync-on-data-writes-the-superblock-and-flushes-the-disk.md b/issues/a-clean-fsync-on-data-writes-the-superblock-and-flushes-the-disk.md
+deleted file mode 100644
+index 45d793b89..000000000
+--- a/issues/a-clean-fsync-on-data-writes-the-superblock-and-flushes-the-disk.md
++++ /dev/null
+@@ -1,31 +0,0 @@
+----
+-status: open
+-kind: defect
+-opened: 2026-10-28
+----
+-
+-# A clean fsync on DATA writes the superblock and flushes the disk
+-
+-An fsync of a file on DATA syncs the whole volume
+-(`issues/an-fsync-of-a-served-file-syncs-its-whole-volume.md`), and the
+-volume's sync, `bcachefs::Mounted::sync` (`lib/bcachefs/src/fs.rs`), commits
+-unconditionally. It flushes the cache, writes the superblock, and flushes
+-again. The file server's cache issues a device flush only where it owes one,
+-after a write it made. The superblock write makes one owed every time, so an
+-fsync with nothing new to make durable still costs a block write and an NVMe
+-Flush.
+-
+-Measured on the AMD bench (2026-10-28, `osbench persist` at PR #1097's
+-c8f3fbfb0, DATA on its designated NVMe partition): `persist.fsync_clean`
+-p50 1,233,821 ns under ToyOS, against 56,649 and 69,703 ns under the
+-bench's Linux on the same NVMe. That is about the cost of one Flush on that
+-disk, and `persist.write_4k_fsync`, which owes one, reads 2.9 ms on ToyOS
+-and 3.0 to 3.6 ms on Linux.
+-
+-**Exit**: a sync of a volume with nothing uncommitted writes and flushes
+-nothing, shown by counting the requests a clean sync issues on a host disk.
+-`persist.fsync_clean` on the AMD bench then reads within the file server's
+-round trip, tens of µs and not a Flush's ms.
+-
+-**Owner**: the DATA format (`lib/bcachefs/src/fs.rs`) and the file server's
+-DATA volume (`system/fileserver/src/data.rs`).
+diff --git a/issues/toyos-durable-writes-on-the-t14s-nvme-took-1-to-6-ms-across-two-boots.md b/issues/toyos-durable-writes-on-the-t14s-nvme-took-1-to-6-ms-across-two-boots.md
+index fb0341082..0c5785fa6 100644
+--- a/issues/toyos-durable-writes-on-the-t14s-nvme-took-1-to-6-ms-across-two-boots.md
++++ b/issues/toyos-durable-writes-on-the-t14s-nvme-took-1-to-6-ms-across-two-boots.md
+@@ -21,9 +21,9 @@ each validation:
+ No change to the NVMe driver, the block service, the file server or the
+ DATA format lies between the two heads; the second rebased onto #1095's
+ boot path, and both booted off the NVMe. Why one boot's durable writes cost
+-six times the other's is unknown. The clean fsync's remaining 20x, a
+-superblock write and a Flush where Linux's clean fsync takes 23 µs, is
+-`issues/a-clean-fsync-on-data-writes-the-superblock-and-flushes-the-disk.md`.
++six times the other's is unknown. A clean fsync no longer writes the
++superblock or flushes (#1098): it read 15,898 and 16,124 ns on two T14 boots,
++against Linux's 23 µs.
+ 
+ **Exit**: repeated boots on the T14 read ToyOS's `persist.write_4k_fsync`
+ within Linux's, or the boots that do not are explained by a measured cause.
+diff --git a/lib/bcachefs/src/fs.rs b/lib/bcachefs/src/fs.rs
+index ddf3da017..2841387cf 100644
+--- a/lib/bcachefs/src/fs.rs
++++ b/lib/bcachefs/src/fs.rs
+@@ -157,6 +157,10 @@ pub struct Mounted<IO: BlockIO, Mode = ReadWrite> {
+     io: IO,
+     sb: Superblock,
+     alloc: BitmapAllocator,
++    /// The superblock both copies hold on the medium, made durable by this
++    /// mount's last commit; `None` until one lands, and after a sync refused
++    /// before its superblock landed.
++    landed: Option<Superblock>,
+     _mode: PhantomData<Mode>,
+ }
+ 
+@@ -557,7 +561,7 @@ impl<IO: BlockIO> Formatted<IO> {
+ 
+         sb.write(&io)?;
+ 
+-        Ok(Self(Mounted { io, sb, alloc, _mode: PhantomData }))
++        Ok(Self(Mounted { io, sb, alloc, landed: None, _mode: PhantomData }))
+     }
+ 
+     /// Name this filesystem, so whoever serves it can say which one it is.
+@@ -588,7 +592,7 @@ impl<IO: BlockIO> Formatted<IO> {
+     /// Mount this formatted filesystem for read-only access.
+     pub fn mount_readonly(self) -> Mounted<IO, ReadOnly> {
+         let Mounted { io, sb, alloc, .. } = self.0;
+-        Mounted { io, sb, alloc, _mode: PhantomData }
++        Mounted { io, sb, alloc, landed: None, _mode: PhantomData }
+     }
+ 
+     /// Consume and return the underlying IO (for extracting the image bytes).
+@@ -627,7 +631,7 @@ impl<IO: BlockIO, Mode> Mounted<IO, Mode> {
+     fn read_superblock(io: IO) -> Result<Self, FsError> {
+         let sb = Superblock::read(&io)?;
+         let alloc = BitmapAllocator::open(&sb);
+-        Ok(Mounted { io, sb, alloc, _mode: PhantomData })
++        Ok(Mounted { io, sb, alloc, landed: None, _mode: PhantomData })
+     }
+ 
+     /// The device this filesystem was opened over.
+@@ -759,7 +763,7 @@ impl<IO: BlockIO, Mode> Mounted<IO, Mode> {
+     pub fn into_formatted(self) -> Formatted<IO> {
+         let Self { io, sb, mut alloc, .. } = self;
+         alloc.shadow = false;
+-        Formatted(Mounted { io, sb, alloc, _mode: PhantomData })
++        Formatted(Mounted { io, sb, alloc, landed: None, _mode: PhantomData })
+     }
+ 
+     /// Return the extents and file size for a file.
+@@ -923,18 +927,27 @@ impl<IO: BlockIO> Mounted<IO, ReadWrite> {
+         })
+     }
+ 
+-    /// Commit the tree as it stands: see this block's header.
++    /// Commit the tree as it stands: see this block's header. A commit whose
++    /// superblock is the one the medium already holds writes none, since no
++    /// node its root reaches has been written over since it landed; the
++    /// device is still flushed, for what is written in place.
+     pub fn sync(&mut self) -> Result<(), FsError> {
++        let landed = self.landed.take();
+         self.io.flush()?;
+         // What the volume holds free once this commit's own frees are made.
+         self.sb.free_blocks = self.alloc.free_blocks + self.alloc.pending();
+         self.sb.next_alloc = self.alloc.next_alloc;
+         self.sb.set_clean(true);
+-        // From the first superblock write on, this commit may be what a mount
+-        // finds, even where the write is refused.
+-        self.alloc.seal();
+-        self.sb.write(&self.io)?;
+-        self.io.flush()?;
++        if landed.as_ref().is_some_and(|l| self.sb.same_commit(l)) {
++            self.landed = landed;
++        } else {
++            // From the first superblock write on, this commit may be what a
++            // mount finds, even where the write is refused.
++            self.alloc.seal();
++            self.sb.write(&self.io)?;
++            self.io.flush()?;
++            self.landed = Some(self.sb.clone());
++        }
+         self.alloc.committed(&self.io)
+     }
+ 
+@@ -1784,4 +1797,83 @@ mod tests {
+             assert!(fs.is_dir(&dir).expect("a walk of a sound tree"), "{dir}");
+         }
+     }
++
++    /// A device that records the blocks it is asked to write and counts its
++    /// syncs, and refuses the sync `refuse` numbers.
++    struct Counted {
++        io: VecBlockIO,
++        written: core::cell::RefCell<Vec<u64>>,
++        syncs: core::cell::Cell<u32>,
++        refuse: core::cell::Cell<Option<u32>>,
++    }
++
++    impl Counted {
++        fn counts(&self) -> (usize, u32) {
++            (self.written.borrow().len(), self.syncs.get())
++        }
++    }
++
++    impl BlockIO for Counted {
++        fn read_block(&self, block: BlockNum, buf: &mut BlockBuf) -> Result<(), DeviceError> {
++            self.io.read_block(block, buf)
++        }
++        fn write_block(&self, block: BlockNum, buf: &BlockBuf) -> Result<(), DeviceError> {
++            self.written.borrow_mut().push(block.raw());
++            self.io.write_block(block, buf)
++        }
++        fn block_count(&self) -> u64 {
++            self.io.block_count()
++        }
++        fn sync(&self) -> Result<(), DeviceError> {
++            let n = self.syncs.get();
++            self.syncs.set(n + 1);
++            if self.refuse.get() == Some(n) { Err(DeviceError::FAILED) } else { Ok(()) }
++        }
++    }
++
++    fn counted(blocks: u64) -> Mounted<Counted, ReadWrite> {
++        let io = Counted {
++            io: VecBlockIO::from_vec(image(blocks)),
++            written: core::cell::RefCell::default(),
++            syncs: core::cell::Cell::default(),
++            refuse: core::cell::Cell::default(),
++        };
++        Mounted::<_, ReadWrite>::open(io).expect("mount")
++    }
++
++    /// A sync with nothing changed since the last commit writes no block and
++    /// asks the device for one sync, for whatever was written in place; a
++    /// change after it is committed again.
++    #[test]
++    fn a_sync_with_nothing_uncommitted_writes_nothing() {
++        let mut fs = counted(128);
++        fs.create("a", b"one", 2).expect("create");
++        fs.sync().expect("the commit");
++        let (writes, syncs) = fs.io().counts();
++        fs.sync().expect("a clean sync");
++        assert_eq!(fs.io().counts(), (writes, syncs + 1));
++
++        fs.create("b", b"two", 3).expect("create");
++        fs.sync().expect("the next commit");
++        let (after, _) = fs.io().counts();
++        assert!(after > writes + 2, "a change and its commit wrote {} blocks", after - writes);
++        let raw = mount_rw(fs.io.io.into_vec()).expect("remount");
++        assert_eq!(raw.read_file("b").expect("read"), b"two");
++    }
++
++    /// A commit whose superblock was written and whose sync was refused is
++    /// made again by the next, though nothing changed between them.
++    #[test]
++    fn a_sync_after_a_refused_one_commits_again() {
++        let mut fs = counted(128);
++        fs.create("a", b"one", 2).expect("create");
++        fs.sync().expect("the commit");
++        fs.create("b", b"two", 3).expect("create");
++        fs.io().refuse.set(Some(fs.io().syncs.get() + 1));
++        assert!(fs.sync().is_err(), "the device refused the sync after the superblock");
++        let (writes, _) = fs.io().counts();
++        fs.sync().expect("the commit again");
++        let again = fs.io().written.borrow()[writes..].to_vec();
++        assert!(again.contains(&0) && again.contains(&127), "the retry wrote {again:?}, no superblock");
++    }
+ }
+diff --git a/lib/bcachefs/src/superblock.rs b/lib/bcachefs/src/superblock.rs
+index 8b3209943..246201224 100644
+--- a/lib/bcachefs/src/superblock.rs
++++ b/lib/bcachefs/src/superblock.rs
+@@ -98,7 +98,7 @@ impl fmt::Display for FsUuid {
+ }
+ 
+ /// On-disk superblock layout. Stored at block 0 and backed up at the last block.
+-#[derive(Debug, Clone)]
++#[derive(Debug, Clone, PartialEq, Eq)]
+ pub struct Superblock {
+     pub block_count: u64,
+     pub root_node: BlockNum,
+@@ -117,6 +117,13 @@ pub struct Superblock {
+ impl Superblock {
+     pub(crate) const CRC_START: usize = 12; // CRC covers bytes [12..4096]
+ 
++    /// Whether `self` names the same commit as `other`, which the medium
++    /// holds. The allocation cursor is not compared: it is only where a scan
++    /// begins, and a commit's own frees move it after its superblock lands.
++    pub fn same_commit(&self, other: &Self) -> bool {
++        *self == Self { next_alloc: self.next_alloc, ..other.clone() }
++    }
++
+     pub fn is_clean(&self) -> bool {
+         self.flags & 1 != 0
+     }
+diff --git a/system/fileserver/src/data.rs b/system/fileserver/src/data.rs
+index a19b3eb3c..f384f15e0 100644
+--- a/system/fileserver/src/data.rs
++++ b/system/fileserver/src/data.rs
+@@ -1319,17 +1319,18 @@ mod tests {
+         /// Shared, so a test reads what the disk holds while the server runs.
+         image: Rc<std::cell::RefCell<Image>>,
+         writes: std::cell::Cell<usize>,
++        flushes: std::cell::Cell<usize>,
+         keep: usize,
+         refuse: Option<usize>,
+     }
+ 
+     impl Stops {
+         fn new(blocks: u64) -> Self {
+-            Self { blocks, image: Rc::default(), writes: Default::default(), keep: usize::MAX, refuse: None }
++            Self { blocks, image: Rc::default(), writes: Default::default(), flushes: Default::default(), keep: usize::MAX, refuse: None }
+         }
+ 
+         fn from(image: &Image, blocks: u64, keep: usize, refuse: Option<usize>) -> Self {
+-            Self { blocks, image: Rc::new(image.clone().into()), writes: Default::default(), keep, refuse }
++            Self { blocks, image: Rc::new(image.clone().into()), writes: Default::default(), flushes: Default::default(), keep, refuse }
+         }
+     }
+ 
+@@ -1364,12 +1365,37 @@ mod tests {
+         }
+ 
+         async fn flush(&self) -> Result<(), toyos_blockdev::Error> {
++            self.flushes.set(self.flushes.get() + 1);
+             Ok(())
+         }
+     }
+ 
+     impl Disk for Stops {}
+ 
++    /// A sync with nothing written since the last asks the disk for nothing,
++    /// and one after a write over a page the file holds writes the page and
++    /// makes it durable. The sync after a commit still writes the blocks that
++    /// commit freed, which are marked free only once it has landed.
++    #[test]
++    fn a_sync_with_nothing_new_asks_the_disk_for_nothing() {
++        let mut v = DataVolume::format(Stops::new(1024), &["home", "apps"], clock).unwrap();
++        let n = v.open("home/f", CREATE).unwrap();
++        v.write(n, 0, &[1; BLOCK]).unwrap();
++        assert_eq!(v.sync(), Ok(Vec::new()));
++        assert_eq!(v.sync(), Ok(Vec::new()));
++        let asked = |v: &DataVolume<Stops>| (v.cache.disk().writes.get(), v.cache.disk().flushes.get());
++        let synced = asked(&v);
++        assert_eq!(v.sync(), Ok(Vec::new()));
++        assert_eq!(asked(&v), synced);
++
++        v.write(n, 0, &[2; BLOCK]).unwrap();
++        assert_eq!(v.sync(), Ok(Vec::new()));
++        let (writes, flushes) = asked(&v);
++        assert!(writes > synced.0 && flushes > synced.1, "the write over the page asked {:?} after {synced:?}", (writes, flushes));
++        let block = block_for(&v.open[&n].extents, 0).unwrap();
++        assert_eq!(v.cache.disk().image.borrow()[&block][..], [2; BLOCK][..]);
++    }
++
+     fn take(v: DataVolume<Stops>) -> Stops {
+         let DataVolume { fs, cache, .. } = v;
+         drop(fs);
