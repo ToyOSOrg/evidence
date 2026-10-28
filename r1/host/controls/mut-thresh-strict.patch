@@ -1,0 +1,13 @@
+diff --git a/system/netstack/shard/tcp/src/cc.rs b/system/netstack/shard/tcp/src/cc.rs
+index e83d30399..c3d0f3922 100644
+--- a/system/netstack/shard/tcp/src/cc.rs
++++ b/system/netstack/shard/tcp/src/cc.rs
+@@ -116,7 +116,7 @@ impl HyStart {
+             match self.css {
+                 None => {
+                     if let Some(last) = self.last_round_min {
+-                        if current >= last.saturating_add(rtt_thresh(last)) {
++                        if current > last.saturating_add(rtt_thresh(last)) {
+                             // The round the exit happens in is CSS's first.
+                             self.css = Some(Css { baseline: current, rounds: 1 });
+                             change = Some(SlowStart::Conservative);

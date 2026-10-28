@@ -1,0 +1,12 @@
+--- a/system/netstack/shard/tcp/src/conn.rs	2026-10-28 10:37:38
++++ b/system/netstack/shard/tcp/src/conn.rs	2026-10-28 10:37:45
+@@ -1279,8 +1279,7 @@
+             self.sws_fired = false;
+             // Until the next stop says otherwise: an opportunity that ends on the caller's credit
+             // ends here, and cwnd limited it only if this left it full.
+-            let in_flight = self.in_flight();
+-            self.cc.limited = self.cwnd().saturating_sub(in_flight) < self.smss();
++            self.cc.limited = true; // arm B: a stop on the card's room counts as cwnd-limited
+         }
+         let data_end = start.add(len);
+         if data_end.after(old) {

@@ -1,0 +1,13 @@
+diff --git a/system/netstack/shard/tcp/src/conn.rs b/system/netstack/shard/tcp/src/conn.rs
+index 595097f27..eec9f0e7e 100644
+--- a/system/netstack/shard/tcp/src/conn.rs
++++ b/system/netstack/shard/tcp/src/conn.rs
+@@ -1292,7 +1292,7 @@ impl Sync {
+             // Until the next stop says otherwise: an opportunity that ends on the caller's credit
+             // ends here. The caller is neither the application nor the peer (RFC 9438 §5.8), and
+             // a window at least half in flight is in use (RFC 7661 §4.3).
+-            self.cc.limited = self.in_flight() >= self.cwnd() / 2;
++            self.cc.limited = self.cwnd().saturating_sub(self.in_flight()) < self.smss();
+         }
+         let data_end = start.add(len);
+         if data_end.after(old) {

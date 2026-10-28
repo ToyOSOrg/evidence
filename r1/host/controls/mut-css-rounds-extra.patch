@@ -1,0 +1,13 @@
+diff --git a/system/netstack/shard/tcp/src/cc.rs b/system/netstack/shard/tcp/src/cc.rs
+index e83d30399..ee0323d60 100644
+--- a/system/netstack/shard/tcp/src/cc.rs
++++ b/system/netstack/shard/tcp/src/cc.rs
+@@ -142,7 +142,7 @@ impl HyStart {
+         self.last_round_min = self.current_round_min.take();
+         self.samples = 0;
+         match self.css.as_mut() {
+-            Some(css) if css.rounds >= CSS_ROUNDS => Some(SlowStart::Ended),
++            Some(css) if css.rounds > CSS_ROUNDS => Some(SlowStart::Ended),
+             Some(css) => {
+                 css.rounds = css.rounds.saturating_add(1);
+                 change
