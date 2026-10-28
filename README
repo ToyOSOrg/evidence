@@ -1,0 +1,16 @@
+Evidence for ToyOSOrg/ToyOS#1090: head 6bcb4b4a4 on main b4ad5774e's base. Paths are masked ($SCRATCH, $WORKTREE, $DEV, $TMP, $HOME), and the T14 log's partition GUIDs too. A log that begins with a hash begins with `git rev-parse HEAD`; each ends with its exit code.
+
+t14-abded5216/kernel.log: the T14 shared-debug boot of abded5216 (the census wait naming the kind). Line 506: `census_wait: after 100 paces, still grown since the first reading: SharedMem 88 -> 89`, after the parent spawned the ring holder (pid 24) from /system/bin and killed it; line 511, the list bound ends the job. verdict.txt is the boot's verdict (it booted and was read back), not the job's.
+
+host/ci-host.log: cargo run -- --ci host at 6bcb4b4a4, exit 0, 105 steps green.
+host/ci-host-1-red.log: the same at 1d86c1086 (the commit before its amend), exit 1: toyos-checks' suite_split found `spawn_returns_the_census` in DRIVEN_AND_SHARED but no literal `test_rs_spawn_returns_the_census` in the harness, which named the job through format!. 6bcb4b4a4 names it literally.
+host/toyos-checks.log: cargo test --test toyos-checks on that fix (the diff heads the log), exit 0, 41 passed.
+host/build-only.log: cargo run -- --build-only at 6bcb4b4a4, exit 0.
+
+guest/qemu.log: a_spawn_from_an_image_frees_it_when_the_child_ends at 6bcb4b4a4, exit 0: eight spawns from the served /system and eight from a /tmp copy, and the census came back to its first reading after each.
+guest/qemu-uncommitted.log: the same on b4ad5774e plus the uncommitted fix and test (its diff stat heads the log), exit 0.
+
+controls/drop-removed.log: control.sh on b4ad5774e plus the uncommitted change, with fix.patch (the Immutable Drop) reverse-applied, run and restored in the same script, exit 1: the job stalls naming `SharedMem 73 -> 81`, the eight served spawns' images. The test there is the committed one but for the run_test string, which 6bcb4b4a4 spells literally rather than through format! (the same string).
+controls/drop-removed-before-warmup.log: the same control before the test opened the file once ahead of its first reading, exit 1: `Connection 22 -> 24, SharedMem 72 -> 81`. The extra Connection pair and SharedMem are the process's own first connection to the file server, which it keeps; the test now opens it before reading.
+
+metal/: shared-debug staged at 6bcb4b4a4, exit 2 = staged (1 image, 8 shared members, among them spawn_returns_the_census); no machine touched.

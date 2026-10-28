@@ -1,0 +1,19 @@
+diff --git a/sdk/toyos/src/shm.rs b/sdk/toyos/src/shm.rs
+index 427fff541..fab6b4cdd 100644
+--- a/sdk/toyos/src/shm.rs
++++ b/sdk/toyos/src/shm.rs
+@@ -452,6 +452,14 @@ impl fmt::Display for NotImmutable {
+     }
+ }
+ 
++impl Drop for Immutable {
++    fn drop(&mut self) {
++        // SAFETY: the mapping `map` made, which nothing reaches once this drops;
++        // the handle closes after it.
++        let _ = unsafe { syscall::vm_release(self.ptr.cast_mut(), self.len) };
++    }
++}
++
+ impl AsHandle for Immutable {
+     fn as_handle(&self) -> RawHandle {
+         self.handle.raw()

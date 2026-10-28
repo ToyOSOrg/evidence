@@ -1,0 +1,63 @@
+b4ad5774ee56c93a3d947ca8cb824cec2b224880
+ tests/toyos.rs | 57 ++++++++++++++++++++++++++++++++-------------------------
+ 1 file changed, 32 insertions(+), 25 deletions(-)
+   Compiling toyos v0.18.0 ($WORKTREE/sdk/toyos)
+   Compiling toyos-manifest v0.1.0 ($WORKTREE/lib/manifest)
+   Compiling toyos-session v0.1.0 ($WORKTREE/lib/session)
+   Compiling toyos-swap v0.1.0 ($WORKTREE/lib/swap)
+   Compiling toyos-build v0.1.0 ($WORKTREE)
+   Compiling toyos-metal v0.1.0 ($WORKTREE/tests/metal)
+    Finished `test` profile [optimized + debuginfo] target(s) in 8.02s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-040be7639b65fd4e)
+
+13:36:08 running 1 tests, 12 wide
+
+13:36:08   RUN   a_spawn_from_an_image_frees_it_when_the_child_ends
+13:36:08   BUILD x86_64 spawn_returns_the_census (toyos) of tests/guest/rust-tests, for a_spawn_from_an_image_frees_it_when_the_child_ends
+13:36:32   BUILT x86_64 spawn_returns_the_census (toyos) of tests/guest/rust-tests, for a_spawn_from_an_image_frees_it_when_the_child_ends  (24s)
+13:36:32   BUILD x86_64 kernel boot-actuators,test-actuators, loader, ROOT of tests/images/testcases.toml, for a_spawn_from_an_image_frees_it_when_the_child_ends
+13:36:51 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+13:36:51   BUILT x86_64 kernel boot-actuators,test-actuators, loader, ROOT of tests/images/testcases.toml, for a_spawn_from_an_image_frees_it_when_the_child_ends  (19s)
+13:41:54 FAIL a_spawn_from_an_image_frees_it_when_the_child_ends: STALLED: 298s of guard expired, and the guest had said nothing for the last 297s of it — the ceiling caught a machine that had stopped, which is not an answer to what this test asked
+the job said:
+acpiserver: the tables' bytes took 1189 reads of firmware memory, in pages: 11 of type 9
+acpiserver: the tables' AML read SystemMemory 0 times, SystemIO 0 and PCI_Config 0, its memory in pages: none; took the Global Lock 0 times, 0 of them from the firmware; the firmware held it 0ns at the longest against a take; and ran Notify 0 times
+acpiserver: \_S5 evaluated: SLP_TYPa=0 SLP_TYPb=0
+acpiserver: \_S5 handed to the kernel: SLP_TYPa=0
+acpiserver: embedded controller none: no PNP0C09 device is present
+acpiserver: 0 table(s) loaded at run time and 0 refused; the namespace holds 266 objects in 512 slots, and the interpreter 154899 bytes of heap, of the 16777216 it holds between evaluations and the 34155580 while one runs
+acpiserver: the namespace initialised: \_SB._INI absent; 0 _STA read, 0 _INI run, no _REG run; the longest wait an evaluation asked 0 µs; evaluations refused, by kind: none
+acpiserver: the processors' idle states: 0 kept, 0 naming no CPU, 0 refused by the kernel; kept: none; withheld: none; unread: none
+acpiserver: GPEs: 2 with a method in GPE0, 2 of them runtime and enabled, 0 wake events left disabled, 0 past GPE0, 0 naming both triggers
+acpiserver: (this machine's own, quoted in no record) the runtime GPEs are [1, 2]
+acpiserver: no battery: 0 of 0 control-method batteries present, 0 AC adapter(s), with no embedded controller attached; the Global Lock taken 0 times on the way and given back 0 times, the firmware found holding it by 0 of the takes
+held
+held
+held
+held
+held
+held
+held
+held
+census_wait: after 100 paces, still grown since the first reading: Connection 22 -> 24, SharedMem 72 -> 81
+
+13:41:54   STALL a_spawn_from_an_image_frees_it_when_the_child_ends  (303s)
+13:41:54   --- 1 guests, 1 of them not the shipping kernel, 1 kernel build(s): ["boot-actuators,test-actuators"]
+
+13:41:54 host: fastest boot 3544 ms against the reference 1424 ms — liveness ceilings paid at 2.49x
+13:41:54 host: 14 core(s); a guest wider than that waits vcpus/cores longer again
+13:41:54 failures:
+13:41:54     a_spawn_from_an_image_frees_it_when_the_child_ends: STALLED: 298s of guard expired, and the guest had said nothing for the last 297s of it — the ceiling caught a machine that had stopped, which is not an answer to what this test asked
+
+13:41:54 1 of those reds are the ceiling: a_spawn_from_an_image_frees_it_when_the_child_ends
+
+13:41:54 test result: FAILED. 0 passed, 1 failed, 0 invalidated, 1 total (345.5s; workers: 43s building, 303s testing)
+13:41:54 [toyos] this red run's serial logs are kept at $WORKTREE/target/red-run-serial/toyos-tmp-16436-0
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `$WORKTREE/target/debug/deps/toyos_build-040be7639b65fd4e a_spawn_from_an_image_frees_it_when_the_child_ends` (exit status: 1)
+control exit 1
+ sdk/toyos/src/shm.rs |  8 ++++++++
+ tests/toyos.rs       | 57 +++++++++++++++++++++++++++++-----------------------
+ 2 files changed, 40 insertions(+), 25 deletions(-)
