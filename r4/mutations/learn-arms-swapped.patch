@@ -1,0 +1,16 @@
+diff --git a/kernel/pure/sched/idle.rs b/kernel/pure/sched/idle.rs
+index 46aeaab6f..2157a4c1b 100644
+--- a/kernel/pure/sched/idle.rs
++++ b/kernel/pure/sched/idle.rs
+@@ -144,9 +144,9 @@ impl Plan {
+     pub fn learn(&self, history: &mut History, costs: &[Cost], woke: u64) {
+         let slept = woke.saturating_sub(self.chosen_at);
+         match self.ended(woke) {
+-            Ended::Deadline => {}
++            Ended::Deadline => history.unforeseen(costs, slept),
+             Ended::Revisit => history.quiet(costs, slept.max(self.choice.revisit_after.unwrap_or(0))),
+-            Ended::Unforeseen => history.unforeseen(costs, slept),
++            Ended::Unforeseen => {}
+         }
+     }
+ }

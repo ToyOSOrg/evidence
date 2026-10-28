@@ -1,0 +1,41 @@
+   Compiling kernel v0.1.0 (<worktree>/kernel)
+    Finished `test` profile [optimized + debuginfo] target(s) in 3.56s
+     Running unittests pure/lib.rs (target/debug/deps/kernel-fa45b686f8e87f8e)
+
+running 18 tests
+test sched::idle::tests::a_cpu_held_shallow_by_its_history_alone_revisits_after_the_deeper_states_residency ... ok
+test sched::idle::tests::a_cpu_left_idle_after_short_idles_climbs_a_state_per_revisit ... ok
+test sched::idle::tests::a_cpu_with_nothing_due_and_no_bound_waits_deepest ... ok
+test sched::idle::tests::a_held_bound_excludes_every_state_slower_to_wake_than_it ... ok
+test sched::idle::tests::a_period_is_ended_by_the_deadline_the_revisit_or_neither ... ok
+test sched::idle::tests::a_quiet_period_clears_the_states_it_covers_and_no_deeper ... ok
+test sched::idle::tests::a_revisit_a_tick_early_clears_the_state_it_was_armed_for ... ok
+test sched::idle::tests::a_wake_is_the_schedulers_timer_from_a_tick_before_it_on_and_unforeseen_before_that ... ok
+test sched::idle::tests::a_state_entered_before_a_timer_wakes_early_by_its_exit_and_without_one_does_not ... ok
+test sched::idle::tests::idles_between_the_two_residencies_settle_on_the_shallower_state ... ok
+test sched::idle::tests::long_idles_after_short_ones_return_the_cpu_to_the_deepest_state ... ok
+test sched::idle::tests::no_declared_state_is_c1 ... ok
+test sched::idle::tests::short_unforeseen_idles_bring_the_cpu_to_c1_within_the_allowance ... ok
+test sched::idle::tests::the_timer_fires_at_the_deadline_less_the_exit_or_the_revisit_whichever_is_sooner ... ok
+test sched::idle::tests::the_timer_horizon_admits_only_what_fits_before_it ... ok
+test sched::idle::tests::the_least_bound_held_is_the_machines_and_goes_with_its_last_hold ... ok
+test sched::idle::tests::an_unforeseen_wake_is_learned_and_the_deadline_is_not ... FAILED
+test sched::idle::tests::releasing_a_bound_never_held_is_a_kernel_bug - should panic ... ok
+
+failures:
+
+---- sched::idle::tests::an_unforeseen_wake_is_learned_and_the_deadline_is_not stdout ----
+
+thread 'sched::idle::tests::an_unforeseen_wake_is_learned_and_the_deadline_is_not' (74625224) panicked at kernel/pure/sched/idle.rs:430:9:
+assertion `left == right` failed: a 10 µs wake came sooner than both residencies
+  left: History { early: [0, 0, 0, 0, 0, 0, 0, 0] }
+ right: History { early: [1, 1, 0, 0, 0, 0, 0, 0] }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    sched::idle::tests::an_unforeseen_wake_is_learned_and_the_deadline_is_not
+
+test result: FAILED. 17 passed; 1 failed; 0 ignored; 0 measured; 325 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p kernel --lib`

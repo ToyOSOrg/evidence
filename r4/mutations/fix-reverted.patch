@@ -1,0 +1,85 @@
+diff --git a/tests/guest/osbench/src/fair.rs b/tests/guest/osbench/src/fair.rs
+index d022791d8..cf3af8932 100644
+--- a/tests/guest/osbench/src/fair.rs
++++ b/tests/guest/osbench/src/fair.rs
+@@ -246,7 +246,12 @@ impl Grouping {
+             #[cfg(target_os = "toyos")]
+             Grouping::Job => {
+                 use std::os::toyos::process::CommandExt;
+-                let cap = crate::sys::syscap().ok_or("no capability was endowed, so no job can be made")?;
++                use toyos::syscap::SysCap;
++                static CAP: std::sync::OnceLock<Option<SysCap>> = std::sync::OnceLock::new();
++                let cap = CAP
++                    .get_or_init(|| toyos::endow::Endowments::get().take(toyos::endow::SYSCAP_LABEL))
++                    .as_ref()
++                    .ok_or("no capability was endowed, so no job can be made")?;
+                 let job = cap.new_job().map_err(|e| format!("a new job was refused: {e:?}"))?;
+                 let mut command = Command::new(exe);
+                 command.endow(toyos::job::JOB_LABEL, job.into_raw().0);
+diff --git a/tests/guest/osbench/src/identity.rs b/tests/guest/osbench/src/identity.rs
+index d49178a39..843b1d143 100644
+--- a/tests/guest/osbench/src/identity.rs
++++ b/tests/guest/osbench/src/identity.rs
+@@ -109,6 +109,8 @@ mod imp {
+ 
+ #[cfg(target_os = "toyos")]
+ mod imp {
++    use toyos::endow::{Endowments, SYSCAP_LABEL};
++    use toyos::syscap::SysCap;
+     use toyos_abi::inventory::{Driven, RawRecord, Record};
+ 
+     use crate::report::{note, refuse, unsupported};
+@@ -123,7 +125,7 @@ mod imp {
+     /// Every PCI function off the kernel's inventory, which the runner's
+     /// capability carries `inventory` for.
+     fn pci() {
+-        let Some(cap) = crate::sys::syscap() else {
++        let Some(cap) = Endowments::get().take::<SysCap>(SYSCAP_LABEL) else {
+             return refuse("identity.pci", "this program was endowed no SysCap");
+         };
+         let records: Vec<Record> = match cap.records(|n| vec![RawRecord::EMPTY; n]) {
+diff --git a/tests/guest/osbench/src/sys/toyos.rs b/tests/guest/osbench/src/sys/toyos.rs
+index 23b3d8c50..9ad12a66c 100644
+--- a/tests/guest/osbench/src/sys/toyos.rs
++++ b/tests/guest/osbench/src/sys/toyos.rs
+@@ -197,14 +197,6 @@ pub mod ipc {
+     }
+ }
+ 
+-/// The capability the runner endowed this process, `None` where the boot
+-/// endows none. The endowment is taken once per process, so every row that
+-/// uses the capability borrows it here.
+-pub fn syscap() -> Option<&'static toyos::syscap::SysCap> {
+-    static CAP: std::sync::OnceLock<Option<toyos::syscap::SysCap>> = std::sync::OnceLock::new();
+-    CAP.get_or_init(|| toyos::endow::Endowments::get().take(toyos::endow::SYSCAP_LABEL)).as_ref()
+-}
+-
+ /// What the tail group reads to say where a late wake's time went, through
+ /// the runner's capability: each CPU's firmware interrupts and clock, the
+ /// scheduler's diary and the roster's names. Read-only observation rights;
+@@ -212,6 +204,7 @@ pub fn syscap() -> Option<&'static toyos::syscap::SysCap> {
+ pub mod diag {
+     use std::collections::BTreeMap;
+ 
++    use toyos::endow::{Endowments, SYSCAP_LABEL};
+     use toyos::syscap::{SysCap, TraceCursor};
+     use toyos_abi::counters::{Counter, RawRecord, Record};
+     use toyos_abi::syscall::{SYSINFO_ENTRY_SIZE, SYSINFO_HEADER_SIZE};
+@@ -219,7 +212,7 @@ pub mod diag {
+     use toyos_trace::{Entry, Event};
+ 
+     pub struct Diag {
+-        cap: &'static SysCap,
++        cap: SysCap,
+         cursor: Option<TraceCursor<Vec<u64>>>,
+     }
+ 
+@@ -254,7 +247,7 @@ pub mod diag {
+     }
+ 
+     pub fn open() -> Option<Diag> {
+-        let cap = super::syscap()?;
++        let cap: SysCap = Endowments::get().take(SYSCAP_LABEL)?;
+         let cursor = cap.trace_cursor_words().ok().map(|n| TraceCursor::new(vec![0u64; n]));
+         Some(Diag { cap, cursor })
+     }
