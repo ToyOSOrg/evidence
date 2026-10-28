@@ -5,6 +5,7 @@
          pub fn settled_with(&mut self, at_ns: u64, mhz: u64) -> bool {
              let (lo, hi) = (self.lo.min(mhz), self.hi.max(mhz));
 -            if (hi - lo) * 100 > hi * 3 {
++            if (hi - lo) * 10 > hi {
                  *self = Plateau::new(at_ns, mhz);
              } else {
                  (self.lo, self.hi) = (lo, hi);

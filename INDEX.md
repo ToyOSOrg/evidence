@@ -90,3 +90,7 @@ Masking: boot IDs, MAC and IPv4 addresses, partition GUIDs and the shell's trace
 - `crunch.single.matmul` fell in L1, 4190 to 3592 at 71 °C after 4 s of one-thread load.
 - `mem.malloc_churn.{1048576,4096}.t8` are flagged "settled clocks apart": Linux 3641 to 3690 against ToyOS's 4188. The likely cause is a lower turbo bin with more cores active around an eight-thread row, an inference.
 - So each mark is a real change of the clock's state, which the marks exist to show, and none is the reading's noise.
+
+## Correction: r5's m7 patch republished whole
+
+`r5/controls/m7-tolerance-10pct.patch` as first published lost its added line: the publishing step dropped every line beginning `+ `, meant for shell trace lines, and so a patch's additions too. It is replaced with the patch that ran (11 lines). The run's result in `run4.log` is unchanged.
