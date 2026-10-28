@@ -1,0 +1,73 @@
+7ef0a48c89865620890f4a44a402558e98990901
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.27s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-744c45cf70e5d4d9)
+07:23:04   BUILD x86_64 binaries of tests/guest/rust-tests
+07:24:37   BUILT x86_64 binaries of tests/guest/rust-tests  (94s)
+07:24:37   BUILD x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests
+07:25:07   BUILT x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests  (30s)
+07:25:07 [toyos] Compiling 143 C tests, and attempting 24 declared ones...
+07:25:12 [metal] 54 registration(s) and 232 shared member(s) over 7 boot(s)
+07:25:12   BUILD x86_64 kernel, loader, ROOT of $SCRATCH/r2/metal/metalcase/system-dc8b9870b293f8db.toml
+07:25:14 assets: leaving out share/soundfont.sf2 — only /system/bin/doom opens it and this image builds no doom
+07:25:14 assets: leaving out share/doom1.wad — only /system/bin/doom opens it and this image builds no doom
+07:25:14   BUILT x86_64 kernel, loader, ROOT of $SCRATCH/r2/metal/metalcase/system-dc8b9870b293f8db.toml  (3s)
+07:25:15 [metal] metalcase: 2 job(s) under a list bound of 60000 ms, armed with [] and a boot deadline of 120000 ms — $SCRATCH/r2/metal/metalcase/image.img
+07:25:15   BUILD x86_64 ROOT of $SCRATCH/r2/metal/netbenchcase/system-51667d4dd86814f9.toml
+07:25:59 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+07:25:59   BUILT x86_64 ROOT of $SCRATCH/r2/metal/netbenchcase/system-51667d4dd86814f9.toml  (45s)
+07:25:59 [metal] netbenchcase: 1 job(s) under a list bound of 180000 ms, armed with [] and a boot deadline of 360000 ms — $SCRATCH/r2/metal/netbenchcase/image.img
+07:25:59   BUILD x86_64 ROOT of $SCRATCH/r2/metal/proctreecase/system-b9897c9caba579a0.toml
+07:26:01 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+07:26:01   BUILT x86_64 ROOT of $SCRATCH/r2/metal/proctreecase/system-b9897c9caba579a0.toml  (2s)
+07:26:01 [metal] proctreecase: 4 job(s) under a list bound of 60000 ms, armed with [] and a boot deadline of 120000 ms — $SCRATCH/r2/metal/proctreecase/image.img
+07:26:01   BUILD x86_64 kernel boot-actuators,test-actuators, ROOT of $SCRATCH/r2/metal/shared-debug/system-19360814ec268306.toml
+07:26:03 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+07:26:03   BUILT x86_64 kernel boot-actuators,test-actuators, ROOT of $SCRATCH/r2/metal/shared-debug/system-19360814ec268306.toml  (2s)
+07:26:03 [metal] shared-debug: 12 job(s) under a list bound of 62100 ms, armed with ["pci-cap-selftest", "revoked-backing-selftest", "lapic-spurious-selftest", "unclaimed-vector-selftest", "sysret-ss-probe", "iommu-firmware-left"] and a boot deadline of 124200 ms — $SCRATCH/r2/metal/shared-debug/image.img
+07:26:03   BUILD x86_64 ROOT of $SCRATCH/r2/metal/testcases/system-60c85b5159980549.toml
+07:26:05 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+07:26:05   BUILT x86_64 ROOT of $SCRATCH/r2/metal/testcases/system-60c85b5159980549.toml  (2s)
+07:26:06 [metal] testcases: 244 job(s) under a list bound of 98900 ms, armed with [] and a boot deadline of 197800 ms — $SCRATCH/r2/metal/testcases/image.img
+07:26:06   BUILD x86_64 ROOT of $SCRATCH/r2/metal/testcases-refused/system-39fde77d735f8d34.toml
+07:26:07 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+07:26:07   BUILT x86_64 ROOT of $SCRATCH/r2/metal/testcases-refused/system-39fde77d735f8d34.toml  (2s)
+07:26:07 [metal] testcases-refused: 1 job(s) under a list bound of 60000 ms, armed with [] and a boot deadline of 120000 ms — $SCRATCH/r2/metal/testcases-refused/image.img
+07:26:07   BUILD x86_64 ROOT of $SCRATCH/r2/metal/testcases-watchdog/system-1100b9df4598828b.toml
+07:26:09 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+07:26:09   BUILT x86_64 ROOT of $SCRATCH/r2/metal/testcases-watchdog/system-1100b9df4598828b.toml  (2s)
+07:26:09 [metal] testcases-watchdog: 0 job(s) under a list bound of 60000 ms, armed with ["watchdog"] and a boot deadline of 120000 ms — $SCRATCH/r2/metal/testcases-watchdog/image.img
+# One boot per image. Each invocation is `cargo <words>` from this worktree.
+
+metalcase
+  image: $SCRATCH/r2/metal/metalcase/image.img
+  cargo run -p toyos-metal -- --image $SCRATCH/r2/metal/metalcase/image.img --readback $SCRATCH/r2/metal/metalcase --fat32-check
+
+netbenchcase
+  image: $SCRATCH/r2/metal/netbenchcase/image.img
+  cargo run -p toyos-metal -- --image $SCRATCH/r2/metal/netbenchcase/image.img --readback $SCRATCH/r2/metal/netbenchcase --fat32-check
+
+proctreecase
+  image: $SCRATCH/r2/metal/proctreecase/image.img
+  cargo run -p toyos-metal -- --image $SCRATCH/r2/metal/proctreecase/image.img --readback $SCRATCH/r2/metal/proctreecase --fat32-check
+
+shared-debug
+  image: $SCRATCH/r2/metal/shared-debug/image.img
+  cargo run -p toyos-metal -- --image $SCRATCH/r2/metal/shared-debug/image.img --readback $SCRATCH/r2/metal/shared-debug --fat32-check
+
+testcases
+  image: $SCRATCH/r2/metal/testcases/image.img
+  cargo run -p toyos-metal -- --image $SCRATCH/r2/metal/testcases/image.img --readback $SCRATCH/r2/metal/testcases --fat32-check
+
+testcases-refused
+  image: $SCRATCH/r2/metal/testcases-refused/image.img
+  cargo run -p toyos-metal -- --image $SCRATCH/r2/metal/testcases-refused/image.img --readback $SCRATCH/r2/metal/testcases-refused --fat32-check
+
+testcases-watchdog
+  image: $SCRATCH/r2/metal/testcases-watchdog/image.img
+  cargo run -p toyos-metal -- --image $SCRATCH/r2/metal/testcases-watchdog/image.img --readback $SCRATCH/r2/metal/testcases-watchdog --fat32-check
+07:26:09 [metal] staged 7 image(s); $SCRATCH/r2/metal/request.txt lists them. The machine was not touched, so this run establishes nothing about it.
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `$WORKTREE/target/debug/deps/toyos_build-744c45cf70e5d4d9 --metal --metal-readback $SCRATCH/r2/metal 'boot:testcases' 'boot:shared-debug' process_tree launch_toctou port_badge app_view kernel_objects_refused job_fairness hda_tone gop_edid_scale spawn_cost acpi_server_events osbench_lan` (exit status: 2)
+exit 2

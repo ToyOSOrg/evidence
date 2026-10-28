@@ -1,0 +1,14 @@
+Evidence for ToyOSOrg/ToyOS#1080 (branch handles).
+Head 7ef0a48c8 on main 576bebf3a. Paths are masked: $HOME, $DEV, $WORKTREE, $SCRATCH, $TMP. Each log's last line is the exit code the shell saw; logs that begin with a hash begin with `git rev-parse HEAD`.
+
+host/ci-host.log: cargo run -- --ci host at 5be6e88f7 (before the rebase onto main), exit 0, 104 steps green. Since then: the rebase onto 576bebf3a (#1075, i219 and osbench, which touch no handle API and share one disjoint osbench hunk with this branch), and three edits that compile no differently: a doc line on window's RawHandle re-export, issues/toyos-poller-is-sync-and-a-watch-moves-the-tail-in-two-steps.md naming `Poller::watch`, and one expected string in tests/toyos.rs.
+host/build-only.log: cargo run -- --build-only at f03a560da (the rebased commit before the tests/toyos.rs string), exit 0.
+guest/check-x86_64.log, guest/check-aarch64.log: cargo check of the guest workspace for each ToyOS target at 7ef0a48c8 against the sysroot that build made, exit 101 on errors that main has too: update's TOYOS_IMAGE_KEY (set by the build), kernelprobe (AArch64 only), osbench (x86-64 only, issues/osbench-builds-for-no-aarch64-toyos.md), doom's C compiler (set by the build), and filetime under build/root (a host tool). No other error.
+guest/check-rust-tests.log: cargo check of tests/guest/rust-tests' binaries at 7ef0a48c8, exit 0.
+guest/qemu-machine-tests.log: cargo test --test toyos-build -- <24 machine tests> at f03a560da, exit 1: 23 passed; stream_holders failed only because tests/toyos.rs still expected the summary line of the endow/provide arms this change removes (the job itself printed every other claim and exited 0).
+guest/stream_holders-rerun.log: stream_holders at 7ef0a48c8 with the expected line corrected, exit 0, 1 passed.
+controls/safe-ownership-calls.rs: safe code that closes, duplicates, narrows, sub-ranges, sends and DMA-maps a handle by number, and makes an OwnedHandle or BorrowedHandle from one.
+controls/safe-ownership-calls-refused.log: cargo check of it against this branch's toyos-abi and toyos, exit 101, all eight refused with E0133.
+controls/safe-ownership-calls-on-main.log: its six toyos-abi calls against origin/main 576bebf3a, exit 0: each compiled as safe code there.
+metal/prepare.log, metal/request.txt: cargo test --test toyos-build -- --metal --metal-readback <dir> boot:testcases boot:shared-debug process_tree launch_toctou port_badge app_view kernel_objects_refused job_fairness hda_tone gop_edid_scale spawn_cost acpi_server_events osbench_lan at 7ef0a48c8, exit 2 = staged (7 images, 54 registrations and 232 shared members); no machine touched.
+Forks: winit https://github.com/ToyOSOrg/winit/commit/0121752b7c48bc640e221e3cebedefea3796609a, mio https://github.com/ToyOSOrg/mio/commit/cf8d7a57fb9685b28511141c51c9bb7f6b44e583.
