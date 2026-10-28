@@ -23,3 +23,5 @@ Durability (`amd/durability-*`): the AMD bench's next boot, #1079's benchcase at
 T14 session at `0343c0aa8` (`t14/`): bench_data_designated judged PASS (judge.log exit 0). The stamp was Written by nvme 04:00.0 on p4 (44564480 blocks); the second boot formatted and served bcachefs. Both sticks have 60062500 sectors, four past a whole block: the boot stick read its last sector (backup NoHeader, no ReadFailed), and the sgdisk scratch stick reported no disagreement, so its backup on sector 60062499 read valid.
 
 T14 durability (`t14/durability-*`): its next boot, #1074's diag3 benchcase, said `fileserver: mounted the DATA volume`, bcachefs, 11 names.
+
+Round 3 at `05720ad63` (`r3/`): `nvme_leaves_the_benchs_disk_alone` re-judged with the new left_alone: AMD #1089 testcases PASS, T14 #1074 diag3 PASS; controls red (an NVMe session on the host root, DATA said in memory); QEMU twin exit 0; host CI exit 0.
