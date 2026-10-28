@@ -3,7 +3,7 @@
 Labelled current-state comparison: ToyOS at 069cbbeb8 (#1097, code-identical to its landing head) against each bench's Ubuntu 24.04 (Linux 6.8.0-147) as installed. Per bench: 4 ToyOS benchcase boots off the internal NVMe and 5 Linux `osbench all` runs, interleaved L T L | T L | T L | T L, every ToyOS readback judged EXIT=0. A row's value is each run's p50; the exact two-sided Mann-Whitney test at 0.05 over 5 against 4 runs (least p 2/126) says whether it resolves. Each p is its row's alone: about 1.6% of rows resolve by chance with no difference anywhere. The full tables are `t14-compare.md` and `amd-compare.md`.
 
 Caveats that bear on reading it:
-- The AMD's Linux chose `clocksource=tsc` in 3 runs and `hpet` in 2, as booted. Each HPET timestamp costs 1.2 µs, so its per-operation rows have wide Linux spreads. Their medians are the TSC runs'.
+- The AMD's Linux chose `clocksource=tsc` in 3 runs and `hpet` in 2, as booted. Each HPET timestamp costs 1.2 µs, so its per-operation rows have wide Linux spreads. A median is not always a TSC run's: `ipc.reqrep.8`'s is an HPET run's (TSC runs 7,684, 14,983 and 15,719 ns; HPET runs 13,829 and 10,551), so read such a row per run.
 - Linux runs its distribution's governor (T14 `powersave`, the same HWP request ToyOS makes; AMD `schedutil`). This is the baseline, not the matched-request experiment.
 - `persist` and `fs.disk` run on each system's filesystem on the same NVMe (ext4 against ToyOS DATA).
 
@@ -181,7 +181,7 @@ Neither boot was a lone outlier: the slow mode recurs. ToyOS's `persist` rows ac
 | scoreboard r3 (17:39) | 0.50 ms | 1.08 ms | 1.04 ms | **7.10 ms** | 167 MB/s |
 | scoreboard r4 (17:48) | 0.58 ms | 1.08 ms | 1.09 ms | 1.23 ms | 311 MB/s |
 
-Linux's are 0.81 to 1.20 ms for the durable writes in every run. Two of five boots ran slow throughout `persist`, and a third (r3) turned slow partway, between `append_4k_fsync` and `create_fsync_unlink`. The boot logs' NVMe and DATA lines do not tell the slow boots apart. The cause is unknown. `issues/toyos-durable-writes-on-the-t14s-nvme-run-six-times-slower-in-some-boots.md` (PR #1097, 61baeec07) carries this table.
+Linux's durable writes in these five runs read 0.99 to 1.04 ms (`write_4k_fsync`), 0.83 to 1.25 ms (`append_4k_fsync`) and 0.94 to 0.98 ms (`create_fsync_unlink`). Two of five boots ran slow throughout `persist`, and a third (r3) turned slow partway, between `append_4k_fsync` and `create_fsync_unlink`. The boot logs' NVMe and DATA lines do not tell the slow boots apart. The cause is unknown. `issues/toyos-durable-writes-on-the-t14s-nvme-run-six-times-slower-in-some-boots.md` carries this table; it lands through PR #1105.
 
 
 ## Files
