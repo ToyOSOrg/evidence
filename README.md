@@ -28,3 +28,26 @@ PR head 5fb75fc8b, with the measurement code removed. Measurement branch `igpu-f
 | r2/metal-prepare-head.log | `--metal --metal-readback <dir> boot:shared-debug` (staging) | 5fb75fc8b | 2 (staged) |
 
 The first round's `host/` logs stand for unchanged host code: r2 changes only kernel `vtd/`, issues and the removal of test-harness rows, and lint compiles all of it. The r1 control logs remain valid: the decision function and the judge they exercise are unchanged in shape.
+
+## r2 on the T14 (chain-igpu2)
+
+`shared-debug` at 5fb75fc8b was booted 3 times; every boot returned rc=0.
+
+| file | content |
+|---|---|
+| r2/t14/judge-shared-debug-N.log | `--metal --metal-readback <dir> boot:shared-debug`, exit 1 on each |
+| r2/t14/shared-debug-N-iommu-lines.log | the boot's kernel `iommu` lines |
+
+What the boots show:
+- All 12 registered rows pass on every boot, including `iommu_firmware_left` ("4 of them keeping translation on").
+- Every unit logs "it stays on while this kernel's root replaces firmware's", and no boot has a `DMA FAULT`.
+- Each judge's exit 1 comes from 5 shared members. `test_rs_handle_lifetime` is killed at about 60 s, and the 4 members after it never run.
+- The same 5 fail identically on main 576bebf3a, judged by the handles agent at 08:34 and 08:35 today, so they do not come from this branch.
+
+Three boots without a fault are consistent with the switch under live scanout. They are too few to establish it at the 1-in-46 rate seen before.
+
+The `iommu-cycles` boots did not run: main's flasher has no FLASHABLE row for the measurement actuator. They are re-queued as chain-igpu3.
+
+## Errata check
+
+r2/errata/631123-034.txt is the text of Intel's 11th Generation Intel Core Processor Specification Update, 631123-034 (April 2026), fetched from https://cdrdv2.intel.com/v1/dl/getContent/631123. Errata TGL001 to TGL075: none concerns VT-d, DMA remapping or iGPU DMA translation. TGL004 (posted-interrupt descriptors in PRMRR) is the nearest and does not apply.
