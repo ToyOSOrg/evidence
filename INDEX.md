@@ -72,3 +72,10 @@ Masking: boot IDs, MAC and IPv4 addresses, partition GUIDs and the shell's trace
   - Both Linux boots chose `clocksource=tsc` (`time.now` 22.7 ns), so this run does not show the probe cancelling an HPET read; the host test does (`probe_mhz` with 1.21 µs added to both chains). That needs a Linux boot on the HPET, some 57% of boots on record.
   - With the timestamp cheap, `cpu.chunk@system` is 2926/2936 ns (Linux) against 2936 ns (ToyOS).
   - This boot's DATA was the AMD's newly designated p4 (#1085), mounted (`fileserver: mounted the DATA volume`). Its `fs.served.*` rows are the file server over that volume; `persist` stays on the stick's LOG volume in this PR.
+
+## r8: the difference probe against an HPET read, on the AMD (a runtime clocksource switch, not the baseline)
+
+- `amd-hpet-switch/`: the orchestrator switched the AMD's running Linux from `tsc` to `hpet`, ran the fa7258221 Linux half (`osbench all`), and switched back. `session.txt`: tsc, hpet, rc=0, tsc. This is a validation of the probe, not a baseline run.
+- Every group reads `clocksource=hpet`, and `time.now` p50 is 1,211,480 ps: each timestamp costs the HPET read's 1.21 µs.
+- `mhz_settled` over all 85 lines is 4186 to 4312 MHz, median 4236, 0.1% from ToyOS's 4241 in r7, with 0 unsettled. Under the old probe, a6a4c60d8 read 4044 on the HPET. So the two-chain difference cancels a 1.21 µs read on metal.
+- `cpu.chunk` p50 is 4330 ns there, against 2936 ns for ToyOS: that row times each chunk with two timestamps, which the HPET makes 2.4 µs dearer. It is the clocksource's cost to a per-operation row, as the README says, not the probe's.
