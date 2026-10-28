@@ -25,13 +25,20 @@ None moved the gap. These images carry the pipediag counters, so they compare wi
 | 16384 | 31.5 / 77.9 | 286 / 323 | 16.3 / 0 | 15.9 / 15.9 | 15.9 / 15.7 | 13.3 / 15.6 |
 | 4096 | 66.7 / 124.1 | 331 / 370 | 0 / 0 | 13.6 / 13.7 | 16.6 / 15.1 | 7.3 / 9.0 |
 
-  The head retires 2 to 3 times the instructions with no more cache or alias events: about 44 more per KiB copied, so roughly 175 per 4 KiB user-page piece. Base waits on a full store buffer, and the head does not.
+  The head retires 2 to 3 times the instructions: about 44 more per KiB copied, roughly 175 per 4 KiB user-page piece. That is the bulk of the difference. Base waits on a full store buffer, and the head does not.
+  L1D replacements and L2 misses are no higher. 4K-alias blocks are lower at 64 KiB (8.4 against 12.0), but about 2 per KiB higher at 16 KiB (+17%) and 4 KiB (+23%). They may account for part of the 16 KiB residual: an inference, not measured. diag3's skew image shows that more aliasing costs throughput; it does not show the head's extra is free.
 - **`cand`** is 0a48bf8b4 plus `patches/cand-inline.patch`, clean. It inlines the per-piece path: `Bytes::place`/`peek`, `Gather`, `frame_bytes`. Results, base boots 1, 2 against cand boots 1, 2:
   - 4096: 2661 / 2772 against 2662 / 2673;
   - 16384: 4377 / 4434 against 4262 / 4260;
   - 65536: 6953 / 6916 against 6924 / 6861.
 
   The landing commit is this patch, with the bounds refusal moved to a cold helper.
+
+## What did not inline: `symbols/`
+
+`symbols/kernel-<rev>.txt` lists the kernel ELF's pipe and user-walk functions (`nm -C`, addresses dropped). Each kernel is from `cargo run -- --build-only` at that revision, x86_64.
+- At 0a48bf8b4, the measured pre-change head, `Bytes::place` (one instance) and `Bytes::peek` (two) are out-of-line functions, called once per user-page piece from the walk's closure. `Gather` and `frame_bytes` have no symbol, so they were already inlined into those.
+- At 52c9e14b1, the landing head, neither `place` nor `peek` has a symbol; they are inlined into the walk closures, which appear instead. `past_a_frame` has no symbol either, which suggests the compiler drops the call as unreachable (an inference, not checked in the disassembly).
 
 ## Reds
 
