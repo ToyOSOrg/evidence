@@ -20,3 +20,5 @@
 | r1's and r2's, kept | as named in `summary.log` |
 
 B3's model case, `a_count_the_reset_left_undecoded_restarts_from_the_bound`, is red under `start-in-one-write` and `arm-skips-the-tick`. r1's `stop-clears-fired` is retired: it protected the behaviour B1 removes.
+
+The first r3 commit carried patches made before 7a77fa390 was committed, as diffs against 987f38ea9 plus the uncommitted r3 tree; the next commit replaces them with the same mutations as diffs against 7a77fa390, which is byte-identical to the tree the controls ran on (`shasum -c`).
