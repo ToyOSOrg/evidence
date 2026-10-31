@@ -1,0 +1,13 @@
+diff --git a/system/netstack/shard/tcp/src/conn.rs b/system/netstack/shard/tcp/src/conn.rs
+index 8f60df3bd..d37d77367 100644
+--- a/system/netstack/shard/tcp/src/conn.rs
++++ b/system/netstack/shard/tcp/src/conn.rs
+@@ -850,7 +850,7 @@ impl Sync {
+         let mut departed = None;
+         while let Some(&(_, at)) = self.departures.front().filter(|&&(end, _)| ack.at_or_after(end)) {
+             self.departures.pop_front();
+-            departed = Some(at);
++            departed = departed.or(Some(at));
+         }
+         let rtt = departed.map(|at| now.since(at)).or(echoed)?;
+         self.rtt.sample(rtt, flight.div_ceil(self.smss().saturating_mul(2).max(1)).max(1));
