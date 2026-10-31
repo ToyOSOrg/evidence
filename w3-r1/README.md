@@ -10,6 +10,5 @@ Home and worktree paths are masked.
 | w3-control-device-power.log | `cargo test -p toyos-ax2xx` with w3-mut-device-power.patch | 26c6ae4ff's crate + patch | 101; `every_message_the_driver_exchanges_is_declared_at_a_version_typed_here` red |
 | w3-control-scan-forms.log | `cargo test -p toyos-ax2xx` with w3-mut-scan-forms.patch | 26c6ae4ff's crate + patch | 101; `a_scan_channel_carries_its_band_where_the_declared_version_puts_it` red |
 
-The two controls ran on the crate as committed (the sourcegate change, made
-after them, touches no file of the crate) and each patch was restored in the
-same command.
+The two controls ran on the crate's files as 26c6ae4ff commits them, before
+that commit was made, and each patch was restored in the same command.
