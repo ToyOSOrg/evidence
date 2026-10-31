@@ -1,0 +1,36 @@
+   Compiling toyos-blockring v0.1.0 ($WORKTREE/lib/blockring)
+    Finished `release` profile [optimized] target(s) in 0.85s
+     Running unittests src/lib.rs (target/release/deps/toyos_blockring-961a86c869c36193)
+
+running 12 tests
+test client::tests::a_request_without_arena_room_waits_for_it ... ok
+test client::tests::a_lost_flush_reissues_then_asks_again ... ok
+test client::tests::a_failed_own_flush_refuses_writes_until_a_flush_succeeds ... ok
+test client::tests::a_write_holds_arena_blocks_only_on_the_wire ... ok
+test client::tests::a_second_answer_for_one_tag_is_a_violation ... ok
+test client::tests::a_write_given_up_poisons_every_later_flush ... ok
+test client::tests::what_was_on_the_wire_at_the_end_is_refused_and_what_was_not_waits ... ok
+test client::tests::nothing_goes_out_before_a_session ... ok
+test client::tests::read_only_answers_a_write_alone ... ok
+test client::tests::overlapping_writes_go_out_again_in_order ... ok
+test client::tests::writes_past_the_limit_wait_for_the_clients_own_flush ... ok
+test client::tests::a_write_at_the_limit_waits_for_a_callers_flush_on_the_wire ... FAILED
+
+failures:
+
+---- client::tests::a_write_at_the_limit_waits_for_a_callers_flush_on_the_wire stdout ----
+
+thread 'client::tests::a_write_at_the_limit_waits_for_a_callers_flush_on_the_wire' (107827646) panicked at lib/blockring/src/client.rs:804:9:
+assertion `left == right` failed: the write goes out, or the client asks its own flush
+  left: Some(Request { op: Flush, tag: 65 })
+ right: None
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    client::tests::a_write_at_the_limit_waits_for_a_callers_flush_on_the_wire
+
+test result: FAILED. 11 passed; 1 failed; 0 ignored; 0 measured; 18 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-blockring --lib`
+exit 101
