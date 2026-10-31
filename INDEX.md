@@ -106,3 +106,35 @@ Files are in `r3/metal-amd/`. The panic page is excerpted; the full logs are not
 - At 68afed54f, before the guard, the event panicked one boot at 17.6 s: the TSC was 1.72 ms ahead of the HPET over 680 ms.
 - The unheld path records counts only. It records neither the size nor whether the HPET and the PM timer agree with each other. Both reading apart in the same span rules out an HPET-only event.
 - What remains: either the TSC moved, or both of the FCH's counters stood still together. The HPET's 69,841,278 fs period is 14.318 MHz, and the PM timer's 3.58 MHz is that clock divided by 4, so they share a source.
+
+## r6: the AMD's 1.7 ms event against the RTC, at eee39c691 (branch `system-clock-scout`)
+
+eee39c691 is a scout commit on top of 5def3dc23.
+- An idle span's disagreement is logged in full, with the HPET-vs-PM verdict.
+- The RTC's update-ended interrupt (IRQ8) times the TSC against its 32.768 kHz crystal.
+- Each span records the idle periods per declared state.
+- The census gains `rtc`.
+
+Checks:
+- **Host CI:** `cargo run -- --ci host` exited 0, with 106 steps green (`r6/checks/`).
+- **QEMU:** `a_stalled_hpet_is_left_out` exited 0.
+- **QEMU probe:** a red run forced by `probe-keep-serial.patch`, reverted in the same command, shows the RTC edges arriving under TCG. TCG timing is not evidence.
+
+Metal: the orchestrator ran four AMD boots from a tree pinned at eee39c691, in the order benchcase, benchcase, testcases, benchcase. Every driver exited 0.
+- Each bench boot was paired with the testcases boot and judged offline. `clock_holds_over_minutes` and `irq_census_conservation` PASS in all three pairs (`r6/metal-amd/judge-*.log`).
+- The census puts `rtc=14` on cpu0 and 0 on every AP.
+
+### The event, once per boot, in a span where all 16 CPUs entered s1 (port 0x415, the deepest any span reached)
+
+| boot | uptime at sample | TSC ahead of the HPET | TSC ahead of the PM timer | HPET vs PM | TSC ahead of the RTC (the next RTC span) |
+|---|---|---|---|---|---|
+| bench1 | 17.976 s | 1,697,321 ns | 1,697,608 ns | agree | 1,697,899 ns |
+| bench2 | 17.788 s | 1,719,964 ns | 1,719,768 ns | agree | 1,734,772 ns |
+| bench3 | 17.798 s | 1,698,515 ns | 1,698,828 ns | agree | 1,709,833 ns |
+| tests1 | 5.675 s | 1,687,827 ns | 1,689,756 ns | agree | no RTC span covers it (the RTC was armed at 4.672 s) |
+
+- **The RTC column.** The RTC span ending in the event's own sample reads 11–15 µs. The edges trail the samples in phase, so the next RTC span is the one that covers the event.
+- **No opposite.** No RTC span of the opposite sign follows. Each boot's widest RTC span is the event's. Interrupt wake latency instead shows as ±0.5–0.7 ms pairs, as at 178.97 s and 179.97 s in bench1.
+- **Agreement.** Three chipset references, on two oscillators, agree within about 15 µs on bench1 and bench3, and within 37 µs on bench2.
+- **Idle states.** Every unheld span in every boot reached s1 (`[0, 32, 0, …]` etc.), and only the one span per boot reads apart. So the deepest idle state does not single the event out.
+- **What it leaves.** A forward TSC step of about 1.7 ms. Alternatively, the FCH's 14.318 MHz domain and its RTC both stood still by the same amount. The RTC's separate crystal is from AMD FCH convention; that is an inference, not a document citation.
