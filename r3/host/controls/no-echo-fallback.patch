@@ -1,0 +1,17 @@
+diff --git a/system/netstack/shard/tcp/src/conn.rs b/system/netstack/shard/tcp/src/conn.rs
+index cb0d29771..ac7ad5e23 100644
+--- a/system/netstack/shard/tcp/src/conn.rs
++++ b/system/netstack/shard/tcp/src/conn.rs
+@@ -880,11 +880,7 @@ impl Sync {
+                 ctx.log.count(Counter::RttFromDeparture);
+                 now.since(at)
+             }
+-            (None, Some(rtt)) => {
+-                ctx.log.count(Counter::RttFromEcho);
+-                rtt
+-            }
+-            (None, None) => return None,
++            (None, _) => return None,
+         };
+         self.rtt.sample(rtt, flight.div_ceil(self.smss().saturating_mul(2).max(1)).max(1));
+         self.sampled = true;

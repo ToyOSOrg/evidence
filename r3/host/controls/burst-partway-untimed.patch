@@ -1,0 +1,13 @@
+diff --git a/system/netstack/shard/tcp/src/conn.rs b/system/netstack/shard/tcp/src/conn.rs
+index cb0d29771..eb6170a88 100644
+--- a/system/netstack/shard/tcp/src/conn.rs
++++ b/system/netstack/shard/tcp/src/conn.rs
+@@ -866,7 +866,7 @@ impl Sync {
+         let mut departed = None;
+         while let Some(run) = self.departures.front_mut().filter(|run| ack.after(run.start)) {
+             if ack.before(run.end) {
+-                if core::mem::replace(&mut run.sampled, true) && run.first != run.last {
++                if core::mem::replace(&mut run.sampled, true) {
+                     return None;
+                 }
+                 departed = Some(run.first);
