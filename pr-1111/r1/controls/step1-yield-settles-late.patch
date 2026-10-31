@@ -1,0 +1,20 @@
+--- a/kernel/pure/sched/cpu.rs
++++ b/kernel/pure/sched/cpu.rs
+@@ -1622,9 +1622,6 @@
+ 
+     /// Voluntary yield: a fair thread gives up the rest of its request.
+     pub fn dispose_yield(mut self) -> SchedPass<'c, 'e, H, P, Disposed> {
+-        // Before the yield: the yielder stays runnable here, so what queues
+-        // behind it is forwarded as it would be behind a running task.
+-        self.settle();
+         if let Some(current) = self.cpu.running.take() {
+             let mut task = current.preempt(self.cpu.id, self.now);
+             if task.shared().kill_pending() {
+@@ -1634,6 +1631,7 @@
+             }
+             self.cpu.rq.put_back(task, true);
+         }
++        self.settle();
+         self.dispose()
+     }
+ 
