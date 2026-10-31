@@ -1,0 +1,700 @@
+   Compiling toyos-net-tcp v0.1.0 (<worktree>/system/netstack/shard/tcp)
+    Finished `test` profile [optimized + debuginfo] target(s) in 6.70s
+     Running unittests src/lib.rs (target/debug/deps/toyos_net_tcp-42fc86851155979d)
+
+running 42 tests
+test cc::tests::s_cc_007_slow_start_stops_at_ssthresh ... ok
+test cc::tests::s_cc_008_the_epoch_after_a_timeout ... ok
+test cc::tests::s_cc_009_cubic_values ... ok
+test cc::tests::s_cc_010_congestion_events ... ok
+test cc::tests::s_cc_013_application_limited_time_is_skipped ... ok
+test cc::tests::s_cc_011_reno_friendly_region ... ok
+test cc::tests::s_cc_014_flight_not_cwnd_at_a_timeout ... ok
+test cc::tests::s_cc_019_rtt_thresh_is_an_eighth_clamped_to_4_and_16_ms ... ok
+test cc::tests::s_cc_020_a_rising_round_trip_ends_slow_start_after_css ... ok
+test cc::tests::s_cc_022_l_applies_only_to_the_initial_slow_start ... ok
+test cc::tests::s_cc_023_a_falling_minimum_flaps_within_a_round ... ok
+test cc::tests::s_cc_021_a_round_trip_back_under_the_baseline_resumes_slow_start ... ok
+test pace::tests::a_fast_bucket_holds_a_millisecond ... ok
+test pace::tests::a_slow_bucket_holds_the_initial_window_and_releases_at_half ... ok
+test pace::tests::an_idle_bucket_fills_only_to_its_capacity ... ok
+test pace::tests::avoidance_paces_at_a_quarter_over_the_window ... ok
+test pace::tests::without_a_smoothed_rtt_nothing_is_paced ... ok
+test cc::tests::s_cc_015_prop_avoidance_growth_is_bounded ... ok
+test rtt::tests::s_rt_001_first_sample ... ok
+test rtt::tests::s_rt_002_later_sample ... ok
+test rtt::tests::s_rt_003_the_200_ms_floor ... ok
+test rtt::tests::s_rt_004_the_60_s_ceiling ... ok
+test rtt::tests::s_rt_012_appendix_g_weights ... ok
+test rx::tests::a_handshake_inside_one_tick_starts_the_estimate_at_a_tick ... ok
+test rx::tests::a_reply_the_peer_sat_on_does_not_set_the_round_trip ... ok
+test rx::tests::an_echo_aged_by_the_peers_silence_moves_the_estimate_an_eighth ... ok
+test rx::tests::full_sized_is_learned_from_what_arrives ... ok
+test rx::tests::without_timestamps_the_least_fill_time_is_kept ... ok
+test tx::tests::s_lr_015_the_scoreboard_keeps_the_lowest_64 ... ok
+test props::s_rx_026_prop_sacked_bytes_are_delivered ... FAILED
+test props::s_prop_001_snd_una_at_or_before_snd_nxt ... FAILED
+test props::s_prop_007_pipe_is_bounded ... FAILED
+test props::s_prop_004_the_right_edge_never_retreats ... FAILED
+test props::s_op_025_prop_timestamps_on_every_segment ... ok
+test props::s_mod_004_prop_urgent_is_never_sent ... FAILED
+test props::s_prop_005_the_scoreboard_stays_above_snd_una ... FAILED
+test props::s_prop_008_nothing_happens_before_a_deadline ... ok
+test props::s_rt_017_prop_no_retransmission_before_an_rto ... ok
+test props::s_prop_001_snd_una_at_or_before_snd_nxt_whatever_the_next_hop_answers ... ok
+test props::s_prop_002_delivered_data_is_a_prefix ... ok
+test props::s_prop_006_totality_against_an_adversary ... ok
+test props::s_prop_003_end_of_stream_after_every_byte ... ok
+
+failures:
+
+---- props::s_rx_026_prop_sacked_bytes_are_delivered stdout ----
+
+thread 'props::s_rx_026_prop_sacked_bytes_are_delivered' (105096296) panicked at system/netstack/shard/tcp/src/props.rs:320:9:
+t = 30900 ms
+node 0 52289: end Some(Fin) sent 151297 received 187667 source left 0
+  Ok(Status { state: LastAck, readable: 0, writable: 0, queued: 59698, starved: false, failure: None, soft_error: None, delivery_problem: false })
+  Some(Info { state: LastAck, snd_una: Seq(26394841), snd_nxt: Seq(26394841), snd_wnd: 56847, snd_wl1: Seq(2347489937), max_snd_wnd: 65535, rcv_nxt: Seq(2347489937), rcv_edge: Seq(2347555472), srtt: Some(581.078ms), rttvar: Some(644.678ms), rto: 3.15979s, cwnd: 4054, ssthresh: 4054, smss: 1448, snd_shift: 0, rcv_shift: 0, sack: true, ts_recent: Some(3280730575), sacked_ranges: 0, in_recovery: false, high_rxt: None, rescue_rxt: None, pipe: 0, ooo_ranges: 0, queued: 59698, unread: 0, rtx_timer: None, deadline: Some(Instant(4506983000000)) })
+node 1 80: end None sent 187667 received 91599 source left 0
+  Ok(Status { state: FinWait2, readable: 0, writable: 0, queued: 0, starved: false, failure: None, soft_error: None, delivery_problem: false })
+  Some(Info { state: FinWait2, snd_una: Seq(2347489937), snd_nxt: Seq(2347489937), snd_wnd: 65535, snd_wl1: Seq(26393393), max_snd_wnd: 65535, rcv_nxt: Seq(26394841), rcv_edge: Seq(26451688), srtt: Some(43.045ms), rttvar: Some(12.725ms), rto: 200ms, cwnd: 4131, ssthresh: 3403, smss: 1448, snd_shift: 0, rcv_shift: 0, sack: true, ts_recent: Some(4256706399), sacked_ranges: 0, in_recovery: false, high_rxt: None, rescue_rxt: None, pipe: 0, ooo_ranges: 0, queued: 0, unread: 0, rtx_timer: None, deadline: None })
+
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- props::s_prop_001_snd_una_at_or_before_snd_nxt stdout ----
+
+thread 'props::s_prop_001_snd_una_at_or_before_snd_nxt' (105096286) panicked at system/netstack/shard/tcp/src/props.rs:320:9:
+t = 52842 ms
+node 0 52289: end Some(Fin) sent 122371 received 161747 source left 0
+  Ok(Status { state: Closing, readable: 0, writable: 0, queued: 70772, starved: false, failure: None, soft_error: None, delivery_problem: true })
+  Some(Info { state: Closing, snd_una: Seq(26354841), snd_nxt: Seq(26354841), snd_wnd: 65408, snd_wl1: Seq(2347460267), max_snd_wnd: 65535, rcv_nxt: Seq(2347460267), rcv_edge: Seq(2347619371), srtt: Some(28.691692s), rttvar: Some(31.226187s), rto: 60s, cwnd: 6740, ssthresh: 3010, smss: 1448, snd_shift: 7, rcv_shift: 7, sack: true, ts_recent: Some(3280776455), sacked_ranges: 0, in_recovery: false, high_rxt: None, rescue_rxt: None, pipe: 0, ooo_ranges: 0, queued: 70772, unread: 0, rtx_timer: None, deadline: Some(Instant(4552842733000)) })
+node 1 80: end None sent 161747 received 51599 source left 0
+  Ok(Status { state: FinWait2, readable: 0, writable: 0, queued: 0, starved: false, failure: None, soft_error: None, delivery_problem: false })
+  Some(Info { state: FinWait2, snd_una: Seq(2347460267), snd_nxt: Seq(2347460267), snd_wnd: 159104, snd_wl1: Seq(26354841), max_snd_wnd: 159104, rcv_nxt: Seq(26354841), rcv_edge: Seq(26420249), srtt: Some(19.898ms), rttvar: Some(8.37ms), rto: 200ms, cwnd: 3417, ssthresh: 3057, smss: 1448, snd_shift: 7, rcv_shift: 7, sack: true, ts_recent: Some(4256752280), sacked_ranges: 0, in_recovery: false, high_rxt: None, rescue_rxt: None, pipe: 0, ooo_ranges: 0, queued: 0, unread: 0, rtx_timer: None, deadline: None })
+
+
+---- props::s_prop_007_pipe_is_bounded stdout ----
+
+thread 'props::s_prop_007_pipe_is_bounded' (105096293) panicked at system/netstack/shard/tcp/src/props.rs:320:9:
+t = 44993 ms
+node 0 52289: end Some(Fin) sent 150447 received 107715 source left 0
+  Ok(Status { state: Closing, readable: 0, writable: 0, queued: 67623, starved: false, failure: None, soft_error: None, delivery_problem: false })
+  Some(Info { state: Closing, snd_una: Seq(26386066), snd_nxt: Seq(26386066), snd_wnd: 61056, snd_wl1: Seq(2347406235), max_snd_wnd: 65535, rcv_nxt: Seq(2347406235), rcv_edge: Seq(2347561883), srtt: Some(528.18ms), rttvar: Some(646.075ms), rto: 3.11248s, cwnd: 10136, ssthresh: 10572, smss: 1448, snd_shift: 7, rcv_shift: 7, sack: true, ts_recent: Some(3280736932), sacked_ranges: 0, in_recovery: false, high_rxt: None, rescue_rxt: None, pipe: 0, ooo_ranges: 0, queued: 67623, unread: 0, rtx_timer: None, deadline: Some(Instant(4513316000000)) })
+node 1 80: end None sent 107715 received 82824 source left 0
+  Ok(Status { state: FinWait2, readable: 0, writable: 0, queued: 0, starved: false, failure: None, soft_error: None, delivery_problem: false })
+  Some(Info { state: FinWait2, snd_una: Seq(2347406235), snd_nxt: Seq(2347406235), snd_wnd: 155648, snd_wl1: Seq(26384618), max_snd_wnd: 155648, rcv_nxt: Seq(26386066), rcv_edge: Seq(26447130), srtt: Some(21.256ms), rttvar: Some(14.234ms), rto: 200ms, cwnd: 2896, ssthresh: 2896, smss: 1448, snd_shift: 7, rcv_shift: 7, sack: true, ts_recent: Some(4256712796), sacked_ranges: 0, in_recovery: false, high_rxt: None, rescue_rxt: None, pipe: 0, ooo_ranges: 0, queued: 0, unread: 0, rtx_timer: None, deadline: None })
+
+
+---- props::s_prop_004_the_right_edge_never_retreats stdout ----
+
+thread 'props::s_prop_004_the_right_edge_never_retreats' (105096290) panicked at system/netstack/shard/tcp/src/props.rs:320:9:
+t = 45748 ms
+node 0 52289: end Some(Fin) sent 199053 received 115370 source left 0
+  Ok(Status { state: LastAck, readable: 0, writable: 0, queued: 16575, starved: false, failure: None, soft_error: None, delivery_problem: true })
+  Some(Info { state: LastAck, snd_una: Seq(26485720), snd_nxt: Seq(26485720), snd_wnd: 40919, snd_wl1: Seq(2347413890), max_snd_wnd: 65535, rcv_nxt: Seq(2347413890), rcv_edge: Seq(2347479425), srtt: Some(851.572ms), rttvar: Some(1.264314s), rto: 5.908828s, cwnd: 7240, ssthresh: 9122, smss: 1448, snd_shift: 0, rcv_shift: 0, sack: true, ts_recent: Some(3280750813), sacked_ranges: 0, in_recovery: false, high_rxt: None, rescue_rxt: None, pipe: 0, ooo_ranges: 0, queued: 16575, unread: 0, rtx_timer: None, deadline: Some(Instant(4527198252000)) })
+node 1 80: end None sent 115370 received 182478 source left 0
+  Ok(Status { state: FinWait2, readable: 0, writable: 0, queued: 0, starved: false, failure: None, soft_error: None, delivery_problem: false })
+  Some(Info { state: FinWait2, snd_una: Seq(2347413890), snd_nxt: Seq(2347413890), snd_wnd: 65535, snd_wl1: Seq(26484272), max_snd_wnd: 65535, rcv_nxt: Seq(26485720), rcv_edge: Seq(26526639), srtt: Some(25.631ms), rttvar: Some(6.268ms), rto: 200ms, cwnd: 3194, ssthresh: 3194, smss: 1448, snd_shift: 0, rcv_shift: 0, sack: true, ts_recent: Some(4256726664), sacked_ranges: 0, in_recovery: false, high_rxt: None, rescue_rxt: None, pipe: 0, ooo_ranges: 0, queued: 0, unread: 0, rtx_timer: None, deadline: None })
+
+
+---- props::s_mod_004_prop_urgent_is_never_sent stdout ----
+
+thread 'props::s_mod_004_prop_urgent_is_never_sent' (105096284) panicked at system/netstack/shard/tcp/src/props.rs:320:9:
+t = 46165 ms
+node 0 52289: end Some(Fin) sent 211270 received 171306 source left 0
+  Ok(Status { state: Closing, readable: 0, writable: 0, queued: 170822, starved: false, failure: None, soft_error: None, delivery_problem: false })
+  Some(Info { state: Closing, snd_una: Seq(26343690), snd_nxt: Seq(26343690), snd_wnd: 65408, snd_wl1: Seq(2347473326), max_snd_wnd: 65535, rcv_nxt: Seq(2347473326), rcv_edge: Seq(2347540910), srtt: Some(328.682ms), rttvar: Some(466.821ms), rto: 2.195966s, cwnd: 4320, ssthresh: 4046, smss: 1448, snd_shift: 7, rcv_shift: 7, sack: true, ts_recent: Some(3280725970), sacked_ranges: 0, in_recovery: false, high_rxt: None, rescue_rxt: None, pipe: 0, ooo_ranges: 0, queued: 170822, unread: 0, rtx_timer: None, deadline: Some(Instant(4502360000000)) })
+node 1 80: end None sent 171306 received 40448 source left 0
+  Ok(Status { state: FinWait2, readable: 0, writable: 0, queued: 0, starved: false, failure: None, soft_error: None, delivery_problem: false })
+  Some(Info { state: FinWait2, snd_una: Seq(2347473326), snd_nxt: Seq(2347473326), snd_wnd: 67584, snd_wl1: Seq(26342242), max_snd_wnd: 71936, rcv_nxt: Seq(26343690), rcv_edge: Seq(26409098), srtt: Some(29.761ms), rttvar: Some(5.898ms), rto: 200ms, cwnd: 3668, ssthresh: 3668, smss: 1448, snd_shift: 7, rcv_shift: 7, sack: true, ts_recent: Some(4256701786), sacked_ranges: 0, in_recovery: false, high_rxt: None, rescue_rxt: None, pipe: 0, ooo_ranges: 0, queued: 0, unread: 0, rtx_timer: None, deadline: None })
+
+
+---- props::s_prop_005_the_scoreboard_stays_above_snd_una stdout ----
+
+thread 'props::s_prop_005_the_scoreboard_stays_above_snd_una' (105096291) panicked at system/netstack/shard/tcp/src/props.rs:320:9:
+t = 45569 ms
+node 0 52289: end None sent 214205 received 164620 source left 0
+  Ok(Status { state: FinWait2, readable: 0, writable: 0, queued: 0, starved: false, failure: None, soft_error: None, delivery_problem: false })
+  Some(Info { state: FinWait2, snd_una: Seq(26517448), snd_nxt: Seq(26517448), snd_wnd: 65408, snd_wl1: Seq(2347466191), max_snd_wnd: 65535, rcv_nxt: Seq(2347467639), rcv_edge: Seq(2347565431), srtt: Some(57.975ms), rttvar: Some(25.638ms), rto: 200ms, cwnd: 2896, ssthresh: 2896, smss: 1448, snd_shift: 7, rcv_shift: 7, sack: true, ts_recent: Some(3280741682), sacked_ranges: 0, in_recovery: false, high_rxt: None, rescue_rxt: None, pipe: 0, ooo_ranges: 0, queued: 0, unread: 0, rtx_timer: None, deadline: None })
+node 1 80: end Some(Fin) sent 196743 received 214205 source left 0
+  Ok(Status { state: Closing, readable: 0, writable: 0, queued: 32123, starved: false, failure: None, soft_error: None, delivery_problem: true })
+  Some(Info { state: Closing, snd_una: Seq(2347467639), snd_nxt: Seq(2347467639), snd_wnd: 97792, snd_wl1: Seq(26517448), max_snd_wnd: 99200, rcv_nxt: Seq(26517448), rcv_edge: Seq(26582856), srtt: Some(392.673ms), rttvar: Some(472.794ms), rto: 2.283849s, cwnd: 5758, ssthresh: 4054, smss: 1448, snd_shift: 7, rcv_shift: 7, sack: true, ts_recent: Some(4256717606), sacked_ranges: 0, in_recovery: false, high_rxt: None, rescue_rxt: None, pipe: 0, ooo_ranges: 0, queued: 32123, unread: 0, rtx_timer: None, deadline: Some(Instant(4518130385000)) })
+
+
+
+failures:
+    props::s_mod_004_prop_urgent_is_never_sent
+    props::s_prop_001_snd_una_at_or_before_snd_nxt
+    props::s_prop_004_the_right_edge_never_retreats
+    props::s_prop_005_the_scoreboard_stays_above_snd_una
+    props::s_prop_007_pipe_is_bounded
+    props::s_rx_026_prop_sacked_bytes_are_delivered
+
+test result: FAILED. 36 passed; 6 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.81s
+
+error: test failed, to rerun pass `-p toyos-net-tcp --lib`
+     Running tests/acceptability.rs (target/debug/deps/acceptability-94e275c44be4ebd9)
+
+running 27 tests
+test s_ac_002_at_the_right_edge ... ok
+test s_ac_003_zero_window_probe ... ok
+test s_ac_001_in_order_text_is_acknowledged_late ... ok
+test s_ac_005_zero_window_rst ... ok
+test s_ac_006_empty_segment_beyond_the_window ... ok
+test s_ac_007_front_trim ... ok
+test s_ac_009_exact_rst ... ok
+test s_ac_004_zero_window_pure_ack ... ok
+test s_ac_010_inexact_rst_is_challenged ... ok
+test s_ac_011_rst_outside_the_window ... ok
+test s_ac_012_challenge_acks_are_limited ... ok
+test s_ac_008_back_trim ... ok
+test s_ac_013_syn_is_challenged ... ok
+test s_ac_014_syn_beyond_the_window ... ok
+test s_ac_015_retransmitted_synack ... ok
+test s_ac_016_ack_of_unsent_data ... ok
+test s_ac_017_rfc5961_lower_bound ... ok
+test s_ac_018_data_with_the_old_ack_is_no_duplicate ... ok
+test s_ac_019_text_without_ack ... ok
+test s_ac_020_old_segments_do_not_update_the_window ... ok
+test s_ac_021_a_window_may_shrink ... ok
+test s_ac_022_max_snd_wnd ... ok
+test s_ac_023_one_ack_per_receive_pass ... ok
+test s_ac_024_text_after_the_peer_fin ... ok
+test s_ac_025_ack_half_the_space_away ... ok
+test s_ac_026_rst_with_fin ... ok
+test s_ac_027_rst_payload_is_ignored ... ok
+
+test result: ok. 27 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/close.rs (target/debug/deps/close-330f6ec51aae02b0)
+
+running 32 tests
+test s_cl_005_the_fin_rides_on_data ... ok
+test s_cl_002_passive_close ... ok
+test s_cl_006_the_fin_is_retransmitted ... ok
+test s_cl_001_active_close ... ok
+test s_cl_003_simultaneous_close ... ok
+test s_cl_008_sending_in_close_wait ... ok
+test s_cl_004_fin_acknowledging_ours ... ok
+test s_cl_009_a_retransmitted_fin_in_close_wait ... ok
+test s_cl_007_half_close ... ok
+test s_cl_010_a_retransmitted_fin_restarts_time_wait ... ok
+test s_cl_012_the_orphan_bound ... ok
+test s_cl_011_an_orphan_in_fin_wait_2 ... ok
+test s_cl_013_an_orphan_behind_a_shut_window ... ok
+test s_cl_015_data_for_an_orphan ... ok
+test s_cl_016_close_with_unread_data ... ok
+test s_cl_017_time_wait_is_60_s ... ok
+test s_cl_018_reopening_from_time_wait_by_timestamp ... ok
+test s_cl_019_reopening_by_sequence_number ... ok
+test s_cl_022_syn_in_time_wait_without_a_listener ... ok
+test s_cl_020_rst_in_time_wait_is_ignored ... ok
+test s_cl_024_abort ... ok
+test s_cl_028_close_in_syn_sent ... ok
+test s_cl_026_no_time_wait_after_a_reset ... ok
+test s_cl_029_shutdown_read ... ok
+test s_cl_030_last_ack_waits_for_the_fin ... ok
+test s_cl_031_rst_in_close_wait ... ok
+test s_cl_032_rst_in_last_ack_and_closing ... ok
+test s_cl_025_abort_without_rst ... ok
+test s_cl_027_the_reset_stub ... ok
+test s_cl_014_a_user_keeps_a_shut_window_open ... ok
+test s_cl_021_a_failed_reopening_returns_to_time_wait ... ok
+test s_cl_023_time_wait_is_bounded ... ok
+
+test result: ok. 32 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s
+
+     Running tests/congestion.rs (target/debug/deps/congestion-21b48341c89fc9ef)
+
+running 10 tests
+test s_cc_004_one_segment_after_two_syn_retransmissions ... ok
+test s_cc_001_ten_segments ... ok
+test s_cc_002_ten_segments_with_timestamps ... ok
+test s_cc_005_slow_start ... ok
+test s_cc_003_ten_segments_of_536 ... ok
+test s_cc_018_a_stretch_ack_grows_the_initial_slow_start_by_all_it_acknowledged ... FAILED
+test s_cc_006_no_growth_when_not_cwnd_limited ... ok
+test s_cc_012_restart_after_idle ... ok
+test s_cc_017_a_sender_the_card_holds_grows_a_window_half_in_flight ... ok
+test s_cc_016_acks_in_one_pass_each_grow_slow_start ... ok
+
+failures:
+
+---- s_cc_018_a_stretch_ack_grows_the_initial_slow_start_by_all_it_acknowledged stdout ----
+
+thread 's_cc_018_a_stretch_ack_grows_the_initial_slow_start_by_all_it_acknowledged' (105098136) panicked at system/netstack/shard/tcp/tests/congestion.rs:135:5:
+assertion `left == right` failed: the pacer releases the rest of the window
+  left: 0
+ right: 10
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    s_cc_018_a_stretch_ack_grows_the_initial_slow_start_by_all_it_acknowledged
+
+test result: FAILED. 9 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-net-tcp --test congestion`
+     Running tests/egress.rs (target/debug/deps/egress-97d0fafe7c57c20b)
+
+running 25 tests
+test s_ka_003_probes_that_cannot_leave_still_give_up ... ok
+test s_pl_001_the_timer_starts_at_hand_off ... ok
+test s_pl_004_owed_acks_collapse ... ok
+test a_freed_connection_leaves_no_turn_behind ... ok
+test s_pl_005_at_most_three_duplicate_acks_are_held ... ok
+test s_pl_007_credit_bounds_an_opportunity ... ok
+test s_pl_008_resets_go_first ... ok
+test s_pl_006_a_segment_carries_the_state_of_its_moment ... ok
+test s_pl_009_a_handshake_gives_up_without_credit ... ok
+test s_pl_009_give_up_without_credit ... ok
+test s_hs_034_a_child_whose_synack_cannot_leave_gives_up ... ok
+test s_ka_002_a_segment_cancels_a_probe_still_owed ... ok
+test s_pl_002_no_expiry_for_a_retransmission_that_never_left ... ok
+test s_pl_003_unsent_is_not_in_flight ... ok
+test s_pl_012_a_connection_freed_while_waiting_leaves_no_turn_behind ... ok
+test s_pl_010_give_up_before_retransmission ... ok
+test s_pl_012_a_flow_builds_nothing_while_its_next_hop_is_pending ... ok
+test s_pl_012_a_window_update_offers_nothing_until_it_leaves ... ok
+test s_pl_012_an_ack_owed_in_syn_received_waits_for_its_next_hop ... ok
+test s_pl_013_a_local_host_unreachable_fails_a_connect_at_once ... ok
+test s_pl_012_an_owed_ack_waits_for_its_next_hop ... ok
+test s_pl_014_an_owed_ack_outlasts_an_unreachable_next_hop ... ok
+test s_pl_014_a_synchronized_connection_records_host_unreachable_soft ... ok
+test s_pl_015_what_is_owed_outside_a_connection_waits_for_its_next_hop ... ok
+test s_pl_015_resets_waiting_for_their_next_hop_stay_bounded ... ok
+
+test result: ok. 25 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/handshake.rs (target/debug/deps/handshake-a59065699096e02f)
+
+running 42 tests
+test s_hs_009_synsent_refused ... ok
+test s_hs_001_active_open_bare_peer ... ok
+test s_hs_013_synsent_bad_ack_without_syn ... ok
+test s_hs_007_synsent_ack_at_iss ... ok
+test s_hs_005_simultaneous_open ... ok
+test s_hs_006_simultaneous_open_synack_lost ... ok
+test s_hs_014_synsent_fin ... ok
+test s_hs_012_synsent_ack_without_syn ... ok
+test s_hs_010_synsent_rst_without_ack ... ok
+test s_hs_011_synsent_rst_with_a_bad_ack ... ok
+test s_hs_008_synsent_ack_past_snd_nxt ... ok
+test s_hs_002_active_open_full_peer ... ok
+test s_hs_004_passive_open_full_peer ... ok
+test s_hs_003_passive_open_bare_peer ... ok
+test s_hs_015_syn_give_up ... ok
+test s_hs_016_one_syn_retransmission ... ok
+test s_hs_018_syn_payload_is_discarded ... ok
+test s_hs_017_two_syn_retransmissions ... ok
+test s_hs_019_synack_payload_is_discarded ... ok
+test s_hs_020_listen_rst ... ok
+test s_hs_021_listen_ack ... ok
+test s_hs_022_listen_synack ... ok
+test s_hs_023_listen_without_syn ... ok
+test s_hs_024_duplicate_syn_in_syn_received ... ok
+test s_hs_025_new_syn_in_syn_received ... ok
+test s_hs_026_child_bad_ack ... ok
+test s_hs_027_child_rst ... ok
+test s_hs_028_active_syn_received_rst ... ok
+test s_hs_029_child_fin ... ok
+test s_hs_031_child_text_without_ack ... ok
+test s_hs_032_child_inexact_rst ... ok
+test s_hs_033_child_completes_with_data ... ok
+test s_hs_035_connect_needs_a_unicast_remote ... ok
+test s_hs_040_synack_retransmitted ... ok
+test s_hs_041_no_socket ... ok
+test s_hs_043_calls_in_the_wrong_state ... ok
+test s_hs_042_no_socket_reset_limit ... ok
+test s_hs_038_data_queued_in_syn_sent ... ok
+test s_hs_039_active_syn_received_bad_ack ... ok
+test s_hs_037_the_initial_window_is_ten_smss ... ok
+test s_hs_034_synack_give_up ... ok
+test s_hs_030_fin_waits_for_established ... ok
+
+test result: ok. 42 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests/held.rs (target/debug/deps/held-ac69c74f6d8f83d6)
+
+running 6 tests
+test an_orphan_is_counted_until_both_fins ... ok
+test a_close_that_resets_leaves_no_orphan ... ok
+test a_close_before_the_handshake_ends_leaves_an_orphan_until_it_gives_up ... ok
+test an_orphan_is_counted_until_its_idle_reset ... ok
+test options_are_the_ones_the_connection_has ... ok
+test ready_counts_the_connections_accept_has_yet_to_return ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/icmp.rs (target/debug/deps/icmp-5ac49c58195dd162)
+
+running 21 tests
+test s_ic_001_port_unreachable_refuses_a_connect ... ok
+test s_ic_002_a_stale_quote ... ok
+test s_ic_003_host_unreachable_is_soft ... ok
+test s_ic_004_administratively_prohibited ... ok
+test s_ic_005_soft_in_a_synchronized_state ... ok
+test s_ic_006_port_unreachable_is_soft_when_synchronized ... ok
+test s_ic_007_quotes_outside_the_flight ... ok
+test s_ic_008_time_exceeded_is_soft ... ok
+test s_ic_009_parameter_problem_is_soft ... ok
+test s_ic_010_an_unassigned_code_is_soft ... ok
+test s_ic_011_path_mtu_lowered ... ok
+test s_ic_012_no_next_hop_mtu ... ok
+test s_ic_013_an_mtu_that_is_no_smaller ... ok
+test s_ic_014_the_mtu_floor ... ok
+test s_ic_015_an_mtu_not_below_the_refused_datagram ... ok
+test s_ic_016_one_retransmission_per_lowering ... ok
+test s_ic_017_time_wait_is_stale ... ok
+test s_ic_018_a_listener_is_never_addressed ... ok
+test s_ic_019_a_pending_child_is_deleted ... ok
+test s_ic_020_progress_clears_a_soft_error ... ok
+test s_ic_021_path_mtu_with_timestamps ... ok
+
+test result: ok. 21 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/isn.rs (target/debug/deps/isn-dc6db9458ae8774c)
+
+running 9 tests
+test s_isn_003_the_4us_clock ... ok
+test s_isn_001_siphash_reference_vectors ... ok
+test s_isn_004_every_field_of_the_tuple_counts ... ok
+test s_isn_005_the_key_counts ... ok
+test s_isn_006_clock_wrap ... ok
+test s_isn_002_isn_at_clock_zero ... ok
+test s_isn_009_incarnations_share_the_offset ... ok
+test s_isn_008_timestamp_offset ... ok
+test s_isn_007_prop_unpredictable ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/lent.rs (target/debug/deps/lent-daba6daa814f5d5b)
+
+running 4 tests
+test a_connection_is_lent_once_and_only_once_synchronized ... ok
+test what_a_connection_held_moves_to_its_lent_ring_at_its_offsets ... ok
+test the_lent_send_ring_is_the_text_segments_carry_across_its_end ... ok
+test a_read_out_of_the_lent_ring_owes_the_window_update_a_recv_does ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/listen.rs (target/debug/deps/listen-71f3d122d351a327)
+
+running 11 tests
+test s_ls_001_one_listener_per_endpoint ... ok
+test s_ls_005_first_in_first_out ... ok
+test s_ls_006_a_closed_child_is_accepted ... ok
+test s_ls_007_a_reset_child_is_never_returned ... ok
+test s_ls_008_closing_a_listener_resets_its_children ... ok
+test s_ls_009_the_specific_address_first ... ok
+test s_ls_002_connections_do_not_hold_the_port ... ok
+test s_ls_010_children_inherit_options ... ok
+test s_ls_011_a_bound_port_without_a_listener ... ok
+test s_ls_003_the_pending_bound ... ok
+test s_ls_004_the_ready_bound ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/modern.rs (target/debug/deps/modern-3c75d68f5284bc23)
+
+running 14 tests
+test s_div_001_rst_never_below_snd_una ... ok
+test s_div_002_rst_at_a_shrunk_edge ... ok
+test s_div_002_rst_below_the_offered_edge_behind_snd_una ... ok
+test s_div_003_rst_at_snd_nxt_inside_the_window ... ok
+test s_mod_001_syn_with_fin ... ok
+test s_mod_002_syn_with_rst ... ok
+test s_div_001_rst_at_the_right_edge ... ok
+test s_mod_003_urgent_data_inline ... ok
+test s_mod_006_tcp_md5 ... ok
+test s_mod_007_fast_open ... ok
+test s_mod_008_challenges_are_logged_once ... ok
+test s_mod_009_out_of_range_acks_are_logged_per_10_s ... ok
+test s_mod_005_one_line_per_rule_per_10_s ... ok
+test s_mod_005_a_bulk_peer_leaves_room_for_refusals ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/net.rs (target/debug/deps/net-903c30fdd3625d56)
+
+running 20 tests
+test s_ls_012_a_syn_flood ... ok
+test s_net_011_the_fin_overtakes_the_last_data ... ok
+test s_net_010_a_lost_retransmission ... ok
+test s_net_012_a_slow_reader ... ok
+test s_net_014_an_abort_is_a_reset ... ok
+test s_net_002_newreno_when_one_side_has_no_sack ... ok
+test rfc_8985_7_3_no_probe_without_an_rtt_sample_since_the_last ... ok
+test s_net_008_timestamps_wrap ... ok
+test s_net_009_the_last_segment_of_each_burst ... ok
+test s_net_016_a_peer_without_options ... ok
+test s_net_007_sequence_numbers_wrap ... ok
+test s_net_005_lost_acks ... ok
+test s_net_015_nagle_and_the_delayed_ack ... ok
+test rfc_7323_2_2_no_scaling_unless_both_syns_offer_it ... ok
+test a_receive_buffer_nobody_reads_never_grows ... ok
+test the_receive_window_grows_by_what_is_read_per_round_trip ... ok
+test a_lent_receive_ring_grows_the_window_as_a_read_does ... ok
+test a_peer_sending_segments_shorter_than_our_send_mss_still_grows_the_window ... ok
+test s_net_013_a_hundred_connections ... ok
+test rfc_7323_2_a_scaled_window_carries_more_than_64_kib_in_flight_each_way ... ok
+
+test result: ok. 20 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.98s
+
+     Running tests/options.rs (target/debug/deps/options-1778a072f221608c)
+
+running 30 tests
+test s_op_003_synack_to_a_full_syn ... ok
+test s_op_002_synack_to_a_bare_syn ... ok
+test s_op_004_mss_zero_is_raised ... ok
+test s_op_005_mss_100_is_raised ... ok
+test s_op_006_no_mss_option ... ok
+test s_op_007_the_interface_bounds_the_mss ... ok
+test s_op_009_window_scaling ... ok
+test s_op_010_shift_above_14_is_clamped ... ok
+test s_op_008_timestamps_take_twelve_bytes ... ok
+test s_op_012_window_scale_outside_a_syn_is_ignored ... ok
+test s_op_013_a_synack_window_is_never_scaled ... ok
+test s_op_001_the_active_syn ... ok
+test s_op_011_unscaled_when_the_peer_offers_none ... ok
+test s_op_014_sack_unnegotiated ... ok
+test s_op_015_timestamps_unnegotiated ... ok
+test s_op_018_delayed_ack_echoes_the_earliest ... ok
+test s_op_016_timestamps_on_an_unnegotiated_connection ... ok
+test s_op_019_ts_across_a_hole ... ok
+test s_op_017_ts_recent_needs_seq_at_or_before_last_ack_sent ... ok
+test s_op_022_no_paws_on_an_rst ... ok
+test s_op_023_ts_recent_expires_after_24_days ... ok
+test s_op_020_paws ... ok
+test s_op_026_mss_outside_a_syn_is_ignored ... ok
+test s_op_021_missing_timestamps_are_dropped ... ok
+test s_op_024_rst_for_no_socket_echoes_the_timestamp ... ok
+test s_op_027_ecn_is_not_negotiated ... ok
+test s_op_028_sack_blocks_in_a_syn_are_ignored ... ok
+test s_op_029_the_last_mss_wins ... ok
+test s_op_031_the_shift_fits_the_buffer ... ok
+test s_op_032_tsecr_without_ack_is_ignored ... ok
+
+test result: ok. 30 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/pacing.rs (target/debug/deps/pacing-20b95d6c83b92db1)
+
+running 3 tests
+test an_ack_during_a_pacing_hold_grows_the_window ... ok
+test a_window_past_the_bucket_leaves_at_the_pacing_rate ... FAILED
+test an_acknowledgment_leaves_through_a_pacing_hold ... ok
+
+failures:
+
+---- a_window_past_the_bucket_leaves_at_the_pacing_rate stdout ----
+
+thread 'a_window_past_the_bucket_leaves_at_the_pacing_rate' (105102460) panicked at system/netstack/shard/tcp/tests/pacing.rs:24:5:
+assertion `left == right` failed
+  left: 0
+ right: 5
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    a_window_past_the_bucket_leaves_at_the_pacing_rate
+
+test result: FAILED. 2 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-net-tcp --test pacing`
+     Running tests/port.rs (target/debug/deps/port-c8460ce2ab86b711)
+
+running 8 tests
+test s_port_001_algorithm_4 ... ok
+test s_port_003_a_listening_port_is_skipped ... ok
+test s_port_007_never_a_self_connection ... ok
+test s_port_002_another_destination_another_counter ... ok
+test s_port_004_time_wait_holds_its_4_tuple ... ok
+test s_port_006_algorithm_2_for_a_listener ... ok
+test s_port_005_exhaustion ... ok
+test s_port_008_prop_ports ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/receive.rs (target/debug/deps/receive-508626d66a88bbb5)
+
+running 27 tests
+test s_rx_001_every_second_segment ... ok
+test s_rx_002_the_delayed_ack_is_40_ms ... ok
+test s_rx_007_stored_bytes_win ... ok
+test s_rx_010_nothing_after_a_remembered_fin ... ok
+test s_rx_009_a_fin_beyond_a_hole ... ok
+test s_rx_011_unread_bytes_close_the_window ... ok
+test s_rx_005_a_filled_hole_is_acknowledged_at_once ... ok
+test s_rx_013_a_window_update_when_the_window_was_small ... ok
+test s_rx_014_the_edge_holds_while_a_hole_is_open ... ok
+test s_rx_006_a_later_range_remains ... ok
+test a_sub_unit_window_rounds_up_only_into_free_room ... ok
+test s_rx_003_out_of_order_is_acknowledged_at_once ... ok
+test s_rx_016_the_ack_rides_on_data ... ok
+test s_rx_004_duplicate_acks_are_not_coalesced ... ok
+test s_rx_018_the_triggering_range_first ... ok
+test s_rx_019_three_blocks_with_timestamps ... ok
+test s_rx_008_at_most_32_ranges ... ok
+test s_rx_012_receiver_silly_window_avoidance ... ok
+test s_rx_020_dsack_below_rcv_nxt ... ok
+test s_rx_017_sack_blocks ... ok
+test s_rx_022_no_sack_unnegotiated ... ok
+test s_rx_021_dsack_inside_a_range ... ok
+test s_rx_023_a_reset_comes_after_the_text_before_it ... ok
+test s_rx_024_data_then_end ... ok
+test s_rx_015_the_offered_edge_is_honoured_under_scaling ... ok
+test s_rx_025_push_is_not_a_boundary ... ok
+test s_rx_027_half_close_keeps_receiving ... ok
+
+test result: ok. 27 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/recovery.rs (target/debug/deps/recovery-dd84351c774a595e)
+
+running 33 tests
+test a_probe_due_when_the_window_shuts_gives_way_to_persist ... ok
+test rfc_8985_7_4_a_resent_probe_reported_as_a_duplicate_infers_no_loss ... ok
+test rfc_8985_7_2_with_one_segment_out_the_probe_stands_in_for_the_first_rto ... ok
+test rfc_8985_7_4_a_dsack_of_another_segment_still_infers_the_loss ... ok
+test rfc_8985_7_2_no_probe_in_rto_recovery ... ok
+test rfc_8985_7_3_the_probe_is_new_data_where_the_window_takes_a_segment ... ok
+test rfc_8985_7_4_a_dsack_after_the_ack_at_the_probes_end_infers_no_loss ... ok
+test rfc_8985_7_4_a_duplicate_without_sack_at_the_probes_end_infers_no_loss ... ok
+test rfc_8985_7_1_fast_recovery_ends_the_probes_episode ... ok
+test s_lr_002_limited_transmit_and_inflation ... ok
+test rfc_8985_7_4_an_ack_that_infers_the_probes_loss_and_enters_recovery_cuts_twice ... ok
+test s_lr_001_newreno_one_loss ... ok
+test rfc_8985_7_4_a_resent_probe_acknowledged_past_its_end_without_a_dsack_repaired_a_loss ... ok
+test s_lr_003_newreno_partial_ack ... ok
+test s_lr_006_no_fast_retransmit_after_a_timeout ... ok
+test s_lr_005_what_is_not_a_duplicate ... ok
+test s_lr_007_inflation_is_capped ... ok
+test s_lr_009_is_lost_on_the_first_ack ... ok
+test s_lr_010_a_second_hole ... ok
+test s_lr_011_new_data_during_sack_recovery ... ok
+test s_lr_004_full_ack_after_limited_transmit ... ok
+test s_lr_012_rescue_retransmission ... ok
+test s_lr_008_sack_recovery ... ok
+test s_lr_016_timeout ... ok
+test s_lr_019_sacks_after_a_timeout_skip_held_ranges ... ok
+test s_lr_013_the_recovery_point ... ok
+test s_lr_021_pure_duplicates_without_blocks ... ok
+test s_lr_020_sacked_bytes_stay_queued ... ok
+test s_lr_014_invalid_blocks_and_dsack ... ok
+test s_lr_018_no_sack_recovery_before_the_timeout_point ... ok
+test s_lr_022_limited_transmit_by_pipe ... ok
+test s_lr_023_a_lost_fast_retransmission ... ok
+test s_lr_017_a_second_timeout ... ok
+
+test result: ok. 33 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/rtt.rs (target/debug/deps/rtt-00af827eddf0479a)
+
+running 14 tests
+test s_rt_009_timestamp_samples ... ok
+test s_rt_008_the_newest_segment_acknowledged_is_timed ... ok
+test s_rt_007_karn ... ok
+test s_rt_010_a_retransmission_echoed ... ok
+test s_rt_005_the_minimum_is_200_ms ... ok
+test s_rt_011_an_echo_from_the_future ... ok
+test s_rt_014_three_expiries_forget_the_estimate ... ok
+test s_rt_013_backoff_doubles ... ok
+test s_rt_015_the_timer_restarts_on_new_acks ... ok
+test s_rt_016_no_timer_when_all_is_acknowledged ... ok
+test s_rt_006_three_seconds_after_a_lost_syn ... ok
+test s_rt_018_a_sample_below_the_timestamp_tick ... ok
+test s_rt_017_a_retransmission_forgets_the_departures_before_it ... ok
+test s_rt_019_each_ack_is_a_sample_without_timestamps ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/send.rs (target/debug/deps/send-2a7799cdf8641383)
+
+running 21 tests
+test s_tx_002_nagle ... ok
+test s_tx_004_full_segments_then_wait ... ok
+test s_tx_001_one_segment_with_push ... ok
+test s_tx_003_nodelay ... ok
+test s_tx_005_push_only_where_the_queue_empties ... ok
+test s_tx_006_silly_window_override ... ok
+test s_tx_007_an_opened_window_cancels_the_override ... ok
+test s_tx_008_half_the_largest_window ... ok
+test s_tx_009_a_shrunk_window ... ok
+test s_tx_010_the_initial_window_bounds_a_burst ... ok
+test s_tx_011_the_send_buffer_is_bounded ... ok
+test s_tx_012_no_send_after_shutdown ... ok
+test s_tx_014_an_opened_window_ends_persist ... ok
+test s_tx_013_persist_backs_off ... ok
+test s_tx_015_the_probe_byte_taken ... ok
+test s_tx_018_the_fin_as_probe ... ok
+test s_tx_019_a_shut_window_stops_the_retransmission_timer ... ok
+test s_tx_017_an_unanswered_persist_gives_up ... ok
+test s_tx_020_cwnd_does_not_arm_the_override ... ok
+test s_tx_021_close_pushes ... ok
+test s_tx_016_an_answered_persist_lives ... ok
+
+test result: ok. 21 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/send_limit.rs (target/debug/deps/send_limit-e37628c92f56d0a3)
+
+running 8 tests
+test a_nagle_hold_is_the_senders_own ... ok
+test a_sender_at_the_peers_window_counts_the_wait_as_the_windows ... ok
+test a_sender_with_nothing_unsent_counts_the_wait_as_the_users ... ok
+test a_wait_that_changes_cause_counts_each_cause_its_own_span ... ok
+test a_wait_that_ends_in_a_timeout_is_congestions ... ok
+test each_ack_is_counted_by_its_limit_with_what_it_grew ... ok
+test a_sender_at_its_congestion_window_counts_the_wait_until_the_ack_that_opens_it ... ok
+test a_retransmission_is_not_counted_as_sent_again ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/seq.rs (target/debug/deps/seq-86a9d764472fa2ec)
+
+running 8 tests
+test s_seq_001_offsets ... ok
+test s_seq_003_half_the_space_is_unordered ... ok
+test s_seq_004_ack_range_check ... ok
+test s_seq_002_ordering_across_the_wrap ... ok
+test s_seq_007_timestamps_compare_modularly ... ok
+test s_seq_006_acceptability_across_the_wrap ... ok
+test s_seq_008_sending_across_the_wrap ... ok
+test s_seq_005_segment_length ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/timers.rs (target/debug/deps/timers-5aeaebebe207e633)
+
+running 15 tests
+test s_ka_001_off_by_default ... ok
+test s_gu_005_user_timeout_ends_an_answered_persist ... ok
+test s_gu_004_user_timeout ... ok
+test s_ka_002_a_probe_after_two_hours ... ok
+test s_gu_006_b_advice_is_kept_per_address ... ok
+test s_gu_006_progress_confirms_the_next_hop ... ok
+test s_gu_006_a_confirmation_after_a_reverify_is_kept ... ok
+test s_ka_003_nine_unanswered_probes ... ok
+test s_ka_005_the_peer_keepalive_is_answered ... ok
+test s_ka_006_the_idle_time_is_settable ... ok
+test s_ka_004_no_keepalive_with_data_outstanding ... ok
+test s_gu_001_three_expiries_raise_advice ... ok
+test s_gu_002_give_up ... ok
+test s_gu_003_progress_restarts_the_give_up_clock ... ok
+test s_ka_007_close_wait_and_fin_wait_2 ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests toyos_net_tcp
+
+running 5 tests
+test system/netstack/shard/tcp/src/lib.rs - compile_fail::s_hs_036_a_connection_cannot_connect_again (line 343) - compile fail ... ok
+test system/netstack/shard/tcp/src/lib.rs - compile_fail::s_op_030_tcp_cannot_choose_dscp_ecn_or_df (line 362) - compile fail ... ok
+test system/netstack/shard/tcp/src/lib.rs - compile_fail::s_hs_036_a_connection_cannot_connect_again (line 336) - compile fail ... ok
+test system/netstack/shard/tcp/src/lib.rs - compile_fail::s_op_030_tcp_cannot_choose_dscp_ecn_or_df (line 355) ... ok
+test system/netstack/shard/tcp/src/lib.rs - compile_fail::s_hs_036_a_connection_cannot_connect_again (line 329) ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.33s
+
+error: 3 targets failed:
+    `-p toyos-net-tcp --lib`
+    `-p toyos-net-tcp --test congestion`
+    `-p toyos-net-tcp --test pacing`

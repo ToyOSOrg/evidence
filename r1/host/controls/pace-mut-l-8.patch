@@ -1,0 +1,12 @@
+diff --git a/system/netstack/shard/tcp/src/cc.rs b/system/netstack/shard/tcp/src/cc.rs
+index 89f0e4d2c..dcb400ce7 100644
+--- a/system/netstack/shard/tcp/src/cc.rs
++++ b/system/netstack/shard/tcp/src/cc.rs
+@@ -103,6 +103,7 @@ fn rtt_thresh(last_round_min: Duration) -> Duration {
+ impl HyStart {
+     /// What the ACK grows cwnd by when the window was in use, of `bytes` newly acknowledged.
+     fn growth(&self, bytes: u32) -> u32 {
++        let bytes = bytes.min(1460 * 8);
+         if self.css.is_some() { bytes / CSS_GROWTH_DIVISOR } else { bytes }
+     }
+ 

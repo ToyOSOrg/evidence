@@ -1,0 +1,13 @@
+diff --git a/system/netstack/shard/tcp/src/conn.rs b/system/netstack/shard/tcp/src/conn.rs
+index 3c3ce5e9a..b0bcb78e4 100644
+--- a/system/netstack/shard/tcp/src/conn.rs
++++ b/system/netstack/shard/tcp/src/conn.rs
+@@ -1217,7 +1217,7 @@ impl Sync {
+             Some(self.declined)
+         };
+         // A pacing hold leaves the window as the last send found it (`hand_off`).
+-        if let Some(limit) = held.filter(|&limit| limit != SendLimit::Pacing) {
++        if let Some(limit) = held {
+             self.cc.limited = limit == SendLimit::Congestion;
+         }
+         let was = self.held_by.map(|(limit, _)| limit);
