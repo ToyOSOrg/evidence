@@ -69,3 +69,40 @@ Files are in `r3/metal-amd/`. The panic page is excerpted; the full logs are not
   - A staged TSC step: the PM timer reads 10.001 ms apart from the TSC, as the HPET does, and the kernel panics.
   - A staged HPET stall: the PM timer reads 847 ns apart, so the span is left out and the clock reports again.
 - No metal run at this head. The owner paused before staging.
+
+## r5, at 5def3dc23 (rebased onto main 0c7e62ca7)
+
+- **Host CI:** `cargo run -- --ci host` exited 0, with 106 steps green (`r5/checks/ci-host-5def3dc23.log`).
+- **Metal:** the orchestrator ran the boots from a tree pinned at 5def3dc23, and every driver exited 0.
+  - T14: one benchcase boot and one testcases boot.
+  - AMD: three benchcase boots and one testcases boot.
+- **Judging:** each bench boot was paired with its machine's testcases boot. The pair was judged offline with `cargo test --test toyos-build -- --metal --metal-readback <dir> smp_roster_and_tsc_trail timer_calibration clock_holds_over_minutes`.
+  - Each of the four pairs exited 0, with `smp_roster_and_tsc_trail`, `timer_calibration` and `clock_holds_over_minutes` all PASS (`r5/metal-*/judge-*.log`).
+  - The clock, idle and `IA32_TSC_ADJUST` lines of every boot are in `r5/metal-*/run-*-clock-lines.log`. Whole logs are not published.
+
+### T14 (Tiger Lake, idles in MWAIT 0x31 / 0x60)
+
+- The clock keeps CPUID 15H's rate. Over 128 s the HPET measured it 0.036 ppm slow, within 2.3 ppm.
+- APs are within 177 cycles of cpu0's TSC. `IA32_TSC_ADJUST` is 0.
+- Unheld spans, in which every CPU entered a declared idle state:
+  - benchcase: 31 spans; the HPET read apart from the TSC in 0 and the PM timer in 0.
+  - testcases: 8 spans; 0 and 0.
+- No step, drift or disagreement line was logged.
+
+### AMD (82A2, idles in C1 or the P_LVL ports 0x414 / 0x415; no IA32_TSC_ADJUST)
+
+- The 50 ms calibration was 1,796,614,688,752 to 1,796,630,610,943 mHz across the boots, each within about 20.8 ppm. The rate kept at 128 s was 1,796,624,780,439 to 1,796,624,798,477 mHz.
+- APs are within 270 cycles of cpu0's TSC.
+- No held span disagreed, and none of "HPET moved", "agree against" or "all disagree" was logged.
+- **In every boot, exactly one unheld span has both the HPET and the PM timer read apart from the TSC. No other unheld span reads apart.**
+
+| boot | window holding the span (uptime) | unheld spans by the end | HPET apart | PM timer apart |
+|---|---|---|---|---|
+| bench1 | 15.9 s to 24.9 s | 33 | 1 | 1 |
+| bench2 | 15.9 s to 24.9 s | 33 | 1 | 1 |
+| bench3 | 15.8 s to 24.9 s | 33 | 1 | 1 |
+| tests1 | before 12.8 s | 8 | 1 | 1 |
+
+- At 68afed54f, before the guard, the event panicked one boot at 17.6 s: the TSC was 1.72 ms ahead of the HPET over 680 ms.
+- The unheld path records counts only. It records neither the size nor whether the HPET and the PM timer agree with each other. Both reading apart in the same span rules out an HPET-only event.
+- What remains: either the TSC moved, or both of the FCH's counters stood still together. The HPET's 69,841,278 fs period is 14.318 MHz, and the PM timer's 3.58 MHz is that clock divided by 4, so they share a source.
