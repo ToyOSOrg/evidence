@@ -1,0 +1,71 @@
+# sched-place A/B on the T14: base origin/main 0c7e62ca7 against head 28a55585c (#1111 + #1116 + #1117 on that base).
+# 16 boots: 4 of each image per side, interleaved base, head, base, head. Each boot reads back into its own directory, already created.
+# Judge each readback with the check tree pinned at its side's revision: base rows at 0c7e62ca7 (osbench spawn_cost wake_onto_busy),
+#   head rows at 28a55585c (the same plus affinity_pins, which only head has). The sha256 beside each image is the one staged.
+# Read: osbench's ipc and files (fs-rtt) rows for #1111, pingpong same_cpu placed_held and wake.onto_busy for #1116, spawn_cost and
+#   osbench's thread/process spawn for #1117; affinity_pins must pass on head. Base origin/main moved to f45dc5e3b (#1106, NIC drivers
+#   as processes) after the stack was rebased; 0c7e62ca7 is the stack's own base, so the A/B differs by the stack alone.
+
+benchcase (base-t14-1, 0c7e62ca7, image sha256 037c138c1c40d4ea)
+  image: $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/sched-place/ab2/base-t14/benchcase/image.img
+  cargo run -p toyos-metal -- --image $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/sched-place/ab2/base-t14/benchcase/image.img --readback $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/sched-place/ab2/base-t14/benchcase-boot1 --fat32-check
+
+benchcase (head-t14-1, 28a55585c, image sha256 ba6e242232367a61)
+  image: $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/sched-place/ab2/head-t14/benchcase/image.img
+  cargo run -p toyos-metal -- --image $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/sched-place/ab2/head-t14/benchcase/image.img --readback $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/sched-place/ab2/head-t14/benchcase-boot1 --fat32-check
+
+benchcase (base-t14-2, 0c7e62ca7, image sha256 037c138c1c40d4ea)
+  image: $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/sched-place/ab2/base-t14/benchcase/image.img
+  cargo run -p toyos-metal -- --image $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/sched-place/ab2/base-t14/benchcase/image.img --readback $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/sched-place/ab2/base-t14/benchcase-boot2 --fat32-check
+
+benchcase (head-t14-2, 28a55585c, image sha256 ba6e242232367a61)
+  image: $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/sched-place/ab2/head-t14/benchcase/image.img
+  cargo run -p toyos-metal -- --image $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/sched-place/ab2/head-t14/benchcase/image.img --readback $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/sched-place/ab2/head-t14/benchcase-boot2 --fat32-check
+
+benchcase (base-t14-3, 0c7e62ca7, image sha256 037c138c1c40d4ea)
+  image: $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/sched-place/ab2/base-t14/benchcase/image.img
+  cargo run -p toyos-metal -- --image $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/sched-place/ab2/base-t14/benchcase/image.img --readback $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/sched-place/ab2/base-t14/benchcase-boot3 --fat32-check
+
+benchcase (head-t14-3, 28a55585c, image sha256 ba6e242232367a61)
+  image: $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/sched-place/ab2/head-t14/benchcase/image.img
+  cargo run -p toyos-metal -- --image $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/sched-place/ab2/head-t14/benchcase/image.img --readback $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/sched-place/ab2/head-t14/benchcase-boot3 --fat32-check
+
+benchcase (base-t14-4, 0c7e62ca7, image sha256 037c138c1c40d4ea)
+  image: $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/sched-place/ab2/base-t14/benchcase/image.img
+  cargo run -p toyos-metal -- --image $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/sched-place/ab2/base-t14/benchcase/image.img --readback $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/sched-place/ab2/base-t14/benchcase-boot4 --fat32-check
+
+benchcase (head-t14-4, 28a55585c, image sha256 ba6e242232367a61)
+  image: $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/sched-place/ab2/head-t14/benchcase/image.img
+  cargo run -p toyos-metal -- --image $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/sched-place/ab2/head-t14/benchcase/image.img --readback $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/sched-place/ab2/head-t14/benchcase-boot4 --fat32-check
+
+testcases (base-t14-1, 0c7e62ca7, image sha256 2fdf5542ea2b2c1b)
+  image: $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/sched-place/ab2/base-t14/testcases/image.img
+  cargo run -p toyos-metal -- --image $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/sched-place/ab2/base-t14/testcases/image.img --readback $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/sched-place/ab2/base-t14/testcases-boot1 --fat32-check
+
+testcases (head-t14-1, 28a55585c, image sha256 9b620f3c772cb03c)
+  image: $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/sched-place/ab2/head-t14/testcases/image.img
+  cargo run -p toyos-metal -- --image $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/sched-place/ab2/head-t14/testcases/image.img --readback $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/sched-place/ab2/head-t14/testcases-boot1 --fat32-check
+
+testcases (base-t14-2, 0c7e62ca7, image sha256 2fdf5542ea2b2c1b)
+  image: $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/sched-place/ab2/base-t14/testcases/image.img
+  cargo run -p toyos-metal -- --image $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/sched-place/ab2/base-t14/testcases/image.img --readback $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/sched-place/ab2/base-t14/testcases-boot2 --fat32-check
+
+testcases (head-t14-2, 28a55585c, image sha256 9b620f3c772cb03c)
+  image: $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/sched-place/ab2/head-t14/testcases/image.img
+  cargo run -p toyos-metal -- --image $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/sched-place/ab2/head-t14/testcases/image.img --readback $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/sched-place/ab2/head-t14/testcases-boot2 --fat32-check
+
+testcases (base-t14-3, 0c7e62ca7, image sha256 2fdf5542ea2b2c1b)
+  image: $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/sched-place/ab2/base-t14/testcases/image.img
+  cargo run -p toyos-metal -- --image $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/sched-place/ab2/base-t14/testcases/image.img --readback $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/sched-place/ab2/base-t14/testcases-boot3 --fat32-check
+
+testcases (head-t14-3, 28a55585c, image sha256 9b620f3c772cb03c)
+  image: $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/sched-place/ab2/head-t14/testcases/image.img
+  cargo run -p toyos-metal -- --image $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/sched-place/ab2/head-t14/testcases/image.img --readback $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/sched-place/ab2/head-t14/testcases-boot3 --fat32-check
+
+testcases (base-t14-4, 0c7e62ca7, image sha256 2fdf5542ea2b2c1b)
+  image: $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/sched-place/ab2/base-t14/testcases/image.img
+  cargo run -p toyos-metal -- --image $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/sched-place/ab2/base-t14/testcases/image.img --readback $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/sched-place/ab2/base-t14/testcases-boot4 --fat32-check
+
+testcases (head-t14-4, 28a55585c, image sha256 9b620f3c772cb03c)
+  image: $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/sched-place/ab2/head-t14/testcases/image.img
+  cargo run -p toyos-metal -- --image $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/sched-place/ab2/head-t14/testcases/image.img --readback $HOME/.claude/jobs/2280e09e/tmp/scratchpad/agents/sched-place/ab2/head-t14/testcases-boot4 --fat32-check
