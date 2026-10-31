@@ -1,0 +1,53 @@
+=== a truncating open does not empty the object: RED (exit 101)
+$ cargo test --lib pages::tests::a_truncating_open
+
+running 1 test
+test pages::tests::a_truncating_open_leaves_the_object_no_page_of_before ... FAILED
+
+failures:
+
+---- pages::tests::a_truncating_open_leaves_the_object_no_page_of_before stdout ----
+
+thread 'pages::tests::a_truncating_open_leaves_the_object_no_page_of_before' (109436722) panicked at system/fileserver/src/pages/tests.rs:371:5:
+assertion `left == right` failed: a holder reads the object, and finds nothing of before
+  left: (8192, 2)
+ right: (0, 0)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    pages::tests::a_truncating_open_leaves_the_object_no_page_of_before
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 95 filtered out; finished in 0.00s
+
+   Compiling fileserver v0.0.0 (<worktree>/system/fileserver)
+    Finished `test` profile [optimized + debuginfo] target(s) in 13.33s
+     Running unittests src/lib.rs (<worktree>/target/debug/deps/fileserver-c7ac95979b91b705)
+error: test failed, to rerun pass `--lib`
+
+=== room drops an open file first: RED (exit 101)
+$ cargo test --lib pages::tests::room_is_made
+
+running 1 test
+test pages::tests::room_is_made_by_a_file_nobody_holds_before_any_other ... FAILED
+
+failures:
+
+---- pages::tests::room_is_made_by_a_file_nobody_holds_before_any_other stdout ----
+
+thread 'pages::tests::room_is_made_by_a_file_nobody_holds_before_any_other' (109439527) panicked at system/fileserver/src/pages/tests.rs:308:5:
+the closed file's object went
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    pages::tests::room_is_made_by_a_file_nobody_holds_before_any_other
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 95 filtered out; finished in 0.00s
+
+   Compiling fileserver v0.0.0 (<worktree>/system/fileserver)
+    Finished `test` profile [optimized + debuginfo] target(s) in 8.56s
+     Running unittests src/lib.rs (<worktree>/target/debug/deps/fileserver-c7ac95979b91b705)
+error: test failed, to rerun pass `--lib`
+
+tree after restore: ' M system/fileserver/src/pages/tests.rs\n M tests/guest/osbench/src/files.rs\n M tests/guest/rust-tests/src/bin/a_served_file_reads_through_its_paged_object.rs\n M tests/guest/rust-tests/src/bin/launch_unsent_stdio.rs\n M tests/guest/rust-tests/src/bin/process_tree.rs\n M tests/guest/rust-tests/src/bin/spawn_child_ends_first.rs\n M tests/guest/rust-tests/src/bin/spawn_image_object.rs\n M tests/guest/rust-tests/src/bin/spawn_lands_claimed.rs\n'
