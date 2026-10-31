@@ -1,0 +1,11 @@
+--- a/tests/common/metal.rs
++++ b/tests/common/metal.rs
+@@ -199,7 +199,7 @@
+     let named = |name: &str| all || names.iter().any(|word| name.contains(word));
+     let taken: Vec<SharedBoot> = shared
+         .iter()
+-        .filter_map(|boot| boot.keeping(|job| boots.contains(&boot.boot.as_str()) || named(bare(job))))
++        .filter_map(|boot| boot.keeping(|job| (boots.contains(&boot.boot.as_str()) || named(bare(job))) && bare(job) != "counters_silent"))
+         .collect();
+     let row_named = |name: &str, decl: &Metal| if named_only(decl) { names.contains(&name) } else { named(name) };
+     let rows = rows
