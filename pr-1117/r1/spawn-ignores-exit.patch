@@ -1,0 +1,13 @@
+diff --git a/kernel/pure/sched/cpu.rs b/kernel/pure/sched/cpu.rs
+index 0b23e8ee0..fbf391da7 100644
+--- a/kernel/pure/sched/cpu.rs
++++ b/kernel/pure/sched/cpu.rs
+@@ -2763,7 +2763,7 @@ impl<M: SchedMsg> CpuHandles<M> {
+                 .filter(|&cpu| mask.contains(cpu) && (!answering_only || self.get(cpu).answering(now)))
+                 .min_by_key(|&cpu| {
+                     let handle = self.get(cpu);
+-                    (handle.load(), !handle.doorbell().sleeping(), self.busy_siblings(cpu), handle.idle_exit())
++                    (handle.load(), !handle.doorbell().sleeping(), self.busy_siblings(cpu))
+                 })
+         };
+         scan(true)
