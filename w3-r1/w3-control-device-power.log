@@ -1,0 +1,84 @@
+   Compiling toyos-ax2xx v0.1.0 (<dev>/toyos-wifi/system/ax2xx/driver)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.49s
+     Running unittests src/lib.rs (target/debug/deps/toyos_ax2xx-ea2fe58162d6d4c5)
+
+running 33 tests
+test tests::a_country_answer_is_its_header_and_four_bytes_a_channel ... ok
+test tests::a_missing_record_is_refused_by_kind ... ok
+test tests::a_platform_nvm_record_outside_a_block_or_of_an_unknown_kind_is_refused ... ok
+test tests::a_received_frame_is_exactly_its_mpdu_length_after_its_descriptor ... ok
+test tests::a_record_of_the_wrong_length_is_refused ... ok
+test tests::a_record_running_past_the_end_is_refused ... ok
+test tests::a_header_of_another_format_or_magic_is_refused ... ok
+test tests::a_last_record_may_end_without_its_padding ... ok
+test tests::a_scan_requests_lists_land_at_their_offsets ... FAILED
+test tests::a_message_the_driver_exchanges_declared_twice_refuses_the_file ... FAILED
+test tests::a_message_declared_at_a_version_without_a_layout_refuses_the_file ... FAILED
+test tests::a_part_is_served_only_as_the_hardware_its_file_is_for ... ok
+test tests::a_scan_request_the_file_or_the_layout_cannot_hold_is_refused ... ok
+test tests::a_second_singleton_or_flag_word_is_refused ... ok
+test tests::an_image_without_a_section_or_two_cpus_is_refused ... ok
+test tests::an_iteration_is_its_header_and_eight_bytes_a_channel ... ok
+test tests::an_unknown_kind_is_refused_by_kind ... ok
+test tests::each_file_sets_the_api_and_capability_bits_its_read_out_lists ... ok
+test tests::a_scan_channel_carries_its_band_where_the_declared_version_puts_it ... FAILED
+test tests::every_command_is_one_the_versions_check_holds ... ok
+test tests::each_image_starts_with_its_1656_byte_section_and_none_is_over_32_kib ... ok
+test tests::every_command_is_the_size_its_section_asserts ... ok
+test tests::every_notification_is_refused_off_its_asserted_size ... ok
+test tests::every_message_the_driver_exchanges_is_declared_at_a_version_typed_here ... FAILED
+test tests::fields_land_where_their_layouts_put_them ... ok
+test tests::separators_out_of_order_or_missing_are_refused ... ok
+test tests::the_alive_notification_gives_its_error_tables_and_sku ... ok
+test tests::the_ax200s_file_decodes_as_its_read_out_states ... ok
+test tests::the_ax210s_file_decodes_as_its_read_out_states ... ok
+test tests::the_files_declare_what_the_summary_table_says ... ok
+test tests::the_minimal_file_decodes ... ok
+test tests::the_platform_nvm_block_is_chosen_by_sku_and_hardware ... ok
+test tests::the_platform_nvm_decodes_as_its_read_out_states ... ok
+
+failures:
+
+---- tests::a_scan_requests_lists_land_at_their_offsets stdout ----
+
+thread 'tests::a_scan_requests_lists_land_at_their_offsets' (104677380) panicked at system/ax2xx/driver/src/tests.rs:504:49:
+called `Result::unwrap()` on an `Err` value: Version { message: "device power", declared: Some(6) }
+
+---- tests::a_message_the_driver_exchanges_declared_twice_refuses_the_file stdout ----
+
+thread 'tests::a_message_the_driver_exchanges_declared_twice_refuses_the_file' (104677371) panicked at system/ax2xx/driver/src/tests.rs:169:5:
+assertion `left == right` failed
+  left: Err(Version { message: "device power", declared: Some(6) })
+ right: Err(Repeated { message: "scan request" })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- tests::a_message_declared_at_a_version_without_a_layout_refuses_the_file stdout ----
+
+thread 'tests::a_message_declared_at_a_version_without_a_layout_refuses_the_file' (104677370) panicked at system/ax2xx/driver/src/tests.rs:149:5:
+assertion `left == right` failed
+  left: Err(Version { message: "device power", declared: Some(6) })
+ right: Err(Version { message: "scan request", declared: Some(16) })
+
+---- tests::a_scan_channel_carries_its_band_where_the_declared_version_puts_it stdout ----
+
+thread 'tests::a_scan_channel_carries_its_band_where_the_declared_version_puts_it' (104677378) panicked at system/ax2xx/driver/src/tests.rs:467:47:
+called `Result::unwrap()` on an `Err` value: Version { message: "device power", declared: Some(6) }
+
+---- tests::every_message_the_driver_exchanges_is_declared_at_a_version_typed_here stdout ----
+
+thread 'tests::every_message_the_driver_exchanges_is_declared_at_a_version_typed_here' (104677389) panicked at system/ax2xx/driver/src/tests.rs:105:5:
+assertion `left == right` failed
+  left: Err(Version { message: "device power", declared: Some(6) })
+ right: Ok(Versions { scan: BandByte, received: V4 })
+
+
+failures:
+    tests::a_message_declared_at_a_version_without_a_layout_refuses_the_file
+    tests::a_message_the_driver_exchanges_declared_twice_refuses_the_file
+    tests::a_scan_channel_carries_its_band_where_the_declared_version_puts_it
+    tests::a_scan_requests_lists_land_at_their_offsets
+    tests::every_message_the_driver_exchanges_is_declared_at_a_version_typed_here
+
+test result: FAILED. 28 passed; 5 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-ax2xx --lib`
