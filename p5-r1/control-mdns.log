@@ -1,0 +1,40 @@
+   Compiling toyos-net-shard v0.1.0 (<dev>/toyos-wifi/system/netstack/shard)
+   Compiling toyos-net-node v0.1.0 (<dev>/toyos-wifi/system/netstack/node)
+warning: method `send_via` is never used
+   --> system/netstack/node/src/lease.rs:278:19
+    |
+ 95 | impl Stack {
+    | ---------- method in this implementation
+...
+278 |     pub(crate) fn send_via(&mut self, now: Instant, id: SocketId, iface: IfIndex, destination: Ipv4Addr, port: u16, payload: &[u8])...
+    |                   ^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `toyos-net-node` (lib) generated 1 warning
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.31s
+     Running tests/links.rs (target/debug/deps/links-f83113dd493db06f)
+
+running 4 tests
+test each_link_leases_its_own_address_by_its_own_client ... ok
+test with_no_link_up_lookups_ask_the_lease_they_asked ... ok
+test lookups_ask_the_wired_links_resolver_fail_over_and_return ... ok
+test the_name_is_probed_for_on_each_link_from_that_links_address_and_lost_on_one_alone ... FAILED
+
+failures:
+
+---- the_name_is_probed_for_on_each_link_from_that_links_address_and_lost_on_one_alone stdout ----
+
+thread 'the_name_is_probed_for_on_each_link_from_that_links_address_and_lost_on_one_alone' (110537163) panicked at system/netstack/node/tests/links.rs:350:5:
+lost on the wireless link: [Name { link: IfIndex(0), event: Claimed }, Name { link: IfIndex(1), event: Claimed }]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    the_name_is_probed_for_on_each_link_from_that_links_address_and_lost_on_one_alone
+
+test result: FAILED. 3 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-net-node --test links`
+error: 1 target failed:
+    `-p toyos-net-node --test links`

@@ -1,0 +1,14 @@
+diff --git a/system/netstack/ip/src/route.rs b/system/netstack/ip/src/route.rs
+index 122758a68..6e41bdfce 100644
+--- a/system/netstack/ip/src/route.rs
++++ b/system/netstack/ip/src/route.rs
+@@ -44,8 +44,7 @@ pub enum Source {
+ /// `order` is every interface's index, by rank and then arrival.
+ pub(crate) fn lookup(ifaces: &[Interface], order: &[usize], destination: Ipv4Addr, source: Source, bound: Option<IfIndex>) -> Result<Route, Counter> {
+     let eligible = |index: usize, i: &Interface| {
+-        i.up
+-            && bound.is_none_or(|b| b.0 == index)
++        bound.is_none_or(|b| b.0 == index)
+             && match source {
+                 Source::Bound(addr) => i.is_usable(addr),
+                 Source::Any | Source::Unspecified => true,

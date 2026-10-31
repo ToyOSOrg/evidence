@@ -1,0 +1,13 @@
+diff --git a/system/netstack/node/src/name.rs b/system/netstack/node/src/name.rs
+index 7f2e33c92..6dc990aca 100644
+--- a/system/netstack/node/src/name.rs
++++ b/system/netstack/node/src/name.rs
+@@ -97,7 +97,7 @@ impl Name {
+             record.on(on, ms);
+         }
+         let socket = self.socket;
+-        let send = |stack: &mut Stack, link: IfIndex, to: Ipv4Addr, port: u16, message: &[u8]| u64::from(stack.send_via(now, socket, link, to, port, message).is_err());
++        let send = |stack: &mut Stack, link: IfIndex, to: Ipv4Addr, port: u16, message: &[u8]| { let _ = link; u64::from(stack.send_to(now, socket, to, port, message).is_err()) };
+         loop {
+             let received = match stack.recv_from(self.socket, &mut self.message) {
+                 Ok(Some(received)) => received,

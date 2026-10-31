@@ -1,0 +1,24 @@
+diff --git a/system/netstack/shard/src/lib.rs b/system/netstack/shard/src/lib.rs
+index 39dc48fd3..ce8bdb7f5 100644
+--- a/system/netstack/shard/src/lib.rs
++++ b/system/netstack/shard/src/lib.rs
+@@ -451,8 +451,7 @@ impl Shard {
+                 toyos_net_ip::Event::Verified { iface, addr } => events.push(Event::Verified { iface, addr }),
+                 toyos_net_ip::Event::Conflict { iface, addr, mac } => events.push(Event::Conflict { iface, addr, mac }),
+                 toyos_net_ip::Event::Lost { iface, addr, mac } => {
+-                    tcp.lose_address(addr);
+-                    events.push(Event::Lost { iface, addr, mac });
++                                        events.push(Event::Lost { iface, addr, mac });
+                 }
+                 toyos_net_ip::Event::NotVerified { iface, addr } => events.push(Event::NotVerified { iface, addr }),
+             }
+@@ -512,9 +511,6 @@ impl Shard {
+     /// holds any more, and every TCP connection from it ends (`Failure::AddressGone`).
+     pub fn remove_address(&mut self, now: Instant, iface: IfIndex, addr: Ipv4Addr) -> Result<(), toyos_net_ip::Counter> {
+         let removed = self.ip.remove_address(now, iface, addr);
+-        if removed.is_ok() {
+-            self.tcp.lose_address(addr);
+-        }
+         self.settle(now);
+         removed
+     }

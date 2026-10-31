@@ -1,0 +1,106 @@
+   Compiling toyos-net-ip v0.1.0 (<dev>/toyos-wifi/system/netstack/ip)
+   Compiling toyos-net-udp v0.1.0 (<dev>/toyos-wifi/system/netstack/udp)
+   Compiling toyos-net-shard v0.1.0 (<dev>/toyos-wifi/system/netstack/shard)
+   Compiling toyos-net-node v0.1.0 (<dev>/toyos-wifi/system/netstack/node)
+   Compiling toyos-net-testnet v0.1.0 (<dev>/toyos-wifi/system/netstack/shard/testnet)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.78s
+     Running tests/links.rs (target/debug/deps/links-f83113dd493db06f)
+
+running 4 tests
+test each_link_leases_its_own_address_by_its_own_client ... ok
+test with_no_link_up_lookups_ask_the_lease_they_asked ... ok
+test the_name_is_probed_for_on_each_link_from_that_links_address_and_lost_on_one_alone ... ok
+test lookups_ask_the_wired_links_resolver_fail_over_and_return ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/streams.rs (target/debug/deps/streams-74c7d6a2b4b46cda)
+
+running 40 tests
+test a_connect_is_a_handshake_and_its_answer_names_the_port ... ok
+test a_holder_past_the_first_takes_a_place_and_none_is_made_past_the_places ... ok
+test a_connect_before_the_lease_is_refused_and_sends_nothing ... ok
+test a_head_past_what_was_published_resets_that_stream_alone ... ok
+test a_batch_stops_at_its_budget_and_says_a_pass_is_owed ... ok
+test a_connect_nobody_answers_arp_for_fails_when_tcp_knows ... ok
+test a_connect_past_its_deadline_is_timed_out_at_the_deadline ... ok
+test a_connect_whose_client_left_before_its_answer_is_answered_closed ... ok
+test a_deadline_moves_an_established_stream_with_no_opportunity_after_it ... ok
+test a_holder_that_left_holding_the_gate_lets_the_one_that_stays_write ... ok
+test a_read_opens_a_shut_window_at_the_next_opportunity ... ok
+test a_batch_of_frames_moves_an_established_stream_once_with_no_opportunity_after_it ... ok
+test a_client_that_leaves_with_text_unread_resets ... ok
+test a_tail_past_the_send_rings_room_resets_that_stream ... ok
+test a_client_that_leaves_has_what_it_wrote_sent_and_then_the_fin ... ok
+test a_refused_connect_is_answered_with_the_refusal ... ok
+test a_reset_after_the_clients_shutdown_is_the_end_the_client_reads ... ok
+test an_established_streams_connect_deadline_is_gone ... ok
+test a_write_larger_than_the_window_is_queued_whole_and_arrives_whole ... ok
+test a_write_rings_netstack_and_the_pass_it_brings_takes_the_bytes ... ok
+test bytes_that_arrive_ring_every_holder_waiting_for_them ... ok
+test a_reset_after_the_peers_fin_fails_the_clients_writes ... ok
+test a_reset_in_the_batch_of_the_text_before_it_is_read_after_the_text ... ok
+test nodelay_set_before_the_connect_holds_from_the_first_segment ... ok
+test a_source_registered_with_room_is_rung_back_on_its_bell ... ok
+test text_published_after_the_shutdown_resets_that_stream ... ok
+test nodelay_reaches_the_stack ... ok
+test text_unread_when_both_fins_ended_the_connection_is_still_the_clients ... ok
+test a_stream_whose_address_is_lost_ends_as_address_gone ... FAILED
+test a_shutdown_sends_what_was_written_and_then_the_fin ... ok
+test the_last_holder_leaving_is_the_streams_close ... ok
+test a_reset_is_the_end_the_client_reads_and_lets_the_stream_go ... ok
+test the_end_of_the_clients_writing_is_a_fin_and_the_peer_still_sends ... ok
+test the_peers_fin_ends_the_clients_reading_and_not_its_writing ... ok
+test an_echo_past_both_windows_arrives_whole_both_ways_and_ends_in_both_fins ... ok
+test the_clients_stream_is_the_peers_byte_for_byte ... ok
+test a_reset_rings_a_writer_over_a_full_send_ring_on_its_bell ... ok
+test room_released_rings_a_writer_over_a_full_send_ring_on_its_bell ... ok
+test no_cut_of_a_segment_is_a_segment ... ok
+test no_flipped_bit_of_a_segment_delivers_other_bytes ... ok
+
+failures:
+
+---- a_stream_whose_address_is_lost_ends_as_address_gone stdout ----
+
+thread 'a_stream_whose_address_is_lost_ends_as_address_gone' (110534809) panicked at system/netstack/node/tests/streams.rs:847:5:
+assertion `left == right` failed
+  left: ([], Err(WouldBlock))
+ right: ([], Err(Failed(5)))
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    a_stream_whose_address_is_lost_ends_as_address_gone
+
+test result: FAILED. 39 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+error: test failed, to rerun pass `-p toyos-net-node --test streams`
+     Running tests/links.rs (target/debug/deps/links-1afa88d6e37ed712)
+
+running 5 tests
+test a_link_that_only_goes_down_keeps_its_address ... ok
+test a_new_flow_leaves_by_the_wired_link_though_the_wireless_came_first ... ok
+test a_new_flow_fails_over_to_the_wireless_link_and_the_next_returns_to_the_wired_one ... ok
+test a_flow_waits_for_its_own_links_room_and_holds_back_none_of_the_others ... ok
+test a_flow_from_an_address_taken_away_ends_and_one_from_the_other_link_does_not ... FAILED
+
+failures:
+
+---- a_flow_from_an_address_taken_away_ends_and_one_from_the_other_link_does_not stdout ----
+
+thread 'a_flow_from_an_address_taken_away_ends_and_one_from_the_other_link_does_not' (110534899) panicked at system/netstack/shard/tests/links.rs:160:5:
+assertion `left == right` failed
+  left: Ok(1)
+ right: Err(Failed(AddressGone))
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    a_flow_from_an_address_taken_away_ends_and_one_from_the_other_link_does_not
+
+test result: FAILED. 4 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-net-shard --test links`
+error: 2 targets failed:
+    `-p toyos-net-node --test streams`
+    `-p toyos-net-shard --test links`

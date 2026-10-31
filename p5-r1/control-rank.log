@@ -1,0 +1,124 @@
+   Compiling toyos-net-ip v0.1.0 (<dev>/toyos-wifi/system/netstack/ip)
+warning: field `rank` is never read
+  --> system/netstack/ip/src/iface.rs:20:9
+   |
+18 | pub(crate) struct Interface {
+   |                   --------- field in this struct
+19 |     pub mac: IndividualMac,
+20 |     pub rank: crate::Rank,
+   |         ^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+   Compiling toyos-net-udp v0.1.0 (<dev>/toyos-wifi/system/netstack/udp)
+warning: `toyos-net-ip` (lib) generated 1 warning
+   Compiling toyos-net-shard v0.1.0 (<dev>/toyos-wifi/system/netstack/shard)
+   Compiling toyos-net-node v0.1.0 (<dev>/toyos-wifi/system/netstack/node)
+   Compiling toyos-net-testnet v0.1.0 (<dev>/toyos-wifi/system/netstack/shard/testnet)
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.84s
+     Running tests/rank.rs (target/debug/deps/rank-99338263860d47f2)
+
+running 6 tests
+test a_bound_source_keeps_its_own_interface_whatever_its_rank ... ok
+test a_link_without_room_holds_back_no_other_links_frames ... ok
+test a_connected_prefix_beats_a_lower_ranks_gateway ... ok
+test a_link_that_goes_down_hands_the_default_route_on_and_takes_it_back_on_return ... FAILED
+test among_equal_ranks_the_first_added_leads ... FAILED
+test the_default_route_leaves_by_the_lower_rank_whichever_came_first ... FAILED
+
+failures:
+
+---- a_link_that_goes_down_hands_the_default_route_on_and_takes_it_back_on_return stdout ----
+
+thread 'a_link_that_goes_down_hands_the_default_route_on_and_takes_it_back_on_return' (110487214) panicked at system/netstack/ip/tests/rank.rs:81:5:
+assertion `left == right` failed: the wired link's return
+  left: Ok(Route { iface: IfIndex(0), next_hop: Neighbour(192.0.2.1), source: 192.0.2.10 })
+ right: Ok(Route { iface: IfIndex(1), next_hop: Neighbour(198.51.100.1), source: 198.51.100.10 })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- among_equal_ranks_the_first_added_leads stdout ----
+
+thread 'among_equal_ranks_the_first_added_leads' (110487216) panicked at system/netstack/ip/tests/rank.rs:70:5:
+assertion `left == right` failed
+  left: Ok(Route { iface: IfIndex(0), next_hop: Neighbour(192.0.2.1), source: 192.0.2.10 })
+ right: Ok(Route { iface: IfIndex(1), next_hop: Neighbour(198.51.100.1), source: 198.51.100.10 })
+
+---- the_default_route_leaves_by_the_lower_rank_whichever_came_first stdout ----
+
+thread 'the_default_route_leaves_by_the_lower_rank_whichever_came_first' (110487217) panicked at system/netstack/ip/tests/rank.rs:64:5:
+assertion `left == right` failed
+  left: Ok(Route { iface: IfIndex(0), next_hop: Neighbour(192.0.2.1), source: 192.0.2.10 })
+ right: Ok(Route { iface: IfIndex(1), next_hop: Neighbour(198.51.100.1), source: 198.51.100.10 })
+
+
+failures:
+    a_link_that_goes_down_hands_the_default_route_on_and_takes_it_back_on_return
+    among_equal_ranks_the_first_added_leads
+    the_default_route_leaves_by_the_lower_rank_whichever_came_first
+
+test result: FAILED. 3 passed; 3 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-net-ip --test rank`
+     Running tests/links.rs (target/debug/deps/links-f83113dd493db06f)
+
+running 4 tests
+test each_link_leases_its_own_address_by_its_own_client ... ok
+test with_no_link_up_lookups_ask_the_lease_they_asked ... ok
+test the_name_is_probed_for_on_each_link_from_that_links_address_and_lost_on_one_alone ... ok
+test lookups_ask_the_wired_links_resolver_fail_over_and_return ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/links.rs (target/debug/deps/links-1afa88d6e37ed712)
+
+running 5 tests
+test a_link_that_only_goes_down_keeps_its_address ... ok
+test a_new_flow_fails_over_to_the_wireless_link_and_the_next_returns_to_the_wired_one ... FAILED
+test a_flow_from_an_address_taken_away_ends_and_one_from_the_other_link_does_not ... FAILED
+test a_flow_waits_for_its_own_links_room_and_holds_back_none_of_the_others ... FAILED
+test a_new_flow_leaves_by_the_wired_link_though_the_wireless_came_first ... FAILED
+
+failures:
+
+---- a_new_flow_fails_over_to_the_wireless_link_and_the_next_returns_to_the_wired_one stdout ----
+
+thread 'a_new_flow_fails_over_to_the_wireless_link_and_the_next_returns_to_the_wired_one' (110487252) panicked at system/netstack/shard/tests/links.rs:124:5:
+assertion `left == right` failed: the next flow is the wired link's again
+  left: [(IfIndex(0), 198.51.100.10)]
+ right: [(IfIndex(1), 192.0.2.10)]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- a_flow_from_an_address_taken_away_ends_and_one_from_the_other_link_does_not stdout ----
+
+thread 'a_flow_from_an_address_taken_away_ends_and_one_from_the_other_link_does_not' (110487249) panicked at system/netstack/shard/tests/links.rs:160:5:
+assertion `left == right` failed
+  left: Ok(1)
+ right: Err(Failed(AddressGone))
+
+---- a_flow_waits_for_its_own_links_room_and_holds_back_none_of_the_others stdout ----
+
+thread 'a_flow_waits_for_its_own_links_room_and_holds_back_none_of_the_others' (110487250) panicked at system/netstack/shard/tests/links.rs:147:5:
+assertion `left == right` failed
+  left: [(IfIndex(0), 198.51.100.10), (IfIndex(0), 198.51.100.10)]
+ right: [(IfIndex(0), 198.51.100.10)]
+
+---- a_new_flow_leaves_by_the_wired_link_though_the_wireless_came_first stdout ----
+
+thread 'a_new_flow_leaves_by_the_wired_link_though_the_wireless_came_first' (110487253) panicked at system/netstack/shard/tests/links.rs:110:5:
+assertion `left == right` failed: its SYN
+  left: [(IfIndex(0), 198.51.100.10)]
+ right: [(IfIndex(1), 192.0.2.10)]
+
+
+failures:
+    a_flow_from_an_address_taken_away_ends_and_one_from_the_other_link_does_not
+    a_flow_waits_for_its_own_links_room_and_holds_back_none_of_the_others
+    a_new_flow_fails_over_to_the_wireless_link_and_the_next_returns_to_the_wired_one
+    a_new_flow_leaves_by_the_wired_link_though_the_wireless_came_first
+
+test result: FAILED. 1 passed; 4 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-net-shard --test links`
+error: 2 targets failed:
+    `-p toyos-net-ip --test rank`
+    `-p toyos-net-shard --test links`

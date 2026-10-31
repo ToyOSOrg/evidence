@@ -1,0 +1,66 @@
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.37s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-040be7639b65fd4e)
+
+18:54:42 running 1 tests, 12 wide
+
+18:54:42   RUN   traffic_leaves_by_the_second_link_while_the_first_is_down
+18:54:42   BUILD x86_64 link_failover (toyos) of tests/guest/rust-tests, for traffic_leaves_by_the_second_link_while_the_first_is_down
+18:54:45   BUILT x86_64 link_failover (toyos) of tests/guest/rust-tests, for traffic_leaves_by_the_second_link_while_the_first_is_down  (3s)
+18:54:45   BUILD x86_64 kernel, loader, ROOT of tests/images/netcase.toml, for traffic_leaves_by_the_second_link_while_the_first_is_down
+18:54:49 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+18:54:49   BUILT x86_64 kernel, loader, ROOT of tests/images/netcase.toml, for traffic_leaves_by_the_second_link_while_the_first_is_down  (4s)
+18:56:30 FAIL traffic_leaves_by_the_second_link_while_the_first_is_down: the job ended Some(101):
+virtio-net: VirtIO: PCI 00:03.0 features device=0x10330bf8024 negotiated=0x300000020 access_platform=y
+virtio-net: MAC 52:54:00:12:34:56
+supervisor: started virtio-net
+virtio-net: the link is open
+netstack: virtio-net's link is open
+virtio-net: VirtIO: PCI 00:04.0 features device=0x10330bf8024 negotiated=0x300000020 access_platform=y
+virtio-net: MAC 52:54:00:12:34:57
+netstack: virtio-net's link is open
+virtio-net: the link is open
+netstack: DHCP: lease 10.0.2.15/24 on virtio-net, from 10.0.2.2, gateway 10.0.2.2, dns [10.0.2.3], 675 ms after netstack came up
+netstack: ready, at most 31 places (16 MiB each of 4049 MiB total)
+netstack: DHCP: lease 10.0.3.15/24 on virtio-net, from 10.0.3.2, gateway 10.0.3.2, dns [10.0.3.3], 725 ms after netstack came up
+  PASS: a round left by link 0, on 10.0.2.0
+netstack: mDNS on virtio-net: no host answered for toyos-t14.local; this machine answers as it there
+netstack: mDNS on virtio-net: no host answered for toyos-t14.local; this machine answers as it there
+
+thread 'main' (1) panicked at src/bin/link_failover.rs:58:9:
+link_failover: the first link down within 90s; netstack says {"net.dns.link": U64(0), "net.link.0.driver": Text("virtio-net"), "net.link.0.lease.address": Text("10.0.2.15/24"), "net.link.0.lease.dns": Text("10.0.2.3"), "net.link.0.lease.held": Bool(true), "net.link.0.lease.router": Text("10.0.2.2"), "net.link.0.lease.server": Text("10.0.2.2"), "net.link.0.mac": Text("52:54:00:12:34:56"), "net.link.0.medium": Text("wired"), "net.link.0.neighbour.router": Text("stale"), "net.link.0.sent": U64(81), "net.link.0.state": Text("unreported"), "net.link.1.driver": Text("virtio-net"), "net.link.1.lease.address": Text("10.0.3.15/24"), "net.link.1.lease.dns": Text("10.0.3.3"), "net.link.1.lease.held": Bool(true), "net.link.1.lease.router": Text("10.0.3.2"), "net.link.1.lease.server": Text("10.0.3.2"), "net.link.1.mac": Text("52:54:00:12:34:57"), "net.link.1.medium": Text("wired"), "net.link.1.neighbour.router": Text("stale"), "net.link.1.sent": U64(21), "net.link.1.state": Text("unreported"), "net.links": U64(2), "net.places.held": U64(2), "net.places.max": U64(31), "net.sockets.holders": U64(1), "net.sockets.listeners": U64(0), "net.sockets.tcp": U64(1), "net.sockets.udp": U64(1), "net.streams.holders": U64(1), "net.streams.live": U64(1), "net.tcp.accept-queue-full": U64(0), "net.tcp.accept-reset-dropped": U64(0), "net.tcp.ack-out-of-range": U64(0), "net.tcp.acks.cwnd-limited": U64(0), "net.tcp.acks.not-limited": U64(1), "net.tcp.close-unread-rst": U64(0), "net.tcp.closed-rst": U64(0), "net.tcp.closed-rst-limited": U64(0), "net.tcp.congestion-stops": U64(0), "net.tcp.congestion-stops.cwnd.bytes": U64(0), "net.tcp.congestion-stops.srtt.us": U64(0), "net.tcp.cwnd.grown.bytes": U64(0), "net.tcp.data-after-fin": U64(0), "net.tcp.dsack-rcvd": U64(0), "net.tcp.ecn-not-negotiated": U64(0), "net.tcp.event-overflow": U64(0), "net.tcp.fast-recovery": U64(0), "net.tcp.fin-conflict": U64(0), "net.tcp.hystart.css": U64(0), "net.tcp.hystart.css.rounds": U64(0), "net.tcp.hystart.exit.cwnd.bytes": U64(0), "net.tcp.hystart.exits": U64(0), "net.tcp.hystart.resumed": U64(0), "net.tcp.icmp-hard-as-soft": U64(0), "net.tcp.icmp-no-socket": U64(0), "net.tcp.icmp-soft": U64(0), "net.tcp.icmp-stale": U64(0), "net.tcp.keepalive-probe": U64(0), "net.tcp.limited-transmit": U64(0), "net.tcp.listen-no-syn": U64(0), "net.tcp.listen-overflow": U64(0), "net.tcp.listen-rst": U64(0), "net.tcp.listener-closed-reset": U64(0), "net.tcp.loss-probe": U64(0), "net.tcp.loss-probe-recovery": U64(0), "net.tcp.mss-below-floor": U64(0), "net.tcp.next-hop-failed": U64(0), "net.tcp.no-ephemeral-port": U64(0), "net.tcp.ooo-range-limit": U64(0), "net.tcp.option-fastopen": U64(0), "net.tcp.option-md5": U64(0), "net.tcp.orphan-data-rst": U64(0), "net.tcp.orphan-idle-abort": U64(0), "net.tcp.paws-reject": U64(0), "net.tcp.persist-probe": U64(0), "net.tcp.pmtu-bogus": U64(0), "net.tcp.pmtu-floored": U64(0), "net.tcp.pmtu-lowered": U64(0), "net.tcp.pmtu-no-mtu": U64(0), "net.tcp.retransmit.bytes": U64(0), "net.tcp.rst-challenged": U64(0), "net.tcp.rto": U64(0), "net.tcp.rto-unsent": U64(0), "net.tcp.sack-block-invalid": U64(0), "net.tcp.sack-recovery": U64(0), "net.tcp.sack-unnegotiated": U64(0), "net.tcp.self-connect": U64(0), "net.tcp.send-limited.congestion.ns": U64(0), "net.tcp.send-limited.user.ns": U64(12906998), "net.tcp.send-limited.window.ns": U64(0), "net.tcp.sent.bytes": U64(14), "net.tcp.syn-challenged": U64(0), "net.tcp.syn-data-discarded": U64(0), "net.tcp.syn-fin": U64(0), "net.tcp.syn-rst": U64(0), "net.tcp.synack-give-up": U64(0), "net.tcp.synrcvd-dup-syn": U64(0), "net.tcp.synsent-rst-no-ack": U64(0), "net.tcp.timewait-evicted": U64(0), "net.tcp.timewait-reuse": U64(0), "net.tcp.timewait-rst-ignored": U64(0), "net.tcp.ts-ecr-invalid": U64(0), "net.tcp.ts-missing": U64(0), "net.tcp.unsolicited-ack-limited": U64(0), "net.tcp.urgent-ignored": U64(0), "net.tcp.wscale-clamped": U64(0)}
+stack backtrace:
+   0:           0x280c80 - _Unwind_Backtrace
+   1:           0x258f23 - <<std[f8157ccd4b3250df]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[73b405bef30eeff1]::fmt::Display>::fmt
+   2:           0x2858c7 - core[73b405bef30eeff1]::fmt::write
+   3:           0x25cc0b - <std[f8157ccd4b3250df]::sys::stdio::toyos::Stderr as core[73b405bef30eeff1]::io::write::Write>::write_fmt
+   4:           0x2425c3 - std[f8157ccd4b3250df]::panicking::default_hook::{closure#0}
+   5:           0x25600e - std[f8157ccd4b3250df]::panicking::default_hook
+   6:           0x2561c9 - std[f8157ccd4b3250df]::panicking::panic_with_hook
+   7:           0x24267d - std[f8157ccd4b3250df]::panicking::panic_handler::{closure#0}
+   8:           0x23bac9 - std[f8157ccd4b3250df]::sys::backtrace::__rust_end_short_backtrace::<std[f8157ccd4b3250df]::panicking::panic_handler::{closure#0}, !>
+   9:           0x242d88 - __rustc[d0c72ce299f394e5]::rust_begin_unwind
+  10:           0x285feb - core[73b405bef30eeff1]::panicking::panic_fmt
+  11:           0x228ba5 - link_failover[b94f1c2a24aa4cb8]::until::<link_failover[b94f1c2a24aa4cb8]::main::{closure#4}>
+  12:           0x229e90 - link_failover[b94f1c2a24aa4cb8]::main
+  13:           0x227276 - std[f8157ccd4b3250df]::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  14:           0x227690 - std[f8157ccd4b3250df]::rt::lang_start::<()>::{closure#0}
+  15:           0x2557d6 - std[f8157ccd4b3250df]::rt::lang_start_internal
+  16:           0x22a771 - main
+  17:           0x257303 - std[f8157ccd4b3250df]::sys::pal::toyos::start_rust
+  18:           0x22f9ea - _start
+
+18:56:30   FAIL  traffic_leaves_by_the_second_link_while_the_first_is_down  (101s)
+18:56:30   --- 1 guests, 0 of them not the shipping kernel, 1 kernel build(s): [""]
+
+18:56:30 host: fastest boot 10055 ms against the reference 1424 ms — liveness ceilings paid at 7.06x
+18:56:30 host: 14 core(s); a guest wider than that waits vcpus/cores longer again
+18:56:30 failures:
+18:56:30     traffic_leaves_by_the_second_link_while_the_first_is_down: the job ended Some(101):
+
+18:56:30 test result: FAILED. 0 passed, 1 failed, 0 invalidated, 1 total (108.4s; workers: 7s building, 101s testing)
+18:56:30 [toyos] this red run's serial logs are kept at <dev>/toyos-wifi/target/red-run-serial/toyos-tmp-21842-0
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `<dev>/toyos-wifi/target/debug/deps/toyos_build-040be7639b65fd4e traffic_leaves_by_the_second_link_while_the_first_is_down` (exit status: 1)
+exit=1
