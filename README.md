@@ -25,3 +25,8 @@ r4/t14/  The A/B staged in r2/staged (T14, osbench_lan, peer the AMD bench's Lin
   c1 p1 q1 c2 p2 q2 c3 p3 q3, Linux L2; every boot rc 0, every judge exit 0. C = 15fdb0e9b, P = b3aee3b18, Q = P with N = 1.25.
   session/t14-linux-{1,2}.{txt,err}, toyos/<arm>.{txt,verdict.txt,judge.log}; judgement-table.txt per arm: p50, received-by
   marks (MB), css / css entry rounds, loss counters, RTT samples by source, the pacing hold's total time.
+
+r5/host/  #1114 rebased onto main after #1112 (dc1a8642e), with the header rule (a send joins a short run only if short too): head ce43f3f7d
+  ci-host-ce43f3f7d.log (107 steps, all green, EXIT=0), tcp-test-ce43f3f7d.log (441 passed, EXIT=0),
+  controls/ the header rule's control (any send joining a short run): exit 101, failing s_rt_025.
+  Masked under #1119's rule, model strings included.
