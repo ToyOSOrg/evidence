@@ -1,0 +1,73 @@
+# T14 session for #1114 (step 3: pacing with L = infinity), restaged after #1112's review r1; supersedes metal4. Worktree <worktree>.
+# C = 15fdb0e9b (#1112's head, branch tcp-rtt: every segment in flight timed, L = 8, unpaced).
+# P = b3aee3b18 (#1114 rebased onto C, branch tcp-pace: pacing, N = 2 in slow start and 1.25 after, L = infinity).
+# Q = P + <scratch>/patches/pace-mut-n-slow-start-1.25.patch
+#     (N = 1.25 throughout, the approved plan's literal rate; diagnostic, decides N in slow start; its host tests fail by design).
+# Order: Linux (L1), c1 p1 q1 c2 p2 q2 c3 p3 q3, Linux (L2). One boot per image; hashes in image-sha256.txt.
+# Peer osbench-lan/3 and the T14's Linux osbench: the same binaries as #1112's session,
+#   <scratch>/metal2/linux-1480e1a67/ (SHA256SUMS inside: c0c0d27e... osbench, 4ec7058b... peer).
+#   osbench changed since only in its disk rows (files.rs) and the ToyOS side (sys/toyos.rs); the lan group's Linux code is the same.
+# Read per upload row: p50, peer_received_by_{100,300,1000,2000}ms_bytes_mean; ToyOS also stack_net_tcp_send_limited_pacing_ns,
+#   rtt_departure, rtt_echo, hystart_{css,css_entry_rounds,resumed,exits}, loss counters (retransmit_bytes, rto, fast/sack_recovery, loss_probe), congestion_stops.
+# Decision rule, set before the run:
+#   P vs C: pacing with L = infinity confirms if P's 300 ms mark beats C's in every one of the three pairs (one-sided p = 1/8),
+#           with no lower p50 and no retransmission or recovery beyond C's.
+#   Parity: P's 100 ms and 300 ms marks at or above the lower of L1/L2 less 10 %, and its p50 within L1/L2 less 1 MB/s.
+#           Then the ramp issue closes: delete it in a follow-up commit on #1114.
+#   Q vs P: P's 100 ms mark above Q's in every pair means N = 2 in slow start earns its place.
+#           Q within P's spread means N = 1.25 throughout is enough, and #1114 takes RFC 9002's single N.
+#   Pacing at work: send_limited_pacing_ns near zero in P means the line, not the pacer, spread the bursts on this path;
+#           P then matches #1112's session's D (L = infinity unpaced), and the pacer's value is the general burst bound, unmeasured here.
+#   Loss in P (retransmits, recoveries) is burst harm the pacer did not prevent: investigate before landing.
+#   Samples (#1112's fix): in C, rtt_echo near zero against rtt_departure confirms every segment in flight is timed on metal.
+#           css / css_entry_rounds against #1112's session (B 1.97-2.68, capped C 2.40-2.58) says whether finer samples changed the flapping.
+# Judge each readback at its arm's code (restore after; the tree is clean on both branches):
+#   C:  cd <worktree> && git switch -q tcp-rtt && cargo test --test toyos-build -- --metal --metal-readback <scratch>/metal4/cN osbench_lan
+#   P:  cd <worktree> && git switch -q tcp-pace && cargo test --test toyos-build -- --metal --metal-readback <scratch>/metal4/pN osbench_lan
+#   Q:  cd <worktree> && git switch -q tcp-pace && git apply <scratch>/patches/pace-mut-n-slow-start-1.25.patch && cargo test --test toyos-build -- --metal --metal-readback <scratch>/metal4/qN osbench_lan; git apply -R <scratch>/patches/pace-mut-n-slow-start-1.25.patch
+# Each invocation is `cargo <words>` from this worktree.
+
+## c1
+netbenchcase
+  image: <scratch>/metal4/c1/netbenchcase/image.img
+  cargo run -p toyos-metal -- --image <scratch>/metal4/c1/netbenchcase/image.img --readback <scratch>/metal4/c1/netbenchcase --fat32-check
+
+## p1
+netbenchcase
+  image: <scratch>/metal4/p1/netbenchcase/image.img
+  cargo run -p toyos-metal -- --image <scratch>/metal4/p1/netbenchcase/image.img --readback <scratch>/metal4/p1/netbenchcase --fat32-check
+
+## q1
+netbenchcase
+  image: <scratch>/metal4/q1/netbenchcase/image.img
+  cargo run -p toyos-metal -- --image <scratch>/metal4/q1/netbenchcase/image.img --readback <scratch>/metal4/q1/netbenchcase --fat32-check
+
+## c2
+netbenchcase
+  image: <scratch>/metal4/c2/netbenchcase/image.img
+  cargo run -p toyos-metal -- --image <scratch>/metal4/c2/netbenchcase/image.img --readback <scratch>/metal4/c2/netbenchcase --fat32-check
+
+## p2
+netbenchcase
+  image: <scratch>/metal4/p2/netbenchcase/image.img
+  cargo run -p toyos-metal -- --image <scratch>/metal4/p2/netbenchcase/image.img --readback <scratch>/metal4/p2/netbenchcase --fat32-check
+
+## q2
+netbenchcase
+  image: <scratch>/metal4/q2/netbenchcase/image.img
+  cargo run -p toyos-metal -- --image <scratch>/metal4/q2/netbenchcase/image.img --readback <scratch>/metal4/q2/netbenchcase --fat32-check
+
+## c3
+netbenchcase
+  image: <scratch>/metal4/c3/netbenchcase/image.img
+  cargo run -p toyos-metal -- --image <scratch>/metal4/c3/netbenchcase/image.img --readback <scratch>/metal4/c3/netbenchcase --fat32-check
+
+## p3
+netbenchcase
+  image: <scratch>/metal4/p3/netbenchcase/image.img
+  cargo run -p toyos-metal -- --image <scratch>/metal4/p3/netbenchcase/image.img --readback <scratch>/metal4/p3/netbenchcase --fat32-check
+
+## q3
+netbenchcase
+  image: <scratch>/metal4/q3/netbenchcase/image.img
+  cargo run -p toyos-metal -- --image <scratch>/metal4/q3/netbenchcase/image.img --readback <scratch>/metal4/q3/netbenchcase --fat32-check
