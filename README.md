@@ -15,3 +15,8 @@ r2/  #1114 rebased onto #1112's review fix (15fdb0e9b); supersedes r1/staged, wh
   host/tcp-test-b3aee3b18.log   cargo test -p toyos-net-tcp --no-fail-fast: 437 passed, EXIT=0
   host/controls/                the seven pacing controls (patches in r1/host/controls) rerun at b3aee3b18, all exit 101
   staged/                       the T14 session: C = 15fdb0e9b, P = b3aee3b18, Q = P + the N = 1.25 patch; request.txt with the rule
+
+r3/host/  #1114 rebased onto #1112's review r2 fix (417b74b9f): head 2b865e208
+  ci-host-2b865e208.log, tcp-test-2b865e208.log (440 passed), controls/ (the seven pacing controls rerun, all exit 101).
+  The staged session in r2/staged stands: its C = 15fdb0e9b and P = b3aee3b18 differ from these heads only in how sub-SMSS
+  sends join a run, and the bulk upload sends full segments whose runs are single-instant bursts, timed the same by both.
