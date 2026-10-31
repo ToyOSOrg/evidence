@@ -9,3 +9,9 @@ r1/staged/  The T14 session staged for the A/B (not yet run): request.txt with t
   image hashes, and each staging's log (exit 2 is staging's normal end: no machine touched).
   C = f1a230e00 (#1112), P = dfeb1fcfa (#1114), Q = P + controls/pace-mut-n-slow-start-1.25.patch.
 Paths are masked as <worktree>, <primary>, <scratch>, <tmp>, <home>.
+
+r2/  #1114 rebased onto #1112's review fix (15fdb0e9b); supersedes r1/staged, which carried the 64-segment cap and never ran.
+  host/ci-host-b3aee3b18.log    cargo run -- --ci host: 105 steps, all green, EXIT=0
+  host/tcp-test-b3aee3b18.log   cargo test -p toyos-net-tcp --no-fail-fast: 437 passed, EXIT=0
+  host/controls/                the seven pacing controls (patches in r1/host/controls) rerun at b3aee3b18, all exit 101
+  staged/                       the T14 session: C = 15fdb0e9b, P = b3aee3b18, Q = P + the N = 1.25 patch; request.txt with the rule
