@@ -29,3 +29,11 @@ All boots are AMD-bench `benchcase` runs, each verdict `passed` (`verdicts.txt`)
 - `rebase/ci-host.log`: `cargo run -- --ci host` on #1099 rebased onto 0c7e62ca7. `ci-host.rev` holds the revision and the exit code.
 
 Paths under the agent's home and scratch are masked.
+
+## Every row's direction (added)
+
+`count.py base1,base2 head1,head2` counts the rows where both heads lie beyond both bases, each way. `count-landing.txt`:
+- The landing control, WA1,WA2 against C1,C2: of 129 rows, 35 are worse in both heads and 14 better.
+- The same count between two pairs of boots of one tree (ddc26a3ea): A1,A2 against A3,A4 gives 31 and 16, and A1,A3 against A2,A4 gives 23 and 16.
+
+So a lean of this size across many rows, CPU-only ones included (`crunch.*`, `mem.memcpy.*`, `time.now`), is what two pairs of boots of one tree show. It is not attributable to the change.
