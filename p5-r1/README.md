@@ -11,8 +11,8 @@ network's own.
 | guest-1.log | the six network guest tests | 6767bd973 | 1: the failover job had no `log` port |
 | guest-2.log | the failover test | 6767bd973 + the job waiting on inspect | 1: the first link never read down (virtio-net reported no link) |
 | guest-3.log | the failover test | 44007afd5's tree before commit | 0 |
-| guest-4.log | `cargo test --test toyos-build -- traffic_leaves_by_the_second_link_while_the_first_is_down netstack_holders_exported_to_children a_link_ends_under_a_held_stream_and_comes_back udp_receive_times_out a_virtio_function_without_access_platform_is_refused iommu_virtio_platform` | 44007afd5's tree | 0; 6 passed |
-| control-rank.log | ip, shard and node two-link tests with control-rank.patch (rank ignored) | 44007afd5's tree + patch | 101: the ip rank tests and four shard link tests red |
+| guest-4.log | `cargo test --test toyos-build -- traffic_leaves_by_the_second_link_while_the_first_is_down netstack_holders_exported_to_children a_link_ends_under_a_held_stream_and_comes_back udp_receive_times_out a_virtio_function_without_access_platform_is_refused iommu_virtio_platform` | the virtio commit's tree before its rebase: P5's four commits on f45dc5e3b, which the rebase onto 49559ddb2 made 44007afd5 | 0; 6 passed |
+| control-rank.log | ip, shard and node two-link tests with control-rank.patch (rank ignored) | that same pre-rebase tree + patch | 101: the ip rank tests and four shard link tests red |
 | control-lost.log | shard links and node streams tests with control-lost.patch (a lost address's flows left) | same + patch | 101: both lost-address tests red |
 | control-mdns.log | node links test with control-mdns.patch (mDNS not sent per link) | same + patch | 101: the per-link name test red |
 | control-down.log | the failover guest test with control-down.patch (a down link stays eligible) | same + patch, image rebuilt | 1: the job's datagrams refused with the first link down |
@@ -20,5 +20,7 @@ network's own.
 Each control patch was applied, built and run, and the file restored, in one
 command; the image was rebuilt from the restored tree before guest-4.
 
-guest-4 and the controls ran before the rebase onto 49559ddb2 and the
-files.rs count fix; neither touches netstack, the drivers or the harness.
+guest-4 and the controls ran on that pre-rebase tree, before the files.rs
+count fix: the rebase brought main's fileserver cache and ax2xx files, and
+the fix one test literal, none of which touches netstack, the drivers or the
+harness.
