@@ -1,0 +1,11 @@
+--- a/kernel/pure/sched/cpu.rs
++++ b/kernel/pure/sched/cpu.rs
+@@ -1136,7 +1136,7 @@
+         parker: CpuId,
+         env: Env<'_, H, P>,
+     ) -> bool {
+-        env.cpus.topology().level(self.id, parker).is_some_and(|shared| shared <= Level::Llc)
++        env.cpus.topology().level(self.id, parker).is_some_and(|_| true)
+             && !task.is_rt()
+             && !task.shared().stop_pending()
+             && !task.shared().kill_pending()
