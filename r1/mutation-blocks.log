@@ -1,0 +1,62 @@
+   Compiling toyos-tgl-display v0.1.0 (<home>/Dev/<user>/toyos-display/system/tgl-display/driver)
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.52s
+     Running unittests src/lib.rs (target/debug/deps/toyos_tgl_display-643552b79068154a)
+
+running 14 tests
+test tests::a_cursor_on_is_refused_untouched ... ok
+test tests::a_second_transcoder_on_is_refused_untouched ... ok
+test tests::a_line_time_not_the_modes_is_refused_untouched ... ok
+test tests::a_mailbox_error_is_refused_with_no_display_register_written ... ok
+test tests::a_yuv_plane_is_refused_untouched ... ok
+test tests::a_plane_that_cannot_tolerate_sagv_is_left_as_found ... ok
+test tests::a_stopped_pipe_is_refused_untouched ... ok
+test tests::a_zero_level_above_zero_ends_the_valid_levels ... ok
+test tests::the_t14s_line_time_is_its_firmwares ... ok
+test tests::the_t14s_pcode_words_are_its_latencies_with_three_us_added ... ok
+test tests::a_level_past_the_allocation_disables_it_and_every_level_above ... FAILED
+test tests::every_t14_level_fits_and_level_zero_carries_sagv ... FAILED
+test tests::y_tiling_takes_its_four_line_minimum ... FAILED
+test tests::the_t14s_gop_gets_levels_one_to_seven_and_its_surface_rearmed_last ... FAILED
+
+failures:
+
+---- tests::a_level_past_the_allocation_disables_it_and_every_level_above stdout ----
+
+thread 'tests::a_level_past_the_allocation_disables_it_and_every_level_above' (112440362) panicked at system/tgl-display/driver/src/tests.rs:50:5:
+assertion `left == right` failed
+  left: Some(Level { blocks: 80, lines: 5 })
+ right: Some(Level { blocks: 81, lines: 5 })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- tests::every_t14_level_fits_and_level_zero_carries_sagv stdout ----
+
+thread 'tests::every_t14_level_fits_and_level_zero_carries_sagv' (112440370) panicked at system/tgl-display/driver/src/tests.rs:41:5:
+assertion `left == right` failed
+  left: [Some(Level { blocks: 16, lines: 1 }), Some(Level { blocks: 64, lines: 4 }), Some(Level { blocks: 64, lines: 4 }), Some(Level { blocks: 64, lines: 4 }), Some(Level { blocks: 64, lines: 4 }), Some(Level { blocks: 80, lines: 5 }), Some(Level { blocks: 128, lines: 8 }), Some(Level { blocks: 128, lines: 8 })]
+ right: [Some(Level { blocks: 17, lines: 1 }), Some(Level { blocks: 65, lines: 4 }), Some(Level { blocks: 65, lines: 4 }), Some(Level { blocks: 65, lines: 4 }), Some(Level { blocks: 65, lines: 4 }), Some(Level { blocks: 81, lines: 5 }), Some(Level { blocks: 129, lines: 8 }), Some(Level { blocks: 129, lines: 8 })]
+
+---- tests::y_tiling_takes_its_four_line_minimum stdout ----
+
+thread 'tests::y_tiling_takes_its_four_line_minimum' (112440374) panicked at system/tgl-display/driver/src/tests.rs:58:5:
+assertion `left == right` failed
+  left: Some(Level { blocks: 61, lines: 4 })
+ right: Some(Level { blocks: 62, lines: 4 })
+
+---- tests::the_t14s_gop_gets_levels_one_to_seven_and_its_surface_rearmed_last stdout ----
+
+thread 'tests::the_t14s_gop_gets_levels_one_to_seven_and_its_surface_rearmed_last' (112440371) panicked at system/tgl-display/driver/src/tests.rs:84:5:
+assertion `left == right` failed
+  left: [(459328, 2147500048), (459332, 2147549248), (459336, 2147549248), (459340, 2147549248), (459344, 2147549248), (459348, 2147565648), (459352, 2147614848), (459356, 2147614848), (459164, 0)]
+ right: [(459328, 2147500049), (459332, 2147549249), (459336, 2147549249), (459340, 2147549249), (459344, 2147549249), (459348, 2147565649), (459352, 2147614849), (459356, 2147614849), (459164, 0)]
+
+
+failures:
+    tests::a_level_past_the_allocation_disables_it_and_every_level_above
+    tests::every_t14_level_fits_and_level_zero_carries_sagv
+    tests::the_t14s_gop_gets_levels_one_to_seven_and_its_surface_rearmed_last
+    tests::y_tiling_takes_its_four_line_minimum
+
+test result: FAILED. 10 passed; 4 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-tgl-display --lib`
+exit=101
