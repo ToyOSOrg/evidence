@@ -28,3 +28,11 @@ Each `.txt` holds a boot's `osbench v=2` and `disk-path-probe2:` lines only. Eve
   - The probe's flush lines for that row match the stale boot's: 8,192-block flushes in 257–259 runs, 254–255 of them full.
   - X-B2 differs from the stale X-B only by r2. Its one behavioural change acts only at 32 MiB kept with a caller's flush on the wire, and the cache's flush leaves none on the wire while its runs go.
   - The same boot reads `fs.disk.mkdir_rmdir` 109.5 µs, against 86.6 in both other boots, a path that does not reach the cap.
+
+## The T14 seq_write.1048576 drop is not r2's (added)
+
+`t14-boots.txt`: every T14 osbench boot on 2026-10-31 that carries the row, in time order, with `fs.disk.mkdir_rmdir` beside it. Each path names the agent's readback directory.
+- **r2 is in a fast boot.** X-C2 (#1118 r1, whose tree contains #1113 r2 at 20bdd1401) read 490 at 22:19. The two slow boots, X-B2 (260) and X-D (282), ran at 23:31 and 23:36.
+- **A fixed tree reads both modes.** sched-place's base image (`sched-place/ab2/base-t14`, the same image four times) read 342 and 353, then 187 and 184, in consecutive boots.
+- **`mkdir_rmdir` moved with it,** 86.6 → 108–110 µs, a path that never reaches r2's 32 MiB condition. Across unrelated trees that day it reads 84–121 µs.
+- So the row is per-boot bimodal on the T14, in runs of consecutive boots, outside #1113.
