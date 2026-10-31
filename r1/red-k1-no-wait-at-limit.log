@@ -1,0 +1,46 @@
+   Compiling toyos-blockring v0.1.0 ($WORKTREE/lib/blockring)
+    Finished `release` profile [optimized] target(s) in 1.86s
+     Running unittests src/lib.rs (target/release/deps/toyos_blockring-961a86c869c36193)
+
+running 7 tests
+test model::tests::a_used_page_reads_fresh_once_a_servers_ends_are_made_over_it ... ok
+test model::tests::every_request_is_answered_exactly_once ... FAILED
+test model::tests::the_model_reaches_the_end_it_should ... FAILED
+test model::tests::no_write_goes_out_while_the_client_keeps_its_limit ... FAILED
+test model::tests::states_named_alike_act_alike ... ok
+test model::tests::the_model_reaches_a_write_given_up ... ok
+test model::tests::what_a_flush_calls_durable_is_on_the_medium ... ok
+
+failures:
+
+---- model::tests::every_request_is_answered_exactly_once stdout ----
+Failures { resets: 0, crashes: 0, errors: 0 }: 0 end states, 0 with a flush given up, Some((Kept, "write 3 went out with 1 blocks kept, after ask 0 > ask 1 > ask 2 > take Write { run: Run { first: 0, count: 1 }, lba: 0 }#4 > take Write { run: Run { first: 1, count: 1 }, lba: 1 }#5 > take Flush#6 > done Write { run: Run { first: 0, count: 1 }, lba: 0 }#4 > done Write { run: Run { first: 1, count: 1 }, lba: 1 }#5 > done Flush#6 > read #4 Ok > ask 3"))
+
+thread 'model::tests::every_request_is_answered_exactly_once' (105748446) panicked at lib/blockring/src/model.rs:758:13:
+the model reached no end
+
+---- model::tests::the_model_reaches_the_end_it_should stdout ----
+Failures { resets: 0, crashes: 0, errors: 0 }: 0 end states, 0 with a flush given up, Some((Kept, "write 3 went out with 1 blocks kept, after ask 0 > ask 1 > ask 2 > take Write { run: Run { first: 0, count: 1 }, lba: 0 }#4 > take Write { run: Run { first: 1, count: 1 }, lba: 1 }#5 > take Flush#6 > done Write { run: Run { first: 0, count: 1 }, lba: 0 }#4 > done Write { run: Run { first: 1, count: 1 }, lba: 1 }#5 > done Flush#6 > read #4 Ok > ask 3"))
+
+thread 'model::tests::the_model_reaches_the_end_it_should' (105748450) panicked at lib/blockring/src/model.rs:794:9:
+assertion `left == right` failed
+  left: Some((Kept, "write 3 went out with 1 blocks kept, after ask 0 > ask 1 > ask 2 > take Write { run: Run { first: 0, count: 1 }, lba: 0 }#4 > take Write { run: Run { first: 1, count: 1 }, lba: 1 }#5 > take Flush#6 > done Write { run: Run { first: 0, count: 1 }, lba: 0 }#4 > done Write { run: Run { first: 1, count: 1 }, lba: 1 }#5 > done Flush#6 > read #4 Ok > ask 3"))
+ right: None
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- model::tests::no_write_goes_out_while_the_client_keeps_its_limit stdout ----
+Failures { resets: 0, crashes: 0, errors: 0 }: 0 end states, 0 with a flush given up, Some((Kept, "write 3 went out with 1 blocks kept, after ask 0 > ask 1 > ask 2 > take Write { run: Run { first: 0, count: 1 }, lba: 0 }#4 > take Write { run: Run { first: 1, count: 1 }, lba: 1 }#5 > take Flush#6 > done Write { run: Run { first: 0, count: 1 }, lba: 0 }#4 > done Write { run: Run { first: 1, count: 1 }, lba: 1 }#5 > done Flush#6 > read #4 Ok > ask 3"))
+
+thread 'model::tests::no_write_goes_out_while_the_client_keeps_its_limit' (105748447) panicked at lib/blockring/src/model.rs:782:17:
+Failures { resets: 0, crashes: 0, errors: 0 }: write 3 went out with 1 blocks kept, after ask 0 > ask 1 > ask 2 > take Write { run: Run { first: 0, count: 1 }, lba: 0 }#4 > take Write { run: Run { first: 1, count: 1 }, lba: 1 }#5 > take Flush#6 > done Write { run: Run { first: 0, count: 1 }, lba: 0 }#4 > done Write { run: Run { first: 1, count: 1 }, lba: 1 }#5 > done Flush#6 > read #4 Ok > ask 3
+
+
+failures:
+    model::tests::every_request_is_answered_exactly_once
+    model::tests::no_write_goes_out_while_the_client_keeps_its_limit
+    model::tests::the_model_reaches_the_end_it_should
+
+test result: FAILED. 4 passed; 3 failed; 0 ignored; 0 measured; 22 filtered out; finished in 0.73s
+
+error: test failed, to rerun pass `-p toyos-blockring --lib`
+exit 101

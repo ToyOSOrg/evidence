@@ -1,0 +1,40 @@
+   Compiling toyos-blockring v0.1.0 ($WORKTREE/lib/blockring)
+    Finished `release` profile [optimized] target(s) in 0.84s
+     Running unittests src/lib.rs (target/release/deps/toyos_blockring-961a86c869c36193)
+
+running 7 tests
+test model::tests::a_used_page_reads_fresh_once_a_servers_ends_are_made_over_it ... ok
+test model::tests::states_named_alike_act_alike ... ok
+test model::tests::the_model_reaches_the_end_it_should ... ok
+test model::tests::what_a_flush_calls_durable_is_on_the_medium ... FAILED
+test model::tests::the_model_reaches_a_write_given_up ... FAILED
+test model::tests::no_write_goes_out_while_the_client_keeps_its_limit ... ok
+test model::tests::every_request_is_answered_exactly_once ... ok
+
+failures:
+
+---- model::tests::what_a_flush_calls_durable_is_on_the_medium stdout ----
+Failures { resets: 0, crashes: 0, errors: 0 }: 24 end states, 0 with a flush given up, None
+Failures { resets: 1, crashes: 0, errors: 0 }: 20 end states, 0 with a flush given up, Some((Durable, "flush 4 was answered durable with block 0 holding 1, not the 3 acknowledged before it (or a later one of [3]), after ask 0 > ask 1 > ask 2 > take Write { run: Run { first: 0, count: 1 }, lba: 0 }#4 > take Write { run: Run { first: 1, count: 1 }, lba: 1 }#5 > take Flush#6 > done Write { run: Run { first: 0, count: 1 }, lba: 0 }#4 > done Write { run: Run { first: 1, count: 1 }, lba: 1 }#5 > done Flush#6 > read #4 Ok > ask 3 > take Write { run: Run { first: 3, count: 1 }, lba: 0 }#8 > done Write { run: Run { first: 3, count: 1 }, lba: 0 }#8 > read #5 Ok > read #6 Ok > read #8 Ok > ask 4 > take Flush#12 > reset([] [None, None] [1, 2]) > read #12 Device > take Flush#16 > done Flush#16 > read #16 Lost > take Flush#20 > done Flush#20 > read #20 Ok"))
+
+thread 'model::tests::what_a_flush_calls_durable_is_on_the_medium' (105750457) panicked at lib/blockring/src/model.rs:771:17:
+Failures { resets: 1, crashes: 0, errors: 0 }: flush 4 was answered durable with block 0 holding 1, not the 3 acknowledged before it (or a later one of [3]), after ask 0 > ask 1 > ask 2 > take Write { run: Run { first: 0, count: 1 }, lba: 0 }#4 > take Write { run: Run { first: 1, count: 1 }, lba: 1 }#5 > take Flush#6 > done Write { run: Run { first: 0, count: 1 }, lba: 0 }#4 > done Write { run: Run { first: 1, count: 1 }, lba: 1 }#5 > done Flush#6 > read #4 Ok > ask 3 > take Write { run: Run { first: 3, count: 1 }, lba: 0 }#8 > done Write { run: Run { first: 3, count: 1 }, lba: 0 }#8 > read #5 Ok > read #6 Ok > read #8 Ok > ask 4 > take Flush#12 > reset([] [None, None] [1, 2]) > read #12 Device > take Flush#16 > done Flush#16 > read #16 Lost > take Flush#20 > done Flush#20 > read #20 Ok
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- model::tests::the_model_reaches_a_write_given_up stdout ----
+Failures { resets: 0, crashes: 1, errors: 5 }: 264 end states, 27 with a flush given up, Some((Durable, "flush 1 was answered durable with block 0 holding 0, not the 1 acknowledged before it (or a later one of [1]), after ask 0 > take Write { run: Run { first: 0, count: 1 }, lba: 0 }#4 > done Write { run: Run { first: 0, count: 1 }, lba: 0 }#4 > read #4 Ok > ask 1 > take Flush#8 > fail Flush#8 > read #8 Device > take Flush#12 > fail Flush#12 > read #12 Device > take Flush#16 > fail Flush#16 > read #16 Device > take Flush#20 > fail Flush#20 > read #20 Device > take Flush#24 > fail Flush#24 > crash([None, None] [0, 0]) > notice > reconnect > take Flush#28 > done Flush#28 > read #28 Ok"))
+
+thread 'model::tests::the_model_reaches_a_write_given_up' (105750455) panicked at lib/blockring/src/model.rs:805:9:
+assertion `left == right` failed
+  left: Some((Durable, "flush 1 was answered durable with block 0 holding 0, not the 1 acknowledged before it (or a later one of [1]), after ask 0 > take Write { run: Run { first: 0, count: 1 }, lba: 0 }#4 > done Write { run: Run { first: 0, count: 1 }, lba: 0 }#4 > read #4 Ok > ask 1 > take Flush#8 > fail Flush#8 > read #8 Device > take Flush#12 > fail Flush#12 > read #12 Device > take Flush#16 > fail Flush#16 > read #16 Device > take Flush#20 > fail Flush#20 > read #20 Device > take Flush#24 > fail Flush#24 > crash([None, None] [0, 0]) > notice > reconnect > take Flush#28 > done Flush#28 > read #28 Ok"))
+ right: None
+
+
+failures:
+    model::tests::the_model_reaches_a_write_given_up
+    model::tests::what_a_flush_calls_durable_is_on_the_medium
+
+test result: FAILED. 5 passed; 2 failed; 0 ignored; 0 measured; 22 filtered out; finished in 0.76s
+
+error: test failed, to rerun pass `-p toyos-blockring --lib`
+exit 101
