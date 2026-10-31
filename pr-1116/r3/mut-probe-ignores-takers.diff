@@ -1,0 +1,11 @@
+--- <tmp>	2026-10-31 23:45:55
++++ kernel/pure/sched/cpu.rs	2026-10-31 23:45:55
+@@ -2368,7 +2368,7 @@
+         STEAL_RINGS.into_iter().find_map(|(inner, outer)| {
+             cpus.topology()
+                 .ring(me, inner, outer, 0)
+-                .filter(|&cpu| cpus.offers_surplus(cpu) && cpus.get(cpu).takes(me) && cpus.get(cpu).answering(self.now))
++                .filter(|&cpu| cpus.offers_surplus(cpu) && cpus.get(cpu).answering(self.now))
+                 .max_by_key(|&cpu| cpus.get(cpu).surplus())
+         })
+     }
