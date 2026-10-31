@@ -1,0 +1,260 @@
+diff --git a/kernel/Cargo.toml b/kernel/Cargo.toml
+index 80144c705..6efdeed97 100644
+--- a/kernel/Cargo.toml
++++ b/kernel/Cargo.toml
+@@ -383,6 +383,8 @@ entry-df-unclean = []
+ # own cost into the arm it is being compared against.
+ pass-spin = []
+ heap-lockspin = ["pass-spin"]
++# Measurement only, never lands: diary marks inside the IPC syscalls.
++scout-ipc-marks = []
+ 
+ [lib]
+ path = "pure/lib.rs"
+diff --git a/kernel/src/arch/x86_64/apic.rs b/kernel/src/arch/x86_64/apic.rs
+index 44a40be68..899dc8e19 100644
+--- a/kernel/src/arch/x86_64/apic.rs
++++ b/kernel/src/arch/x86_64/apic.rs
+@@ -274,7 +274,11 @@ pub(super) fn tlb_ipi_to(cpu_id: u32) {
+ pub fn kick_cpu(cpu_id: u32) {
+     if !ENABLED.load(Ordering::Relaxed) { return; }
+     let apic_id = crate::smp::hardware_id(cpu_id);
++    #[cfg(feature = "scout-ipc-marks")]
++    crate::trace::scout::mark(crate::trace::scout::KICK_BEGIN, cpu_id);
+     send(Some(apic_id), 0x4000 | u32::from(super::idt::KICK_VECTOR));
++    #[cfg(feature = "scout-ipc-marks")]
++    crate::trace::scout::mark(crate::trace::scout::KICK_END, cpu_id);
+ }
+ 
+ // Kicked, and not left to arrive on their own: a CPU halted in the idle path has stopped its own timer, so nothing else brings it to the counters round it is asked to serve.
+diff --git a/kernel/src/inbox/mod.rs b/kernel/src/inbox/mod.rs
+index 6b7e1474b..67f19f5f4 100644
+--- a/kernel/src/inbox/mod.rs
++++ b/kernel/src/inbox/mod.rs
+@@ -411,6 +411,8 @@ pub fn submit(
+ 
+     loop {
+         polls::deliver(inbox);
++        #[cfg(feature = "scout-ipc-marks")]
++        crate::trace::scout::mark(crate::trace::scout::DELIVERED, 0);
+         let (count, dropped) = inbox.with_completions(|c| (c.completion_count(), c.dropped()))?;
+ 
+         if count >= min_complete || min_complete == 0 {
+diff --git a/kernel/src/sched/driver.rs b/kernel/src/sched/driver.rs
+index 18a482ce3..2b1be0b10 100644
+--- a/kernel/src/sched/driver.rs
++++ b/kernel/src/sched/driver.rs
+@@ -555,6 +555,8 @@ pub fn pass(dispose: Dispose) {
+         crate::quiesce::note_progress();
+     }
+     execute(action);
++    #[cfg(feature = "scout-ipc-marks")]
++    crate::trace::scout::mark(crate::trace::scout::RESUMED, 0);
+     crate::preempt::enable_no_resched();
+ }
+ 
+@@ -623,6 +625,8 @@ pub fn pass_block(ticket: Ticket, deadline: Option<Nanos>) {
+         crate::quiesce::note_progress();
+     }
+     execute(action);
++    #[cfg(feature = "scout-ipc-marks")]
++    crate::trace::scout::mark(crate::trace::scout::RESUMED, 0);
+     crate::preempt::enable_no_resched();
+ }
+ 
+diff --git a/kernel/src/syscall/dispatch.rs b/kernel/src/syscall/dispatch.rs
+index 29a0afcfd..aebed55c2 100644
+--- a/kernel/src/syscall/dispatch.rs
++++ b/kernel/src/syscall/dispatch.rs
+@@ -73,6 +73,12 @@ pub(crate) fn syscall_dispatch(num: u64, a1: u64, a2: u64, a3: u64, a4: u64) ->
+     #[cfg(feature = "boot-actuators")]
+     task_probes();
+     let entered = crate::arch::cpu::counter();
++    #[cfg(feature = "scout-ipc-marks")]
++    let scouted = crate::trace::scout::marked(num);
++    #[cfg(feature = "scout-ipc-marks")]
++    if scouted {
++        crate::trace::scout::mark(crate::trace::scout::SYS_ENTER, num as u32);
++    }
+ 
+     // SAFETY: current process's page tables remain active for the duration of this call.
+     let ctx = unsafe { SyscallContext::new() };
+@@ -663,6 +669,10 @@ pub(crate) fn syscall_dispatch(num: u64, a1: u64, a2: u64, a3: u64, a4: u64) ->
+     // Wall-clock, not CPU time: elapsed includes any preemption.
+     let elapsed = crate::arch::cpu::counter().saturating_sub(entered);
+     crate::sched::driver::note_syscall(num, elapsed);
++    #[cfg(feature = "scout-ipc-marks")]
++    if scouted {
++        crate::trace::scout::mark(crate::trace::scout::SYS_EXIT, num as u32);
++    }
+ 
+     result
+ }
+diff --git a/kernel/src/syscall/ipc.rs b/kernel/src/syscall/ipc.rs
+index eec16a82d..8fe29cb9a 100644
+--- a/kernel/src/syscall/ipc.rs
++++ b/kernel/src/syscall/ipc.rs
+@@ -466,6 +466,8 @@ fn send(conn_h: RawHandle, out: &Outgoing<'_>, nonblock: bool, receives: bool) -
+                     return Err(SyscallError::PermissionDenied.into());
+                 }
+             }
++            #[cfg(feature = "scout-ipc-marks")]
++            crate::trace::scout::mark(crate::trace::scout::RESOLVED, 0);
+             // A refusal restores every handle at its own number, so it is invisible.
+             let tx = conn.tx().clone();
+             let moved = data.handles.transfer(wanted, |batch| tx.send(&out.bytes, batch));
+@@ -475,7 +477,11 @@ fn send(conn_h: RawHandle, out: &Outgoing<'_>, nonblock: bool, receives: bool) -
+         });
+         let tx = match sent {
+             Ok((tx, Ok(()), parks)) => {
++                #[cfg(feature = "scout-ipc-marks")]
++                crate::trace::scout::mark(crate::trace::scout::QUEUED, 0);
+                 wake_receiver(&tx, parks);
++                #[cfg(feature = "scout-ipc-marks")]
++                crate::trace::scout::mark(crate::trace::scout::POSTED, 0);
+                 return Ok(());
+             }
+             Ok((tx, Err(SendRefused::NoRoom), _)) if !nonblock => tx,
+@@ -509,6 +515,8 @@ fn recv(conn_h: RawHandle, into: &mut Incoming<'_>, nonblock: bool) -> u64 {
+             let conn = data.handles.get::<ConnectionEnd>(conn_h, Rights::READ)?;
+             let rx = conn.rx().clone();
+             let taken = rx.recv(&mut into.bytes, into.cap, &mut data.handles);
++            #[cfg(feature = "scout-ipc-marks")]
++            crate::trace::scout::mark(crate::trace::scout::TAKEN, 0);
+             Ok::<_, crate::object::Refusal>((rx, taken))
+         });
+         let rx = match taken {
+@@ -518,6 +526,8 @@ fn recv(conn_h: RawHandle, into: &mut Incoming<'_>, nonblock: bool) -> u64 {
+                 }
+                 // Room for the sender.
+                 rx.write_watch().post();
++                #[cfg(feature = "scout-ipc-marks")]
++                crate::trace::scout::mark(crate::trace::scout::RECV_DONE, 0);
+                 return toyos_abi::syscall::Received::encode(head.len, head.handles);
+             }
+             Ok((_, Taken::Gone)) => return SyscallError::Gone.to_u64(),
+@@ -528,6 +538,8 @@ fn recv(conn_h: RawHandle, into: &mut Incoming<'_>, nonblock: bool) -> u64 {
+             // Refused outside this hold: ending the caller takes the same non-reentrant lock.
+             Err(e) => return e.refuse(),
+         };
++        #[cfg(feature = "scout-ipc-marks")]
++        crate::trace::scout::mark(crate::trace::scout::PARKING, 0);
+         if watch::wait_until(&crate::scheduler::Parkable::at_entry(), rx.read_watch(), 0, WaitClass::Ipc, Deadline::never(), || {
+             rx.readable()
+         })
+diff --git a/kernel/src/trace.rs b/kernel/src/trace.rs
+index f7eec87f7..f3aa433ba 100644
+--- a/kernel/src/trace.rs
++++ b/kernel/src/trace.rs
+@@ -61,6 +61,33 @@ pub fn trace(kind: Kind, data: u32) {
+     push(kind, None, data);
+ }
+ 
++/// Measurement only, never lands: `osbench ipcsplit` decodes these codes.
++#[cfg(feature = "scout-ipc-marks")]
++pub mod scout {
++    pub const SYS_ENTER: u32 = 1;
++    pub const SYS_EXIT: u32 = 2;
++    pub const KICK_BEGIN: u32 = 3;
++    pub const KICK_END: u32 = 4;
++    pub const RESUMED: u32 = 8;
++    pub const RESOLVED: u32 = 10;
++    pub const QUEUED: u32 = 11;
++    pub const POSTED: u32 = 12;
++    pub const TAKEN: u32 = 13;
++    pub const RECV_DONE: u32 = 14;
++    pub const PARKING: u32 = 15;
++    pub const DELIVERED: u32 = 17;
++
++    #[inline]
++    pub fn mark(code: u32, arg: u32) {
++        super::trace(super::Kind::Mark, code << 24 | (arg & 0x00FF_FFFF));
++    }
++
++    pub fn marked(num: u64) -> bool {
++        use toyos_abi::syscall::*;
++        matches!(num, SYS_MESSAGE_SEND | SYS_MESSAGE_RECV | SYS_MESSAGE_CALL | SYS_INBOX_SUBMIT)
++    }
++}
++
+ /// Reserve, stamp and publish under one guard, on the ring of the CPU the guard holds us to.
+ #[inline]
+ fn push(kind: Kind, task: Option<(u32, u32)>, data: u32) {
+diff --git a/tests/guest/osbench/src/ipc.rs b/tests/guest/osbench/src/ipc.rs
+index b437b36c2..3a461cc4d 100644
+--- a/tests/guest/osbench/src/ipc.rs
++++ b/tests/guest/osbench/src/ipc.rs
+@@ -25,7 +25,7 @@ const HANDLE: u32 = 1;
+ const MECHANISM: &str = if cfg!(target_os = "toyos") { "toyos_connection" } else { "unix_stream_socket" };
+ const HANDLE_MECHANISM: &str = if cfg!(target_os = "toyos") { "toyos_moved_pipe_end" } else { "scm_rights_then_close" };
+ 
+-fn control(peer: &Peer, bytes: u32, rounds: u32, mode: u32) -> std::io::Result<()> {
++pub(crate) fn control(peer: &Peer, bytes: u32, rounds: u32, mode: u32) -> std::io::Result<()> {
+     let mut words = [0u8; 12];
+     for (slot, word) in words.as_chunks_mut::<4>().0.iter_mut().zip([bytes, rounds, mode]) {
+         *slot = word.to_le_bytes();
+diff --git a/tests/guest/osbench/src/main.rs b/tests/guest/osbench/src/main.rs
+index 9e88b2f36..c3b058ce4 100644
+--- a/tests/guest/osbench/src/main.rs
++++ b/tests/guest/osbench/src/main.rs
+@@ -35,6 +35,7 @@ mod files;
+ mod identity;
+ mod internet;
+ mod ipc;
++mod ipcsplit;
+ mod lan;
+ mod measure;
+ mod mem;
+@@ -156,7 +157,7 @@ const GROUPS: [(&str, fn()); 17] = [
+ 
+ /// The groups that need another party: `lan` the `osbench-peer` on the other
+ /// bench, `internet` the public internet.
+-const BY_NAME: [(&str, fn()); 2] = [("lan", lan::suite), ("internet", internet::suite)];
++const BY_NAME: [(&str, fn()); 3] = [("lan", lan::suite), ("internet", internet::suite), ("ipcsplit", ipcsplit::suite)];
+ 
+ /// A group between its first and last lines, after the machine's conditions
+ /// and the clock its CPU starts at.
+diff --git a/tests/images/benchcase.toml b/tests/images/benchcase.toml
+index ca6fe4642..8ff67fb34 100644
+--- a/tests/images/benchcase.toml
++++ b/tests/images/benchcase.toml
+@@ -97,6 +97,7 @@ args = [
+ "bin/osbench_internet" = "/system/bin/osbench"
+ "bin/osbench_crunch" = "/system/bin/osbench"
+ "bin/osbench_persist" = "/system/bin/osbench"
++"bin/osbench_ipcsplit" = "/system/bin/osbench"
+ "bin/reboot" = "/system/bin/toybox"
+ 
+ # The block service: every disk a driver offers on `disk`, listed and opened
+diff --git a/tests/toyos.rs b/tests/toyos.rs
+index 24c226028..b55501c90 100644
+--- a/tests/toyos.rs
++++ b/tests/toyos.rs
+@@ -1174,6 +1174,11 @@ const METAL: &[(&str, metal::Metal)] = &[
+         metal::Metal { arms: TESTCASES, judge: |b| job_fairness(b[0]) },
+     ),
+     // ---- one image: tests/images/benchcase.toml, `osbench`'s ToyOS half ----
++    // Measurement only, never lands.
++    (
++        "ipcsplit_marks",
++        metal::Metal { arms: IPCSPLIT_MARKS, judge: |b| osbench_ran(b[0], &["osbench_ipcsplit"]) },
++    ),
+     (
+         // The numbers compared with the same program on the bench's own Linux.
+         // Evidence and not a verdict: they are read off the log, and the row
+@@ -1766,6 +1771,15 @@ const OSBENCH_GROUPS: [&str; 17] = [
+ /// ninety benchmarks that settle the clock settles it before and after
+ /// itself, 50 ms where the clock holds and 0.5 s at most (`clock::settle`):
+ /// under 95 s. So a list bound of 525 s leaves that stall 136 s.
++/// Measurement only, never lands: the IPC syscalls split by the profile
++/// kernel's marks.
++const IPCSPLIT_MARKS: &[metal::Arm] = &[metal::Arm {
++    features: &["scout-ipc-marks"],
++    adds_ms: 120_000,
++    named_only: true,
++    ..metal::once("ipcsplit-marks", "tests/images/benchcase.toml", &[], &["osbench_ipcsplit"])
++}];
++
+ const BENCHCASE: &[metal::Arm] = &[metal::Arm {
+     adds_ms: 465_000,
+     ..metal::once("benchcase", "tests/images/benchcase.toml", &[], &OSBENCH_GROUPS)

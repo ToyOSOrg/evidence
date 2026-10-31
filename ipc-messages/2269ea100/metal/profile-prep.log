@@ -1,0 +1,57 @@
+2269ea100fd81ad14f91a1223552866aa8f61e3d + measurement-only profile patch (profile/profile.patch, never committed)
+ kernel/Cargo.toml               |  2 ++
+ kernel/src/arch/x86_64/apic.rs  |  4 ++++
+ kernel/src/inbox/mod.rs         |  2 ++
+ kernel/src/sched/driver.rs      |  4 ++++
+ kernel/src/syscall/dispatch.rs  | 10 ++++++++++
+ kernel/src/syscall/ipc.rs       | 12 ++++++++++++
+ kernel/src/trace.rs             | 27 +++++++++++++++++++++++++++
+ tests/guest/osbench/src/ipc.rs  |  2 +-
+ tests/guest/osbench/src/main.rs |  3 ++-
+ tests/images/benchcase.toml     |  1 +
+ tests/toyos.rs                  | 14 ++++++++++++++
+ 11 files changed, 79 insertions(+), 2 deletions(-)
+   Compiling toyos-abi v0.16.0 (<worktrees>/toyos-ipc-events/sdk/abi)
+   Compiling toyos v0.18.0 (<worktrees>/toyos-ipc-events/sdk/toyos)
+   Compiling toyos-symbols v0.1.0 (<worktrees>/toyos-ipc-events/lib/symbols)
+   Compiling toyos-logstream v0.1.0 (<worktrees>/toyos-ipc-events/lib/logstream)
+   Compiling toyos-input v0.1.0 (<worktrees>/toyos-ipc-events/lib/input)
+   Compiling toyos-bootmap v0.1.0 (<worktrees>/toyos-ipc-events/lib/bootmap)
+   Compiling kernel v0.1.0 (<worktrees>/toyos-ipc-events/kernel)
+   Compiling toyos-acpi v0.1.0 (<worktrees>/toyos-ipc-events/lib/acpi)
+   Compiling toyos-userbound v0.1.0 (<worktrees>/toyos-ipc-events/lib/userbound)
+   Compiling toyos-manifest v0.1.0 (<worktrees>/toyos-ipc-events/lib/manifest)
+   Compiling toyos-session v0.1.0 (<worktrees>/toyos-ipc-events/lib/session)
+   Compiling toyos-swap v0.1.0 (<worktrees>/toyos-ipc-events/lib/swap)
+   Compiling toyos-build v0.1.0 (<worktrees>/toyos-ipc-events)
+   Compiling toyos-metal v0.1.0 (<worktrees>/toyos-ipc-events/tests/metal)
+    Finished `test` profile [optimized + debuginfo] target(s) in 20.98s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-040be7639b65fd4e)
+18:35:27   BUILD x86_64 binaries of tests/guest/rust-tests
+18:35:30 external deps changed: cleaning <worktrees>/toyos-ipc-events/tests/guest/rust-tests/target/x86_64-unknown-toyos
+18:35:31 external deps changed: cleaning <worktrees>/toyos-ipc-events/tests/guest/rust-tests/tls-dlopen-lib/target/x86_64-unknown-toyos
+18:35:31 external deps changed: cleaning <worktrees>/toyos-ipc-events/tests/guest/rust-tests/tls-lib/target/x86_64-unknown-toyos
+18:35:31 external deps changed: cleaning <worktrees>/toyos-ipc-events/tests/guest/rust-tests/tls-multi-crate/target/x86_64-unknown-toyos
+18:35:31 external deps changed: cleaning <worktrees>/toyos-ipc-events/tests/guest/rust-tests/tls-cranelift/target/x86_64-unknown-toyos
+18:36:53   BUILT x86_64 binaries of tests/guest/rust-tests  (86s)
+18:36:53   BUILD x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests
+18:37:22   BUILT x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests  (29s)
+18:37:22 [toyos] Compiling 143 C tests, and attempting 24 declared ones...
+18:37:27 [metal] 1 registration(s) and 0 shared member(s) over 1 boot(s)
+18:37:27   BUILD x86_64 kernel scout-ipc-marks, loader, ROOT of <scratch>/metal/profile/ipcsplit-marks/system-f6650abe80abfb57.toml
+18:37:30 external deps changed: cleaning <worktrees>/toyos-ipc-events/target/x86_64-unknown-toyos
+18:38:49 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+18:38:49   BUILT x86_64 kernel scout-ipc-marks, loader, ROOT of <scratch>/metal/profile/ipcsplit-marks/system-f6650abe80abfb57.toml  (81s)
+18:38:49 [metal] ipcsplit-marks: 1 job(s) under a list bound of 180000 ms, armed with [] and a boot deadline of 360000 ms — <scratch>/metal/profile/ipcsplit-marks/image.img
+# One boot per image. Each invocation is `cargo <words>` from this worktree.
+
+ipcsplit-marks
+  image: <scratch>/metal/profile/ipcsplit-marks/image.img
+  cargo run -p toyos-metal -- --image <scratch>/metal/profile/ipcsplit-marks/image.img --readback <scratch>/metal/profile/ipcsplit-marks --fat32-check
+18:38:49 [metal] staged 1 image(s); <scratch>/metal/profile/request.txt lists them. The machine was not touched, so this run establishes nothing about it.
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `<worktrees>/toyos-ipc-events/target/debug/deps/toyos_build-040be7639b65fd4e --metal --metal-readback <scratch>/metal/profile ipcsplit_marks` (exit status: 2)
+exit 2
+restored

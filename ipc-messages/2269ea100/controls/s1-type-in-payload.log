@@ -1,0 +1,46 @@
+control s1-type-in-payload on 8fb61777da2aece259ff8633c5fbff2d39458413
+ sdk/toyos/src/ipc.rs | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+   Compiling toyos v0.18.0 (<worktrees>/toyos-ipc-events/sdk/toyos)
+warning: variant `Malformed` is never constructed
+   --> sdk/toyos/src/ipc.rs:455:5
+    |
+454 | enum Refused {
+    |      ------- variant in this enum
+455 |     Malformed,
+    |     ^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `toyos` (lib test) generated 1 warning
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.82s
+     Running unittests src/lib.rs (target/debug/deps/toyos-757a17a5e3c64085)
+
+running 9 tests
+test ipc::tests::a_frame_is_its_type_then_exactly_its_payload ... ok
+test ipc::tests::a_payload_past_the_frame_bound_is_refused ... ok
+test ipc::tests::a_payload_decodes_only_at_exactly_its_width ... ok
+test ipc::tests::a_receive_refused_is_the_step_a_server_acts_on ... ok
+test ipc::tests::a_payload_too_large_closes_its_handles ... ok
+test ipc::tests::a_refused_move_closes_every_handle_it_consumed ... ok
+test ipc::tests::a_batch_past_the_bound_is_refused_and_closed ... ok
+test ipc::tests::a_taken_move_closes_nothing ... ok
+test ipc::tests::a_message_shorter_than_a_type_is_malformed ... FAILED
+
+failures:
+
+---- ipc::tests::a_message_shorter_than_a_type_is_malformed stdout ----
+
+thread 'ipc::tests::a_message_shorter_than_a_type_is_malformed' (108073105) panicked at sdk/toyos/src/ipc.rs:675:9:
+assertion failed: matches!(rx.taken(Ok(Received { len: TYPE_LEN - 1, handles: 0 }), none),
+    Err(Refused::Malformed))
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    ipc::tests::a_message_shorter_than_a_type_is_malformed
+
+test result: FAILED. 8 passed; 1 failed; 0 ignored; 0 measured; 138 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos --lib`
+test exit 101

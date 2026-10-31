@@ -1,0 +1,50 @@
+control q3-short-buffer-taken on 8fb61777da2aece259ff8633c5fbff2d39458413 + random-test fit assertion
+ kernel/pure/message.rs | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+   Compiling kernel v0.1.0 (<worktrees>/toyos-ipc-events/kernel)
+warning: unused variable: `buf`
+  --> kernel/pure/message.rs:96:9
+   |
+96 |         buf: usize,
+   |         ^^^ help: if this is intentional, prefix it with an underscore: `_buf`
+   |
+   = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `kernel` (lib test) generated 1 warning (run `cargo fix --lib -p kernel --tests` to apply 1 suggestion)
+    Finished `test` profile [optimized + debuginfo] target(s) in 3.13s
+     Running unittests pure/lib.rs (target/debug/deps/kernel-fa45b686f8e87f8e)
+
+running 7 tests
+test message::tests::a_message_is_taken_whole_with_its_own_handles ... ok
+test message::tests::a_message_too_large_for_the_reader_stays_queued_whole ... FAILED
+test message::tests::a_message_without_handles_asks_no_room ... ok
+test message::tests::a_push_past_the_bounds_is_a_caller_bug - should panic ... ok
+test message::tests::each_bound_refuses_the_message_past_it ... ok
+test message::tests::every_message_arrives_once_whole_in_order_with_its_handles ... FAILED
+test message::tests::fits_any_is_room_for_the_largest_send ... ok
+
+failures:
+
+---- message::tests::a_message_too_large_for_the_reader_stays_queued_whole stdout ----
+
+thread 'message::tests::a_message_too_large_for_the_reader_stays_queued_whole' (108093087) panicked at kernel/pure/message.rs:180:9:
+assertion `left == right` failed: a buffer a byte short
+  left: Some(Ok(([0, 1, 2, 3], [1, 2])))
+ right: Some(Err(TooSmall))
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- message::tests::every_message_arrives_once_whole_in_order_with_its_handles stdout ----
+
+thread 'message::tests::every_message_arrives_once_whole_in_order_with_its_handles' (108093091) panicked at kernel/pure/message.rs:278:25:
+a message taken into a reader too small for it
+
+
+failures:
+    message::tests::a_message_too_large_for_the_reader_stays_queued_whole
+    message::tests::every_message_arrives_once_whole_in_order_with_its_handles
+
+test result: FAILED. 5 passed; 2 failed; 0 ignored; 0 measured; 364 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p kernel --lib`
+test exit 101
+ M kernel/pure/message.rs

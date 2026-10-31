@@ -1,0 +1,25 @@
+# ipc-messages (phase 2) metal request. Each invocation is `cargo <words>` from <worktrees>/toyos-ipc-events.
+# One boot per line. T14 and AMD unless noted; give each bench and boot its own readback
+# directory (for example <readback>-t14-1), since a readback directory holds one boot. Checksums: <scratch>/metal/image-sha256.txt.
+#
+# Trees (all on main f45dc5e3b + #1108 18060b521):
+#   base = 4fc78ac97  (#1108 + the scheduler's b24b37a56: phase 2's parent)
+#   h1   = 245f7b9af  (+ whole messages, no call)
+#   h2   = 2269ea100  (+ the call; head). Staged from that tree but one header comment in a guest test.
+#   profile = 2269ea100 + measurement-only diary marks (never committed; <scratch>/profile/profile.patch)
+#
+# A. A/B, row `osbench` (benchcase). Rows of interest: ipc.reqrep.*, ipc.reqrep_handle.8,
+#    pingpong.*, fs.*.direct.*. Alternate per bench: base, h1, h2, then h2, h1, base, as boots
+#    allow (two of each per bench is the ask; AMD's LLC placement is bimodal, so one boot each
+#    there decides nothing). h2 against h1 decides the call; h1 against base prices whole messages.
+cargo run -p toyos-metal -- --image <scratch>/metal/base/benchcase/image.img --readback <scratch>/metal/base/benchcase --fat32-check
+cargo run -p toyos-metal -- --image <scratch>/metal/h1/benchcase/image.img --readback <scratch>/metal/h1/benchcase --fat32-check
+cargo run -p toyos-metal -- --image <scratch>/metal/h2/benchcase/image.img --readback <scratch>/metal/h2/benchcase --fat32-check
+#    (second boots: the same images, another readback directory)
+#
+# B. Members, testcases shared boot at h2, one boot per bench: messages_are_whole, connect_before_serve.
+cargo run -p toyos-metal -- --image <scratch>/metal/h2/testcases/image.img --readback <scratch>/metal/h2/testcases --fat32-check
+#
+# C. Profile, row ipcsplit_marks (benchcase, scout kernel), one boot, T14 first, AMD if a boot is spare:
+#    note=ipcsplit.* lines split send/recv/call/inbox bodies by diary marks.
+cargo run -p toyos-metal -- --image <scratch>/metal/profile/ipcsplit-marks/image.img --readback <scratch>/metal/profile/ipcsplit-marks --fat32-check

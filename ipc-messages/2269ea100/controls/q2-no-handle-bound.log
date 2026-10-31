@@ -1,0 +1,43 @@
+control q2-no-handle-bound on 8fb61777da2aece259ff8633c5fbff2d39458413
+ kernel/pure/message.rs | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+   Compiling kernel v0.1.0 (<worktrees>/toyos-ipc-events/kernel)
+    Finished `test` profile [optimized + debuginfo] target(s) in 2.14s
+     Running unittests pure/lib.rs (target/debug/deps/kernel-fa45b686f8e87f8e)
+
+running 7 tests
+test message::tests::a_message_without_handles_asks_no_room ... ok
+test message::tests::a_message_is_taken_whole_with_its_own_handles ... ok
+test message::tests::a_message_too_large_for_the_reader_stays_queued_whole ... ok
+test message::tests::a_push_past_the_bounds_is_a_caller_bug - should panic ... ok
+test message::tests::each_bound_refuses_the_message_past_it ... FAILED
+test message::tests::fits_any_is_room_for_the_largest_send ... FAILED
+test message::tests::every_message_arrives_once_whole_in_order_with_its_handles ... FAILED
+
+failures:
+
+---- message::tests::each_bound_refuses_the_message_past_it stdout ----
+
+thread 'message::tests::each_bound_refuses_the_message_past_it' (108057079) panicked at kernel/pure/message.rs:82:9:
+message: a message queued past the queue's bounds
+
+---- message::tests::fits_any_is_room_for_the_largest_send stdout ----
+
+thread 'message::tests::fits_any_is_room_for_the_largest_send' (108057081) panicked at kernel/pure/message.rs:224:9:
+room for fewer than a send's handles is not writable
+
+---- message::tests::every_message_arrives_once_whole_in_order_with_its_handles stdout ----
+
+thread 'message::tests::every_message_arrives_once_whole_in_order_with_its_handles' (108057080) panicked at kernel/pure/message.rs:82:9:
+message: a message queued past the queue's bounds
+
+
+failures:
+    message::tests::each_bound_refuses_the_message_past_it
+    message::tests::every_message_arrives_once_whole_in_order_with_its_handles
+    message::tests::fits_any_is_room_for_the_largest_send
+
+test result: FAILED. 4 passed; 3 failed; 0 ignored; 0 measured; 364 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p kernel --lib`
+test exit 101
