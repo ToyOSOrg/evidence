@@ -1,0 +1,12 @@
+diff --git a/system/netstack/shard/tcp/src/conn.rs b/system/netstack/shard/tcp/src/conn.rs
+index cb0d29771..eee36907d 100644
+--- a/system/netstack/shard/tcp/src/conn.rs
++++ b/system/netstack/shard/tcp/src/conn.rs
+@@ -1188,7 +1188,6 @@ impl Sync {
+         self.rtt.back_off();
+         // RFC 6298 §5: after a back-off, a new RTT measurement "can only happen when new data has
+         // been sent and acknowledged", so the backed-off RTO stands until then.
+-        self.departures.clear();
+         (self.probe_at, self.probe_due, self.probe) = (None, false, None);
+         let repeat = core::mem::replace(&mut self.timeout_rtx, true);
+         self.cc.on_timeout(self.tx.flight(), repeat);

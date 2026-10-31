@@ -19,3 +19,9 @@ r2/host/  Review r1's fix at ToyOS 15fdb0e9b (every segment in flight timed; sam
   tcp-test-15fdb0e9b.log  cargo test -p toyos-net-tcp --no-fail-fast: 429 passed, EXIT=0
   controls/               eight negative controls, each applied, run and reverted; summary.txt (all exit 101), patches and logs.
                           echo-first was rewritten once: its first patch left a match non-exhaustive and did not compile.
+
+r3/host/  Review r2's fix at ToyOS 417b74b9f (small-write joins stop at the first ACK into a run; first/last send instants)
+  ci-host-417b74b9f.log           cargo run -- --ci host: 105 steps, all green, EXIT=0
+  tcp-test-417b74b9f.log          cargo test -p toyos-net-tcp --no-fail-fast: 432 passed, EXIT=0
+  s_rt_022-at-15fdb0e9b.log       the review's test against 15fdb0e9b's conn.rs (fix-conn-reverted-for-s_rt_022.diff reverted): fails, exit 101
+  controls/                       eleven negative controls, each applied, run and reverted; summary.txt (all exit 101), patches and logs
