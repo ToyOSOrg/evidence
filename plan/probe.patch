@@ -1,0 +1,99 @@
+diff --git a/system/fileserver/src/data.rs b/system/fileserver/src/data.rs
+index f384f15e0..6bfd83aff 100644
+--- a/system/fileserver/src/data.rs
++++ b/system/fileserver/src/data.rs
+@@ -1318,6 +1318,8 @@ mod tests {
+         blocks: u64,
+         /// Shared, so a test reads what the disk holds while the server runs.
+         image: Rc<std::cell::RefCell<Image>>,
++        reads: std::cell::Cell<usize>,
++        requests: std::cell::Cell<usize>,
+         writes: std::cell::Cell<usize>,
+         flushes: std::cell::Cell<usize>,
+         keep: usize,
+@@ -1326,11 +1328,11 @@ mod tests {
+ 
+     impl Stops {
+         fn new(blocks: u64) -> Self {
+-            Self { blocks, image: Rc::default(), writes: Default::default(), flushes: Default::default(), keep: usize::MAX, refuse: None }
++            Self { blocks, image: Rc::default(), reads: Default::default(), requests: Default::default(), writes: Default::default(), flushes: Default::default(), keep: usize::MAX, refuse: None }
+         }
+ 
+         fn from(image: &Image, blocks: u64, keep: usize, refuse: Option<usize>) -> Self {
+-            Self { blocks, image: Rc::new(image.clone().into()), writes: Default::default(), flushes: Default::default(), keep, refuse }
++            Self { blocks, image: Rc::new(image.clone().into()), reads: Default::default(), requests: Default::default(), writes: Default::default(), flushes: Default::default(), keep, refuse }
+         }
+     }
+ 
+@@ -1340,6 +1342,7 @@ mod tests {
+         }
+ 
+         async fn read(&self, lba: u64, out: &mut [Block]) -> Result<(), toyos_blockdev::Error> {
++            self.reads.set(self.reads.get() + out.len());
+             let image = self.image.borrow();
+             for (block, out) in (lba..).zip(out) {
+                 match image.get(&block) {
+@@ -1351,6 +1354,7 @@ mod tests {
+         }
+ 
+         async fn write(&self, lba: u64, data: &[Block]) -> Result<(), toyos_blockdev::Error> {
++            self.requests.set(self.requests.get() + 1);
+             for (block, data) in (lba..).zip(data) {
+                 let n = self.writes.get();
+                 self.writes.set(n + 1);
+@@ -1370,6 +1374,55 @@ mod tests {
+         }
+     }
+ 
++    /// MEASUREMENT ONLY: osbench's fs.disk.seq_read.4096 at the cache's own
++    /// limit: a 64 MiB file written in 4 KiB calls and synced, then read
++    /// whole in 4 KiB calls, five rounds; print the disk blocks each round read.
++    #[test]
++    fn probe_seq_read_4096_at_the_limit() {
++        const MIB: usize = 1 << 20;
++        let mut v = DataVolume::format(Stops::new(40_000), &["home", "apps"], clock).unwrap();
++        let n = v.open("home/seq", CREATE).unwrap();
++        let page: Vec<u8> = (0..BLOCK).map(|i| (i % 253) as u8).collect();
++        for k in 0..64 * MIB / BLOCK {
++            v.write(n, (k * BLOCK) as u64, &page).unwrap();
++        }
++        v.close(n).unwrap();
++        assert_eq!(v.sync(), Ok(Vec::new()));
++        let mut out = vec![0u8; BLOCK];
++        for round in 0..5 {
++            let before = v.cache.disk().reads.get();
++            let n = v.open("home/seq", PLAIN).unwrap();
++            for k in 0..64 * MIB / BLOCK {
++                assert_eq!(v.read(n, (k * BLOCK) as u64, &mut Buf(&mut out)).unwrap(), BLOCK);
++            }
++            v.close(n).unwrap();
++            println!("probe seq_read round {round}: disk blocks read {}", v.cache.disk().reads.get() - before);
++        }
++    }
++
++    /// MEASUREMENT ONLY: osbench's persist.seq_write_fsync. Each round
++    /// truncates the file, writes 8 MiB in 1 MiB calls and syncs; print the
++    /// file's runs and the disk write requests the sync made.
++    #[test]
++    fn probe_seq_write_fsync_fragmentation() {
++        const MIB: usize = 1 << 20;
++        let mut v = DataVolume::format(Stops::new(200_000), &["home", "apps"], clock).unwrap();
++        let chunk = vec![0x2du8; MIB];
++        let how = OpenHow { create: true, create_new: false, truncate: true };
++        for round in 0..6 {
++            let n = v.open("home/seq", how).unwrap();
++            for k in 0..8 {
++                v.write(n, (k * MIB) as u64, &chunk).unwrap();
++            }
++            let lens: Vec<u32> = v.open[&n].extents.iter().map(|e| e.block_count).collect();
++            let (before, asked) = (v.cache.disk().writes.get(), v.cache.disk().requests.get());
++            assert_eq!(v.sync(), Ok(Vec::new()));
++            let (blocks, requests) = (v.cache.disk().writes.get() - before, v.cache.disk().requests.get() - asked);
++            v.close(n).unwrap();
++            println!("probe seq_write round {round}: blocks written {blocks} in {requests} requests, file runs {}: {lens:?}", lens.len());
++        }
++    }
++
+     impl Disk for Stops {}
+ 
+     /// A sync with nothing written since the last asks the disk for nothing,
