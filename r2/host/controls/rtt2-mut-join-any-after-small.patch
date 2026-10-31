@@ -1,0 +1,13 @@
+diff --git a/system/netstack/shard/tcp/src/conn.rs b/system/netstack/shard/tcp/src/conn.rs
+index 15964defc..b2491878e 100644
+--- a/system/netstack/shard/tcp/src/conn.rs
++++ b/system/netstack/shard/tcp/src/conn.rs
+@@ -1345,7 +1345,7 @@ impl Sync {
+         } else if end.after(old) {
+             let smss = self.smss();
+             match self.departures.back_mut() {
+-                Some(run) if run.end == start && (run.at == now || (run.end.since(run.start) < smss && len < smss)) => run.end = end,
++                Some(run) if run.end == start && (run.at == now || run.end.since(run.start) < smss) => run.end = end,
+                 _ => self.departures.push_back(Departure { start, end, at: now }),
+             }
+         }
