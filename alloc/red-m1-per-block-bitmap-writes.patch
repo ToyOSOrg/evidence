@@ -1,0 +1,28 @@
+diff --git a/lib/bcachefs/src/alloc_bitmap.rs b/lib/bcachefs/src/alloc_bitmap.rs
+index 6da81ca67..a4e82e7af 100644
+--- a/lib/bcachefs/src/alloc_bitmap.rs
++++ b/lib/bcachefs/src/alloc_bitmap.rs
+@@ -260,21 +260,8 @@ impl BitmapAllocator {
+ 
+     /// Mark a contiguous range of blocks as used, one write per bitmap block.
+     fn set_range_used(&self, io: &dyn BlockIO, start: BlockNum, count: u64) -> Result<(), FsError> {
+-        let end = start.raw() + count;
+-        let mut block = start.raw();
+-        while block < end {
+-            let (bitmap_block, _, _) = self.bit_of(BlockNum::new(block));
+-            let mut buf = BlockBuf::zeroed();
+-            io.read(bitmap_block, &mut buf)?;
+-            while block < end {
+-                let (holding, byte_off, bit) = self.bit_of(BlockNum::new(block));
+-                if holding != bitmap_block {
+-                    break;
+-                }
+-                buf.0[byte_off] |= 1 << bit;
+-                block += 1;
+-            }
+-            io.write(bitmap_block, &buf)?;
++        for i in 0..count {
++            self.set_used(io, BlockNum::new(start.raw() + i))?;
+         }
+         Ok(())
+     }

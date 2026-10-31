@@ -1,0 +1,13 @@
+diff --git a/lib/bcachefs/src/fs.rs b/lib/bcachefs/src/fs.rs
+index 069ac92f7..fff9914ed 100644
+--- a/lib/bcachefs/src/fs.rs
++++ b/lib/bcachefs/src/fs.rs
+@@ -1074,7 +1074,7 @@ impl<IO: BlockIO> Mounted<IO, ReadWrite> {
+         let mut covered: u64 = extents.iter().map(|e| e.block_count as u64).sum();
+         let hole = covered;
+         while covered < end {
+-            let want = (end - covered).min(u32::MAX as u64) as u32;
++            let want = 1;
+             let total = self.alloc.total_blocks;
+             let from = match extents.last().and_then(|e| e.start_block.checked_add(e.block_count as u64)) {
+                 None => self.alloc.next_alloc,

@@ -1,0 +1,56 @@
+diff --git a/system/fileserver/src/cache.rs b/system/fileserver/src/cache.rs
+index d6bde7286..369a51e88 100644
+--- a/system/fileserver/src/cache.rs
++++ b/system/fileserver/src/cache.rs
+@@ -315,7 +315,21 @@ impl<D: Disk> BlockDev for Cache<D> {
+         self.until(|inner| !inner.flushing).await;
+         self.inner.borrow_mut().flushing = true;
+         let _flushing = Flushing(self);
+-        let mut runs = self.dirty_runs().into_iter();
++        let runs = self.dirty_runs();
++        // MEASUREMENT ONLY (disk-path probe 2), never to land.
++        let blocks: usize = runs.iter().map(|&(_, n)| n).sum();
++        if blocks >= 1024 {
++            let count = |lo: usize, hi: usize| runs.iter().filter(|&&(_, n)| (lo..=hi).contains(&n)).count();
++            println!(
++                "disk-path-probe2: flush blocks {blocks} runs {} of32 {} of16-31 {} of2-15 {} of1 {}",
++                runs.len(),
++                count(RUN, RUN),
++                count(16, RUN - 1),
++                count(2, 15),
++                count(1, 1)
++            );
++        }
++        let mut runs = runs.into_iter();
+         let mut flight: Vec<Pin<Box<dyn Future<Output = Result<(), Error>> + '_>>> = Vec::new();
+         let mut refused = Ok(());
+         poll_fn(|cx| loop {
+diff --git a/system/fileserver/src/data.rs b/system/fileserver/src/data.rs
+index 2a5ede3bf..1da9de7b3 100644
+--- a/system/fileserver/src/data.rs
++++ b/system/fileserver/src/data.rs
+@@ -790,6 +790,24 @@ impl<D: Disk> Volume for DataVolume<D> {
+     }
+ 
+     fn sync(&mut self) -> Result<Vec<(Node, Error)>, Error> {
++        // MEASUREMENT ONLY (disk-path probe 2), never to land.
++        for open in self.open.values() {
++            let pages: u64 = open.extents.iter().map(|e| e.block_count as u64).sum();
++            if pages >= 2048 {
++                let mut lens: Vec<u32> = open.extents.iter().map(|e| e.block_count).collect();
++                let first: Vec<u32> = lens.iter().copied().take(16).collect();
++                lens.sort_unstable();
++                let n = lens.len();
++                println!(
++                    "disk-path-probe2: file '{}' pages {pages} runs {n} shortest {} median {} longest {} first {first:?} free_bytes {}",
++                    open.path,
++                    lens[0],
++                    lens[n / 2],
++                    lens[n - 1],
++                    self.fs.free_bytes()
++                );
++            }
++        }
+         let mut unwritten = Vec::new();
+         let nodes: Vec<Node> = self.open.keys().copied().collect();
+         for node in nodes {

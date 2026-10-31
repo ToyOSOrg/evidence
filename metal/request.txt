@@ -1,0 +1,32 @@
+# disk-path round 3: #1113 r1 under its kept limit, and seq_write step 1, with one shared probe build.
+# Three trees, one benchcase boot of each per bench (six boots). Suggested order per bench: X-A, X-B, X-C.
+#   X-A = #1099 head fe6d7d2a8 (the base of #1113).
+#   X-B = #1113 head 558ab7707 + the measurement-only probe 03386f119. Head of #1113's A/B, base of step 1's.
+#   X-C = step 1 fb5adb524 + the same probe, 8e2bb97ce. Head of step 1's A/B.
+# Rows: persist.seq_write_fsync, fs.disk.seq_write.1048576 and .4096; no regression in persist.* or fs.disk.*.
+# Probe lines: kernel.log "disk-path-probe2:" (a file of >= 2048 pages at each DATA sync, and each cache flush of >= 1024 blocks).
+# Image sha256: $SCRATCH/metal2/sha256.txt
+X-A-t14 benchcase
+  image: $SCRATCH/metal2/X-A-t14/benchcase/image.img
+  cargo run -p toyos-metal -- --image $SCRATCH/metal2/X-A-t14/benchcase/image.img --readback $SCRATCH/metal2/X-A-t14/benchcase --fat32-check
+
+X-A-amd benchcase
+  image: $SCRATCH/metal2/X-A-amd/benchcase/image.img
+  cargo run -p toyos-metal -- --image $SCRATCH/metal2/X-A-amd/benchcase/image.img --readback $SCRATCH/metal2/X-A-amd/benchcase --fat32-check --host toyos@bench-amd
+
+X-B-t14 benchcase
+  image: $SCRATCH/metal2/X-B-t14/benchcase/image.img
+  cargo run -p toyos-metal -- --image $SCRATCH/metal2/X-B-t14/benchcase/image.img --readback $SCRATCH/metal2/X-B-t14/benchcase --fat32-check
+
+X-B-amd benchcase
+  image: $SCRATCH/metal2/X-B-amd/benchcase/image.img
+  cargo run -p toyos-metal -- --image $SCRATCH/metal2/X-B-amd/benchcase/image.img --readback $SCRATCH/metal2/X-B-amd/benchcase --fat32-check --host toyos@bench-amd
+
+X-C-t14 benchcase
+  image: $SCRATCH/metal2/X-C-t14/benchcase/image.img
+  cargo run -p toyos-metal -- --image $SCRATCH/metal2/X-C-t14/benchcase/image.img --readback $SCRATCH/metal2/X-C-t14/benchcase --fat32-check
+
+X-C-amd benchcase
+  image: $SCRATCH/metal2/X-C-amd/benchcase/image.img
+  cargo run -p toyos-metal -- --image $SCRATCH/metal2/X-C-amd/benchcase/image.img --readback $SCRATCH/metal2/X-C-amd/benchcase --fat32-check --host toyos@bench-amd
+
