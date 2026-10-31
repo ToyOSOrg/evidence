@@ -1,0 +1,29 @@
+diff --git a/tests/toyos.rs b/tests/toyos.rs
+index 782dde750..ea4d89f92 100644
+--- a/tests/toyos.rs
++++ b/tests/toyos.rs
+@@ -2852,7 +2852,7 @@ fn acpi_press_is_one_sci() -> Result<(), String> {
+ /// only those two jobs: each exits 0, which it does only once every row it
+ /// ran measured or said why not, its capability rows among them.
+ fn osbench_capability_groups_exit_0() -> Result<(), String> {
+-    const JOBS: [&str; 2] = ["osbench_identity", "osbench_fair"];
++    const JOBS: [&str; 2] = ["osbench_sched", "osbench_mem"];
+     let committed = compile::repo_root().join("tests/images/benchcase.toml");
+     let text = fs::read_to_string(&committed).map_err(|e| format!("{}: {e}", committed.display()))?;
+     let derived = toyos_metal::image::derive(&text, 300_000, &JOBS, &[]).map_err(|why| why.to_string())?;
+@@ -2862,11 +2862,14 @@ fn osbench_capability_groups_exit_0() -> Result<(), String> {
+         &config,
+         &[],
+         &[],
+-        BootOptions { ready_marker: bootlog::COMPLETE, ..Default::default() },
++        BootOptions { ready_marker: bootlog::COMPLETE, smp: 4, ..Default::default() },
+     );
+     let mut console = format!("{}\n", qemu.boot_log());
+     let last = format!("===TEST_END {} ", JOBS[JOBS.len() - 1]);
+     await_guest(&mut qemu, &mut console, "osbench's two groups to end", |said| said.contains(&last))?;
++    for line in console.lines().filter(|l| l.contains("refused=") || l.contains("===TEST_END") || l.contains("bench=wake.onto_busy") || l.contains("munmap_touched_remote")) {
++        eprintln!("  [probe] {line}");
++    }
+     let said = serial::Serial::named("osbench boot", console);
+     for job in JOBS {
+         said.must_say(&format!("===TEST_END {job} exit=0==="))?;
