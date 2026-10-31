@@ -30,3 +30,9 @@ r5/host/  #1114 rebased onto main after #1112 (dc1a8642e), with the header rule 
   ci-host-ce43f3f7d.log (107 steps, all green, EXIT=0), tcp-test-ce43f3f7d.log (441 passed, EXIT=0),
   controls/ the header rule's control (any send joining a short run): exit 101, failing s_rt_025.
   Masked under #1119's rule, model strings included.
+
+r6/  Review r1 of #1114 at ToyOS 3a0744d34 (on main 24a538c88; the bucket at most half the window; the ramp issue kept open)
+  host/ci-host-3a0744d34.log (107 steps, all green, EXIT=0), host/tcp-test-3a0744d34.log (442 passed, EXIT=0),
+  host/controls/ eight pacing controls with patches and logs, all exit 101.
+  staged/ the T14 parity boot (Linux, p1, Linux): request.txt with the rule, the image hash, the staging log (exit 2: staged),
+  and the Linux binaries' hashes rebuilt at 3a0744d34 (the peer's are unchanged).

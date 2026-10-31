@@ -1,0 +1,22 @@
+# T14 parity boot for #1114 (review r1), worktree <worktree>, branch tcp-pace.
+# P = 3a0744d34 (#1114 on main 24a538c88: pacing with the half-window bucket, N = 2 in slow start, L = infinity).
+# Order: Linux (L1), p1, Linux (L2): one ToyOS boot, bracketed by Linux runs as in the earlier sessions. Image hash in image-sha256.txt.
+# Linux binaries, rebuilt at 3a0744d34 (osbench changed on main since the last session; built with
+#   CARGO_TARGET_DIR=<scratch> cargo +nightly-2026-07-22 build -p osbench -p osbench-lan --target x86_64-unknown-linux-musl --profile toyos,
+#   logs/linux-build-3.log, exit 0): <scratch>/metal5/linux-3a0744d34/ (SHA256SUMS inside).
+#   T14's Linux runs osbench-linux-x86_64 (3946781d...), lan group, as before. The AMD peer is unchanged: osbench-peer-linux-x86_64 is
+#   byte-identical to the last sessions' (4ec7058b..., osbench-lan/3), so the running peer need not change.
+# Read the upload row: p50, peer_received_by_{100,300,1000,2000}ms_bytes_mean; ToyOS also stack_net_tcp_send_limited_pacing_ns,
+#   rtt_departure / rtt_echo, hystart_{css,css_entry_rounds,exits}, loss counters (retransmit_bytes, rto, fast/sack_recovery, loss_probe).
+# Decision rule, set before the run (the issue's exit):
+#   Parity: p1's p50 at or above the lower of L1/L2 less 1 MB/s, and its 100 ms and 300 ms marks at or above the lower of L1/L2 (the exit: "no slower"),
+#           with nothing resent beyond a loss probe. Then the ramp issue is deleted in a commit on #1114.
+#   Short of that: the issue stays open with this reading, and the pacing hold time and loss counters say whether the half-window
+#           bucket (more holds on short round trips) or the new main (#1106's driver process) is what moved.
+# Judge: cd <worktree> && git switch -q tcp-pace && cargo test --test toyos-build -- --metal --metal-readback <scratch>/metal5/p1 osbench_lan
+# Each invocation is `cargo <words>` from this worktree.
+
+## p1
+netbenchcase
+  image: <scratch>/metal5/p1/netbenchcase/image.img
+  cargo run -p toyos-metal -- --image <scratch>/metal5/p1/netbenchcase/image.img --readback <scratch>/metal5/p1/netbenchcase --fat32-check
