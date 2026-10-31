@@ -1,0 +1,114 @@
+# How the traces' command bytes were obtained and checked (spec/ax2xx.md §15.2), revision 2.
+#
+# No run logged a packet's bytes. Each command's bytes were derived twice from what the run logged:
+#   A. from revision 1's layout tables and the inputs the run logged (firmware PHY configuration word,
+#      NVM chains, LTR state, capability and API bits, channel list), by a reader's tool;
+#   B. from the run's build itself: the build's own functions that build and send commands, pasted
+#      verbatim into a host harness whose mocks stand in for the device and return the logged answers.
+# A and B agree byte for byte. A negative control shows the comparison sees a one-field change. The
+# firmware's own error table (Run11:604) independently confirms Run11's refused header and lengths.
+#
+# Neither tool is published: B is a reference's code, and A encodes a reference's command
+# construction, so either would put a reference's construction beside the specification. They stay
+# with the reader; their hashes are below, and either can be re-made from the pinned builds
+# (spec/provenance.md, Ref D per run). The trace writer (tools/traces.py, hash below) holds the
+# device packets' recorded fields and the specification's fill rules, and is withheld with A
+# because it reads A's output.
+#
+# Paths are relative to the reader's scratch root. The station's address never entered either
+# derivation: both use the placeholder 02:00:00:00:00:01.
+#
+## 0. Inputs
+$ rustc --version
+rustc 1.98.1 (48a229cea 2026-09-01)
+exit 0
+$ python3 --version
+Python 3.14.7
+exit 0
+$ shasum -a 256 fw/iwlwifi-cc-a0-77.ucode
+1866a58a1daee56b120362122d5f7548b443b53d33f2558a7e4407d58fd27dab  iwlwifi-cc-a0-77.ucode
+exit 0
+the run logs, as published in spec/runs/:
+0efc2cef2c115a4ac4c8db0f42deb6e01a306259f6b638af8e2cf6bca5d2a4c0  spec/runs/demo-v11.log
+1fd1e6aa2cf568142bda627b8e601c3654dee5febe80a0f7b9d14f17fdd9cf78  spec/runs/demo-v13.log
+7cbc9ab838e3e7fca9bb388043ec48003e444500c630177c60525d928312df46  spec/runs/demo-v14.log
+56c4b7d05db5388d0e514965acb3bb0a134d18c24a0fc57f544de96d5cd14bdd  spec/runs/demo-v15.log
+36f3e5b9bb0d092a0924fcb312800d509687d1ff61b20b792eaf79e78398dd5f  spec/runs/demo-v16.log
+their line counts, then the raw logs' the masking read (the masking replaces within lines, so a line number cites the same line in both):
+1285 690 705 702 735 
+1285 690 705 702 735 
+each run's build, from its log's 'build' line before masking: Run11 bb504f2, Run13 f5c7ed8, Run14 1b63c3e, Run15 6d951f1, Run16 27d689b (spec/provenance.md, Ref D per run)
+## 1. Derivation A: revision 1's layouts and the logged inputs (reader's tool, not published: it encodes a reference's command construction)
+$ shasum -a 256 tools/traces_a.py
+3078c93ce12ceced1d1cc6f727ce4d93902d284f04ddb206201379c0165c9243  tools/traces_a.py
+exit 0
+$ python3 -I tools/traces_a.py 13 > a13.txt
+exit 0
+$ python3 -I tools/traces_a.py 11 > a11.txt
+exit 0
+## 2. Derivation B: each build's own command functions, pasted verbatim into a host harness that mocks only the device and gives the logged inputs (reader's tool, not published: it is a reference's code)
+$ shasum -a 256 harness/pasted-f5c7ed8.rs harness/pasted-bb504f2.rs harness/head.rs harness/tail.rs harness/consts.rs harness/helpers.rs harness/send-head.rs
+66a7f0193f07fe76f850865e3d3c370d18ead4365d3f962e422d39124b358801  harness/pasted-f5c7ed8.rs
+2ffcae8d692a99938830219fd49611cb184b095ed1778023def4021dfd13348b  harness/pasted-bb504f2.rs
+0f8ce09ec14a4b4484ce7c7e76ea572f5797a3b076b4e181d5e0e8bce2820217  harness/head.rs
+71e5b8a6cb449a78d649fee359f1a1c0270b7bf05d2f20170099e1fe5b0f58f1  harness/tail.rs
+3ef3944f0398b827e5fe70b847645d784ed89935ac798f9acee43dc6597ca5ca  harness/consts.rs
+363a64355a07ed41cc6900c4de68ab91ca27a5a1787f1be780e40aad1a2b79b2  harness/helpers.rs
+c89c5f89043e87cf77f5842565c3791ffeb77b70d9f7281f503edc9ba5ec0df4  harness/send-head.rs
+exit 0
+$ rustc --edition 2021 -O -o harness/bin-f5c7ed8 harness/src-f5c7ed8.rs
+exit 0
+$ harness/bin-f5c7ed8 fw/iwlwifi-cc-a0-77.ucode 0 > b-f5c7ed8.txt
+exit 0
+$ rustc --edition 2021 -O -o harness/bin-bb504f2 harness/src-bb504f2.rs
+exit 0
+$ harness/bin-bb504f2 fw/iwlwifi-cc-a0-77.ucode 0 > b-bb504f2.txt
+exit 0
+## 3. A against B
+$ diff a13.cmp b13.cmp  (Run13, all 16 commands)
+exit 0
+$ diff a11.cmp b11.cmp  (Run11, its first 10 commands)
+exit 0
+5a2d95f74e040ec1f9497014ed21c63a4abcb5cb462b3b12b3718d0545274d19  a13.cmp
+5a2d95f74e040ec1f9497014ed21c63a4abcb5cb462b3b12b3718d0545274d19  b13.cmp
+99b6b04b17e550b313945dfb290f1a3a4e4950ef42d485366e670c5b1fe755e7  a11.cmp
+99b6b04b17e550b313945dfb290f1a3a4e4950ef42d485366e670c5b1fe755e7  b11.cmp
+payload lengths A derived, against the lengths each run logged (Run13:597-621; Run11:591-602, 604):
+0:4 1:4 2:4 3:4 4:8 5:8 6:32 7:20 8:4 9:28 10:12 11:60 12:32 13:32 14:148 15:1940 
+0:4 1:4 2:4 3:4 4:8 5:8 6:32 7:20 8:4 9:32 
+## 4. Negative control: A with 2.4 GHz and 5 GHz band values swapped in the scan's channel entries must differ from B
+$ diff traces_a.py mut.py | grep -c '^[<>]'  (the changed lines are counted, not printed: the tool is not published)
+2
+exit 1 (1: the mutation applied)
+$ python3 -I mut.py 13 | awk '{print $1, $3}' > mut.cmp
+exit 0
+$ diff -q mut.cmp b13.cmp
+Files out/mut.cmp and out/b13.cmp differ
+exit 1 (1 wanted: the comparison sees the mutation)
+$ diff -q a13.cmp b13.cmp  (restored)
+exit 0
+## 5. The firmware's own record of Run11's refused command (Run11:604, UMAC error table dwords 6, 7 and 8)
+logged: 000901c8 0000001c 00000020
+trace idx 9 header: c801090020000000  (bytes c8 01 09 00 = dword 0x000901c8; bytes 4-5 = 0x0020 = 32 sent; the layout's 28 = 0x1c)
+## 6. Runs 13 to 16: every command, answer and notification line from the alive notification to the first command after the scan, answer times removed
+$ diff r13.txt r14.txt  (27 lines)
+exit 0
+$ diff r13.txt r15.txt  (27 lines)
+exit 0
+$ diff r13.txt r16.txt  (27 lines)
+exit 0
+and, in each of these builds, the functions that build and send commands, against Run13's, extracted by name and hashed (a line names any that differs):
+  1b63c3e: compared
+  6d951f1: compared
+  27d689b: compared
+## 7. The traces
+$ shasum -a 256 tools/traces.py
+97afc1a185da8775383b52651945cd4c7200317f8def2d434e8b2fa9294142ab  tools/traces.py
+exit 0
+$ python3 -I tools/traces.py traces a13.txt a11.txt
+exit 0
+e9a3a21b8af92b72d2dd48b01c658fd9493f7f5719129e8ebbfcbf03bf5a96e9  traces/ax200-run13.trace
+fbbdd6a1afc8818e3643889c4513a3d838590395eaf29d13adea5240685983d6  traces/ax200-run11.trace
+placeholder occurrences (02:00:00:00:00:01) per trace:
+traces/ax200-run11.trace:0
+traces/ax200-run13.trace:2

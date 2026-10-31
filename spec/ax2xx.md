@@ -1,8 +1,19 @@
 # Intel AX200 and AX210: the device's interface
 
-Revision 1. The readers' specification for the W stages of ToyOS's Wi-Fi track (`issues/there-is-no-wifi.md`; the design is ToyOS pull request 876). A writer writes the driver from this document and the public standards alone.
+Revision 2. The readers' specification for the W stages of ToyOS's Wi-Fi track (`issues/there-is-no-wifi.md`; the design is ToyOS pull request 876). A writer writes the driver from this document and the public standards alone.
 
 ## 0. This revision
+
+### What revision 2 adds
+
+- **Recorded bench traces** (§15, `spec/traces/`): the command and notification exchanges of two recorded AX200 runs, scrubbed, from the alive notification through a passive scan (Run13) and through a refused command (Run11). They are what W3's fourth exit replays.
+- **The duplicate version entry** both files carry for (0x0e, 0x17): §6.5.
+- **The hardware-type record's other 8 bytes**: §6.6.
+- **§14's open items that the vendor's own driver settles**: items 5, 7, 8, 9, 10, 12 and 16, and items 11 and 13 but for a bench check, each now stated in its section. It narrows items 4 and 6 to a ruling on the source order. §14 lists what stays open, with two new items the traces raise.
+- **A source tier**: Intel's own driver code (§0, sources), which ranks above the other references.
+- **Corrections**: Appendix A dropped one of the two (0x0e, 0x17) entries; §11's MPDU length counts the header padding.
+
+Revision 1 is commit `bc45020` on this branch; everything it states and this revision does not change still stands.
 
 ### What it covers
 
@@ -15,13 +26,14 @@ Later revisions carry association, the transmit path, key installation, block-ac
 ### Sources, in #876 §7's order
 
 1. **Intel's firmware-interface definitions decide what they state.** These are the definitions Intel publishes for these parts under BSD-3-Clause (dual-licensed with GPL-2.0), read at a pinned release, and cited here as `[Intel n]`. Another reference disagreeing does not reopen what they state; the bench checks it.
-2. **Other references fill what those leave unsaid**: another operating system's driver for these parts, which this document calls **the reference driver**, with its 802.11 layer; an access-point implementation; and the demo's driver. Each is cited as `[Ref n]`.
+   - **Intel's own driver** for these parts, the dual-licensed source files of the same pinned release, is the vendor's code. It fills what the definitions leave unsaid before any other reference, and is cited as `[Intel n]` too; `spec/provenance.md` names each key's document as "Intel definitions" or "Intel driver". Where the driver contradicts a definition, this document says so at the fact (§7.3).
+2. **Other references fill what Intel leaves unsaid**: another operating system's driver for these parts, which this document calls **the reference driver**, with its 802.11 layer; an access-point implementation; and the demo's driver. Each is cited as `[Ref n]`.
 3. **The firmware containers**, read under the licence bound below.
 4. **Measurements**: S1 on the T14 (`s1/` and `s1-r2/` on this branch); the demo's runs on the AMD bench, AX200, masked whole under `spec/runs/`; the AMD bench's configuration-space dump, decoded in `spec/evidence/ax200-config-space.log`.
 5. **Standards**: IEEE Std 802.11-2020.
 
 - **Each key's document, file, lines and pinned commit are in `spec/provenance.md`**, the readers' record. This document names no reference's file, and a writer needs none: the facts are stated here.
-- **Of Intel's definitions, only dual-licensed files were read**; no GPL-only file was read beyond its licence line.
+- **Of Intel's definitions and driver, only dual-licensed files were read**; no GPL-only file was read beyond its licence line.
 
 A fact the references disagree on, or all leave unsaid, is listed in §14 and stays open until a reader's scout measures it.
 
@@ -34,6 +46,7 @@ A fact the references disagree on, or all leave unsaid, is listed in §14 and st
 | `C77 @off`, `C89 @off`, `CPN @off` | the record at byte offset `off` of `iwlwifi-cc-a0-77.ucode`, `iwlwifi-ty-a0-gf-a0-89.ucode` or `iwlwifi-ty-a0-gf-a0.pnvm`, as `spec/evidence/container-*.log` reads it |
 | `C77 v(g,i)`, `C89 v(g,i)` | that file's declared versions for group `g`, identifier `i` (Appendix A) |
 | `Runnn:line` | line of `spec/runs/demo-vnn.log`, a demo run on the AX200 |
+| `Tnn` | the trace `spec/traces/ax200-runnn.trace` (§15) |
 | `S1 file:line` | line of an S1 log on this branch |
 | `P:line` | line of `spec/evidence/ax200-config-space.log` |
 | `[I]` | this reader's inference, stated as such |
@@ -244,6 +257,15 @@ Read and written directly; Intel's definitions say they are reachable whenever t
   - the PHY-configuration command, which the reference driver sends only to parts with transmit SISO diversity, and neither part has it [Ref 60];
   - the dynamic-queue enable command, which the reference driver sends only when capability 12 is set, and neither file sets it [Ref 61; Appendix B].
 - **The reference driver starts twice.** Its first start reads the NVM (steps 1-19) and stops the device; it then starts again (steps 1-18) and configures (step 20). [Ref 62].
+- **One start suffices on both parts.** Intel's driver treats every part of the AX200's family and later as running one unified image. Each time it brings the device up, it loads the image once, runs the initialisation exchange (step 18), reads the NVM within that same start if it has not read it before, and configures in that start. [Intel 370].
+  - It also starts the device once while it loads, to read the NVM, and stops it; that start is not needed to bring the device up.
+  - Measured on the AX200: one start through step 20 reached a passive scan (below).
+- **Intel's driver uses the same fixed waits as the reference driver**, with no completion signal and no stated hardware requirement:
+  - 5 ms after the software reset [Intel 358];
+  - 1 ms and then 5 ms in power-down [Intel 359];
+  - 1 ms after setting bit 31 of 0x250 before the prepare rounds, and 25 ms between rounds [Intel 360];
+  - 2 µs after the access request [Intel 361].
+  - The vendor's code is the strongest source for these waits; none names an event to await instead (§14).
 - **Measured: one start through step 20 reached a passive scan on the AX200.** Run13:483-638.
 - **Measured AX200 timings**:
   - the alive cause arrived 46 to 52 ms after the load was started, and the alive notification was read 136 to 141 ms after it. Run11:494, 550, 588-590; Run13:495, 556, 594-596.
@@ -357,7 +379,8 @@ Each step is the reference driver's. [Ref 44].
 - **Measured in MSI mode on the AX200**:
   - the alive cause read `0x00000001` from 0x008 [Run11:550];
   - a firmware error read `0x02000000`, bit 25 [Run11:605].
-- **The reference driver programs a 4 KiB host-memory interrupt cause table after every alive**, in MSI-X mode too (0x0A0, §3.2). [Ref 81]. Whether MSI-X mode needs it is open (§14).
+- **The reference driver programs a 4 KiB host-memory interrupt cause table after every alive**, in MSI-X mode too (0x0A0, §3.2). [Ref 81].
+- **MSI-X mode does not use the interrupt cause table.** Intel's driver allocates the table only when MSI-X is not in use. Its routine that programs register 0x0A0 does nothing without a table, so in MSI-X mode it never programs one. [Intel 362]. This settles revision 1's open item 7.
 
 ## 6. The firmware file
 
@@ -413,7 +436,7 @@ Each step is the reference driver's. [Ref 44].
 | 54 | UMAC debug addresses: error table address, print buffer address | `0x00880128` | `0x00471488` | error table (§12.2) | [Intel 125]; [Intel 126]; C77 @0x05b974; C89 @0x06a034 |
 | 55 | LMAC debug addresses, the first being the error table address | `0x004dff20` | `0x004f2358` | error table (§12.2) | [Intel 127]; [Intel 128]; C77 @0x000080; C89 @0x000080 |
 | 57 | recovery information | 1 | 1 | ignored | [Intel 129] |
-| 58 | hardware type: MAC type u16, RF type u16 | `0x34`, `0x10a` | `0x42`, `0x10d` | §1 | [Intel 130]; C77 @0x05b960; C89 @0x06a020 |
+| 58 | hardware type, 12 bytes (§6.6) | `0x34`, `0x10a` | `0x42`, `0x10d` | §1 | [Intel 130]; C77 @0x05b960; C89 @0x06a020 |
 | 60 | sequencer version | 1 | 1 | ignored | [Intel 131] |
 | 61 | PHY integration version | 1 | 1 | ignored | [Intel 132] |
 | 68 | current program counter | 1 | 1 | ignored | [Intel 133] |
@@ -452,6 +475,47 @@ Counts per kind: C77 and C89, "record kinds and counts".
 - **The value 99 marks an unknown version.** [Intel 140]. An entry with command version 99 names a notification the host never sends, and one with notification version 99 has no notification of its own [I].
 - **A command a file does not list is sent at the one layout Intel's definitions give it.** Each such command in §10 says so, and the bench checks it.
 - Appendix A lists every entry of both files.
+
+**How Intel's driver reads the record.** [Intel 348]; [Intel 349].
+
+- **It keeps the record's entries whole, in file order**, and refuses a file that carries a second kind-48 record.
+- **A lookup takes the first entry, in file order, whose group and identifier match.** It does so for command versions and for notification versions alike.
+- **A command whose group is 0 is looked up under group 1**, the group it is sent in (§8.2). A notification's group is not remapped.
+- **A version of 99 means the caller's default**, as if the entry were absent.
+- **The reference driver's lookups also take the first match.** [Ref 212].
+
+**The duplicate entry: (0x0e, 0x17).**
+
+- **Each file has exactly one duplicated (group, identifier) pair, and it is the same in both.** The two entries are adjacent, in this order:
+  - the AX200 file: entry 177 of 192 at byte `0x000374`, command 1 and notification 0; entry 178 at `0x000378`, command 99 and notification 1;
+  - the AX210 file: entry 170 of 218 at `0x000358`, command 1 and notification 0; entry 171 at `0x00035c`, command 99 and notification 1.
+  - Read in file order by `spec/tools/records.py` (`spec/evidence/records.log`); C77 and C89 list the same two entries.
+- **Group 0x0e is none of the groups Intel's definitions name** (0x00 to 0x06, 0x08, 0x09, 0x0b, 0x0c, 0x0f and 0x10). [Intel 354]. No source names a message in it, and nothing this specification sends or decodes is in group 0x0e.
+- **Intel's driver and the reference driver both read (0x0e, 0x17) as command version 1 with notification version 0**, from the first entry; neither consults the second. [Intel 348]; [Ref 212].
+- **What the firmware means by it is stated nowhere.** The likeliest reading is that two messages share the identifier in that group, one a command at version 1 with no notification, the other a notification at version 1 that is no command [I].
+- **So the duplicate decides nothing a driver of these parts uses.** A loader must still decode the file with it present; the vendor's rule is that the first entry answers a lookup.
+
+### 6.6 The hardware-type record (kind 58, 12 bytes)
+
+Every kind-58 record in the three pinned files is 12 bytes. Read whole by `spec/tools/records.py` (`spec/evidence/records.log`).
+
+| Offset | Width | Field | AX200 file | AX210 file | Each platform-NVM block | Source |
+|---|---|---|---|---|---|---|
+| 0 | 2 | MAC type | `0x0034` | `0x0042` | `0x0042` | [Intel 351]; [Ref 119] |
+| 2 | 2 | RF type | `0x010a` | `0x010d` | `0x010d` | same |
+| 4 | 4 | unnamed | `41 30 00 00` | `41 30 00 00` | `00 00 00 00` | no source |
+| 8 | 4 | unnamed | `42 30 00 00` | `41 30 00 00` | `00 00 00 00` | no source |
+
+Records: C77 @0x05b960; C89 @0x06a020; CPN @0x000014, @0x0035b4, @0x006b88, @0x00a15c.
+
+- **No source defines bytes 4 to 11.** Intel's driver reads only the first two u16 fields, and only from the platform-NVM file, where it requires at least those 4 bytes. [Intel 351].
+- **Intel's driver ignores the record in a firmware file**: it is among the record kinds its loader skips. [Intel 350].
+- **Bytes 4 to 11 read as two NUL-padded ASCII names, "A0" and "B0" in the AX200 file and "A0" and "A0" in the AX210 file.** They are most likely the MAC step and the RF step the file is built for [I]. The facts behind that reading:
+  - Intel's driver names a file by the MAC step and RF step, each as a letter followed by `0`. It reads step 0 as `a` and step 1 as `b`, and always names the HR radio's step `b`. [Intel 352].
+  - Intel names MAC type `0x34` CC and `0x42` TY, and RF type `0x10A` HR2 and `0x10D` GF. [Intel 353].
+  - The AX210 file is named `ty-a0-gf-a0`: MAC step a0 and RF step a0, matching "A0" and "A0".
+  - The AX200 read a MAC step of 0 (bits 3:2 of `0x00000340`) and an RF step of 1 (bits 11:8 of `0x0010a100`), A and B, matching "A0" and "B0". Run11:479.
+- **Nothing reads bytes 4 to 11, and no source makes them a condition for serving a part.** §1's rule matches the MAC type and RF type alone.
 
 ## 7. Loading the image
 
@@ -521,7 +585,7 @@ Layout: [Intel 143].
   - Intel's definitions place the scale fields at bits 28:26 and 12:10 and the value fields at bits 25:16 and 9:0; the microsecond scale is 2. [Intel 160].
   - Intel's fields encode 250 µs with both requests as `0x88FA88FA` [I].
   - The reference driver shifts its scale by 24 and by 8, outside those fields, and so writes `0x80FA80FA` [I]. [Ref 99].
-  - Intel's fields decide (§14).
+  - **Intel's driver writes `0x88FA88FA`.** It builds the word from Intel's fields: both requests, scale 2 and value 250, for about 250 µs. It does so only for a discrete part of the AX200's or the AX210's family, both of which these parts are. [Intel 355]. This settles revision 1's open item 5.
 
 ### 7.3 AX210: context information, peripheral scratch and image loader
 
@@ -597,8 +661,20 @@ Layout: [Intel 143].
 | 84 | 2 | message rings control flags | 0 | [Intel 201] |
 | 86 | 2 | peripheral information MSI vector | 0 | [Intel 202] |
 | 88 | 8 | peripheral scratch address | the scratch above | [Intel 203]; [Ref 114] |
-| 96 | 4 | peripheral scratch size | Intel's definitions: in dwords; the reference driver writes the size in bytes (§14) | [Intel 204]; [Ref 115] |
+| 96 | 4 | peripheral scratch size | in bytes, as Intel's driver writes it (below); Intel's definitions say dwords | [Intel 204]; [Intel 356]; [Ref 115] |
 | 100 | 4 | reserved | | [Intel 205] |
+
+**The peripheral scratch size: Intel's driver contradicts Intel's definition.**
+
+- **Intel's definition of the field says the size is in dwords.** [Intel 204]; [Intel 357].
+- **Intel's driver writes it in bytes**, the byte length of the structure. [Intel 356].
+  - Without the extended sequencer flag (extended control flags, which this document leaves 0), that length runs to the end of the image maps and leaves out the 64-byte sequencer map: 1,660 bytes in §7.3's layout.
+  - With the flag, it is the whole structure, 1,724 bytes.
+- **Intel's driver notes, at that write, that older devices accept a larger size** and that only simulation checks the size exactly. [Intel 356]. A size four times too large passes on such a device, so the bench cannot tell bytes from dwords [I].
+- **The reference driver also writes bytes.** [Ref 115].
+- **This document follows Intel's driver: 1,660, in bytes.**
+  - Under §0's order a definition decides over another reference, but here the vendor contradicts itself, and its driver is the code it ships for these parts.
+  - The orchestrator confirms that reading of the source rule (§14).
 
 **Starting the load** ([Ref 116]):
 
@@ -735,7 +811,11 @@ Group 0x00, identifier 0x01. Both files declare notification version 6: C77 v(0x
   - Firmware of API 50 or later rejects a group-0 command with a bad-command firmware error. [Ref 131].
   - Intel's definitions make group 1 the default for legacy identifiers. [Intel 234].
   - Both files declare their legacy commands in group 1 (Appendix A), and the AX200 answered such commands in group 1. Run11:597-602.
-- **Placing a command**: the reference driver points the first buffer entry at the command's first `min(20, total)` bytes and, when the command is longer, the second entry at the rest of the same contiguous buffer. [Ref 132]; [Ref 133]. Whether one entry for the whole command is accepted is open (§14).
+- **Placing a command**: the reference driver points the first buffer entry at the command's first `min(20, total)` bytes and, when the command is longer, the second entry at the rest of the same contiguous buffer. [Ref 132]; [Ref 133].
+- **Intel's driver places a command the same way**, the first entry `min(20, total)` bytes and the second the rest. [Intel 364].
+- **Why the first entry is short, from Intel's driver**: the flow handler writes back into the first buffer entry only. That entry must be large enough to hold the scratch area and the packet number a data frame's transmit command carries, which end at byte 20. Intel's driver notes that a larger first entry would only cost allocation and copying, and it maps a command's first entry for DMA in both directions. [Intel 363]; [Intel 364].
+  - So one entry covering a whole command is within what Intel describes [I], and the bench checks it.
+  - **The first entry's memory must be writable by the device**, whatever its length, because the device writes back into it. Under an IOMMU this means its pages are mapped device-writable. Revision 1's open item 8 is settled to this.
 - **The reference driver aligns its command buffers to 64 bytes** and bounds a payload at 4,096 − 8 bytes. [Ref 134]; [Ref 135].
 - **Measured**: the AX200 accepted payloads of 4 to 1,940 bytes in two buffer entries. Run13:597-621.
 
@@ -799,7 +879,11 @@ The reference driver runs one receive queue, queue 0, of 512 buffers of 4,096 by
 
 - **On the AX210 the status area holds the completion ring's head index**, of which the reference driver uses bits 11:0. [Ref 150].
 - **The reference driver reads neither used ring.** It takes buffers in ring order up to the status index, so it relies on the device filling them in order [I]. [Ref 151].
-- **The AX200's 4-byte used-ring entry has no layout in any reference** (§14).
+- **Intel's driver reads the used ring and finds each filled buffer by its identifier, not by its position.** [Intel 365]. This settles revision 1's open item 9.
+  - **AX200**: a used-ring entry is a u32 whose bits 11:0 are the identifier of the buffer filled. The free-ring entry carries that identifier in its bits 11:0 (§9.1).
+  - **AX210**: the completion descriptor's identifier field (§9.1) carries the transfer descriptor's identifier.
+  - **Intel's driver numbers its buffers from 1** and treats a completion whose identifier is 0, or beyond its buffer count, as invalid. The reference driver uses the ring slot, 0 included (§9.1). Numbering from 1 leaves a zeroed entry unable to name a buffer [I].
+  - It takes completions in used-ring order up to the status index, so a buffer's slot in the free ring need not match its place in the used ring.
 
 ### 9.2 Draining
 
@@ -1220,6 +1304,8 @@ Version 1, 8 bytes: the scan's identifier u32 and flags u32 (reserved). [Intel 3
 - **Intel's definitions give the descriptor a 20-byte common part, then a tail.** The version-4 tail is 28 bytes, for a 48-byte descriptor; versions 3, 5 and 6 take a 44-byte tail, for a 64-byte descriptor. [Intel 308].
 - **The reference driver reads 64 bytes on the AX210 and 48 on the AX200.** [Ref 182].
 - **The frame follows the descriptor, and is exactly the descriptor's MPDU length long.** Bytes after it in the packet are not part of the frame (§11.7). [Ref 183].
+- **The MPDU length counts the two padding bytes** when MAC flags 2 bit 5 is set (§11.3): Intel's driver subtracts 2 from it then. [Intel 368].
+- **The MPDU length can also count a MIC and CRC the device left in place.** MAC flags 1 bits 7:4 give their length in 2-byte words. Intel's driver removes that many bytes from the frame's end whenever the MPDU length exceeds them. Its stated reason is that the device's receive decryption engine may not have removed them, for example when it is disabled for management frames. [Intel 368].
 
 **Common part.** [Intel 309].
 
@@ -1299,7 +1385,9 @@ Version 1, 8 bytes: the scan's identifier u32 and flags u32 (reserved). [Intel 3
   - `0x00007a5f` on CCMP-protected frames that decrypted;
   - `0x0000101b` on a beacon from another BSS.
   - Run16:655-657, 684.
-- **Bits 4, 12, 13 and 14 were set in some of those words, and no source names them** (§14).
+- **Bits 4, 12, 13 and 14 were set in some of those words.** Intel's definitions do not name them. The reference driver's definitions name them, with no description: bit 4 key parameters OK, bit 12 protected-frame bit compare, bit 13 extended-IV bit compare and bit 14 key-ID compare. [Ref 213].
+  - Nothing in this document or in the reference drivers' acceptance decides by them.
+  - The same definitions also name bit 29 RF-kill, and bits 21:16 a hash index and 23:22 a filtering mask. Those overlap Intel's checksum bits 16 and 17 and duplicate bit 22, and Intel's decide.
 
 **Acceptance, in the reference driver's order.** [Ref 185].
 
@@ -1325,9 +1413,13 @@ Version 1, 8 bytes: the scan's identifier u32 and flags u32 (reserved). [Intel 3
   - One 368-byte frame was 24 bytes of header, 8 of CCMP header, 8 of LLC, 20 of IPv4, 8 of UDP and 300 of DHCP. Run14:681; Run15:676.
   - MAC flags 1's MIC and CRC length read 0 on those frames. Same lines.
   - The reference driver keeps whatever trails the frame, because firmware versions differ on removing the MIC. [Ref 190].
-  - The AX210 is unmeasured (§14).
+  - **The device says, frame by frame, how much MIC and CRC is left**: MAC flags 1's MIC and CRC length, which Intel's driver removes (§11.1). [Intel 368]. On the AX200 it read 0 where the MIC was gone, as above. So a driver that removes what the field states needs no measurement of the AX210 to be right. The AX210 bench still checks it (§14).
 - **Replay**: the reference driver checks the 48-bit packet number itself: CCMP header bytes 0, 1, 4, 5, 6 and 7, least significant first. A frame whose number is not above the last accepted for its key and TID is dropped; A-MSDU subframes after the first may repeat it. [Ref 191].
-  - The reference driver does not read status bit 7. Whether the firmware checks packet numbers is open (§14).
+  - The reference driver does not read status bit 7.
+  - **On the host, Intel's driver checks a decrypted unicast data frame's packet number**, per key ID, TID and receive queue, with the same byte order. It drops a number not above the last one accepted. A later A-MSDU subframe may repeat its first subframe's number. [Intel 366].
+    - It leaves to its 802.11 layer, also on the host, the frames of its default receive queue, the queue these parts' single-queue setup uses (§9.1), and group-addressed and non-data frames.
+  - **Intel's driver relies on the firmware's replay flag (status bit 7) only for protected beacons**, which the firmware may filter so that the host never sees them. [Intel 367].
+  - **So the host checks data frames' packet numbers whatever the firmware does.** Whether the firmware also checks them stays unmeasured, and no longer decides anything. This settles revision 1's open item 12.
 - **Key ID**: byte 3 of the CCMP header, bits 7:6.
   - The reference driver's 802.11 layer takes a unicast frame's key as the pairwise key whatever its key ID says, and a group frame's by its key ID. [Ref 192].
   - What the AP sent is in §13.2.
@@ -1350,7 +1442,12 @@ Version 1, 8 bytes: the scan's identifier u32 and flags u32 (reserved). [Intel 3
 
 - **The hardware splits an A-MSDU.** Each subframe arrives as its own received-frame notification, with the MPDU's 802.11 header copied in front of it, MAC flags 2 bit 6 set, and the subframe index and last-subframe flag in the A-MSDU information byte. [Intel 330]; [Ref 194].
 - **The reference driver clears the A-MSDU-present bit in each copy's QoS control.** It notes that the AX200 devices it tested already left the bit clear. It also lets subframes after the first repeat the sequence number and packet number. [Ref 195].
-- **Whether each subframe's bytes still begin with its A-MSDU subframe header** (destination, source, length) is open. The reference driver hands subframes to its 802.11 layer as ordinary frames once the bit is clear, which implies they do not [I] (§14).
+- **Each subframe's bytes after the copied header are the subframe's MSDU, without its A-MSDU subframe header** [I, from both drivers]. The facts behind that reading:
+  - Intel's driver says its hardware de-aggregates A-MSDUs and copies the MPDU's header unchanged onto each subframe. It then clears the A-MSDU-present bit in the copy. [Intel 369].
+  - On these parts it hands each subframe on as an ordinary frame, not marked as part of an A-MSDU; it marks them so only on an older family. [Intel 369].
+  - The reference driver does the same. [Ref 195].
+  - An 802.11 layer given an ordinary frame reads its body as an MSDU, so the subframe header is gone.
+  - A run with an AP sending A-MSDUs checks it (§14).
 - **No A-MSDU arrived in the demo's runs**: the A-MSDU information byte read 0 on every probed frame. Run14, Run15, Run16 `wifi-rx` lines.
 
 ### 11.6 Duplicates
@@ -1549,29 +1646,97 @@ Version 1, 8 bytes: the scan's identifier u32 and flags u32 (reserved). [Intel 3
 
 ## 14. Open
 
+Still open in revision 2:
+
 | # | Open fact | Where | What decides it |
 |---|---|---|---|
-| 1 | whether each part verifies its firmware file, by which vendor statement; the track ships no file without one | §1 | a vendor statement; until then the owner |
+| 1 | whether each part verifies its firmware file, by which vendor statement; the track ships no file without one. Intel's dual-licensed driver at the pin states none either | §1 | a vendor statement; until then the owner |
 | 2 | the T14 AX210's subsystem ID, hardware revision, RF identity and SKU identity | §1, §7.4 | a read on the T14, by a reader's scout or W5's first boot |
 | 3 | the AX210's country-update answer at version 6, its latency-tolerance command at version 3, and its scan request at version 17 with band-in-flags channel entries | §10.9, §10.12, §10.15 | W5's first T14 run |
-| 4 | the peripheral scratch size's unit: Intel's definitions say dwords, the reference driver writes bytes | §7.3 | Intel's definitions decide; the bench checks it first |
-| 5 | the boot latency-tolerance word: Intel's fields encode 250 µs as `0x88FA88FA`, the reference driver writes `0x80FA80FA` | §7.2 | Intel's fields decide; the bench checks |
-| 6 | The reference driver's fixed waits with no completion signal in any source: 5 ms after a software reset; 1 ms and 5 ms in power-down; 2 µs after the access request; 25 ms between ready rounds | §4 | a hardware document or a measured condition, before ToyOS waits a fixed time |
-| 7 | whether MSI-X mode needs the interrupt cause table | §5.4 | a scout |
-| 8 | whether the command queue accepts a command in one buffer entry | §8.2 | a scout |
-| 9 | the AX200's 4-byte used-ring entry, and whether buffers always complete in order | §9.1 | a scout |
-| 10 | received-frame status bits 4, 12, 13 and 14, seen set and named nowhere | §11.2 | a scout |
-| 11 | whether the AX210's firmware removes the CCMP MIC | §11.3 | W5's or W6's T14 run |
-| 12 | whether the firmware checks data frames' packet numbers | §11.3 | a scout replaying a frame |
-| 13 | what an A-MSDU subframe's bytes begin with | §11.5 | a run with an AP sending A-MSDUs |
+| 4 | the peripheral scratch size: this document follows Intel's driver (1,660 bytes) over Intel's definition (dwords). The bench cannot separate them if the device accepts a larger size | §7.3 | the orchestrator's reading of §0's source order for a vendor that contradicts itself |
+| 6 | the fixed waits with no completion signal: 5 ms after a software reset; 1 ms and 5 ms in power-down; 1 ms before the prepare rounds and 25 ms between them; 2 µs after the access request. Intel's driver uses the same waits and names no event | §4 | whether the vendor's driver counts as the cited requirement root `CLAUDE.md` asks of a fixed delay: the owner; or a measured condition |
+| 11 | the AX210 bench's check that MAC flags 1's MIC and CRC length is what remains | §11.3 | W5's or W6's T14 run |
+| 13 | a recorded A-MSDU, to check that a subframe's bytes start at its MSDU | §11.5 | a run with an AP sending A-MSDUs |
 | 14 | an AP's unicast key ID other than 0, and a retransmitted message 1: #876 §1 lists both as fixed by the demo's runs, and no run on record measured either | §13.2, §13.3 | an AP the harness commands (`issues/no-access-point-answers-to-the-harness.md`) |
 | 15 | which MAC, link and station commands the AX210's version-89 firmware takes | Appendix A | W6's revision |
-| 16 | whether one start suffices on the AX210 (the reference driver starts twice) | §4.2 | W5's first T14 run |
+| 17 | whether a passive scan needs a PHY context, an RLC configuration and a MAC context first: every recorded scan was preceded by all three, and the reference driver adds none until it authenticates | §15 | a scout or W5's first run scanning without them |
+| 18 | the trace bits no run recorded: most notification payloads, every length-and-flags word's bits 31:14, and the received frames during each scan | §15 | a reader's scout that records each packet's bytes, on a branch kept off `origin` |
 
 - **Item 15 in detail.** The AX210 file declares no version for the older MAC-context (0x01, 0x28), binding (0x01, 0x2b), station (0x01, 0x18) or station-key (0x01, 0x17) commands, all of which the AX200 file declares. It declares MAC-configuration-group (0x03) entries instead. Both files set capability 110 (the MLD API). The reference driver uses that API only on later parts, because version-77 firmware on older parts claims it without implementing it. [Ref 211].
+
+Settled by revision 2, each in its section:
+
+| # | Revision 1's open fact | Settled to | Where | Source |
+|---|---|---|---|---|
+| 5 | the boot latency-tolerance word | `0x88FA88FA` | §7.2 | [Intel 355] |
+| 7 | whether MSI-X mode needs the interrupt cause table | it does not | §5.4 | [Intel 362] |
+| 8 | whether the command queue accepts a command in one buffer entry | within what Intel describes, and the first entry must be device-writable; the bench checks | §8.2 | [Intel 363]; [Intel 364] |
+| 9 | the AX200's used-ring entry, and completion order | a u32 with the buffer's identifier in bits 11:0, read in used-ring order | §9.1 | [Intel 365] |
+| 10 | received-frame status bits 4, 12, 13 and 14 | named by the reference driver's definitions, and nothing decides by them | §11.2 | [Ref 213] |
+| 11 | whether the AX210's firmware removes the CCMP MIC | the device reports what remains in MAC flags 1, and Intel's driver removes that; only the bench check stays open | §11.1, §11.3 | [Intel 368] |
+| 12 | whether the firmware checks data frames' packet numbers | the host checks them regardless | §11.3 | [Intel 366]; [Intel 367] |
+| 13 | what an A-MSDU subframe's bytes begin with | its MSDU [I]; only the bench check stays open | §11.5 | [Intel 369] |
+| 16 | whether one start suffices on the AX210 | yes, on both parts | §4.2 | [Intel 370] |
+
+## 15. Recorded traces: W3's bench traces
+
+### 15.1 The files
+
+| File | Run | What it holds |
+|---|---|---|
+| `spec/traces/ax200-run13.trace` | Run13 (`spec/runs/demo-v13.log`), the AX200 on the AMD bench | the alive notification through a passive scan of 38 channels: 16 commands, their answers, and every notification the run logged |
+| `spec/traces/ax200-run11.trace` | Run11 (`spec/runs/demo-v11.log`), its first start | the alive notification through a refused command: 10 commands, 9 answers, the software-error cause, and both error tables |
+
+- **The format is stated at the head of each file.** Each line is one command the host wrote, one packet the device wrote, or one table the host read, in the order the run logged them.
+- **A command line holds every byte**: the 8-byte header of §8.2, then the payload.
+- **A device line holds the packet from its length-and-flags word through its payload, with a mask.** A set mask bit was recorded by the run. A clear bit was not recorded. It holds the value this specification's rule gives where it gives one, else 0. The rules that fill bits are three:
+  - an answer carries its command's identifier (§8.4);
+  - a legacy notification arrives in group 0 (§10.1);
+  - a notification's sequence has bit 15 set (§9.4).
+- **No AX210 trace exists**: no run on record drove the AX210 (§14, item 2).
+
+### 15.2 How the bytes were obtained
+
+- **No run logged a packet's bytes.** The demo logged each command's group, identifier, slot, payload length, and its answer's group, length, first word and time. It logged the fields it decoded from each notification, and the inputs from which it built each command.
+- **Each command's bytes are what that run's build writes from those logged inputs.** [Ref 215]. Two derivations agree byte for byte on all 16 Run13 commands and the first 10 of Run11 (`spec/evidence/traces-derivation.log`):
+  - one from revision 1's layouts and the logged inputs;
+  - one from the build's own command code, run on the host with those inputs.
+- **The firmware's own record checks them.** Run11's UMAC error table holds the header dword of the command the firmware refused, `0x000901c8`, and the lengths 28 and 32 (§12.2). That is the trace's idx 9 header: `c8 01 09 00 20 00 00 00`. Run11:604; T11.
+- **The firmware took every Run13 command.** Each was answered without bit 6 of its group set (§8.4). Run13:597-621.
+- **Each device packet holds exactly what its run logged**: lengths, groups, slots, the first word of each answer, the fields the demo decoded, and nothing else.
+  - **The NVM-info and country-update answers** record each of the first 51 channel-profile entries' valid bit (bit 0), and each valid entry's active-scan bit (bit 3). They come from the channel list the run logged, which names each valid channel and marks the passive ones. Run13:602, 611.
+  - **The NVM-info answer's LAR word** was recorded only as nonzero; it is filled with 1.
+- **Every decision the run logged depends only on recorded bits**: the start, the channel set of 38 channels with 25 passive, LAR, the country-update outcome and the scan's completion. So a recorded bit is enough to answer a trace; the unrecorded bits are §14's item 18.
+
+### 15.3 What answering a trace means
+
+- **Fed the device lines in order, a driver following this specification writes the command lines' payloads, with three differences.**
+  - **Commands 12, 13 and 14 are the demo's, not this specification's**: a PHY context added on channel 1, an RLC configuration, and a MAC context added for a station. §4.2's step 20 does not send them, and the reference driver adds none of them before it authenticates. [Ref 214]. A driver without them sends the scan request at slot 12, not 15. Whether a passive scan needs them is §14's item 17.
+  - **The slot, and so the sequence, follows the driver's own count** of commands sent (§8.2). An answer matches its command by sequence.
+  - **The station's address** in commands 14 and 15 is the placeholder.
+- **The scan request's channel list is that of Run13's country-update answer**: channels 1 to 13 with band 1, then the 25 valid 5 GHz channels from 36 to 165 with band 0, in that order, each with iteration count 1 (§10.15). Run13:611.
+- **Run11 is the error path's trace.** The firmware did not answer the 32-byte country update. It raised the software-error cause, and its tables name the command and both lengths (§12.2). A driver that sends each command at its specified size never writes Run11's idx 9; the trace exercises what a driver does when a command is refused.
+- **Runs 14, 15 and 16 exchanged the same bytes as Run13 through the scan.**
+  - Their builds' command code is unchanged from Run13's.
+  - Every command, answer and notification line they logged, from the alive notification up to the first command after the scan, matches Run13's, answer times aside (`spec/evidence/traces-derivation.log`).
+  - They differ in what the scan received:
+
+| Run | Frames received during the scan | Networks | Source |
+|---|---|---|---|
+| Run13 | 17 | 15 | Run13:636 |
+| Run14 | 15 | 15 | Run14:637 |
+| Run15 | 17 | 17 | Run15:636 |
+| Run16 | 19 | 19 | Run16:636 |
+
+### 15.4 Scrubbing
+
+- **The station's address is replaced by `02:00:00:00:00:01` everywhere**: in the MAC context's own-address field (command 14, payload bytes 16-21) and in the probe template's source address (command 15, payload bytes 626-631).
+- **No other address or identifier occurs in these exchanges.** The scan's received frames, which carry other stations' addresses and network names, are counted, not recorded. No DMA address appears in a command's bytes.
+- **The country code `NL`**, of the firmware's country-change notification, is the bench's regulatory domain as revision 1 records it (§10.12).
+
 ## Appendix A. Declared versions
 
-Every entry of both files' command-version records, from C77 @0x0000a8 and C89 @0x0000a8: group, identifier, then "c" the command version and "n" the notification version; 99 is unknown, and — means the file has no entry.
+Every entry of both files' command-version records, from C77 @0x0000a8 and C89 @0x0000a8: group, identifier, then "c" the command version and "n" the notification version; 99 is unknown, and — means the file has no entry. One pair has two entries in each file, listed in file order; revision 1's table showed only the second (§6.5).
 
 | Group | Identifier | AX200 file | AX210 file |
 |---|---|---|---|
@@ -1724,7 +1889,7 @@ Every entry of both files' command-version records, from C77 @0x0000a8 and C89 @
 | 0x0e | 0x13 | c2 n0 | c2 n0 |
 | 0x0e | 0x15 | c1 n0 | c1 n0 |
 | 0x0e | 0x16 | c99 n0 | c99 n0 |
-| 0x0e | 0x17 | c99 n1 | c99 n1 |
+| 0x0e | 0x17 | c1 n0, then c99 n1 (§6.5) | c1 n0, then c99 n1 (§6.5) |
 | 0x0e | 0x18 | c1 n0 | c1 n0 |
 | 0x0e | 0x1a | c1 n0 | c1 n0 |
 | 0x0e | 0x1b | c1 n0 | c1 n0 |
@@ -1852,7 +2017,10 @@ From C77 and C89, the bit numbers each file sets in its API words (kind 29) and 
 | `spec/runs/demo-v14.log` | the v14 boot: the first protected data |
 | `spec/runs/demo-v15.log` | the v15 boot: the access point's echo of the station's group frames |
 | `spec/runs/demo-v16.log` | the v16 boot: every received frame's fate, and a DHCP lease |
-| `spec/tools/` | the scripts that staged these files and checked this document's layout tables |
+| `spec/traces/ax200-run13.trace`, `spec/traces/ax200-run11.trace` | the recorded traces (§15) |
+| `spec/evidence/records.log` | revision 2's read-out of every kind-58 record whole and of the kind-48 duplicates in file order (§6.5, §6.6) |
+| `spec/evidence/traces-derivation.log` | how the traces' command bytes were derived and checked, with each check's command, exit code and hash (§15.2) |
+| `spec/tools/` | the scripts that staged these files and checked this document's layout tables; `records.py` is revision 2's record reader |
 | `s1/judge.log`, `s1-r2/wifi-s1-b-kernel.log` | S1 on the T14: the AX210's PCI read-out and its ACPI names |
 | `e13-amd-ax200-bar.log` | the AX200's BAR and the bridge in front of it on the AMD bench |
 

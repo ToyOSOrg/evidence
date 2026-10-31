@@ -6,6 +6,8 @@ The readers' record of where each keyed fact of the specification was read. Each
 - **Ref, O**: OpenBSD src, commit 7b20c05da58a2cc94ec9155c91888280ac716cae; paths under `sys/`.
 - **Ref, H**: hostap, commit d1759a2fa64d9d962765aab5677b86eae95d7e3a; paths under `the repository root`.
 - **Ref, D**: the demo's driver as built for Run13 (a local demo branch, never on main); paths under `the repository root`.
+- **Intel driver** (revision 2): the dual-licensed (GPL-2.0 OR BSD-3-Clause) source files of Intel's iwlwifi driver at the same Linux tag v7.2 (8d3ae59288f1e7d58d76558a6ee96d533bc5019f), paths under `drivers/net/wireless/intel/iwlwifi/`. Each file's licence line was read first; every file read carries the dual licence. Copyright: Intel Corporation and its subsidiaries.
+- **Ref, D, per run** (revision 2): the demo's `userland/netstack/src/wifi.rs` at the build each run's log names: Run11 `bb504f284516acb9c782c67cea750e720a82e044`, Run13 `f5c7ed8f83253f48215c77f885a5138b8452f701`, Run14 `1b63c3e16069c54ea3397d1d8a38c7e4cf53921a`, Run15 `6d951f19be11e7e80a974857cf97b5b81cf2b793`, Run16 `27d689b9b81b1b36ff335b1567740f248d79d92b` (local demo branches, never on main).
 
 | Key | Document | File | Lines |
 |---|---|---|---|
@@ -567,3 +569,30 @@ The readers' record of where each keyed fact of the specification was read. Each
 | Ref 209 | hostap | `src/ap/wpa_auth.c` | 2938-2955, 3088-3091 |
 | Ref 210 | hostap | `src/ap/wpa_auth.c` | 2216-2228 |
 | Ref 211 | OpenBSD | `sys/dev/pci/if_iwx.c` | 4575-4583 |
+| Intel 348 | Intel driver | `drivers/net/wireless/intel/iwlwifi/fw/img.c` | 39-83 |
+| Intel 349 | Intel driver | `drivers/net/wireless/intel/iwlwifi/iwl-drv.c` | 1401-1417 |
+| Intel 350 | Intel driver | `drivers/net/wireless/intel/iwlwifi/iwl-drv.c` | 1475-1477 (no case for kind 58 in the switch it ends) |
+| Intel 351 | Intel driver | `drivers/net/wireless/intel/iwlwifi/fw/pnvm.c` | 89-110 |
+| Intel 352 | Intel driver | `drivers/net/wireless/intel/iwlwifi/iwl-drv.c` | 172-179, 195, 255-266, 287-289 |
+| Intel 353 | Intel definitions | `drivers/net/wireless/intel/iwlwifi/iwl-config.h` | 470-489 |
+| Intel 354 | Intel definitions | `drivers/net/wireless/intel/iwlwifi/fw/api/commands.h` | 37-51 |
+| Intel 355 | Intel driver | `drivers/net/wireless/intel/iwlwifi/pcie/gen1_2/trans-gen2.c` | 417-438 |
+| Intel 356 | Intel driver | `drivers/net/wireless/intel/iwlwifi/pcie/ctxt-info-v2.c` | 230-245 |
+| Intel 357 | Intel definitions | `drivers/net/wireless/intel/iwlwifi/pcie/iwl-context-info-v2.h` | 293 |
+| Intel 358 | Intel driver | `drivers/net/wireless/intel/iwlwifi/pcie/gen1_2/trans.c` | 78-89 |
+| Intel 359 | Intel driver | `drivers/net/wireless/intel/iwlwifi/pcie/gen1_2/trans-gen2.c` | 59-80 |
+| Intel 360 | Intel driver | `drivers/net/wireless/intel/iwlwifi/pcie/gen1_2/trans.c` | 544-596 |
+| Intel 361 | Intel driver | `drivers/net/wireless/intel/iwlwifi/pcie/gen1_2/trans.c` | 2352-2355 |
+| Intel 362 | Intel driver | `drivers/net/wireless/intel/iwlwifi/pcie/gen1_2/trans.c` | 3958-3966; `pcie/gen1_2/rx.c` 2207-2215 |
+| Intel 363 | Intel driver | `drivers/net/wireless/intel/iwlwifi/pcie/gen1_2/internal.h` | 290-299 |
+| Intel 364 | Intel driver | `drivers/net/wireless/intel/iwlwifi/pcie/gen1_2/tx-gen2.c` | 1341-1387 |
+| Intel 365 | Intel driver | `drivers/net/wireless/intel/iwlwifi/pcie/gen1_2/rx.c` | 221-236, 1150-1160, 1448-1486 |
+| Intel 366 | Intel driver | `drivers/net/wireless/intel/iwlwifi/mvm/rxmq.c` | 14-89 |
+| Intel 367 | Intel driver | `drivers/net/wireless/intel/iwlwifi/mvm/rxmq.c` | 325-406 |
+| Intel 368 | Intel driver | `drivers/net/wireless/intel/iwlwifi/mvm/rxmq.c` | 95-115 |
+| Intel 369 | Intel driver | `drivers/net/wireless/intel/iwlwifi/mvm/rxmq.c` | 2350-2370, 2398-2401 |
+| Intel 370 | Intel driver | `drivers/net/wireless/intel/iwlwifi/mvm/fw.c` | 598-718, 1665-1670, 1700-1712; `mvm/mvm.h` 1509-1513 |
+| Ref 212 | OpenBSD | `sys/dev/pci/if_iwx.c` | 525-552 |
+| Ref 213 | OpenBSD | `sys/dev/pci/if_iwxreg.h` | 3645-3704 |
+| Ref 214 | OpenBSD | `sys/dev/pci/if_iwx.c` | 10094-10195 (no context command), 8970-9010 (contexts added) |
+| Ref 215 | the demo, per run | `userland/netstack/src/wifi.rs` at each run's build (above) | the functions that build commands and parse answers |
