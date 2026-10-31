@@ -13,3 +13,9 @@ r1/host/  At ToyOS f1a230e00 (1480e1a67 rebased onto main 0c7e62ca7, plus the co
   tcp-test-f1a230e00.log            cargo test -p toyos-net-tcp --no-fail-fast: 427 passed, EXIT=0
   controls-1480e1a67/               four negative controls at 1480e1a67: each patch applied, [tcp] tests run, reverted; summary and logs
 Paths are masked as <worktree>, <primary>, <scratch>, <checkout>, <tmp>, <home>.
+
+r2/host/  Review r1's fix at ToyOS 15fdb0e9b (every segment in flight timed; sample-source counters)
+  ci-host-15fdb0e9b.log   cargo run -- --ci host: 105 steps, all green, EXIT=0
+  tcp-test-15fdb0e9b.log  cargo test -p toyos-net-tcp --no-fail-fast: 429 passed, EXIT=0
+  controls/               eight negative controls, each applied, run and reverted; summary.txt (all exit 101), patches and logs.
+                          echo-first was rewritten once: its first patch left a match non-exhaustive and did not compile.
