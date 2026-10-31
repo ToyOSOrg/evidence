@@ -62,3 +62,21 @@ ToyOS's last driverless dependency on the firmware's display programming for pow
 3. Your decision on the display driver and the DMC payload.
 4. The driver, by stage.
 5. PMC instruments: not needed. These experiments named both blockers without them.
+
+## For the display agent (handover notes)
+
+- **Intel's PRM, fetched and converted:** `phase3/prm/`. Vol 12 (Display Engine) is `705833.txt`; Vol 2c's registers are `703046.txt` (A-L) and `703047.txt` (M-Z), with the PDFs beside them. They come from intel.com's "graphics-for-linux developer-reference, Tiger Lake" page. The converter is `phase3/tools/pdf2txt.py`, run with `phase3/venv` (pypdf + cryptography).
+  - The text extraction sometimes puts a register's `Address:` line before the previous entry's `ShortName`, so check each address against its neighbours. PLANE_CTL_1_A = 70180h is inferred from 2_A..7_A at 70280h..70780h.
+- **The scout kernel pattern to reuse:** `power-scout` at `9fd3114fc`, `kernel/src/pcidev/scout.rs` (`display_off`). It finds 00:02.0, maps BAR0 0x80000 uncached with `crate::mm::paging::map_mmio`, and logs registers.
+  - It runs as a test-actuators `SYS_DEBUG` action, from `osbench scout` on `tests/images/scoutcase.toml`. Row `power_scout` is named-only, and its arm takes `features: &["test-actuators"]`.
+  - A read-only watermark scout fits the same shape: add a stage that logs registers and writes nothing.
+- **What the T14's firmware leaves** (kernel log, r7 `toyos/scout-lines.txt`):
+  - Pipe A, plane 1 only: PLANE_CTL_1_A = 84000008, which is X-tiled.
+  - TRANS_CONF_A = c0000024.
+  - TRANS_DDI_FUNC_CTL_A = 8a000002, so DDI A (eDP).
+  - DC_STATE_EN = 0, PWR_WELL_CTL2 = ff, CDCLK_CTL = 00380158, DBUF_CTL_S1 = c060c000, FUSE_STATUS = 8f800000.
+  - GOP framebuffer: 1920x1080, stride 1920 px, at BAR2 0x4000000000. The RMRR is 0x9c000000-0xa07fffff (iGPU scope).
+  - The iGPU's DMA goes through IOMMU unit0, currently in the kernel's identity domain.
+- **Registers to read in the scout** (Vol 2c): PLANE_WM_1_A levels 0-7, PLANE_WM_TRANS_1_A (70268h), PLANE_BUF_CFG_1_A, WM_LINETIME_A, DBUF_CTL_S1/S2, and the SAGV/pcode state. "Retrieve Memory Latency Data" in Vol 12 gives the pcode mailbox for the latencies. Read all of them on every pipe A plane, the cursor included.
+- **Measure** with `osbench_energy` (row `osbench_energy`, image `energybenchcase`) against Linux runs on the T14, as `tests/guest/osbench/README.md` describes. The Linux-side PSR/DMC status is in i915's debugfs under `/sys/kernel/debug/dri/1/` (the DRM device is `card1`), after `mount -t debugfs none /sys/kernel/debug`.
+- **The NVMe caps the package at PC3** until APST lands (the power agent's track). A display stage measured before APST may show only PC2 to PC3. Linux's `nomodeset` row (2796 mW idle, PC2 976 ‰) is the reference for "graphics as firmware left them".
