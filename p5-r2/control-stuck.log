@@ -1,0 +1,44 @@
+   Compiling toyos-net-ip v0.1.0 (<dev>/toyos-wifi/system/netstack/ip)
+warning: method `queued` is never used
+  --> system/netstack/ip/src/egress.rs:90:8
+   |
+89 | impl Control {
+   | ------------ method in this implementation
+90 |     fn queued(&self, iface: IfIndex) -> usize {
+   |        ^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `toyos-net-ip` (lib) generated 1 warning
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.03s
+     Running tests/rank.rs (target/debug/deps/rank-99338263860d47f2)
+
+running 8 tests
+test a_connected_prefix_beats_a_lower_ranks_gateway ... ok
+test the_default_route_leaves_by_the_lower_rank_whichever_came_first ... ok
+test a_bound_source_keeps_its_own_interface_whatever_its_rank ... ok
+test a_flows_advice_lands_on_its_own_links_gateway_where_two_links_share_one ... ok
+test a_link_that_goes_down_hands_the_default_route_on_and_takes_it_back_on_return ... ok
+test a_link_without_room_holds_back_no_other_links_frames ... ok
+test among_equal_ranks_the_first_added_leads ... ok
+test a_link_that_takes_nothing_holds_back_none_of_another_links_own_frames ... FAILED
+
+failures:
+
+---- a_link_that_takes_nothing_holds_back_none_of_another_links_own_frames stdout ----
+
+thread 'a_link_that_takes_nothing_holds_back_none_of_another_links_own_frames' (113908959) panicked at system/netstack/ip/tests/rank.rs:200:5:
+assertion `left == right` failed: its request
+  left: []
+ right: [IfIndex(1)]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    a_link_that_takes_nothing_holds_back_none_of_another_links_own_frames
+
+test result: FAILED. 7 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-net-ip --test rank`
+error: 1 target failed:
+    `-p toyos-net-ip --test rank`

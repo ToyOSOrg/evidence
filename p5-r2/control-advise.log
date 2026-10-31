@@ -1,0 +1,40 @@
+   Compiling toyos-net-shard v0.1.0 (<dev>/toyos-wifi/system/netstack/shard)
+warning: unused variable: `local`
+   --> system/netstack/shard/src/lib.rs:428:51
+    |
+428 |                 toyos_net_tcp::Event::Reachable { local, remote } => ip.advise(now, remote, Source::Any, Advice::Confirmed),
+    |                                                   ^^^^^ help: try ignoring the field: `local: _`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+   Compiling toyos-net-testnet v0.1.0 (<dev>/toyos-wifi/system/netstack/shard/testnet)
+warning: `toyos-net-shard` (lib) generated 1 warning (run `cargo fix --lib -p toyos-net-shard` to apply 1 suggestion)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.68s
+     Running tests/links.rs (target/debug/deps/links-1afa88d6e37ed712)
+
+running 7 tests
+test a_gateway_that_fails_on_one_link_drops_no_datagram_waiting_on_the_other ... ok
+test a_link_that_only_goes_down_keeps_its_address ... ok
+test a_new_flow_fails_over_to_the_wireless_link_and_the_next_returns_to_the_wired_one ... ok
+test a_flow_waits_for_its_own_links_room_and_holds_back_none_of_the_others ... ok
+test a_flow_from_an_address_taken_away_ends_and_one_from_the_other_link_does_not ... ok
+test a_new_flow_leaves_by_the_wired_link_though_the_wireless_came_first ... ok
+test a_flows_progress_confirms_its_own_links_gateway_where_two_links_share_one ... FAILED
+
+failures:
+
+---- a_flows_progress_confirms_its_own_links_gateway_where_two_links_share_one stdout ----
+
+thread 'a_flows_progress_confirms_its_own_links_gateway_where_two_links_share_one' (113951597) panicked at system/netstack/shard/tests/links.rs:332:5:
+assertion `left == right` failed: the flow's own gateway entry, confirmed
+  left: Some("delay")
+ right: Some("reachable")
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    a_flows_progress_confirms_its_own_links_gateway_where_two_links_share_one
+
+test result: FAILED. 6 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-net-shard --test links`

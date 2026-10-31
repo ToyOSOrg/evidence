@@ -1,0 +1,34 @@
+   Compiling toyos-net-ip v0.1.0 (<dev>/toyos-wifi/system/netstack/ip)
+   Compiling toyos-net-udp v0.1.0 (<dev>/toyos-wifi/system/netstack/udp)
+   Compiling toyos-net-shard v0.1.0 (<dev>/toyos-wifi/system/netstack/shard)
+   Compiling toyos-net-testnet v0.1.0 (<dev>/toyos-wifi/system/netstack/shard/testnet)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.15s
+     Running tests/links.rs (target/debug/deps/links-1afa88d6e37ed712)
+
+running 6 tests
+test a_link_that_only_goes_down_keeps_its_address ... ok
+test a_new_flow_leaves_by_the_wired_link_though_the_wireless_came_first ... ok
+test a_flow_from_an_address_taken_away_ends_and_one_from_the_other_link_does_not ... ok
+test a_flow_waits_for_its_own_links_room_and_holds_back_none_of_the_others ... ok
+test a_new_flow_fails_over_to_the_wireless_link_and_the_next_returns_to_the_wired_one ... ok
+test a_gateway_that_fails_on_one_link_drops_no_datagram_waiting_on_the_other ... FAILED
+
+failures:
+
+---- a_gateway_that_fails_on_one_link_drops_no_datagram_waiting_on_the_other stdout ----
+
+thread 'a_gateway_that_fails_on_one_link_drops_no_datagram_waiting_on_the_other' (113908478) panicked at system/netstack/shard/tests/links.rs:239:5:
+assertion `left == right` failed: the wired datagram alone
+  left: 2
+ right: 1
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    a_gateway_that_fails_on_one_link_drops_no_datagram_waiting_on_the_other
+
+test result: FAILED. 5 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-net-shard --test links`
+error: 1 target failed:
+    `-p toyos-net-shard --test links`
