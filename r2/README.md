@@ -13,7 +13,7 @@ The `disk-path-probe2:` lines in each boot's `.txt`. Every verdict is `passed` (
 ## Host checks
 
 - `ci-host-r2.log`: `cargo run -- --ci host` at 8be159d4c (`ci-host.rev`), 105 steps green. `ci-host-r2.try1.log` is the first run, at the commit before the amend, red on clippy `default_trait_access` in the test's `Sparse` constructor. That was fixed in the amend.
-- `r2-bcachefs.log` (180 unit, 57 integration) and `r2-fileserver.log` (91), both exit 0.
+- `r2-bcachefs.log` (180 unit, 57 integration) and `r2-fileserver.log` (90), both exit 0.
 - Red controls, each a diff applied, run with `cargo test -p bcachefs --release --lib fs::tests::a_write_`, and restored byte for byte:
   - `red-r5-no-min-run`: runs of any length. Exit 101; `a_write_skips_single_holes_for_a_run_a_request_long` fails. The file got `[(4, 1), (261, 63)]` where `[(66, 64)]` was wanted.
   - `red-r6-no-fallback`: a pass per run. Exit 101; `a_write_on_a_volume_of_single_holes_passes_its_bitmap_twice_at_most` fails, with 16 runs reading the bitmap 167 times. The head reads it 55 times, within the bound of 64.
