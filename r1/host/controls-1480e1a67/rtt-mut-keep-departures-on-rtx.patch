@@ -1,0 +1,13 @@
+diff --git a/system/netstack/shard/tcp/src/conn.rs b/system/netstack/shard/tcp/src/conn.rs
+index 8f60df3bd..d06906389 100644
+--- a/system/netstack/shard/tcp/src/conn.rs
++++ b/system/netstack/shard/tcp/src/conn.rs
+@@ -1309,8 +1309,6 @@ impl Sync {
+         }
+         if resent {
+             ctx.log.add(Counter::RetransmitBytes, u64::from(old.earlier(end).since(start)));
+-            // The ACK that repairs a hole also covers what was sent before it, held behind the hole.
+-            self.departures.clear();
+             if start == self.tx.una {
+                 self.rto_pending = false;
+             }
