@@ -138,3 +138,26 @@ Metal: the orchestrator ran four AMD boots from a tree pinned at eee39c691, in t
 - **Agreement.** Three chipset references, on two oscillators, agree within about 15 µs on bench1 and bench3, and within 37 µs on bench2.
 - **Idle states.** Every unheld span in every boot reached s1 (`[0, 32, 0, …]` etc.), and only the one span per boot reads apart. So the deepest idle state does not single the event out.
 - **What it leaves.** A forward TSC step of about 1.7 ms. Alternatively, the FCH's 14.318 MHz domain and its RTC both stood still by the same amount. The RTC's separate crystal is from AMD FCH convention; that is an inference, not a document citation.
+
+## r7: the trigger pinned, and the step policy at d33a0de82
+
+### The trigger: AMD, scout 499e48bab (branch `system-clock-scout`), one benchcase boot and one testcases boot
+
+- **Method:** for the boot's first 64 spells with every CPU in a declared state, the first CPU to wake reads the HPET against the sampler's last sample (`r7/metal-amd-trigger/*-clock-lines.log`).
+- **benchcase:**
+  - spells 0–2 (3.6 µs, 10.9 µs, 1.66 ms) read the TSC within 60 ns of the HPET;
+  - spell 3, from TSC 31,096,003,626, 3.83 ms by the TSC, ends 1,698,511 ns ahead;
+  - every later spell holds that offset (1,698.1–1,700.8 µs).
+- **testcases:** the boot's first spell (TSC 9,164,431,674, 3.22 ms by the TSC) already ends 1,715,182 ns ahead.
+- **What it shows:** the step happens inside an early spell with all 16 CPUs in port 0x415 (s1), once a boot. The stepping spell's TSC length includes the jump.
+
+### The policy at d33a0de82 (rebased on main 24a538c88)
+
+- **Host CI:** `cargo run -- --ci host` exited 0, with 108 steps green (`r7/checks/ci-host-d33a0de82.log`).
+- **Host tests:** `cargo test -p kernel --lib --features sched-check clock::reference` covers the RTC's least-latency reading through 700 µs interrupts, its three verdicts, the step response, and a slew that stays within 500 ppm and pays its debt in time (`r7/checks/pure-reference-tests.log`, 19 passed, before the rebase; CI's run covers the head).
+- **QEMU, `a_stepped_tsc_is_slewed_then_demoted`:** exit 0 at the head (`r7/qemu/both-clock-tests-d33a0de82.log`). Before the rebase (`r7/qemu/a_stepped_tsc_is_slewed_then_demoted.log`):
+  - the staged 10 ms step is confirmed by the RTC (9.81 ms) and slewed away in about 21 s;
+  - the second, also confirmed, demotes the TSC;
+  - a process's reading then reaches the kernel.
+- **QEMU, `a_stalled_hpet_is_left_out`:** exit 0 at the head.
+- **Negative control:** with the demotion arm disabled (`r7/controls/no-demote.patch`, described rather than published as a diff), the stepped test fails: no "DEMOTED" line (`r7/controls/no-demote.log`, exit 1). The code was restored from the copy taken before the mutation.
