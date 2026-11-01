@@ -36,3 +36,7 @@ r6/  Review r1 of #1114 at ToyOS 3a0744d34 (on main 24a538c88; the bucket at mos
   host/controls/ eight pacing controls with patches and logs, all exit 101.
   staged/ the T14 parity boot (Linux, p1, Linux): request.txt with the rule, the image hash, the staging log (exit 2: staged),
   and the Linux binaries' hashes rebuilt at 3a0744d34 (the peer's are unchanged).
+
+r7/t14/  The parity boot (T14, osbench_lan, peer the AMD bench's Linux over its Wi-Fi): Linux L1, p1 = 3a0744d34, Linux L2;
+  image and binary hashes checked before it started; every run rc 0, the judge exit 0. session/ the Linux runs,
+  toyos/p1.{txt,verdict.txt,judge.log}, judgement-p1.txt. Masked under #1119's rule, model strings included.
