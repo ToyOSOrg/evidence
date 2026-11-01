@@ -1,0 +1,96 @@
+diff --git a/system/nvme/src/nvme.rs b/system/nvme/src/nvme.rs
+index b6c304e43..9c5539552 100644
+--- a/system/nvme/src/nvme.rs
++++ b/system/nvme/src/nvme.rs
+@@ -108,6 +108,22 @@ pub enum Power {
+     Refused(u16),
+ }
+ 
++/// The diagnostic probe's counts, by power state found (32: Get Features failed).
++#[derive(Clone, Debug)]
++struct Probe {
++    found: [u64; 33],
++    gap_min: [u64; 33],
++    gap_max: [u64; 33],
++    last: Instant,
++    said: Instant,
++}
++
++impl Probe {
++    fn new() -> Self {
++        Self { found: [0; 33], gap_min: [u64::MAX; 33], gap_max: [0; 33], last: Instant::now(), said: Instant::now() }
++    }
++}
++
+ /// Whose a command is.
+ #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+ pub enum Owner {
+@@ -237,6 +253,8 @@ pub struct Controller {
+     pub peak: usize,
+     /// Commands issued down each I/O queue.
+     pub issued: Vec<u64>,
++    /// Diagnostic probe: the power state each I/O found the idle device in.
++    probe: Probe,
+ }
+ 
+ impl Controller {
+@@ -297,6 +315,7 @@ impl Controller {
+             stray: false,
+             peak: 0,
+             issued: Vec::new(),
++            probe: Probe::new(),
+         };
+         ctrl.enable()?;
+         ctrl.identify()?;
+@@ -632,6 +651,7 @@ impl Controller {
+     /// # Panics
+     /// With no room: the caller asks [`Self::has_room`] first.
+     pub fn submit_io(&mut self, write: bool, block: u64, blocks: u32, at: u64, owner: Owner) {
++        self.probe_state();
+         let per = (toyos_blockring::BLOCK_BYTES as u32 / self.lba_bytes) as u64;
+         self.submit_sectors(write, block * per, blocks as u64 * per, at, owner);
+     }
+@@ -671,6 +691,7 @@ impl Controller {
+ 
+     /// Issue a Flush for `owner` (§7.1 of the NVM Command Set).
+     pub fn submit_flush(&mut self, owner: Owner) {
++        self.probe_state();
+         let queue = self.roomiest().expect("nvme: a flush with no queue room");
+         self.submit(Some(queue), Command { opcode: IO_FLUSH, nsid: 1, ..Command::default() }, owner, |_| 0);
+         self.issued[queue] += 1;
+@@ -718,6 +739,35 @@ impl Controller {
+         Ok(aborted)
+     }
+ 
++    /// Diagnostic: where no I/O is outstanding, ask the controller its power
++    /// state (Get Features 02h, §5.1.25.1.2). An admin command neither leaves
++    /// a non-operational state nor counts as I/O for APST's idle time
++    /// (§8.1.17.1, §8.1.17.2).
++    fn probe_state(&mut self) {
++        let gap = self.probe.last.elapsed();
++        self.probe.last = Instant::now();
++        if self.busy() != 0 {
++            return;
++        }
++        let cmd = Command { opcode: 0x0A, cdw10: 0x02, ..Command::default() };
++        let ps = match self.admin_command("Get Features (Power Management)", cmd) {
++            Ok(dw0) => (dw0 & 0x1F) as usize,
++            Err(_) => 32,
++        };
++        self.probe.found[ps] += 1;
++        let ms = gap.as_millis() as u64;
++        self.probe.gap_max[ps] = self.probe.gap_max[ps].max(ms);
++        self.probe.gap_min[ps] = self.probe.gap_min[ps].min(ms);
++        if self.probe.said.elapsed() >= Duration::from_secs(30) {
++            self.probe.said = Instant::now();
++            let states: Vec<String> = (0..33)
++                .filter(|&n| self.probe.found[n] != 0)
++                .map(|n| format!("ps{n}={} gap {}..{} ms", self.probe.found[n], self.probe.gap_min[n], self.probe.gap_max[n]))
++                .collect();
++            println!("nvme probe: an idle device's state at each arrival: {}", states.join(", "));
++        }
++    }
++
+     /// The queues each command was issued down, as a line.
+     pub fn spread(&self) -> String {
+         self.issued.iter().map(u64::to_string).collect::<Vec<_>>().join("/")

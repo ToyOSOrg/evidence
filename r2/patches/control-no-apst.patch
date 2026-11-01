@@ -1,0 +1,27 @@
+diff --git a/system/nvme/src/main.rs b/system/nvme/src/main.rs
+index 257ed9c..1d0d5ea 100644
+--- a/system/nvme/src/main.rs
++++ b/system/nvme/src/main.rs
+@@ -146,7 +146,7 @@ fn main() {
+ /// against.
+ fn say_power(name: &str, power: &nvme::Power) {
+     match power {
+-        nvme::Power::Unsupported => println!("{name}: no autonomous power state transitions: the controller supports none"),
++        nvme::Power::Unsupported => println!("{name}: no autonomous power state transitions: A/B control, the table is not set"),
+         nvme::Power::Refused(status) => {
+             println!("{name}: no autonomous power state transitions: the controller refused the table (status {status:#x})")
+         }
+diff --git a/system/nvme/src/nvme.rs b/system/nvme/src/nvme.rs
+index b6c304e..f8ceb4e 100644
+--- a/system/nvme/src/nvme.rs
++++ b/system/nvme/src/nvme.rs
+@@ -419,7 +419,8 @@ impl Controller {
+     /// the controller then serves from its operational state.
+     fn set_power(&mut self) -> Result<Power, Refusal> {
+         let (supported, states) = self.states.clone();
+-        if !supported {
++        // A/B control: the controller is left at its default, as before APST.
++        if !supported || true {
+             return Ok(Power::Unsupported);
+         }
+         let plan = nvme_apst::plan(&states);
