@@ -1,0 +1,158 @@
+diff --git a/tests/guest/osbench/src/pingpong.rs b/tests/guest/osbench/src/pingpong.rs
+index b2a1795f9..d8cf88512 100644
+--- a/tests/guest/osbench/src/pingpong.rs
++++ b/tests/guest/osbench/src/pingpong.rs
+@@ -114,6 +114,7 @@ fn bench(kind: &str, at: Where) -> String {
+ /// Neither side is put on the interrupts' CPU.
+ fn run(kind: &str, at: Where, mut pinger: impl Channel, mut ponger: impl Channel) {
+     let bench = bench(kind, at);
++    let ran = crate::ran::start();
+     let (go_ping, ping_go) = mpsc::channel::<bool>();
+     let (go_pong, pong_go) = mpsc::channel::<bool>();
+     let (ping_said, ping_heard) = mpsc::channel();
+@@ -186,14 +187,11 @@ fn run(kind: &str, at: Where, mut pinger: impl Channel, mut ponger: impl Channel
+     let pong_seen = pong_heard.recv().unwrap_or_default();
+     let checks = ping_seen.len().min(pong_seen.len());
+     let held = ping_seen.iter().zip(&pong_seen).filter(|(&ping, &pong)| ping == ping_cpu && wanted(pong)).count();
+-    result(
+-        &bench,
+-        "ns",
+-        &mut kept,
+-        &[
+-            ("ping_cpu", ping_cpu.to_string()),
+-            ("pong_cpu", pong_side.cpu.to_string()),
+-            ("placed_held", format!("{held}/{checks}")),
+-        ],
+-    );
++    let mut fields = vec![
++        ("ping_cpu", ping_cpu.to_string()),
++        ("pong_cpu", pong_side.cpu.to_string()),
++        ("placed_held", format!("{held}/{checks}")),
++    ];
++    fields.extend(ran.fields());
++    result(&bench, "ns", &mut kept, &fields);
+ }
+diff --git a/tests/guest/osbench/src/ran.rs b/tests/guest/osbench/src/ran.rs
+index b9bec0927..89b6150c6 100644
+--- a/tests/guest/osbench/src/ran.rs
++++ b/tests/guest/osbench/src/ran.rs
+@@ -34,6 +34,41 @@ pub fn start() -> Ran {
+ }
+ 
+ impl Ran {
++    /// Diagnostic: this process's migrations in the span, how many crossed
++    /// an LLC, and its wakes and picks, as `m/x/w/p` with `lost` beside it.
++    pub fn moves(self) -> String {
++        #[cfg(target_os = "toyos")]
++        {
++            let Some(mut d) = self.diag else { return "-".to_string() };
++            let (entries, lost, failed) = d.diary();
++            if failed.is_some() {
++                return "-".to_string();
++            }
++            let apics: std::collections::BTreeMap<u32, u32> =
++                d.counters().unwrap_or_default().into_iter().map(|c| (c.cpu, c.apic)).collect();
++            let llc = |cpu: u32| apics.get(&cpu).and_then(|&apic| crate::arch::llc_of_apic(apic));
++            let me = std::process::id();
++            let (mut moved, mut crossed, mut woken, mut picked) = (0u64, 0u64, 0u64, 0u64);
++            for (_, entry) in &entries {
++                if entry.thread.is_none_or(|t| t.pid != me) {
++                    continue;
++                }
++                match entry.event {
++                    toyos_trace::Event::Migrate { to } => {
++                        moved += 1;
++                        crossed += u64::from(llc(u32::from(entry.cpu)) != llc(to));
++                    }
++                    toyos_trace::Event::Wake => woken += 1,
++                    toyos_trace::Event::Pick => picked += 1,
++                    _ => {}
++                }
++            }
++            format!("{moved}/{crossed}/{woken}/{picked}:lost{lost}")
++        }
++        #[cfg(not(target_os = "toyos"))]
++        "-".to_string()
++    }
++
+     /// The span's fields, ending it.
+     pub fn fields(self) -> Vec<(&'static str, String)> {
+         #[cfg(target_os = "toyos")]
+diff --git a/tests/guest/osbench/src/system.rs b/tests/guest/osbench/src/system.rs
+index 79d352467..00f2b6b41 100644
+--- a/tests/guest/osbench/src/system.rs
++++ b/tests/guest/osbench/src/system.rs
+@@ -100,18 +100,32 @@ pub fn process_spawn() {
+ /// to end-of-file. One unread round, then seven.
+ pub fn pipe_throughput(size: usize) {
+     let bench = format!("pipe.throughput.{size}");
++    // Diagnostic: the CPU each side ran on most, sampled as pingpong samples its sides.
++    let mode = |seen: Vec<u32>| {
++        let mut counts = std::collections::BTreeMap::new();
++        for cpu in seen {
++            *counts.entry(cpu).or_insert(0u32) += 1;
++        }
++        counts.into_iter().max_by_key(|&(_, n)| n).map_or(u32::MAX, |(cpu, _)| cpu)
++    };
++    let sides = std::cell::RefCell::new(Vec::new());
++    let spans = std::cell::RefCell::new(Vec::new());
+     let round = || -> std::io::Result<u64> {
++        let span = crate::ran::start();
+         let (mut reader, mut writer) = std::io::pipe()?;
+-        let writing = thread::spawn(move || -> std::io::Result<()> {
++        let writing = thread::spawn(move || -> std::io::Result<Vec<u32>> {
+             let chunk = vec![0x5au8; size];
+             let start = Instant::now();
++            let mut seen = Vec::new();
+             while start.elapsed() < Duration::from_millis(100) {
+                 for _ in 0..64 {
+                     writer.write_all(&chunk)?;
+                 }
++                seen.push(sys::current_cpu());
+             }
+-            Ok(())
++            Ok(seen)
+         });
++        let mut read_seen = Vec::new();
+         let mut buf = vec![0u8; 64 * 1024];
+         // The clock starts at the first byte; what it carried is not counted.
+         if reader.read(&mut buf)? == 0 {
+@@ -123,9 +137,12 @@ pub fn pipe_throughput(size: usize) {
+                 0 => break,
+                 n => bytes += n as u64,
+             }
++            read_seen.push(sys::current_cpu());
+         }
+         let ns = ns_since(start).max(1);
+-        writing.join().expect("the writer panicked")?;
++        let write_seen = writing.join().expect("the writer panicked")?;
++        sides.borrow_mut().push((mode(read_seen), mode(write_seen)));
++        spans.borrow_mut().push(span.moves());
+         Ok(bytes * 1000 / ns)
+     };
+     let run = || -> std::io::Result<Vec<u64>> {
+@@ -134,7 +151,23 @@ pub fn pipe_throughput(size: usize) {
+         (0..7).map(|_| round()).collect()
+     };
+     match run() {
+-        Ok(mut mbps) => result(&bench, "MB/s", &mut mbps, &[("write_bytes", size.to_string())]),
++        Ok(mut mbps) => {
++            let sides = sides.borrow();
++            let timed = &sides[1..];
++            let one_core = timed.iter().filter(|&&(r, w)| sys::core_of(r) == sys::core_of(w)).count();
++            let on: Vec<String> = timed.iter().map(|&(r, w)| format!("{r}+{w}")).collect();
++            result(
++                &bench,
++                "MB/s",
++                &mut mbps,
++                &[
++                    ("write_bytes", size.to_string()),
++                    ("reader_writer_cpus", on.join(",")),
++                    ("one_core", format!("{one_core}/{}", timed.len())),
++                    ("moves_xllc_wakes_picks", spans.borrow()[1..].join(",")),
++                ],
++            )
++        }
+         Err(e) => refuse(&bench, e),
+     }
+ }
