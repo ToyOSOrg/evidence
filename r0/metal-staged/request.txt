@@ -1,0 +1,15 @@
+# fs-7b A/B (PR head b4edede36, base 06238ef4d = main 190f3b164 + the persist.write_4k_fsync_beside_1m row), from <worktree>
+# Rules, set before any boot: <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/fs-7b/ab/rules.md
+# On the T14 and on the AMD bench: base, head, base, head (benchcase), then one head testcases boot.
+# Each invocation is `cargo <words>` from the worktree; give each boot its own --readback dir (runs/<bench>/<n>-<base|head>).
+
+base benchcase (06238ef4d): <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/fs-7b/ab/base/benchcase/image.img
+  cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/fs-7b/ab/base/benchcase/image.img --readback <dir> --fat32-check
+head benchcase (b4edede36): <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/fs-7b/ab/head/benchcase/image.img
+  cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/fs-7b/ab/head/benchcase/image.img --readback <dir> --fat32-check
+head testcases (b4edede36), members a_served_files_read_never_tears_against_its_write, a_served_file_reads_through_its_paged_object, served_file_offset, a_pager_s_end_answers_its_waiting_holders_gone, std_fs:
+  cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/fs-7b/ab/head/testcases/image.img --readback <dir> --fat32-check
+
+9d6c5e9cac33c13a96de0984df190a382bed7820d0f15f94cafab671d6c28b53  base/benchcase/image.img
+5ad98b3d8d6411b0cabced96fe528afa47572f2f748d6c9f97ebd3328e0eb7e8  head/benchcase/image.img
+37d2c2010da4fd2c67727011cc7d70d9dd2acee0241906acad4b31fca9c1adb5  head/testcases/image.img

@@ -1,0 +1,48 @@
+
+running 17 tests
+test paged::tests::a_core_is_kept_whatever_the_allocator_refuses ... ok
+test paged::tests::a_failed_page_answers_failed_until_supplied_again ... ok
+test paged::tests::a_clean_supply_past_the_size_is_refused_and_a_dirty_one_extends_it ... ok
+test paged::tests::a_range_must_be_ended_exactly_as_begun_and_once ... ok
+test paged::tests::a_reader_racing_an_extending_write_never_sees_its_unwritten_bytes ... ok
+test paged::tests::a_shrink_removes_dirty_pages_releases_their_slots_and_names_the_tail ... ok
+test paged::tests::a_withdrawal_of_a_long_range_walks_the_objects_pages ... ok
+test paged::tests::a_supplied_page_is_found_and_a_second_supply_changes_nothing ... ok
+test paged::tests::an_offset_or_range_past_the_last_page_is_out_of_reach ... ok
+test paged::tests::an_unpin_after_a_shrink_removed_the_page_grows_nothing ... ok
+test paged::tests::only_clean_unheld_pages_are_withdrawn ... ok
+test paged::tests::kept_is_exactly_the_pages_dirtied_or_pinned_since_the_begin_or_unwritten ... ok
+test paged::tests::the_dirty_ceiling_refuses_and_a_write_back_frees_it ... ok
+test paged::tests::an_invalidated_object_answers_gone_and_gives_every_frame_back ... ok
+test paged::tests::a_short_call_holds_the_write_until_its_end ... FAILED
+test paged::tests::a_read_counts_only_where_no_write_began_or_was_under_way ... FAILED
+test paged::tests::a_full_table_refuses_and_every_slot_is_reached_after_churn ... ok
+
+failures:
+
+---- paged::tests::a_short_call_holds_the_write_until_its_end stdout ----
+
+thread 'paged::tests::a_short_call_holds_the_write_until_its_end' (130573310) panicked at kernel/pure/paged.rs:762:9:
+assertion `left == right` failed: a short call's write is under way
+  left: Some(Version(1))
+ right: None
+
+---- paged::tests::a_read_counts_only_where_no_write_began_or_was_under_way stdout ----
+
+thread 'paged::tests::a_read_counts_only_where_no_write_began_or_was_under_way' (130573308) panicked at kernel/pure/paged.rs:742:9:
+assertion `left == right` failed: a read meets the write in flight
+  left: Some(Version(1))
+ right: None
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    paged::tests::a_read_counts_only_where_no_write_began_or_was_under_way
+    paged::tests::a_short_call_holds_the_write_until_its_end
+
+test result: FAILED. 15 passed; 2 failed; 0 ignored; 0 measured; 406 filtered out; finished in 0.00s
+
+   Compiling kernel v0.1.0 (<worktree>/kernel)
+    Finished `test` profile [optimized + debuginfo] target(s) in 3.37s
+     Running unittests pure/lib.rs (target/debug/deps/kernel-fa45b686f8e87f8e)
+error: test failed, to rerun pass `-p kernel --lib`
