@@ -1,0 +1,25 @@
+# T14 SERIES for PR #1094 (NOT TO RUN until the pilot has been read and the owner has agreed to attend).
+# It needs a PERSON PRESENT at the T14 for the whole series: every loss is cleared only by unplugging
+# and replugging the scratch stick. Head ed155ea36274c1feef512d6eaafc25d2cfe40527; the images and commands
+# are the pilot's (r4/pilot/pilot-protocol.txt step 1), with cycle numbers n = 2, 3, ... in place of 1.
+#
+# Rotations of O, R, D, A, in that order (A, the SysRq reset of Ubuntu, last in each).
+# After each ToyOS cycle, judge it as the pilot's step 2 does.
+#
+# Counting
+# - LOSS: an Ubuntu cycle exiting 1 with "the scratch disk came back", or a ToyOS judge red with
+#   "the scratch disk came back". Record cycle, arm, state (unreadable | attached | gone) and the run dir.
+#   A person replugs the stick; the next cycle's own check confirms it served.
+# - A ToyOS judge red with "lost before ToyOS wrote it": a loss to Ubuntu's restart into ToyOS; counts in
+#   no arm. Replug as above.
+# - Any other red: counts in no arm; stop the series and send it back (it may be a ToyOS defect).
+# - With nobody at the bench the series stops at its first loss.
+#
+# End: the 8th counted loss, or 25 rotations (50 ToyOS cycles, 50 Ubuntu cycles), whichever is first.
+#
+# Decision rule (fixed before the pilot; issues/a-reset-can-leave-a-usb-stick-hung-until-its-power-is-removed.md):
+# one-sided sign test at 5% over the k counted losses (the arms interleave, so under the null a loss is
+# equally likely in either half):
+#   ToyOS (R+D) loses sticks more often than Ubuntu's restart (O+A) if ToyOS holds 5 of 5, 6 of 6, 7 of 7
+#   or 7 of 8; Ubuntu loses more by the same counts the other way; otherwise no difference is shown, and
+#   0 losses in 50 cycles bounds that half's rate under 6% (95%). D vs A and R vs O are read the same way.

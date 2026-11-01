@@ -1,0 +1,32 @@
+   Compiling toyos-build v0.1.0 ($WORKTREE)
+    Finished `test` profile [optimized + debuginfo] target(s) in 7.91s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-e03b5959f77ae3b7)
+18:02:09   BUILD x86_64 binaries of tests/guest/rust-tests
+18:03:59   BUILT x86_64 binaries of tests/guest/rust-tests  (110s)
+18:03:59   BUILD x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests
+18:04:39   BUILT x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests  (39s)
+18:04:39 [toyos] Compiling 143 C tests, and attempting 24 declared ones...
+18:04:43 [metal] 2 registration(s) and 0 shared member(s) over 2 boot(s)
+18:04:43   BUILD x86_64 kernel, loader, ROOT of $SCRATCH/r4/pilot/metal/scratchdeadline/system-1d680ad9dcbdaa69.toml
+18:06:11 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+18:06:11   BUILT x86_64 kernel, loader, ROOT of $SCRATCH/r4/pilot/metal/scratchdeadline/system-1d680ad9dcbdaa69.toml  (88s)
+18:06:11 [metal] scratchdeadline: 1 job(s) under a list bound of 60000 ms, armed with [] and a boot deadline of 40000 ms — $SCRATCH/r4/pilot/metal/scratchdeadline/image.img
+18:06:11   BUILD x86_64 ROOT of $SCRATCH/r4/pilot/metal/scratchreboot/system-fac6bcee20a6c6bf.toml
+18:06:15 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+18:06:15   BUILT x86_64 ROOT of $SCRATCH/r4/pilot/metal/scratchreboot/system-fac6bcee20a6c6bf.toml  (3s)
+18:06:15 [metal] scratchreboot: 1 job(s) under a list bound of 60000 ms, armed with [] and a boot deadline of 120000 ms — $SCRATCH/r4/pilot/metal/scratchreboot/image.img
+# One boot per image. Each invocation is `cargo <words>` from this worktree.
+
+scratchdeadline
+  image: $SCRATCH/r4/pilot/metal/scratchdeadline/image.img
+  cargo run -p toyos-metal -- --image $SCRATCH/r4/pilot/metal/scratchdeadline/image.img --readback $SCRATCH/r4/pilot/metal/scratchdeadline --fat32-check --scratch-cycle
+
+scratchreboot
+  image: $SCRATCH/r4/pilot/metal/scratchreboot/image.img
+  cargo run -p toyos-metal -- --image $SCRATCH/r4/pilot/metal/scratchreboot/image.img --readback $SCRATCH/r4/pilot/metal/scratchreboot --fat32-check --scratch-cycle
+18:06:15 [metal] staged 2 image(s); $SCRATCH/r4/pilot/metal/request.txt lists them. The machine was not touched, so this run establishes nothing about it.
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `$WORKTREE/target/debug/deps/toyos_build-e03b5959f77ae3b7 --metal --metal-readback $SCRATCH/r4/pilot/metal scratch_written_through_a_deadline_reset scratch_written_through_a_reboot` (exit status: 2)
+exit=2

@@ -1,0 +1,56 @@
+# T14 PILOT for PR #1094: one rotation O, R, D, A of the scratch-stick reset cycle.
+# Branch stick-hang, worktree $WORKTREE, head ed155ea36274c1feef512d6eaafc25d2cfe40527.
+# Every command runs from the worktree. T14 only. It writes the T14's SCRATCH stick only; no boot stick
+# is in a boot's path (#1095) and the AMD bench is untouched. The pilot proves the mechanics; it is no verdict.
+# P=$SCRATCH/r4/pilot
+# Keep each command's full stdout+stderr as $P/runs/<cycle>/run.log with its UTC start time and exit code.
+
+## 0. Once (destroys only the scratch stick's contents; no bench risk)
+# a) Which disk is the scratch stick: exactly one removable USB disk whose one partition has PARTTYPE
+#    51cc09f9-7442-435b-bc03-0fd8718b0fb5. Record the output. (No SERIAL column.)
+ssh <t14> 'lsblk -o NAME,TRAN,RM,SIZE,MODEL,PARTTYPE; for d in /sys/block/sd*; do echo "$d -> $(readlink -f $d)"; done; lsusb -t'
+# b) Re-adopt it on whole MiB (the old layout is refused by usbd). /dev/sdX from (a). The tool refuses a
+#    non-removable disk and any disk carrying a ToyOS image.
+cargo run -p toyos-metal -- --adopt-scratch /dev/sdX --dry-run
+cargo run -p toyos-metal -- --adopt-scratch /dev/sdX
+# c) Rehearsal: lists the disks and prints every root line it would run; writes and restarts nothing.
+#    It must name the scratch disk from (a). (A dry run does not do the root read.)
+cargo run -p toyos-metal -- --restart-ubuntu orderly --dry-run
+
+## 1. The rotation, in this order (least risky first). What each boot risks:
+# O  Ubuntu `reboot` with dd writing the scratch stick. Risks the scratch stick only.
+cargo run -p toyos-metal -- --restart-ubuntu orderly --readback $P/runs/O1
+# R  ToyOS boot off the NVMe install area; scratch_load writes 64 MiB through usbd and asks for the orderly
+#    reboot. Risks the scratch stick; a failed boot falls back to Ubuntu (BootNext is one-shot).
+cargo run -p toyos-metal -- --image $P/metal/scratchreboot/image.img --readback $P/runs/R1/scratchreboot --fat32-check --scratch-cycle
+# D  ToyOS boot; scratch_load writes until the 40 s boot deadline resets the machine, no USB register
+#    touched. Risks the scratch stick; same fallback.
+cargo run -p toyos-metal -- --image $P/metal/scratchdeadline/image.img --readback $P/runs/D1/scratchdeadline --fat32-check --scratch-cycle
+# A  SysRq-b after `sync` with dd writing: an abrupt reset of the bench's Ubuntu. Risks the scratch stick,
+#    and Ubuntu's root filesystem replays its journal at the next boot (synced first). LAST for that reason.
+cargo run -p toyos-metal -- --restart-ubuntu abrupt --readback $P/runs/A1
+
+## 2. Judge the ToyOS cycles offline (exit 0 = stimulus as designed and the stick served before and after)
+cargo test --test toyos-build -- --metal --metal-readback $P/runs/R1 scratch_written_through_a_reboot
+cargo test --test toyos-build -- --metal --metal-readback $P/runs/D1 scratch_written_through_a_deadline_reset
+# The Ubuntu cycles' verdict is toyos-metal's exit: 0 = served after; 1 with "the scratch disk came back"
+# = lost; any other refusal = the cycle did not run as designed.
+
+## Stop rules
+# - Run the four cycles in order whatever their verdicts, EXCEPT: stop at a loss ("the scratch disk came
+#   back <state>", in an exit or a judge). The stick then needs a PERSON to unplug and replug it; do not
+#   try rtcwake/S5 (an unwoken T14 is stranded).
+# - A later cycle refuses by itself (exit 2, "no scratch cycle: ... before the reset") if the stick is not
+#   served when it starts, so nothing runs on a lost stick.
+# - Send all of $P/runs back. A loss in the pilot is recorded as a data point; it decides nothing.
+
+## The staging run's own listing (staged at ed155ea36; the pilot uses the per-cycle readback dirs above)
+# # One boot per image. Each invocation is `cargo <words>` from this worktree.
+# 
+# scratchdeadline
+#   image: $SCRATCH/r4/pilot/metal/scratchdeadline/image.img
+#   cargo run -p toyos-metal -- --image $SCRATCH/r4/pilot/metal/scratchdeadline/image.img --readback $SCRATCH/r4/pilot/metal/scratchdeadline --fat32-check --scratch-cycle
+# 
+# scratchreboot
+#   image: $SCRATCH/r4/pilot/metal/scratchreboot/image.img
+#   cargo run -p toyos-metal -- --image $SCRATCH/r4/pilot/metal/scratchreboot/image.img --readback $SCRATCH/r4/pilot/metal/scratchreboot --fat32-check --scratch-cycle
