@@ -1,0 +1,33 @@
+# T14 parity session for issues/tcp-opens-a-connections-window-slower-than-linux-in-its-first-300-ms.md
+# Worktree <dev>/toyos-tcp-ramp2, branch tcp-ramp2, head 4f52c3056 (main 190f3b164 + osbench's per-round ramp marks).
+# No TCP change: the ToyOS image is main's [tcp] (#1114's pacer). Image hash in image-sha256.txt (c2f145b8...).
+# Order: Linux (L1), t1, Linux (L2), the same form as the parity boot (tcp-ramp/metal5).
+#
+# Linux binaries, rebuilt at 4f52c3056 so Linux's row carries the per-round marks too:
+#   CARGO_TARGET_DIR=<scratch> cargo +nightly-2026-07-22 build -p osbench -p osbench-lan --target x86_64-unknown-linux-musl --profile toyos
+#   (logs/linux-build.log, EXIT=0): <scratch>/metal/linux-4f52c3056/ (SHA256SUMS inside).
+#   The T14's Linux runs osbench-linux-x86_64 (4da3866e...), lan group, as before.
+#   The AMD peer need not change: osbench-lan's source and its one dependency (libc) are unchanged since 3a0744d34, whose
+#   peer (4ec7058b...) is running. The rebuilt peer's bytes differ (105552ad...) only as a different worktree's build does; the
+#   running one is kept.
+#
+# Read the upload row: p50, peer_received_by_{100,300}ms_bytes (five rounds, comma-separated) and _mean, and ToyOS's loss counters
+#   (retransmit_bytes, rto, fast/sack_recovery, loss_probe) and send_limited_{window,congestion,pacing}_ns.
+#
+# Decision rule, set before the run (the issue's proposed exit, commit 4f52c3056):
+#   Parity, closing the issue, when all hold:
+#     - t1's p50 >= min(L1, L2) p50 - 1 MB/s;
+#     - nothing resent beyond a loss probe (no RTO, no recovery);
+#     - at 100 ms and at 300 ms, t1's five rounds against L1's and L2's ten: the exact one-sided rank test that t1 ranks
+#       low gives p > 0.05.
+#   Does not decide: L1's five rounds against L2's five differ at p <= 0.05 by the exact two-sided rank test at either
+#     mark. Then the rounds are not exchangeable across runs, and the next session interleaves L, T, L, T, L and compares runs.
+#   Otherwise not parity: the issue stays open with the reading, and the send-limited times say where ToyOS waited.
+# Judge (scratch tool; exit status is not the verdict, its VERDICT line is):
+#   python3 -I <scratch>/tools/judge.py <L1 stdout> <scratch>/metal/t1/netbenchcase/kernel.log <L2 stdout>
+# Each invocation is `cargo <words>` from the worktree.
+
+## t1
+netbenchcase
+  image: <scratch>/metal/t1/netbenchcase/image.img
+  cargo run -p toyos-metal -- --image <scratch>/metal/t1/netbenchcase/image.img --readback <scratch>/metal/t1/netbenchcase --fat32-check
