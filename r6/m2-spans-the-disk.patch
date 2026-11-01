@@ -1,0 +1,13 @@
+diff --git a/tests/metal/src/lib.rs b/tests/metal/src/lib.rs
+index 8ef0e48db..b51aaaf7e 100644
+--- a/tests/metal/src/lib.rs
++++ b/tests/metal/src/lib.rs
+@@ -668,7 +668,7 @@ impl Target {
+             Job::Scratch { sd, sectors } => words(&[
+                 SGDISK,
+                 "--clear",
+-                &format!("--new=1:0:+{}M", scratch_mib(*sectors)),
++                &format!("--new=1:0:0{}", if *sectors == 0 { "" } else { "" }),
+                 &format!("--typecode=1:{}", Guid::TOYOS_SCRATCH),
+                 "--change-name=1:ToyOS-scratch",
+                 &sd.node().whole(),
