@@ -1,0 +1,46 @@
+diff --git a/tests/guest/rust-tests/src/bin/launch_unsent_stdio.rs b/tests/guest/rust-tests/src/bin/launch_unsent_stdio.rs
+index b6a8a0be4..927458a55 100644
+--- a/tests/guest/rust-tests/src/bin/launch_unsent_stdio.rs
++++ b/tests/guest/rust-tests/src/bin/launch_unsent_stdio.rs
+@@ -47,6 +47,13 @@ fn launched(program: &str, argv: &[u8], fds: &[(u32, BorrowedHandle<'_>, Kind)])
+ }
+ 
+ fn main() {
++    let (read, write) = toyos::pipe_pair().expect("a pipe");
++    launched("/system/bin/wifi", b"/system/bin/wifi\0status", &[(1, write.as_handle(), Kind::Handle)]);
++    let mut said = [0u8; 64];
++    let n = read.read(&mut said).expect("read what wifi wrote");
++    let said = String::from_utf8_lossy(&said[..n]).into_owned();
++    assert_eq!(said, "no radio\n", "wifi status said {said:?}");
++    eprintln!("ONE-OFF: wifi status said {said:?}");
+     let (read, write) = toyos::pipe_pair().expect("a pipe");
+     launched("/system/bin/cat", b"/system/bin/cat", &[(1, write.as_handle(), Kind::Handle)]);
+     drop(write);
+diff --git a/tests/images/launchcase.toml b/tests/images/launchcase.toml
+index f9c8e589e..5124a4e20 100644
+--- a/tests/images/launchcase.toml
++++ b/tests/images/launchcase.toml
+@@ -3,14 +3,21 @@
+ # holds a launcher, and `cat` and `echo` are links to it, so a spawn of
+ # either is a launch.
+ [boot]
+-start = ["logkeeper", "test-runner"]
++start = ["logkeeper", "test-runner", "wlan"]
+ 
+ [programs.logkeeper]
+ service = true
+ syscap = ["logread"]
+ 
+ [programs.test-runner]
+-starts = ["toybox"]
++starts = ["toybox", "wifi"]
++
++[programs.wlan]
++service = true
++serves = ["radio", "wifi"]
++
++[programs.wifi]
++receives = ["wifi"]
+ 
+ [programs.toybox]
+ 
