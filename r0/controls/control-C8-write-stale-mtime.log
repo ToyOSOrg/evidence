@@ -1,0 +1,33 @@
+
+running 1 test
+test pages::tests::an_objects_size_and_mtime_are_the_volumes_after_every_change ... FAILED
+
+failures:
+
+---- pages::tests::an_objects_size_and_mtime_are_the_volumes_after_every_change stdout ----
+
+thread 'pages::tests::an_objects_size_and_mtime_are_the_volumes_after_every_change' (134019195) panicked at system/fileserver/src/pages/tests.rs:660:9:
+assertion `left == right` failed: after a write
+  left: (12293, 0)
+ right: (12293, 3000000014)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    pages::tests::an_objects_size_and_mtime_are_the_volumes_after_every_change
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 111 filtered out; finished in 0.00s
+
+   Compiling fileserver v0.0.0 (<worktree>/system/fileserver)
+warning: unused variable: `mtime`
+   --> system/fileserver/src/pages.rs:427:68
+    |
+427 |         let Writing { identity, node, old, contents, offset, data, mtime } = *w;
+    |                                                                    ^^^^^ help: try ignoring the field: `mtime: _`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `fileserver` (lib test) generated 1 warning (run `cargo fix --lib -p fileserver --tests` to apply 1 suggestion)
+    Finished `test` profile [optimized + debuginfo] target(s) in 9.53s
+     Running unittests src/lib.rs (target/debug/deps/fileserver-c7ac95979b91b705)
+error: test failed, to rerun pass `-p fileserver --lib`

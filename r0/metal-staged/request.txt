@@ -1,0 +1,12 @@
+# FS stage 3a (fs-3a 70af9e75a, stacked on #1141), from <worktree>
+# Rules, set before any boot: <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/fs-7b/ab3a/rules.md
+# Base: #1141's staged head benchcase, <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/fs-7b/ab/head/benchcase/image.img (no new base image).
+# On the T14 and the AMD bench: base, head, base, head benchcase, then one head testcases boot. One --readback dir per boot.
+
+head benchcase: <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/fs-7b/ab3a/head/benchcase/image.img
+  cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/fs-7b/ab3a/head/benchcase/image.img --readback <dir> --fat32-check
+head testcases (members a_held_files_fstat_is_its_servers_stat, a_served_files_read_never_tears_against_its_write, a_served_file_reads_through_its_paged_object, served_file_offset, std_fs, file_mtime, stat_identity):
+  cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/fs-7b/ab3a/head/testcases/image.img --readback <dir> --fat32-check
+
+c5715cc7173d00ccabeeaa191a8ec5af30366f1ee1089c802274c19169999b1e  head/benchcase/image.img
+f85b681e278f177f0ccd5a913af0898bf0ea5a491c954dea2cf931d33aec3db5  head/testcases/image.img
