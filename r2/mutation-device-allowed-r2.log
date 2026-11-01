@@ -1,0 +1,56 @@
+rev 82a688be47b983c0dc1da7c6974bdd6862c41335
+applied
+   Compiling toyos-userbound v0.1.0 (<worktree>/lib/userbound)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.36s
+     Running unittests src/lib.rs (target/debug/deps/toyos_userbound-8ae1eb0d18a979a2)
+
+running 29 tests
+test fault::tests::a_ring_is_only_ever_what_cs_said ... ok
+test idle::tests::a_port_the_holder_may_read_is_kept_and_any_other_refused ... ok
+test idle::tests::a_malformed_declaration_is_refused_whole ... ok
+test idle::tests::a_hint_leaf_5_does_not_enumerate_is_refused ... ok
+test idle::tests::a_cpu_whose_timer_or_clock_stops_keeps_c1_alone ... ok
+test idle::tests::a_table_reads_back_from_its_words_whole ... ok
+test idle::tests::the_t14s_two_states_are_kept_as_declared ... ok
+test port::tests::a_declared_run_refuses_every_run_that_shares_a_port_with_it ... ok
+test idle::tests::a_residency_shorter_than_the_exit_is_refused ... ok
+test port::tests::a_full_declaration_refuses_one_more_run ... ok
+test port::tests::a_refused_access_names_the_first_port_it_may_not_touch ... ok
+test port::tests::a_run_is_never_empty_and_never_past_the_last_port ... ok
+test port::tests::a_fresh_bitmap_refuses_every_port_and_ends_in_ones ... ok
+test port::tests::a_held_row_opens_its_ports_and_no_other ... ok
+test span::tests::a_kernel_address_is_not_a_user_address ... ok
+test port::tests::the_last_port_of_the_space_opens_without_touching_the_end_byte ... ok
+test span::tests::a_range_ending_past_the_bound_is_refused_and_a_wrapping_one_too ... ok
+test span::tests::a_vaddr_min_above_the_base_cannot_rebase ... ok
+test span::tests::a_zero_sized_object_is_nothing_to_dereference ... ok
+test port::tests::a_switch_to_a_process_holding_nothing_closes_the_row ... ok
+test span::tests::an_entry_is_an_address_of_the_user_half_and_nothing_else ... ok
+test span::tests::an_image_at_vaddr_zero_rebases_to_the_base_itself ... ok
+test span::tests::an_image_that_reaches_the_last_page_of_the_user_half_is_refused ... ok
+test span::tests::an_object_is_refused_for_its_alignment_before_anything_else ... ok
+test span::tests::an_object_may_not_end_past_the_bound ... ok
+test window::tests::a_header_firmware_did_not_write_is_refused ... ok
+test window::tests::an_opregion_in_nvs_is_its_eight_kb_in_whole_pages ... ok
+test span::tests::an_aligned_object_may_cross_a_page_boundary ... ok
+test window::tests::a_window_past_firmwares_own_memory_is_refused ... FAILED
+
+failures:
+
+---- window::tests::a_window_past_firmwares_own_memory_is_refused stdout ----
+
+thread 'window::tests::a_window_past_firmwares_own_memory_is_refused' (135308452) panicked at lib/userbound/src/window.rs:142:9:
+assertion `left == right` failed
+  left: Ok(Window { start: 1073872896, bytes: 8192, offset: 0, len: 8192 })
+ right: Err(Device)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    window::tests::a_window_past_firmwares_own_memory_is_refused
+
+test result: FAILED. 28 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-userbound --lib`
+exit 101
+restored
