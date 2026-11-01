@@ -1,0 +1,21 @@
+# W2a reference capture, revision 2: the PTK rekey and the group key handshake. One Linux bench
+# run, no ToyOS image. Same bench and procedure as revision 1 (the T14 bench is fine).
+
+script: <scratch>/agents/wifi/w2a/capture/r2/capture.sh  (revision 1 plus your two fixes; diff against ../capture.sh)
+
+  1. copy it to a fresh directory on the bench;
+  2. sudo bash capture.sh <that directory>/out   (about two minutes, every wait bounded);
+  3. bring out/ back whole with the exit code into <scratch>/agents/wifi/w2a/capture/r2/out/
+
+changes from revision 1:
+  - the AP config carries no rekey field: v2.10's AP parsed group_rekey and wpa_ptk_rekey and
+    never rekeyed in 64 s;
+  - the station sets wpa_ptk_rekey=6, so it asks for a new 4-way handshake when its PTK's
+    lifetime ends;
+  - after the join, the script asks the AP's control interface "wpa_cli REKEY_GTK" and records
+    its answer in rekey-gtk.txt. If v2.10 lacks the command, that file says so and the group
+    path stays unrecorded;
+  - eapol.pcap is gone (it lost its socket), and so is the STA-up fix that served it. The rekey
+    frames are CCMP-protected on air anyway; their bytes come from the station's -dd log.
+
+touches the same as revision 1. Installs nothing; the reboot undoes it.

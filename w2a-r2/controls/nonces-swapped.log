@@ -1,0 +1,48 @@
+control nonces-swapped on 228e4f76a12c054b64d3258033e0bcbf57c16177 plus the staged capture test
+--- a/system/wlan/handshake/src/supplicant.rs
++++ b/system/wlan/handshake/src/supplicant.rs
+@@ -123,7 +123,7 @@
+         } else {
+             (spa.0, aa.0)
+         };
+-        let (n_low, n_high) = if anonce < snonce {
++        let (n_high, n_low) = if anonce < snonce {
+             (anonce, snonce)
+         } else {
+             (snonce, anonce)
+build exit 0
+   Compiling toyos-wlan-handshake v0.1.0 (<worktree>/system/wlan/handshake)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.16s
+     Running tests/capture.rs (target/debug/deps/capture-37fddc3a14f93d68)
+
+running 2 tests
+test a_recorded_psk_handshake_is_answered_byte_for_byte ... FAILED
+test a_recorded_handshake_with_management_frame_protection_is_answered_byte_for_byte ... FAILED
+
+failures:
+
+---- a_recorded_psk_handshake_is_answered_byte_for_byte stdout ----
+
+thread 'a_recorded_psk_handshake_is_answered_byte_for_byte' (121718374) panicked at system/wlan/handshake/tests/capture.rs:127:5:
+assertion `left == right` failed: message 2, byte for byte
+  left: [2, 3, 0, 117, 2, 1, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 92, 0, 156, 27, 49, 23, 192, 124, 165, 186, 109, 63, 6, 84, 64, 251, 136, 214, 245, 71, 157, 34, 159, 201, 238, 233, 126, 219, 62, 37, 109, 70, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 87, 81, 16, 223, 110, 249, 216, 201, 149, 56, 10, 199, 134, 152, 7, 123, 0, 22, 48, 20, 1, 0, 0, 15, 172, 4, 1, 0, 0, 15, 172, 4, 1, 0, 0, 15, 172, 2, 0, 0]
+ right: [2, 3, 0, 117, 2, 1, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 92, 0, 156, 27, 49, 23, 192, 124, 165, 186, 109, 63, 6, 84, 64, 251, 136, 214, 245, 71, 157, 34, 159, 201, 238, 233, 126, 219, 62, 37, 109, 70, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 238, 232, 11, 197, 31, 125, 204, 176, 93, 204, 131, 7, 20, 96, 214, 122, 0, 22, 48, 20, 1, 0, 0, 15, 172, 4, 1, 0, 0, 15, 172, 4, 1, 0, 0, 15, 172, 2, 0, 0]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- a_recorded_handshake_with_management_frame_protection_is_answered_byte_for_byte stdout ----
+
+thread 'a_recorded_handshake_with_management_frame_protection_is_answered_byte_for_byte' (121718373) panicked at system/wlan/handshake/tests/capture.rs:127:5:
+assertion `left == right` failed: message 2, byte for byte
+  left: [2, 3, 0, 123, 2, 1, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 217, 29, 209, 156, 109, 13, 28, 187, 113, 164, 227, 220, 169, 8, 155, 74, 56, 94, 4, 222, 247, 122, 56, 161, 160, 160, 94, 36, 67, 130, 192, 186, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 201, 21, 104, 251, 228, 156, 149, 211, 148, 125, 131, 237, 253, 105, 191, 242, 0, 28, 48, 26, 1, 0, 0, 15, 172, 4, 1, 0, 0, 15, 172, 4, 1, 0, 0, 15, 172, 2, 192, 0, 0, 0, 0, 15, 172, 6]
+ right: [2, 3, 0, 123, 2, 1, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 217, 29, 209, 156, 109, 13, 28, 187, 113, 164, 227, 220, 169, 8, 155, 74, 56, 94, 4, 222, 247, 122, 56, 161, 160, 160, 94, 36, 67, 130, 192, 186, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 241, 244, 215, 197, 152, 103, 59, 10, 156, 195, 196, 142, 135, 144, 151, 141, 0, 28, 48, 26, 1, 0, 0, 15, 172, 4, 1, 0, 0, 15, 172, 4, 1, 0, 0, 15, 172, 2, 192, 0, 0, 0, 0, 15, 172, 6]
+
+
+failures:
+    a_recorded_handshake_with_management_frame_protection_is_answered_byte_for_byte
+    a_recorded_psk_handshake_is_answered_byte_for_byte
+
+test result: FAILED. 0 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+error: test failed, to rerun pass `-p toyos-wlan-handshake --test capture`
+test exit 101
+restored exit 0
