@@ -1,0 +1,12 @@
+--- a/system/wlan/handshake/src/supplicant.rs
++++ b/system/wlan/handshake/src/supplicant.rs
+@@ -322,7 +322,8 @@
+         if key.key_length != 16 {
+             return Err(Refused::KeyLength);
+         }
+-        let snonce = self.pending.as_ref().map_or_else(nonce, |p| p.snonce);
++        // Control: a resent message 1 is answered under another SNonce.
++        let snonce = self.pending.as_ref().map_or_else(nonce, |p| p.snonce.map(|b| b ^ 1));
+         let ptk = Ptk::derive(
+             &self.pmk,
+             self.authenticator,

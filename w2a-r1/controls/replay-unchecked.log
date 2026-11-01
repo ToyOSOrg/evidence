@@ -1,0 +1,60 @@
+control replay-unchecked at 31a5254f1d4727013b2c04d674688b76151070c5
+--- patch
+--- a/system/wlan/handshake/src/supplicant.rs
++++ b/system/wlan/handshake/src/supplicant.rs
+@@ -296,7 +296,7 @@
+         if !info.has(Info::ACK) || info.has(Info::REQUEST) || info.has(Info::ERROR) {
+             return Err(Refused::NotFromAuthenticator);
+         }
+-        if self.replay.is_some_and(|last| key.replay <= last) {
++        if false && self.replay.is_some_and(|last| key.replay <= last) {
+             return Err(Refused::Replayed);
+         }
+         match (info.has(Info::PAIRWISE), info.has(Info::MIC)) {
+build exit 0
+   Compiling toyos-wlan-handshake v0.1.0 (<worktree>/system/wlan/handshake)
+    Finished `test` profile [optimized + debuginfo] target(s) in 2.99s
+     Running tests/handshake.rs (target/debug/deps/handshake-8cd20971029305bb)
+
+running 21 tests
+test every_reason_is_its_own ... ok
+test a_gtk_rsc_past_48_bits_is_refused ... ok
+test a_resent_message_1_keeps_its_snonce ... ok
+test a_message_1_after_the_handshake_rekeys_under_a_fresh_snonce ... ok
+test a_replayed_counter_is_refused ... FAILED
+test a_mic_mismatch_is_refused_and_changes_nothing ... ok
+test group_key_id_0_is_refused ... ok
+test eapol_framing_is_checked ... ok
+test a_retransmitted_message_3_is_answered_and_reinstalls_nothing ... ok
+test management_frame_protection_installs_the_igtk_too ... ok
+test message_3s_rsne_must_be_the_beacons ... ok
+test the_4_way_handshake_installs_the_ptks_tk_and_the_gtk ... ok
+test messages_out_of_their_order_are_refused ... ok
+test message_3s_rsnxe_must_be_the_beacons ... ok
+test key_information_no_authenticator_sends_is_refused ... ok
+test message_2_carries_the_snonce_and_the_stations_rsne ... ok
+test group_rekeying_installs_a_new_gtk_once ... ok
+test every_single_octet_change_to_message_3_is_refused ... ok
+test hostile_key_data_is_refused ... ok
+test an_igtk_is_required_and_checked_under_management_frame_protection ... ok
+test associations_this_supplicant_cannot_key_are_refused ... ok
+
+failures:
+
+---- a_replayed_counter_is_refused stdout ----
+
+thread 'a_replayed_counter_is_refused' (120481273) panicked at system/wlan/handshake/tests/handshake.rs:136:5:
+assertion `left == right` failed
+  left: None
+ right: Some(Replayed)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    a_replayed_counter_is_refused
+
+test result: FAILED. 20 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.29s
+
+error: test failed, to rerun pass `-p toyos-wlan-handshake --test handshake`
+test exit 101
+restored exit 0

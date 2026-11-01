@@ -1,0 +1,21 @@
+# W2a reference capture: one Linux bench run, no ToyOS image.
+
+bench: bench-t14 or bench-amd (either; Ubuntu 24.04, kernel 6.8). No radio of the bench's is used.
+script: <scratch>/agents/wifi/w2a/capture/capture.sh
+
+steps, under the bench lock:
+  1. copy capture.sh to the bench, e.g. into a fresh directory under /tmp;
+  2. sudo bash capture.sh <that directory>/out
+     (about a minute; every wait has a timeout; exit 2 means a precondition failed, such as
+     mac80211_hwsim already loaded);
+  3. bring <that directory>/out back whole (tar it), with the command's exit code, into
+     <scratch>/agents/wifi/w2a/capture/out/
+
+what it touches: modprobe mac80211_hwsim radios=2 (unloaded at exit); its two new interfaces set
+unmanaged in NetworkManager and given fixed local MACs 02:00:00:00:a0:01 / 02:00:00:00:b0:02;
+hwsim0 up; two wpa_supplicant and two tcpdump processes it starts and stops by PID. Installs
+nothing; no other interface is touched; the reboot undoes the rest.
+
+output: per scenario (psk, pmf): air.pcap (radiotap), eapol.pcap, ap.log and sta.log
+(wpa_supplicant -dd -K: test keys of a throwaway network), result. The writer scrubs before
+anything is published.
