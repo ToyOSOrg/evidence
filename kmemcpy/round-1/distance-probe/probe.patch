@@ -1,0 +1,173 @@
+diff --git a/kernel/src/main.rs b/kernel/src/main.rs
+index e6b5e12fc..bc00fdd91 100644
+--- a/kernel/src/main.rs
++++ b/kernel/src/main.rs
+@@ -66,6 +66,8 @@ mod idle;
+ mod iommu;
+ mod preempt;
+ mod counters;
++#[cfg(target_arch = "x86_64")]
++mod memprobe;
+ mod census;
+ mod irq_census;
+ #[cfg(feature = "mask-windows")]
+diff --git a/kernel/src/memprobe.rs b/kernel/src/memprobe.rs
+new file mode 100644
+index 000000000..9a0116838
+--- /dev/null
++++ b/kernel/src/memprobe.rs
+@@ -0,0 +1,96 @@
++//! MEASUREMENT ONLY, never lands: every kernel `memcpy` by its destination's
++//! distance above its source modulo 4 KiB, and by its caller.
++
++use core::sync::atomic::{AtomicU64, Ordering::Relaxed};
++
++/// Buckets: n < 64; then d = 0, 1-15, 16-63, 64-255, 256-511, 512-1023, 1024+.
++const BUCKETS: usize = 8;
++static COUNT: [AtomicU64; BUCKETS] = [const { AtomicU64::new(0) }; BUCKETS];
++static BYTES: [AtomicU64; BUCKETS] = [const { AtomicU64::new(0) }; BUCKETS];
++
++const SLOTS: usize = 64;
++static RA: [AtomicU64; SLOTS] = [const { AtomicU64::new(0) }; SLOTS];
++/// Per caller: bytes at n >= 64, and of those at d in 1..512, and at d in 1..64.
++static RA_ALL: [AtomicU64; SLOTS] = [const { AtomicU64::new(0) }; SLOTS];
++static RA_512: [AtomicU64; SLOTS] = [const { AtomicU64::new(0) }; SLOTS];
++static RA_64: [AtomicU64; SLOTS] = [const { AtomicU64::new(0) }; SLOTS];
++static LAST: AtomicU64 = AtomicU64::new(0);
++
++extern "C" fn record(dest: usize, src: usize, n: usize, ra: u64) {
++    let d = dest.wrapping_sub(src) % 4096;
++    let b = if n < 64 {
++        0
++    } else {
++        match d {
++            0 => 1,
++            1..16 => 2,
++            16..64 => 3,
++            64..256 => 4,
++            256..512 => 5,
++            512..1024 => 6,
++            _ => 7,
++        }
++    };
++    COUNT[b].fetch_add(1, Relaxed);
++    BYTES[b].fetch_add(n as u64, Relaxed);
++    if n < 64 {
++        return;
++    }
++    let mut i = (ra.wrapping_mul(0x9E37_79B9_7F4A_7C15) >> 58) as usize;
++    for _ in 0..SLOTS {
++        let cur = RA[i].load(Relaxed);
++        if cur == ra || (cur == 0 && RA[i].compare_exchange(0, ra, Relaxed, Relaxed).map_or_else(|v| v == ra, |_| true)) {
++            RA_ALL[i].fetch_add(n as u64, Relaxed);
++            if (1..512).contains(&d) {
++                RA_512[i].fetch_add(n as u64, Relaxed);
++            }
++            if (1..64).contains(&d) {
++                RA_64[i].fetch_add(n as u64, Relaxed);
++            }
++            return;
++        }
++        i = (i + 1) % SLOTS;
++    }
++}
++
++#[unsafe(no_mangle)]
++#[unsafe(naked)]
++unsafe extern "C" fn memcpy(_dest: *mut core::ffi::c_void, _src: *const core::ffi::c_void, _n: usize) -> *mut core::ffi::c_void {
++    core::arch::naked_asm!(
++        "push rdi",
++        "push rsi",
++        "push rdx",
++        "mov rcx, [rsp + 24]",
++        "call {record}",
++        "pop rdx",
++        "pop rsi",
++        "pop rdi",
++        "mov rax, rdi",
++        "mov rcx, rdx",
++        "rep movsb",
++        "ret",
++        record = sym record,
++    );
++}
++
++/// Log the histogram and the caller table, if anything was copied since.
++pub fn dump(why: &str) {
++    let total: u64 = BYTES.iter().map(|b| b.load(Relaxed)).sum();
++    if LAST.swap(total, Relaxed) == total {
++        return;
++    }
++    let c: [u64; BUCKETS] = core::array::from_fn(|i| COUNT[i].load(Relaxed));
++    let b: [u64; BUCKETS] = core::array::from_fn(|i| BYTES[i].load(Relaxed));
++    crate::log!("memprobe {why} anchor={:#x} count={c:?} bytes={b:?}", record as *const () as usize);
++    for i in 0..SLOTS {
++        let ra = RA[i].load(Relaxed);
++        if ra != 0 {
++            crate::log!(
++                "memprobe ra={ra:#x} all={} d512={} d64={}",
++                RA_ALL[i].load(Relaxed),
++                RA_512[i].load(Relaxed),
++                RA_64[i].load(Relaxed)
++            );
++        }
++    }
++}
+diff --git a/kernel/src/process.rs b/kernel/src/process.rs
+index aafe23657..368294e22 100644
+--- a/kernel/src/process.rs
++++ b/kernel/src/process.rs
+@@ -952,6 +952,8 @@ fn walk(mut owed: Vec<Pid>) {
+ 
+ /// End the calling thread's process as `end` says, and everything below it.
+ pub fn exit(end: End) -> ! {
++    #[cfg(target_arch = "x86_64")]
++    crate::memprobe::dump("exit");
+     let tid = current_tid();
+     let mut owed = Vec::new();
+     for sched in claim(current_process(), end, Some(tid), &mut owed) {
+diff --git a/tests/toyos.rs b/tests/toyos.rs
+index 9f4c94f07..4f8f5cf23 100644
+--- a/tests/toyos.rs
++++ b/tests/toyos.rs
+@@ -544,6 +544,8 @@ const MACHINE_TESTS: &[&str] = &[
+     // endowments a job gets is the image's and the supervisor's, which no
+     // host build has, and the benches run osbench only nightly.
+     "osbench_capability_groups_exit_0",
++    // Measurement only, never lands.
++    "memprobe_runs",
+     // What the kernel reads and writes for the `acpi` claim's holder and what
+     // it refuses. A red here is a write the kernel made — to RAM, to the
+     // firmware's tables, to COM1, to `PM1a_CNT`, to a function's configuration
+@@ -3035,6 +3037,23 @@ fn osbench_capability_groups_exit_0() -> Result<(), String> {
+     Ok(())
+ }
+ 
++/// Measurement only, never lands: the kernel's copies by page distance under
++/// osbench's pipe, IPC and file groups, the console kept in `MEMPROBE_LOG`.
++fn memprobe_runs() -> Result<(), String> {
++    const JOBS: [&str; 3] = ["osbench_system", "osbench_ipc", "osbench_files"];
++    let committed = compile::repo_root().join("tests/images/benchcase.toml");
++    let text = fs::read_to_string(&committed).map_err(|e| format!("{}: {e}", committed.display()))?;
++    let derived = toyos_metal::image::derive(&text, 600_000, &JOBS, &[]).map_err(|why| why.to_string())?;
++    let config = common::lane::dir().join("memprobe-runs.toml");
++    fs::write(&config, derived).map_err(|e| format!("{}: {e}", config.display()))?;
++    let mut qemu = QemuInstance::boot_with_options(&config, &[], &[], BootOptions { ready_marker: bootlog::COMPLETE, ..Default::default() });
++    let mut console = format!("{}\n", qemu.boot_log());
++    let last = format!("===TEST_END {} ", JOBS[JOBS.len() - 1]);
++    let result = await_guest(&mut qemu, &mut console, "osbench's groups to end", |said| said.contains(&last));
++    fs::write(std::env::var("MEMPROBE_LOG").expect("MEMPROBE_LOG"), &console).expect("write MEMPROBE_LOG");
++    result
++}
++
+ /// Boot the image `--console-boot` builds, on the machine shape with a panel
+ /// for `/system/bin/console` to claim, and wait for what that image owes at
+ /// boot: the console up on its panel, having read the log and the keyboard,
+@@ -4763,6 +4782,7 @@ fn run_machine_test(name: &str, test_config: &Path) -> Result<(), String> {
+         "a_stalled_hpet_is_left_out" => faults::a_stalled_hpet_is_left_out(test_config),
+         "acpi_press_is_one_sci" => acpi_press_is_one_sci(),
+         "osbench_capability_groups_exit_0" => osbench_capability_groups_exit_0(),
++        "memprobe_runs" => memprobe_runs(),
+         "acpi_mediated_access" => acpi_mediated_access(2),
+         "acpi_lock_given_back_on_one_cpu" => acpi_mediated_access(1),
+         "acpi_supply_outlives_holder" => acpi_supply_outlives_holder(),

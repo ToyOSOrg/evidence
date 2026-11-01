@@ -1,0 +1,23 @@
+# kernel-memcpy A/B: base against head, both benches, boots in the order base, head, head, base (four per bench).
+# base = b49e6aec415b2f0d61197cbe4481f6e4247c725d: origin/main 190f3b164 + the measurement (osbench kcopyat). Branch kernel-memcpy-ab.
+# head = dc535330f8acb4cf6b8c9838a303373509c595f2: base + the fix (42fb86902, PR branch kernel-memcpy). Branch kernel-memcpy-ab.
+# One arm, row "kcopyat": benchcase.toml, shipping kernel; jobs osbench_kcopyat, osbench_files, osbench_ipc, osbench_system.
+# Give each boot its own readback dir: $SCRATCH/ab/runs/<t14|amd>/<1-base|2-head|3-head|4-base>.
+# Checksums: $SCRATCH/ab/image-sha256.txt
+#
+# Rule, stated before the run. Per arm, the mean of its two boots' p50s. "W" is the head's window for the bench's
+# vendor, which head's boot log states ("memcpy: highest first Rule { window: .. }"): AMD 32, Intel 192.
+#  K1 exit: head kcopyat.read.8192.d16 and .read.4096.d16 <= 2.0 x head's .d0 of that size, both benches.
+#  K2 gain: head kcopyat.read.<size>.d<d> <= base's same row for every d in 1..W, both sizes, both benches.
+#  K3 untouched: head kcopyat.read.<size>.d<d> within 1.05 x base's for d = 0 and every d >= W, both sizes, both benches.
+#  K4 window: in-process rows at 4096 and 8192: down.d < movsb.d for every measured d in 1..W, and movsb.d <= down.d
+#     at the first two measured d >= W (AMD 32, 48; Intel 192, 224), each bench. A failure moves W to the measured
+#     crossover in a follow-up commit, which K2/K3 then judge from the in-process rows alone.
+#  K5 length: AMD: down.65536.d16 < movsb.65536.d16. Intel: down.16384.d16 < movsb.16384.d16 and
+#     movsb.65536.d16 <= down.65536.d16 (the 16 KiB cap). A failure moves the cap as K4 moves W.
+#  K6 elsewhere: every files.*, ipc.* and pipe.* row's head p50 within 1.05 x base's, both benches; a row outside it
+#     repeated in both pairs is investigated before landing.
+# Prediction, recorded before the run (an estimate, not a bound): K1 holds through the read's syscall cost although
+#     the descending copy alone runs about 3 x a d0 rep movsb on Zen 2 (8 bytes a store against its 32), which the
+#     in-process down.8192.d16 against movsb.8192.d0 shows directly.
+# The fix lands when K1-K3 and K6 hold on both benches and K4-K5 hold or their follow-up is committed.
