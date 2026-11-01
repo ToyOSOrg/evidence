@@ -1,0 +1,20 @@
+# amd-memcpy round 2: why a userland memcpy is slow on the AMD bench, by where its two ends sit.
+# Revision 02272ca2e (branch amd-memcpy-copyat, on origin/main 3add613c1), MEASUREMENT ONLY, never lands.
+# One image, shipping kernel. Jobs: osbench_copyat, osbench_mem. Checksum: <scratch>/r2/image-sha256.txt
+# One boot per bench. Give each its own readback dir, e.g. <scratch>/r2/runs/<bench>/copyat.
+#
+# Rule, stated before the run. Rows bench=copyat.<bytes>.<how>.s<a>.d<d>, p50 ns, judged at 8192 bytes;
+# "base" below is libc.s0.d0 on the same bench.
+#  M  memory type: AMD libc.s0.d0 <= 300 ns. Then the anonymous pages the heap also uses copy at cache
+#     speed, and PAT/MTRR attributes of those pages are not the cause.
+#  C1 distance: on AMD, some d > 0 has libc.s0.d<d> and libc.s16.d<d> both >= 4 x base, while
+#     libc.s16.d0 <= 1.5 x base. Then the cause is the destination's distance above the source modulo
+#     4 KiB (AMD 56305 rev. 3.02 s2.12: STLF eligibility by address bits 11:0).
+#  C2 alignment: on AMD, libc.s16.d0 >= 4 x base. Then the cause is the source's offset in its line.
+#  H  the heap row: copyat.8192.heap is within 1.5 x the libc row at its noted (src offset mod 64, distance)
+#     nearest in the matrix, or the matrix does not explain the heap case and neither C holds for it.
+#  F  remedy: a candidate <how> qualifies if on AMD its worst row is <= 1.5 x base and on the T14 each of its
+#     rows is <= 1.1 x the T14 libc row it stands beside. If none qualifies alone, libc's rep movsb with the
+#     slow distances (C1) routed to the best qualifying candidate there is judged by the same two bounds.
+#  The T14 is the control: none of M, C1, C2 is expected to fire there.
+# mem.memcpy.* rows are evidence (the scoreboard's), not judged.

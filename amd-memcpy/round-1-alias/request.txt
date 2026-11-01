@@ -1,0 +1,29 @@
+# amd-memcpy scout: what makes a userland copy slow on the AMD bench. Both benches, T14 and AMD.
+# Revision 8582c16e8 (branch amd-memcpy-scout, on origin/main 3add613c1; images built at a8c2f6d9e, which differs only in a host test gate), MEASUREMENT ONLY, never lands.
+# Images: aliasbase = shipping kernel; aliasscout = the same with kernel feature scout-user-va
+# (the kernel's user copies through the user's own address under stac/clac instead of the direct map).
+# Jobs per boot: osbench_alias, osbench_system. Checksums: <scratch>/scout/image-sha256.txt
+# Boots per bench: aliasbase then aliasscout (two). Give each boot its own readback dir, e.g. <dir>/<bench>/<image>.
+#
+# Rule, stated before the run. Rows are osbench lines bench=alias.<bytes>.<src>.<case>, p50 in ns;
+# judged at 8192 bytes, and 4096 must agree in direction.
+#  R1 mechanism (AMD, aliasbase): shm.alias >= 3 x shm.user.
+#  R2 cause (AMD, aliasbase): heap.kernel >= 3 x heap.user, heap.kernel.again <= 1.5 x heap.user.again,
+#     and heap.syscall <= 1.5 x heap.user.
+#  R3 control (T14, aliasbase): heap.kernel <= 1.5 x heap.user and shm.alias <= 1.5 x shm.user.
+#  R4 remedy (AMD, aliasscout): heap.kernel <= 1.5 x heap.user and heap.kernel_dst <= 1.5 x heap.user.
+# R1-R3 hold: the cause is the kernel writing user pages through its direct-map alias, which Zen's
+# linear-address L1D utag misses on (AMD 56305 rev. 3.02 s2.6.2.2); R4 is the fix's measured ceiling.
+# R2 fails: the alias does not explain the user copy and the cause is elsewhere.
+# R3 fails: the effect is not the AMD L1D's, and the rule's premise is reopened.
+# system.pipe_throughput.* and the T14 aliasscout rows are evidence, not judged.
+
+# One boot per image. Each invocation is `cargo <words>` from this worktree.
+
+aliasbase
+  image: <scratch>/scout/metal/aliasbase/image.img
+  cargo run -p toyos-metal -- --image <scratch>/scout/metal/aliasbase/image.img --readback <scratch>/scout/metal/aliasbase --fat32-check
+
+aliasscout
+  image: <scratch>/scout/metal/aliasscout/image.img
+  cargo run -p toyos-metal -- --image <scratch>/scout/metal/aliasscout/image.img --readback <scratch>/scout/metal/aliasscout --fat32-check

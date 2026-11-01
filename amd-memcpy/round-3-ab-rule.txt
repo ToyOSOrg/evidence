@@ -1,0 +1,18 @@
+# amd-memcpy round 3: base against fix. Both benches, T14 and AMD.
+# base = 168b84871 (origin/main 3add613c1 + the measurement commit, MEASUREMENT ONLY)
+# head = 6576b4dcc (base + the libc fix: copy_forward copies down at a distance under 512 mod 4 KiB)
+# Branch amd-memcpy-ab. One image config, shipping kernel; jobs osbench_copyat, osbench_ipc, osbench_mem.
+# Boots per bench: base, head, head, base (four; two suffice for A1-A4, all four for A5).
+# Give each boot its own readback dir, e.g. <scratch>/r3/runs/<bench>/<base|head><1|2>. Checksums: <scratch>/r3/image-sha256.txt
+#
+# Rule, stated before the run. p50s; libc rows at 8192 bytes, both source offsets; "d0" = libc.s0.d0 of the
+# same boot. The AMD clock reads in 10 ns steps, so every AMD bound below allows +10 ns.
+#  A1 fixed: head libc.d<d> for d in 16, 32, 64, 256, 384 <= 1.6 x d0, both benches. (1.6, not round 2's 1.5:
+#     the SSE2 loop's 16-byte stores read 140 ns against 90 on the AMD there.)
+#  A2 untouched: head libc rows at d = 0 and d >= 512, and mem.memcpy.*, within 1.1 x base, both benches.
+#  A3 the real heap case: head copyat.8192.heap <= 2 x head d0, both benches (the issue's exit, twice the good copy).
+#  A4 window: on the T14, base libc.d512..d768 each <= 1.5 x base d0; otherwise the window (512) is too short
+#     and the fix is incomplete there.
+#  A5 IPC: ipc.reqrep.65536 and .4096, mean of the two head p50s <= 1.05 x the two base p50s', both benches;
+#     a gain is reported, not required.
+# The fix lands only if A1, A2, A3 and A5 hold on both benches. A4 failing extends the window before landing.
