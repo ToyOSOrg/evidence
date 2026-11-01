@@ -1,0 +1,40 @@
+rev 342ecc1426e0a7dd738bc867ded28d664814f356 + working tree (r2 tests) + mutation-netstack-send-commit.patch
+   Compiling toyos-net-node v0.1.0 (<worktree>/system/netstack/node)
+warning: unused import: `SEND_RING`
+  --> system/netstack/node/src/streams.rs:41:124
+   |
+41 | ...ODELAY, RECEIVE_INITIAL, RECEIVE_RING, RESET, SEND_INITIAL, SEND_RING, TIMED_OUT, UNREACHABLE, WORDS};
+   |                                                                ^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: `toyos-net-node` (lib) generated 1 warning (run `cargo fix --lib -p toyos-net-node` to apply 1 suggestion)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.00s
+     Running tests/streams.rs (target/debug/deps/streams-74c7d6a2b4b46cda)
+
+running 2 tests
+test a_send_ring_size_netstack_cannot_commit_resets_that_stream ... FAILED
+test a_send_ring_a_client_grew_without_committing_is_read_through_netstacks_own_commit ... FAILED
+
+failures:
+
+---- a_send_ring_size_netstack_cannot_commit_resets_that_stream stdout ----
+
+thread 'a_send_ring_size_netstack_cannot_commit_resets_that_stream' (135790142) panicked at system/netstack/node/tests/common/client.rs:100:9:
+a take of 1460 bytes at 4262640 past what was committed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- a_send_ring_a_client_grew_without_committing_is_read_through_netstacks_own_commit stdout ----
+
+thread 'a_send_ring_a_client_grew_without_committing_is_read_through_netstacks_own_commit' (135790141) panicked at system/netstack/node/tests/common/client.rs:100:9:
+a take of 1460 bytes at 4262640 past what was committed
+
+
+failures:
+    a_send_ring_a_client_grew_without_committing_is_read_through_netstacks_own_commit
+    a_send_ring_size_netstack_cannot_commit_resets_that_stream
+
+test result: FAILED. 0 passed; 2 failed; 0 ignored; 0 measured; 42 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-net-node --test streams`
+exit 101
