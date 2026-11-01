@@ -1,0 +1,40 @@
+$ cargo test -p toyos-build --lib buildlock::tests::waiters_on_a_build_all_get_in
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.35s
+     Running unittests build/lib.rs (target/debug/deps/toyos_build-32bfab8f43606acc)
+
+running 1 test
+test buildlock::tests::waiters_on_a_build_all_get_in ... FAILED
+
+failures:
+
+---- buildlock::tests::waiters_on_a_build_all_get_in stdout ----
+
+thread 'buildlock::tests::waiters_on_a_build_all_get_in' (138253925) panicked at build/buildlock.rs:988:9:
+assertion `left == right` failed: of 8 builds waiting on one that succeeded, only 1 got their sysroot in 20 s
+  left: 1
+ right: 8
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread '<unnamed>' (138253930) panicked at build/buildlock.rs:969:34:
+called `Result::unwrap()` on an `Err` value: SendError { .. }
+
+thread '<unnamed>' (138253932) panicked at build/buildlock.rs:969:34:
+called `Result::unwrap()` on an `Err` value: SendError { .. }
+
+thread '<unnamed>' (138253933) panicked at build/buildlock.rs:969:34:
+called `Result::unwrap()` on an `Err` value: SendError { .. }
+
+thread '<unnamed>' (138253934) panicked at build/buildlock.rs:969:34:
+called `Result::unwrap()` on an `Err` value: SendError { .. }
+toyos-tmpdir: remove <tmp>: Directory not empty (os error 66)
+20:39:00 [build-lock] waiting for the sysroot lock (using sysroot 87b6ca068c4eb649) — held by pid 97045 (building sysroot 87b6ca068c4eb649), 0s so far
+20:39:00 [build-lock] waiting for the sysroot lock (using sysroot 87b6ca068c4eb649) — held by pid 97045 (building sysroot 87b6ca068c4eb649), 0s so far
+toyos-tmpdir: remove <tmp> which should hold nothing now that its last TempDir is gone: Directory not empty (os error 66)
+
+
+failures:
+    buildlock::tests::waiters_on_a_build_all_get_in
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 389 filtered out; finished in 20.33s
+
+error: test failed, to rerun pass `-p toyos-build --lib`

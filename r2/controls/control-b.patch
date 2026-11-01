@@ -1,0 +1,13 @@
+--- <scratch>.fixed.rs	2026-11-01 21:37:43
++++ <scratch>/r2/control-b.rs	2026-11-01 21:37:43
+@@ -245,9 +245,7 @@
+ fn keyed_try_using(store: &Path, kind: Keyed, key: &Key) -> Option<Guard> {
+     let path = keyed_lock_path(store, kind, key);
+     let file = open_lock_file(&path);
+-    if !try_lock(&file, Mode::Shared) {
+-        return None;
+-    }
++    file.lock_shared().unwrap();
+     file.set_modified(SystemTime::now()).unwrap_or_else(|e| panic!("build lock: date {}: {e}", path.display()));
+     Some(Guard { file, records_holder: false })
+ }
