@@ -1,0 +1,19 @@
+--- a/lib/userbound/src/window.rs	2026-11-01 14:27:36
++++ b/lib/userbound/src/window.rs	2026-11-01 14:27:36
+@@ -56,15 +56,12 @@
+     let mut at = start;
+     while at < end {
+         let mut holding = map.iter().filter(|entry| (entry.start..entry.end).contains(&at));
+-        if holding.clone().any(|entry| toyos_bootmap::is_usable_type(entry.uefi_type)) {
+-            return Err(WindowRefused::Usable);
+-        }
+         if !holding.any(|entry| matches!(entry.uefi_type, EFI_RESERVED | EFI_ACPI_NVS)) {
+             return Err(WindowRefused::NotFirmware);
+         }
+         at += PAGE_4K;
+     }
+-    if map.iter().any(|entry| toyos_bootmap::is_usable_type(entry.uefi_type) && entry.start < end && start < entry.end) {
++    if false {
+         return Err(WindowRefused::Usable);
+     }
+     if devices.into_iter().any(|(first, past)| first < end && start < past) {
