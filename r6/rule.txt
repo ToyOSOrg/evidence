@@ -1,0 +1,24 @@
+# DECISION RULE, fixed before this run (r6: the A/B at Linux's tiers)
+# Arms: A = control-no-apst.patch (no Set Features 0Ch, as main). B = head (Linux's tiers).
+# Both arms carry probe-v3.patch. It logs every I/O submitted within 100 ms of an arrival at a drive idle >= 50 ms,
+# plus every I/O >= 2 ms, with since-boot stamps in µs, op, idle time, the state found and the latency.
+# Statistic: each boot's row p50, then the median per arm. "Resolved" means every B boot lies beyond every A boot.
+#
+# GATES (#1131 is judged on the drive alone):
+# G1 First I/O after idle, like for like. This replaces r3's B-A, which the T14's slow write mode confounded.
+#    cost_B = median over B disk boots of (persist.write_4k_fsync_after_idle p50 - persist.write_4k_fsync p50)
+#    cost_L = median over Linux persist runs of the same difference.
+#    PASS iff cost_B <= cost_L.
+#    B-A is reported beside it.
+# G2 Worst sample: B's largest after_idle sample over all its boots must be <= Linux's largest over all its runs.
+# G3 Back to back (fs.disk.*, nvme.*, persist.* except after_idle): none may be > 5% worse in B AND resolved.
+# READY iff G1-G3 hold on both benches.
+#
+# REPORTED, not gated:
+# - Idle package (median B-A, with PC residencies). The excursions belong to issues/the-t14s-idle-package-stays-in-pc2.md, not #1131.
+# - L0, Linux's APST table on each bench. On the AMD the tiers predict 0..3->4 after 100 ms; a different table is reported against B's.
+# - W3, the T14's wake: for each B after_idle sample, the probe's command sequence from the idle arrival.
+#   It gives each command's submit offset and latency, and the gaps in which no command was outstanding:
+#   - time on the device (command latencies);
+#   - time between a completion and the next submission (ToyOS's own path);
+#   - Linux's difference in cost against both.
