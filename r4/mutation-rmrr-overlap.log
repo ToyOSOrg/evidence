@@ -1,0 +1,43 @@
+   Compiling kernel v0.1.0 (<work>/toyos-display/kernel)
+warning: method `overlaps` is never used
+  --> kernel/pure/rmrr.rs:46:8
+   |
+45 | impl Region {
+   | ----------- method in this implementation
+46 |     fn overlaps(&self, start: u64, end: u64) -> bool {
+   |        ^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `kernel` (lib test) generated 1 warning
+    Finished `test` profile [optimized + debuginfo] target(s) in 3.52s
+     Running unittests pure/lib.rs (target/debug/deps/kernel-fa45b686f8e87f8e)
+
+running 10 tests
+test rmrr::tests::a_range_off_2_mib_takes_pages_at_its_ends_and_leaves_between ... ok
+test rmrr::tests::a_function_neither_display_nor_usb_is_refused ... ok
+test rmrr::tests::a_sub_hierarchy_refuses_every_function_below_it ... ok
+test rmrr::tests::a_region_not_whole_pages_is_refused ... ok
+test rmrr::tests::an_unknown_scope_beside_an_endpoint_refuses_it ... ok
+test rmrr::tests::one_endpoint_display_controller_keeps_its_region ... ok
+test rmrr::tests::a_usb_controller_keeps_a_small_region_off_2_mib ... ok
+test rmrr::tests::two_endpoints_in_one_region_are_both_refused ... ok
+test rmrr::tests::duplicate_and_overlapping_regions_of_one_function_are_kept_once ... ok
+test rmrr::tests::overlapping_regions_of_two_functions_refuse_both ... FAILED
+
+failures:
+
+---- rmrr::tests::overlapping_regions_of_two_functions_refuse_both stdout ----
+
+thread 'rmrr::tests::overlapping_regions_of_two_functions_refuse_both' (117255036) panicked at kernel/pure/rmrr.rs:233:9:
+assertion failed: refused(&found, IGPU) && refused(&found, XHCI)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    rmrr::tests::overlapping_regions_of_two_functions_refuse_both
+
+test result: FAILED. 9 passed; 1 failed; 0 ignored; 0 measured; 357 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p kernel --lib`
+exit=101
