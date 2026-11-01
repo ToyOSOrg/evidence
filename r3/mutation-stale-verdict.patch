@@ -1,0 +1,15 @@
+--- a/system/tgl-display/driver/src/lib.rs	2026-11-01 12:56:26
++++ b/system/tgl-display/driver/src/lib.rs	2026-11-01 12:56:26
+@@ -381,11 +381,10 @@
+     }
+     let deadline = clock.nanos() + POWER_WELL_NANOS;
+     loop {
+-        let late = clock.nanos() > deadline;
+         if regs.read32(regs::PWR_WELL_CTL2) & regs::power_well_state(well) == 0 {
+             return Ok(());
+         }
+-        if late {
++        if clock.nanos() > deadline {
+             return Err(Refusal::PowerWellHeld(well));
+         }
+     }

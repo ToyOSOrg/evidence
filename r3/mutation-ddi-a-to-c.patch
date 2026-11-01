@@ -1,0 +1,11 @@
+--- a/system/tgl-display/driver/src/lib.rs	2026-11-01 12:56:25
++++ b/system/tgl-display/driver/src/lib.rs	2026-11-01 12:56:26
+@@ -340,7 +340,7 @@
+ pub fn allow_display_c6<R: Registers, C: Clock>(regs: &R, clock: &C, program: &dmc::Program<'_>) -> Result<Allowed, Refusal> {
+     let before = [regs::PWR_WELL_CTL1, regs::PWR_WELL_CTL2, regs::DC_STATE_EN].map(|at| regs.read32(at));
+     let ddi = (regs.read32(regs::TRANS_DDI_FUNC_CTL_A) >> regs::DDI_SELECT_SHIFT) & regs::DDI_SELECT;
+-    if ddi != regs::DDI_A {
++    if !(1..=3).contains(&ddi) {
+         return Err(Refusal::Port(ddi));
+     }
+     if regs.read32(regs::VGA_CONTROL) & regs::VGA_DISPLAY_DISABLE == 0 {
