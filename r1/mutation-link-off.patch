@@ -1,0 +1,13 @@
+--- a/system/tgl-display/driver/src/psr.rs	2026-11-01 13:27:15
++++ b/system/tgl-display/driver/src/psr.rs	2026-11-01 13:27:15
+@@ -132,8 +132,8 @@
+         return Err(Refusal::SetupTime { lines: setup_lines, vblank: vblank_lines });
+     }
+ 
+-    aux::write(regs, clock, PSR_EN_CFG, &[MAIN_LINK_ACTIVE]).map_err(Refusal::Aux)?;
+-    aux::write(regs, clock, PSR_EN_CFG, &[MAIN_LINK_ACTIVE | PSR_ENABLE]).map_err(Refusal::Aux)?;
++    aux::write(regs, clock, PSR_EN_CFG, &[0]).map_err(Refusal::Aux)?;
++    aux::write(regs, clock, PSR_EN_CFG, &[PSR_ENABLE]).map_err(Refusal::Aux)?;
+     aux::write(regs, clock, SET_POWER, &[D0]).map_err(Refusal::Aux)?;
+ 
+     // The VSC DIP enabled before PSR, with hardware sending PSR1's header and
