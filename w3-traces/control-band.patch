@@ -1,0 +1,33 @@
+diff --git a/system/ax2xx/driver/src/command.rs b/system/ax2xx/driver/src/command.rs
+index 89d5b8ade..606d92f76 100644
+--- a/system/ax2xx/driver/src/command.rs
++++ b/system/ax2xx/driver/src/command.rs
+@@ -15,6 +15,17 @@ pub struct Command {
+     pub payload: Vec<u8>,
+ }
+ 
++impl Command {
++    /// The command's 8-byte header (§8.2): its identifier and group, `sequence` (the descriptor's
++    /// slot in bits 7:0 and the queue in bits 12:8, the host's own count), the payload's length,
++    /// a reserved byte and version 0. `None` for a payload past what the length field holds.
++    pub fn header(&self, sequence: u16) -> Option<[u8; 8]> {
++        let [s0, s1] = sequence.to_le_bytes();
++        let [l0, l1] = u16::try_from(self.payload.len()).ok()?.to_le_bytes();
++        Some([self.message.id.id, self.message.id.group, s0, s1, l0, l1, 0, 0])
++    }
++}
++
+ /// A payload as it is written, field by field.
+ struct Out(Vec<u8>);
+ 
+@@ -209,8 +220,8 @@ pub enum Band {
+ impl Band {
+     fn phy(self) -> u8 {
+         match self {
+-            Band::Ghz5 => 0,
+-            Band::Ghz2_4 => 1,
++            Band::Ghz5 => 1,
++            Band::Ghz2_4 => 0,
+             Band::Ghz6 => 2,
+         }
+     }
