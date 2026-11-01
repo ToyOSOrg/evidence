@@ -1,0 +1,49 @@
+control group-reinstalled on 1679ef913def3dc85dc3b0dfbc01a6c0940d18fa plus the uncommitted rekey test
+--- a/system/wlan/handshake/src/supplicant.rs
++++ b/system/wlan/handshake/src/supplicant.rs
+@@ -478,7 +478,6 @@
+             .as_ref()
+             .is_some_and(|(id, k)| *id == key.id && ct::equal(k.expose(), key.key()))
+         {
+-            return None;
+         }
+         self.gtk = Some((key.id, Secret::new(*key.key())));
+         Some(key)
+build exit 0
+   Compiling toyos-wlan-handshake v0.1.0 (<worktree>/system/wlan/handshake)
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.31s
+     Running tests/capture.rs (target/debug/deps/capture-37fddc3a14f93d68)
+
+running 4 tests
+test a_recorded_handshake_with_management_frame_protection_is_answered_byte_for_byte ... ok
+test recorded_ptk_rekeys_under_management_frame_protection_are_answered_byte_for_byte ... FAILED
+test recorded_ptk_rekeys_are_answered_byte_for_byte_and_reinstall_no_group_key ... FAILED
+test a_recorded_psk_handshake_is_answered_byte_for_byte ... ok
+
+failures:
+
+---- recorded_ptk_rekeys_under_management_frame_protection_are_answered_byte_for_byte stdout ----
+
+thread 'recorded_ptk_rekeys_under_management_frame_protection_are_answered_byte_for_byte' (124506193) panicked at system/wlan/handshake/tests/capture.rs:242:21:
+assertion `left == right` failed
+  left: Some([143, 253, 227, 3, 215, 254, 221, 169, 146, 125, 225, 120, 60, 115, 250, 44])
+ right: None
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- recorded_ptk_rekeys_are_answered_byte_for_byte_and_reinstall_no_group_key stdout ----
+
+thread 'recorded_ptk_rekeys_are_answered_byte_for_byte_and_reinstall_no_group_key' (124506192) panicked at system/wlan/handshake/tests/capture.rs:242:21:
+assertion `left == right` failed
+  left: Some([239, 107, 53, 127, 215, 12, 53, 38, 120, 97, 124, 177, 69, 52, 22, 210])
+ right: None
+
+
+failures:
+    recorded_ptk_rekeys_are_answered_byte_for_byte_and_reinstall_no_group_key
+    recorded_ptk_rekeys_under_management_frame_protection_are_answered_byte_for_byte
+
+test result: FAILED. 2 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+error: test failed, to rerun pass `-p toyos-wlan-handshake --test capture`
+test exit 101
+restored exit 0

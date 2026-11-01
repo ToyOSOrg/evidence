@@ -1,0 +1,12 @@
+--- a/system/wlan/handshake/src/supplicant.rs
++++ b/system/wlan/handshake/src/supplicant.rs
+@@ -323,7 +323,8 @@
+         if key.key_length != 16 {
+             return Err(Refused::KeyLength);
+         }
+-        let snonce = self.pending.as_ref().map_or_else(nonce, |p| p.snonce);
++        // Control: a rekey reuses the installed handshake's SNonce.
++        let snonce = self.pending.as_ref().or(self.current.as_ref()).map_or_else(nonce, |p| p.snonce);
+         let ptk = Ptk::derive(
+             &self.pmk,
+             self.authenticator,

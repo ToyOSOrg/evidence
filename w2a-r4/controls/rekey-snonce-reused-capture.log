@@ -1,0 +1,52 @@
+control rekey-snonce-reused on 1679ef913def3dc85dc3b0dfbc01a6c0940d18fa plus the uncommitted rekey test
+--- a/system/wlan/handshake/src/supplicant.rs
++++ b/system/wlan/handshake/src/supplicant.rs
+@@ -323,7 +323,8 @@
+         if key.key_length != 16 {
+             return Err(Refused::KeyLength);
+         }
+-        let snonce = self.pending.as_ref().map_or_else(nonce, |p| p.snonce);
++        // Control: a rekey reuses the installed handshake's SNonce.
++        let snonce = self.pending.as_ref().or(self.current.as_ref()).map_or_else(nonce, |p| p.snonce);
+         let ptk = Ptk::derive(
+             &self.pmk,
+             self.authenticator,
+build exit 0
+    Blocking waiting for file lock on package cache
+   Compiling toyos-wlan-handshake v0.1.0 (<worktree>/system/wlan/handshake)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.92s
+     Running tests/capture.rs (target/debug/deps/capture-37fddc3a14f93d68)
+
+running 4 tests
+test a_recorded_psk_handshake_is_answered_byte_for_byte ... ok
+test a_recorded_handshake_with_management_frame_protection_is_answered_byte_for_byte ... ok
+test recorded_ptk_rekeys_are_answered_byte_for_byte_and_reinstall_no_group_key ... FAILED
+test recorded_ptk_rekeys_under_management_frame_protection_are_answered_byte_for_byte ... FAILED
+
+failures:
+
+---- recorded_ptk_rekeys_are_answered_byte_for_byte_and_reinstall_no_group_key stdout ----
+
+thread 'recorded_ptk_rekeys_are_answered_byte_for_byte_and_reinstall_no_group_key' (124515257) panicked at system/wlan/handshake/tests/capture.rs:238:17:
+assertion `left == right` failed: the answer to line 11, byte for byte
+  left: [2, 3, 0, 117, 2, 1, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 119, 31, 225, 73, 90, 243, 83, 142, 120, 189, 108, 227, 27, 198, 157, 36, 107, 95, 137, 148, 135, 234, 24, 116, 125, 255, 160, 199, 222, 133, 53, 72, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 210, 25, 168, 200, 44, 35, 109, 14, 129, 97, 244, 247, 57, 202, 137, 128, 0, 22, 48, 20, 1, 0, 0, 15, 172, 4, 1, 0, 0, 15, 172, 4, 1, 0, 0, 15, 172, 2, 0, 0]
+ right: [2, 3, 0, 117, 2, 1, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 130, 9, 133, 150, 145, 194, 40, 6, 149, 220, 86, 177, 217, 194, 229, 99, 244, 74, 141, 81, 112, 62, 54, 161, 62, 189, 229, 36, 46, 30, 132, 54, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 244, 173, 176, 151, 177, 144, 126, 240, 67, 4, 5, 149, 170, 53, 63, 0, 22, 48, 20, 1, 0, 0, 15, 172, 4, 1, 0, 0, 15, 172, 4, 1, 0, 0, 15, 172, 2, 0, 0]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- recorded_ptk_rekeys_under_management_frame_protection_are_answered_byte_for_byte stdout ----
+
+thread 'recorded_ptk_rekeys_under_management_frame_protection_are_answered_byte_for_byte' (124515258) panicked at system/wlan/handshake/tests/capture.rs:238:17:
+assertion `left == right` failed: the answer to line 12, byte for byte
+  left: [2, 3, 0, 123, 2, 1, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 202, 180, 227, 33, 204, 59, 106, 93, 204, 33, 126, 160, 81, 174, 185, 2, 53, 130, 207, 3, 144, 94, 149, 164, 78, 5, 162, 29, 137, 217, 159, 147, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 148, 99, 188, 119, 59, 132, 201, 250, 233, 196, 28, 134, 191, 44, 22, 255, 0, 28, 48, 26, 1, 0, 0, 15, 172, 4, 1, 0, 0, 15, 172, 4, 1, 0, 0, 15, 172, 2, 192, 0, 0, 0, 0, 15, 172, 6]
+ right: [2, 3, 0, 123, 2, 1, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 235, 196, 196, 47, 231, 31, 128, 127, 52, 123, 156, 77, 57, 161, 203, 228, 186, 198, 10, 217, 30, 110, 183, 214, 41, 200, 123, 72, 247, 41, 194, 139, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 232, 200, 218, 207, 23, 237, 4, 7, 197, 225, 207, 17, 171, 187, 191, 167, 0, 28, 48, 26, 1, 0, 0, 15, 172, 4, 1, 0, 0, 15, 172, 4, 1, 0, 0, 15, 172, 2, 192, 0, 0, 0, 0, 15, 172, 6]
+
+
+failures:
+    recorded_ptk_rekeys_are_answered_byte_for_byte_and_reinstall_no_group_key
+    recorded_ptk_rekeys_under_management_frame_protection_are_answered_byte_for_byte
+
+test result: FAILED. 2 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+error: test failed, to rerun pass `-p toyos-wlan-handshake --test capture`
+test exit 101
+restored exit 0
