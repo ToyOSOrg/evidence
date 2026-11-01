@@ -1,0 +1,17 @@
+# amd-memcpy round 5: base3 against head3, both benches, base, head, head, base (four boots per bench).
+# base3 = 80421e74a: 3add613c1 + the measurement (copyat; rows from 64 KiB to 64 MiB at d 0/16/256).
+# head3 = 0f861df89 = base3 + #1133 at 8aa56f3a2 (aligned stores; over 1 MiB rep movsb where ERMS). Branch amd-memcpy-ab3.
+# One image config, shipping kernel; jobs osbench_copyat, osbench_ipc, osbench_mem.
+# Give each boot its own readback dir, e.g. <scratch>/r5/runs/<bench>/<1-base|2-head|3-head|4-base>.
+# Checksums: <scratch>/r5/image-sha256.txt
+#
+# Rule, stated before the run. Mean of the two p50s per arm; "d0" = head's libc.s0.d0 at that size;
+# every AMD bound allows +10 ns at 8 KiB.
+#  C1 short copies: head libc 8192 rows at d 16..384, both source offsets, <= 1.3 x d0, both benches.
+#  C2 untouched: head libc 8192 rows at d 0 and >= 512, and every mem.memcpy.* row, within 1.1 x base, both benches.
+#  C3 heap: head copyat.8192.heap <= 1.5 x d0, both benches.
+#  C4 every size: head copyat.<size>.libc.s0.d16 and .d256 for 64 KiB .. 64 MiB <= 1.1 x base's same row, both
+#     benches, and on the AMD also <= 1.1 x base's d0 row of that size.
+#  C5 IPC: ipc.reqrep.4096 and .65536 head <= 1.05 x base, both benches. A T14 failure repeated across both pairs
+#     is investigated before landing (round 4 read 1.11 at 4096 from one pair).
+# #1133 lands when C1-C5 hold on both benches. The window (512) is not moved by this round.
