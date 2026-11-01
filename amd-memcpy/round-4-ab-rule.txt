@@ -1,0 +1,18 @@
+# amd-memcpy round 4: one base/head pair per bench (review r1 of #1133). T14 and AMD.
+# base2 = 2fdc73934: 3add613c1 + measurement (copyat, with 1 MiB / 64 MiB rows and the downavx candidate).
+# head2 = 77488f3c4 = base2 + #1133 at 15a8464d3 (AVX-wide descending copy, one-compare hot path). Branch amd-memcpy-ab2.
+# One image config, shipping kernel; jobs osbench_copyat, osbench_ipc, osbench_mem. Boots per bench: base2, head2.
+# Give each its own readback dir, e.g. <scratch>/r4/runs/<bench>/<base|head>. Checksums: <scratch>/r4/image-sha256.txt
+#
+# Rule, stated before the run. p50s; "d0" = libc.s0.d0 of the same boot; every AMD bound allows +10 ns (its
+# clock's step).
+#  B1 short copies: head libc 8192 rows at d in 16..384, both source offsets, <= 1.3 x d0, both benches.
+#  B2 untouched: head libc rows at d = 0 and d >= 512, and every mem.memcpy.* row, within 1.1 x base, both benches.
+#  B3 heap: head copyat.8192.heap <= 1.5 x head d0, both benches.
+#  B4 past the caches: head copyat.1048576 and .67108864 libc rows at d16 and d256 <= 1.1 x base's same row,
+#     and <= 1.1 x head's d0 row of that size. If either fails, the route is limited by size.
+#  B5 window: from base2's rows, W = the smallest tested distance from which libc.d<d> <= 1.05 x downavx.d<d>
+#     for every larger tested d, on both source offsets and both benches. If W > 512, SHORT_ALIAS rises to W.
+#     If W < 512 and head's rows between W and 512 are worse than base's by more than 1.1x, it falls to W.
+#  B6 IPC: ipc.reqrep.4096 and .65536 head <= 1.05 x base, both benches.
+# #1133 lands when B1-B4 and B6 hold on both benches, with B5's window applied.
