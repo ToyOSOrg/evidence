@@ -1,0 +1,62 @@
+# PR #1063 (combined with #1038): P-256 register kernels + scoped timing protection.
+# Head p256-speed 9a5d4fad5a9b015cfa66164c571613a307456d8c; base origin/main 190f3b1648ba9e9be6ca149514c474b81c3c3832.
+# Every command is `cargo <words>` run from <dev>/toyos-p256 (any revision; toyos-metal only flashes and reads back).
+# Nothing here needs DOITM or any CPU mode: x86-64 runs with none (owner item 81b).
+#
+# A/B RULE, set before the run (parity instrument's "ours" median per row, head over base, each bench, both pairs):
+#   PASS if p-256/ecdh and ecdsa-p-256-sha-256/verify/64 are each <= 0.90 of base in both pairs,
+#   and no other row is above 1.05 of base in both pairs (x86-64's protection is a constant
+#   inactive guard, so only the P-256/P-384 arithmetic changed). The Linux probe predicts
+#   ECDH 0.80 (T14) / 0.75 (AMD), verify 0.84 / 0.78. Ours/ring is reported, not judged.
+# CT RULE: crypto_secret_timing_curves passes (every routine max |t| < 4.5, controls held) on both benches.
+#
+# Order per bench: base-1, head-1, base-2, head-2 (cryptocase, ~2 min each, alone in its boot), then
+# head-1 cryptoctcurvescase (about 2 h; the constant-time check of the new kernels incl. the AVX2 table read).
+
+== T14 ==
+(1) base-1 cryptocase
+    cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/crypto-timing/metal/t14-base-1/cryptocase/image.img --readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/crypto-timing/metal/t14-base-1/cryptocase --fat32-check
+(2) head-1 cryptocase
+    cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/crypto-timing/metal/t14-head-1/cryptocase/image.img --readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/crypto-timing/metal/t14-head-1/cryptocase --fat32-check
+(3) base-2 cryptocase
+    cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/crypto-timing/metal/t14-base-2/cryptocase/image.img --readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/crypto-timing/metal/t14-base-2/cryptocase --fat32-check
+(4) head-2 cryptocase
+    cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/crypto-timing/metal/t14-head-2/cryptocase/image.img --readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/crypto-timing/metal/t14-head-2/cryptocase --fat32-check
+(5) head-1 cryptoctcurvescase
+    cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/crypto-timing/metal/t14-head-1/cryptoctcurvescase/image.img --readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/crypto-timing/metal/t14-head-1/cryptoctcurvescase --fat32-check
+
+== AMD bench ==
+(6) base-1 cryptocase
+    cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/crypto-timing/metal/amd-base-1/cryptocase/image.img --readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/crypto-timing/metal/amd-base-1/cryptocase --fat32-check --host toyos@bench-amd
+(7) head-1 cryptocase
+    cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/crypto-timing/metal/amd-head-1/cryptocase/image.img --readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/crypto-timing/metal/amd-head-1/cryptocase --fat32-check --host toyos@bench-amd
+(8) base-2 cryptocase
+    cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/crypto-timing/metal/amd-base-2/cryptocase/image.img --readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/crypto-timing/metal/amd-base-2/cryptocase --fat32-check --host toyos@bench-amd
+(9) head-2 cryptocase
+    cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/crypto-timing/metal/amd-head-2/cryptocase/image.img --readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/crypto-timing/metal/amd-head-2/cryptocase --fat32-check --host toyos@bench-amd
+(10) head-1 cryptoctcurvescase
+    cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/crypto-timing/metal/amd-head-1/cryptoctcurvescase/image.img --readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/crypto-timing/metal/amd-head-1/cryptoctcurvescase --fat32-check --host toyos@bench-amd
+
+# Judges (exit 0 is a pass), from <dev>/toyos-p256 at 9a5d4fad5:
+#   cargo test --test toyos-build -- --metal --metal-readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/crypto-timing/metal/t14-base-1 crypto_instrument
+#   cargo test --test toyos-build -- --metal --metal-readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/crypto-timing/metal/t14-head-1 crypto_instrument
+#   cargo test --test toyos-build -- --metal --metal-readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/crypto-timing/metal/t14-base-2 crypto_instrument
+#   cargo test --test toyos-build -- --metal --metal-readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/crypto-timing/metal/t14-head-2 crypto_instrument
+#   cargo test --test toyos-build -- --metal --metal-readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/crypto-timing/metal/amd-base-1 crypto_instrument
+#   cargo test --test toyos-build -- --metal --metal-readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/crypto-timing/metal/amd-head-1 crypto_instrument
+#   cargo test --test toyos-build -- --metal --metal-readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/crypto-timing/metal/amd-base-2 crypto_instrument
+#   cargo test --test toyos-build -- --metal --metal-readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/crypto-timing/metal/amd-head-2 crypto_instrument
+#   cargo test --test toyos-build -- --metal --metal-readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/crypto-timing/metal/t14-head-1 crypto_secret_timing_curves
+#   cargo test --test toyos-build -- --metal --metal-readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/crypto-timing/metal/amd-head-1 crypto_secret_timing_curves
+# The A/B is read from the "parity: " lines of each cryptocase readback by the implementer.
+# Image sha256:
+#   amd-base-1/cryptocase/image.img  8c958221ca348b194aac49e0e0d0ffe667bed14daf00df3b7253304dc11f1b3e
+#   amd-base-2/cryptocase/image.img  84d68d8155d628d75e146d775b1c10f26859c7d6df0ed2a08c72a776985c616c
+#   amd-head-1/cryptocase/image.img  70795d874eaf1cf538a5586859a07620748dfb88349f2a15994189748713ecf7
+#   amd-head-1/cryptoctcurvescase/image.img  51f7aebda1010e26672e40c6a38af908d77cf5d66d209731f9bebddc06b21e8c
+#   amd-head-2/cryptocase/image.img  6cd379d2200405429ec8addfc95e3da5276322c61cef41daaf877b82f4eaf22e
+#   t14-base-1/cryptocase/image.img  58e049331aec322072c929a702fc4032c9d8e40e567c9a911bb9f740e4013bcc
+#   t14-base-2/cryptocase/image.img  4256564ab44287b256231a1be6ae640e15aa5207bbe5bd0805a9b1ebdfd80cbd
+#   t14-head-1/cryptocase/image.img  17a70f122cbb31432e7f7b8de96f623848af00bbc37f6a87e1cc760245f4af96
+#   t14-head-1/cryptoctcurvescase/image.img  05fb7e19436ad80b5e52afdf7924910c46c9523ad708f06064cbf25e206d1104
+#   t14-head-2/cryptocase/image.img  8a4ce2d0c244fe190b4cb5e158d82a38bdf70cf4a6f4970173909ac39513c5e8
