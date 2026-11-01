@@ -197,3 +197,19 @@ Metal: the orchestrator ran four AMD boots from a tree pinned at eee39c691, in t
   - no span was left out, no TSC step, no demotion;
   - the RTC's IRQ8 armed on gsi 8.
 - **A judge printing defect:** this judging showed every report line, because the left-out match was too wide. It is fixed in the next commit, which only narrows what is printed. Re-judged with that fix, the same four rows pass.
+
+## r10: review r3's fixes at f5a102ed9, and the AMD's r8 at fec49988c
+
+### AMD r8, at fec49988c
+
+- **Runs:** the orchestrator ran one benchcase boot and one testcases boot, both drivers exiting 0.
+- **Judging:** judged offline with d739b0743's harness (which only narrows what is printed). Exit 0, all four rows PASS: `irq_census_conservation`, `smp_roster_and_tsc_trail`, `timer_calibration` and `clock_holds_over_minutes` (`r10/metal-amd/judge-r8-fec49988c-harness-d739b0743.log`; clock lines in `r10/metal-amd/run-*-clock-lines.log`).
+- **benchcase:** a 1,700,808 ns step in the span ending at 17.80 s. It was confirmed by the RTC (1,709,655 ns) and slewed away by 32.81 s. Over 128 s the HPET measured 3,886 ppb from the boot's calibration, which was within 20,536 ppb.
+- **testcases:** a 1,718,230 ns step in the span ending at 5.73 s. It was unconfirmed (no RTC edge before it yet) and was still slewing when the list ended.
+- No demotion, and no per-CPU check fired. Every AP was within 288 cycles of the BSP.
+
+### Checks at f5a102ed9
+
+- **Host CI:** `cargo run -- --ci host` exited 0, with 108 steps green (`r10/checks/ci-host-f5a102ed9.log`).
+- **Pure:** 25 passed (`r10/checks/pure-clock-tests.log`). `a_drift_base_never_reaches_across_a_step` asserts both halves: with the earlier edges forgotten, a 1.7 ms step after a 4 ms one reads as the counter's; with them kept, it does not.
+- **QEMU x86-64 TCG, 2 vCPUs:** `a_stepped_tsc_is_slewed_then_demoted` and `a_stalled_hpet_is_left_out` exited 0 (`r10/qemu/both-clock-tests-f5a102ed9.log`). The run used the tree before the commit. The tree differed from f5a102ed9 only in comments and the issue text written during the run. The demotion on cpu0 completed its handover round, and a process on cpu1 then read through the kernel.

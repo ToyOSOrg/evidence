@@ -1,0 +1,32 @@
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.40s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-e03b5959f77ae3b7)
+
+09:31:16 running 2 tests, 12 wide
+
+09:31:16   RUN   a_stalled_hpet_is_left_out
+09:31:16   RUN   a_stepped_tsc_is_slewed_then_demoted
+09:31:16   BUILD x86_64 kernel boot-actuators,test-actuators, loader, ROOT of tests/images/testcases.toml, for a_stepped_tsc_is_slewed_then_demoted
+09:31:16   BUILD x86_64 kernel boot-actuators,test-actuators, loader, ROOT of tests/images/testcases.toml, for a_stalled_hpet_is_left_out
+09:31:20 [build-lock] waiting for the artifact lock (artifact staging) — held by pid 73212 (artifact staging), 0s so far
+09:31:50 [build-lock] still waiting for the artifact lock (artifact staging), 30s so far — held by pid 73212 (artifact staging), 30s so far
+09:32:04 [build-lock] artifact staging acquired after 43.7s
+09:32:04 [build-lock] waiting for the artifact lock (artifact staging) — held by pid 73212 (artifact staging), 0s so far
+09:32:34 [build-lock] still waiting for the artifact lock (artifact staging), 30s so far — held by pid 73212 (artifact staging), 30s so far
+09:33:04 [build-lock] still waiting for the artifact lock (artifact staging), 60s so far — held by pid 73212 (artifact staging), 60s so far
+09:33:34 [build-lock] still waiting for the artifact lock (artifact staging), 90s so far — held by pid 73212 (artifact staging), 90s so far
+09:33:36 [build-lock] artifact staging acquired after 92.0s
+09:33:36 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+09:33:36   BUILT x86_64 kernel boot-actuators,test-actuators, loader, ROOT of tests/images/testcases.toml, for a_stepped_tsc_is_slewed_then_demoted  (139s)
+09:33:36 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+09:33:36   BUILT x86_64 kernel boot-actuators,test-actuators, loader, ROOT of tests/images/testcases.toml, for a_stalled_hpet_is_left_out  (140s)
+09:33:50   [hpet_stall] clock: the HPET moved and the TSC did not, so this span is left out: the TSC counted 1030470000 ticks, the HPET 1020420000 ns and reads 10030886 ns apart, 572952 allowed (Sample { before: 11879283000, after: 11879352000, reference: 173538000 } to Sample { before: 12909753000, after: 12909760000, reference: 275580000 }); the PM timer counted 1030133156 ns and reads 36226 ns apart, 600814 allowed (Sample { before: 11879552000, after: 11879665000, reference: 8969259 } to Sample { before: 12909762000, after: 12909770000, reference: 12656667 })
+09:33:50   PASS  a_stalled_hpet_is_left_out  (14s)
+09:34:24   [tsc_step] [15.713 cpu0 kernel] clock: TSC STEP: the TSC stepped 10004931 ns forward against the HPET and the PM timer, unconfirmed by the RTC (the RTC's edges read 4241501 ns); the clock slews it away at most 500 ppm, most of it in about 20009 ms
+09:34:24   [tsc_step] [47.967 cpu0 kernel] clock: DEMOTED: the TSC stepped 9999751 ns against the HPET and the PM timer, confirmed by the RTC (the RTC's edges read 10842259 ns), after 1 step(s) slewed, so the TSC no longer keeps the clock: every process's reading of now asks the kernel, which counts by the HPET from 47986876214 ns, 19407197 ns from the TSC's clock and held at every CPU's clock at the handover till it catches up; the kernel's own clock and deadlines stay on the TSC, at the kept rate
+09:34:24   [tsc_step] [47.969 cpu1 kernel] clock: a process's reading of now asked the kernel since the TSC was demoted, and read 47989535214 ns
+09:34:24   PASS  a_stepped_tsc_is_slewed_then_demoted  (48s)
+09:34:24   --- 2 guests, 2 of them not the shipping kernel, 1 kernel build(s): ["boot-actuators,test-actuators"]
+
+09:34:24 host: fastest boot 12967 ms against the reference 1424 ms — liveness ceilings paid at 8.00x
+09:34:24 host: 14 core(s); a guest wider than that waits vcpus/cores longer again
+09:34:24 test result: ok. 2 passed, 2 total (188.0s; workers: 279s building, 63s testing)
