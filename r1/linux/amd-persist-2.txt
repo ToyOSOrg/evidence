@@ -1,0 +1,74 @@
+osbench v=2 os=linux group=persist start
+osbench v=2 os=linux cond cpu_model=<cpu>
+osbench v=2 os=linux cond cpus=16
+osbench v=2 os=linux cond threads_per_core=2
+osbench v=2 os=linux cond kernel=6.8.0-147-generic
+osbench v=2 os=linux cond distro=Ubuntu_24.04.5_LTS
+osbench v=2 os=linux cond cpus_online=0-15
+osbench v=2 os=linux cond smt_active=1
+osbench v=2 os=linux cond smt_control=on
+osbench v=2 os=linux cond cpufreq_driver=acpi-cpufreq*16
+osbench v=2 os=linux cond governor=schedutil*16
+osbench v=2 os=linux cond epp=absent*16
+osbench v=2 os=linux cond min_khz=1400000*16
+osbench v=2 os=linux cond max_khz=1800000*16
+osbench v=2 os=linux cond intel_no_turbo=absent
+osbench v=2 os=linux cond boost=1
+osbench v=2 os=linux cond amd_pstate=absent
+osbench v=2 os=linux cond platform_profile=balanced
+osbench v=2 os=linux cond clocksource=hpet
+osbench v=2 os=linux cond battery_status=Full
+osbench v=2 os=linux cond battery_capacity=100
+osbench v=2 os=linux cond ac_online=1
+osbench v=2 os=linux cond thp=madvise
+osbench v=2 os=linux cond autogroup=1
+osbench v=2 os=linux cond timer_slack_ns=50000
+osbench v=2 os=linux cond vuln_spectre_v2=Mitigation:_Retpolines;_IBPB:_conditional;_STIBP:_always-on;_RSB_filling;_PBRSB-eIBRS:_Not_affected;_BHI:_Not_affected
+osbench v=2 os=linux cond vuln_indirect_target_selection=Not_affected
+osbench v=2 os=linux cond vuln_itlb_multihit=Not_affected
+osbench v=2 os=linux cond vuln_vmscape=Mitigation:_IBPB_before_exit_to_userspace
+osbench v=2 os=linux cond vuln_mmio_stale_data=Not_affected
+osbench v=2 os=linux cond vuln_mds=Not_affected
+osbench v=2 os=linux cond vuln_reg_file_data_sampling=Not_affected
+osbench v=2 os=linux cond vuln_tsa=Not_affected
+osbench v=2 os=linux cond vuln_l1tf=Not_affected
+osbench v=2 os=linux cond vuln_spec_store_bypass=Mitigation:_Speculative_Store_Bypass_disabled_via_prctl
+osbench v=2 os=linux cond vuln_tsx_async_abort=Not_affected
+osbench v=2 os=linux cond vuln_spectre_v1=Mitigation:_usercopy/swapgs_barriers_and___user_pointer_sanitization
+osbench v=2 os=linux cond vuln_gather_data_sampling=Not_affected
+osbench v=2 os=linux cond vuln_retbleed=Mitigation:_untrained_return_thunk;_SMT_enabled_with_STIBP_protection
+osbench v=2 os=linux cond vuln_spec_rstack_overflow=Mitigation:_Safe_RET
+osbench v=2 os=linux cond vuln_srbds=Not_affected
+osbench v=2 os=linux cond vuln_meltdown=Not_affected
+osbench v=2 os=linux cond loadavg=0.40,0.17,0.06
+osbench v=2 os=linux cond busy_permille_1s=1
+osbench v=2 os=linux bench=cpu.clock unit=MHz n=200 min=1237 p50=1371 p90=4299 p99=4320 p999=- max=4842 mean=2377 cycles_per_probe=300000 mhz=4282
+osbench v=2 os=linux cond persist.served_by=ext4,_NVMe_disk,_model_<drive>,_write_cache_write_back
+osbench v=2 os=linux bench=persist.write_4k_fsync unit=ns n=100 min=3042891 p50=3680820 p90=3912927 p99=4117723 p999=- max=5089320 mean=3682261 served_by=ext4,_NVMe_disk,_model_<drive>,_write_cache_write_back medium=nvme switches_per_op=2.00 faults_per_op=0.00 mhz_settled=4286 mhz_after=4303 mhz=1368
+osbench v=2 os=linux bench=persist.fsync_clean unit=ns n=200 min=62445 p50=68172 p90=69918 p99=76205 p999=- max=76904 mean=68267 served_by=ext4,_NVMe_disk,_model_<drive>,_write_cache_write_back medium=nvme switches_per_op=1.00 faults_per_op=0.00 mhz_settled=4282 mhz_after=4282 mhz=4286
+osbench v=2 os=linux bench=persist.write_4k_fsync_after_idle unit=ns n=8 min=10833968 p50=11084040 p90=- p99=- p999=- max=11490325 mean=11186986 idle_s=10 served_by=ext4,_NVMe_disk,_model_<drive>,_write_cache_write_back medium=nvme mhz=1371
+osbench v=2 os=linux bench=persist.append_4k_fsync unit=ns n=100 min=3217214 p50=3870714 p90=4098814 p99=6987568 p999=- max=11163695 mean=3911776 served_by=ext4,_NVMe_disk,_model_<drive>,_write_cache_write_back medium=nvme switches_per_op=2.00 faults_per_op=0.00 mhz_settled=4291 mhz_after=4291 mhz=1368
+osbench v=2 os=linux bench=persist.create_fsync_unlink unit=ns n=50 min=3170770 p50=3350680 p90=3742137 p99=- p999=- max=6577393 mean=3471191 served_by=ext4,_NVMe_disk,_model_<drive>,_write_cache_write_back medium=nvme switches_per_op=2.00 faults_per_op=0.00 mhz_settled=4304 mhz_after=4278 mhz=1445
+osbench v=2 os=linux bench=persist.seq_write_fsync unit=MB/s n=3 min=490 p50=496 p90=- p99=- p999=- max=498 mean=494 file_bytes=8388608 call_bytes=1048576 served_by=ext4,_NVMe_disk,_model_<drive>,_write_cache_write_back medium=nvme mhz_settled=4278 mhz_after=4278 mhz=1896
+osbench v=2 os=linux bench=persist.seq_read_cached unit=MB/s n=3 min=11162 p50=11460 p90=- p99=- p999=- max=11663 mean=11428 file_bytes=8388608 call_bytes=1048576 served_by=ext4,_NVMe_disk,_model_<drive>,_write_cache_write_back medium=nvme mhz_settled=4291 mhz_after=4291 mhz=4282
+osbench v=2 os=linux cond fs.disk.served_by=ext4,_NVMe_disk,_model_<drive>,_write_cache_write_back
+osbench v=2 os=linux cond fs.disk.mount=ext4_rw,relatime_rw
+osbench v=2 os=linux bench=fs.disk.open_close unit=ns n=2000 min=3283 p50=4399 p90=4819 p99=5238 p999=12921 max=16692 mean=4542 served_by=ext4,_NVMe_disk,_model_<drive>,_write_cache_write_back medium=nvme switches_per_op=0.00 faults_per_op=0.00 mhz_settled=4304 mhz_after=4299 mhz=4304
+osbench v=2 os=linux bench=fs.disk.stat unit=ns n=2000 min=2304 p50=2863 p90=2933 p99=3283 p999=10686 max=11174 mean=2768 served_by=ext4,_NVMe_disk,_model_<drive>,_write_cache_write_back medium=nvme switches_per_op=0.00 faults_per_op=0.00 mhz_settled=4274 mhz_after=4282 mhz=4278
+osbench v=2 os=linux bench=fs.disk.fstat unit=ns n=2000 min=1327 p50=1885 p90=1956 p99=1956 p999=9010 max=10127 mean=1750 served_by=ext4,_NVMe_disk,_model_<drive>,_write_cache_write_back medium=nvme switches_per_op=0.00 faults_per_op=0.00 mhz_settled=4286 mhz_after=4274 mhz=4295
+osbench v=2 os=linux bench=fs.disk.create_write_unlink unit=ns n=1000 min=28355 p50=29054 p90=29613 p99=40508 p999=88628 max=88907 mean=29759 bytes=100 served_by=ext4,_NVMe_disk,_model_<drive>,_write_cache_write_back medium=nvme switches_per_op=0.00 faults_per_op=0.00 mhz_settled=4299 mhz_after=4312 mhz=4282
+osbench v=2 os=linux bench=fs.disk.read_4k_at unit=ns n=2000 min=1816 p50=2375 p90=2864 p99=3283 p999=10546 max=10965 mean=2534 file_bytes=16777216 served_by=ext4,_NVMe_disk,_model_<drive>,_write_cache_write_back medium=nvme switches_per_op=0.00 faults_per_op=0.00 mhz_settled=4299 mhz_after=4304 mhz=4278
+osbench v=2 os=linux bench=fs.disk.write_4k_at unit=ns n=2000 min=1816 p50=2933 p90=3353 p99=3841 p999=12012 max=12502 mean=3091 file_bytes=16777216 served_by=ext4,_NVMe_disk,_model_<drive>,_write_cache_write_back medium=nvme switches_per_op=0.00 faults_per_op=0.00 mhz_settled=4274 mhz_after=4282 mhz=4295
+osbench v=2 os=linux bench=fs.disk.seek unit=ns n=2000 min=907 p50=1397 p90=1467 p99=1467 p999=8102 max=9568 mean=1384 file_bytes=16777216 served_by=ext4,_NVMe_disk,_model_<drive>,_write_cache_write_back medium=nvme switches_per_op=0.00 faults_per_op=0.00 mhz_settled=4286 mhz_after=4304 mhz=4291
+osbench v=2 os=linux bench=fs.disk.read_4k unit=ns n=2000 min=1815 p50=2305 p90=2444 p99=2864 p999=10826 max=12362 mean=2215 file_bytes=16777216 served_by=ext4,_NVMe_disk,_model_<drive>,_write_cache_write_back medium=nvme switches_per_op=0.00 faults_per_op=0.00 mhz_settled=4278 mhz_after=4295 mhz=4274
+osbench v=2 os=linux bench=fs.disk.pread_4k unit=ns n=2000 min=978 p50=2374 p90=2444 p99=2864 p999=9917 max=11314 mean=2222 file_bytes=16777216 served_by=ext4,_NVMe_disk,_model_<drive>,_write_cache_write_back medium=nvme switches_per_op=0.00 faults_per_op=0.00 mhz_settled=4304 mhz_after=4304 mhz=4304
+osbench v=2 os=linux bench=fs.disk.pread_8 unit=ns n=2000 min=1396 p50=1886 p90=2374 p99=2445 p999=9918 max=10406 mean=1984 file_bytes=16777216 served_by=ext4,_NVMe_disk,_model_<drive>,_write_cache_write_back medium=nvme switches_per_op=0.00 faults_per_op=0.00 mhz_settled=4278 mhz_after=4282 mhz=4291
+osbench v=2 os=linux bench=fs.disk.readdir.1000 unit=ns n=50 min=437203 p50=443628 p90=455222 p99=- p999=- max=482390 mean=445757 entries=1000 served_by=ext4,_NVMe_disk,_model_<drive>,_write_cache_write_back medium=nvme switches_per_op=0.02 faults_per_op=1.02 mhz_settled=4274 mhz_after=4282 mhz=4291
+osbench v=2 os=linux bench=fs.disk.rename unit=ns n=2000 min=9847 p50=10825 p90=11035 p99=18438 p999=37086 max=90793 mean=10971 served_by=ext4,_NVMe_disk,_model_<drive>,_write_cache_write_back medium=nvme switches_per_op=0.00 faults_per_op=0.00 mhz_settled=4299 mhz_after=4278 mhz=4304
+osbench v=2 os=linux bench=fs.disk.mkdir_rmdir unit=ns n=1000 min=36946 p50=38273 p90=40438 p99=61460 p999=90234 max=102317 mean=39271 served_by=ext4,_NVMe_disk,_model_<drive>,_write_cache_write_back medium=nvme switches_per_op=0.00 faults_per_op=0.00 mhz_settled=4282 mhz_after=4291 mhz=4286
+osbench v=2 os=linux bench=fs.disk.tree.100 unit=ns n=20 min=3382738 p50=3450414 p90=3462846 p99=- p999=- max=3472344 mean=3439619 files=100 served_by=ext4,_NVMe_disk,_model_<drive>,_write_cache_write_back medium=nvme switches_per_op=0.75 faults_per_op=0.00 mhz_settled=4282 mhz_after=4308 mhz=4304
+osbench v=2 os=linux bench=fs.disk.seq_write.4096 unit=MB/s n=5 min=649 p50=751 p90=- p99=- p999=- max=753 mean=730 call_bytes=4096 file_bytes=67108864 served_by=ext4,_NVMe_disk,_model_<drive>,_write_cache_write_back medium=nvme mhz_settled=4299 mhz_after=4286 mhz=3951
+osbench v=2 os=linux bench=fs.disk.seq_read.4096 unit=MB/s n=5 min=5008 p50=5044 p90=- p99=- p999=- max=5047 mean=5036 call_bytes=4096 file_bytes=67108864 served_by=ext4,_NVMe_disk,_model_<drive>,_write_cache_write_back medium=nvme mhz_settled=4304 mhz_after=4304 mhz=4295
+osbench v=2 os=linux bench=fs.disk.seq_write.1048576 unit=MB/s n=5 min=774 p50=778 p90=- p99=- p999=- max=812 mean=785 call_bytes=1048576 file_bytes=67108864 served_by=ext4,_NVMe_disk,_model_<drive>,_write_cache_write_back medium=nvme mhz_settled=4308 mhz_after=4299 mhz=3962
+osbench v=2 os=linux bench=fs.disk.seq_read.1048576 unit=MB/s n=5 min=10950 p50=11301 p90=- p99=- p999=- max=11333 mean=11227 call_bytes=1048576 file_bytes=67108864 served_by=ext4,_NVMe_disk,_model_<drive>,_write_cache_write_back medium=nvme mhz_settled=4286 mhz_after=4282 mhz=4304
+osbench v=2 os=linux group=persist done secs=85
