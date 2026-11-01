@@ -1,0 +1,1 @@
+d3d8d1750: cargo clippy -p kernel-copies --all-targets --target x86_64-apple-darwin -- -D warnings (exit 0); cargo test -p kernel-copies --target x86_64-apple-darwin (exit 0, no warnings); cargo run -- --build-only (exit 0). Run with the review-r1 edits uncommitted on 7a409c1e2, which d3d8d1750 commits unchanged.
