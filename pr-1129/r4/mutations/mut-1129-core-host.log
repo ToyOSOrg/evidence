@@ -1,0 +1,29 @@
+   Compiling kernel v0.1.0 ($HOME/Dev/<user>/toyos-sched-place/kernel)
+    Finished `test` profile [optimized + debuginfo] target(s) in 2.06s
+     Running unittests pure/lib.rs (target/debug/deps/kernel-fa45b686f8e87f8e)
+
+running 6 tests
+test cpu::tests::a_cpu_that_describes_no_cache_has_one_llc_per_package ... ok
+test sched::cpu::tests::a_move_stays_off_the_wakers_core ... FAILED
+test sched::cpu::tests::a_run_of_wakes_from_another_llc_moves_the_task_into_it ... ok
+test sched::cpu::tests::a_task_masked_out_of_its_wakers_llc_stays_home ... ok
+test sched::cpu::tests::a_wake_from_home_breaks_the_run ... ok
+test sched::cpu::tests::two_runs_ending_in_one_drain_go_to_two_cpus ... ok
+
+failures:
+
+---- sched::cpu::tests::a_move_stays_off_the_wakers_core stdout ----
+
+thread 'sched::cpu::tests::a_move_stays_off_the_wakers_core' (127936421) panicked at kernel/pure/sched/cpu.rs:4745:9:
+the task went to cpu3 or cpu7, off cpu1's core with cpu5, and it is InTransit(CpuId(5))
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    sched::cpu::tests::a_move_stays_off_the_wakers_core
+
+test result: FAILED. 5 passed; 1 failed; 0 ignored; 0 measured; 383 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p kernel --lib`
+MUTATION_EXIT=101
+restored
