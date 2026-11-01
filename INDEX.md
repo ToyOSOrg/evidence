@@ -213,3 +213,9 @@ Metal: the orchestrator ran four AMD boots from a tree pinned at eee39c691, in t
 - **Host CI:** `cargo run -- --ci host` exited 0, with 108 steps green (`r10/checks/ci-host-f5a102ed9.log`).
 - **Pure:** 25 passed (`r10/checks/pure-clock-tests.log`). `a_drift_base_never_reaches_across_a_step` asserts both halves: with the earlier edges forgotten, a 1.7 ms step after a 4 ms one reads as the counter's; with them kept, it does not.
 - **QEMU x86-64 TCG, 2 vCPUs:** `a_stepped_tsc_is_slewed_then_demoted` and `a_stalled_hpet_is_left_out` exited 0 (`r10/qemu/both-clock-tests-f5a102ed9.log`). The run used the tree before the commit. The tree differed from f5a102ed9 only in comments and the issue text written during the run. The demotion on cpu0 completed its handover round, and a process on cpu1 then read through the kernel.
+
+## r11: review r4's fixes at 0650c9d08
+
+- **Image:** `cargo run -- --build-only` exited 0.
+- **Host CI:** `cargo run -- --ci host` exited 0, with 108 steps green (`r11/ci-host-0650c9d08.log`).
+- **QEMU x86-64 TCG, 2 vCPUs:** `a_stepped_tsc_is_slewed_then_demoted` exited 0 (`r11/qemu-stepped-0650c9d08.log`). The second step demoted the TSC on cpu1. Its round, waiting through `tlb::poll`, collected cpu0's floor, and a process on cpu1 then read through the kernel. Each run used the tree committed as 0650c9d08.
