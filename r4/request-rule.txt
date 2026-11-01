@@ -1,0 +1,52 @@
+# PR #1131 r4, T14 only: what the idle excursions coincide with, and what a wake from PS4 costs. 3 boots, IN THIS ORDER, plus 1 Linux read.
+# Revision e996bcab438d106c4cd0c6f124d0598d2aaa922e (nvme-apst), from <home> whose tree must stay clean. All patches are diagnostic and were applied for staging only.
+# HEAD has moved past the images' revision (issues/ and osbench's Linux-only nvme.rs), so the metal driver runs from it unchanged.
+# Every image carries:
+#  - probe-v2.patch:
+#    - every I/O is timed;
+#    - an I/O reaching an idle drive first asks its power state (Get Features 02h, NVMe 2.1 §8.1.17.1-2), with the idle time since the last completion;
+#    - notable I/Os (>= 2 ms, idle >= 50 ms, or a state other than PS0) are logged with since-boot stamps as "nvme probe: <s.ms> <op> idle <ms> ps<N> <us>", in batches >= 30 s apart;
+#    - at bring-up: "probe: HMPRE .., HMMIN .., Feature 0Dh (HMB) .., Feature 11h (NOPPME) ..".
+#  - energy-seconds.patch: one "energy.idle.second" note per idle second, said after the row. Each note holds:
+#    - end_ns (since boot, the diary's clock);
+#    - pc2 ‰, and each CPU's C0 ‰ (MPERF/TSC);
+#    - timer fires and idle entries per CPU;
+#    - wakes by task@cpu, from the kernel diary;
+#    - diary records lost.
+#
+# Boots:
+#  1  B50-energy  head + itpt-50x.patch (r1's condition, the most excursions: 12-19)  osbench_energy
+#  2  B500-disk   head as committed (500x)                                            osbench_disk
+#  3  A-energy    control-no-apst.patch (no APST; excursions 2-20 in r1-r3)           osbench_energy   (optional: drop it if the session is short)
+# Linux step (no install; as root): lspci -vvv -s 00:06.0; lspci -vvv -s 04:00.0  -> <home>
+#
+# DECISION RULES, fixed before the run.
+# E (boots 1 and 3).
+#  - An excursion second has mw >= that run's p25 + 4000. Each one is set against the other seconds of the same run, on each candidate:
+#    - an nvme probe event stamped inside the second (end_ns - 1 s, end_ns];
+#    - a wake of each task (logkeeper, nvme, fileserver, i219, netstack, acpiserver, klogd, osbench_energy);
+#    - the C0 ‰ of each CPU above that run's median + 20;
+#    - timer fires or idle entries above that run's median.
+#  - A candidate COINCIDES if it is present in >= 80% of the excursion seconds and in <= 30% of the others.
+#  - If one coincides, it is the trigger to pursue at its owner (the nvme driver for drive events, logkeeper for its writes, the scheduler/timers for a CPU or timer pattern).
+#  - If none coincides, the excursions follow no software-visible event. They then belong to the platform as ToyOS leaves it (display/uncore), and are recorded at issues/the-t14s-idle-package-stays-in-pc2.md.
+#  - Either way the result, and the 6-7 W baseline against Linux nomodeset's 2.8 W in the same PC2, go into that issue.
+#  - "lost" > 0 in a second voids that second's diary candidates.
+# W (boot 2, persist.write_4k_fsync_after_idle). Take each of its 8 samples as the probe's command sequence from the first idle arrival on.
+#  - The drive FALLS BACK to its non-operational state after an I/O if, in >= 6 of 8 samples, a later command of the same sample both:
+#    - reports ps3 or ps4, and
+#    - takes >= 3 ms.
+#    Then ToyOS's write+flush pays more than one wake, which is what to remove first (ordering or merging the sample's commands).
+#  - If only the first command per sample is slow, it is ONE WAKE. The ~1.5 ms over Linux then lies in ToyOS's own path; the next step is a split of that path's time.
+#  - The probe's PS4-at-12-ms readings are explained if they are those later commands (idle < 50 ms and ps4).
+#  - The slow write mode (back-to-back write_4k_fsync about 6 ms) is recorded with the boot.
+# H (boots 1-3).
+#  - If HMPRE > 0 and Feature 0Dh's EHM bit is 0, the drive requests an HMB and ToyOS gives none. The HMB issue is then filed with these values.
+#  - NOPPME is recorded beside it.
+# L (the Linux lspci). Recorded against ToyOS's register dump (r7 scout):
+#  - the LTR max snoop/no-snoop;
+#  - L1SS's LTR_L1.2_THRESHOLD and T_PwrOn.
+#  A difference is input for a later boot. No boot is staged for it now.
+#
+# Setup: AC, panel lit, nothing else running, radios as r1.
+# Judge: cargo test --test toyos-build -- --metal --metal-readback <home> osbench_energy|osbench_disk

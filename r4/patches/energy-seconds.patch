@@ -1,0 +1,134 @@
+diff --git a/tests/guest/osbench/src/energy.rs b/tests/guest/osbench/src/energy.rs
+index 08f0db1d5..c7ecdc14e 100644
+--- a/tests/guest/osbench/src/energy.rs
++++ b/tests/guest/osbench/src/energy.rs
+@@ -128,7 +128,7 @@ fn row(bench: &str, seconds: u64, load: Load) -> Result<(), Refused> {
+                 }
+             });
+         }
+-        let sampled = sample(seconds, &counts, matches!(load, Load::Spin(_)), &mut samples);
++        let sampled = sample(seconds, &counts, matches!(load, Load::Spin(_)), matches!(load, Load::Idle), &mut samples);
+         stop.store(true, Relaxed);
+         sampled
+     });
+@@ -177,7 +177,11 @@ struct Samples {
+ 
+ /// A reading of the package each second for `seconds`, into `out`, with the
+ /// energy per chunk where `per_chunk`.
+-fn sample(seconds: u64, counts: &[Slot], per_chunk: bool, out: &mut Samples) -> Result<(), Refused> {
++fn sample(seconds: u64, counts: &[Slot], per_chunk: bool, diag: bool, out: &mut Samples) -> Result<(), Refused> {
++    #[cfg(target_os = "toyos")]
++    let mut each = diag.then(seconds_diag::Each::open).flatten();
++    #[cfg(not(target_os = "toyos"))]
++    let _ = diag;
+     let chunks = || counts.iter().map(|c| c.0.load(Relaxed)).sum::<u64>();
+     let Round { package: mut before, cpus } = power::round()?;
+     out.first_cpus = cpus;
+@@ -187,6 +191,10 @@ fn sample(seconds: u64, counts: &[Slot], per_chunk: bool, out: &mut Samples) ->
+         // The span is the measurement: each read is due a second after the start, not after the last read.
+         std::thread::sleep((start + Duration::from_secs(second)).saturating_duration_since(Instant::now()));
+         let Round { package: after, cpus } = power::round()?;
++        #[cfg(target_os = "toyos")]
++        if let Some(each) = each.as_mut() {
++            each.second(second, &before, &after, &out.last_cpus, &cpus);
++        }
+         out.last_cpus = cpus;
+         let (now, done_now) = (Instant::now(), chunks());
+         let ns = u64::try_from((now - at).as_nanos()).expect("a second under 584 years");
+@@ -208,9 +216,96 @@ fn sample(seconds: u64, counts: &[Slot], per_chunk: bool, out: &mut Samples) ->
+         (before, at, done) = (after, now, done_now);
+     }
+     out.span_ns = u64::try_from(start.elapsed().as_nanos()).expect("a row under 584 years");
++    #[cfg(target_os = "toyos")]
++    if let Some(each) = each {
++        each.report();
++    }
+     Ok(())
+ }
+ 
++/// Diagnostic: each idle second's events, off the kernel's diary and the
++/// round's counters, said after the row so the saying is outside it.
++#[cfg(target_os = "toyos")]
++mod seconds_diag {
++    use std::collections::BTreeMap;
++
++    use toyos_trace::Event;
++
++    use crate::report::note;
++    use crate::sys::{diag::Diag, CpuPower, Package};
++
++    pub struct Each {
++        diag: Diag,
++        names: BTreeMap<(u32, u32), (String, u64)>,
++        lines: Vec<Vec<(&'static str, String)>>,
++    }
++
++    impl Each {
++        pub fn open() -> Option<Self> {
++            let mut diag = crate::sys::diag::open()?;
++            if !diag.has_diary() {
++                return None;
++            }
++            diag.diary();
++            let names = diag.roster();
++            Some(Self { diag, names, lines: Vec::new() })
++        }
++
++        pub fn second(&mut self, k: u64, before: &Package, after: &Package, first: &[CpuPower], last: &[CpuPower]) {
++            let (records, lost, _) = self.diag.diary();
++            let cpus = last.len().max(1);
++            let (mut fires, mut idles, mut wakes) = (vec![0u32; cpus], vec![0u32; cpus], BTreeMap::<String, u32>::new());
++            for (_, e) in &records {
++                let c = (e.cpu as usize).min(cpus - 1);
++                match e.event {
++                    Event::TimerFire | Event::TimerFireBurst { .. } => fires[c] += 1,
++                    Event::IdleEnter => idles[c] += 1,
++                    Event::Wake => {
++                        let name = e
++                            .thread
++                            .and_then(|t| self.names.get(&(t.pid, t.tid)).map(|(n, _)| n.clone()).or(Some(format!("{}/{}", t.pid, t.tid))))
++                            .unwrap_or_default();
++                        *wakes.entry(format!("{name}@{}", e.cpu)).or_default() += 1;
++                    }
++                    _ => {}
++                }
++            }
++            let c0: Vec<String> = last
++                .iter()
++                .map(|b| {
++                    first
++                        .iter()
++                        .find(|a| a.cpu == b.cpu)
++                        .and_then(|a| Some((b.mperf?.wrapping_sub(a.mperf?), b.tsc.wrapping_sub(a.tsc))))
++                        .map_or("-".to_string(), |(m, t)| osbench_rules::window::permille(m, t).to_string())
++                })
++                .collect();
++            let ticks = after.tsc.wrapping_sub(before.tsc);
++            let pc2 = before.residency[0]
++                .zip(after.residency[0])
++                .map_or("-".to_string(), |(a, b)| osbench_rules::window::permille(b.wrapping_sub(a), ticks).to_string());
++            let join = |v: &[u32]| v.iter().map(u32::to_string).collect::<Vec<_>>().join("/");
++            let wakes: Vec<String> = wakes.iter().map(|(n, c)| format!("{n}x{c}")).collect();
++            self.lines.push(vec![
++                ("s", k.to_string()),
++                ("end_ns", toyos_abi::clock::nanos_since_boot().to_string()),
++                ("pc2", pc2),
++                ("c0_permille", c0.join("/")),
++                ("fires", join(&fires)),
++                ("idles", join(&idles)),
++                ("lost", lost.to_string()),
++                ("wakes", wakes.join(",")),
++            ]);
++        }
++
++        pub fn report(self) {
++            for line in &self.lines {
++                note("energy.idle.second", line);
++            }
++        }
++    }
++}
++
+ /// The cores' power over the row where each core counts its own energy:
+ /// each core once, SMT siblings reading the same counter.
+ fn cores_mw(first: &[CpuPower], last: &[CpuPower], unit: u64, span_ns: u64) -> Option<u64> {

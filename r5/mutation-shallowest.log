@@ -1,0 +1,32 @@
+   Compiling nvme-apst v0.1.0 (<home>
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.58s
+     Running unittests src/lib.rs (target/debug/deps/nvme_apst-6fa03160b788963d)
+
+running 9 tests
+test tests::an_operational_state_is_never_a_target ... ok
+test tests::a_descriptor_reads_as_figure_313_lays_it_out ... ok
+test tests::a_state_with_an_unreported_latency_is_never_a_target ... ok
+test tests::a_state_whose_round_trip_exceeds_the_bound_is_never_a_target ... ok
+test tests::npss_is_zero_based_and_apsta_is_bit_0 ... ok
+test tests::no_target_reports_more_idle_power_than_the_state_it_leaves ... ok
+test tests::the_table_encodes_itpt_in_bits_31_8_and_itps_in_7_3 ... ok
+test tests::every_operational_state_steps_to_the_shallowest_admitted_one_and_that_to_the_next ... ok
+test tests::the_deepest_state_within_a_tier_is_the_target_past_shallower_ones ... FAILED
+
+failures:
+
+---- tests::the_deepest_state_within_a_tier_is_the_target_past_shallower_ones stdout ----
+
+thread 'tests::the_deepest_state_within_a_tier_is_the_target_past_shallower_ones' (134728740) panicked at system/nvme/apst/src/lib.rs:289:9:
+assertion `left == right` failed
+  left: [Some(Transition { to: 3, after_ms: 100 }), Some(Transition { to: 3, after_ms: 100 }), Some(Transition { to: 3, after_ms: 100 }), Some(Transition { to: 4, after_ms: 100 }), None]
+ right: [Some(Transition { to: 4, after_ms: 100 }), Some(Transition { to: 4, after_ms: 100 }), Some(Transition { to: 4, after_ms: 100 }), Some(Transition { to: 4, after_ms: 100 }), None]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    tests::the_deepest_state_within_a_tier_is_the_target_past_shallower_ones
+
+test result: FAILED. 8 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p nvme-apst --lib`

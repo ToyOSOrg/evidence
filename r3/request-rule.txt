@@ -1,0 +1,37 @@
+# PR #1131 r3, t14: the APST A/B at IDLE_PER_LATENCY 500. ONE SESSION, IN THE ORDER BELOW.
+# Revision e996bcab438d106c4cd0c6f124d0598d2aaa922e (nvme-apst), from <home> Its tree must stay clean.
+# A = control-no-apst.patch (no Set Features 0Ch, as main). B = head (ITPT 500x the round trip).
+# BOTH arms carry probe.patch (Get Features 02h at each idle arrival). The images were verified by grep: the probe is in every image, the control in A only.
+# The Linux binary is <home> sha256 b6d59c290c68c8f6b4ae95c3567e28eca43333a43fb30e69c5bc8dbcaacdd1e3.
+# It is still current: osbench has not changed since r1 (only nvme-apst's constant has).
+# Setup on every boot and Linux run: AC, panel lit, nothing else running, radios blocked for energy as r1.
+#
+# DECISION RULE, fixed before this run.
+# Statistic: each boot's row p50, then the median per arm. "Resolved" means every B boot lies beyond every A boot.
+# §0 Linux's APST, measured on this bench (Linux documents no APST policy: kernel-parameters.txt has only nvme.quirks).
+#    Reported, not a gate. It gives Linux's ITPT / (ENLAT+EXLAT) per state, beside B's logged table.
+#    If Linux's ratio is ~50, 500 is a deliberate divergence. The excursion result in §1b then decides whether Linux pays the 50x cost.
+# §1 Idle: energy.idle.package p50. BLOCKS if B resolves higher on either bench. The gain is reported.
+# §1b Excursions, the oracle for r1's +502/+604 mW. Per run, count the seconds of energy.idle.series >= that run's own p25 + 4000 mW.
+#    Prior counts on the T14: ToyOS 50x B 12-19, ToyOS A 2-11, Linux (#1100) 2-3.
+#    - If B's median <= A's median + 2: the 500x policy adds no excursions.
+#    - If Linux's median here is >= 12, the excursions are the platform's (Linux pays them too).
+#      If it is <= A's median, they are ToyOS's 50x policy's, and 500x is the fix.
+#    Reported per bench. On the AMD the same count is reported without a prior.
+# §2 Latency, next-latency-rule.md (Linux parity, same session). Both must hold:
+#    - median_B(after_idle p50) - median_A(after_idle p50) <= median over Linux runs of (after_idle p50 - write_4k_fsync p50);
+#    - max B after_idle sample <= max Linux after_idle sample.
+# §3 Back-to-back rows (fs.disk.*, nvme.*, persist.* except after_idle): none may be > 5% worse AND resolved.
+# READY iff §1 does not block and §2 and §3 hold, on both benches. §0 and §1b are reported, and explain the cause.
+#
+# Judge afterwards: cargo test --test toyos-build -- --metal --metal-readback <home> osbench_energy [osbench_disk]
+#
+# Linux steps (<t14> is the bench's own ssh name; copy <home> to /tmp/osbench first):
+#   L0  once, first, as root -> <home>
+#       grep -r . /sys/module/nvme_core/parameters/; modinfo -p nvme_core
+#       nvme get-feature /dev/nvme0 -f 0x0c -H; nvme get-feature /dev/nvme0 -f 0x02 -H
+#       (install with apt-get install -y nvme-cli if it is missing, and say so in the file)
+#   LE<k> energy: ssh <t14> 'sudo modprobe msr; sudo rfkill block all; sudo /tmp/osbench energy </dev/null; sudo rfkill unblock all' > <home>
+#   LP<k> as the normal user, in HOME: /tmp/osbench files </dev/null > <home> /tmp/osbench persist </dev/null > <home>
+#
+# ORDER (the first arm alternates per round: A, B, A):
