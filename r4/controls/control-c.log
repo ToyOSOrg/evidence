@@ -1,0 +1,28 @@
+   Compiling fileserver v0.0.0 (<worktree>/system/fileserver)
+    Finished `test` profile [optimized + debuginfo] target(s) in 8.43s
+     Running unittests src/lib.rs (target/debug/deps/fileserver-c7ac95979b91b705)
+
+running 4 tests
+test pages::tests::a_write_refused_part_way_is_cut_back_to_what_it_put ... ok
+test data::tests::a_write_refused_after_allocating_leaves_no_old_bytes_past_the_end ... ok
+test data::tests::a_write_refused_in_a_hole_leaves_the_hole_reading_zeros ... ok
+test pages::tests::a_write_refused_in_a_hole_gives_back_the_block_it_took ... FAILED
+
+failures:
+
+---- pages::tests::a_write_refused_in_a_hole_gives_back_the_block_it_took stdout ----
+fileserver: a paged object refused: Kernel(Io)
+
+thread 'pages::tests::a_write_refused_in_a_hole_gives_back_the_block_it_took' (123127001) panicked at system/fileserver/src/pages/tests.rs:361:5:
+assertion `left == right` failed: the refused write kept the hole's block, or gave back more
+  left: 16687104
+ right: 16691200
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    pages::tests::a_write_refused_in_a_hole_gives_back_the_block_it_took
+
+test result: FAILED. 3 passed; 1 failed; 0 ignored; 0 measured; 101 filtered out; finished in 0.01s
+
+error: test failed, to rerun pass `-p fileserver --lib`

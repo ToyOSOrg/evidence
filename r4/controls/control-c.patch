@@ -1,0 +1,13 @@
+diff --git a/system/fileserver/src/pages.rs b/system/fileserver/src/pages.rs
+index ade4fe47b..e86f664e1 100644
+--- a/system/fileserver/src/pages.rs
++++ b/system/fileserver/src/pages.rs
+@@ -376,7 +376,7 @@ impl<P: Pager> Files<P> {
+             // What was reserved and not put would read as the blocks' old bytes.
+             let landed = if done > 0 { offset + done as u64 } else { 0 };
+             let cut = old.max(landed);
+-            let resized = self.pg().resize(id, cut).map_err(word).and(volume.unreserve(node, reserved, landed));
++            let resized = self.pg().resize(id, cut).map_err(word).and(volume.truncate(node, cut));
+             if let Err(again) = resized {
+                 println!("fileserver: a refused write of file {identity} was not cut back to {cut} ({again:?})");
+             }
