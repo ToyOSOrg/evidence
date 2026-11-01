@@ -1,0 +1,22 @@
+a call sends a whole message and takes the next one back
+
+SYS_MESSAGE_CALL is SYS_MESSAGE_SEND and then a blocking SYS_MESSAGE_RECV on
+the same connection, in one syscall. A refused send answers as a send does
+with nothing sent; once the request is queued the receive answers as a
+receive does, into the same two windows. A protocol whose peer answers each
+request in turn makes the next message its answer. The request carries no
+handles: an error could come from either half, so a caller could not know
+whether they had moved.
+
+The call no longer tells the scheduler that its caller parks next:
+#1111 dropped WakeCause::parks_next (e938fe3e5), and #1129's waker-LLC
+affinity carries the waker on every wake instead. What is left is one
+syscall entry and exit per round trip.
+
+Consumers: the file server's client (toyos::fs's request and reply) and
+osbench's ipc.reqrep rows, whose request's last frame and answer's first
+are one call. Connection::call takes the answer straight into the caller's
+buffer, as recv_into does. messages_are_whole checks that a call takes the
+answer its peer sends, with the answer's handle, split across both windows.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
