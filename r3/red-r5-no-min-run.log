@@ -1,0 +1,37 @@
+   Compiling bcachefs v0.1.0 ($WORKTREE/lib/bcachefs)
+warning: unused variable: `min_run`
+    --> lib/bcachefs/src/fs.rs:1066:9
+     |
+1066 |         min_run: u32,
+     |         ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_min_run`
+     |
+     = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `bcachefs` (lib test) generated 1 warning (run `cargo fix --lib -p bcachefs --tests` to apply 1 suggestion)
+    Finished `release` profile [optimized] target(s) in 27.43s
+     Running unittests src/lib.rs (target/release/deps/bcachefs-fccbf3ba13011d3a)
+
+running 4 tests
+test fs::tests::a_write_on_a_volume_of_single_holes_reads_two_laps_at_most ... ok
+test fs::tests::a_write_skips_single_holes_for_a_run_a_request_long ... FAILED
+test fs::tests::a_write_into_one_cluster_of_single_holes_reads_two_laps_at_most ... ok
+test fs::tests::a_write_into_one_cluster_of_long_runs_reads_two_laps_at_most ... ok
+
+failures:
+
+---- fs::tests::a_write_skips_single_holes_for_a_run_a_request_long stdout ----
+
+thread 'fs::tests::a_write_skips_single_holes_for_a_run_a_request_long' (117091148) panicked at lib/bcachefs/src/fs.rs:1928:9:
+assertion `left == right` failed: 64 pages after 31 single holes
+  left: [(4, 1), (261, 63)]
+ right: [(66, 64)]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    fs::tests::a_write_skips_single_holes_for_a_run_a_request_long
+
+test result: FAILED. 3 passed; 1 failed; 0 ignored; 0 measured; 179 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p bcachefs --lib`
+exit 101

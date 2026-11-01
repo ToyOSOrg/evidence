@@ -1,0 +1,32 @@
+   Compiling bcachefs v0.1.0 ($WORKTREE/lib/bcachefs)
+    Finished `release` profile [optimized] target(s) in 26.07s
+     Running unittests src/lib.rs (target/release/deps/bcachefs-fccbf3ba13011d3a)
+
+running 4 tests
+test fs::tests::a_write_skips_single_holes_for_a_run_a_request_long ... ok
+test fs::tests::a_write_on_a_volume_of_single_holes_reads_two_laps_at_most ... ok
+test fs::tests::a_write_into_one_cluster_of_single_holes_reads_two_laps_at_most ... FAILED
+test fs::tests::a_write_into_one_cluster_of_long_runs_reads_two_laps_at_most ... FAILED
+
+failures:
+
+---- fs::tests::a_write_into_one_cluster_of_single_holes_reads_two_laps_at_most stdout ----
+
+thread 'fs::tests::a_write_into_one_cluster_of_single_holes_reads_two_laps_at_most' (117091753) panicked at lib/bcachefs/src/fs.rs:1984:54:
+allocate: NoSpace { requested: 14, available: 62 }
+
+---- fs::tests::a_write_into_one_cluster_of_long_runs_reads_two_laps_at_most stdout ----
+
+thread 'fs::tests::a_write_into_one_cluster_of_long_runs_reads_two_laps_at_most' (117091752) panicked at lib/bcachefs/src/fs.rs:1984:54:
+allocate: NoSpace { requested: 169, available: 209 }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    fs::tests::a_write_into_one_cluster_of_long_runs_reads_two_laps_at_most
+    fs::tests::a_write_into_one_cluster_of_single_holes_reads_two_laps_at_most
+
+test result: FAILED. 2 passed; 2 failed; 0 ignored; 0 measured; 179 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p bcachefs --lib`
+exit 101
