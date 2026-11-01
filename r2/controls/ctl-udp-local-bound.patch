@@ -1,0 +1,13 @@
+diff --git a/sdk/toyos/src/net/socket.rs b/sdk/toyos/src/net/socket.rs
+index 065028e54..9a1d000aa 100644
+--- a/sdk/toyos/src/net/socket.rs
++++ b/sdk/toyos/src/net/socket.rs
+@@ -387,7 +387,7 @@ pub fn is_socket(handle: BorrowedHandle<'_>) -> bool {
+ pub fn local(handle: BorrowedHandle<'_>) -> Result<([u8; 4], u16), NetError> {
+     let end = TABLE.lock().get(handle.raw()).ok_or(NetError::NotASocket)?;
+     let connected = match end.kind {
+-        Kind::Datagram => connected(handle)?.map(|peer| peer.local_addr),
++        Kind::Datagram => None,
+         Kind::Listener => None,
+     };
+     Ok((connected.unwrap_or(end.addr), end.port))

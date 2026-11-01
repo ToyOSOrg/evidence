@@ -1,0 +1,13 @@
+diff --git a/system/netstack/shard/src/lib.rs b/system/netstack/shard/src/lib.rs
+index 61e608ad2..d10db4412 100644
+--- a/system/netstack/shard/src/lib.rs
++++ b/system/netstack/shard/src/lib.rs
+@@ -686,7 +686,7 @@ impl Shard {
+     /// from, which its connect fixed.
+     pub fn udp_peer(&mut self, id: SocketId) -> Result<Option<UdpPeer>, toyos_net_udp::Error> {
+         self.udp.binding(id).map(|(binding, _)| match binding {
+-            toyos_net_udp::Binding::Connected { local, peer, peer_port } => Some(UdpPeer { addr: peer, port: peer_port, local }),
++            toyos_net_udp::Binding::Connected { local, peer, peer_port } => Some(UdpPeer { addr: peer, port: peer_port, local: { let _ = local; Ipv4Addr::UNSPECIFIED } }),
+             toyos_net_udp::Binding::Any | toyos_net_udp::Binding::Specific(_) => None,
+         })
+     }

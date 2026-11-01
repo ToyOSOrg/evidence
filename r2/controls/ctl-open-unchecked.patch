@@ -1,0 +1,13 @@
+diff --git a/sdk/toyos/src/net/stream.rs b/sdk/toyos/src/net/stream.rs
+index 7a8880aa0..7ae9109ee 100644
+--- a/sdk/toyos/src/net/stream.rs
++++ b/sdk/toyos/src/net/stream.rs
+@@ -839,7 +839,7 @@ fn open<A: Answered>(
+         let lent = region.share().map_err(|_| NetError::Io)?;
+         let (answer, bells, connection) = ask(lent)?;
+         let (addr, port) = answer.local();
+-        let local = local_end(addr, port).ok_or(NetError::Protocol(A::ASKED))?;
++        let local = local_end(addr, port).or(Some((addr, port))).ok_or(NetError::Protocol(A::ASKED))?;
+         let (region, base) = region.into_raw();
+         // SAFETY: `into_raw` gave this the region's handle, which nothing else answers for.
+         let held = take_up(connection.into_owned(), bells, unsafe { OwnedHandle::from_raw(region) }, base)?;
