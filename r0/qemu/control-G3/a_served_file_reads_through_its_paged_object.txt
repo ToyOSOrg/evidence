@@ -1,0 +1,34 @@
+test: test_rs_a_served_file_reads_through_its_paged_object
+exit_code: None
+error: kernel panic: PANIC: panicked at kernel/src/user_ptr.rs:170:21: — the guest went quiet because every CPU is halted, not because it was still working. The panic is the finding and the guard never got to be one.
+--- what the kernel said as it died ---
+[ 9.791 cpu0 kernel alert] PANIC: panicked at kernel/src/user_ptr.rs:170:21:
+user_ptr: a user copy under its own space's lock at kernel/src/user_ptr.rs:170:21: its fault-in would wait on itself
+[ 9.791 cpu0 kernel]   Backtrace:
+[ 9.792 cpu0 kernel]     0xffff8000621bceec  core::panicking::panic_fmt+0x2c
+[ 9.792 cpu0 kernel]     0xffff80006205f263  kernel::user_ptr::under_its_lock+0x33
+[ 9.793 cpu0 kernel]     0xffff80006205eae9  <kernel::user_ptr::View>::pieces::<<kernel::user_ptr::UserBytesMut>::write_raw::{closure#0}>+0x459
+[ 9.793 cpu0 kernel]     0xffff80006210d716  <kernel::object::paged::PagerObject>::read+0x586
+[ 9.793 cpu0 kernel]     0xffff80006212c088  kernel::syscall::paged::sys_paged_read+0x118
+[ 9.793 cpu0 kernel]     0xffff80006207233c  kernel::syscall::dispatch::syscall_dispatch::{closure#0}+0x1aec
+[ 9.793 cpu0 kernel]     0xffff800062049fe0  kernel::arch::x86_64::syscall::syscall_handler+0x80
+[ 9.793 cpu0 kernel]     0xffff800062049c3c  kernel::arch::x86_64::syscall::syscall_entry+0x54
+[ 9.793 cpu0 kernel]   Contexts: cpu0 crashed at sp=0xffff800003b2a3f0, asking about ctx 0xffff800003b2bbb0
+[ 9.793 cpu0 kernel]   cpu0 is on ctx 0xffff800003b2bbb0 pid=13 tid=0 stack_top=0xffff800003b2b000 saved_sp=0xffff800003b2a7e0
+[ 9.793 cpu0 kernel]   cpu1 is on ctx 0xffff800000b6c390 pid=1 tid=0 stack_top=0xffff800000b8d000 saved_sp=0xffff800000b8cc60
+[ 9.794 cpu0 kernel]   Running: pid=13 tid=Some(Tid(0))
+[ 9.794 cpu0 kernel]   Process: test_rs_a_served_file_reads pid=13 state=Live
+[ 9.794 cpu0 kernel]   Syscall: num=156 user_rip=0x229026 user_rsp=0xbb6b90
+[ 9.794 cpu0 kernel]   User backtrace:
+[ 9.794 cpu0 kernel]     0x229026  /system/bin/test_rs_a_served_file_reads_through_its_paged_object+0x29026 id=9daddd1fa3f530a491efcf608967e6fd67e82bc7
+[ 9.794 cpu0 kernel]     0x22515c  /system/bin/test_rs_a_served_file_reads_through_its_paged_object+0x2515b id=9daddd1fa3f530a491efcf608967e6fd67e82bc7
+[ 9.794 cpu0 kernel]     0x2241ae  /system/bin/test_rs_a_served_file_reads_through_its_paged_object+0x241ad id=9daddd1fa3f530a491efcf608967e6fd67e82bc7
+[ 9.794 cpu0 kernel]     0x223c86  /system/bin/test_rs_a_served_file_reads_through_its_paged_object+0x23c85 id=9daddd1fa3f530a491efcf608967e6fd67e82bc7
+[ 9.794 cpu0 kernel]     0x223930  /system/bin/test_rs_a_served_file_reads_through_its_paged_object+0x2392f id=9daddd1fa3f530a491efcf608967e6fd67e82bc7
+[ 9.794 cpu0 kernel]     0x24ecb6  /system/bin/test_rs_a_served_file_reads_through_its_paged_object+0x4ecb5 id=9daddd1fa3f530a491efcf608967e6fd67e82bc7
+[ 9.794 cpu0 kernel]     0x2254e1  /system/bin/test_rs_a_served_file_reads_through_its_paged_object+0x254e0 id=9daddd1fa3f530a491efcf608967e6fd67e82bc7
+[ 9.794 cpu0 kernel]     0x250623  /system/bin/test_rs_a_served_file_reads_through_its_paged_object+0x50622 id=9daddd1fa3f530a491efcf608967e6fd67e82bc7
+[ 9.794 cpu0 kernel]     0x22946a  /system/bin/test_rs_a_served_file_reads_through_its_paged_object+0x29469 id=9daddd1fa3f530a491efcf608967e6fd67e82bc7
+[ 9.795 cpu0 kernel alert] panic: rebooting in 60 s, timed by the calibrated clock
+--- stdout ---
+user_ptr: a user copy under its own space's lock at kernel/src/user_ptr.rs:170:21: its fault-in would wait on itself
