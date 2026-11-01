@@ -1,0 +1,13 @@
+diff --git a/system/wlan/station/src/choice.rs b/system/wlan/station/src/choice.rs
+index 4294af6da..3d04e19c6 100644
+--- a/system/wlan/station/src/choice.rs
++++ b/system/wlan/station/src/choice.rs
+@@ -185,7 +185,7 @@ fn plan(e: &Elements<'_>, security: Security) -> Result<Plan, Unjoinable> {
+ fn rank(a: &Bss, b: &Bss) -> Ordering {
+     let key = |x: &Bss| {
+         let strong = x.signal >= STRONG;
+-        (strong, if strong { Some(x.channel.band()) } else { None }, x.signal)
++        (strong, None::<toyos_radio::Band>, x.signal)
+     };
+     key(a).cmp(&key(b))
+ }

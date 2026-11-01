@@ -1,0 +1,14 @@
+diff --git a/system/wlan/station/src/lib.rs b/system/wlan/station/src/lib.rs
+index de4e2a0f6..387c37844 100644
+--- a/system/wlan/station/src/lib.rs
++++ b/system/wlan/station/src/lib.rs
+@@ -609,8 +609,7 @@ impl Station {
+             }
+             Phase::Connected { .. } => {
+                 self.say(&format!("wlan: the association ended ({detail}); joining again"));
+-                self.join = Some(Join { phase: Phase::Scanning, ..join });
+-                self.scan(now);
++                drop((join, now));
+             }
+             Phase::Scanning | Phase::Associating { .. } => unreachable!("matched above"),
+         }
