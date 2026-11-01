@@ -1,0 +1,19 @@
+head 9f4d00502dc961ee0f899f7860b51c23acaf7ebb + uncommitted:  M system/netstack/node/tests/streams.rs  M tests/guest/rust-tests/src/bin/link_failover.rs  M tests/toyos.rs 
+== fix
+exit 0
+15:20:22:02   [links] PASS: a round left by link 0, on 10.0.3.0
+16:20:22:02   [links] PASS: the stream over link 0 left from its lease, 10.0.3.15:58145
+17:20:22:02   [links] PASS: the stream over link 1 left from its lease, 10.0.2.15:61137
+18:20:22:02   [links] PASS: with link 0 down, a round left by link 1 and none by link 0
+19:20:22:02   [links] PASS: with link 0 up again, a round left by it
+== ctl-std-literal applied
+exit 1
+14:20:23:09 FAIL traffic_leaves_by_the_second_link_while_the_first_is_down: the job ended Some(101):
+28:  PASS: a round left by link 0, on 10.0.3.0
+30:thread 'main' (1) panicked at src/bin/link_failover.rs:114:9:
+31:assertion `left == right` failed: link_failover: the stream over link 0 says it left from 10.0.2.15:58348
+57:20:23:09   FAIL  traffic_leaves_by_the_second_link_while_the_first_is_down  (5s)
+65:20:23:09 test result: FAILED. 0 passed, 1 failed, 0 invalidated, 1 total (66.0s; workers: 61s building, 5s testing)
+ M system/netstack/node/tests/streams.rs
+ M tests/guest/rust-tests/src/bin/link_failover.rs
+ M tests/toyos.rs

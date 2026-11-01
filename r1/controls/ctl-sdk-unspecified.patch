@@ -1,0 +1,13 @@
+diff --git a/sdk/toyos/src/net/stream.rs b/sdk/toyos/src/net/stream.rs
+index fd989eab5..8851fec6e 100644
+--- a/sdk/toyos/src/net/stream.rs
++++ b/sdk/toyos/src/net/stream.rs
+@@ -583,7 +583,7 @@ pub fn endpoints(handle: BorrowedHandle<'_>) -> Result<(EndAddr, EndAddr), Refus
+ /// A stream's own end as netstack names it, where it can be one: a unicast
+ /// address, neither unspecified, multicast nor broadcast, and a port.
+ fn local_end(addr: [u8; 4], port: u16) -> Option<([u8; 4], u16)> {
+-    (addr != [0; 4] && addr[0] < 224 && port != 0).then_some((addr, port))
++    (addr[0] < 224 && port != 0).then_some((addr, port))
+ }
+ 
+ /// The handle a watch of `way` is made on, for reading: the holder's receive

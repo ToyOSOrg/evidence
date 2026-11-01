@@ -1,0 +1,25 @@
+# T14 parity session for issues/tcp-opens-a-connections-window-slower-than-linux-in-its-first-300-ms.md, second attempt.
+# Worktree <dev>/toyos-tcp-ramp2, branch local-addr, head 9070b6111: main + a stream's local address from netstack
+#   (the first session's t1 refused its group: "no netstack link holds 10.0.2.15"). No TCP change.
+# Image hash in image-sha256.txt (f2e0d18b...).
+# Order: Linux (L1), t1, Linux (L2), as the first session.
+# Linux binaries: unchanged, reuse <scratch>/metal/linux-4f52c3056/ (osbench 4da3866e...).
+#   tests/guest/osbench has not changed since 4f52c3056. The AMD peer stays the running 4ec7058b one.
+#
+# Decision rule (the issue's accepted exit), set before the run:
+#   Parity, closing the issue, when all hold:
+#     - t1's p50 >= min(L1, L2) p50 - 1 MB/s;
+#     - nothing resent beyond a loss probe (no RTO, no recovery);
+#     - at 100 ms and at 300 ms, t1's five rounds against L1's and L2's ten: the exact one-sided rank test that t1 ranks
+#       low gives p > 0.05.
+#   Does not decide: L1's five rounds against L2's five differ at p <= 0.05 by the exact two-sided rank test at either
+#     mark (the next session then interleaves L, T, L, T, L), or t1 has no upload row.
+#   Otherwise not parity: the issue stays open with the reading.
+# Judge: python3 -I <scratch>/tools/judge.py <L1 stdout> <scratch>/metal2/t1/netbenchcase/kernel.log <L2 stdout>
+#   Its VERDICT line is the verdict; exit 1 with "no upload row" means t1 did not measure.
+# Each invocation is `cargo <words>` from the worktree.
+
+## t1
+netbenchcase
+  image: <scratch>/metal2/t1/netbenchcase/image.img
+  cargo run -p toyos-metal -- --image <scratch>/metal2/t1/netbenchcase/image.img --readback <scratch>/metal2/t1/netbenchcase --fat32-check
