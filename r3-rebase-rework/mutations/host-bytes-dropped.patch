@@ -1,0 +1,13 @@
+diff --git a/system/virtio-console/src/agent.rs b/system/virtio-console/src/agent.rs
+index 02ad087ab..c739c8757 100644
+--- a/system/virtio-console/src/agent.rs
++++ b/system/virtio-console/src/agent.rs
+@@ -128,7 +128,7 @@ impl Agent {
+         loop {
+             let conn = &self.conn;
+             let mut blocked = false;
+-            let step = self.channel.receive(|bytes| match conn.try_send_bytes(HOST_BYTES, bytes) {
++            let step = self.channel.receive(|bytes| match { let _ = (conn, bytes, HOST_BYTES); Ok::<(), TrySendError>(()) } {
+                 Ok(()) => true,
+                 Err(TrySendError::Full) => {
+                     blocked = true;
