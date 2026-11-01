@@ -1,0 +1,317 @@
+=== write pin grows the size at its pin: RED (exit 101)
+$ cargo test --lib paged::tests::a_reader_racing_an_extending_write
+
+running 1 test
+test paged::tests::a_reader_racing_an_extending_write_never_sees_its_unwritten_bytes ... FAILED
+
+failures:
+
+---- paged::tests::a_reader_racing_an_extending_write_never_sees_its_unwritten_bytes stdout ----
+
+thread 'paged::tests::a_reader_racing_an_extending_write_never_sees_its_unwritten_bytes' (118601934) panicked at kernel/pure/paged.rs:714:9:
+assertion `left == right` failed: the copy is in flight: a reader still stops at the old end
+  left: 4096
+ right: 100
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    paged::tests::a_reader_racing_an_extending_write_never_sees_its_unwritten_bytes
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 373 filtered out; finished in 0.00s
+
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+   Compiling kernel v0.1.0 (<worktree>/kernel)
+    Finished `test` profile [optimized + debuginfo] target(s) in 6.56s
+     Running unittests pure/lib.rs (<worktree>/target/debug/deps/kernel-fa45b686f8e87f8e)
+error: test failed, to rerun pass `--lib`
+
+=== unpin not keyed on the frame: RED (exit 101)
+$ cargo test --lib paged::tests::an_unpin_after_a_shrink
+
+running 1 test
+test paged::tests::an_unpin_after_a_shrink_removed_the_page_grows_nothing ... FAILED
+
+failures:
+
+---- paged::tests::an_unpin_after_a_shrink_removed_the_page_grows_nothing stdout ----
+
+thread 'paged::tests::an_unpin_after_a_shrink_removed_the_page_grows_nothing' (118603108) panicked at kernel/pure/paged.rs:502:64:
+a write pin released twice
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    paged::tests::an_unpin_after_a_shrink_removed_the_page_grows_nothing
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 373 filtered out; finished in 0.00s
+
+   Compiling kernel v0.1.0 (<worktree>/kernel)
+warning: unused variable: `frame`
+   --> kernel/pure/paged.rs:495:62
+    |
+495 |     pub fn write_unpin(&mut self, o: &mut Object, page: u64, frame: F, end: u64)
+    |                                                              ^^^^^ help: if this is intentional, prefix it with an underscore: `_frame`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `kernel` (lib test) generated 1 warning (run `cargo fix --lib -p kernel --tests` to apply 1 suggestion)
+    Finished `test` profile [optimized + debuginfo] target(s) in 4.00s
+     Running unittests pure/lib.rs (<worktree>/target/debug/deps/kernel-fa45b686f8e87f8e)
+error: test failed, to rerun pass `--lib`
+
+=== a clean supply grows the size: RED (exit 101)
+$ cargo test --lib paged::tests::a_clean_supply_past_the_size
+
+running 1 test
+test paged::tests::a_clean_supply_past_the_size_is_refused_and_a_dirty_one_extends_it ... FAILED
+
+failures:
+
+---- paged::tests::a_clean_supply_past_the_size_is_refused_and_a_dirty_one_extends_it stdout ----
+
+thread 'paged::tests::a_clean_supply_past_the_size_is_refused_and_a_dirty_one_extends_it' (118604050) panicked at kernel/pure/paged.rs:697:9:
+assertion `left == right` failed: a clean page ending past the size leaves it
+  left: 4096
+ right: 100
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    paged::tests::a_clean_supply_past_the_size_is_refused_and_a_dirty_one_extends_it
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 373 filtered out; finished in 0.00s
+
+   Compiling kernel v0.1.0 (<worktree>/kernel)
+    Finished `test` profile [optimized + debuginfo] target(s) in 2.68s
+     Running unittests pure/lib.rs (<worktree>/target/debug/deps/kernel-fa45b686f8e87f8e)
+error: test failed, to rerun pass `--lib`
+
+=== a withdrawal walks the range: RED (exit 101)
+$ cargo test --lib paged::tests::a_withdrawal_of_a_long_range
+
+running 1 test
+test paged::tests::a_withdrawal_of_a_long_range_walks_the_objects_pages ... FAILED
+
+failures:
+
+---- paged::tests::a_withdrawal_of_a_long_range_walks_the_objects_pages stdout ----
+
+thread 'paged::tests::a_withdrawal_of_a_long_range_walks_the_objects_pages' (118605222) panicked at kernel/pure/paged.rs:851:9:
+16777216 probes for a range of 2^24 pages
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    paged::tests::a_withdrawal_of_a_long_range_walks_the_objects_pages
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 373 filtered out; finished in 0.04s
+
+   Compiling kernel v0.1.0 (<worktree>/kernel)
+    Finished `test` profile [optimized + debuginfo] target(s) in 3.04s
+     Running unittests pure/lib.rs (<worktree>/target/debug/deps/kernel-fa45b686f8e87f8e)
+error: test failed, to rerun pass `--lib`
+
+=== a data read fills the cache: RED (exit 101)
+$ cargo test --lib data::tests::a_files_pages_pass_the_cache_by
+
+running 1 test
+test data::tests::a_files_pages_pass_the_cache_by ... FAILED
+
+failures:
+
+---- data::tests::a_files_pages_pass_the_cache_by stdout ----
+
+thread 'data::tests::a_files_pages_pass_the_cache_by' (118607907) panicked at system/fileserver/src/data.rs:906:9:
+assertion `left == right` failed: a data read keeps nothing
+  left: 262
+ right: 6
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    data::tests::a_files_pages_pass_the_cache_by
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 98 filtered out; finished in 0.01s
+
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+   Compiling fileserver v0.0.0 (<worktree>/system/fileserver)
+    Finished `test` profile [optimized + debuginfo] target(s) in 6.29s
+     Running unittests src/lib.rs (<worktree>/target/debug/deps/fileserver-c7ac95979b91b705)
+error: test failed, to rerun pass `--lib`
+
+=== a refused write is not cut back: RED (exit 101)
+$ cargo test --lib pages::tests::a_write_refused_part_way
+
+running 1 test
+test pages::tests::a_write_refused_part_way_is_cut_back_to_what_it_put ... FAILED
+
+failures:
+
+---- pages::tests::a_write_refused_part_way_is_cut_back_to_what_it_put stdout ----
+fileserver: a paged object refused: Kernel(Io)
+
+thread 'pages::tests::a_write_refused_part_way_is_cut_back_to_what_it_put' (118611583) panicked at system/fileserver/src/pages/tests.rs:336:5:
+assertion `left == right` failed: the volume's size is back where the object's is
+  left: 16384
+ right: 4
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    pages::tests::a_write_refused_part_way_is_cut_back_to_what_it_put
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 98 filtered out; finished in 0.00s
+
+   Compiling fileserver v0.0.0 (<worktree>/system/fileserver)
+    Finished `test` profile [optimized + debuginfo] target(s) in 10.21s
+     Running unittests src/lib.rs (<worktree>/target/debug/deps/fileserver-c7ac95979b91b705)
+error: test failed, to rerun pass `--lib`
+
+=== a landing is not marked dirty: RED (exit 101)
+$ cargo test --lib pages::tests::a_write_past_the_dirty_ceiling
+
+running 1 test
+test pages::tests::a_write_past_the_dirty_ceiling_writes_back_and_goes_on ... FAILED
+
+failures:
+
+---- pages::tests::a_write_past_the_dirty_ceiling_writes_back_and_goes_on stdout ----
+fileserver: a paged object refused: DirtyFull
+
+thread 'pages::tests::a_write_past_the_dirty_ceiling_writes_back_and_goes_on' (118612758) panicked at system/fileserver/src/pages/tests.rs:284:45:
+called `Result::unwrap()` on an `Err` value: NoSpace
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    pages::tests::a_write_past_the_dirty_ceiling_writes_back_and_goes_on
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 98 filtered out; finished in 0.00s
+
+   Compiling fileserver v0.0.0 (<worktree>/system/fileserver)
+    Finished `test` profile [optimized + debuginfo] target(s) in 2.91s
+     Running unittests src/lib.rs (<worktree>/target/debug/deps/fileserver-c7ac95979b91b705)
+error: test failed, to rerun pass `--lib`
+
+=== a core frame is given back as it leaves: RED (exit 101)
+$ cargo test --lib paged::tests::a_core_is_kept
+
+running 1 test
+test paged::tests::a_core_is_kept_whatever_the_allocator_refuses ... FAILED
+
+failures:
+
+---- paged::tests::a_core_is_kept_whatever_the_allocator_refuses stdout ----
+
+thread 'paged::tests::a_core_is_kept_whatever_the_allocator_refuses' (118614636) panicked at kernel/pure/paged.rs:821:17:
+assertion `left == right` failed: round 0: a core frame was given back
+  left: Free
+ right: Aside
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    paged::tests::a_core_is_kept_whatever_the_allocator_refuses
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 373 filtered out; finished in 0.00s
+
+   Compiling kernel v0.1.0 (<worktree>/kernel)
+warning: field `core` is never read
+  --> kernel/pure/paged.rs:53:5
+   |
+52 | pub struct Core {
+   |            ---- field in this struct
+53 |     core: u64,
+   |     ^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `kernel` (lib test) generated 1 warning
+    Finished `test` profile [optimized + debuginfo] target(s) in 3.66s
+     Running unittests pure/lib.rs (<worktree>/target/debug/deps/kernel-fa45b686f8e87f8e)
+error: test failed, to rerun pass `--lib`
+
+=== a refused create makes no room: RED (exit 101)
+$ cargo test --lib pages::tests::an_object_refused_for_room
+
+running 1 test
+test pages::tests::an_object_refused_for_room_is_made_by_a_closed_files_going ... FAILED
+
+failures:
+
+---- pages::tests::an_object_refused_for_room_is_made_by_a_closed_files_going stdout ----
+fileserver: a paged object refused: NoRoom
+
+thread 'pages::tests::an_object_refused_for_room_is_made_by_a_closed_files_going' (118620901) panicked at system/fileserver/src/pages/tests.rs:212:37:
+called `Result::unwrap()` on an `Err` value: NoSpace
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    pages::tests::an_object_refused_for_room_is_made_by_a_closed_files_going
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 98 filtered out; finished in 0.00s
+
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+   Compiling fileserver v0.0.0 (<worktree>/system/fileserver)
+    Finished `test` profile [optimized + debuginfo] target(s) in 12.01s
+     Running unittests src/lib.rs (<worktree>/target/debug/deps/fileserver-c7ac95979b91b705)
+error: test failed, to rerun pass `--lib`
+
+=== a truncating open does not empty the object: RED (exit 101)
+$ cargo test --lib pages::tests::a_truncating_open
+
+running 1 test
+test pages::tests::a_truncating_open_leaves_the_object_no_page_of_before ... FAILED
+
+failures:
+
+---- pages::tests::a_truncating_open_leaves_the_object_no_page_of_before stdout ----
+
+thread 'pages::tests::a_truncating_open_leaves_the_object_no_page_of_before' (118623026) panicked at system/fileserver/src/pages/tests.rs:373:5:
+assertion `left == right` failed: a holder reads the object, and finds nothing of before
+  left: (8192, 2)
+ right: (0, 0)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    pages::tests::a_truncating_open_leaves_the_object_no_page_of_before
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 98 filtered out; finished in 0.00s
+
+   Compiling fileserver v0.0.0 (<worktree>/system/fileserver)
+    Finished `test` profile [optimized + debuginfo] target(s) in 6.04s
+     Running unittests src/lib.rs (<worktree>/target/debug/deps/fileserver-c7ac95979b91b705)
+error: test failed, to rerun pass `--lib`
+
+=== room drops an open file first: RED (exit 101)
+$ cargo test --lib pages::tests::room_is_made
+
+running 1 test
+test pages::tests::room_is_made_by_a_file_nobody_holds_before_any_other ... FAILED
+
+failures:
+
+---- pages::tests::room_is_made_by_a_file_nobody_holds_before_any_other stdout ----
+
+thread 'pages::tests::room_is_made_by_a_file_nobody_holds_before_any_other' (118623423) panicked at system/fileserver/src/pages/tests.rs:307:5:
+the closed file's object went
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    pages::tests::room_is_made_by_a_file_nobody_holds_before_any_other
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 98 filtered out; finished in 0.00s
+
+   Compiling fileserver v0.0.0 (<worktree>/system/fileserver)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.47s
+     Running unittests src/lib.rs (<worktree>/target/debug/deps/fileserver-c7ac95979b91b705)
+error: test failed, to rerun pass `--lib`
+
+tree after restore: ' M tests/guest/pagerprobe/src/main.rs\n'

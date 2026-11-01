@@ -1,0 +1,39 @@
+test: test_rs_a_pager_s_end_answers_its_waiting_holders_gone
+exit_code: None
+error: kernel panic: PANIC: panicked at kernel/src/mm/alloc.rs:553:17: — the guest went quiet because every CPU is halted, not because it was still working. The panic is the finding and the guard never got to be one.
+--- what the kernel said as it died ---
+[11.389 cpu1 kernel alert] PANIC: panicked at kernel/src/mm/alloc.rs:553:17:
+GlobalAlloc: 2097152 bytes exceeds MAX_HEAP_ALLOC (2093056) — a caller is using alloc for page-scale memory
+[11.389 cpu1 kernel]   Backtrace:
+[11.391 cpu1 kernel]     0xffff8000625a6e9c  core::panicking::panic_fmt+0x2c
+[11.391 cpu1 kernel]     0xffff8000624bf066  <kernel::mm::alloc::KernelAllocator as core::alloc::global::GlobalAlloc>::alloc+0x176
+[11.391 cpu1 kernel]     0xffff8000624e1f53  <kernel::mm::alloc::KernelAllocator as core::alloc::global::GlobalAlloc>::realloc+0x43
+[11.391 cpu1 kernel]     0xffff8000624dda77  <alloc::raw_vec::RawVecInner>::finish_grow+0xf7
+[11.391 cpu1 kernel]     0xffff8000624dd34e  <alloc::raw_vec::RawVec<kernel::sched::task::ReadyTask<kernel::sched::payload::KernelPayload>>>::grow_one+0x4e
+[11.392 cpu1 kernel]     0xffff800062492971  <kernel::object::paged::PagerObject>::removing::<usize, <kernel::object::paged::PagerObject>::withdraw::{closure#0}>::{closure#0}+0x21
+[11.392 cpu1 kernel]     0xffff80006245e091  <kernel::paged::Pages<u64>>::withdraw::<<kernel::object::paged::PagerObject>::withdraw::{closure#0}::{closure#0}>+0x121
+[11.392 cpu1 kernel]     0xffff8000624924f0  <kernel::object::paged::PagerObject>::removing::<usize, <kernel::object::paged::PagerObject>::withdraw::{closure#0}>+0x1b0
+[11.392 cpu1 kernel]     0xffff8000625001ad  <kernel::object::paged::PagerObject>::withdraw+0x1d
+[11.392 cpu1 kernel]     0xffff80006251aca0  kernel::syscall::paged::sys_paged_op+0x3f0
+[11.392 cpu1 kernel]     0xffff80006257aa80  kernel::arch::x86_64::syscall::syscall_handler+0x80
+[11.392 cpu1 kernel]     0xffff80006257a854  kernel::arch::x86_64::syscall::syscall_entry+0x54
+[11.392 cpu1 kernel]   Contexts: cpu1 crashed at sp=0xffff800003955ad0, asking about ctx 0xffff800003934480
+[11.392 cpu1 kernel]   cpu0 is on ctx 0xffff8000013f5a50 pid=9 tid=0 stack_top=0xffff800003864000 saved_sp=0xffff800003863920
+[11.392 cpu1 kernel]   cpu1 is on ctx 0xffff800003934480 pid=14 tid=0 stack_top=0xffff800003956000 saved_sp=0xffff800003955cf0
+[11.392 cpu1 kernel]   Running: pid=14 tid=Some(Tid(0))
+[11.392 cpu1 kernel]   Process: pagerprobe pid=14 state=Live
+[11.392 cpu1 kernel]   Syscall: num=152 user_rip=0x227019 user_rsp=0xbc4c50
+[11.392 cpu1 kernel]   User backtrace:
+[11.393 cpu1 kernel]     0x227019  /system/bin/pagerprobe+0x27019 id=ade7974134e7dedb5987217f1b6bbafcdae8b161
+[11.393 cpu1 kernel]     0x226beb  /system/bin/pagerprobe+0x26bea id=ade7974134e7dedb5987217f1b6bbafcdae8b161
+[11.393 cpu1 kernel]     0x225318  /system/bin/pagerprobe+0x25317 id=ade7974134e7dedb5987217f1b6bbafcdae8b161
+[11.393 cpu1 kernel]     0x225e76  /system/bin/pagerprobe+0x25e75 id=ade7974134e7dedb5987217f1b6bbafcdae8b161
+[11.393 cpu1 kernel]     0x225e90  /system/bin/pagerprobe+0x25e8f id=ade7974134e7dedb5987217f1b6bbafcdae8b161
+[11.393 cpu1 kernel]     0x254026  /system/bin/pagerprobe+0x54025 id=ade7974134e7dedb5987217f1b6bbafcdae8b161
+[11.393 cpu1 kernel]     0x225e61  /system/bin/pagerprobe+0x25e60 id=ade7974134e7dedb5987217f1b6bbafcdae8b161
+[11.393 cpu1 kernel]     0x255f73  /system/bin/pagerprobe+0x55f72 id=ade7974134e7dedb5987217f1b6bbafcdae8b161
+[11.393 cpu1 kernel]     0x22709a  /system/bin/pagerprobe+0x27099 id=ade7974134e7dedb5987217f1b6bbafcdae8b161
+[11.391 cpu1 kernel]     0xffff8000625a6e9c  core::panicking::panic_fmt+0x2c
+[11.406 cpu1 kernel alert] panic: rebooting in 60 s, timed by the calibrated clock
+--- stdout ---
+GlobalAlloc: 2097152 bytes exceeds MAX_HEAP_ALLOC (2093056) — a caller is using alloc for page-scale memory
