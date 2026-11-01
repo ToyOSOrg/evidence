@@ -1,0 +1,28 @@
+   Compiling kernel v0.1.0 ($HOME/Dev/<user>/toyos-sched-place/kernel)
+    Finished `test` profile [optimized + debuginfo] target(s) in 9.06s
+     Running unittests pure/lib.rs (target/debug/deps/kernel-fa45b686f8e87f8e)
+
+running 5 tests
+test sched::cpu::tests::a_spawn_wakes_the_shallowest_free_core_sleeper ... ok
+test sched::cpu::tests::a_spawn_goes_to_a_free_core_before_a_busy_cores_thread ... ok
+test sched::cpu::tests::spawn_placement_chooses_only_inside_the_mask ... ok
+test sched::cpu::tests::a_spawned_task_is_adopted_and_dispatched ... ok
+test sched::cpu::tests::a_spawn_passes_over_a_rung_sleeper ... FAILED
+
+failures:
+
+---- sched::cpu::tests::a_spawn_passes_over_a_rung_sleeper stdout ----
+
+thread 'sched::cpu::tests::a_spawn_passes_over_a_rung_sleeper' (120459274) panicked at kernel/pure/sched/cpu.rs:4931:9:
+the next spawn goes to another sleeper, not CpuId(7)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    sched::cpu::tests::a_spawn_passes_over_a_rung_sleeper
+
+test result: FAILED. 4 passed; 1 failed; 0 ignored; 0 measured; 379 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p kernel --lib`
+MUTATION_EXIT=101
+restored
