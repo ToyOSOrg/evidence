@@ -1,0 +1,68 @@
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.26s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-e03b5959f77ae3b7)
+
+21:25:36 running 1 tests, 12 wide
+
+21:25:36   RUN   bar_map_again
+21:25:36   BUILD x86_64 bar_map_again (toyos) of tests/guest/rust-tests, for bar_map_again
+21:25:37   BUILT x86_64 bar_map_again (toyos) of tests/guest/rust-tests, for bar_map_again  (2s)
+21:25:37   BUILD x86_64 msix_in_place (toyos) of tests/guest/rust-tests, for bar_map_again
+21:25:39   BUILT x86_64 msix_in_place (toyos) of tests/guest/rust-tests, for bar_map_again  (2s)
+21:25:39   BUILD x86_64 kernel, loader, ROOT of tests/images/testcases.toml, for bar_map_again
+21:25:46 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+21:25:46   BUILT x86_64 kernel, loader, ROOT of tests/images/testcases.toml, for bar_map_again  (7s)
+21:25:51 FAIL bar_map_again: the job ended Some(101):
+acpiserver: embedded controller none: no PNP0C09 device is present
+acpiserver: 0 table(s) loaded at run time and 0 refused; the namespace holds 266 objects in 512 slots, and the interpreter 154899 bytes of heap, of the 16777216 it holds between evaluations and the 34155580 while one runs
+acpiserver: the namespace initialised: \_SB._INI absent; 0 _STA read, 0 _INI run, no _REG run; the longest wait an evaluation asked 0 µs; evaluations refused, by kind: none
+acpiserver: the processors' idle states: 0 kept, 0 naming no CPU, 0 refused by the kernel; kept: none; withheld: none; unread: none
+acpiserver: GPEs: 2 with a method in GPE0, 2 of them runtime and enabled, 0 wake events left disabled, 0 past GPE0, 0 naming both triggers
+acpiserver: (this machine's own, quoted in no record) the runtime GPEs are [1, 2]
+acpiserver: no battery: 0 of 0 control-method batteries present, 0 AC adapter(s), with no embedded controller attached; the Global Lock taken 0 times on the way and given back 0 times, the firmware found holding it by 0 of the takes
+bar_map_again: two answers held at once map apart, and the later outlives the earlier
+bar_map_again: BAR 4 asked for and its handle closed; asking again
+bar_map_again: answered with a handle that maps
+bar_map_again: an ask from a full handle table refused; asking again
+bar_map_again: answered after the refusal with a handle that maps
+
+thread 'main' (1) panicked at src/bin/bar_map_again.rs:128:5:
+assertion `left == right` failed: bar_map_again: a BAR's handle mapped after its claim moved
+  left: None
+ right: Some(Gone)
+stack backtrace:
+   0:           0x2738d0 - _Unwind_Backtrace
+   1:           0x24e543 - <<std[550c7110803f5119]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[73b405bef30eeff1]::fmt::Display>::fmt
+   2:           0x2777e7 - core[73b405bef30eeff1]::fmt::write
+   3:           0x251c5b - <std[550c7110803f5119]::sys::stdio::toyos::Stderr as core[73b405bef30eeff1]::io::write::Write>::write_fmt
+   4:           0x238a73 - std[550c7110803f5119]::panicking::default_hook::{closure#0}
+   5:           0x24bcde - std[550c7110803f5119]::panicking::default_hook
+   6:           0x24be99 - std[550c7110803f5119]::panicking::panic_with_hook
+   7:           0x238b2d - std[550c7110803f5119]::panicking::panic_handler::{closure#0}
+   8:           0x230d89 - std[550c7110803f5119]::sys::backtrace::__rust_end_short_backtrace::<std[550c7110803f5119]::panicking::panic_handler::{closure#0}, !>
+   9:           0x239238 - __rustc[d0c72ce299f394e5]::rust_begin_unwind
+  10:           0x277f0b - core[73b405bef30eeff1]::panicking::panic_fmt
+  11:           0x277e7f - core[73b405bef30eeff1]::panicking::assert_failed_inner
+  12:           0x222e0b - core[73b405bef30eeff1]::panicking::assert_failed::<core[73b405bef30eeff1]::option::Option<toyos_abi[f9f222709b0432cb]::syscall::SyscallError>, core[73b405bef30eeff1]::option::Option<toyos_abi[f9f222709b0432cb]::syscall::SyscallError>>
+  13:           0x222674 - bar_map_again[b6d9dac7fda71023]::main
+  14:           0x222d96 - std[550c7110803f5119]::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  15:           0x224180 - std[550c7110803f5119]::rt::lang_start::<()>::{closure#0}
+  16:           0x24b726 - std[550c7110803f5119]::rt::lang_start_internal
+  17:           0x222931 - main
+  18:           0x24cfc3 - std[550c7110803f5119]::sys::pal::toyos::start_rust
+  19:           0x225f4a - _start
+
+21:25:51   FAIL  bar_map_again  (5s)
+21:25:51   --- 1 guests, 0 of them not the shipping kernel, 1 kernel build(s): [""]
+
+21:25:51 host: fastest boot 4639 ms against the reference 1424 ms — liveness ceilings paid at 3.26x
+21:25:51 host: 14 core(s); a guest wider than that waits vcpus/cores longer again
+21:25:51 failures:
+21:25:51     bar_map_again: the job ended Some(101):
+
+21:25:51 test result: FAILED. 0 passed, 1 failed, 0 invalidated, 1 total (15.7s; workers: 11s building, 5s testing)
+21:25:51 [toyos] this red run's serial logs are kept at <worktree>/target/red-run-serial/toyos-tmp-29860-0
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `<worktree>/target/debug/deps/toyos_build-e03b5959f77ae3b7 bar_map_again` (exit status: 1)
+exit 1

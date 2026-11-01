@@ -1,0 +1,15 @@
+diff --git a/kernel/src/syscall/ipc.rs b/kernel/src/syscall/ipc.rs
+index 90dfe0830..e037eddac 100644
+--- a/kernel/src/syscall/ipc.rs
++++ b/kernel/src/syscall/ipc.rs
+@@ -481,9 +481,7 @@ fn send(conn_h: RawHandle, out: &Outgoing<'_>, nonblock: bool) -> Result<(), u64
+         });
+         let tx = match sent {
+             Ok((tx, Ok(()), handed)) => {
+-                for handed in handed {
+-                    handed.revoke();
+-                }
++                drop(handed);
+                 crate::scheduler::post_lending(tx.read_watch(), || tx.set_rt_boost_pending());
+                 return Ok(());
+             }
