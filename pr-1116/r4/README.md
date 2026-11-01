@@ -9,7 +9,7 @@
 - `ci-host-130237c67.log`: `cargo run -- --ci host` at the rebased stack before `0295551c9`. It exited 1, with 1 red of 108: clippy for osbench on both Linux targets, where `super::allowed_cpus` was not found in main's new power reader. Every other step is green. Steps that are required to red, such as `wake-fence-off`, reached their verdicts.
 - `osbench-clippy-x86.log` and `osbench-clippy-arm.log`: the red step's two commands with the Linux fix applied, each exit 0. `0295551c9` changes beyond that only `sys/toyos.rs`, which no Linux build compiles.
 - `qemu.log`: `affinity_pins_hold_on_every_cpu` and `std_threads_count_…` at `130237c67`, both PASS, exit 0. `0295551c9` changes only osbench, which neither builds.
-- `probe-sched.log`: `probe-sched.py` points `osbench_capability_groups_exit_0` at `osbench_sched` on 4 TCG CPUs, at the stack head `a2fd3af47`. The edit is applied at run time and never committed.
+- `probe-sched.log`: `probe-sched.py` points `osbench_capability_groups_exit_0` at `osbench_sched` on 4 TCG CPUs, at `a2fd3af47`, which is #1116 plus #1117. The edit is applied at run time and never committed.
   - It exited 0. `wake.onto_busy` measured with n=200, and `osbench_sched` exited 0.
   - This probe is what found the ToyOS-side rename, `arch::core_of`, which host CI does not build.
 - `r2-busy-test.log`: the new `a_busy_balance_passes_a_heavier_surplus_its_mask_leaves_out`, exit 0.

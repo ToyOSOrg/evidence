@@ -1,4 +1,4 @@
-# PR #1116 r5: ab4, the review-r2 head `a2fd3af47` on metal
+# PR #1116 r5: ab4, #1116 plus #1117 at `a2fd3af47` on metal
 
 There were three boots, each with rc=0: the T14's benchcase and testcases, and the AMD's benchcase. Each was judged with the tree at `a2fd3af47` and the staged words.
 
@@ -10,4 +10,6 @@ There were three boots, each with rc=0: the T14's benchcase and testcases, and t
   - Every osbench group exited 0, and no row refused.
   - `wake_onto_busy` exited 53, which by its contract is its p99 in µs.
 
-After ab4, #1116 was restacked on #1111 without step 2 (`b0a338fe2`). That changed only the parker's mask check and its test.
+`a2fd3af47` is #1117's spawn tie-break on top of #1116's review-r2 head, so every boot here carried both. ab4's image already had `0295551c9`'s power-reader fixes.
+
+**Why the results carry to #1116 at `b0a338fe2`.** The tie-break changes only which CPU a new thread starts on, among the CPUs its mask names. Every pin and move goes through #1116's mask path, and each bench verifies its pins against where the thread ran. Since then #1116 has been restacked on #1111 without step 2, which removed only the parker's mask check and its test.
