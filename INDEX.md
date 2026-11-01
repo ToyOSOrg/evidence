@@ -161,3 +161,28 @@ Metal: the orchestrator ran four AMD boots from a tree pinned at eee39c691, in t
   - a process's reading then reaches the kernel.
 - **QEMU, `a_stalled_hpet_is_left_out`:** exit 0 at the head.
 - **Negative control:** with the demotion arm disabled (`r7/controls/no-demote.patch`, described rather than published as a diff), the stepped test fails: no "DEMOTED" line (`r7/controls/no-demote.log`, exit 1). The code was restored from the copy taken before the mutation.
+
+## r8: review r2's fixes at fec49988c (rebased on main 427f6548e), and the AMD at d33a0de82
+
+### AMD r7, at d33a0de82 (the policy before r2's fixes)
+
+- **Runs:** the orchestrator ran one benchcase boot and one testcases boot, both drivers exiting 0.
+- **Judging:** judged offline as one pair, all four rows PASS: `smp_roster_and_tsc_trail`, `timer_calibration`, `clock_holds_over_minutes` and `irq_census_conservation` (`r8/metal-amd/judge-r7-d33a0de82.log`).
+- **benchcase:** the step was 1,695,132 ns in the span ending at 17.77 s. It was confirmed by the RTC, which read 1,658,781 ns, and slewed away by 24.78 s.
+- **testcases:** the step was 1,723,072 ns in the span ending at 5.71 s. It was unconfirmed by the RTC: no edge yet before the span, since the RTC was armed at 4.67 s. It was slewed away by 12.71 s.
+- Neither boot demoted the TSC, and no per-CPU check fired.
+- **T14 r7:** aborted by the runner (the orchestrator's race, since fixed) and not rerun, since r2's fixes change the code.
+
+### Checks at fec49988c
+
+- **Host CI:** `cargo run -- --ci host` exited 0, with 108 steps green. It includes the new loom, pure and harness tests (`r8/checks/ci-host-fec49988c.log`).
+- **Loom:** `cargo test -p kernel-loom --test clock_latch` exited 0, with 4 passed (`r8/checks/loom-clock_latch.log`).
+  - `a_counter_read_inside_the_section_never_extrapolates_a_superseded_line` holds the new read.
+  - `a_counter_read_after_the_section_can_extrapolate_a_superseded_line` (`should_panic`) shows the old order fails.
+- **Pure:** 21 passed (`r8/checks/pure-reference-tests.log`), including:
+  - the slew paid over two periods: a late sample does not overpay, and a later one is paid back;
+  - the RTC's drift correction: a 60 ppm crystal reads a step and reads a stall as none.
+- **QEMU, before the rebase:** `a_stepped_tsc_is_slewed_then_demoted` and `a_stalled_hpet_is_left_out` exited 0 (`r8/qemu/both-clock-tests.log`). The rebase brought no kernel, ABI or harness change.
+- **Negative controls, each restored from a copy taken before:**
+  - `no-page-demote`: the demotion logged but the page left unmarked. The stepped test fails: no process reading reached the kernel (exit 1).
+  - `no-drift`: the RTC's drift correction zeroed. `the_rtcs_crystal_drift_is_taken_out` fails (exit 101).
