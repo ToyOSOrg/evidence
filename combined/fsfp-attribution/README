@@ -1,0 +1,10 @@
+The T14's attribution boot of the P-256 timing leak, extracted from its readback (kernel log lines only).
+
+- Code: 9217793d2 (the revision that leaked), with an unpushed probe commit on top that sets each
+  mode machine-wide from the kernel and reads it back (`probe_mode: ... uarch_misc_ctl= spec_ctrl=`).
+- Machine: the T14, Intel signature 0x806c1, microcode 0xbe. The readback's verdict: passed.
+- Workload: P-256 public key, 250,000 fixed-versus-random measurements per mode, in run order
+  off, DOITM (IA32_UARCH_MISC_CTL=1), SSBD (SPEC_CTRL=0x4), PSFD (SPEC_CTRL=0x80), DDPD_U (not
+  enumerated, skipped), off, DOITM; a leaky and a null control before and after.
+- Result: off leaks (max |t| 28.98 and 27.50); DOITM, SSBD and PSFD alone each pass
+  (1.93/2.43, 1.94, 2.38). `cpuid.7.2.edx=0x00000001`: PSFD enumerated, DDP_CTRL not.
