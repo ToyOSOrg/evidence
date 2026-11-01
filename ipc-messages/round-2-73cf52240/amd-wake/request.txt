@@ -1,0 +1,17 @@
+# ipc phase 2, AMD wake question. AMD only, four boots, interleaved: base, h1, base, h1.
+# Each invocation is `cargo <words>` from <worktrees>/toyos-ipc-events; give each boot its own readback directory.
+#   base = 18060b521 (#1108, what #1121 now stands on) + measurement-only ipcwake group
+#   h1   = 343a655b1 (#1121 head: whole messages, no call, no scheduler commit) + the same group
+# Jobs per boot: osbench_ipcwake (diary counts per round trip at 4096 and 65536 bytes), then osbench_ipc.
+#
+# Rule, stated before the run (ipcwake.65536 lines, means of the two boots per arm):
+#  - Wake hypothesis HOLDS if h1's client_parks + server_parks per round trip is >= 2x base's and h1's
+#    cross-CPU wakes per round trip rise with it. Then the fix is in the transport's batching or wake policy.
+#  - REJECTED if parks per round trip match (within 25%). Then: if h1's slower boots run client and server
+#    on different LLCs (CPUs 0-7 vs 8-15) and base's faster ones on one, the difference is placement, not
+#    this change; if placement matches, the extra time is in the copies, and I profile them next.
+#  - ipcwake.4096 (one frame each way) is the control: one park per side per round trip in both arms.
+cargo run -p toyos-metal -- --image <scratch>/r2/metal/base/ipcwake/image.img --readback <scratch>/r2/metal/base/ipcwake --fat32-check
+cargo run -p toyos-metal -- --image <scratch>/r2/metal/h1/ipcwake/image.img --readback <scratch>/r2/metal/h1/ipcwake --fat32-check
+cargo run -p toyos-metal -- --image <scratch>/r2/metal/base/ipcwake/image.img --readback <scratch>/r2/metal/base/ipcwake --fat32-check
+cargo run -p toyos-metal -- --image <scratch>/r2/metal/h1/ipcwake/image.img --readback <scratch>/r2/metal/h1/ipcwake --fat32-check
