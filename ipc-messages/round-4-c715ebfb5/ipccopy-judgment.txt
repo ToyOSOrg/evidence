@@ -1,0 +1,23 @@
+ipccopy, one T14 boot and one AMD boot of the same image, check tree ipc-messages-ab-copy eb58854e8
+(on 343a655b1, whole messages). Rule stated before the run: p2/r4/metal/request.txt.
+
+p50 ns                                         T14     AMD
+65536 round trip                             40591   68031
+4096 round trip                               9293    9839
+kernel copy out, 8 KiB (copy_out-copied_out)  1074     591
+kernel copy in, 8 KiB (copy_in-copied_in)      791     591
+kernel copy out, 4 KiB                         798     350
+kernel copy in, 4 KiB                          527     380
+userland copy out of FrameRx, per 8 KiB frame  134    2645
+userland copy out of FrameRx, per 4 KiB frame   83    1365
+
+Judgment:
+- The kernel's copies are not the cost: AMD's are faster than the T14's.
+- The userland copy is. AMD's is 2.5 us slower per 8 KiB frame and 1.3 us per
+  4 KiB frame, which is the regression: about 16 frames x 2.5 us at 65536, and
+  two at 4096 against +1.9 us.
+- So by the rule the fix is a receive into the caller's own buffer, with no
+  copy out of a FrameRx: c715ebfb5.
+- Separately, userland copy_from_slice on the AMD bench runs at about 3 GB/s
+  against the T14's 50, while the kernel's copies there are fast.
+  Recorded as issues/userland-memcpy-on-the-amd-bench-runs-at-a-fifteenth-of-the-t14s.md.

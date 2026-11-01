@@ -1,0 +1,81 @@
+DRIVER: ready
+=== messages_are_whole
+test: test_rs_messages_are_whole
+exit_code: Some(0)
+--- stdout ---
+messages_are_whole: three messages arrived in order, each with its own handles
+messages_are_whole: a short buffer took nothing, and the message came whole after
+messages_are_whole: each bound refused the send past it and moved nothing
+messages_are_whole: plain reads and writes were refused
+messages_are_whole: ok
+=== connect_before_serve
+test: test_rs_connect_before_serve
+exit_code: Some(0)
+--- stdout ---
+  served: the frame was buffered before the server had started
+  left: the client's receive answered gone and its next send was refused
+a client's frame outlives the absence of its server, and its exit is a word
+=== netstack_gone_mid_bind
+test: test_rs_netstack_gone_mid_bind
+exit_code: Some(0)
+--- stdout ---
+  already gone: the connect itself is refused, and sshserver's guard sees NotConnected
+  mid-flight: the handle transfer says the peer is gone
+  mid-flight: the frame write says the peer is gone
+a netstack that leaves mid-bind is a netstack that is not there, at all three syscalls
+=== pipe_other_end_gone
+test: test_rs_pipe_other_end_gone
+exit_code: Some(0)
+--- stdout ---
+  a parked reader was told of its writer and a parked writer of its reader
+  a connection and a file were refused the question
+  an end closed by its own holder answered its watch with NotFound
+pipe_other_end_gone: an end is told when its other end's last holder goes, and not before
+=== abuse_shared_grant
+test: test_rs_abuse_shared_grant
+exit_code: Some(0)
+--- stdout ---
+the region reached the peer it was sent to and no other, a closed handle names nothing, and part of one is its pages
+=== abuse_connect_flood
+test: test_rs_abuse_connect_flood
+exit_code: Some(0)
+--- stdout ---
+  32 unaccepted connections cost 0 KiB of physical memory
+  the first message on a connection allocated 4 KiB
+connect refused after 32 unaccepted, and resumed once one was drained
+=== cpal_drop_unreleased
+test: test_rs_cpal_drop_unreleased
+exit_code: Some(0)
+--- stdout ---
+client: soundserver did not let go of the closed stream within 29.024943ms, its fade and a ring of periods
+cpal's drop came back while its server held the signal, and the next signal ended its stream thread
+=== mutual_kill
+test: test_rs_mutual_kill
+exit_code: Some(0)
+--- stdout ---
+mutual_kill: 64 rounds of two processes killing each other, every one ended
+mutual_kill: a process that killed itself ended killed
+=== window_refusal
+test: test_rs_window_refusal
+exit_code: Some(0)
+--- stdout ---
+window refusal: [Refuse(1)] waiting for the client's request
+window refusal: [Refuse(1)] waiting for the answer
+window refusal: [Refuse(2)] waiting for the client's request
+window refusal: [Refuse(2)] waiting for the answer
+window refusal: [Refuse(4242)] waiting for the client's request
+window refusal: [Refuse(4242)] waiting for the answer
+window refusal: [Unrelated] waiting for the client's request
+window refusal: [Unrelated] waiting for the answer
+window refusal: [Close] waiting for the client's request
+window refusal: [Close] waiting for the answer
+window refusal: [NoBuffer] waiting for the client's request
+window refusal: [NoBuffer] waiting for the answer
+window refusal: [AbsurdScale(0)] waiting for the client's request
+window refusal: [AbsurdScale(0)] waiting for the answer
+window refusal: [AbsurdScale(481)] waiting for the client's request
+window refusal: [AbsurdScale(481)] waiting for the answer
+window refusal: waiting for the client to exit
+8 refusal outcomes decoded, none panicked the client
+DRIVER: quit sent
+exit 0

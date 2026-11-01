@@ -1,0 +1,15 @@
+# #1121 landing A/B: base against head on the same bench. T14 and AMD, each bench interleaved
+# base, head, head, base (four boots per bench). Check trees are the commits themselves:
+#   base = 18060b521 (#1108, what #1121 stands on)
+#   head = c715ebfb5 (#1121: whole messages, the receive into the caller's buffer)
+# Each invocation is `cargo <words>` from <worktrees>/toyos-ipc-events; give each boot its own readback directory.
+# Checksums: <scratch>/r5/metal/image-sha256.txt.
+#
+# Rule, stated before the run (osbench rows, mean of the two p50s per arm, per bench):
+#  - Parity holds on a row if head <= base * 1.05.
+#  - #1121 lands only if parity holds on both benches for ipc.reqrep.8, .4096, .65536, ipc.reqrep_handle.8
+#    and every fs.*.direct.* row.
+#  - A row worse by more than 5% on either bench is investigated before landing. A row whose two base
+#    boots themselves differ by more than 25% (the bimodal AMD rows) is judged against the nearer base boot.
+cargo run -p toyos-metal -- --image <scratch>/r5/metal/base/benchcase/image.img --readback <scratch>/r5/metal/base/benchcase --fat32-check
+cargo run -p toyos-metal -- --image <scratch>/r5/metal/head/benchcase/image.img --readback <scratch>/r5/metal/head/benchcase --fat32-check
