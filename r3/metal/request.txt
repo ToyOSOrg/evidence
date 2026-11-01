@@ -1,0 +1,75 @@
+# T14 scratch-stick reset series: do ToyOS's resets lose a USB stick more often than Ubuntu's restart?
+# Branch stick-hang, worktree $WORKTREE, head efd05be874b8f1379eb1561c7ef70d71feaba850.
+# Every command runs from the worktree. T14 only. It writes the T14's SCRATCH stick and nothing else
+# removable; the AMD bench and every boot stick are untouched. Since #1095 no stick is in a boot's path.
+#
+# R=$SCRATCH/r3
+# Images (staged from the tree committed as efd05be87):
+#   D image: $SCRATCH/r3/metal/scratchdeadline/image.img
+#   R image: $SCRATCH/r3/metal/scratchreboot/image.img
+# Keep every command's full stdout+stderr as $R/runs/<cycle>/run.log, with its UTC start time and exit code.
+
+## 0. Once, before the first cycle (no risk to the bench; destroys the scratch stick's contents only)
+# a) Which disk is the scratch stick. Record the output. Expect exactly one removable USB disk whose one
+#    partition has PARTTYPE 51cc09f9-7442-435b-bc03-0fd8718b0fb5. (No SERIAL column: it identifies the stick.)
+ssh <t14> 'lsblk -o NAME,TRAN,RM,SIZE,MODEL,PARTTYPE; for d in /sys/block/sd*; do echo "$d -> $(readlink -f $d)"; done; lsusb -t'
+# b) Re-adopt it with this branch's --adopt-scratch, which lays the partition on whole MiB; the stick adopted
+#    before is refused by usbd (issues/the-scratch-disk-adopt-scratch-makes-is-not-served.md). /dev/sdX from (a).
+#    The tool refuses any non-removable disk and any disk carrying a ToyOS image.
+cargo run -p toyos-metal -- --adopt-scratch /dev/sdX --dry-run
+cargo run -p toyos-metal -- --adopt-scratch /dev/sdX
+# c) Rehearse the Ubuntu arm: it lists the disks and prints every root line it would run; it writes nothing
+#    and restarts nothing. It must name the scratch disk from (a).
+cargo run -p toyos-metal -- --restart-ubuntu orderly --dry-run
+
+## 1. Pilot: one rotation, then stop and send me the four readback dirs before the series.
+#  Order within a rotation is least risky first. What each cycle risks:
+#  O  Ubuntu `reboot` under a dd write to the scratch stick. Risks the scratch stick only.
+#  R  ToyOS boot from the NVMe install area; scratch_load writes 64 MiB through usbd and asks for the
+#     orderly reboot. Risks the scratch stick; a failed boot falls back to Ubuntu (BootNext is one-shot).
+#  D  ToyOS boot; scratch_load writes until the 40 s boot deadline resets the machine with no USB register
+#     touched. Risks the scratch stick; same fallback.
+#  A  SysRq-b after `sync`, with dd writing the scratch stick: an abrupt reset of the bench's Ubuntu.
+#     Risks the scratch stick, and Ubuntu's root filesystem replays its journal at the next boot (synced
+#     first, so nothing should be lost). LAST in every rotation for that reason.
+cargo run -p toyos-metal -- --restart-ubuntu orderly --readback $R/runs/O1
+cargo run -p toyos-metal -- --image $SCRATCH/r3/metal/scratchreboot/image.img --readback $R/runs/R1/scratchreboot --fat32-check
+cargo run -p toyos-metal -- --image $SCRATCH/r3/metal/scratchdeadline/image.img --readback $R/runs/D1/scratchdeadline --fat32-check
+cargo run -p toyos-metal -- --restart-ubuntu abrupt --readback $R/runs/A1
+# Judge the ToyOS cycles offline (exit 0 = stimulus as designed AND the stick served before and after):
+cargo test --test toyos-build -- --metal --metal-readback $R/runs/R1 scratch_written_through_a_reboot
+cargo test --test toyos-build -- --metal --metal-readback $R/runs/D1 scratch_written_through_a_deadline_reset
+# The Ubuntu cycles are judged by toyos-metal's own exit: 0 = served after; 1 with "the scratch disk came back" = lost;
+# any other refusal (exit 1 or 2) = no cycle: count it in no arm and send it to me.
+
+## 2. The series (after I have read the pilot): rotations O, R, D, A with cycle numbers n = 2, 3, ...
+#  The same four commands and two judges with <n> in place of 1.
+
+## 3. Stop rules, and the decision rule (fixed now, before any cycle)
+# - A LOSS is: an Ubuntu cycle exiting 1 with "the scratch disk came back", or a ToyOS judge red with
+#   "the scratch disk came back". Record cycle, arm, state (unreadable | attached | gone) and $R/runs/<cycle>.
+# - A ToyOS judge red with "lost before ToyOS wrote it" is a loss to the Ubuntu restart INTO ToyOS:
+#   record it, count it in no arm.
+# - Any other red (stimulus missing, a usbd stop that did not finish, a refusal): count it in no arm,
+#   stop the series and send it to me. It may be a ToyOS defect.
+# - After a loss the stick needs a PERSON PRESENT to unplug it and plug it back in (only removing its power
+#   is known to recover one). Then the next cycle's own before-check confirms it is served. With nobody at
+#   the bench, the series STOPS at that loss. Do not try rtcwake/S5 to recover it: whether the T14 wakes
+#   from S5 by RTC is unverified, and a T14 left off is stranded.
+# - The series ends at the 8th loss or after 25 rotations (50 ToyOS cycles, 50 Ubuntu cycles).
+# - Verdict, one-sided sign test at 5% over the k losses in the counted arms:
+#     ToyOS (R+D) loses sticks more often than Ubuntu (O+A) if ToyOS holds 5 of 5, 6 of 6, 7 of 7 or 7 of 8.
+#     Ubuntu loses more by the same counts the other way.
+#     Otherwise no difference is shown; 0 losses in 50 cycles bounds that half's rate under 6% (95%).
+#   D vs A and R vs O are read the same way (25 cycles each will rarely decide).
+
+## The staging run's own listing (one boot per image; the series uses per-cycle readback dirs as above)
+# # One boot per image. Each invocation is `cargo <words>` from this worktree.
+# 
+# scratchdeadline
+#   image: $SCRATCH/r3/metal/scratchdeadline/image.img
+#   cargo run -p toyos-metal -- --image $SCRATCH/r3/metal/scratchdeadline/image.img --readback $SCRATCH/r3/metal/scratchdeadline --fat32-check
+# 
+# scratchreboot
+#   image: $SCRATCH/r3/metal/scratchreboot/image.img
+#   cargo run -p toyos-metal -- --image $SCRATCH/r3/metal/scratchreboot/image.img --readback $SCRATCH/r3/metal/scratchreboot --fat32-check
