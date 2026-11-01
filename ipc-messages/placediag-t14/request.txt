@@ -1,0 +1,30 @@
+# placediag A/B, T14 only: four boots, in this order: head-1, base-2, head-3, base-4.
+# Each invocation is `cargo <words>` from /Users/<user>/Dev/<user>/toyos-ipc-events (any tree; toyos-metal only flashes and reads back).
+# head = ipc-messages-ab-place 1fe04dee7 (PR #1121 at 93adf1c83 + placement notes)
+# base = ipc-messages-ab-place-base b8d291d17 (its merge base main 3add613c1 + the same notes)
+# Both pushed. Measurement only; neither lands. benchcase only: energybenchcase is not asked.
+# Checksums: /Users/<user>/.claude/jobs/2280e09e/tmp/scratchpad/agents/ipc-events/p2/r7/metal/image-sha256.txt
+#
+# Rule, set before the run. Read wake.onto_busy's bench line and every note=placediag.onto_busy line.
+# - If refusals reproduce on head and not on base (head >=1 of 2 refused, base 0 of 2), whole messages
+#   are implicated; the placer_on/landed_on maps then say whether the placer moved off waker_on or the
+#   candidates never landed on the busy CPU.
+# - If both or neither arm refuses, the refusal is not this PR's, and the notes are handed to the
+#   scheduler track as-is.
+# - Two boots per arm cannot rank a rate this low (3 of 6 before); they classify, not measure.
+
+head-1
+  image: /Users/<user>/.claude/jobs/2280e09e/tmp/scratchpad/agents/ipc-events/p2/r7/metal/head/benchcase/image.img
+  cargo run -p toyos-metal -- --image /Users/<user>/.claude/jobs/2280e09e/tmp/scratchpad/agents/ipc-events/p2/r7/metal/head/benchcase/image.img --readback /Users/<user>/.claude/jobs/2280e09e/tmp/scratchpad/agents/ipc-events/p2/r7/metal/runs/t14/head-1 --fat32-check
+
+base-2
+  image: /Users/<user>/.claude/jobs/2280e09e/tmp/scratchpad/agents/ipc-events/p2/r7/metal/base/benchcase/image.img
+  cargo run -p toyos-metal -- --image /Users/<user>/.claude/jobs/2280e09e/tmp/scratchpad/agents/ipc-events/p2/r7/metal/base/benchcase/image.img --readback /Users/<user>/.claude/jobs/2280e09e/tmp/scratchpad/agents/ipc-events/p2/r7/metal/runs/t14/base-2 --fat32-check
+
+head-3
+  image: /Users/<user>/.claude/jobs/2280e09e/tmp/scratchpad/agents/ipc-events/p2/r7/metal/head/benchcase/image.img
+  cargo run -p toyos-metal -- --image /Users/<user>/.claude/jobs/2280e09e/tmp/scratchpad/agents/ipc-events/p2/r7/metal/head/benchcase/image.img --readback /Users/<user>/.claude/jobs/2280e09e/tmp/scratchpad/agents/ipc-events/p2/r7/metal/runs/t14/head-3 --fat32-check
+
+base-4
+  image: /Users/<user>/.claude/jobs/2280e09e/tmp/scratchpad/agents/ipc-events/p2/r7/metal/base/benchcase/image.img
+  cargo run -p toyos-metal -- --image /Users/<user>/.claude/jobs/2280e09e/tmp/scratchpad/agents/ipc-events/p2/r7/metal/base/benchcase/image.img --readback /Users/<user>/.claude/jobs/2280e09e/tmp/scratchpad/agents/ipc-events/p2/r7/metal/runs/t14/base-4 --fat32-check

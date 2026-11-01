@@ -1,0 +1,16 @@
+placediag A/B, T14, 4 boots (orchestrator: all EXIT=0, verdict passed)
+head = ipc-messages-ab-place 1fe04dee7 (#1121 at 93adf1c83 + notes); base = ipc-messages-ab-place-base b8d291d17 (3add613c1 + notes)
+
+Rule (set before the run): head >=1 of 2 refused and base 0 of 2 implicates whole messages; both or neither refusing means not this PR's.
+
+Refusals (staging ok=false): head 0 of 2, base 0 of 2. Neither arm refused. By the rule, the refusal is not shown to be #1121's.
+
+Head-only signature, outside the rule (it was not a criterion, so it is an observation):
+- On both head boots the bench's own thread (the placer, waker_on=2) migrated to CPU 0, the IRQ CPU, during staging and stayed there:
+  1-head from partner 2 (198 of 200 stagings ended off waker_on);
+  3-head from partner 32 (168 of 176 notes).
+  On base, 0 of 2 boots (8 notes each, all placer_before = placer_after = waker_on).
+- 1-head: wake.onto_busy unmeasured. All 200 rounds skipped_waker_on_busy_or_irq.
+  3-head measured: p50 3870, against base 3838 and 3898 ns.
+- Inference, not verified: the earlier "refused" boots (3 of 6 whole-message trees) are the same migration seen at a different moment. A placer moved to CPU 0 spawns candidates the `wanted` closure (fixed at the original waker_on) can miss. So the mechanism is the scheduler moving an unpinned bench thread to an idle CPU 0. Its frequency differs between trees (2/2 vs 0/2 here, a small sample). Nothing in #1121 decides placement; whole messages change only how busy CPU 0's other work is. Not attributed.
+- No correctness failure: every boot passed, and the row is a measurement.
