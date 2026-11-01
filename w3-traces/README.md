@@ -5,6 +5,7 @@ These are W3's trace answering tests for the AX200 (`system/ax2xx/driver/tests/t
 - `ax2xx-tests.log`: `cargo test -p toyos-ax2xx`, exit 0, at the revision above.
 - `ci-host.log`: `cargo run -- --ci host`, exit 0, 107 steps, at the revision above, macOS aarch64 host.
 - `traces.sha256`: hashes of the two trace files as committed. They equal pr-876's `spec/traces` at 9b841a5fd312a0cd6ae341dc8c0dec1e3f6fa204.
-- Negative controls. Each was applied as a patch, built, run with `cargo test -p toyos-ax2xx --test traces` and restored in the same run. Both ran on the same ax2xx sources before the rebase onto main 1f74a559d. The rebase brought in only netstack changes, so their results still apply.
-  - `control-band.patch` / `.log`: swaps the scan channels' band encoding. Run13 goes red.
-  - `control-umac.patch` / `.log`: shifts the UMAC table's data index. Run11 goes red.
+- Negative controls, in `controls-at-head/`, at the revision above. Each patch is only the mutation, applied to the committed tree. Each was built (the log shows the crate compiling), run with `cargo test -p toyos-ax2xx --test traces`, and restored with `git checkout` in the same run. The log ends with the exit code and an empty `git status`.
+  - `control-band`: swaps the 2.4 and 5 GHz band encoding. Exit 101: Run13 fails and the other three tests pass.
+  - `control-umac`: shifts the UMAC table's data index by one. Exit 101: Run11 fails and the other three tests pass.
+- The top-level `control-*.patch` and `control-*.log` are the first round, superseded. They ran before the commit, and `control-band.patch` also carries the then-uncommitted `Command::header` hunk, so it is not a mutation on its own. Kept because this branch is append-only.
