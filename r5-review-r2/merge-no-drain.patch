@@ -1,0 +1,288 @@
+diff --git a/build/vmconsole.rs b/build/vmconsole.rs
+index 7a8cb883a..48ae10cdf 100644
+--- a/build/vmconsole.rs
++++ b/build/vmconsole.rs
+@@ -180,8 +180,8 @@ pub fn merge(mut port: impl Read + AsRawFd, mut uart: Option<UartSocket>, mut sh
+     let mut pending: Vec<u8> = Vec::new();
+     let mut chunk = [0u8; 4096];
+     let mut filter = Uart::default();
+-    // One read of the port: `false` at its end, or once nothing is left to read for.
+-    let mut out = |port: &mut dyn Read, show: &mut dyn FnMut(&[u8]) -> bool| -> bool {
++    // One read of the port.
++    let mut out = |port: &mut dyn Read, show: &mut dyn FnMut(&[u8]) -> bool| -> PortRead {
+         let read = loop {
+             match port.read(&mut chunk) {
+                 Err(e) if e.kind() == io::ErrorKind::Interrupted => continue,
+@@ -189,23 +189,23 @@ pub fn merge(mut port: impl Read + AsRawFd, mut uart: Option<UartSocket>, mut sh
+             }
+         };
+         if read == 0 {
+-            if !pending.is_empty() {
+-                show(&std::mem::take(&mut pending));
++            if !pending.is_empty() && !show(&std::mem::take(&mut pending)) {
++                return PortRead::Stop;
+             }
+-            return false;
++            return PortRead::Ended;
+         }
+         pending.extend_from_slice(&chunk[..read]);
+         while let Some(end) = pending.iter().position(|&b| b == b'\n') {
+             let line: Vec<u8> = pending.drain(..=end).collect();
+             if !show(&line) {
+-                return false;
++                return PortRead::Stop;
+             }
+         }
+-        true
++        PortRead::More
+     };
+     loop {
+         let Some(console) = &mut uart else {
+-            if !out(&mut port, &mut show) {
++            if out(&mut port, &mut show) != PortRead::More {
+                 return;
+             }
+             continue;
+@@ -218,33 +218,53 @@ pub fn merge(mut port: impl Read + AsRawFd, mut uart: Option<UartSocket>, mut sh
+         if unsafe { libc::poll(fds.as_mut_ptr(), 2, -1) } < 0 {
+             continue;
+         }
+-        if fds[0].revents != 0 && !out(&mut port, &mut show) {
+-            return;
+-        }
+-        if fds[1].revents == 0 {
+-            continue;
+-        }
+-        while readable(port.as_raw_fd(), 0) {
+-            if !out(&mut port, &mut show) {
+-                return;
++        let mut port_read = fds[0].revents != 0;
++        let uart_read = fds[1].revents != 0;
++        while port_read {
++            match out(&mut port, &mut show) {
++                PortRead::More => port_read = readable(port.as_raw_fd(), 0),
++                // The UART may still hold what it said last, the stop's
++                // last lines or a fatal report's tail: read to its end too.
++                PortRead::Ended => return,
++                PortRead::Stop => return,
+             }
+         }
++        if uart_read && !console.read_once(&mut filter, &mut show) {
++            uart = None;
++        }
++    }
++}
++
++/// What one read of the console port came to.
++#[derive(Clone, Copy, PartialEq, Eq)]
++enum PortRead {
++    More,
++    Ended,
++    /// `show` asked for nothing more.
++    Stop,
++}
++
++impl UartSocket {
++    /// One read: its bytes into the file and its lines to show through
++    /// `filter`. `false` at the socket's end, or once `show` asks for nothing
++    /// more.
++    fn read_once(&mut self, filter: &mut Uart, show: &mut impl FnMut(&[u8]) -> bool) -> bool {
+         let mut bytes = [0u8; 4096];
+-        match console.stream.read(&mut bytes) {
+-            Ok(0) | Err(_) => uart = None,
+-            Ok(n) => {
+-                // The file keeps every byte; a host that cannot write it has
+-                // lost the record, and says so by ending.
+-                if let Err(e) = console.file.write_all(&bytes[..n]) {
+-                    panic!("the UART's file: {e}");
+-                }
+-                for line in filter.pass(&bytes[..n]) {
+-                    if !show(&line) {
+-                        return;
+-                    }
+-                }
+-            }
++        let n = match self.stream.read(&mut bytes) {
++            Ok(0) | Err(_) => return false,
++            Ok(n) => n,
++        };
++        // The file keeps every byte; a host that cannot write it has lost the
++        // record, and says so by ending.
++        if let Err(e) = self.file.write_all(&bytes[..n]) {
++            panic!("the UART's file: {e}");
+         }
++        filter.pass(&bytes[..n]).iter().all(|line| show(line))
++    }
++
++    /// Every read to the socket's end, which comes with QEMU's own.
++    fn drain(&mut self, filter: &mut Uart, show: &mut impl FnMut(&[u8]) -> bool) {
++        while self.read_once(filter, show) {}
+     }
+ }
+ 
+@@ -491,8 +511,9 @@ mod tests {
+     }
+ 
+     /// **The launch's merge**: the port's lines in order, then the UART's from
+-    /// the carrier's word on, the port drained before each UART read; every
+-    /// UART byte in its file; and the port's last unended line at its end.
++    /// the carrier's word on, the port drained before each UART read; the
++    /// port's last unended line at its end; and what the UART says after the
++    /// port has ended, shown and in its file.
+     #[test]
+     fn the_merge_shows_the_port_and_the_uarts_own_lines_in_order() {
+         let (port, mut port_in) = UnixStream::pair().expect("a pair for the port");
+@@ -502,15 +523,20 @@ mod tests {
+         let file = File::create(&path).expect("the UART's file");
+         let port_text = "[ 0.001 cpu0 kernel] boot: early\n[ 6.500 supervisor] supervisor: started x\n";
+         let death = "[ 7.000 cpu0 kernel alert] PANIC: panicked at a:1:\n";
++        let last = "[ 7.002 cpu0 kernel] Shutting down.\n";
+         let uart_text = format!("[ 0.001 cpu0 kernel] boot: early\n{QUIET}{death}");
+         port_in.write_all(port_text.as_bytes()).expect("the port's bytes");
+         uart_in.write_all(uart_text.as_bytes()).expect("the UART's bytes");
+-        drop(uart_in);
+-        // The port's last bytes once the UART's line is shown, and then its end.
++        // Once the UART's line is shown: the port's last, unended bytes and
++        // its end, and only then the UART's last line and its end, as QEMU's
++        // exit can leave them.
+         let (seen, seen_rx) = std::sync::mpsc::channel::<Vec<u8>>();
+         let ender = std::thread::spawn(move || {
+             while seen_rx.recv().is_ok_and(|line| line != death.as_bytes()) {}
+             port_in.write_all(b"[ 7.001 cpu0 kernel] cut mid-li").expect("the port's last bytes");
++            drop(port_in);
++            while seen_rx.recv().is_ok_and(|line| !line.ends_with(b"cut mid-li")) {}
++            uart_in.write_all(last.as_bytes()).expect("the UART's last line");
+         });
+         let mut shown = Vec::new();
+         merge(port, Some(UartSocket { stream: uart, file }), |line| {
+@@ -518,9 +544,10 @@ mod tests {
+             let _ = seen.send(line.to_vec());
+             true
+         });
+-        ender.join().expect("the port's writer");
+-        let want = format!("{port_text}{death}[ 7.001 cpu0 kernel] cut mid-li");
++        ender.join().expect("the writer");
++        let want = format!("{port_text}{death}[ 7.001 cpu0 kernel] cut mid-li{last}");
+         assert_eq!(String::from_utf8(shown).expect("UTF-8"), want);
+-        assert_eq!(std::fs::read_to_string(&path).expect("the UART's file"), uart_text);
++        assert_eq!(std::fs::read_to_string(&path).expect("the UART's file"), format!("{uart_text}{last}"));
+     }
++
+ }
+diff --git a/lib/logstream/src/lib.rs b/lib/logstream/src/lib.rs
+index a1eb5c364..572e43336 100644
+--- a/lib/logstream/src/lib.rs
++++ b/lib/logstream/src/lib.rs
+@@ -58,6 +58,11 @@ pub const CARRIER: &str = "log-carrier";
+ /// The one row that may receive [`CARRIER`]: the virtio console device's driver.
+ pub const CARRIER_HOLDER: &str = "virtio-console";
+ 
++/// What `logkeeper` says once the carrier's channel has taken nothing it is
++/// owed for its bound and the UART carries the log beside it: lines can then
++/// reach both channels, out of order.
++pub const CARRIER_STALLED: &str = "logkeeper: the console carrier's channel has taken none of";
++
+ /// A carrier's request on [`CARRIER`]: a bare frame, answered by [`SERVED`].
+ pub const CARRY: u32 = 8;
+ 
+diff --git a/system/logkeeper/src/carrier.rs b/system/logkeeper/src/carrier.rs
+index 49a549b71..ce3591d3f 100644
+--- a/system/logkeeper/src/carrier.rs
++++ b/system/logkeeper/src/carrier.rs
+@@ -5,11 +5,13 @@
+ //! byte, and comes back once the carrier goes, the machine stops, or the
+ //! channel takes nothing of what it is owed for [`STALL`]** ([`Carriage`]):
+ //! a carrier that is stuck but alive never leaves the UART silent. The UART
+-//! is quiet again once the channel takes more; meanwhile both carry the log. The carrier is handed the boot from its first line like any
+-//! reader, with no stall bound: a slow channel is not a failed one. It says on
+-//! its connection how much of its pipe its channel has taken ([`DELIVERED`]),
+-//! which is how the stop knows the channel has the log up to the flush before
+-//! the UART takes the rest ([`Carrier::stop`]).
++//! is quiet again once the channel takes more; meanwhile both carry the log.
++//!
++//! **A slow channel is never let go**: the carrier is handed the boot from
++//! its first line like any reader, and keeps it however long its channel
++//! takes. It says on its connection how much of its pipe its channel has
++//! taken ([`DELIVERED`]), which is how the stop knows the channel has the log
++//! up to the flush before the UART takes the rest ([`Carrier::stop`]).
+ //!
+ //! **This program's own end is the kernel's to answer**: the console it says
+ //! the log is carried on goes with this process, and the kernel gives the log
+@@ -26,7 +28,7 @@ use toyos::poller::{Poller, READABLE, WRITABLE};
+ use toyos::port::Acceptor;
+ use toyos::{say, Console, Pipe};
+ use toyos_abi::syscall::SyscallError;
+-use toyos_logstream::{CARRY, DELIVERED};
++use toyos_logstream::{CARRIER_STALLED, CARRY, DELIVERED};
+ 
+ use crate::serve::Hub;
+ 
+@@ -36,11 +38,12 @@ use crate::serve::Hub;
+ const STOP_WAIT: Duration = Duration::from_secs(2);
+ 
+ /// How long the carrier's channel may take nothing of the bytes it is owed
+-/// before the UART carries the log too: policy, past what a channel that
+-/// takes bytes at all leaves untaken — QEMU 11.1.1 takes a port's transmit at
+-/// once, measured — and short enough that a wedge costs the operator seconds.
++/// before the UART carries the log too. Policy, short because the costs are
++/// lopsided: a false stall only duplicates lines on both channels, and a
++/// missed one leaves both silent.
+ pub const STALL: Duration = Duration::from_secs(5);
+ 
++
+ /// What the kernel is to be told about the console UART.
+ #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+ pub enum Tell {
+@@ -272,11 +275,13 @@ impl Carrier {
+             }
+             let owed = state.carriage.owed();
+             let tell = state.carriage.tick(now);
+-            say!(
+-                "logkeeper: the console carrier's channel has taken none of {owed} bytes owed it for {} s; \
+-                 the UART carries the log too until it takes more",
+-                STALL.as_secs()
+-            );
++            // A channel that never took the first byte left the UART loud.
++            if tell == Some(Tell::Loud) {
++                say!(
++                    "{CARRIER_STALLED} {owed} bytes owed it for {} s; the UART carries the log too until it takes more",
++                    STALL.as_secs()
++                );
++            }
+             self.tell(tell);
+         }
+     }
+diff --git a/system/virtio-console/src/console.rs b/system/virtio-console/src/console.rs
+index 775d7f0eb..a2ecf8923 100644
+--- a/system/virtio-console/src/console.rs
++++ b/system/virtio-console/src/console.rs
+@@ -70,7 +70,12 @@ pub fn run(mut channel: Channel, probe: Probe, held: Vec<Control>, poller: Polle
+         if console.channel.can_transmit() {
+             poller.watch(&console.log, READABLE, TOKEN_LOG);
+         }
+-        let timeout = console.channel.oldest().map_or(u64::MAX, |at| crate::until(at, SILENT));
++        // Once the silence is said, only the device's taking the transmit,
++        // which interrupts, has anything to change.
++        let timeout = match console.silent_since {
++            Some(_) => u64::MAX,
++            None => console.channel.oldest().map_or(u64::MAX, |at| crate::until(at, SILENT)),
++        };
+         let mut interrupted = false;
+         poller.wait(1, timeout, |token| interrupted |= token == TOKEN_CLAIM);
+         if interrupted {
+diff --git a/tests/common/serial.rs b/tests/common/serial.rs
+index acce5200e..158841ca6 100644
+--- a/tests/common/serial.rs
++++ b/tests/common/serial.rs
+@@ -238,6 +238,11 @@ impl Serial {
+ /// all — so the only capture allowed to hold one is the capture of the test
+ /// that staged it, and every other boot in the estate reds.
+ const NEVER_CLEAN: &[&str] = &[
++    // system/logkeeper/src/carrier.rs — the console carrier's channel took
++    // nothing for its bound, so the UART carries the log beside it, and every
++    // line after can be on both channels, out of order: under QEMU, whose host
++    // reads at once, a defect, and one that would mislead any count or order.
++    toyos_logstream::CARRIER_STALLED,
+     // kernel/src/iommu/fault.rs — a function a *process* drives reached an
+     // address its own domain does not map. The machine goes on and the claim
+     // refuses every later call, so this is not a death; it is a driver whose
