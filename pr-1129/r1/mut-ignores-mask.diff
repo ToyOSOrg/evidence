@@ -1,0 +1,11 @@
+--- <tmp>	2026-11-01 03:01:58
++++ kernel/pure/sched/cpu.rs	2026-11-01 03:02:17
+@@ -1190,7 +1190,7 @@
+         let mask = task.affinity();
+         env.cpus.idle_near(waker, topology.position(waker), |cpu| {
+             topology.llc_index(cpu.id()) == llc
+-                && mask.contains(cpu.id())
++                && (mask.contains(cpu.id()) || true)
+                 && cpu.doorbell().sleeping()
+                 && cpu.answering(now)
+         })

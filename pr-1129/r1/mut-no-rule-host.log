@@ -1,0 +1,27 @@
+    Blocking waiting for file lock on package cache
+   Compiling kernel v0.1.0 ($HOME/Dev/<user>/toyos-sched-place/kernel)
+    Finished `test` profile [optimized + debuginfo] target(s) in 2.13s
+     Running unittests pure/lib.rs (target/debug/deps/kernel-fa45b686f8e87f8e)
+
+running 4 tests
+test sched::cpu::tests::a_task_adopted_outside_its_mask_is_sent_to_a_cpu_it_names ... ok
+test sched::cpu::tests::a_task_masked_out_of_its_wakers_llc_stays_home ... ok
+test sched::cpu::tests::a_task_woken_from_two_llcs_in_turn_stays_home ... ok
+test sched::cpu::tests::a_task_woken_twice_from_another_llc_moves_into_it ... FAILED
+
+failures:
+
+---- sched::cpu::tests::a_task_woken_twice_from_another_llc_moves_into_it stdout ----
+
+thread 'sched::cpu::tests::a_task_woken_twice_from_another_llc_moves_into_it' (117738672) panicked at kernel/pure/sched/cpu.rs:4607:9:
+the second wake from LLC 1 handed it to a CPU of LLC 1, and it is Running(CpuId(0))
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    sched::cpu::tests::a_task_woken_twice_from_another_llc_moves_into_it
+
+test result: FAILED. 3 passed; 1 failed; 0 ignored; 0 measured; 380 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p kernel --lib`
+exit 101
