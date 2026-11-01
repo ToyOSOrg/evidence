@@ -1,0 +1,14 @@
+# 7a r2 runs (paged-7a dd8821553), each from <worktree> Base images are the r1 A/B's (28a8aac17), already run.
+# The r2 fix touches the SDK's read path (one descriptor lookup per read again), so the benchcase head is run again beside the base.
+T14 and AMD, benchcase: base, head, base, head (rows fs.disk.* and fs.mem.*)
+  base: <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/fs-paged/ab/base/benchcase/image.img
+  head: <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/fs-paged/ab2/benchcase/image.img
+  cargo run -p toyos-metal -- --image <image> --readback <dir> --fat32-check
+T14 and AMD, head testcases: a_served_file_reads_through_its_paged_object, served_file_offset, a_pager_s_end_answers_its_waiting_holders_gone
+  cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/fs-paged/ab2/testcases/image.img --readback <dir> --fat32-check
+T14, head proctreecase: app_view
+  cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/fs-paged/ab2/proctreecase/image.img --readback <dir> --fat32-check
+fb5b41a17950062b4d1acf842f648e01e9c201d14d8379ad8ae23ee42415c3eb  ab/base/benchcase/image.img
+3998cb7056bc656d7e67499c43944a7100a87c9edc5ea16a37cce33b7ed5c5d7  ab2/benchcase/image.img
+9d51fb46491ac036ae9a50457e2fdac4682d0c7cbf8e20540363fa7b3eb8497d  ab2/testcases/image.img
+20029817a1ef1547759e67c9bb0e7b55eeec2638d9d25a8b299c328e38b8f220  ab2/proctreecase/image.img
