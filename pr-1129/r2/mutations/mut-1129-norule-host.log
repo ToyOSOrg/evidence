@@ -1,0 +1,34 @@
+   Compiling kernel v0.1.0 ($HOME/Dev/<user>/toyos-sched-place/kernel)
+    Finished `test` profile [optimized + debuginfo] target(s) in 22.25s
+     Running unittests pure/lib.rs (target/debug/deps/kernel-fa45b686f8e87f8e)
+
+running 5 tests
+test cpu::tests::a_cpu_that_describes_no_cache_has_one_llc_per_package ... ok
+test sched::cpu::tests::a_task_masked_out_of_its_wakers_llc_stays_home ... ok
+test sched::cpu::tests::a_wake_from_home_breaks_the_run ... ok
+test sched::cpu::tests::a_run_of_wakes_from_another_llc_moves_the_task_into_it ... FAILED
+test sched::cpu::tests::two_runs_ending_in_one_drain_go_to_two_cpus ... FAILED
+
+failures:
+
+---- sched::cpu::tests::a_run_of_wakes_from_another_llc_moves_the_task_into_it stdout ----
+
+thread 'sched::cpu::tests::a_run_of_wakes_from_another_llc_moves_the_task_into_it' (120736397) panicked at kernel/pure/sched/cpu.rs:4701:9:
+the run's last wake handed it to a CPU of LLC 1, and it is Running(CpuId(0))
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- sched::cpu::tests::two_runs_ending_in_one_drain_go_to_two_cpus stdout ----
+
+thread 'sched::cpu::tests::two_runs_ending_in_one_drain_go_to_two_cpus' (120736400) panicked at kernel/pure/sched/cpu.rs:4750:18:
+the two moves did not go to two CPUs of LLC 1: [Running(CpuId(0)), Ready(CpuId(0))]
+
+
+failures:
+    sched::cpu::tests::a_run_of_wakes_from_another_llc_moves_the_task_into_it
+    sched::cpu::tests::two_runs_ending_in_one_drain_go_to_two_cpus
+
+test result: FAILED. 3 passed; 2 failed; 0 ignored; 0 measured; 383 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p kernel --lib`
+MUTATION_EXIT=101
+restored

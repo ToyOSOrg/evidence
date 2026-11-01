@@ -1,0 +1,39 @@
+# #1129 A/B on the AMD bench: 8 benchcase boots, interleaved base, head, base, head...
+# base 5aa902055 = the stack (#1117 head 8ab51591b) + #1126's ran= field; head eb93d942c = #1129 (b8bd0ea02) + the same. Both branches pushed
+#   (sched-diag-wake-base, sched-diag-wake-head).
+# Judge each readback with the check tree at its arm's revision: `--metal --metal-readback <dir> --metal-host toyos@bench-amd boot:benchcase`.
+#   (boot:benchcase takes in the T14-only I219 rows, which red on the AMD and say nothing.)
+# Read: each ipc.* and fs.disk.* row's ran= field and p50 (split LLCs against one), ipc.reqrep.65536 among them for #1121;
+#   osbench's fair and sched rows for regressions.
+
+benchcase (base-1, 5aa902055, image sha256 36efecd3bdb1d88d)
+  image: $HOME/.claude/jobs/2280e09e<tmp>
+  cargo run -p toyos-metal -- --image $HOME/.claude/jobs/2280e09e<tmp> --readback $HOME/.claude/jobs/2280e09e<tmp> --fat32-check --host toyos@bench-amd
+
+benchcase (head-1, eb93d942c, image sha256 c7d52eecf8cfe18e)
+  image: $HOME/.claude/jobs/2280e09e<tmp>
+  cargo run -p toyos-metal -- --image $HOME/.claude/jobs/2280e09e<tmp> --readback $HOME/.claude/jobs/2280e09e<tmp> --fat32-check --host toyos@bench-amd
+
+benchcase (base-2, 5aa902055, image sha256 36efecd3bdb1d88d)
+  image: $HOME/.claude/jobs/2280e09e<tmp>
+  cargo run -p toyos-metal -- --image $HOME/.claude/jobs/2280e09e<tmp> --readback $HOME/.claude/jobs/2280e09e<tmp> --fat32-check --host toyos@bench-amd
+
+benchcase (head-2, eb93d942c, image sha256 c7d52eecf8cfe18e)
+  image: $HOME/.claude/jobs/2280e09e<tmp>
+  cargo run -p toyos-metal -- --image $HOME/.claude/jobs/2280e09e<tmp> --readback $HOME/.claude/jobs/2280e09e<tmp> --fat32-check --host toyos@bench-amd
+
+benchcase (base-3, 5aa902055, image sha256 36efecd3bdb1d88d)
+  image: $HOME/.claude/jobs/2280e09e<tmp>
+  cargo run -p toyos-metal -- --image $HOME/.claude/jobs/2280e09e<tmp> --readback $HOME/.claude/jobs/2280e09e<tmp> --fat32-check --host toyos@bench-amd
+
+benchcase (head-3, eb93d942c, image sha256 c7d52eecf8cfe18e)
+  image: $HOME/.claude/jobs/2280e09e<tmp>
+  cargo run -p toyos-metal -- --image $HOME/.claude/jobs/2280e09e<tmp> --readback $HOME/.claude/jobs/2280e09e<tmp> --fat32-check --host toyos@bench-amd
+
+benchcase (base-4, 5aa902055, image sha256 36efecd3bdb1d88d)
+  image: $HOME/.claude/jobs/2280e09e<tmp>
+  cargo run -p toyos-metal -- --image $HOME/.claude/jobs/2280e09e<tmp> --readback $HOME/.claude/jobs/2280e09e<tmp> --fat32-check --host toyos@bench-amd
+
+benchcase (head-4, eb93d942c, image sha256 c7d52eecf8cfe18e)
+  image: $HOME/.claude/jobs/2280e09e<tmp>
+  cargo run -p toyos-metal -- --image $HOME/.claude/jobs/2280e09e<tmp> --readback $HOME/.claude/jobs/2280e09e<tmp> --fat32-check --host toyos@bench-amd

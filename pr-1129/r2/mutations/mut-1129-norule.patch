@@ -1,0 +1,12 @@
+--- a/kernel/pure/sched/cpu.rs
++++ b/kernel/pure/sched/cpu.rs
+@@ -1201,6 +1201,9 @@
+         env: Env<'_, H, P>,
+     ) -> Option<CpuId> {
+         let waker = cause.waker?;
++        if waker.0 < u32::MAX {
++            return None;
++        }
+         let topology = env.cpus.topology();
+         let llc = topology.llc_index(waker);
+         let run = task.count_waker_llc(llc);
