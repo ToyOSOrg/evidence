@@ -1,0 +1,11 @@
+--- <scratch>.fixed.rs	2026-11-01 20:18:44
++++ <scratch>/control-b.rs	2026-11-01 20:18:44
+@@ -389,6 +389,8 @@
+     let began = Instant::now();
+     let mut said = began;
+     let mut pause = Duration::from_millis(1);
++    let blocked = match mode { Mode::Shared => file.lock_shared(), Mode::Exclusive => file.lock() };
++    blocked.unwrap();
+     while !try_lock(file, mode) {
+         let now = Instant::now();
+         if now >= deadline {

@@ -1,0 +1,16 @@
+--- <scratch>.fixed.rs	2026-11-01 20:23:11
++++ <scratch>/control-d.rs	2026-11-01 20:23:11
+@@ -223,10 +223,9 @@
+ /// waited for by every other process that wants the same key, which then finds
+ /// it made.
+ fn keyed_building(store: &Path, kind: Keyed, key: &Key) -> Option<Guard> {
+-    let file = open_lock_file(&keyed_lock_path(store, kind, key));
+-    if !try_lock(&file, Mode::Exclusive) {
+-        return None;
+-    }
++    let path = keyed_lock_path(store, kind, key);
++    let file = open_lock_file(&path);
++    take(&file, Mode::Exclusive, &path, "key lock", "building", UNNOTED, Instant::now() + CEILING);
+     let mut guard = Guard { file, records_holder: true };
+     write_note(&mut guard.file, &note_text(&format!("building {} {key}", kind.name())));
+     Some(guard)
