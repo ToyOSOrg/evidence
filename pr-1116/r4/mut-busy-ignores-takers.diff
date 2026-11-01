@@ -1,0 +1,11 @@
+--- <tmp>	2026-11-01 00:39:13
++++ kernel/pure/sched/cpu.rs	2026-11-01 00:39:13
+@@ -2129,7 +2129,7 @@
+         let heaviest = STEAL_RINGS
+             .into_iter()
+             .flat_map(|(inner, outer)| cpus.topology().ring(me, inner, outer, 0))
+-            .filter(|&cpu| cpus.offers_surplus(cpu) && cpus.get(cpu).takes(me) && cpus.get(cpu).answering(now))
++            .filter(|&cpu| cpus.offers_surplus(cpu) && cpus.get(cpu).answering(now))
+             .map(|cpu| (cpus.get(cpu).weight(), cpu))
+             .fold(None, |best: Option<(u64, CpuId)>, (weight, cpu)| match best {
+                 Some((most, _)) if most >= weight => best,
