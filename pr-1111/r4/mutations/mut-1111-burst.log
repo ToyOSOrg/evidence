@@ -1,0 +1,35 @@
+   Compiling kernel v0.1.0 ($HOME/Dev/<user>/toyos-sched-place/kernel)
+    Finished `test` profile [optimized + debuginfo] target(s) in 3.47s
+     Running unittests pure/lib.rs (target/debug/deps/kernel-fa45b686f8e87f8e)
+
+running 6 tests
+test sched::cpu::tests::a_wake_its_poster_exits_behind_runs_where_it_was_posted ... ok
+test sched::cpu::tests::a_wake_its_poster_parks_behind_runs_where_it_was_posted ... ok
+test sched::cpu::tests::a_burst_of_wakes_forwards_one_per_idle_sibling ... ok
+test sched::cpu::tests::a_wake_its_poster_yields_behind_is_still_forwarded ... ok
+test sched::cpu::tests::an_rt_burst_its_poster_parks_behind_keeps_one_here ... FAILED
+test sched::cpu::tests::a_fair_burst_its_poster_parks_behind_keeps_one_here ... FAILED
+
+failures:
+
+---- sched::cpu::tests::an_rt_burst_its_poster_parks_behind_keeps_one_here stdout ----
+
+thread 'sched::cpu::tests::an_rt_burst_its_poster_parks_behind_keeps_one_here' (120323056) panicked at kernel/pure/sched/cpu.rs:4278:9:
+and the other went to the idle sibling: [Running(CpuId(0)), Ready(CpuId(0))]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- sched::cpu::tests::a_fair_burst_its_poster_parks_behind_keeps_one_here stdout ----
+
+thread 'sched::cpu::tests::a_fair_burst_its_poster_parks_behind_keeps_one_here' (120323052) panicked at kernel/pure/sched/cpu.rs:4278:9:
+and the other went to the idle sibling: [Running(CpuId(0)), Ready(CpuId(0))]
+
+
+failures:
+    sched::cpu::tests::a_fair_burst_its_poster_parks_behind_keeps_one_here
+    sched::cpu::tests::an_rt_burst_its_poster_parks_behind_keeps_one_here
+
+test result: FAILED. 4 passed; 2 failed; 0 ignored; 0 measured; 363 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p kernel --lib`
+MUTATION_EXIT=101
+restored
