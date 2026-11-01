@@ -186,3 +186,14 @@ Metal: the orchestrator ran four AMD boots from a tree pinned at eee39c691, in t
 - **Negative controls, each restored from a copy taken before:**
   - `no-page-demote`: the demotion logged but the page left unmarked. The stepped test fails: no process reading reached the kernel (exit 1).
   - `no-drift`: the RTC's drift correction zeroed. `the_rtcs_crystal_drift_is_taken_out` fails (exit 101).
+
+## r9: the T14 at fec49988c
+
+- **Runs:** the orchestrator ran one benchcase boot (266 s) and one testcases boot (90 s), both drivers exiting 0.
+- **Judging:** judged offline at fec49988c, all four rows PASS: `irq_census_conservation`, `smp_roster_and_tsc_trail`, `timer_calibration` and `clock_holds_over_minutes` (`r9/metal-t14/judge-fec49988c.log`).
+- **The clock:**
+  - it keeps CPUID 15H's 2,419,200,000.663 Hz;
+  - over 128 s the HPET measured 32 ppb from it, within 156 ppb;
+  - no span was left out, no TSC step, no demotion;
+  - the RTC's IRQ8 armed on gsi 8.
+- **A judge printing defect:** this judging showed every report line, because the left-out match was too wide. It is fixed in the next commit, which only narrows what is printed. Re-judged with that fix, the same four rows pass.
