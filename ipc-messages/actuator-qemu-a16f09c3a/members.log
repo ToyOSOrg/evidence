@@ -1,0 +1,69 @@
+DRIVER: ready
+=== abuse_kernel_addr
+test: test_rs_abuse_kernel_addr
+exit_code: Some(0)
+--- stdout ---
+dlopen and futex refuse an address they may not reach, and kernel memory is untouched
+=== handle_lifetime
+test: test_rs_handle_lifetime
+exit_code: Some(0)
+--- stdout ---
+  an undefined OpenFlags bit is InvalidArgument, and without it the same open works
+file, acceptor and ring each outlive the first close and are released by kill
+=== shm_release_reclaims
+test: test_rs_shm_release_reclaims
+exit_code: Some(0)
+--- stdout ---
+dropped regions reclaimed (16 live SharedMem out and back); a sent region survived its maker letting go
+=== spawn_returns_the_census
+test: test_rs_spawn_returns_the_census
+exit_code: Some(0)
+--- stdout ---
+held
+held
+held
+held
+held
+held
+held
+held
+8 spawns from the served /system: the census came back to its first reading
+held
+held
+held
+held
+held
+held
+held
+held
+8 spawns from a copy in /state: the census came back to its first reading
+held
+held
+held
+held
+held
+held
+held
+held
+8 spawns from a copy in /tmp: the census came back to its first reading
+=== spawn_lands_claimed
+test: test_rs_spawn_lands_claimed
+exit_code: Some(0)
+--- stdout ---
+spawn_lands_claimed: the child landed claimed and was retired, and its place was published after it
+=== spawn_child_ends_first
+test: test_rs_spawn_child_ends_first
+exit_code: Some(0)
+--- stdout ---
+spawn_child_ends_first: the spawn answered a child that had already ended, and a refused one started none
+=== counters_silent
+test: test_rs_counters_silent
+exit_code: Some(0)
+--- stdout ---
+counters_silent: cpu1 was read stale while silent, and answered once heard
+=== ring0_timer_in_syscall
+test: test_rs_ring0_timer_in_syscall
+exit_code: Some(0)
+--- stdout ---
+ring0_timer_in_syscall: the timer interrupted the syscall's body and re-armed a quantum
+DRIVER: quit sent
