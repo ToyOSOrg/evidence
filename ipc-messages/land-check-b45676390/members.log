@@ -1,0 +1,71 @@
+DRIVER: ready
+=== a_served_file_reads_through_its_paged_object
+test: test_rs_a_served_file_reads_through_its_paged_object
+exit_code: Some(0)
+--- stdout ---
+a_served_file_reads_through_its_paged_object: the holder reads what the server wrote
+a_served_file_reads_through_its_paged_object: a reopen reads the same, a directory has none
+a_served_file_reads_through_its_paged_object: std reads the same
+a_served_file_reads_through_its_paged_object: ok
+=== served_file_offset
+test: test_rs_served_file_offset
+exit_code: Some(0)
+--- stdout ---
+served_file_offset: passed
+=== a_pager_s_end_answers_its_waiting_holders_gone
+test: test_rs_a_pager_s_end_answers_its_waiting_holders_gone
+exit_code: Some(0)
+--- stdout ---
+pagerprobe: more than 512 MiB in one object withdrawn, released and left for the end
+pagerprobe: a pager is refused a holder's read
+pagerprobe --hold: a pipe end sent as a holder is refused, and this process lives
+pagerprobe: the helper waits on a page nobody supplies; ending the pager
+pagerprobe --hold: the pager's end answered the wait Gone
+pagerprobe: ok
+a_pager_s_end_answers_its_waiting_holders_gone: ok
+=== std_fs
+test: test_rs_std_fs
+exit_code: Some(0)
+--- stdout ---
+
+thread 'main' (1) panicked at library/std/src/io/stdio.rs:1168:9:
+failed printing to stdout: broken pipe
+stack backtrace:
+   0:           0x2c7160 - _Unwind_Backtrace
+   1:           0x2961b3 - <<std[542e2ee52da5a081]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[73b405bef30eeff1]::fmt::Display>::fmt
+   2:           0x2cd5f7 - core[73b405bef30eeff1]::fmt::write
+   3:           0x29bf5b - <std[542e2ee52da5a081]::sys::stdio::toyos::Stderr as core[73b405bef30eeff1]::io::write::Write>::write_fmt
+   4:           0x276233 - std[542e2ee52da5a081]::panicking::default_hook::{closure#0}
+   5:           0x29171e - std[542e2ee52da5a081]::panicking::default_hook
+   6:           0x2918d9 - std[542e2ee52da5a081]::panicking::panic_with_hook
+   7:           0x2762ed - std[542e2ee52da5a081]::panicking::panic_handler::{closure#0}
+   8:           0x26dd69 - std[542e2ee52da5a081]::sys::backtrace::__rust_end_short_backtrace::<std[542e2ee52da5a081]::panicking::panic_handler::{closure#0}, !>
+   9:           0x276a88 - __rustc[d0c72ce299f394e5]::rust_begin_unwind
+  10:           0x2cdd7b - core[73b405bef30eeff1]::panicking::panic_fmt
+  11:           0x291daf - std[542e2ee52da5a081]::io::stdio::_print
+  12:           0x251fc8 - toybox[5fd70464e7e9353b]::echo::main
+  13:           0x24f92a - toybox[5fd70464e7e9353b]::run
+  14:           0x24fb25 - toybox[5fd70464e7e9353b]::main
+  15:           0x24d106 - std[542e2ee52da5a081]::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  16:           0x243660 - std[542e2ee52da5a081]::rt::lang_start::<()>::{closure#0}
+  17:           0x290b46 - std[542e2ee52da5a081]::rt::lang_start_internal
+  18:           0x24fd71 - main
+  19:           0x2938e3 - std[542e2ee52da5a081]::sys::pal::toyos::start_rust
+  20:           0x260296 - _start
+  file types: ok
+all fs tests passed
+=== file_mtime
+test: test_rs_file_mtime
+exit_code: Some(0)
+--- stdout ---
+file-mtime: /tmp stamps 1793542209073306053 then 1793542209073438926
+=== messages_are_whole
+test: test_rs_messages_are_whole
+exit_code: Some(0)
+--- stdout ---
+messages_are_whole: three messages arrived in order, each with its own handles
+messages_are_whole: a short buffer took nothing, and the message came whole after
+messages_are_whole: each bound refused the send past it and moved nothing
+messages_are_whole: plain reads and writes were refused
+messages_are_whole: ok
+DRIVER: quit sent
