@@ -1,0 +1,12 @@
+# ipc phase 2: where whole messages' extra AMD time goes. One boot on the AMD and one on the T14,
+# the same image. Check tree: ipc-messages-ab-copy eb58854e8 (on 343a655b1, whole messages).
+# Each invocation is `cargo <words>` from <worktrees>/toyos-ipc-events; give each bench its own readback directory.
+#
+# Rule, stated before the run (note=ipccopy.65536.* and .4096.*, p50, AMD against T14):
+#  - The kernel's copy is the cost if AMD's copy_in-copied_in or copy_out-copied_out exceeds the
+#    T14's by >= 1 us per 8 KiB frame. The fix is then in the queue's copy (kernel/src/frame_bytes.rs).
+#  - The userland copy is the cost if AMD's client_user_copy_ns_per_frame exceeds the T14's by >= 1 us.
+#    The fix is then a receive into the caller's own buffer, with no copy out of a FrameRx.
+#  - Neither: the split's other segments (enter-copy_in, copied_out-exit, the resumed spans) say
+#    where, and I report them before choosing a fix.
+cargo run -p toyos-metal -- --image <scratch>/r4/metal/ipccopy/image.img --readback <scratch>/r4/metal/ipccopy --fat32-check

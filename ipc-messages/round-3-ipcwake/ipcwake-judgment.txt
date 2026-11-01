@@ -1,0 +1,27 @@
+ipcwake, AMD, four boots (readbacks p2/r2/metal/runs), check trees 9d5d6b2c3 (base) / 580c44a64 (h1).
+Rule stated before the run: p2/r2/metal/request.txt.
+
+boot    row    p50_ns  client_parks server_parks client_cpus      server_cpus
+base-1  4096    7535   1.00         1.00         1:1000           2:1000
+base-1  65536  30389   1.00         1.00         1:1006           2:1007
+h1-2    4096    9488   1.00         1.00         1:1000           2:1000
+h1-2    65536  65937   1.00         1.00         1:1010           2:114,6:897
+base-3  4096    7665   1.00         1.00         1:1000           2:1000
+base-3  65536  31280   1.00         1.00         1:1006           2:1007
+h1-4    4096    9529   1.00         1.00         6:1000           2:1000
+h1-4    65536  65676   1.00         1.00         6:1010           0:926,2:85
+
+AMD topology (the boot's `topo:` lines): CPUs 0-7 are llc=0 (cores 0-3, two
+threads each), 8-15 llc=1.
+
+Judgment:
+- Park hypothesis REJECTED: one park per side per round trip in both arms, at
+  4096 and at 65536. h1 does not park between frames.
+- Placement split REJECTED: every pair in every boot ran inside llc 0. Base
+  ran on cores 0 and 1 (CPUs 1 and 2); h1 on cores 0 and 3 or 3 and 0.
+- So by the rule the extra time is in the copies. It scales with bytes:
+  +1.9 us per 4096 round trip (two frames) and +35 us per 65536 round trip
+  (16 frames, about 2.2 us each).
+- The cross-CPU wake count is 0 throughout. It compares a Wake record's CPU
+  with the next Pick's, and a Wake is recorded where it is drained, so that
+  count measures nothing here and is not used.
