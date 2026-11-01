@@ -31,3 +31,5 @@ touch no lock.
   --all-targets`, with its command line. Exit 0.
 - `logs/head-unit.log`: the buildlock tests at the head. Exit 0.
 - `logs/fixed-unit.log`: the same tests before the rebase. Exit 0.
+
+The branch head is now 5ee9f0878, the same tree as 181eb4399 with the first commit's message reworded.
