@@ -1,0 +1,13 @@
+--- a/system/netstack/shard/tcp/src/conn.rs
++++ b/system/netstack/shard/tcp/src/conn.rs
+@@ -1249,5 +1249,9 @@
+         // A pacing hold leaves the window as the last send found it (`hand_off`).
+         if let Some(limit) = held.filter(|&limit| limit != SendLimit::Pacing) {
+-            self.cc.limited = limit == SendLimit::Congestion;
++            self.cc.limited = match limit {
++                SendLimit::Congestion => true,
++                SendLimit::Window => self.in_flight() >= self.cwnd() / 2,
++                _ => false,
++            };
+         }
+         let was = self.held_by.map(|(limit, _)| limit);

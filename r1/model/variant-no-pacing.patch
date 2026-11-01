@@ -1,0 +1,8 @@
+--- a/system/netstack/shard/tcp/src/pace.rs
++++ b/system/netstack/shard/tcp/src/pace.rs
+@@ -51,2 +51,5 @@
+     fn of(cc: &Cc, srtt: Option<Duration>) -> Option<Self> {
++        if srtt.is_some() {
++            return None;
++        }
+         let per_ns = NonZeroU64::new(u64::try_from(srtt?.as_nanos()).unwrap_or(u64::MAX))?;
