@@ -1,0 +1,22 @@
+review r2: netstack makes both of a link's bells
+
+A NIC driver's hello carried the bell the driver rings, and netstack used
+it typed on every receive pass. A handle of another kind in that slot,
+even from a plain driver bug, ended the whole stack with a handle fault,
+and with it every stream and the healthy second link #1106's failover
+keeps. No check settles an event's kind, so netstack cannot refuse it.
+
+The serving side now makes every bell, as blockserve and netstack's own
+stream bells already do: Session::open makes both pairs and sends the
+driver its waker and its bell with MSG_OPENED (OPENED_HANDLES). The hello
+carries only the region, which Region::lent checks, and HELLO_HANDLES
+goes. netstack holds only events it made; only the driver trusts received
+bells, as diskserver does the block server's. The driver's departure is
+still its waker's last handle, so a hang-up keeps its meaning.
+
+Also the review's suggestions: the receive bounds' comment reads, the
+pipe-lock record is rewrapped with its page-population sentence on both
+copies, a double blank line goes, and response_bytes says its buffer
+must hold an error answer too.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
