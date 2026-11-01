@@ -1,0 +1,11 @@
+PR #1063 (combined with #1038), round 1: head p256-speed 9a5d4fad5a9b015cfa66164c571613a307456d8c on main 190f3b164.
+Development Mac; paths masked (<home>, <dev>, <tmp>).
+
+- logs/vm-suite-r1.log and logs/vm-<suite>-r1.log: toyos-crypto's lib/differential/wycheproof/vectors/nist/fuzz
+  suites for x86_64-unknown-linux-musl under QEMU TCG -cpu max, built from the worktree at that head's content
+  (tools/test-build.sh, tools/vm.sh, tools/vm-suite.sh). Each guest init exit 0x0.
+- logs/qemu-virt-smp-r1.log: `cargo test --test toyos-build -- virt_smp virt_el1_smp`, exit 0.
+- logs/controls.log, logs/control-*.log, patches/: the two negative controls (tools/controls.sh), each exit 1.
+- logs/build-x86-r1.log, logs/build-aarch64-r1.log: `cargo run -- --build-only [--arch aarch64]`, exit 0.
+- logs/ci-host-r1.log: `cargo run -- --ci host`, exit 0, 108 steps green.
+- logs/stage-*.log, metal-request.txt: metal staging (exit 2, staged, no machine touched).

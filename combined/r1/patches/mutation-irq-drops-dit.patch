@@ -1,0 +1,12 @@
+diff --git a/kernel/src/arch/aarch64/trap.rs b/kernel/src/arch/aarch64/trap.rs
+index 6400a0a25..72844d8dd 100644
+--- a/kernel/src/arch/aarch64/trap.rs
++++ b/kernel/src/arch/aarch64/trap.rs
+@@ -122,6 +122,7 @@ extern "C" fn dispatch(frame: &mut Frame, entry: u64) {
+                 crate::windows::handler_entered();
+             }
+             let preempt = irq(frame, true);
++            frame.spsr &= !(1 << 24);
+             #[cfg(feature = "mask-windows")]
+             crate::windows::handler_leaving();
+             if preempt {
