@@ -1,0 +1,42 @@
+diff --git a/system/fileserver/src/pages/tests.rs b/system/fileserver/src/pages/tests.rs
+index a35bdceb3..638e8235f 100644
+--- a/system/fileserver/src/pages/tests.rs
++++ b/system/fileserver/src/pages/tests.rs
+@@ -652,3 +652,37 @@ fn a_directorys_fsync_makes_a_new_name_durable() {
+     let mut v = after_a_stop(v);
+     assert_eq!(v.lstat("home/d").map(|m| m.kind), Ok(crate::volume::Kind::Dir));
+ }
++
++/// TEMPORARY experiment, not committed: renames after the persist rows' pattern,
++/// with every fsync a whole sync (`whole`) or per-file.
++fn renames_after(whole: bool) -> std::time::Duration {
++    let page = PAGE as usize;
++    let mut v = DataVolume::format(Ram::new(16384), 256, &["home"], clock).unwrap();
++    let mut files = Files::new(Some(Fake::new(4096, 1024)));
++    let over = open(&mut files, &mut v, "home/over");
++    let beside = open(&mut files, &mut v, "home/beside");
++    files.write(&mut v, over.1, over.0, 0, &pattern(256 * page, 1)).unwrap();
++    files.write(&mut v, beside.1, beside.0, 0, &pattern(256 * page, 2)).unwrap();
++    files.sync(&mut v).unwrap();
++    for i in 0..105u8 {
++        files.write(&mut v, beside.1, beside.0, 0, &pattern(256 * page, i)).unwrap();
++        files.write(&mut v, over.1, over.0, 0, &pattern(page, i)).unwrap();
++        if whole { files.sync(&mut v).unwrap(); } else { files.fsync(&mut v, Some((over.1, over.0))).unwrap(); }
++    }
++    files.sync(&mut v).unwrap();
++    let a = v.open("home/a", CREATE).unwrap();
++    v.close(a).unwrap();
++    let t = std::time::Instant::now();
++    for i in 0..2000 {
++        let (f, to) = if i % 2 == 0 { ("home/a", "home/b") } else { ("home/b", "home/a") };
++        v.rename(f, to).unwrap();
++    }
++    t.elapsed()
++}
++
++#[test]
++fn experiment_renames_after_fsyncs() {
++    for _ in 0..10 {
++        println!("EXP whole={:?} perfile={:?}", renames_after(true), renames_after(false));
++    }
++}
