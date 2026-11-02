@@ -1,0 +1,30 @@
+# ab9: #1129 reworked (a thread leaving its process names no waker) against #1117, with a per-round pipe diagnostic. 6 AMD benchcase boots,
+# order base, head, head, base, base, head. base f06df08b7 = #1117 c9f88d36e + diagnostic; head 33df293ad = #1129 cebbdedd5 + the same diagnostic
+# + a head-only hunk writing each wake's waker into the diary. Pushed as sched-diag-ab9-{base,head}. Metal only; none lands.
+# Decision rule, fixed before staging: $HOME/.claude/jobs/2280e09e<tmp> Analysis: python3 -I $HOME/.claude/jobs/2280e09e<tmp> $HOME/.claude/jobs/2280e09e<tmp>
+# Judge, per boot, in a tree at the arm's revision: cargo test --test toyos-build -- --metal --metal-readback <readback dir> --metal-host toyos@bench-amd boot:benchcase
+# The I219 rows are T14-only and red here.
+
+benchcase (1-base, f06df08b7, image sha256 a0b13eefd02a67b4)
+  image: $HOME/.claude/jobs/2280e09e<tmp>
+  cargo run -p toyos-metal -- --image $HOME/.claude/jobs/2280e09e<tmp> --readback $HOME/.claude/jobs/2280e09e<tmp> --fat32-check --host toyos@bench-amd
+
+benchcase (2-head, 33df293ad, image sha256 25120b7db7ce39af)
+  image: $HOME/.claude/jobs/2280e09e<tmp>
+  cargo run -p toyos-metal -- --image $HOME/.claude/jobs/2280e09e<tmp> --readback $HOME/.claude/jobs/2280e09e<tmp> --fat32-check --host toyos@bench-amd
+
+benchcase (3-head, 33df293ad, image sha256 25120b7db7ce39af)
+  image: $HOME/.claude/jobs/2280e09e<tmp>
+  cargo run -p toyos-metal -- --image $HOME/.claude/jobs/2280e09e<tmp> --readback $HOME/.claude/jobs/2280e09e<tmp> --fat32-check --host toyos@bench-amd
+
+benchcase (4-base, f06df08b7, image sha256 a0b13eefd02a67b4)
+  image: $HOME/.claude/jobs/2280e09e<tmp>
+  cargo run -p toyos-metal -- --image $HOME/.claude/jobs/2280e09e<tmp> --readback $HOME/.claude/jobs/2280e09e<tmp> --fat32-check --host toyos@bench-amd
+
+benchcase (5-base, f06df08b7, image sha256 a0b13eefd02a67b4)
+  image: $HOME/.claude/jobs/2280e09e<tmp>
+  cargo run -p toyos-metal -- --image $HOME/.claude/jobs/2280e09e<tmp> --readback $HOME/.claude/jobs/2280e09e<tmp> --fat32-check --host toyos@bench-amd
+
+benchcase (6-head, 33df293ad, image sha256 25120b7db7ce39af)
+  image: $HOME/.claude/jobs/2280e09e<tmp>
+  cargo run -p toyos-metal -- --image $HOME/.claude/jobs/2280e09e<tmp> --readback $HOME/.claude/jobs/2280e09e<tmp> --fat32-check --host toyos@bench-amd
