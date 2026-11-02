@@ -1,0 +1,14 @@
+PR #1063: the AMD asserted chacha20-poly1305/key cell, by disassembly, and the staged A/B pair 3.
+
+crypto_parity (asserted build, x86_64-unknown-toyos) built at the metal revisions 190f3b164 (base) and
+9a5d4fad5 (head), and at 8ca3a2e07 / 41977c528 / ba42889cd (pair 3's base and head). rowdiff.txt: the row's
+three functions, the loop body, SealingKey::chacha20_poly1305 and drop_glue<aead::Key> (Secret's wipe inlined),
+per build: address, address mod 64, size, instruction count and a hash with addresses taken out.
+
+- The instructions are identical in base and head. loop.diff shows that the loop bodies differ only in symbol
+  hash suffixes and label comments. The constructor and the drop hash the same.
+- The layout changed: the constructor moved from 0xc9180 (mod 64 = 0) to 0xf5360 (mod 64 = 32). The loop and
+  the drop keep their alignment, at other addresses.
+- The builds are deterministic per source: 9a5d4fad5, 41977c528 and ba42889cd give the same addresses and code,
+  and so do 190f3b164 and 8ca3a2e07. So AMD head-1 (6.0 ns) and head-2 (6.9 ns) ran the same code at the same
+  addresses.
