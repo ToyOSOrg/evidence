@@ -1,0 +1,99 @@
+diff --git a/tests/guest/osbench/src/storage.rs b/tests/guest/osbench/src/storage.rs
+index 6b6b177e5..bd36ebf8c 100644
+--- a/tests/guest/osbench/src/storage.rs
++++ b/tests/guest/osbench/src/storage.rs
+@@ -30,17 +30,94 @@ const AFTER_IDLE_SAMPLES: usize = 8;
+ /// `op` timed alone, [`AFTER_IDLE_SAMPLES`] times, each after [`IDLE`] in which
+ /// this program touches nothing: ns per operation.
+ fn after_idle(bench: &str, served: &[(&str, String)], mut op: impl FnMut() -> Result<(), String>) {
++    #[cfg(target_os = "toyos")]
++    let mut trace = diag_trace::Trace::open();
+     let mut ns = Vec::with_capacity(AFTER_IDLE_SAMPLES);
+     for _ in 0..AFTER_IDLE_SAMPLES {
+         std::thread::sleep(IDLE);
++        #[cfg(target_os = "toyos")]
++        let t0 = toyos_abi::clock::nanos_since_boot();
+         let t = Instant::now();
+         if let Err(why) = op() {
+             return refuse(bench, why);
+         }
+         ns.push(u64::try_from(t.elapsed().as_nanos()).expect("an operation under 584 years"));
++        #[cfg(target_os = "toyos")]
++        if let Some(trace) = trace.as_mut() {
++            trace.window(t0, toyos_abi::clock::nanos_since_boot());
++        }
+     }
+     let fields: Vec<(&str, String)> = std::iter::once(("idle_s", IDLE.as_secs().to_string())).chain(served.iter().cloned()).collect();
+     result(bench, "ns", &mut ns, &fields);
++    #[cfg(target_os = "toyos")]
++    if let Some(mut trace) = trace {
++        // Three back to back, unmeasured, for the same path without idle before it.
++        for _ in 0..3 {
++            let t0 = toyos_abi::clock::nanos_since_boot();
++            if op().is_err() {
++                break;
++            }
++            trace.window(t0, toyos_abi::clock::nanos_since_boot());
++        }
++        trace.report(bench);
++    }
++}
++
++/// Diagnostic: the kernel diary's records inside each sample, said after the
++/// row so the saying is outside it.
++#[cfg(target_os = "toyos")]
++mod diag_trace {
++    use std::collections::BTreeMap;
++
++    use toyos_trace::Event;
++
++    use crate::report::note;
++    use crate::sys::diag::{describe, Diag};
++
++    pub struct Trace {
++        diag: Diag,
++        windows: Vec<(u64, u64)>,
++    }
++
++    impl Trace {
++        pub fn open() -> Option<Self> {
++            let mut diag = crate::sys::diag::open()?;
++            if !diag.has_diary() {
++                return None;
++            }
++            diag.diary();
++            Some(Self { diag, windows: Vec::new() })
++        }
++
++        pub fn window(&mut self, t0: u64, t1: u64) {
++            self.windows.push((t0, t1));
++        }
++
++        pub fn report(mut self, bench: &str) {
++            let (records, lost, failed) = self.diag.diary();
++            let names: BTreeMap<(u32, u32), (String, u64)> = self.diag.roster();
++            note(&format!("{bench}.trace"), &[("records", records.len().to_string()), ("lost", lost.to_string()), ("failed", failed.unwrap_or_default())]);
++            for (k, &(t0, t1)) in self.windows.iter().enumerate() {
++                let events: Vec<String> = records
++                    .iter()
++                    .filter(|(at, _)| *at + 2_000_000 >= t0 && *at <= t1 + 1_000_000)
++                    .map(|(at, e)| {
++                        let off = *at as i64 - t0 as i64;
++                        let who = e
++                            .thread
++                            .filter(|_| e.event.names_its_task() || matches!(e.event, Event::Preempt))
++                            .and_then(|t| names.get(&(t.pid, t.tid)).map(|(n, _)| n.clone()))
++                            .unwrap_or_default();
++                        format!("{}us:c{}:{}{}{who}", off / 1000, e.cpu, describe(e).split(':').next().unwrap_or(""), if who.is_empty() { "" } else { ":" })
++                    })
++                    .collect();
++                note(
++                    &format!("{bench}.trace.sample"),
++                    &[("k", k.to_string()), ("t0_ns", t0.to_string()), ("dur_us", ((t1 - t0) / 1000).to_string()), ("events", events.join(","))],
++                );
++            }
++        }
++    }
+ }
+ 
+ pub fn suite() {

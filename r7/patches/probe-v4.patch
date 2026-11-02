@@ -1,0 +1,182 @@
+diff --git a/system/nvme/src/nvme.rs b/system/nvme/src/nvme.rs
+index b6c304e..662a441 100644
+--- a/system/nvme/src/nvme.rs
++++ b/system/nvme/src/nvme.rs
+@@ -108,6 +108,91 @@ pub enum Power {
+     Refused(u16),
+ }
+ 
++/// Diagnostic probe: one I/O, from its submission to the reap that took its answer.
++#[derive(Clone, Copy, Debug)]
++struct Ev {
++    /// Submitted, in nanoseconds since boot (the diary's clock).
++    at_ns: u64,
++    op: u8,
++    lba: u64,
++    sectors: u32,
++    session: u64,
++    /// Since the device last went idle, where it was idle at this submission.
++    idle_ms: Option<u64>,
++    /// Submission to reap.
++    lat_us: u64,
++}
++
++/// Diagnostic probe: every I/O within [`WINDOW_MS`] of an arrival after at
++/// least [`WINDOW_AFTER_IDLE_MS`] idle, and every I/O of 2 ms or more, logged
++/// in batches at least 30 s apart. It issues no command of its own.
++#[derive(Debug)]
++struct Probe {
++    idle_since: Instant,
++    /// The idle time of the arrival being submitted, for its own event.
++    arriving: Option<(Instant, u64)>,
++    window: Option<Instant>,
++    events: Vec<Ev>,
++    said: Instant,
++}
++
++const WINDOW_AFTER_IDLE_MS: u64 = 50;
++const WINDOW_MS: u128 = 100;
++
++impl Probe {
++    fn new() -> Self {
++        Self { idle_since: Instant::now(), arriving: None, window: None, events: Vec::new(), said: Instant::now() }
++    }
++
++    fn arrival(&mut self, idle: bool) {
++        if !idle {
++            return;
++        }
++        let idle_ms = self.idle_since.elapsed().as_millis() as u64;
++        let now = Instant::now();
++        self.arriving = Some((now, idle_ms));
++        if idle_ms >= WINDOW_AFTER_IDLE_MS {
++            self.window = Some(now);
++        }
++        self.flush_lines();
++    }
++
++    fn completed(&mut self, slot: &Slot, session: u64) {
++        let lat = slot.since.elapsed();
++        let lat_us = lat.as_micros() as u64;
++        // The arrival's own event: submitted within a few microseconds of it.
++        let idle_ms = self
++            .arriving
++            .filter(|&(at, _)| slot.since >= at && slot.since.duration_since(at).as_micros() < 50)
++            .map(|(_, ms)| ms);
++        let in_window = self.window.is_some_and(|w| slot.since >= w && slot.since.duration_since(w).as_millis() <= WINDOW_MS);
++        if !(in_window || lat_us >= 2_000 || idle_ms.is_some_and(|ms| ms >= WINDOW_AFTER_IDLE_MS)) || self.events.len() >= 4096 {
++            return;
++        }
++        let at_ns = toyos_abi::clock::nanos_since_boot().saturating_sub(lat.as_nanos() as u64);
++        self.events.push(Ev { at_ns, op: slot.opcode, lba: slot.lba, sectors: slot.sectors, session, idle_ms, lat_us });
++    }
++
++    fn flush_lines(&mut self) {
++        if self.said.elapsed() < Duration::from_secs(30) || self.events.is_empty() {
++            return;
++        }
++        self.said = Instant::now();
++        for chunk in self.events.chunks(12) {
++            let evs: Vec<String> = chunk
++                .iter()
++                .map(|e| {
++                    let op = match e.op { 0x00 => "flush", 0x01 => "write", 0x02 => "read", _ => "op" };
++                    let idle = e.idle_ms.map_or("busy".to_string(), |ms| format!("idle {ms} ms"));
++                    format!("{}.{:06} {op} {}+{} s{} {idle} {} us", e.at_ns / 1_000_000_000, e.at_ns / 1_000 % 1_000_000, e.lba, e.sectors, e.session, e.lat_us)
++                })
++                .collect();
++            println!("nvme probe: {}", evs.join("; "));
++        }
++        self.events.clear();
++    }
++}
++
+ /// Whose a command is.
+ #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+ pub enum Owner {
+@@ -183,6 +268,10 @@ impl Command {
+ struct Slot {
+     owner: Owner,
+     since: Instant,
++    /// Diagnostic probe: the command's opcode, first LBA and sectors.
++    opcode: u8,
++    lba: u64,
++    sectors: u32,
+ }
+ 
+ struct Queue {
+@@ -237,6 +326,8 @@ pub struct Controller {
+     pub peak: usize,
+     /// Commands issued down each I/O queue.
+     pub issued: Vec<u64>,
++    /// Diagnostic probe of every I/O's timing around idle arrivals.
++    probe: Probe,
+ }
+ 
+ impl Controller {
+@@ -297,6 +388,7 @@ impl Controller {
+             stray: false,
+             peak: 0,
+             issued: Vec::new(),
++            probe: Probe::new(),
+         };
+         ctrl.enable()?;
+         ctrl.identify()?;
+@@ -511,13 +603,20 @@ impl Controller {
+     /// Write one entry into queue `queue` (`None` is the admin queue) and ring
+     /// its doorbell; answers the slot's identifier.
+     fn submit(&mut self, queue: Option<usize>, cmd: Command, owner: Owner, prp: impl FnOnce(u16) -> u64) -> u16 {
++        if queue.is_some() {
++            self.probe.arrival(self.busy() == 0);
++        }
++        self.submit_entry(queue, cmd, owner, prp)
++    }
++
++    fn submit_entry(&mut self, queue: Option<usize>, cmd: Command, owner: Owner, prp: impl FnOnce(u16) -> u64) -> u16 {
+         let (regs, dma, stride) = (self.regs, self.dma, self.stride);
+         let q = match queue {
+             Some(i) => &mut self.io[i],
+             None => &mut self.admin,
+         };
+         let cid = q.free.pop().expect("nvme: a submission with no free slot");
+-        q.slots[cid as usize] = Some(Slot { owner, since: Instant::now() });
++        q.slots[cid as usize] = Some(Slot { owner, since: Instant::now(), opcode: cmd.opcode, lba: u64::from(cmd.cdw10) | (u64::from(cmd.cdw11) << 32), sectors: if cmd.opcode == IO_FLUSH { 0 } else { (cmd.cdw12 & 0xFFFF) + 1 } });
+         let mut cmd = cmd;
+         // Written into this slot's own list page before the entry that names
+         // it exists.
+@@ -536,6 +635,7 @@ impl Controller {
+     fn reap_queue(&mut self, queue: Option<usize>, out: &mut Vec<Done>) {
+         let (regs, dma, stride) = (self.regs, self.dma, self.stride);
+         let stray = &mut self.stray;
++        let probe = &mut self.probe;
+         let q = match queue {
+             Some(i) => &mut self.io[i],
+             None => &mut self.admin,
+@@ -569,6 +669,13 @@ impl Controller {
+                 continue;
+             };
+             q.free.push(cid);
++            if queue.is_some() {
++                let session = match slot.owner {
++                    Owner::Session(o) => o.session,
++                    Owner::Driver => u64::MAX,
++                };
++                probe.completed(&slot, session);
++            }
+             out.push(Done { owner: slot.owner, ok: status == 0, status, dw0 });
+         }
+         if moved {
+@@ -578,9 +685,13 @@ impl Controller {
+ 
+     /// Every answer every I/O queue holds.
+     pub fn reap(&mut self, out: &mut Vec<Done>) {
++        let before = out.len();
+         for i in 0..self.io.len() {
+             self.reap_queue(Some(i), out);
+         }
++        if out.len() > before && self.busy() == 0 {
++            self.probe.idle_since = Instant::now();
++        }
+     }
+ 
+     /// Consume the claim's interrupt record. `Io` is the unit having refused
