@@ -1,0 +1,11 @@
+--- lib/acpi/src/iort.rs	2026-11-02 00:11:33
++++ <scratch>/mut-no-alone.rs	2026-11-02 00:13:25
+@@ -293,7 +293,7 @@
+                 (unit, Node::Smmuv3(smmu)) if smmu.base == base => {
+                     // `output + span` was checked not to wrap when the table was opened.
+                     let streams = (mapping.output + (low - mapping.input), mapping.output + (high - mapping.input));
+-                    self.alone(unit, (root.at, index), streams)?;
++                    let _ = streams;
+                 }
+                 (_, Node::Smmuv3(_) | Node::Its { .. }) => return Ok(false),
+                 _ => return Err(IortRefused::Output { at: root.at, reference: mapping.reference }),

@@ -1,0 +1,57 @@
+   Compiling toyos-acpi v0.1.0 (<dev>/toyos-lifecycle-2/lib/acpi)
+    Finished `test` profile [optimized + debuginfo] target(s) in 15.95s
+     Running tests/iort.rs (target/debug/deps/iort-313a1d0c9c9609b9)
+
+running 33 tests
+test a_node_array_inside_the_header_is_refused ... ok
+test a_mapping_carries_an_id_by_its_offset_from_the_input_base_and_ends_at_its_last_id ... ok
+test a_node_array_past_the_table_is_refused_as_its_first_node ... ok
+test a_node_longer_than_the_table_or_shorter_than_its_type_is_refused ... ok
+test a_mapping_whose_range_leaves_the_id_space_is_refused ... ok
+test a_node_revision_whose_layout_was_not_read_is_refused ... ok
+test a_node_count_that_overruns_the_table_is_refused_where_the_bytes_end ... ok
+test a_node_type_not_decoded_is_answered_by_its_type_and_refuses_nothing ... ok
+test a_revision_whose_layout_was_not_read_is_refused ... ok
+test a_root_complex_has_no_mapping_of_its_own ... ok
+test a_revision_4_smmu_indexes_its_own_mapping_whenever_a_control_interrupt_is_not_wired ... ok
+test a_route_through_an_output_reference_to_a_node_its_source_may_not_reach_is_refused ... ok
+test a_route_through_an_output_reference_that_names_no_node_is_refused ... ok
+test a_single_mapping_that_is_not_its_smmus_own_is_refused ... ok
+test a_stream_is_not_judged_alone_past_an_id_array_out_of_its_node ... ok
+test a_stream_another_mapping_puts_out_to_the_same_smmu_is_refused ... ok
+test a_stream_the_smmu_maps_nowhere_has_no_its ... ok
+test a_table_too_short_for_its_own_header_fields_is_refused ... ok
+test an_id_array_lying_over_its_nodes_own_fields_is_refused ... ok
+test an_id_array_running_past_its_node_is_refused ... ok
+test an_id_two_mappings_claim_is_refused_when_it_is_asked_for ... ok
+test an_its_group_of_other_than_one_its_is_refused ... ok
+test an_its_node_declaring_an_id_array_is_refused ... ok
+test an_smmus_own_mapping_index_at_or_past_its_id_array_is_refused ... ok
+test a_range_of_every_bus_reads_the_table_a_bounded_number_of_times ... ok
+test the_hardware_gic_boot_routes_bus_zero_through_the_smmu_and_nothing_to_an_its ... ok
+test the_hardware_gic_boots_madt_names_no_its ... ok
+test the_its_boot_routes_bus_zero_through_the_smmu_to_the_its_and_the_rest_past_it ... ok
+test the_its_boots_madt_names_the_its_the_iort_routes_to ... ok
+test the_mapping_a_revision_5_smmu_indexes_is_the_units_own_and_routes_no_stream ... ok
+test opening_a_table_and_routing_a_requester_each_read_it_a_bounded_number_of_times ... ok
+test a_range_is_translated_exactly_where_each_of_its_requesters_is ... FAILED
+test no_corruption_of_a_published_iort_panics_or_hangs_the_decoder ... ok
+
+failures:
+
+---- a_range_is_translated_exactly_where_each_of_its_requesters_is stdout ----
+
+thread 'a_range_is_translated_exactly_where_each_of_its_requesters_is' (141650703) panicked at lib/acpi/tests/iort.rs:796:21:
+assertion `left == right` failed: table 3, segment 0, 0x0..=0x1ff
+  left: true
+ right: false
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    a_range_is_translated_exactly_where_each_of_its_requesters_is
+
+test result: FAILED. 32 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 6.54s
+
+error: test failed, to rerun pass `-p toyos-acpi --test iort`
+no-overlap EXIT=101

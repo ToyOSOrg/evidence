@@ -1,0 +1,18 @@
+--- lib/acpi/src/iort.rs	2026-11-02 00:14:24
++++ <scratch>/mut-per-rid.rs	2026-11-02 00:14:41
+@@ -272,6 +272,15 @@
+     /// root complex mapping that holds any of them, one walk of the nodes and
+     /// their mappings for an overlap and one for a shared stream.
+     pub fn translates(&self, segment: u32, rids: core::ops::RangeInclusive<u16>, base: u64) -> Result<bool, IortRefused> {
++        if true {
++            for rid in rids {
++                match self.route(segment, rid)? {
++                    Route::Translated { smmu, .. } if smmu.base == base => {}
++                    _ => return Ok(false),
++                }
++            }
++            return Ok(true);
++        }
+         let (first, last) = (u32::from(*rids.start()), u32::from(*rids.end()));
+         if first > last {
+             return Ok(true);
