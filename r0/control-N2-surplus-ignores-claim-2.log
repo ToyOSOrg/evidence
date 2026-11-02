@@ -1,0 +1,49 @@
+-        let used = self.used();
++        let used = (self.head + self.len).div_ceil(FRAME).min(self.frames.len());
+   Compiling kernel v0.1.0 ($HOME/Dev/$USER/toyos-s0a/kernel)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.44s
+     Running unittests pure/lib.rs (target/debug/deps/kernel-fa45b686f8e87f8e)
+
+running 24 tests
+test pipe::tests::a_second_claim_is_refused_until_the_first_ends ... ok
+test pipe::tests::an_empty_write_waits_for_nothing ... ok
+test pipe::tests::a_reader_leaving_answers_a_waiting_writer ... ok
+test pipe::tests::an_abandoned_claim_changes_nothing ... ok
+test pipe::tests::a_drained_pipe_beside_a_claim_keeps_the_claims_place ... ok
+test pipe::tests::a_small_pipe_write_lands_whole_or_waits ... ok
+test pipe::tests::a_refused_nonblocking_write_is_answered_by_readiness ... ok
+test pipe::tests::an_end_dropped_with_the_ring_neither_empty_nor_full_is_gone ... ok
+test pipe::tests::an_end_whose_other_end_is_held_is_not_told_it_is_gone ... ok
+test pipe::tests::an_end_with_a_second_holder_outlives_the_first ... ok
+test pipe::tests::a_read_beside_an_unsupplied_claim_gives_back_nothing ... ok
+test pipe::tests::bytes_are_never_cleared_under_a_claim - should panic ... ok
+test pipe::tests::a_write_claim_keeps_its_frames_while_reads_drain_beside_it ... FAILED
+test pipe::tests::a_drained_pipe_gives_its_frames_back ... ok
+test pipe::tests::readable_and_writable_say_nothing_of_the_other_end ... ok
+test pipe::tests::the_last_holder_of_the_pipe_ends_it ... ok
+test pipe::tests::the_surplus_comes_back_in_batches ... ok
+test pipe::tests::pieces_placed_and_peeked_in_any_order_are_one_copy ... ok
+test pipe::tests::a_steady_stream_takes_no_frames ... ok
+test pipe::tests::a_full_pipe_part_read_holds_the_most_frames ... ok
+test pipe::tests::competing_partial_writes_tear_in_the_same_run ... ok
+test pipe::tests::competing_small_writes_never_interleave_while_the_reader_lags ... ok
+test pipe::tests::a_waiting_writer_wakes_exactly_when_its_write_lands ... ok
+test pipe::tests::a_stream_comes_back_exact_and_the_frames_stay_bounded ... ok
+
+failures:
+
+---- pipe::tests::a_write_claim_keeps_its_frames_while_reads_drain_beside_it stdout ----
+
+thread 'pipe::tests::a_write_claim_keeps_its_frames_while_reads_drain_beside_it' (145925071) panicked at kernel/pure/pipe.rs:241:9:
+assertion `left == right` failed: pipe: bytes placed past the frames it was given
+  left: 1
+ right: 0
+
+
+failures:
+    pipe::tests::a_write_claim_keeps_its_frames_while_reads_drain_beside_it
+
+test result: FAILED. 23 passed; 1 failed; 0 ignored; 0 measured; 423 filtered out; finished in 2.63s
+
+error: test failed, to rerun pass `-p kernel --lib`
+rc=101

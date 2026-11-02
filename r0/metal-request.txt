@@ -1,0 +1,15 @@
+# S0-a A/B (PR head 42e2716c3, base 058bea2d3 = main), from $HOME/Dev/$USER/toyos-s0a.
+# Rules, set before any boot: $SCRATCH/s0a/ab/rules.md
+# On the T14 and on the AMD bench: base, head, base, head (benchcase, the osbench row), then one head
+# testcases boot and one head shared-debug boot. Give each boot its own --readback dir
+# (runs/<bench>/<n>-<base|head|testcases|shared-debug>). Hashes: $SCRATCH/s0a/ab/image-sha256.txt.
+# Each invocation is `cargo <words>` from the worktree.
+
+base benchcase (058bea2d3):
+  cargo run -p toyos-metal -- --image $SCRATCH/s0a/ab/base/benchcase/image.img --readback <dir> --fat32-check
+head benchcase (42e2716c3):
+  cargo run -p toyos-metal -- --image $SCRATCH/s0a/ab/head/benchcase/image.img --readback <dir> --fat32-check
+head testcases (members messages_are_whole blocking_read_stress pipe_other_end_gone poll_wake_pipe std_io std_process std_fs std_fs_write ends_sent_over_each_other_both_end kill_ends_every_wait mio_waker_coalesces query_modules_size lseek_past_eof file_mtime; the whole boot exercises the gate):
+  cargo run -p toyos-metal -- --image $SCRATCH/s0a/ab/head/testcases/image.img --readback <dir> --fat32-check
+head shared-debug (handle_lifetime, which needs test-actuators):
+  cargo run -p toyos-metal -- --image $SCRATCH/s0a/ab/head/shared-debug/image.img --readback <dir> --fat32-check

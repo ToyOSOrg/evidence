@@ -1,0 +1,57 @@
+ kernel/pure/pipe.rs | 329 ++++++++++++++++++++++++++++++++++++++++++++--------
+ 1 file changed, 280 insertions(+), 49 deletions(-)
+   Compiling kernel v0.1.0 ($HOME/Dev/$USER/toyos-s0a/kernel)
+    Finished `test` profile [optimized + debuginfo] target(s) in 2.35s
+     Running unittests pure/lib.rs (target/debug/deps/kernel-fa45b686f8e87f8e)
+
+running 23 tests
+test pipe::tests::an_empty_write_waits_for_nothing ... ok
+test pipe::tests::an_abandoned_claim_changes_nothing ... ok
+test pipe::tests::a_second_claim_is_refused_until_the_first_ends ... ok
+test pipe::tests::a_refused_nonblocking_write_is_answered_by_readiness ... ok
+test pipe::tests::an_end_dropped_with_the_ring_neither_empty_nor_full_is_gone ... ok
+test pipe::tests::a_small_pipe_write_lands_whole_or_waits ... ok
+test pipe::tests::a_reader_leaving_answers_a_waiting_writer ... ok
+test pipe::tests::a_drained_pipe_beside_a_claim_keeps_the_claims_place ... FAILED
+test pipe::tests::an_end_whose_other_end_is_held_is_not_told_it_is_gone ... ok
+test pipe::tests::an_end_with_a_second_holder_outlives_the_first ... ok
+test pipe::tests::a_write_claim_keeps_its_frames_while_reads_drain_beside_it ... FAILED
+test pipe::tests::bytes_are_never_cleared_under_a_claim - should panic ... ok
+test pipe::tests::readable_and_writable_say_nothing_of_the_other_end ... ok
+test pipe::tests::the_last_holder_of_the_pipe_ends_it ... ok
+test pipe::tests::a_drained_pipe_gives_its_frames_back ... ok
+test pipe::tests::the_surplus_comes_back_in_batches ... ok
+test pipe::tests::pieces_placed_and_peeked_in_any_order_are_one_copy ... ok
+test pipe::tests::a_steady_stream_takes_no_frames ... ok
+test pipe::tests::a_full_pipe_part_read_holds_the_most_frames ... ok
+test pipe::tests::competing_small_writes_never_interleave_while_the_reader_lags ... ok
+test pipe::tests::competing_partial_writes_tear_in_the_same_run ... ok
+test pipe::tests::a_waiting_writer_wakes_exactly_when_its_write_lands ... ok
+test pipe::tests::a_stream_comes_back_exact_and_the_frames_stay_bounded ... ok
+
+failures:
+
+---- pipe::tests::a_drained_pipe_beside_a_claim_keeps_the_claims_place stdout ----
+
+thread 'pipe::tests::a_drained_pipe_beside_a_claim_keeps_the_claims_place' (139650838) panicked at kernel/pure/pipe.rs:1007:9:
+assertion `left == right` failed
+  left: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149]
+ right: [100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- pipe::tests::a_write_claim_keeps_its_frames_while_reads_drain_beside_it stdout ----
+
+thread 'pipe::tests::a_write_claim_keeps_its_frames_while_reads_drain_beside_it' (139650848) panicked at kernel/pure/pipe.rs:949:21:
+assertion `left == right` failed: claimed byte 0 moved
+  left: Some((4, 3044))
+ right: Some((4, 0))
+
+
+failures:
+    pipe::tests::a_drained_pipe_beside_a_claim_keeps_the_claims_place
+    pipe::tests::a_write_claim_keeps_its_frames_while_reads_drain_beside_it
+
+test result: FAILED. 21 passed; 2 failed; 0 ignored; 0 measured; 405 filtered out; finished in 3.80s
+
+error: test failed, to rerun pass `-p kernel --lib`
+rc=101
