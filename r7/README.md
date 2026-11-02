@@ -44,3 +44,11 @@ before and after on both benches. `<bench>-split.md` comes from `split.py`.
 - On G1's like-for-like cost the AMD still reads 8.62 against 7.78 ms. Its
   back-to-back write is faster than Linux's (2.67 against 3.58 ms), while the
   absolute after-idle write is level.
+
+**Instrument caveat (for any later APST measurement).** Asking the drive its
+power state (Get Features 02h, admin) at each idle arrival perturbed the
+AMD's drive. With it (r6, probe v3), every B boot had one sample that paid
+two device waits (17.5-19.3 ms). Without it (r7, probe v4), no sample did.
+The spec has an admin command leave a non-operational state in place
+(§8.1.17.1), but this drive's answer was not neutral to the I/O that
+followed. Measure APST with timing alone, not with power-state queries.
