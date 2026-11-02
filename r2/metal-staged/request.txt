@@ -1,0 +1,23 @@
+# #1141 A/B round 2 (ab2): head 029ca221c (fs-7b, rebased onto main 058bea2d3, plus the write-back fix),
+# base a4b6a1ee7 (main 058bea2d3 + the persist.write_4k_fsync_beside_1m row alone).
+# Rules, set before any boot: <scratch>/fs3/ab2/rules.md
+# On the T14 and on the AMD bench, in this order: base, head, base, head, base, head (benchcase),
+# then one head testcases boot: 7 boots per bench, 14 in all.
+# Each invocation is `cargo <words>` from <dev>/toyos-fs3 (or any worktree at main 058bea2d3 or later).
+# Give each boot its own --readback dir: runs/<bench>/<n>-<base|head|head-testcases>,
+# e.g. <scratch>/fs3/ab2/runs/amd/1-base
+# Check each image's hash against image-sha256.txt below before booting it.
+
+base benchcase (a4b6a1ee7):
+  cargo run -p toyos-metal -- --image <scratch>/fs3/ab2/base/benchcase/image.img --readback <dir> --fat32-check
+head benchcase (029ca221c):
+  cargo run -p toyos-metal -- --image <scratch>/fs3/ab2/head/benchcase/image.img --readback <dir> --fat32-check
+head testcases (029ca221c), members a_served_files_read_never_tears_against_its_write, a_served_file_reads_through_its_paged_object, served_file_offset, a_pager_s_end_answers_its_waiting_holders_gone, std_fs:
+  cargo run -p toyos-metal -- --image <scratch>/fs3/ab2/head/testcases/image.img --readback <dir> --fat32-check
+
+beecf1dacaf2f44c4ab729cb264c5d66ee6f9555211e0a4e846300c301936847  base/benchcase/image.img
+b4f61a9f49e38fda24dfc5d44f62d812c579ad4afd6a9009cebfb4ab3ce6f204  head/benchcase/image.img
+0782c8faa596d6d37929662a75a6dede5c86e7e9e07f8dd721463bd7cc34aad6  head/testcases/image.img
+
+Judge once run: python3 -I <scratch>/fs3/scripts/judge2.py <scratch>/fs3/ab2/runs
+Delete ab2/*/*/image.img once run.

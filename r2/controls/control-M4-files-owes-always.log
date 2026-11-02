@@ -1,0 +1,37 @@
+
+running 4 tests
+test pages::tests::a_file_a_sync_could_not_write_back_stays_owed_past_another_s_fsync ... ok
+test pages::tests::a_directorys_fsync_makes_a_new_name_durable ... ok
+test pages::tests::an_fsync_makes_its_file_durable_and_no_other_files_overwrite ... ok
+test pages::tests::an_fsync_writes_first_the_pages_of_every_file_its_commit_carries ... FAILED
+
+failures:
+
+---- pages::tests::an_fsync_writes_first_the_pages_of_every_file_its_commit_carries stdout ----
+
+thread 'pages::tests::an_fsync_writes_first_the_pages_of_every_file_its_commit_carries' (141622253) panicked at system/fileserver/src/pages/tests.rs:617:5:
+the fsync left a change owed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    pages::tests::an_fsync_writes_first_the_pages_of_every_file_its_commit_carries
+
+test result: FAILED. 3 passed; 1 failed; 0 ignored; 0 measured; 110 filtered out; finished in 0.02s
+
+   Compiling fileserver v0.0.0 (<dev>/toyos-fs3/system/fileserver)
+warning: unused variable: `volume`
+   --> system/fileserver/src/pages.rs:576:24
+    |
+576 |     pub fn owes(&self, volume: &dyn Volume) -> bool {
+    |                        ^^^^^^ help: if this is intentional, prefix it with an underscore: `_volume`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `fileserver` (lib) generated 1 warning (run `cargo fix --lib -p fileserver` to apply 1 suggestion)
+warning: `fileserver` (lib test) generated 1 warning (1 duplicate)
+    Finished `test` profile [optimized + debuginfo] target(s) in 7.39s
+     Running unittests src/lib.rs (target/debug/deps/fileserver-c7ac95979b91b705)
+error: test failed, to rerun pass `-p fileserver --lib`
+
+rc=101
