@@ -1,0 +1,29 @@
+# PR #1063, A/B pair 3: head p256-speed 41977c528ae897bb2c9709ba64bd58dd2b97e187 against its base,
+# main 8ca3a2e074d5a540325e11fc925f1d961819152f (the merge base). cryptocase only, ~2 min each, alone in its boot.
+# Every command is `cargo <words>` from <dev>/toyos-p256.
+#
+# RULE, restated before the run (parity "ours" median, head over base, this pair alone):
+#   (a) T14 unasserted ecdsa-p-256-sha-256/verify/64 <= 0.90, and AMD asserted chacha20-poly1305/key <= 1.05;
+#   (b) p-256/ecdh and ecdsa-p-256-sha-256/verify/64 <= 0.90 in every bench and build;
+#   (c) no other cell is > 1.05 here AND was > 1.05 in pair 1 or pair 2 of the first run
+#       (the original rule's "both pairs", with this pair as one of them).
+# PASS = (a) and (b) and (c). Raw ratios; nothing is normalised.
+#
+# Order: T14 base-3, T14 head-3, then AMD base-3, AMD head-3.
+
+(1) T14 base-3
+    cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/crypto-timing/metal-r5/t14-base-3/cryptocase/image.img --readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/crypto-timing/metal-r5/t14-base-3/cryptocase --fat32-check
+(2) T14 head-3
+    cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/crypto-timing/metal-r5/t14-head-3/cryptocase/image.img --readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/crypto-timing/metal-r5/t14-head-3/cryptocase --fat32-check
+(3) AMD base-3
+    cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/crypto-timing/metal-r5/amd-base-3/cryptocase/image.img --readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/crypto-timing/metal-r5/amd-base-3/cryptocase --fat32-check --host toyos@bench-amd
+(4) AMD head-3
+    cargo run -p toyos-metal -- --image <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/crypto-timing/metal-r5/amd-head-3/cryptocase/image.img --readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/crypto-timing/metal-r5/amd-head-3/cryptocase --fat32-check --host toyos@bench-amd
+
+# Judges (exit 0 is a pass): cargo test --test toyos-build -- --metal --metal-readback <home>/.claude/jobs/2280e09e/tmp/scratchpad/agents/crypto-timing/metal-r5/<dir> crypto_instrument
+# The rule above is read from the "parity: " lines by the implementer.
+# Image sha256:
+#   amd-base-3/cryptocase/image.img  aa4e6f04f87f84c5caed945a40abc8176eeaac466a722b85ab8f5c3fee68727d
+#   amd-head-3/cryptocase/image.img  22dab0468e3656eb9c1cb584c92b849ca48e686a5344a067da65920b3b956d44
+#   t14-base-3/cryptocase/image.img  57cfd96dd993653e88129ea7591496f76586654177ccf40ea6918aa73d3c2817
+#   t14-head-3/cryptocase/image.img  5b78776e0ee135a950f8c281bb9416d4fb19459a2bcc54225b7f791fe9dbe66c
