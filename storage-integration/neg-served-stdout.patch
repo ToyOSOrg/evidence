@@ -1,0 +1,11 @@
+--- a/sdk/toyos/src/fd.rs
++++ b/sdk/toyos/src/fd.rs
+@@ -311,7 +311,7 @@ pub fn copy(fd: Fd) -> Result<Option<(crate::OwnedHandle, Kind)>, crate::spawn::Refused> {
+     use crate::spawn::Refused;
+     let copied = with(fd, |o| match (o.handle(), o.kernel_handle()) {
+         (None, _) if o.tag() == SERVED_FILE => {
+-            crate::files::export_held(o).map(|end| (end, Kind::File)).map_err(Refused::File)
++            Err(Refused::Syscall(toyos_abi::syscall::SyscallError::NotSupported))
+         }
+         (Some(bell), _) if o.tag() == SOCKET && crate::net::socket::is_socket(bell) => {
+             crate::net::socket::export(bell).map(|end| (end, Kind::Exported)).map_err(Refused::Export)
