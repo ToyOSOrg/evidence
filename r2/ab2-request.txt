@@ -1,0 +1,15 @@
+# S0-a A/B round 2 (the bounce). Base main a0e8f1333; head 0d0a03065 (b4096); b1024 = the same head with frame_bytes::BOUNCE = 1024 (image only).
+# Rules, set before any boot: $SCRATCH/s0a2/ab2/rules.md
+# Hashes: $SCRATCH/s0a2/ab2/image-sha256.txt. Run from the worktree $HOME/Dev/$USER/toyos-s0a; each invocation is `cargo <words>`.
+# On the T14 and on the AMD bench, in this order, each boot with its own --readback dir
+# (runs/<bench>/<n>-<arm>): 1-base, 2-b4096, 3-b1024, 4-base, 5-b4096, 6-b1024 (benchcase, the osbench row), then 7-testcases.
+# Seven boots per bench. The shared-debug boot is not restaged: nothing since round 1 is on handle_lifetime's path, and round 1 ran it green on both benches.
+
+base benchcase (a0e8f1333):
+  cargo run -p toyos-metal -- --image $SCRATCH/s0a2/ab2/base/benchcase/image.img --readback <dir> --fat32-check
+b4096 benchcase (0d0a03065):
+  cargo run -p toyos-metal -- --image $SCRATCH/s0a2/ab2/b4096/benchcase/image.img --readback <dir> --fat32-check
+b1024 benchcase (0d0a03065, BOUNCE = 1024):
+  cargo run -p toyos-metal -- --image $SCRATCH/s0a2/ab2/b1024/benchcase/image.img --readback <dir> --fat32-check
+b4096 testcases (members messages_are_whole blocking_read_stress pipe_other_end_gone poll_wake_pipe std_io std_process std_fs std_fs_write ends_sent_over_each_other_both_end kill_ends_every_wait mio_waker_coalesces query_modules_size lseek_past_eof file_mtime; the whole boot exercises the gate):
+  cargo run -p toyos-metal -- --image $SCRATCH/s0a2/ab2/b4096/testcases/image.img --readback <dir> --fat32-check
