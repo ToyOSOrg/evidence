@@ -1,0 +1,40 @@
+--- a/tests/toyos.rs	2026-11-03 21:40:33
++++ b/tests/toyos.rs
+@@ -752,6 +752,7 @@
+     // run is the benches'; this is TCG's, whose XSAVE is QEMU's own reading of
+     // the SDM, and the KVM runner's CPU.
+     "vector_state_survives_a_switch",
++    "scratch_entry_jobs",
+     // std's CPU count against the CPUs the guest booted with, and an ended
+     // thread's stack and table place given back, joined or detached, on the
+     // two-CPU q35 guest: std's ToyOS layer, which no host builds.
+@@ -4912,6 +4913,7 @@
+             hda_plays_to_the_controller_that_reaches_an_output(test_config)
+         }
+         "vector_state_survives_a_switch" => vector_state_survives_a_switch(test_config),
++        "scratch_entry_jobs" => scratch_entry_jobs(test_config),
+         "std_threads_count_the_cpus_and_give_back_ended_threads" => std_threads_count_the_cpus_and_give_back_ended_threads(test_config),
+         "affinity_pins_hold_on_every_cpu" => affinity_pins_hold_on_every_cpu(test_config),
+         "kernel_objects_refused_alone" => kernel_objects_refused_alone(test_config),
+@@ -5655,6 +5657,21 @@
+     Ok(())
+ }
+ 
++fn scratch_entry_jobs(test_config: &Path) -> Result<(), String> {
++    let root = compile::repo_root().join("tests/guest/rust-tests");
++    let jobs = ["first_entry", "ring0_clears_ac"];
++    let bins: Vec<(String, Vec<u8>)> = jobs.iter().map(|j| (j.to_string(), qemu::build_toyos_bin(qemu::SUITE_ARCH, &root, j))).collect();
++    let mut qemu = QemuInstance::boot_with_options(test_config, &[], &bins, BootOptions { kernel_features: ACTUATOR_KERNEL, ..BootOptions::default() });
++    for job in jobs {
++        let result = qemu.run_test(&format!("test_rs_{job}"), Duration::from_secs(300));
++        eprintln!("  [scratch] {job}: exit={:?} error={:?}\n{}", result.exit_code, result.error, result.stdout);
++        if result.error.is_some() || result.exit_code != Some(0) {
++            return Err(format!("{job} failed: {:?} {:?}\n{}\nkernel:\n{}", result.exit_code, result.error, result.stdout, qemu.boot_log()));
++        }
++    }
++    Ok(())
++}
++
+ /// [`MACHINE_TESTS`]' `vector_state_survives_a_switch`: the shared boot's
+ /// `vector_state` alone on two CPUs, so five threads time-share them.
+ fn vector_state_survives_a_switch(test_config: &Path) -> Result<(), String> {

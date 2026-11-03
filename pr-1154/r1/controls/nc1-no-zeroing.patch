@@ -1,0 +1,15 @@
+diff --git a/kernel/src/arch/x86_64/entry.rs b/kernel/src/arch/x86_64/entry.rs
+index f3c653b20..2194dce56 100644
+--- a/kernel/src/arch/x86_64/entry.rs
++++ b/kernel/src/arch/x86_64/entry.rs
+@@ -76,10 +76,6 @@ macro_rules! first_entry {
+             "push 0x202",       // RFLAGS: IF=1
+             "push {user_cs}",
+             "push r12",         // RIP
+-            "xor eax, eax", "xor ebx, ebx", "xor ecx, ecx", "xor edx, edx",
+-            "xor esi, esi", "xor ebp, ebp",
+-            "xor r8d, r8d", "xor r9d, r9d", "xor r10d, r10d", "xor r11d, r11d",
+-            "xor r12d, r12d", "xor r13d, r13d", "xor r14d, r14d", "xor r15d, r15d",
+             "iretq",
+             load_initial = sym crate::arch::fpu::load_initial,
+             unlock = sym crate::sched::driver::trampoline_entry,
