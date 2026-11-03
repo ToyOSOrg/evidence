@@ -1,0 +1,11 @@
+--- kernel/src/pcidev/slot.rs	2026-11-03 20:51:41
++++ <scratch>/slot.rs.mut	2026-11-03 20:56:21
+@@ -262,7 +262,7 @@
+         slots.iter().filter_map(|slot| slot.refresh(&mut departed)).min()
+     };
+     for (function, handed) in departed {
+-        handed.revoke();
++        drop(handed);
+         function.watch.post_in_place();
+     }
+     settle
