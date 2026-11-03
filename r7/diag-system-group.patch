@@ -1,0 +1,21 @@
+diff --git a/tests/toyos.rs b/tests/toyos.rs
+index 208f0580c..35db1dcf3 100644
+--- a/tests/toyos.rs
++++ b/tests/toyos.rs
+@@ -3060,7 +3060,7 @@ fn acpi_press_is_one_sci() -> Result<(), String> {
+ /// does only once every row it ran measured or said why not, its capability
+ /// rows among them. A guest reads no package energy, so `energy` says why.
+ fn osbench_capability_groups_exit_0() -> Result<(), String> {
+-    const JOBS: [&str; 3] = ["osbench_identity", "osbench_fair", "osbench_energy"];
++    const JOBS: [&str; 1] = ["osbench_system"];
+     let committed = compile::repo_root().join("tests/images/benchcase.toml");
+     let text = fs::read_to_string(&committed).map_err(|e| format!("{}: {e}", committed.display()))?;
+     let derived = toyos_metal::image::derive(&text, 300_000, &JOBS, &[]).map_err(|why| why.to_string())?;
+@@ -3075,6 +3075,7 @@ fn osbench_capability_groups_exit_0() -> Result<(), String> {
+     let mut console = format!("{}\n", qemu.boot_log());
+     let last = format!("===TEST_END {} ", JOBS[JOBS.len() - 1]);
+     await_guest(&mut qemu, &mut console, "osbench's groups to end", |said| said.contains(&last))?;
++    std::fs::write(std::env::var("DIAG_OUT").unwrap(), &console).unwrap();
+     let said = serial::Serial::named("osbench boot", console);
+     for job in JOBS {
+         said.must_say(&format!("===TEST_END {job} exit=0==="))?;
