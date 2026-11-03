@@ -1,0 +1,40 @@
+--- a/kernel/src/sync.rs	2026-11-03 22:12:07
++++ b/kernel/src/sync.rs	2026-11-03 22:12:07
+@@ -135,6 +135,17 @@
+     #[track_caller]
+     fn acquire(&self) -> LockGuard<'_, T> {
+         crate::preempt::disable();
++        // SCOUT (never committed): test-and-test-and-set, no FIFO handover.
++        loop {
++            if self.ticket.0.compare_exchange_weak(0, 1, Ordering::Acquire, Ordering::Relaxed).is_ok() {
++                return LockGuard { lock: self };
++            }
++            while self.ticket.0.load(Ordering::Relaxed) != 0 {
++                core::hint::spin_loop();
++                crate::arch::tlb::poll();
++            }
++        }
++        #[allow(unreachable_code)]
+         let my_ticket = self.ticket.fetch_advance(Ordering::Relaxed);
+         let mut spins = 0u64;
+         let mut next_warn = 50_000_000u64;
+@@ -184,8 +195,8 @@
+         #[cfg(feature = "mask-windows")]
+         crate::windows::outside_a_handler("a `sync::Lock`");
+         crate::preempt::disable();
+-        let current = self.now.load(ACQUIRED);
+-        match self.ticket.compare_advance(current, Ordering::Relaxed, Ordering::Relaxed) {
++        let _ = ACQUIRED;
++        match self.ticket.0.compare_exchange(0, 1, Ordering::Acquire, Ordering::Relaxed) {
+             Ok(_) => Some(LockGuard { lock: self }),
+             Err(_) => {
+                 crate::preempt::enable();
+@@ -224,7 +235,7 @@
+ 
+ impl<T> Drop for LockGuard<'_, T> {
+     fn drop(&mut self) {
+-        self.lock.now.fetch_advance(Ordering::Release);
++        self.lock.ticket.0.store(0, Ordering::Release);
+         crate::preempt::enable();
+     }
+ }

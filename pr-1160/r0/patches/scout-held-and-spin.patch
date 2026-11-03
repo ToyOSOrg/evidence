@@ -1,0 +1,196 @@
+diff --git a/kernel/src/arch/aarch64/hw.rs b/kernel/src/arch/aarch64/hw.rs
+index b7be85afb..05706aa67 100644
+--- a/kernel/src/arch/aarch64/hw.rs
++++ b/kernel/src/arch/aarch64/hw.rs
+@@ -76,6 +76,11 @@ impl Hw for KernelHw {
+         let _masked = crate::arch::IrqGuard::close();
+         // SAFETY: `save`/`restore` are live Box-backed contexts from
+         // `SchedPass::finish`, freed only by a later pass.
++        let held = crate::sync::SCOUT_HELD[percpu::cpu_id() as usize].load(core::sync::atomic::Ordering::Relaxed);
++        if held != 0 {
++            panic!("SCOUT: cpu{} switches out tid {:?} holding or queued on {held} lock(s), preempt depth {}",
++                percpu::cpu_id(), percpu::current_tid(), crate::preempt::count());
++        }
+         unsafe {
+             (*save).thread_pointer = cpu::thread_pointer();
+             (*save).preempt = crate::preempt::count();
+diff --git a/kernel/src/sync.rs b/kernel/src/sync.rs
+index 58d151688..d5dfd6a08 100644
+--- a/kernel/src/sync.rs
++++ b/kernel/src/sync.rs
+@@ -78,6 +78,78 @@ pub struct Lock<T> {
+     ticket: AtomicTicket,
+     now: AtomicTicket,
+     data: UnsafeCell<T>,
++    #[cfg(not(feature = "loom"))]
++    scout: Scout,
++}
++
++/// SCOUT (never committed): the holder of a `Lock`, as its acquisition wrote it.
++#[cfg(not(feature = "loom"))]
++struct Scout {
++    who: core::sync::atomic::AtomicU64,
++    site: core::sync::atomic::AtomicPtr<core::panic::Location<'static>>,
++    ret: [core::sync::atomic::AtomicU64; 4],
++}
++
++#[cfg(not(feature = "loom"))]
++impl Scout {
++    const fn new() -> Self {
++        Self {
++            who: core::sync::atomic::AtomicU64::new(0),
++            site: core::sync::atomic::AtomicPtr::new(core::ptr::null_mut()),
++            ret: [const { core::sync::atomic::AtomicU64::new(0) }; 4],
++        }
++    }
++
++    #[track_caller]
++    fn took(&self) {
++        if !crate::log::PERCPU_READY.load(Ordering::Relaxed) {
++            return;
++        }
++        let task = crate::scheduler::current_task().map_or(0xFFFF_FFFF_FFFF, |t| t.pack());
++        let who = 1 << 63 | (crate::arch::percpu::cpu_id() as u64) << 48 | task & 0xFFFF_FFFF_FFFF;
++        self.who.store(who, Ordering::Relaxed);
++        self.site.store(core::panic::Location::caller() as *const _ as *mut _, Ordering::Relaxed);
++        let mut fp = crate::arch::cpu::frame_pointer();
++        for slot in &self.ret {
++            let ret = if fp != 0 && fp.is_multiple_of(8) && crate::mm::is_kernel_addr(fp) {
++                // SAFETY: a scout's walk of this stack's own frame records.
++                let (next, ret) = unsafe { (*(fp as *const u64), *((fp + 8) as *const u64)) };
++                fp = next;
++                ret
++            } else {
++                0
++            };
++            slot.store(ret, Ordering::Relaxed);
++        }
++    }
++
++    fn gave(&self) {
++        self.who.store(0, Ordering::Relaxed);
++    }
++
++    fn report(&self, lock: u64, caller: &core::panic::Location<'_>, ticket: u32, now: u32) {
++        let who = self.who.load(Ordering::Relaxed);
++        let site = self.site.load(Ordering::Relaxed);
++        // SAFETY: a scout's read of a `&'static Location` it stored.
++        let site = if site.is_null() { None } else { Some(unsafe { &*site }) };
++        crate::log!(
++            "SCOUT-SPIN lock {lock:#x} at {caller}: ticket={ticket} now={now}; holder word {who:#x} (cpu {} task {:#x}) from {site:?}",
++            (who >> 48) & 0x7FFF,
++            who & 0xFFFF_FFFF_FFFF,
++        );
++        for ret in &self.ret {
++            let ret = ret.load(Ordering::Relaxed);
++            match crate::symbols::kernel_symbol(ret) {
++                Some((name, off)) => crate::log!("SCOUT-SPIN   holder frame {ret:#x} {name}+{off:#x}"),
++                None => crate::log!("SCOUT-SPIN   holder frame {ret:#x}"),
++            }
++        }
++        for cpu in 0..crate::smp::cpu_count() as usize {
++            crate::log!("SCOUT-SPIN   cpu{cpu} holds or queues {}", SCOUT_HELD[cpu].load(Ordering::Relaxed));
++        }
++        crate::hw::report_contexts(0, None);
++        crate::symbols::kernel_backtrace(crate::arch::cpu::frame_pointer(), 12);
++    }
+ }
+ 
+ // SAFETY: the ticket protocol serializes access to `data`; `Send` is required
+@@ -93,6 +165,7 @@ impl<T> Lock<T> {
+             ticket: AtomicTicket::new(Ticket::ZERO),
+             now: AtomicTicket::new(Ticket::ZERO),
+             data: UnsafeCell::new(val),
++            scout: Scout::new(),
+         }
+     }
+ 
+@@ -135,6 +208,7 @@ impl<T> Lock<T> {
+     #[track_caller]
+     fn acquire(&self) -> LockGuard<'_, T> {
+         crate::preempt::disable();
++        scout_held(1);
+         let my_ticket = self.ticket.fetch_advance(Ordering::Relaxed);
+         let mut spins = 0u64;
+         let mut next_warn = 50_000_000u64;
+@@ -142,6 +216,8 @@ impl<T> Lock<T> {
+         // poll inside this spin takes locks of its own, and a nested one that
+         // succeeded would otherwise clear the slot while this spin still waits.
+         let mut was = None;
++        let mut scout_since = 0u64;
++        let mut scout_said = false;
+         while self.now.load(ACQUIRED) != my_ticket {
+             // Inside the loop, so an uncontended acquisition writes nothing:
+             // what a CPU is waiting for is the one thing a record sealed from
+@@ -161,6 +237,18 @@ impl<T> Lock<T> {
+             // which `Shootdown::serve` survives.
+             crate::arch::tlb::poll();
+             spins += 1;
++            #[cfg(not(feature = "loom"))]
++            if spins.is_power_of_two() && spins >= 1 << 16 && crate::log::PERCPU_READY.load(Ordering::Relaxed) {
++                let at = crate::clock::nanos_since_boot();
++                match scout_since {
++                    0 => scout_since = at,
++                    since if !scout_said && at.saturating_sub(since) > 1_000_000_000 => {
++                        scout_said = true;
++                        self.scout.report(self as *const Self as u64, core::panic::Location::caller(), my_ticket.raw(), self.now.load(Ordering::Relaxed).raw());
++                    }
++                    _ => {}
++                }
++            }
+             if spins == next_warn {
+                 let caller = core::panic::Location::caller();
+                 crate::log!("LOCK CONTENTION: {}M spins at {}, ticket={} now={}",
+@@ -176,6 +264,8 @@ impl<T> Lock<T> {
+         if let Some(was) = was {
+             crate::hardlockup::spinning_on_nothing(was);
+         }
++        #[cfg(not(feature = "loom"))]
++        self.scout.took();
+         LockGuard { lock: self }
+     }
+ 
+@@ -186,7 +276,12 @@ impl<T> Lock<T> {
+         crate::preempt::disable();
+         let current = self.now.load(ACQUIRED);
+         match self.ticket.compare_advance(current, Ordering::Relaxed, Ordering::Relaxed) {
+-            Ok(_) => Some(LockGuard { lock: self }),
++            Ok(_) => {
++                scout_held(1);
++                #[cfg(not(feature = "loom"))]
++                self.scout.took();
++                Some(LockGuard { lock: self })
++            }
+             Err(_) => {
+                 crate::preempt::enable();
+                 None
+@@ -224,7 +319,10 @@ impl<T> DerefMut for LockGuard<'_, T> {
+ 
+ impl<T> Drop for LockGuard<'_, T> {
+     fn drop(&mut self) {
++        #[cfg(not(feature = "loom"))]
++        self.lock.scout.gave();
+         self.lock.now.fetch_advance(Ordering::Release);
++        scout_held(u32::MAX);
+         crate::preempt::enable();
+     }
+ }
+@@ -244,3 +342,18 @@ impl<T> Masked<T> {
+         self.0.lock_masked(closed)
+     }
+ }
++
++/// SCOUT (never committed): `sync::Lock`s this CPU holds or queues for.
++#[cfg(not(feature = "loom"))]
++pub static SCOUT_HELD: [AtomicU32; 64] = [const { AtomicU32::new(0) }; 64];
++
++#[cfg(not(feature = "loom"))]
++#[inline]
++fn scout_held(delta: u32) {
++    if crate::log::PERCPU_READY.load(Ordering::Relaxed) {
++        SCOUT_HELD[crate::arch::percpu::cpu_id() as usize].fetch_add(delta, Ordering::Relaxed);
++    }
++}
++
++#[cfg(feature = "loom")]
++fn scout_held(_: u32) {}

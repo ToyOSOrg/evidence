@@ -1,0 +1,133 @@
+diff --git a/tests/common/qemu.rs b/tests/common/qemu.rs
+index e76062e0c..a12152cc5 100644
+--- a/tests/common/qemu.rs
++++ b/tests/common/qemu.rs
+@@ -2306,7 +2306,15 @@ fn qemu_command(
+         .unwrap_or_else(|why| panic!("[qemu] {why}"))
+         .drives(firmware_vars);
+ 
+-    let mut qemu = Command::new(arch.qemu());
++    // SCOUT (never committed): the guest's vCPUs at background QoS, the host's other work above them.
++    let mut qemu = match std::env::var_os("SCOUT_BG") {
++        Some(_) => {
++            let mut wrapped = Command::new("taskpolicy");
++            wrapped.args(["-c", "background"]).arg(arch.qemu());
++            wrapped
++        }
++        None => Command::new(arch.qemu()),
++    };
+     if let Some(boot) = arch.boot() {
+         qemu.arg("-boot").arg(boot);
+     }
+@@ -2314,6 +2322,9 @@ fn qemu_command(
+     let accel = options.profile.accel();
+     if accel.is_hardware() {
+         qemu.arg("-accel").arg(accel.name());
++    } else if std::env::var_os("SCOUT_TCG_SINGLE").is_some() {
++        // SCOUT (never committed): every vCPU on one host thread.
++        qemu.arg("-accel").arg("tcg,thread=single");
+     }
+ 
+     // Without this QEMU runs its default-device pass whenever no network
+@@ -2602,6 +2613,9 @@ fn qemu_command(
+ 
+     if options.gdb_stub {
+         qemu.arg("-s");
++    } else if let Some(port) = scout_gdb_port(boot_image) {
++        // SCOUT (never committed): a stub to read a silent guest's vCPUs.
++        qemu.arg("-gdb").arg(format!("tcp::{port}"));
+     }
+     if let Some(socket) = qmp_socket {
+         qemu.arg("-qmp")
+@@ -2923,3 +2937,12 @@ fn wait_for_ready(
+     record_boot(start.elapsed());
+     seen
+ }
++
++/// SCOUT (never committed): this boot's gdbstub port, from `SCOUT_GDB` and its image's path.
++pub fn scout_gdb_port(boot_image: &Path) -> Option<u16> {
++    use std::hash::{Hash, Hasher};
++    let base: u16 = std::env::var("SCOUT_GDB").ok()?.parse().ok()?;
++    let mut h = std::collections::hash_map::DefaultHasher::new();
++    boot_image.hash(&mut h);
++    Some(base + (h.finish() % 2000) as u16)
++}
+diff --git a/tests/toyos.rs b/tests/toyos.rs
+index d14260b77..9c19026f1 100644
+--- a/tests/toyos.rs
++++ b/tests/toyos.rs
+@@ -3774,6 +3774,74 @@ fn virt_console(qemu: &QemuInstance) -> String {
+ fn judge_virt_job(qemu: &mut QemuInstance, serial: &mut String, job: &str, said: &str) -> Result<(), String> {
+     let end = format!("===TEST_END {job} ");
+     if let Err(why) = await_marker(qemu, serial, &end, &format!("the job {job} to end")) {
++        if let Some(port) = common::qemu::scout_gdb_port(qemu.boot_image()) {
++            // SCOUT (never committed): every vCPU's registers, the guest still alive.
++            let run = |cmds: &[String]| {
++                let mut lldb = std::process::Command::new("lldb");
++                lldb.arg("--batch").arg("-o").arg(format!("gdb-remote {port}"));
++                for c in cmds {
++                    lldb.arg("-o").arg(c);
++                }
++                lldb.arg("-o").arg("process detach");
++                lldb.output().map(|o| format!("{}{}", String::from_utf8_lossy(&o.stdout), String::from_utf8_lossy(&o.stderr))).unwrap_or_else(|e| e.to_string())
++            };
++            let mut cmds = Vec::new();
++            for t in 1..=8 {
++                cmds.push(format!("thread select {t}"));
++                cmds.push("register read pc sp lr fp cpsr x0 x1 x2 x19 x20 x21 x22 x23 x24 x25 x26 x27 x28".to_string());
++                cmds.push("register read VBAR_EL1 TPIDR_EL1 ELR_EL1 ESR_EL1 SP_EL0".to_string());
++            }
++            let first = run(&cmds);
++            eprintln!("SCOUT-LLDB\n{first}");
++            let field = |text: &str, name: &str| -> Option<u64> {
++                let rest = text.split(&format!("{name} = 0x")).nth(1)?;
++                u64::from_str_radix(&rest.chars().take_while(char::is_ascii_hexdigit).collect::<String>(), 16).ok()
++            };
++            let off = |name: &str| std::env::var(name).ok().and_then(|v| u64::from_str_radix(&v, 16).ok()).unwrap_or(0);
++            if let (Some(vbar), Some(lock)) = (field(&first, "VBAR_EL1"), field(&first, "x20")) {
++                let slide = vbar - off("SCOUT_VECTORS");
++                let mut cmds = vec![
++                    format!("memory read -s8 -fx -c32 {:#x}", lock - 0x40),
++                    format!("memory read -s4 -fx -c16 {:#x}", slide + off("SCOUT_HELD")),
++                    format!("memory read -s8 -fx -c8 {:#x}", slide + off("SCOUT_PC")),
++                    format!("memory read -s8 -fu -c8 {:#x}", slide + off("SCOUT_AT")),
++                    format!("memory read -s8 -fu -c8 {:#x}", slide + off("SCOUT_IDLE_IN")),
++                    format!("memory read -s8 -fu -c8 {:#x}", slide + off("SCOUT_IDLE_OUT")),
++                    format!("memory read -s8 -fu -c1 {:#x}", slide + off("SCOUT_LAST_TX")),
++                ];
++                for t in first.split("TPIDR_EL1 = 0x").skip(1) {
++                    let tp = u64::from_str_radix(&t.chars().take_while(char::is_ascii_hexdigit).collect::<String>(), 16).unwrap_or(0);
++                    cmds.push(format!("memory read -s4 -fx -c24 {tp:#x}"));
++                }
++                eprintln!("SCOUT-LLDB slide {slide:#x}\n{}", run(&cmds));
++                for probe in 0..4 {
++                    eprintln!("SCOUT-LLDB lock probe {probe}\n{}", run(&[format!("memory read -s4 -fx -c72 {lock:#x}")]));
++                    std::thread::sleep(std::time::Duration::from_secs(3));
++                }
++                let site = field(&first, "x19").unwrap_or(0);
++                eprintln!("SCOUT-LLDB around\n{}", run(&[
++                    format!("memory read -s8 -fx -c96 {lock:#x}"),
++                    format!("memory read -s8 -fx -c4 {site:#x}"),
++                ]));
++                // Frame-pointer walk on every vCPU, one level per stop.
++                let mut fps: Vec<u64> = first.split("x29 = 0x").skip(1)
++                    .map(|t| u64::from_str_radix(&t.chars().take_while(char::is_ascii_hexdigit).collect::<String>(), 16).unwrap_or(0))
++                    .collect();
++                for level in 0..14 {
++                    let cmds: Vec<String> = fps.iter().map(|fp| format!("memory read -s8 -fx -c2 {fp:#x}")).collect();
++                    let out = run(&cmds);
++                    eprintln!("SCOUT-LLDB frames {level}\n{out}");
++                    let mut next = Vec::new();
++                    for chunk in out.split("(lldb) memory read").skip(1) {
++                        let words: Vec<u64> = chunk.lines().nth(1).and_then(|l| l.split_once(": ")).map(|(_, w)| w.split_whitespace()
++                            .filter_map(|x| u64::from_str_radix(x.trim_start_matches("0x"), 16).ok()).collect()).unwrap_or_default();
++                        next.push(words.first().copied().unwrap_or(0));
++                    }
++                    if next.iter().all(|&f| f == 0) { break; }
++                    fps = next;
++                }
++            }
++        }
+         return Err(format!("{why}\nserial:\n{serial}"));
+     }
+     let ended = serial
