@@ -1,0 +1,31 @@
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.58s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-fb52eeb2ee2fc502)
+23:28:07   BUILD x86_64 binaries of tests/guest/rust-tests
+23:34:16   BUILT x86_64 binaries of tests/guest/rust-tests  (369s)
+23:34:16   BUILD x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests
+23:35:08   BUILT x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests  (52s)
+23:35:08 [toyos] Compiling 143 C tests, and attempting 24 declared ones...
+23:35:15 [metal] 3 registration(s) and 0 shared member(s) over 2 boot(s)
+23:35:15   BUILD x86_64 kernel, loader, ROOT of <scratch>/metal-sc/t14/acpicase/system-0d0a7ff57e0ba1fa.toml
+23:35:19 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+23:35:19   BUILT x86_64 kernel, loader, ROOT of <scratch>/metal-sc/t14/acpicase/system-0d0a7ff57e0ba1fa.toml  (4s)
+23:35:19 [metal] acpicase: 1 job(s) under a list bound of 60000 ms, armed with [] and a boot deadline of 120000 ms — <scratch>/metal-sc/t14/acpicase/image.img
+23:35:19   BUILD x86_64 ROOT of <scratch>/metal-sc/t14/testcases/system-a42600e399419d5d.toml
+23:35:21 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+23:35:21   BUILT x86_64 ROOT of <scratch>/metal-sc/t14/testcases/system-a42600e399419d5d.toml  (2s)
+23:35:21 [metal] testcases: 3 job(s) under a list bound of 60000 ms, armed with [] and a boot deadline of 120000 ms — <scratch>/metal-sc/t14/testcases/image.img
+# One boot per image. Each invocation is `cargo <words>` from this worktree.
+
+acpicase
+  image: <scratch>/metal-sc/t14/acpicase/image.img
+  cargo run -p toyos-metal -- --image <scratch>/metal-sc/t14/acpicase/image.img --readback <scratch>/metal-sc/t14/acpicase --fat32-check
+
+testcases
+  image: <scratch>/metal-sc/t14/testcases/image.img
+  cargo run -p toyos-metal -- --image <scratch>/metal-sc/t14/testcases/image.img --readback <scratch>/metal-sc/t14/testcases --fat32-check
+23:35:21 [metal] staged 2 image(s); <scratch>/metal-sc/t14/request.txt lists them. The machine was not touched, so this run establishes nothing about it.
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `<dev>/toyos-supervised-claims/target/debug/deps/toyos_build-fb52eeb2ee2fc502 --metal --metal-readback <scratch>/metal-sc/t14 acpi_server_death acpi_tables_loaded usbd_drives_the_type_c_controller` (exit status: 2)
+EXIT=2
