@@ -11,3 +11,11 @@ Masked as in `combined-r5/`.
 | `metal-r5b-judge-t14.log`, `metal-r5b-judge-amd.log` | `--metal --metal-readback <scratch>/metal-r5b-judge/{t14,amd} …` over copies of the r5b readbacks | boot `699baad1c`, harness `ad70b5bf5` | exit 0: T14 4/4, AMD 3/3 |
 
 `ad70b5bf5` changes the departure's copy, the holder's wake and `with_bound`'s re-check. None of these is a path the metal rows read: the declaration, the domains and remapping entries, and the boot controllers' claims. Nothing on either bench arms a slot.
+
+After main moved by #1063, which takes syscall 165, `da40835f2` merges it and moves the device set to 166 and 167:
+
+| file | command | revision | result |
+|---|---|---|---|
+| `r7-ci-host.log` | `cargo run -- --ci host` | `da40835f2` | exit 0, 109 green |
+| `r7-build-x86.log`, `r7-build-arm.log` | `cargo run -- --build-only`, `--arch aarch64` | `da40835f2` | exit 0, 0 |
+| `r7-hotplug.log` | `a_function_arrives_and_leaves` | `da40835f2` | exit 0, `kept=Some(Gone)` |
