@@ -1,0 +1,64 @@
+===VERSION
+v1.39.7
+===FSCK /images/*.img
+Running userspace offline fsck
+bcachefs (/images/*.img): error reading superblock: No such file or directory
+  requested read-only, exclusive
+error starting filesystem: No such file or directory
+Error: No such file or directory
+===EXIT /images/*.img 1
+===CMDS
+Check an existing filesystem for errors
+
+Usage: bcachefs fsck [OPTIONS] <DEVICES>...
+===OPT [nodiscard] /images/x4.raw exit 134
+  with options: degraded=yes,fsck,fix_errors=no,nochanges,read_only,noreconcile_enabled,nodiscard
+recovering from clean shutdown, journal seq 5
+Journal keys: 0 read, 0 after sorting and compacting
+going read-write
+bcachefs: fs/btree/interior.c:2067: btree_split: Assertion `!(!find_balanced_split(trans, &split_srcs, &dsts, keys, &b->format, (b->nr.live_u64s * 3) / 5, (18446744073709551615UL)))' failed.
+
+bcachefs: fatal SIGABRT
+Aborted
+===OPT [nodiscard,noreconcile_enabled,journal_reclaim_delay=1000000] /images/x4.raw exit 134
+  with options: degraded=yes,journal_reclaim_delay=1000000,fsck,fix_errors=no,nochanges,read_only,noreconcile_enabled,nodiscard
+recovering from clean shutdown, journal seq 5
+Journal keys: 0 read, 0 after sorting and compacting
+going read-write
+bcachefs: fs/btree/interior.c:2067: btree_split: Assertion `!(!find_balanced_split(trans, &split_srcs, &dsts, keys, &b->format, (b->nr.live_u64s * 3) / 5, (18446744073709551615UL)))' failed.
+
+bcachefs: fatal SIGABRT
+Aborted
+===OPT [norecovery] /images/x4.raw exit 0
+Running userspace offline fsck
+Using encoding defined by superblock: utf8-12.1.0
+starting version per_dev_fragmentation_lru (1.39)
+  with options: degraded=yes,fsck,fix_errors=no,nochanges,norecovery,recovery_pass_last=snapshots_read,read_only,noreconcile_enabled
+recovering from clean shutdown, journal seq 5
+Journal keys: 0 read, 0 after sorting and compacting
+===OPT [nodiscard] /images/churn.raw exit 134
+churn.raw has 1.19M btree buckets and 13.5M marked in bitmap
+  scheduling recovery pass btree_bitmap_gc (49)
+bcachefs: fs/btree/interior.c:2067: btree_split: Assertion `!(!find_balanced_split(trans, &split_srcs, &dsts, keys, &b->format, (b->nr.live_u64s * 3) / 5, (18446744073709551615UL)))' failed.
+check_subvols...
+bcachefs: fatal SIGABRT
+ done (0 seconds)
+check_inodes...[<0>] 0x7fd1e743e6f0B
+Aborted
+===OPT [nodiscard,noreconcile_enabled,journal_reclaim_delay=1000000] /images/churn.raw exit 134
+churn.raw has 1.19M btree buckets and 13.5M marked in bitmap
+  scheduling recovery pass btree_bitmap_gc (49)
+check_inodes...bcachefs: fs/btree/interior.c:2067: btree_split: Assertion `!(!find_balanced_split(trans, &split_srcs, &dsts, keys, &b->format, (b->nr.live_u64s * 3) / 5, (18446744073709551615UL)))' failed.
+
+bcachefs: fatal SIGABRT
+ done (0 seconds)
+check_extents...[<0>] 0x7f05bf63e6f0B
+Aborted
+===OPT [norecovery] /images/churn.raw exit 0
+Running userspace offline fsck
+Using encoding defined by superblock: utf8-12.1.0
+starting version per_dev_fragmentation_lru (1.39)
+  with options: degraded=yes,fsck,fix_errors=no,nochanges,norecovery,recovery_pass_last=snapshots_read,read_only,noreconcile_enabled
+recovering from clean shutdown, journal seq 191
+Journal keys: 0 read, 0 after sorting and compacting
+===DONE

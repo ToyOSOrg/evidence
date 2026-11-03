@@ -1,0 +1,273 @@
+    Checking bcachefs v0.1.0 ($WORKTREE/lib/bcachefs)
+error[E0432]: unresolved imports `bcachefs::BlockBuf`, `bcachefs::BlockIO`, `bcachefs::BlockNum`, `bcachefs::DeviceError`, `bcachefs::Formatted`, `bcachefs::FsError`, `bcachefs::Mounted`, `bcachefs::ReadOnly`, `bcachefs::ReadWrite`, `bcachefs::Superblock`, `bcachefs::TransferError`, `bcachefs::VecBlockIO`
+  --> lib/bcachefs/tests/crash.rs:16:16
+   |
+16 | ...::{BlockBuf, BlockIO, BlockNum, DeviceError, Formatted, FsError, Mounted, ReadOnly, ReadWrite, Superblock, TransferError, VecBlockIO};
+   |       ^^^^^^^^  ^^^^^^^  ^^^^^^^^  ^^^^^^^^^^^  ^^^^^^^^^  ^^^^^^^  ^^^^^^^  ^^^^^^^^  ^^^^^^^^^  ^^^^^^^^^^  ^^^^^^^^^^^^^  ^^^^^^^^^^
+   |       |         |        |         |            |          |        |        |         |          |
+   |       |         |        |         |            |          |        |        |         |          no `Superblock` in the root
+   |       |         |        |         |            |          |        |        |         no `ReadWrite` in the root
+   |       |         |        |         |            |          |        |        no `ReadOnly` in the root
+   |       |         |        |         |            |          |        no `Mounted` in the root
+   |       |         |        |         |            |          no `FsError` in the root
+   |       |         |        |         |            no `Formatted` in the root
+   |       |         |        |         no `DeviceError` in the root
+   |       |         |        no `BlockNum` in the root
+   |       |         no `BlockIO` in the root
+   |       no `BlockBuf` in the root
+
+error[E0432]: unresolved imports `bcachefs::BlockNum`, `bcachefs::Extent`, `bcachefs::Formatted`, `bcachefs::FsError`, `bcachefs::FsUuid`, `bcachefs::Mounted`, `bcachefs::ReadOnly`, `bcachefs::ReadWrite`, `bcachefs::VecBlockIO`
+ --> lib/bcachefs/tests/integration.rs:1:16
+  |
+1 | use bcachefs::{BlockNum, Extent, Formatted, FsError, FsUuid, Mounted, ReadOnly, ReadWrite, VecBlockIO};
+  |                ^^^^^^^^  ^^^^^^  ^^^^^^^^^  ^^^^^^^  ^^^^^^  ^^^^^^^  ^^^^^^^^  ^^^^^^^^^  ^^^^^^^^^^ no `VecBlockIO` in the root
+  |                |         |       |          |        |       |        |         |
+  |                |         |       |          |        |       |        |         no `ReadWrite` in the root
+  |                |         |       |          |        |       |        no `ReadOnly` in the root
+  |                |         |       |          |        |       no `Mounted` in the root
+  |                |         |       |          |        no `FsUuid` in the root
+  |                |         |       |          no `FsError` in the root
+  |                |         |       no `Formatted` in the root
+  |                |         no `Extent` in the root
+  |                no `BlockNum` in the root
+
+For more information about this error, try `rustc --explain E0432`.
+error[E0433]: cannot find `FsError` in `bcachefs`
+   --> lib/bcachefs/tests/integration.rs:646:23
+    |
+646 |         Err(bcachefs::FsError::EntryTooLarge { size, max }) => {
+    |                       ^^^^^^^ could not find `FsError` in `bcachefs`
+
+error: could not compile `bcachefs` (test "crash") due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+error[E0433]: cannot find `FsError` in `bcachefs`
+   --> lib/bcachefs/tests/integration.rs:668:23
+    |
+668 |         Err(bcachefs::FsError::NameTooLong { .. }) => {}
+    |                       ^^^^^^^ could not find `FsError` in `bcachefs`
+
+error[E0433]: cannot find `FsError` in `bcachefs`
+   --> lib/bcachefs/tests/integration.rs:820:60
+    |
+820 |     assert!(matches!(empty.rename("a", "b"), Err(bcachefs::FsError::NotFound)));
+    |                                                            ^^^^^^^ could not find `FsError` in `bcachefs`
+
+error[E0433]: cannot find `FsError` in `bcachefs`
+   --> lib/bcachefs/tests/integration.rs:825:74
+    |
+825 |     assert!(matches!(fs.rename("absent", "bystander.bin"), Err(bcachefs::FsError::NotFound)));
+    |                                                                          ^^^^^^^ could not find `FsError` in `bcachefs`
+
+error[E0433]: cannot find `Superblock` in `bcachefs`
+   --> lib/bcachefs/tests/integration.rs:877:24
+    |
+877 |     let sb = bcachefs::Superblock::read(fs.io()).expect("the superblock");
+    |                        ^^^^^^^^^^ could not find `Superblock` in `bcachefs`
+
+error[E0433]: cannot find `BlockBuf` in `bcachefs`
+   --> lib/bcachefs/tests/integration.rs:878:32
+    |
+878 |     let mut bitmap = bcachefs::BlockBuf::zeroed();
+    |                                ^^^^^^^^ could not find `BlockBuf` in `bcachefs`
+
+error[E0433]: cannot find `BlockIO` in `bcachefs`
+   --> lib/bcachefs/tests/integration.rs:879:15
+    |
+879 |     bcachefs::BlockIO::read_block(fs.io(), sb.bitmap_start, &mut bitmap).expect("the bitmap");
+    |               ^^^^^^^ could not find `BlockIO` in `bcachefs`
+
+error[E0433]: cannot find `Superblock` in `bcachefs`
+    --> lib/bcachefs/tests/integration.rs:1102:26
+     |
+1102 |     let free = bcachefs::Superblock::read(fs.io()).expect("the superblock").free_blocks;
+     |                          ^^^^^^^^^^ could not find `Superblock` in `bcachefs`
+
+error[E0433]: cannot find `BlockBuf` in `bcachefs`
+    --> lib/bcachefs/tests/integration.rs:1116:33
+     |
+1116 |         let mut buf = bcachefs::BlockBuf::zeroed();
+     |                                 ^^^^^^^^ could not find `BlockBuf` in `bcachefs`
+
+error[E0433]: cannot find `BlockIO` in `bcachefs`
+    --> lib/bcachefs/tests/integration.rs:1117:19
+     |
+1117 |         bcachefs::BlockIO::read_block(fs.io(), BlockNum::new(b), &mut buf).expect("read");
+     |                   ^^^^^^^ could not find `BlockIO` in `bcachefs`
+
+error[E0433]: cannot find `DeviceError` in `bcachefs`
+    --> lib/bcachefs/tests/integration.rs:1174:34
+     |
+1174 |             return Err(bcachefs::DeviceError::classify(&Attempted));
+     |                                  ^^^^^^^^^^^ could not find `DeviceError` in `bcachefs`
+
+error[E0433]: cannot find `DeviceError` in `bcachefs`
+    --> lib/bcachefs/tests/integration.rs:1185:34
+     |
+1185 |             return Err(bcachefs::DeviceError::classify(&Attempted));
+     |                                  ^^^^^^^^^^^ could not find `DeviceError` in `bcachefs`
+
+error[E0433]: cannot find `DeviceError` in `bcachefs`
+    --> lib/bcachefs/tests/integration.rs:1213:116
+     |
+1213 | ...ock); assert!(matches!(e, bcachefs::DeviceError::Failed(_))); }
+     |                                        ^^^^^^^^^^^ could not find `DeviceError` in `bcachefs`
+
+error[E0433]: cannot find `DeviceError` in `bcachefs`
+    --> lib/bcachefs/tests/integration.rs:1254:28
+     |
+1254 |     let device = bcachefs::DeviceError::classify(&Attempted);
+     |                            ^^^^^^^^^^^ could not find `DeviceError` in `bcachefs`
+
+error[E0433]: cannot find `DeviceError` in `bcachefs`
+    --> lib/bcachefs/tests/integration.rs:1300:116
+     |
+1300 | ...ree); assert!(matches!(e, bcachefs::DeviceError::Failed(_))); }
+     |                                        ^^^^^^^^^^^ could not find `DeviceError` in `bcachefs`
+
+error[E0433]: cannot find `DeviceError` in `bcachefs`
+    --> lib/bcachefs/tests/integration.rs:1345:23
+     |
+1345 |         Err(bcachefs::DeviceError::classify(&OnBudget))
+     |                       ^^^^^^^^^^^ could not find `DeviceError` in `bcachefs`
+
+error[E0433]: cannot find `DeviceError` in `bcachefs`
+    --> lib/bcachefs/tests/integration.rs:1360:43
+     |
+1360 |         Err(FsError::DeviceSync(bcachefs::DeviceError::Refused(_))) => {}
+     |                                           ^^^^^^^^^^^ could not find `DeviceError` in `bcachefs`
+
+error[E0422]: cannot find struct, variant or union type `Recorded` in crate `bcachefs`
+  --> lib/bcachefs/tests/integration.rs:24:38
+   |
+24 |     assert_eq!(files[0].1, bcachefs::Recorded { symlink: false, size: 13, mtime: 42 });
+   |                                      ^^^^^^^^ not found in `bcachefs`
+
+error[E0425]: cannot find type `Extent` in crate `bcachefs`
+   --> lib/bcachefs/tests/integration.rs:581:86
+    |
+581 | fn write_pages(fs: &mut Mounted<VecBlockIO, ReadWrite>, pages: u32) -> Vec<bcachefs::Extent> {
+    |                                                                                      ^^^^^^ not found in `bcachefs`
+
+error[E0425]: cannot find type `Extent` in crate `bcachefs`
+   --> lib/bcachefs/tests/integration.rs:641:32
+    |
+641 |     let extents: Vec<bcachefs::Extent> = (0..400)
+    |                                ^^^^^^ not found in `bcachefs`
+
+error[E0422]: cannot find struct, variant or union type `Extent` in crate `bcachefs`
+   --> lib/bcachefs/tests/integration.rs:642:28
+    |
+642 |         .map(|i| bcachefs::Extent { start_block: 3000 + i * 2, block_count: 1, _reserved: 0 })
+    |                            ^^^^^^ not found in `bcachefs`
+
+error[E0425]: cannot find type `Extent` in crate `bcachefs`
+   --> lib/bcachefs/tests/integration.rs:677:30
+    |
+677 | fn runs(extents: &[bcachefs::Extent]) -> Vec<(u64, u32)> {
+    |                              ^^^^^^ not found in `bcachefs`
+
+error[E0405]: cannot find trait `TransferError` in crate `bcachefs`
+    --> lib/bcachefs/tests/integration.rs:1143:16
+     |
+1143 | impl bcachefs::TransferError for Attempted {
+     |                ^^^^^^^^^^^^^ not found in `bcachefs`
+
+error[E0405]: cannot find trait `TransferError` in crate `bcachefs`
+    --> lib/bcachefs/tests/integration.rs:1151:16
+     |
+1151 | impl bcachefs::TransferError for OnBudget {
+     |                ^^^^^^^^^^^^^ not found in `bcachefs`
+
+error[E0405]: cannot find trait `BlockIO` in crate `bcachefs`
+    --> lib/bcachefs/tests/integration.rs:1167:16
+     |
+1167 | impl bcachefs::BlockIO for Refuses {
+     |                ^^^^^^^ not found in `bcachefs`
+
+error[E0425]: cannot find type `BlockNum` in crate `bcachefs`
+    --> lib/bcachefs/tests/integration.rs:1170:26
+     |
+1170 |         block: bcachefs::BlockNum,
+     |                          ^^^^^^^^ not found in `bcachefs`
+
+error[E0425]: cannot find type `BlockBuf` in crate `bcachefs`
+    --> lib/bcachefs/tests/integration.rs:1171:29
+     |
+1171 |         buf: &mut bcachefs::BlockBuf,
+     |                             ^^^^^^^^ not found in `bcachefs`
+
+error[E0425]: cannot find type `DeviceError` in crate `bcachefs`
+    --> lib/bcachefs/tests/integration.rs:1172:31
+     |
+1172 |     ) -> Result<(), bcachefs::DeviceError> {
+     |                               ^^^^^^^^^^^ not found in `bcachefs`
+
+error[E0425]: cannot find type `BlockNum` in crate `bcachefs`
+    --> lib/bcachefs/tests/integration.rs:1181:26
+     |
+1181 |         block: bcachefs::BlockNum,
+     |                          ^^^^^^^^ not found in `bcachefs`
+
+error[E0425]: cannot find type `BlockBuf` in crate `bcachefs`
+    --> lib/bcachefs/tests/integration.rs:1182:25
+     |
+1182 |         buf: &bcachefs::BlockBuf,
+     |                         ^^^^^^^^ not found in `bcachefs`
+
+error[E0425]: cannot find type `DeviceError` in crate `bcachefs`
+    --> lib/bcachefs/tests/integration.rs:1183:31
+     |
+1183 |     ) -> Result<(), bcachefs::DeviceError> {
+     |                               ^^^^^^^^^^^ not found in `bcachefs`
+
+error[E0405]: cannot find trait `BlockIO` in crate `bcachefs`
+    --> lib/bcachefs/tests/integration.rs:1323:16
+     |
+1323 | impl bcachefs::BlockIO for Postpones {
+     |                ^^^^^^^ not found in `bcachefs`
+
+error[E0425]: cannot find type `BlockNum` in crate `bcachefs`
+    --> lib/bcachefs/tests/integration.rs:1326:26
+     |
+1326 |         block: bcachefs::BlockNum,
+     |                          ^^^^^^^^ not found in `bcachefs`
+
+error[E0425]: cannot find type `BlockBuf` in crate `bcachefs`
+    --> lib/bcachefs/tests/integration.rs:1327:29
+     |
+1327 |         buf: &mut bcachefs::BlockBuf,
+     |                             ^^^^^^^^ not found in `bcachefs`
+
+error[E0425]: cannot find type `DeviceError` in crate `bcachefs`
+    --> lib/bcachefs/tests/integration.rs:1328:31
+     |
+1328 |     ) -> Result<(), bcachefs::DeviceError> {
+     |                               ^^^^^^^^^^^ not found in `bcachefs`
+
+error[E0425]: cannot find type `BlockNum` in crate `bcachefs`
+    --> lib/bcachefs/tests/integration.rs:1334:26
+     |
+1334 |         block: bcachefs::BlockNum,
+     |                          ^^^^^^^^ not found in `bcachefs`
+
+error[E0425]: cannot find type `BlockBuf` in crate `bcachefs`
+    --> lib/bcachefs/tests/integration.rs:1335:25
+     |
+1335 |         buf: &bcachefs::BlockBuf,
+     |                         ^^^^^^^^ not found in `bcachefs`
+
+error[E0425]: cannot find type `DeviceError` in crate `bcachefs`
+    --> lib/bcachefs/tests/integration.rs:1336:31
+     |
+1336 |     ) -> Result<(), bcachefs::DeviceError> {
+     |                               ^^^^^^^^^^^ not found in `bcachefs`
+
+error[E0425]: cannot find type `DeviceError` in crate `bcachefs`
+    --> lib/bcachefs/tests/integration.rs:1344:44
+     |
+1344 |     fn sync(&self) -> Result<(), bcachefs::DeviceError> {
+     |                                            ^^^^^^^^^^^ not found in `bcachefs`
+
+Some errors have detailed explanations: E0405, E0422, E0425, E0432, E0433.
+For more information about an error, try `rustc --explain E0405`.
+error: could not compile `bcachefs` (test "integration") due to 40 previous errors

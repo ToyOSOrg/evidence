@@ -1,0 +1,47 @@
+
+running 25 tests
+test engine::mount::allocator::tests::an_emptied_bucket_counts_as_room_but_is_free_only_once_durable ... ok
+test engine::mount::allocator::tests::a_bucket_emptied_is_blocked_until_every_traversal_begun_before_ends ... ok
+test engine::tests::buckets::a_bucket_emptied_past_the_journal_is_found ... ok
+test engine::tests::buckets::a_bucket_emptied_by_an_entry_not_yet_durable_is_not_written_again ... ok
+test engine::tests::buckets::an_empty_bucket_a_backpointer_leads_into_is_refused ... ok
+test engine::tests::buckets::buckets_of_eight_nodes_fill_slot_by_slot_and_are_reused_once_all_eight_are_gone ... ok
+test engine::tests::buckets::a_bucket_a_traversal_may_still_lead_into_is_not_written_while_it_reads ... ok
+test engine::tests::buckets::renames_past_the_volumes_buckets_reuse_them_and_never_run_out ... ok
+test engine::tests::buckets::a_full_volume_crashed_mounts_read_write_and_still_removes_names ... ok
+test engine::tests::geometry::a_publication_split_again_by_its_own_keys_settles_self_describing ... FAILED
+test engine::tests::geometry::an_encrypted_node_of_one_block_unmounts_clean ... ok
+test engine::tests::geometry::one_publication_writes_hundreds_of_scattered_changes ... ok
+test engine::tests::buckets::a_full_volume_refuses_changes_by_name_and_still_removes_names_and_unmounts_clean ... ok
+test engine::tests::mount::a_key_of_an_unknown_type_is_refused_before_writing ... ok
+test engine::tests::mount::a_packed_leaf_past_a_node_once_unpacked_is_read_then_split ... ok
+test engine::tests::mount::a_pointer_to_a_cached_node_of_another_btree_is_refused ... ok
+test engine::tests::mount::a_volume_this_writer_cannot_keep_is_refused_read_write ... ok
+test engine::tests::mount::an_imported_journal_too_small_for_reclaim_is_read_and_refused_read_write ... ok
+test engine::tests::mount::files_and_directories_created_read_back_after_a_clean_unmount_and_check_clean ... ok
+test engine::tests::mount::a_clean_volume_with_an_empty_journal_survives_a_crash_going_read_write ... ok
+test engine::tests::mount::small_blocks_and_a_journal_position_off_a_block_are_refused ... ok
+test engine::tests::mount::the_unclean_fixture_of_16_kib_nodes_is_read_and_refused_read_write ... ok
+test engine::tests::mount::leaves_and_roots_split_and_their_buckets_and_accounting_derive ... ok
+test engine::tests::geometry::every_accepted_geometry_unmounts_clean_after_churn ... ok
+test engine::tests::buckets::metadata_only_capacity_returns_after_reopening_and_removing_all_names ... ok
+
+failures:
+
+---- engine::tests::geometry::a_publication_split_again_by_its_own_keys_settles_self_describing stdout ----
+
+thread 'engine::tests::geometry::a_publication_split_again_by_its_own_keys_settles_self_describing' (153301820) panicked at lib/bcachefs/src/engine/tests/geometry.rs:115:5:
+assertion `left == right` failed
+  left: [Derived { btree: Alloc, pos: Bpos { inode: 0, offset: 73, snapshot: 0 }, rule: "pointer generation other than its bucket's" }, Derived { btree: BucketGens, pos: Bpos { inode: 0, offset: 0, snapshot: 0 }, rule: "differs" }]
+ right: []
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    engine::tests::geometry::a_publication_split_again_by_its_own_keys_settles_self_describing
+
+test result: FAILED. 24 passed; 1 failed; 0 ignored; 0 measured; 150 filtered out; finished in 17.45s
+
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.09s
+     Running unittests src/lib.rs (target/debug/deps/bcachefs-f2c101278f6c619e)
+error: test failed, to rerun pass `-p bcachefs --lib`

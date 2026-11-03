@@ -1,0 +1,25 @@
+#!/usr/bin/ash
+# Runs upstream's userspace fsck, read-only, on every image in /images, then powers off.
+/usr/bin/mount -t proc proc /proc
+/usr/bin/mount -t sysfs sys /sys
+/usr/bin/mount -t devtmpfs dev /dev
+cd /tools-bundle
+echo "===VERSION"
+./lib/ld-linux-x86-64.so.2 --library-path ./lib ./bin/bcachefs version
+for img in /images/*.img; do
+  echo "===FSCK $img"
+  if [ -f "$img.pass" ]; then
+    /usr/bin/cat "$img.pass" | ./lib/ld-linux-x86-64.so.2 --library-path ./lib ./bin/bcachefs fsck -n -f -K "$img" 2>&1
+  else
+    ./lib/ld-linux-x86-64.so.2 --library-path ./lib ./bin/bcachefs fsck -n -f -K "$img" 2>&1 </dev/null
+  fi
+  echo "===EXIT $img $?"
+done
+if [ -f /images/cmds.sh ]; then
+  echo "===CMDS"
+  BC="/tools-bundle/lib/ld-linux-x86-64.so.2 --library-path /tools-bundle/lib /tools-bundle/bin/bcachefs"
+  export BC
+  /usr/bin/ash /images/cmds.sh 2>&1
+fi
+echo "===DONE"
+/usr/bin/busybox poweroff -f

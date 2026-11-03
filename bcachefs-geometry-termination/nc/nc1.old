@@ -1,0 +1,4 @@
+        while self.st.borrow().oldest_pin().is_some_and(|pin| pin < start) {
+            // Nothing else runs now, so every dirty node is ready to write.
+            assert!(self.reclaim_round(Order::OldestPin).await?, "committed changes no reclaim round writes");
+        }
