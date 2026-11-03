@@ -20,3 +20,17 @@ The QEMU `libc_children` run and its control predate the merge of main at
 `db6cab94a`; main's changes there (toyos-crypto, the timing-control syscall,
 ssh, `virtsmpcase`) reach none of the served-file spawn, file server or libc
 paths they exercise.
+
+## Round 2: the spawn cwd, DATA's exact check, swap, #934 and the geometry fix
+
+| file | command | revision | target | exit |
+|---|---|---|---|---|
+| `neg-cwd.log`, `neg-cwd.patch` | `cargo test --lib cwd` in `kernel/`, with `spawnable`'s absolute check dropped and restored in one command | `38608485c` content | host | 101: the refusal test fails; restored |
+| `neg-span.log`, `neg-span.patch` | `cargo test --lib a_volume_copied` in `system/fileserver`, with the probe's span refusal disabled and restored | `ebead3512` content | host | 101: the copied volume mounts; restored |
+| `build-swap.log` | `cargo run -- --build-only` | `7987307ff` content, before its commit | x86-64 image | 0 |
+| `ci-host-7987307ff.log`, `ci-image-7987307ff.log` | `--ci host`, `--ci image` | `7987307ff` | host; x86-64 and AArch64 | 0, 0 |
+| `ci-host-e7f2a85b0.log` | `--ci host` | `e7f2a85b0` (#934 merged in) | host | 109 steps green; its exit line was lost when the shell that chained it ended, so this run's verdict is the step summary, and `ci-host-f14f79e50.log` is the exit-coded run on the same base |
+| `ci-image-e7f2a85b0.log` | `--ci image` | `e7f2a85b0` | x86-64 and AArch64 | 0 |
+| `guest-libc-children-e7f2a85b0.log` | `cargo test --test toyos-build -- libc_children` | `e7f2a85b0` | QEMU x86-64, `libccase.toml` | 0 |
+| `bcachefs-lib-f14f79e50.log`, `bcachefs-clippy-f14f79e50.log` | `cargo test -p bcachefs --lib`; `cargo clippy -p bcachefs --lib --no-default-features -- -D warnings` | `f14f79e50` (geometry fix aaa71f0bb, 825b9ba7a) | host | 0, 176 passed; 0 |
+| `ci-host-f14f79e50.log` | `--ci host` | `f14f79e50` | host | 0, 109 steps green |
