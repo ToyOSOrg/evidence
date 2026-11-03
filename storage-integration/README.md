@@ -13,3 +13,10 @@ Paths, user and machine identifiers are masked (`<worktree>`, `<home>`,
 | `ci-host-f32a98839.log` | `cargo run -- --ci host` | `f32a98839` | host (macOS, aarch64) | 0, 109 steps green; the loom failures in it are the models step's negative controls |
 | `ci-image-f32a98839.log` | `cargo run -- --ci image` | `f32a98839` | x86-64 and AArch64 images | 0, 3 steps green |
 | `guest-bins-build.log` | `cargo build --profile toyos --target x86_64-unknown-toyos --bin process_tree --bin lseek_past_eof --bin fs_truncate_persist --bin spawn_from_tmp --bin abuse_elf_loader` in `tests/guest/rust-tests`, with the harness's toolchain and C environment | `f32a98839` | x86_64-unknown-toyos | 0, no warnings: a compile check of the changed metal-only guest binaries, which no run above boots |
+| `ci-host-db6cab94a.log` | `cargo run -- --ci host` | `db6cab94a` (main e3a421563 merged in) | host (macOS, aarch64) | 0, 109 steps green |
+| `ci-image-db6cab94a.log` | `cargo run -- --ci image` | `db6cab94a` | x86-64 and AArch64 images | 0, 3 steps green |
+
+The QEMU `libc_children` run and its control predate the merge of main at
+`db6cab94a`; main's changes there (toyos-crypto, the timing-control syscall,
+ssh, `virtsmpcase`) reach none of the served-file spawn, file server or libc
+paths they exercise.
