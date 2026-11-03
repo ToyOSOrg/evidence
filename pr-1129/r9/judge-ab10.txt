@@ -1,0 +1,206 @@
+boots: 1-base, 2-head, 3-norule, 4-spawn, 5-spawn, 6-norule, 7-head, 8-base, 9-norule, 10-base, 11-spawn, 12-head
+
+## P plumbing (norule/base): rows that resolve; "!" marks a slowdown over 2%
+  ! fs.disk.direct.seek                           ns     norule/base 1.081 (slower x1.081)  base [9468, 9438, 7835] norule [9688, 9528, 9678]
+    fs.disk.pread_4k                              ns     norule/base 1.019 (slower x1.019)  base [1473, 1482, 1452] norule [1483, 1493, 1513]
+    fs.disk.read_4k_at                            ns     norule/base 1.019 (slower x1.019)  base [1733, 1744, 1733] norule [1794, 1753, 1763]
+    fs.disk.seq_read.4096                         MB/s   norule/base 0.982 (slower x1.018)  base [5525, 5481, 5423] norule [5353, 5416, 5369]
+  ! fs.mem.pread_8                                ns     norule/base 1.115 (slower x1.115)  base [591, 571, 662] norule [682, 681, 671]
+    fs.mem.seq_write.1048576                      MB/s   norule/base 1.022 (slower x0.978)  base [3358, 3347, 3348] norule [3424, 3443, 3408]
+    fs.mem.seq_write.4096                         MB/s   norule/base 1.010 (slower x0.991)  base [2734, 2715, 2717] norule [2748, 2757, 2739]
+    fs.mem.stat                                   ns     norule/base 0.990 (slower x0.990)  base [2575, 2584, 2615] norule [2565, 2565, 2565]
+    mem.bw.copy                                   MB/s   norule/base 0.984 (slower x1.016)  base [8331, 8339, 8330] norule [8215, 8196, 8198]
+    mem.bw.write                                  MB/s   norule/base 0.992 (slower x1.008)  base [9787, 9748, 9740] norule [9708, 9653, 9678]
+    mem.malloc_churn.16.t16                       kops/s norule/base 0.982 (slower x1.018)  base [2970, 3039, 2968] norule [2908, 2966, 2944]
+  ! mem.munmap_touched_remote.4k                  ns     norule/base 1.072 (slower x1.072)  base [2936, 2965, 2746] norule [3085, 3095, 3086]
+    pingpong.futex.same_cpu                       ns     norule/base 1.014 (slower x1.014)  base [3657, 3707, 3697] norule [3717, 3727, 3767]
+    process.spawn_wait                            ns     norule/base 0.953 (slower x0.953)  base [455274, 424707, 423446] norule [413114, 414779, 414227]
+    syscall.null                                  ps     norule/base 1.005 (slower x1.005)  base [49050, 49482, 49483] norule [49485, 49556, 49681]
+  ! thread.spawn_join.stack64k                    ns     norule/base 1.022 (slower x1.022)  base [19276, 19397, 19647] norule [19897, 19848, 19867]
+    time.sleep_late.1us                           ns     norule/base 0.955 (slower x0.955)  base [1345, 1375, 1305] norule [1254, 1294, 1294]
+  ! wake.periodic.idle                            ns     norule/base 2.262 (slower x2.262)  base [34793, 5966, 5984] norule [34961, 35608, 35153]
+    work.build_shaped.j16                         ns     norule/base 0.979 (slower x0.979)  base [278655764, 278121571, 279646471] norule [272415141, 273450651, 273192049]
+
+## R rule (head/norule): rows that resolve; "!" marks a slowdown over 3%
+  ! crunch.single.deflate                         ns     head/norule 1.035 (slower x1.035)  norule [63682864, 63791036, 63914318] head [66881432, 67245494, 64037400]
+    fair.shared.helpers                           permille head/norule 1.009 (slower x0.991)  norule [491, 491, 485] head [492, 492, 496]
+    fs.disk.direct.fstat                          ns     head/norule 0.817 (slower x0.817)  norule [9769, 9698, 9778] head [7915, 8055, 7935]
+    fs.disk.direct.pread_4k                       ns     head/norule 0.852 (slower x0.852)  norule [11101, 11041, 11271] head [9347, 9729, 9407]
+    fs.disk.direct.read_4k_at                     ns     head/norule 0.832 (slower x0.832)  norule [20789, 20539, 20999] head [16892, 17724, 17262]
+    fs.disk.direct.seek                           ns     head/norule 0.811 (slower x0.811)  norule [9688, 9528, 9678] head [7765, 7925, 7745]
+    fs.disk.direct.stat                           ns     head/norule 0.830 (slower x0.830)  norule [11632, 11422, 11432] head [9508, 9619, 9498]
+    fs.disk.fstat                                 ns     head/norule 0.834 (slower x0.834)  norule [9838, 10049, 9869] head [8276, 8275, 8256]
+    fs.disk.open_close                            ns     head/norule 0.843 (slower x0.843)  norule [17022, 16872, 16611] head [14187, 14177, 14187]
+    fs.disk.read_4k                               ns     head/norule 0.947 (slower x0.947)  norule [1282, 1253, 1293] head [1202, 1203, 1222]
+    fs.disk.readdir.1000                          ns     head/norule 0.981 (slower x0.981)  norule [712727, 688060, 690224] head [682640, 684804, 683892]
+    fs.disk.reopen_read_4k                        ns     head/norule 0.844 (slower x0.844)  norule [17823, 17653, 17493] head [14868, 14868, 14968]
+    fs.disk.seq_write.1048576                     MB/s   head/norule 1.036 (slower x0.966)  norule [732, 731, 723] head [743, 761, 760]
+    fs.disk.seq_write.4096                        MB/s   head/norule 1.142 (slower x0.876)  norule [227, 229, 229] head [262, 256, 264]
+    fs.disk.stat                                  ns     head/norule 0.857 (slower x0.857)  norule [12764, 12684, 12534] head [10900, 10841, 10820]
+    fs.disk.tree.100                              ns     head/norule 0.957 (slower x0.957)  norule [10766789, 10786015, 10898076] head [10294504, 10423926, 10334799]
+    fs.disk.write_4k_at                           ns     head/norule 0.841 (slower x0.841)  norule [12554, 12534, 12593] head [10620, 10800, 10259]
+    fs.mem.pread_8                                ns     head/norule 0.916 (slower x0.916)  norule [682, 681, 671] head [601, 621, 641]
+    fs.mem.seq_read.1048576                       MB/s   head/norule 1.042 (slower x0.960)  norule [7979, 8024, 7974] head [8025, 8027, 8922]
+    ipc.reqrep.8                                  ns     head/norule 0.857 (slower x0.857)  norule [8245, 8256, 6632] head [6623, 6623, 6582]
+    ipc.reqrep_handle.8                           ns     head/norule 0.847 (slower x0.847)  norule [9528, 9608, 7614] head [7534, 7605, 7524]
+    mem.malloc_churn.1048576.t1                   kops/s head/norule 1.050 (slower x0.952)  norule [208, 214, 219] head [222, 221, 230]
+    mem.memcpy.4096                               MB/s   head/norule 0.996 (slower x1.004)  norule [89524, 89524, 89561] head [89523, 89034, 89034]
+    mem.memcpy.64                                 MB/s   head/norule 0.997 (slower x1.003)  norule [3968, 3969, 3969] head [3966, 3952, 3948]
+    mem.memcpy.65536                              MB/s   head/norule 0.996 (slower x1.004)  norule [67108, 67109, 67107] head [67105, 66712, 66714]
+  ! persist.append_4k_fsync                       ns     head/norule 1.031 (slower x1.031)  norule [2719189, 2792947, 2743514] head [2840336, 2823665, 2850164]
+    persist.fsync_clean                           ns     head/norule 0.855 (slower x0.855)  norule [35156, 33834, 34896] head [28804, 30026, 29986]
+    persist.seq_read_cached                       MB/s   head/norule 1.026 (slower x0.975)  norule [5435, 5495, 5505] head [5644, 5590, 5621]
+  ! pipe.throughput.16384                         MB/s   head/norule 0.409 (slower x2.445)  norule [8490, 8567, 8459] head [3454, 3440, 3542]
+    pipe.throughput.256                           MB/s   head/norule 2.474 (slower x0.404)  norule [205, 174, 189] head [466, 466, 473]
+    pipe.throughput.4096                          MB/s   head/norule 2.534 (slower x0.395)  norule [2064, 2083, 1878] head [5086, 5073, 5107]
+  ! process.spawn_wait                            ns     head/norule 1.070 (slower x1.070)  norule [413114, 414779, 414227] head [442422, 466331, 420139]
+    time.sleep_late.10ms                          ns     head/norule 0.986 (slower x0.986)  norule [56768, 56819, 57309] head [56447, 56237, 55787]
+  ! time.sleep_late.1us                           ns     head/norule 1.047 (slower x1.047)  norule [1254, 1294, 1294] head [1324, 1344, 1354]
+    wake.storm.drain.w4                           ns     head/norule 1.029 (slower x1.029)  norule [70041, 68318, 68078] head [70642, 70512, 71343]
+
+## S2 spawn fix (spawn/base): rows that resolve; "!" marks a slowdown over 3%
+  ! fs.disk.direct.fstat                          ns     spawn/base 1.078 (slower x1.078)  base [9688, 9729, 7975] spawn [9929, 9828, 9758]
+  ! fs.disk.direct.pread_4k                       ns     spawn/base 1.070 (slower x1.070)  base [11061, 11111, 9418] spawn [11151, 11421, 11231]
+  ! fs.disk.direct.read_4k_at                     ns     spawn/base 1.082 (slower x1.082)  base [20749, 20599, 17112] spawn [21039, 21300, 20899]
+  ! fs.disk.direct.seek                           ns     spawn/base 1.091 (slower x1.091)  base [9468, 9438, 7835] spawn [9768, 9788, 9628]
+  ! fs.disk.direct.stat                           ns     spawn/base 1.070 (slower x1.070)  base [11431, 11451, 9618] spawn [11542, 11732, 11491]
+  ! fs.disk.read_4k                               ns     spawn/base 1.041 (slower x1.041)  base [1242, 1253, 1182] spawn [1283, 1282, 1262]
+    fs.disk.read_4k_at                            ns     spawn/base 1.017 (slower x1.017)  base [1733, 1744, 1733] spawn [1753, 1783, 1763]
+  ! fs.mem.seq_read.4096                          MB/s   spawn/base 0.955 (slower x1.047)  base [5198, 5221, 5195] spawn [4947, 5027, 4936]
+    fs.mem.seq_write.1048576                      MB/s   spawn/base 1.009 (slower x0.991)  base [3358, 3347, 3348] spawn [3378, 3359, 3410]
+  ! mem.anon.map                                  ns/MiB spawn/base 1.056 (slower x1.056)  base [202, 198, 206] spawn [219, 208, 213]
+    mem.bw.read                                   MB/s   spawn/base 0.996 (slower x1.004)  base [19464, 19570, 19429] spawn [19415, 19415, 19411]
+    mem.realloc_grow.1m_256m                      ns     spawn/base 0.806 (slower x0.806)  base [49582, 49212, 52478] spawn [40675, 40737, 40536]
+    persist.seq_write_fsync                       MB/s   spawn/base 1.058 (slower x0.945)  base [435, 401, 423] spawn [449, 441, 442]
+    pipe.throughput.1024                          MB/s   spawn/base 1.392 (slower x0.719)  base [776, 1609, 1614] spawn [1849, 1857, 1859]
+    pipe.throughput.4096                          MB/s   spawn/base 1.695 (slower x0.590)  base [4961, 1899, 2302] spawn [4984, 5380, 5167]
+    pipe.throughput.65536                         MB/s   spawn/base 1.556 (slower x0.643)  base [10141, 4545, 4928] spawn [10143, 10210, 10159]
+  ! proc.posix_spawn_wait.tiny                    ns     spawn/base 1.230 (slower x1.230)  base [50876, 52469, 58790] spawn [70652, 66725, 62016]
+  ! proc.spawn_wait_loop.100                      ns     spawn/base 1.213 (slower x1.213)  base [4470933, 4392566, 4429957] spawn [5476840, 5027538, 5617935]
+    syscall.null                                  ps     spawn/base 1.004 (slower x1.004)  base [49050, 49482, 49483] spawn [49533, 49559, 49570]
+    time.sleep_late.1ms                           ns     spawn/base 1.016 (slower x1.016)  base [5966, 5996, 6066] spawn [6136, 6087, 6097]
+    wake.storm.call.w1                            ns     spawn/base 0.940 (slower x0.940)  base [7614, 8145, 7885] spawn [7584, 7344, 7304]
+    wake.storm.call.w16                           ns     spawn/base 0.939 (slower x0.939)  base [15559, 15860, 16060] spawn [15539, 14217, 14827]
+    wake.storm.call.w4                            ns     spawn/base 0.912 (slower x0.912)  base [9408, 9969, 9739] spawn [9227, 8446, 8887]
+  ! wake.storm.drain.w16                          ns     spawn/base 1.168 (slower x1.168)  base [78487, 79729, 79078] spawn [84728, 101541, 90941]
+  ! wake.storm.drain.w4                           ns     spawn/base 1.041 (slower x1.041)  base [67928, 69440, 68559] spawn [69731, 70552, 73989]
+    work.build_shaped.j16                         ns     spawn/base 0.996 (slower x0.996)  base [278655764, 278121571, 279646471] spawn [278048714, 277621365, 277711610]
+
+## whole #1129 (head/base): rows that resolve; "!" marks a slowdown over 3%
+    fair.shared.helpers                           permille head/base 1.009 (slower x0.991)  base [490, 490, 487] head [492, 492, 496]
+    fair.shared.threaded                          permille head/base 0.993 (slower x1.007)  base [479, 479, 482] head [478, 478, 474]
+    fs.disk.open_close                            ns     head/base 0.882 (slower x0.882)  base [16982, 17022, 14246] head [14187, 14177, 14187]
+  ! fs.disk.pread_8                               ns     head/base 1.122 (slower x1.122)  base [792, 902, 772] head [912, 932, 922]
+    fs.disk.read_4k_at                            ns     head/base 1.013 (slower x1.013)  base [1733, 1744, 1733] head [1763, 1763, 1753]
+    fs.mem.rename                                 ns     head/base 0.984 (slower x0.984)  base [6271, 6262, 6352] head [6162, 6201, 6222]
+    fs.mem.seq_write.1048576                      MB/s   head/base 1.029 (slower x0.972)  base [3358, 3347, 3348] head [3453, 3460, 3433]
+    fs.mem.seq_write.4096                         MB/s   head/base 1.012 (slower x0.989)  base [2734, 2715, 2717] head [2747, 2747, 2766]
+    fs.mem.stat                                   ns     head/base 0.990 (slower x0.990)  base [2575, 2584, 2615] head [2565, 2565, 2565]
+    ipc.reqrep.4096                               ns     head/base 0.758 (slower x0.758)  base [10039, 10109, 10390] head [7624, 7835, 7695]
+    ipc.reqrep.65536                              ns     head/base 0.600 (slower x0.600)  base [52789, 50545, 50976] head [30578, 30968, 31059]
+    ipc.reqrep.8                                  ns     head/base 0.808 (slower x0.808)  base [8065, 8216, 8255] head [6623, 6623, 6582]
+    ipc.reqrep_handle.8                           ns     head/base 0.795 (slower x0.795)  base [9478, 9568, 9477] head [7534, 7605, 7524]
+  ! mem.anon.map                                  ns/MiB head/base 1.071 (slower x1.071)  base [202, 198, 206] head [221, 214, 214]
+    mem.bw.copy                                   MB/s   head/base 0.983 (slower x1.018)  base [8331, 8339, 8330] head [8182, 8209, 8173]
+    mem.bw.write                                  MB/s   head/base 0.992 (slower x1.008)  base [9787, 9748, 9740] head [9666, 9713, 9651]
+  ! mem.malloc_churn.1048576.t16                  kops/s head/base 0.952 (slower x1.051)  base [98, 99, 94] head [92, 93, 92]
+    mem.malloc_churn.16.t16                       kops/s head/base 0.984 (slower x1.016)  base [2970, 3039, 2968] head [2958, 2937, 2939]
+  ! mem.munmap_touched_remote.4k                  ns     head/base 1.073 (slower x1.073)  base [2936, 2965, 2746] head [3086, 3095, 3095]
+    persist.append_4k_fsync                       ns     head/base 1.020 (slower x1.020)  base [2756048, 2789441, 2799369] head [2840336, 2823665, 2850164]
+    pingpong.futex.same_cpu                       ns     head/base 1.011 (slower x1.011)  base [3657, 3707, 3697] head [3727, 3737, 3717]
+  ! pipe.throughput.16384                         MB/s   head/base 0.511 (slower x1.959)  base [3546, 8301, 8592] head [3454, 3440, 3542]
+    pipe.throughput.4096                          MB/s   head/base 1.666 (slower x0.600)  base [4961, 1899, 2302] head [5086, 5073, 5107]
+  ! thread.spawn_join.stack64k                    ns     head/base 1.132 (slower x1.132)  base [19276, 19397, 19647] head [19877, 26319, 19797]
+    wake.storm.call.w1                            ns     head/base 0.921 (slower x0.921)  base [7614, 8145, 7885] head [7464, 7153, 7153]
+    wake.storm.call.w4                            ns     head/base 0.921 (slower x0.921)  base [9408, 9969, 9739] head [8977, 9107, 8746]
+  ! wake.storm.drain.w16                          ns     head/base 1.068 (slower x1.068)  base [78487, 79729, 79078] head [81212, 81402, 90920]
+  ! wake.storm.drain.w4                           ns     head/base 1.032 (slower x1.032)  base [67928, 69440, 68559] head [70642, 70512, 71343]
+    work.build_shaped.j16                         ns     head/base 0.979 (slower x0.979)  base [278655764, 278121571, 279646471] head [272500709, 271713873, 274452871]
+
+## ab9 blockers, classified
+  thread.spawn_join                   norule/base 1.102   head/norule 0.985   -> neither
+  fs.disk.seek                        norule/base 1.002   head/norule 1.031   -> neither
+  mem.anon.map                        norule/base 1.058   head/norule 1.012   -> neither
+  mem.munmap_touched_remote.4k        norule/base 1.072*  head/norule 1.001   -> P
+  wake.storm.call.w64                 norule/base 1.020   head/norule 1.001   -> neither
+  wake.storm.drain.w4                 norule/base 1.002   head/norule 1.029*  -> neither
+
+## gain and build
+  ipc.reqrep.8 head/norule 0.8571 -> PASS  norule [8245, 8256, 6632] head [6623, 6623, 6582]
+  work.build_shaped.j16 head/base 0.9788 -> PASS  base [278655764, 278121571, 279646471] head [272500709, 271713873, 274452871]
+  work.build_shaped.j16 parent:
+    1-base    c10*352+9*328+15*320+1*318+8*318+13*307+14*261+4*259+2*245+12*228+11*222+7*208+5*191+3*183+6*174+0*141_m251-91_w3877-0-0_l0_by-
+    2-head    c9*423+10*355+14*349+8*329+13*280+1*269+5*263+2*255+4*248+6*245+12*241+3*219+15*216+0*188+7*184+11*152_m244-130_w285-3497-230_l0_byfileserver.2*3674+?*43+klogd.1*3+nvme.3*1
+    3-norule  c4*389+10*341+12*295+1*287+9*287+0*286+14*256+7*245+13*229+3*212+6*208+11*207+15*181+8*176+2*158+5*156_m226-91_w273-2958-500_l0_byfileserver.2*3359+?*89+klogd.1*2+fileserver.6*2
+    4-spawn   c2*359+5*335+4*307+12*278+0*275+8*268+10*258+1*256+3*255+11*252+13*239+9*227+15*221+6*192+14*185+7*151_m252-105_w3875-0-0_l0_by-
+    5-spawn   c9*419+12*410+10*333+3*282+7*279+8*261+2*254+11*252+13*230+5*218+14*211+4*196+15*185+6*171+0*140+1*136_m237-94_w3790-0-0_l0_by-
+    6-norule  c3*373+1*365+9*363+6*336+4*334+12*322+7*290+14*262+8*251+11*246+15*230+2*229+13*215+0*186+5*178+10*117_m243-113_w314-3164-620_l0_byfileserver.2*3683+?*89+fileserver.6*4+klogd.1*2
+    7-head    c13*422+2*385+14*370+3*356+6*320+12*261+11*260+5*253+9*250+8*229+15*224+10*215+4*199+7*196+0*179+1*119_m286-132_w323-3467-248_l0_byfileserver.2*3605+?*102+nvme.3*3+fileserver.6*3
+    8-base    c5*419+1*356+15*342+13*314+3*308+4*300+2*275+14*267+0*241+9*224+11*209+6*198+12*172+10*162+8*161+7*103_m223-99_w3866-0-0_l0_by-
+    9-norule  c8*358+6*325+10*315+1*313+5*303+2*294+7*291+14*274+12*255+4*243+11*223+13*207+15*203+3*199+0*182+9*173_m263-94_w321-3215-448_l0_byfileserver.2*3609+?*42+klogd.1*4+fileserver.6*3
+    10-base   c1*338+14*331+9*328+12*321+6*267+5*261+7*258+4*250+15*250+13*248+3*239+0*233+11*212+8*196+10*193+2*179_m242-104_w3923-0-0_l0_by-
+    11-spawn  c5*386+15*358+12*302+4*294+13*294+9*286+10*274+6*265+2*261+14*245+7*244+3*220+11*218+8*212+0*186+1*154_m247-99_w4002-0-0_l0_by-
+    12-head   c8*401+14*352+4*341+1*334+9*273+3*264+11*260+15*251+7*241+0*236+13*233+2*213+5*201+10*199+12*195+6*167_m274-136_w309-3436-214_l0_byfileserver.2*3547+?*90+nvme.3*5+klogd.1*4
+  thread.spawn_join parent:
+    1-base    c15*1065+8*15_m1-0_w1050-0-0_l0_by-
+    2-head    c5*1080_m0-0_w1050-0-0_l0_by-
+    3-norule  c7*1081_m0-0_w1050-0-0_l0_by-
+    4-spawn   c7*1080_m0-0_w1050-0-0_l0_by-
+    5-spawn   c7*1079_m0-0_w1050-0-0_l0_by-
+    6-norule  c7*1079_m0-0_w1050-0-0_l0_by-
+    7-head    c5*1080_m0-0_w1050-0-0_l0_by-
+    8-base    c7*1080_m0-0_w1050-0-0_l0_by-
+    9-norule  c7*1080_m0-0_w1050-0-0_l0_by-
+    10-base   c7*1080_m0-0_w1050-0-0_l0_by-
+    11-spawn  c7*1079_m0-0_w1050-0-0_l0_by-
+    12-head   c6*1081_m0-0_w1050-0-0_l0_by-
+
+## pipe per class, and the spawn arm S1
+== pipe.throughput.4096
+  1-base    p50=4961 split=1/7 2060X[R12 W7] 4953s[R12 W8] 5000s[R12 W9] 4929s[R12 W10] 4961s[R12 W11] 5039s[R12 W14] 5007s[R12 W14]
+  2-head    p50=5086 split=1/7 5094s[R2 W7] 1952X[R2 W8] 4856s[R10 W9] 5101s[R10 W12] 5164s[R10 W12] 5044s[R10 W12] 5086s[R10 W13]
+  3-norule  p50=2064 split=6/7 4890s[R1 W7] 2059X[R1 W8] 2064X[R1 W9] 2173X[R1 W10] 2052X[R1 W11] 2188X[R1 W12] 2048X[R1 W13]
+  4-spawn   p50=4984 split=0/7 4979s[R7 W0] 4954s[R7 W0] 5066s[R7 W0] 5060s[R7 W0] 5055s[R7 W0] 4984s[R7 W0] 4927s[R7 W0]
+  5-spawn   p50=5380 split=0/7 5012s[R7 W0] 5005s[R7 W0] 5384s[R7 W0] 5408s[R7 W0] 5380s[R7 W0] 5414s[R7 W0] 5201s[R7 W0]
+  6-norule  p50=2083 split=7/7 2043X[R7 W8] 2018X[R7 W8] 2095X[R7 W9] 2095X[R7 W10] 2083X[R7 W11] 2094X[R7 W12] 2062X[R7 W13]
+  7-head    p50=5073 split=2/7 5073s[R2 W7] 1959X[R2 W8] 1946X[R2 W9] 5163s[R10 W12] 5063s[R10 W12] 5150s[R10 W12] 5163s[R10 W13]
+  8-base    p50=1899 split=6/7 4628s[R2 W7] 1945X[R2 W8] 1854X[R2 W9] 1921X[R2 W10] 1889X[R2 W11] 1899X[R2 W12] 1872X[R2 W13]
+  9-norule  p50=1878 split=6/7 4907s[R2 W7] 1805X[R2 W8] 1900X[R2 W9] 1877X[R2 W10] 1878X[R2 W11] 1854X[R2 W12] 1880X[R2 W13]
+  10-base   p50=2302 split=7/7 2201X[R7 W8] 2252X[R7 W8] 2318X[R7 W9] 2302X[R7 W10] 2298X[R7 W11] 2324X[R7 W12] 2308X[R7 W13]
+  11-spawn  p50=5167 split=0/7 5196s[R7 W0] 5152s[R7 W0] 5166s[R7 W0] 5167s[R7 W0] 5140s[R7 W0] 5180s[R7 W0] 5236s[R7 W0]
+  12-head   p50=5107 split=1/7 5099s[R2 W7] 2075X[R2 W8] 4768s[R10 W9] 5127s[R10 W12] 5107s[R10 W12] 5113s[R10 W12] 5121s[R10 W13]
+  medians (value, rounds): base/split (2130.5, 14); base/same (4961, 7); head/split (1955.5, 4); head/same (5101, 17); norule/split (2052, 19); norule/same (4898.5, 2); spawn/split (None, 0); spawn/same (5152, 21)
+  head vs norule split: 0.953 -> PASS
+  S1: most split rounds in a spawn boot 0; spawn p50 mean 5177 vs base same-LLC median 4961 -> PASS
+== pipe.throughput.16384
+  1-base    p50=3546 split=6/7 8488s[R12 W15] 3546X[R12 W0] 3556X[R12 W1] 3597X[R12 W2] 3450X[R12 W3] 3545X[R12 W4] 3523X[R12 W5]
+  2-head    p50=3454 split=5/7 8271s[R10 W15] 3437X[R10 W0] 3454X[R10 W1] 3439X[R10 W2] 3442X[R10 W3] 3470X[R10 W4] 8386s[R6 W5]
+  3-norule  p50=8490 split=1/7 3580X[R1 W15] 8093s[R1 W2] 8500s[R1 W2] 8507s[R1 W2] 8490s[R1 W3] 8441s[R1 W4] 8518s[R1 W5]
+  4-spawn   p50=8363 split=0/7 8433s[R7 W0] 8433s[R7 W0] 8370s[R7 W1] 8238s[R7 W2] 8281s[R7 W3] 8363s[R7 W4] 8282s[R7 W5]
+  5-spawn   p50=8409 split=0/7 8649s[R7 W0] 8136s[R7 W0] 8544s[R7 W1] 8088s[R7 W2] 8103s[R7 W3] 8409s[R7 W4] 8462s[R7 W5]
+  6-norule  p50=8567 split=1/7 3504X[R7 W15] 8411s[R7 W0] 8556s[R7 W1] 8667s[R7 W2] 8615s[R7 W3] 8616s[R7 W4] 8567s[R7 W5]
+  7-head    p50=3440 split=6/7 8375s[R10 W15] 3440X[R10 W0] 3379X[R10 W1] 3423X[R10 W2] 3462X[R10 W3] 3450X[R10 W4] 3435X[R10 W5]
+  8-base    p50=8301 split=1/7 3328X[R2 W9] 7982s[R2 W0] 8203s[R2 W1] 8302s[R2 W4] 8301s[R2 W4] 8339s[R2 W4] 8319s[R2 W5]
+  9-norule  p50=8459 split=1/7 3438X[R2 W15] 8098s[R2 W0] 8459s[R2 W1] 8456s[R2 W4] 8487s[R2 W4] 8502s[R2 W4] 8479s[R2 W5]
+  10-base   p50=8592 split=1/7 3550X[R7 W15] 8325s[R7 W0] 8621s[R7 W1] 8633s[R7 W2] 8518s[R7 W3] 8626s[R7 W4] 8592s[R7 W5]
+  11-spawn  p50=8217 split=0/7 8313s[R7 W0] 8314s[R7 W0] 8217s[R7 W1] 8156s[R7 W2] 8009s[R7 W3] 8214s[R7 W4] 8319s[R7 W5]
+  12-head   p50=3542 split=5/7 8566s[R10 W15] 3542X[R10 W0] 3561X[R10 W1] 3525X[R10 W2] 3532X[R10 W3] 3493X[R10 W4] 8311s[R6 W5]
+  medians (value, rounds): base/split (3545.5, 8); base/same (8339, 13); head/split (3452.0, 16); head/same (8375, 5); norule/split (3504, 3); norule/same (8495.0, 18); spawn/split (None, 0); spawn/same (8313, 21)
+  head vs norule same: 0.986 -> PASS
+  S1: most split rounds in a spawn boot 0; spawn p50 mean 8329.666666666666 vs base same-LLC median 8339 -> PASS
+== pipe.throughput.65536
+  1-base    p50=10141 split=1/7 4770X[R12 W7] 10072s[R12 W8] 10066s[R12 W9] 10177s[R12 W10] 10183s[R12 W11] 10141s[R12 W14] 10148s[R12 W14]
+  2-head    p50=4717 split=6/7 4667X[R6 W8] 4616X[R6 W8] 4666X[R6 W9] 4741X[R6 W10] 4769X[R6 W11] 4717X[R6 W12] 9964s[R14 W13]
+  3-norule  p50=4647 split=6/7 9939s[R1 W7] 4645X[R1 W8] 4601X[R1 W9] 4647X[R1 W10] 4624X[R1 W11] 4660X[R1 W12] 4660X[R1 W13]
+  4-spawn   p50=10143 split=0/7 10251s[R7 W0] 10192s[R7 W0] 10143s[R7 W0] 10130s[R7 W0] 10154s[R7 W0] 9995s[R7 W0] 9865s[R7 W0]
+  5-spawn   p50=10210 split=0/7 10219s[R7 W0] 10249s[R7 W0] 10218s[R7 W0] 10210s[R7 W0] 10208s[R7 W0] 9968s[R7 W0] 9927s[R7 W0]
+  6-norule  p50=4815 split=7/7 4815X[R7 W8] 4810X[R7 W8] 4805X[R7 W9] 4837X[R7 W10] 4791X[R7 W11] 4833X[R7 W12] 4851X[R7 W13]
+  7-head    p50=4736 split=6/7 10330s[R0 W7] 4736X[R0 W8] 4716X[R0 W9] 4801X[R0 W10] 4713X[R0 W11] 4756X[R0 W12] 4594X[R0 W13]
+  8-base    p50=4545 split=6/7 10007s[R2 W7] 4545X[R2 W8] 4528X[R2 W9] 4572X[R2 W10] 4526X[R2 W11] 4561X[R2 W12] 4537X[R2 W13]
+  9-norule  p50=4789 split=6/7 10158s[R2 W7] 4672X[R2 W8] 4774X[R2 W9] 4759X[R2 W10] 4789X[R2 W11] 4826X[R2 W12] 4811X[R2 W13]
+  10-base   p50=4928 split=7/7 4818X[R7 W8] 4814X[R7 W8] 4943X[R7 W9] 4914X[R7 W10] 4932X[R7 W11] 4929X[R7 W12] 4928X[R7 W13]
+  11-spawn  p50=10159 split=0/7 10221s[R7 W0] 10224s[R7 W0] 10132s[R7 W0] 10179s[R7 W0] 10138s[R7 W0] 10159s[R7 W0] 10007s[R7 W0]
+  12-head   p50=4653 split=6/7 4716X[R6 W8] 4612X[R6 W8] 4653X[R6 W9] 4650X[R6 W10] 4638X[R6 W11] 4658X[R6 W12] 9892s[R14 W13]
+  medians (value, rounds): base/split (4792.0, 14); base/same (10141, 7); head/split (4690.0, 18); head/same (9964, 3); norule/split (4789, 19); norule/same (10048.5, 2); spawn/split (None, 0); spawn/same (10159, 21)
+  head vs norule split: 0.979 -> PASS
+  S1: most split rounds in a spawn boot 0; spawn p50 mean 10170.666666666666 vs base same-LLC median 10141 -> PASS
