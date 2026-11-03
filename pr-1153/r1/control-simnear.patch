@@ -1,0 +1,11 @@
+--- a/kernel/sim/src/vm.rs
++++ b/kernel/sim/src/vm.rs
+@@ -1532,7 +1532,7 @@
+                 let process = self.programs[&key].process;
+                 // A new thread starts with its spawner's mask.
+                 let mask = self.shared[&key].mask().load().0;
+-                self.spawn(process, template, mask, Some(CpuId(cpu as u32)));
++                self.spawn(process, template, mask, None);
+                 self.programs.get_mut(&key).expect("live").pc += 1;
+             }
+             Op::Wake { queue, all, boost } => {

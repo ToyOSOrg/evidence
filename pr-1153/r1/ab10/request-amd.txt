@@ -1,0 +1,55 @@
+# ab10: #1129's rule against its plumbing, and the spawn fix, in one AMD session. 12 benchcase boots, 3 per arm, order
+# base, head, norule, spawn, spawn, norule, head, base, norule, base, spawn, head. Measurement-only arms, pushed as sched-diag-ab10-{base,head,norule,spawn}:
+#   base 3f4bae14d = #1117 c9f88d36e + diagnostic; head 4fd30a2fc = #1129 cebbdedd5 + diagnostic + waker hunk;
+#   norule f4ddf7589 = head with WAKER_RUN = u16::MAX (all plumbing, no move); spawn 02f099a04 = spawn fix 791d0a23b + diagnostic.
+# Decision rule, fixed before staging: $HOME/.claude/jobs/2280e09e<tmp> Analysis: python3 -I $HOME/.claude/jobs/2280e09e<tmp> $HOME/.claude/jobs/2280e09e<tmp>
+# Judge, per boot, in a tree at the arm's revision: cargo test --test toyos-build -- --metal --metal-readback <readback dir> --metal-host toyos@bench-amd boot:benchcase
+# The I219 rows are T14-only and red here.
+
+benchcase (1-base, 3f4bae14d, image sha256 586bd825df66825d)
+  image: $HOME/.claude/jobs/2280e09e<tmp>
+  cargo run -p toyos-metal -- --image $HOME/.claude/jobs/2280e09e<tmp> --readback $HOME/.claude/jobs/2280e09e<tmp> --fat32-check --host toyos@bench-amd
+
+benchcase (2-head, 4fd30a2fc, image sha256 281f11026c951b1e)
+  image: $HOME/.claude/jobs/2280e09e<tmp>
+  cargo run -p toyos-metal -- --image $HOME/.claude/jobs/2280e09e<tmp> --readback $HOME/.claude/jobs/2280e09e<tmp> --fat32-check --host toyos@bench-amd
+
+benchcase (3-norule, f4ddf7589, image sha256 f2674f8c47a56864)
+  image: $HOME/.claude/jobs/2280e09e<tmp>
+  cargo run -p toyos-metal -- --image $HOME/.claude/jobs/2280e09e<tmp> --readback $HOME/.claude/jobs/2280e09e<tmp> --fat32-check --host toyos@bench-amd
+
+benchcase (4-spawn, 02f099a04, image sha256 1d376d2640458ffe)
+  image: $HOME/.claude/jobs/2280e09e<tmp>
+  cargo run -p toyos-metal -- --image $HOME/.claude/jobs/2280e09e<tmp> --readback $HOME/.claude/jobs/2280e09e<tmp> --fat32-check --host toyos@bench-amd
+
+benchcase (5-spawn, 02f099a04, image sha256 1d376d2640458ffe)
+  image: $HOME/.claude/jobs/2280e09e<tmp>
+  cargo run -p toyos-metal -- --image $HOME/.claude/jobs/2280e09e<tmp> --readback $HOME/.claude/jobs/2280e09e<tmp> --fat32-check --host toyos@bench-amd
+
+benchcase (6-norule, f4ddf7589, image sha256 f2674f8c47a56864)
+  image: $HOME/.claude/jobs/2280e09e<tmp>
+  cargo run -p toyos-metal -- --image $HOME/.claude/jobs/2280e09e<tmp> --readback $HOME/.claude/jobs/2280e09e<tmp> --fat32-check --host toyos@bench-amd
+
+benchcase (7-head, 4fd30a2fc, image sha256 281f11026c951b1e)
+  image: $HOME/.claude/jobs/2280e09e<tmp>
+  cargo run -p toyos-metal -- --image $HOME/.claude/jobs/2280e09e<tmp> --readback $HOME/.claude/jobs/2280e09e<tmp> --fat32-check --host toyos@bench-amd
+
+benchcase (8-base, 3f4bae14d, image sha256 586bd825df66825d)
+  image: $HOME/.claude/jobs/2280e09e<tmp>
+  cargo run -p toyos-metal -- --image $HOME/.claude/jobs/2280e09e<tmp> --readback $HOME/.claude/jobs/2280e09e<tmp> --fat32-check --host toyos@bench-amd
+
+benchcase (9-norule, f4ddf7589, image sha256 f2674f8c47a56864)
+  image: $HOME/.claude/jobs/2280e09e<tmp>
+  cargo run -p toyos-metal -- --image $HOME/.claude/jobs/2280e09e<tmp> --readback $HOME/.claude/jobs/2280e09e<tmp> --fat32-check --host toyos@bench-amd
+
+benchcase (10-base, 3f4bae14d, image sha256 586bd825df66825d)
+  image: $HOME/.claude/jobs/2280e09e<tmp>
+  cargo run -p toyos-metal -- --image $HOME/.claude/jobs/2280e09e<tmp> --readback $HOME/.claude/jobs/2280e09e<tmp> --fat32-check --host toyos@bench-amd
+
+benchcase (11-spawn, 02f099a04, image sha256 1d376d2640458ffe)
+  image: $HOME/.claude/jobs/2280e09e<tmp>
+  cargo run -p toyos-metal -- --image $HOME/.claude/jobs/2280e09e<tmp> --readback $HOME/.claude/jobs/2280e09e<tmp> --fat32-check --host toyos@bench-amd
+
+benchcase (12-head, 4fd30a2fc, image sha256 281f11026c951b1e)
+  image: $HOME/.claude/jobs/2280e09e<tmp>
+  cargo run -p toyos-metal -- --image $HOME/.claude/jobs/2280e09e<tmp> --readback $HOME/.claude/jobs/2280e09e<tmp> --fat32-check --host toyos@bench-amd
