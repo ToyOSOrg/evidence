@@ -1,0 +1,11 @@
+--- $SCRATCH/liveness/cpu.rs.good2	2026-11-04 10:26:01
++++ kernel/pure/sched/cpu.rs	2026-11-04 10:26:01
+@@ -521,7 +521,7 @@
+     /// outstanding, the quantity [`Balance::PullWithRearm`] and
+     /// [`Balance::PushOnSurplus`] are judged on.
+     pub fn probe_outstanding(&self, cpus: &CpuHandles<Msg<X>>, now: Nanos) -> bool {
+-        self.asked.is_some_and(|victim| cpus.get(victim).asked_by(self.id) && cpus.get(victim).answering(now))
++        self.asked.is_some_and(|victim| cpus.get(victim).asked_by(self.id) && { let _ = now; true })
+     }
+ 
+     /// Lend the running task an RT window: the path for a client

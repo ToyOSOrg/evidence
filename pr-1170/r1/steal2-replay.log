@@ -1,0 +1,17 @@
+$ cargo run -q -p kernel-sim -- replay kernel/sim/corpus/old_migrate_kept_the_corpse_i14.trace
+old_migrate_kept_the_corpse: FAILED after 46 steps
+  I14: TaskKey(4) was killed and then migrated to cpu1 — a task in transit is dispatched only by the adopt that carries it, so the unwind waits for the destination's pick
+rc=0
+$ cargo run -q -p kernel-sim -- find old_migrate_kept_the_corpse 2000
+seed 135
+old_migrate_kept_the_corpse: FAILED after 57 steps
+  I14: TaskKey(4) was killed and then migrated to cpu1 — a task in transit is dispatched only by the adopt that carries it, so the unwind waits for the destination's pick
+rc=0
+$ cargo run -q -p kernel-sim -- shrink old_migrate_kept_the_corpse 135
+shrunk to 54 decisions; violations:
+  I14: TaskKey(4) was killed and then migrated to cpu1 — a task in transit is dispatched only by the adopt that carries it, so the unwind waits for the destination's pick
+# scenario: old_migrate_kept_the_corpse
+# expect: fail
+4 3 3 0 0 0 1 1 2 0 2 0 2 0 0 0 0 1 2 1 1 2 1 0 1 0 0 1 1 0 1 1
+0 0 0 0 0 0 0 1 1 1 0 2 0 0 1 1 0 1 0 1 1 2 
+rc=0
