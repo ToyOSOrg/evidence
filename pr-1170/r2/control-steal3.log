@@ -1,0 +1,29 @@
+head 10a098e7f23d5ef1a19e941b30270bf182e36b34, worktree with B4/S1/S2 edits, mutation:
+529c529
+<         self.ask_held(cpus).is_some_and(|victim| cpus.get(victim).answering(now))
+---
+>         let _ = now; self.ask_held(cpus).is_some()
+   Compiling kernel v0.1.0 ($HOME/Dev/$USER/toyos-liveness/kernel)
+    Finished `test` profile [optimized + debuginfo] target(s) in 2.47s
+     Running unittests pure/lib.rs (target/debug/deps/kernel-fa45b686f8e87f8e)
+
+running 1 test
+test sched::cpu::tests::a_thief_whose_victim_stopped_asks_another ... FAILED
+
+failures:
+
+---- sched::cpu::tests::a_thief_whose_victim_stopped_asks_another stdout ----
+
+thread 'sched::cpu::tests::a_thief_whose_victim_stopped_asks_another' (164335798) panicked at kernel/pure/sched/cpu.rs:5131:9:
+an ask a stopped CPU holds counted as an answer coming
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    sched::cpu::tests::a_thief_whose_victim_stopped_asks_another
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 446 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p kernel --lib`
+rc=101
+restored: yes
