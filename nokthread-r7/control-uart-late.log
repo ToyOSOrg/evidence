@@ -1,0 +1,35 @@
+== control uart-late at f7bd4fdcff06192f390d56a5ccf8683b49a0a065 plus the patch:
+--- <scratch>/pr/control-uart-late.orig	2026-11-04 11:44:07
++++ system/supervisor/lifecycle/src/declaration.rs	2026-11-04 11:44:07
+@@ -37,7 +37,7 @@
+ /// needs the declaration nor a `HOME`, and from the kernel's hand-over the UART
+ /// says nothing until both run.
+ fn carries_the_log(program: &Program) -> bool {
+-    program.holds.iter().any(|held| held == toyos_logstream::ORIGINS || held == toyos_logstream::CONSOLE_INPUT)
++    program.holds.iter().any(|held| held == toyos_logstream::ORIGINS)
+ }
+ 
+ /// A row that may mint the `acpi` claim and hand it to a server of its own.
+
+running 1 test
+declaration::tests::the_uart_starts_with_the_log_before_the_declaration --- FAILED
+
+failures:
+
+---- declaration::tests::the_uart_starts_with_the_log_before_the_declaration stdout ----
+
+thread 'declaration::tests::the_uart_starts_with_the_log_before_the_declaration' (165213299) panicked at system/supervisor/lifecycle/src/declaration.rs:241:9:
+assertion `left == right` failed
+  left: Plan { comes: true, first: [1, 3], storage: [4], rest: [2] }
+ right: Plan { comes: true, first: [1, 2, 3], storage: [4], rest: [] }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    declaration::tests::the_uart_starts_with_the_log_before_the_declaration
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 43 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--lib`
+exit 101
+restored
