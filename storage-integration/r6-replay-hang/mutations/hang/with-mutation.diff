@@ -1,0 +1,103 @@
+diff --git a/lib/bcachefs/src/engine/mount/reclaim.rs b/lib/bcachefs/src/engine/mount/reclaim.rs
+index 2d59af335..4641cb6a1 100644
+--- a/lib/bcachefs/src/engine/mount/reclaim.rs
++++ b/lib/bcachefs/src/engine/mount/reclaim.rs
+@@ -132,8 +132,9 @@ pub(super) const fn fresh_nodes(nodes: usize) -> usize {
+ /// five (A3.15-A3.17). Either takes at most two transactions more before
+ /// reclaim, which takes an oversized node first, plans it: the one holding
+ /// the slot, as no transaction enters it while a changed node is oversized
+-/// ([`Mount::transact`]), and the pointer update of the one reclaim round in
+-/// flight, each at most `K_TX` u64s of keys. Spread evenly, all that fills
++/// ([`Mount::transact`]), its keys and what its nodes take from pending
++/// together, and the pointer update of the one reclaim round in flight,
++/// each at most `K_TX` u64s of keys. Spread evenly, all that fills
+ /// this many nodes of any size the writer accepts, each a key short of full.
+ /// Materialization takes at most one transaction of distinct key positions,
+ /// including during replay.
+@@ -418,13 +419,13 @@ impl<D: BlockDev> Mount<D> {
+         let mut st = self.st.borrow_mut();
+         let n = st.cache.node(id);
+         if n.writing || n.captured.is_some() || n.held != 0 { return Ok(false); }
+-        self.take_into(&mut st, id, pos)
++        self.take_into(&mut st, id, pos, K_TX as usize * 8)
+     }
+ 
+     /// Transfers pending keys of node `id`'s range into it, from `pos` on
+-    /// and round to it, with bounded positive growth. The caller has found
+-    /// the node free to change.
+-    pub(super) fn take_into(&self, st: &mut State, id: NodeId, pos: Bpos) -> Result<bool> {
++    /// and round to it, each position whose growth still fits `room` bytes;
++    /// deletions take none. The caller has found the node free to change.
++    pub(super) fn take_into(&self, st: &mut State, id: NodeId, pos: Bpos, room: usize) -> Result<bool> {
+         let n = st.cache.node(id);
+         let (btree, level) = (n.btree, n.level);
+         let mut captures = Vec::new();
+@@ -433,17 +434,18 @@ impl<D: BlockDev> Mount<D> {
+             .chain(st.pending.range(btree, level, n.min, pos).take_while(|e| e.key().pos < pos)).peekable();
+         while let Some(first) = pending.peek() {
+             let at = first.key().pos;
+-            let start = captures.len();
+             let before = n.keys.get(n.at(at)).filter(|(k, _)| k.pos == at).map_or(0, |(_, v)| key_bytes(v));
+             let mut size = if btree == Btree::Accounting && level == 0 { before } else { 0 };
++            let mut newest = None;
+             while pending.peek().is_some_and(|e| e.key().pos == at) {
+                 let entry = pending.next().unwrap();
+                 if entry.key().kind != kind::DELETED { size = size.max(key_bytes(entry.value())); }
+-                captures.try_reserve(1).map_err(|_| Error::NoMemory)?;
++                newest = Some(entry.capture());
+                 captures.push(entry.capture());
+             }
++            let _ = newest;
+             let added = size.saturating_sub(before);
+-            if growth + added > K_TX as usize * 8 && start != 0 { captures.truncate(start); continue; }
++            if growth + added > room { continue; }
+             growth += added;
+         }
+         let durable = st.journal.durable;
+diff --git a/lib/bcachefs/src/engine/pending.rs b/lib/bcachefs/src/engine/pending.rs
+index fd3bd9de7..8dd89258f 100644
+--- a/lib/bcachefs/src/engine/pending.rs
++++ b/lib/bcachefs/src/engine/pending.rs
+@@ -63,7 +63,7 @@ fn visited() -> usize { VISITED.with(Cell::get) }
+ 
+ /// What `f` returns, and the entries pending looked at meanwhile.
+ #[cfg(test)]
+-fn visits<T>(f: impl FnOnce() -> T) -> (T, usize) {
++pub(crate) fn visits<T>(f: impl FnOnce() -> T) -> (T, usize) {
+     let before = visited();
+     let out = f();
+     (out, visited() - before)
+@@ -394,19 +394,23 @@ impl Pending {
+         Iter { pending: self, at, end: bounds.map(|(_, max)| max), saved: None }
+     }
+ 
+-    /// The callback installs the value and its pin before the source retires.
+-    /// It is infallible and cannot yield. `false` means capture was superseded.
+-    pub fn transfer(&mut self, capture: Capture, install: impl FnOnce(Transferred)) -> bool {
+-        let wanted = (capture.position, capture.order);
+-        let Some(source) = self.runs.iter_mut().flatten().find_map(|run| run.find(wanted).map(|i| &mut run.entries[i])) else { return false };
+-        let accounting = source.accounting();
+-        let value = core::mem::take(&mut source.value);
+-        install(Transferred { key: source.key, value, first: capture.first, last: source.last });
++    /// The callback installs the captured value, or every accounting delta
++    /// at its position up to it, each with its pin, before the sources
++    /// retire: one pass over the position. It is infallible and cannot
++    /// yield. `false` means capture was superseded.
++    pub fn transfer(&mut self, capture: Capture, mut install: impl FnMut(Transferred)) -> bool {
++        if self.entry((capture.position, capture.order)).is_none() { return false; }
+         for slot in &mut self.runs {
+             let Some(run) = slot else { continue };
+             for i in run.at(capture.position) {
+-                let entry = &run.entries[i];
+-                if entry.live && entry.order <= capture.order && (entry.order == capture.order || !accounting) { run.kill(i, &mut self.live); }
++                visit();
++                let entry = &mut run.entries[i];
++                if !entry.live || entry.order > capture.order || (entry.accounting() && entry.order != capture.order) { continue; }
++                if entry.order == capture.order {
++                    let first = if entry.accounting() { entry.first } else { capture.first };
++                    install(Transferred { key: entry.key, value: core::mem::take(&mut entry.value), first, last: entry.last });
++                }
++                run.kill(i, &mut self.live);
+             }
+             run.compact();
+             run.retire();

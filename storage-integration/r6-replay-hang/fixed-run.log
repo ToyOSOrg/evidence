@@ -1,0 +1,108 @@
+   Compiling bcachefs v0.1.0 ($SCRATCH/perf/tree/lib/bcachefs)
+   Compiling toyos-blockserve v0.1.0 ($SCRATCH/perf/tree/lib/blockserve)
+   Compiling diskserver v0.0.0 ($SCRATCH/perf/tree/system/diskserver)
+   Compiling fileserver v0.0.0 ($SCRATCH/perf/tree/system/fileserver)
+warning: unused import: `fileserver::ram::Ram`
+ --> system/fileserver/tests/hang.rs:7:5
+  |
+7 | use fileserver::ram::Ram;
+  |     ^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `block_on_ready`
+ --> system/fileserver/tests/hang.rs:9:22
+  |
+9 | use toyos_blockdev::{block_on_ready, Block, BlockDev, Error, BLOCK};
+  |                      ^^^^^^^^^^^^^^
+
+warning: unused variable: `m`
+  --> system/fileserver/tests/hang.rs:72:12
+   |
+72 | fn osbench(m: &Model, v: &mut Vol) {
+   |            ^ help: if this is intentional, prefix it with an underscore: `_m`
+   |
+   = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: constant `CREATE` is never used
+  --> system/fileserver/tests/hang.rs:12:7
+   |
+12 | const CREATE: OpenHow = OpenHow { create: true, create_new: false, truncate: false };
+   |       ^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: constant `PLAIN` is never used
+  --> system/fileserver/tests/hang.rs:14:7
+   |
+14 | const PLAIN: OpenHow = OpenHow { create: false, create_new: false, truncate: false };
+   |       ^^^^^
+
+warning: type alias `Vol` is never used
+  --> system/fileserver/tests/hang.rs:41:6
+   |
+41 | type Vol<'a> = DataVolume<&'a Model>;
+   |      ^^^
+
+warning: function `phase` is never used
+  --> system/fileserver/tests/hang.rs:43:4
+   |
+43 | fn phase(t: &mut std::time::Instant, name: &str) {
+   |    ^^^^^
+
+warning: function `put` is never used
+  --> system/fileserver/tests/hang.rs:48:4
+   |
+48 | fn put(v: &mut Vol, path: &str, data: &[u8]) {
+   |    ^^^
+
+warning: function `remove_all` is never used
+  --> system/fileserver/tests/hang.rs:54:4
+   |
+54 | fn remove_all(v: &mut Vol, dir: &str) {
+   |    ^^^^^^^^^^
+
+warning: function `page_at` is never used
+  --> system/fileserver/tests/hang.rs:67:4
+   |
+67 | fn page_at(i: usize, pages: usize) -> u64 {
+   |    ^^^^^^^
+
+warning: function `osbench` is never used
+  --> system/fileserver/tests/hang.rs:72:4
+   |
+72 | fn osbench(m: &Model, v: &mut Vol) {
+   |    ^^^^^^^
+
+warning: `fileserver` (test "hang") generated 11 warnings (run `cargo fix --test "hang" -p fileserver` to apply 3 suggestions)
+    Finished `release` profile [optimized] target(s) in 11.58s
+     Running tests/hang.rs (target/release/deps/hang-d1e500886f459ddd)
+
+running 1 test
+fileserver: mounted the DATA volume
+HANG mounted in 3.05 s
+HANG lstat 0.000 s
+HANG mkdir 0.327 s
+HANG write+sync 2.356 s
+test hang_read_with_new ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.42s
+
+       17.22 real        48.20 user         1.41 sys
+           989265920  maximum resident set size
+                   0  average shared memory size
+                   0  average unshared data size
+                   0  average unshared stack size
+              335496  page reclaims
+                1277  page faults
+                   0  swaps
+                   0  block input operations
+                   0  block output operations
+                   0  messages sent
+                   0  messages received
+                  12  signals received
+                 648  voluntary context switches
+               85450  involuntary context switches
+          1496676669  instructions retired
+           540548516  cycles elapsed
+            62407472  peak memory footprint
