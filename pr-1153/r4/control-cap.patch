@@ -1,0 +1,11 @@
+--- a/kernel/pure/sched/cpu.rs
++++ b/kernel/pure/sched/cpu.rs
+@@ -2656,7 +2656,7 @@
+ /// CPUs online, from which the homed term ranks every candidate alike.
+ pub fn homes(states: impl Iterator<Item = TaskState>, within: CpuMask) -> CpuMask {
+     let mut homes = CpuMask::NONE;
+-    for state in states.take(HOMES_READ) {
++    for state in states {
+         if let Some(cpu) = home_of(state) {
+             homes.insert(cpu);
+         }
