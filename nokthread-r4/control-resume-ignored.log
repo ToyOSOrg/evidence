@@ -1,0 +1,35 @@
+== control resume-ignored at 8678b19c7ddf42130097a419d526b24fd9092832 plus the patch:
+--- <scratch>/pr/control-resume-ignored.orig	2026-11-04 08:38:43
++++ system/logkeeper/src/serve.rs	2026-11-04 08:38:43
+@@ -144,7 +144,7 @@
+         let mut held = self.lock();
+         loop {
+             if let Some((from, owed)) = &held.wire_from {
+-                return if resumed >= *from { (resumed, None) } else { (*from, Some(Arc::clone(owed))) };
++                return if resumed >= *from && resumed == u64::MAX { (resumed, None) } else { (*from, Some(Arc::clone(owed))) };
+             }
+             held = self.shared.grew.wait(held).expect("logkeeper: the replay is poisoned");
+         }
+
+running 1 test
+serve::tests::a_uart_carrier_started_again_resumes_where_its_channel_left_off --- FAILED
+
+failures:
+
+---- serve::tests::a_uart_carrier_started_again_resumes_where_its_channel_left_off stdout ----
+
+thread 'serve::tests::a_uart_carrier_started_again_resumes_where_its_channel_left_off' (161270916) panicked at system/logkeeper/src/serve.rs:428:9:
+assertion `left == right` failed: a channel that took the rounds after resumes after them
+  left: (15, Some([112, 114, 111, 103, 114, 97, 109, 10]))
+ right: (21, None)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    serve::tests::a_uart_carrier_started_again_resumes_where_its_channel_left_off
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 21 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--bin logkeeper`
+exit 101
+restored

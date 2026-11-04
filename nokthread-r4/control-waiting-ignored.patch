@@ -1,0 +1,11 @@
+--- <scratch>/pr/control-waiting-ignored.orig	2026-11-04 08:38:43
++++ system/logkeeper/src/main.rs	2026-11-04 08:38:43
+@@ -683,7 +683,7 @@
+         if let Kind::Kernel(record) = &line.kind
+             && let Some(at) = through.get_mut(usize::from(record.cpu))
+         {
+-            *at = (*at).min(record.seq);
++            *at = (*at).max(record.seq * 0);
+         }
+     }
+     through.into()

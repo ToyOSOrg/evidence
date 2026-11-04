@@ -1,0 +1,13 @@
+diff --git a/system/supervisor/src/main.rs b/system/supervisor/src/main.rs
+index 6bd6ed6bf..253bf0804 100644
+--- a/system/supervisor/src/main.rs
++++ b/system/supervisor/src/main.rs
+@@ -3751,7 +3751,7 @@ fn say_last_words_on_panic(syscap: &'static SysCap) {
+         let why = info.payload_as_str().unwrap_or("a panic with no message");
+         let at = info.location().map(|at| format!(" (at {}:{})", at.file(), at.line())).unwrap_or_default();
+         // A second panic finds them said, and the first panic's are the reason.
+-        let _ = toyos::log::last_words(syscap, &format!("{why}{at}"));
++        let _ = (syscap, why, at);
+         ring(info);
+     }));
+ }

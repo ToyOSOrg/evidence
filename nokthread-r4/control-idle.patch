@@ -1,0 +1,13 @@
+diff --git a/kernel/src/process.rs b/kernel/src/process.rs
+index dac71fd6f..199931a31 100644
+--- a/kernel/src/process.rs
++++ b/kernel/src/process.rs
+@@ -875,7 +875,7 @@ fn teardown(pid: Pid, tid: Tid, end: End, mark: i32, process_data: &Arc<Lock<Pro
+     // The table says zombie now, which a sweep counts as nothing left to stop.
+     crate::quiesce::note_progress();
+     publish_climb(ready);
+-    if supervisor {
++    if supervisor && end == End::Killed {
+         panic!("the supervisor ended, {end}, and nothing starts it again");
+     }
+ }
