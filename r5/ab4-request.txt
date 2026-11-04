@@ -1,0 +1,14 @@
+# S0-a A/B round 4 (pipe calls in one process hold; the probe in both benchcase arms).
+# base = s0a-probe-base 9af33a79a (main a0e8f1333 + the probe); head = s0a-probe 13cca17b9 (PR head 05f6c884f + the probe);
+# testcases = PR head 05f6c884f, without the probe.
+# Rules, set before any boot: $SCRATCH/s0a2/ab4/rules.md
+# Hashes: $SCRATCH/s0a2/ab4/image-sha256.txt. Run from the worktree $HOME/Dev/$USER/toyos-s0a; each invocation is `cargo <words>`.
+# On the AMD bench, and on the T14 once its DATA volume is restored, in this order, each boot with its own --readback dir
+# (runs/<bench>/<n>-<arm>): 1-base, 2-head, 3-base, 4-head (benchcase, the osbench row), then 5-testcases. Five boots per bench.
+
+base benchcase (9af33a79a):
+  cargo run -p toyos-metal -- --image $SCRATCH/s0a2/ab4/base/benchcase/image.img --readback <dir> --fat32-check
+head benchcase (13cca17b9):
+  cargo run -p toyos-metal -- --image $SCRATCH/s0a2/ab4/head/benchcase/image.img --readback <dir> --fat32-check
+testcases (05f6c884f; members messages_are_whole blocking_read_stress pipe_other_end_gone poll_wake_pipe std_io std_process std_fs std_fs_write ends_sent_over_each_other_both_end kill_ends_every_wait mio_waker_coalesces query_modules_size lseek_past_eof file_mtime):
+  cargo run -p toyos-metal -- --image $SCRATCH/s0a2/ab4/testcases/testcases/image.img --readback <dir> --fat32-check
