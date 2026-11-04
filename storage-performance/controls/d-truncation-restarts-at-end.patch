@@ -1,0 +1,18 @@
+diff --git a/lib/bcachefs/src/engine/mount/data.rs b/lib/bcachefs/src/engine/mount/data.rs
+index 3fecd3d16..d0f5d2f08 100644
+--- a/lib/bcachefs/src/engine/mount/data.rs
++++ b/lib/bcachefs/src/engine/mount/data.rs
+@@ -571,8 +571,12 @@ impl<D: BlockDev> Mount<D> {
+             })
+             .await?;
+         }
++        // Each search resumes past the extent last removed, as from `end` it
++        // would pass every earlier deletion again. Nothing writes the file
++        // meanwhile: callers hold the data slot or run before the mount serves.
++        let mut from = end;
+         loop {
+-            let Some((key, value)) = self.extent_after(ino, end).await? else {
++            let Some((key, value)) = self.extent_after(ino, from).await? else {
+                 return Ok(());
+             };
+             let first = start(&key)?;

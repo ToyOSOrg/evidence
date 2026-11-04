@@ -1,0 +1,53 @@
+diff -ru <worktree>/lib/bcachefs/src/engine/cache.rs tree/lib/bcachefs/src/engine/cache.rs
+--- <worktree>/lib/bcachefs/src/engine/cache.rs	2026-11-04 11:44:51
++++ tree/lib/bcachefs/src/engine/cache.rs	2026-11-04 11:51:07
+@@ -223,6 +223,8 @@
+ 
+     /// Changes node `id` through `f`, keeping the pins and the dirty and
+     /// unpointed counts.
++    pub(crate) fn has(&self, id: NodeId) -> bool { self.nodes.get(id.0).is_some_and(Option::is_some) }
++
+     pub(crate) fn change<T>(&mut self, id: NodeId, f: impl FnOnce(&mut Cached) -> T) -> T {
+         let node = self.nodes[id.0].as_mut().expect("a node of the cache");
+         let full = self.full;
+diff -ru <worktree>/lib/bcachefs/src/engine/mount/mod.rs tree/lib/bcachefs/src/engine/mount/mod.rs
+--- <worktree>/lib/bcachefs/src/engine/mount/mod.rs	2026-11-04 11:44:59
++++ tree/lib/bcachefs/src/engine/mount/mod.rs	2026-11-04 11:51:07
+@@ -1246,7 +1246,13 @@
+                 let counters = prior.as_ref().map_or(0, |(_, v)| v.len() / 8).max(delta.len());
+                 st.metadata_bytes = st.metadata_bytes + (KEY_U64S * 8 + counters * 8) as u64 - before;
+             }
++            let dirtied: Vec<NodeId> = txn.dirtied.iter().copied().collect();
+             self.apply(st, txn, bound);
++            for id in dirtied {
++                if !st.cache.has(id) { continue; }
++                let min = st.cache.node(id).min;
++                let _ = self.take_into(st, id, min);
++            }
+             for sector in allocated { st.alloc.unpin(sector / u64::from(self.sb.member.bucket_sectors)); }
+         } else {
+             release(st, &txn.held);
+diff -ru <worktree>/lib/bcachefs/src/engine/mount/reclaim.rs tree/lib/bcachefs/src/engine/mount/reclaim.rs
+--- <worktree>/lib/bcachefs/src/engine/mount/reclaim.rs	2026-11-04 11:44:59
++++ tree/lib/bcachefs/src/engine/mount/reclaim.rs	2026-11-04 11:51:07
+@@ -422,7 +422,12 @@
+         let (btree, level, pos) = next.position;
+         let id = self.find(btree, level, pos).await?;
+         let mut st = self.st.borrow_mut();
++        self.take_into(&mut st, id, pos)
++    }
++
++    pub(super) fn take_into(&self, st: &mut State, id: NodeId, pos: Bpos) -> Result<bool> {
+         let n = st.cache.node(id);
++        let (btree, level) = (n.btree, n.level);
+         if n.writing || n.captured.is_some() || n.held != 0 { return Ok(false); }
+         let mut captures = Vec::new();
+         let mut growth = 0;
+@@ -443,7 +448,6 @@
+             if growth + added > K_TX as usize * 8 && start != 0 { captures.truncate(start); continue; }
+             growth += added;
+         }
+-        let st = &mut *st;
+         let durable = st.journal.durable;
+         let mut accounting = None;
+         let transferred = !captures.is_empty();

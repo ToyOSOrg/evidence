@@ -1,0 +1,14 @@
+diff --git a/lib/bcachefs/src/engine/mount/publish.rs b/lib/bcachefs/src/engine/mount/publish.rs
+index dfe2fb9c0..b7d7583b4 100644
+--- a/lib/bcachefs/src/engine/mount/publish.rs
++++ b/lib/bcachefs/src/engine/mount/publish.rs
+@@ -395,9 +395,6 @@ impl<D: BlockDev> Mount<D> {
+     /// `derived` leaves them; `None` when it has none left to append.
+     fn appended_sectors(&self, st: &State, id: NodeId, derived: &Derived) -> Option<u16> {
+         let n = st.cache.node(id);
+-        if changed_positions(n, derived).is_empty() {
+-            return None;
+-        }
+         let keys = content(st, id, derived, Version::default());
+         Some(n.on_disk + (appended_bytes(self.sb.block_bytes(), n, &keys, derived) / SECTOR) as u16)
+     }
