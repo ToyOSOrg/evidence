@@ -1,0 +1,11 @@
+--- system/supervisor/lifecycle/src/declaration.rs	2026-11-04 06:40:13
++++ <scratch>/decl.mut	2026-11-04 06:50:43
+@@ -67,7 +67,7 @@
+     let comes = held || (holder && started().any(|p| mints(p)));
+     let first_here = |p: &Program| comes && (p.name == toyos_logstream::LOGKEEPER || declares(p) || (!held && mints(p)));
+     let mut plan = Plan { comes, first: Vec::new(), storage: Vec::new(), rest: Vec::new() };
+-    for (at, program) in rows.iter().enumerate().skip(1) {
++    for (at, program) in rows.iter().enumerate() {
+         match () {
+             () if first_here(program) => plan.first.push(at),
+             () if is_storage(program) => plan.storage.push(at),
