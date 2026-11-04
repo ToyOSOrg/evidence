@@ -1,0 +1,11 @@
+--- a/tests/common/hostload.rs
++++ b/tests/common/hostload.rs
+@@ -119,7 +119,7 @@
+         .map(|f| f.parse().expect("/proc/stat's cpu fields are numbers"))
+         .collect();
+     assert_eq!(fields.len(), 8, "/proc/stat's cpu line: {line}");
+-    let idle = fields[3].wrapping_add(fields[4]);
++    let idle = fields[3];
+     let busy = fields.iter().fold(0u64, |sum, f| sum.wrapping_add(*f)).wrapping_sub(idle);
+     let cpus = stat
+         .lines()
