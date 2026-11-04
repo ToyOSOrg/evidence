@@ -1,0 +1,36 @@
+== control holds-config at 08e4bb8f07ac42f2bf8cd706a5065173a573a511
+diff --git a/tests/images/testcases.toml b/tests/images/testcases.toml
+index e30b63335..d8264482a 100644
+--- a/tests/images/testcases.toml
++++ b/tests/images/testcases.toml
+@@ -18,7 +18,6 @@ holds = ["log-origins"]
+ 
+ [programs.uart]
+ devices = ["uart"]
+-holds = ["console-input"]
+ receives = ["log-wire"]
+ restart = true
+ 
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.31s
+     Running unittests build/lib.rs (target/debug/deps/toyos_build-2e1c103dca4530b0)
+
+running 1 test
+test build::tests::every_boot_config_runs_logkeeper ... FAILED
+
+failures:
+
+---- build::tests::every_boot_config_runs_logkeeper stdout ----
+
+thread 'build::tests::every_boot_config_runs_logkeeper' (158890299) panicked at build/build.rs:3226:13:
+tests/images/testcases.toml runs `logkeeper` and does not start `uart` holding the `uart` claim and the console's input, so its console UART says nothing from the kernel's hand-over to the machine's stop
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    build::tests::every_boot_config_runs_logkeeper
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 391 filtered out; finished in 0.01s
+
+error: test failed, to rerun pass `--lib`
+exit 101
+restored

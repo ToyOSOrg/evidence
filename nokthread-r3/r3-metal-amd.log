@@ -1,0 +1,32 @@
+== cargo test --test toyos-build -- --metal --metal-readback <scratch>/metal/amd boot:testcases at 08e4bb8f07ac42f2bf8cd706a5065173a573a511
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.94s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-35ba3716d2b5918e)
+06:44:42   BUILD x86_64 binaries of tests/guest/rust-tests
+06:44:53   BUILT x86_64 binaries of tests/guest/rust-tests  (11s)
+06:44:53   BUILD x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests
+06:45:01   BUILT x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests  (8s)
+06:45:01 [toyos] Compiling 143 C tests, and attempting 24 declared ones...
+06:45:17 [metal] 37 registration(s) and 232 shared member(s) over 2 boot(s)
+06:45:18   BUILD x86_64 kernel, loader, ROOT of <scratch>/metal/amd/testcases/system-ed57c8928c75a74c.toml
+06:45:28 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+06:45:29   BUILT x86_64 kernel, loader, ROOT of <scratch>/metal/amd/testcases/system-ed57c8928c75a74c.toml  (11s)
+06:45:31 [metal] testcases: 252 job(s) under a list bound of 101000 ms, armed with [] and a boot deadline of 202000 ms — <scratch>/metal/amd/testcases/image.img
+06:45:31   BUILD x86_64 ROOT of <scratch>/metal/amd/testcases-watchdog/system-b97c73bc13751309.toml
+06:45:35 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+06:45:35   BUILT x86_64 ROOT of <scratch>/metal/amd/testcases-watchdog/system-b97c73bc13751309.toml  (5s)
+06:45:36 [metal] testcases-watchdog: 0 job(s) under a list bound of 60000 ms, armed with ["watchdog"] and a boot deadline of 120000 ms — <scratch>/metal/amd/testcases-watchdog/image.img
+# One boot per image. Each invocation is `cargo <words>` from this worktree.
+
+testcases
+  image: <scratch>/metal/amd/testcases/image.img
+  cargo run -p toyos-metal -- --image <scratch>/metal/amd/testcases/image.img --readback <scratch>/metal/amd/testcases --fat32-check
+
+testcases-watchdog
+  image: <scratch>/metal/amd/testcases-watchdog/image.img
+  cargo run -p toyos-metal -- --image <scratch>/metal/amd/testcases-watchdog/image.img --readback <scratch>/metal/amd/testcases-watchdog --fat32-check
+06:45:36 [metal] staged 2 image(s); <scratch>/metal/amd/request.txt lists them. The machine was not touched, so this run establishes nothing about it.
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `<dev>/toyos-nokthread/target/debug/deps/toyos_build-35ba3716d2b5918e --metal --metal-readback <scratch>/metal/amd 'boot:testcases'` (exit status: 2)
+exit 2
