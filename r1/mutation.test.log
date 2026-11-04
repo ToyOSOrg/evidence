@@ -1,0 +1,38 @@
+warning: unused variable: `scratch`
+   --> build/toolchain.rs:505:9
+    |
+505 |     let scratch = toyos_tmpdir::TempDir::new("bootstrap");
+    |         ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_scratch`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `toyos-build` (lib) generated 1 warning (run `cargo fix --lib -p toyos-build` to apply 1 suggestion)
+warning: `toyos-build` (lib test) generated 1 warning (1 duplicate)
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.14s
+     Running unittests build/lib.rs (target/debug/deps/toyos_build-2ab8e404141c8377)
+
+running 1 test
+test toolchain::tests::a_bootstrap_run_leaves_nothing_in_its_caller_s_tmpdir ... FAILED
+
+failures:
+
+---- toolchain::tests::a_bootstrap_run_leaves_nothing_in_its_caller_s_tmpdir stdout ----
+
+23:47:44 running 1 test
+23:47:44 left a probe at $TMPDIR/toyos-UID/toyos-tmp-37484-0/x-build-caller-tmpdir-1/rustix_test_can_compile
+23:47:44 test toolchain::tests::a_fake_bootstrap_that_leaves_scratch ... ok
+
+23:47:44 test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 398 filtered out; finished in 0.00s
+
+
+thread 'toolchain::tests::a_bootstrap_run_leaves_nothing_in_its_caller_s_tmpdir' (168752129) panicked at build/toolchain.rs:815:9:
+a bootstrap left ["rustix_test_can_compile"] in its caller's $TMPDIR
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    toolchain::tests::a_bootstrap_run_leaves_nothing_in_its_caller_s_tmpdir
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 398 filtered out; finished in 0.01s
+
+error: test failed, to rerun pass `--lib`
