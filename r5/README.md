@@ -5,8 +5,8 @@
   under QEMU x86_64 on the development Mac at 05f6c884f.
   - 230 of 238 exit 0; the other 8 need `SYS_DEBUG`, as in every round. The C corpus is
     143 of 143. No gate panic.
-  - This ran before the owner's rule that x86 guest tests run only on <qemu-host>. The
-    <qemu-host> run of the relevant guest tests is the one #1150 relies on.
+  - This ran before the owner's rule that x86 guest tests run only on the remote KVM host. The
+    the remote KVM host run of the relevant guest tests is the one #1150 relies on.
 - `probe-qemu.log.gz`: the measurement-only `s0a-probe` branch's osbench bench groups
   under QEMU, rc=0, its exit lines carrying `probe_ns_per_call`. It is a format check, not
   a timing.
