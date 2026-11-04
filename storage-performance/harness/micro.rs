@@ -1,14 +1,17 @@
 
 fn per_op(name: &str, n: usize, mut f: impl FnMut(usize)) {
     for i in 0..n / 20 { f(i); }
+    let r0 = READS.with(|r| r.get());
     let t = std::time::Instant::now();
     for i in 0..n { f(i); }
-    println!("MICRO {name:28} {:10.2} us/op", t.elapsed().as_secs_f64() * 1e6 / n as f64);
+    let reads = READS.with(|r| r.get()) - r0;
+    println!("MICRO {name:28} {:10.2} us/op {:8.3} blocks read/op", t.elapsed().as_secs_f64() * 1e6 / n as f64, reads as f64 / n as f64);
 }
+std::thread_local! { static READS: Cell<u64> = const { Cell::new(0) }; }
 
 #[test]
 fn osbench_rows_micro() {
-    let m = Model { ram: Ram::new(T14_BLOCKS), writes: Cell::new(0) };
+    let m = Model { ram: Ram::new(T14_BLOCKS), writes: Cell::new(0), reads: Cell::new(0) };
     let mut v = mount(&m);
     let d = "home/osbench-1";
     v.mkdir(d).unwrap();

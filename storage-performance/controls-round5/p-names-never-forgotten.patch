@@ -1,0 +1,13 @@
+diff --git a/system/fileserver/src/data.rs b/system/fileserver/src/data.rs
+index 73ce53af6..0a5ed14ae 100644
+--- a/system/fileserver/src/data.rs
++++ b/system/fileserver/src/data.rs
+@@ -229,7 +229,7 @@ impl<D: Disk> DataVolume<D> {
+     fn forget(&self, path: &str) {
+         let path = path.split('/').filter(|name| !name.is_empty()).collect::<Vec<_>>().join("/");
+         let below = format!("{path}/");
+-        self.names.borrow_mut().retain(|known, _| *known != path && !known.starts_with(&below));
++        let _ = (path, below);
+     }
+     fn destination<'a>(&self, path: &'a str) -> Result<(u64, &'a [u8]), Error> {
+         let name = path.rsplit('/').next().filter(|name| !name.is_empty()).ok_or(Error::Root)?;

@@ -17,10 +17,10 @@ const T14_BLOCKS: u64 = 44_564_480;
 
 fn clock() -> u64 { 1_793_650_328_000_000_000 }
 
-struct Model { ram: Ram, writes: Cell<u64> }
+struct Model { ram: Ram, writes: Cell<u64>, reads: Cell<u64> }
 impl BlockDev for Model {
     fn blocks(&self) -> u64 { self.ram.blocks() }
-    async fn read(&self, lba: u64, out: &mut [Block]) -> Result<(), Error> { self.ram.read(lba, out).await }
+    async fn read(&self, lba: u64, out: &mut [Block]) -> Result<(), Error> { self.reads.set(self.reads.get() + out.len() as u64); READS.with(|r| r.set(r.get() + out.len() as u64)); self.ram.read(lba, out).await }
     async fn write(&self, lba: u64, data: &[Block]) -> Result<(), Error> { self.writes.set(self.writes.get() + data.len() as u64); self.ram.write(lba, data).await }
     async fn flush(&self) -> Result<(), Error> { Ok(()) }
 }
@@ -178,7 +178,7 @@ fn osbench(m: &Model, v: &mut Vol) {
 
 #[test]
 fn osbench_tenth_on_t14_geometry() {
-    let m = Model { ram: Ram::new(T14_BLOCKS), writes: Cell::new(0) };
+    let m = Model { ram: Ram::new(T14_BLOCKS), writes: Cell::new(0), reads: Cell::new(0) };
     let t0 = std::time::Instant::now();
     let mut v = mount(&m);
     println!("PHASE {:45} {:10.3} s", "format+mount+history", t0.elapsed().as_secs_f64());

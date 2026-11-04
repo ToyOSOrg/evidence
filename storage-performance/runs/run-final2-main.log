@@ -1,0 +1,49 @@
+   Compiling fileserver v0.0.0 (<scratch>/agents/storage4/perf/main-tree/system/fileserver)
+warning: unused imports: `BLOCK` and `block_on_ready`
+ --> system/fileserver/tests/perf.rs:9:22
+  |
+9 | use toyos_blockdev::{block_on_ready, Block, BlockDev, Error, BLOCK};
+  |                      ^^^^^^^^^^^^^^                          ^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `m`
+  --> system/fileserver/tests/perf.rs:59:12
+   |
+59 | fn osbench(m: &Model, v: &mut Vol) {
+   |            ^ help: if this is intentional, prefix it with an underscore: `_m`
+   |
+   = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `fileserver` (test "perf") generated 2 warnings (run `cargo fix --test "perf" -p fileserver` to apply 2 suggestions)
+    Finished `release` profile [optimized] target(s) in 0.92s
+     Running tests/perf.rs (<scratch>/agents/storage4/perf/target-main/release/deps/perf-e08ea42f23070ba3)
+
+running 2 tests
+fileserver: mounted the DATA volume
+fileserver: mounted the DATA volume
+PHASE format+mount+history                               0.043 s
+MICRO open_close                         6.20 us/op    0.000 blocks read/op
+MICRO stat                               0.16 us/op    0.000 blocks read/op
+PHASE persist                                            0.017 s
+MICRO create_write_unlink               54.42 us/op    0.000 blocks read/op
+PHASE fs.disk create-write-close-unlink x1050            0.057 s
+MICRO write_4k_at                        0.84 us/op    1.000 blocks read/op
+PHASE fs.disk big file random read/write                 0.006 s
+MICRO readdir.1000                     135.41 us/op    0.000 blocks read/op
+PHASE fs.disk 1000 entries create+remove                 0.061 s
+PHASE fs.disk rename x2100                               0.090 s
+MICRO rename                            51.55 us/op    0.000 blocks read/op
+PHASE fs.disk mkdir/rmdir x1050                          0.046 s
+MICRO mkdir_rmdir                       54.26 us/op    0.000 blocks read/op
+MICRO seq_write64M.4096 (per MiB)      361.22 us/op    0.000 blocks read/op
+PHASE fs.disk tree 22x100                                0.102 s
+MICRO seq_write64M.1048576 (per MiB)     229.99 us/op    0.000 blocks read/op
+test osbench_rows_micro ... ok
+PHASE fs.disk                                            0.229 s
+PHASE shutdown sync                                      0.001 s
+TOTAL osbench 0.608 s, blocks written 229117
+test osbench_tenth_on_t14_geometry ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.66s
+

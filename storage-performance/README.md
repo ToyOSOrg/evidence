@@ -56,3 +56,17 @@ test were removed before the commit.
 `cargo clippy -p bcachefs --lib --no-default-features -- -D warnings`: exit 0.
 `logs/host-final.log`: `cargo run -- --ci host`, exit 0, 109 steps green (the
 tree it built compared identical to the committed diff).
+
+## Round 5 (45283fbc5): write-back by extent; the served path's lookups
+
+- `served-path/`: where a DATA stat and open spent their time, measured on a QEMU/KVM
+  probe before the fix, after its first cut and after the final one.
+- `runs/run-final2-{native,main}.log`: the harness and micro rows at 45283fbc5 and
+  main 7835695, back to back: harness 4.45 s vs 0.61 s; stat 0.64 vs 0.16 us;
+  open_close 1.14 vs 6.20 us; seq write 1 MiB calls 0.80 vs 0.23 ms/MiB.
+- `controls-round5/`: each mutation applied, run and restored by `run.py`: the
+  unwritten blocks leaked, runs of one block, whole-run allocations closing the
+  bucket (timeout), no bound on old extents per transaction, the refused suffix
+  reported from 0, names never forgotten, and the idle publication member at its
+  new construction: each red.
+- `logs/host-45283fbc5.log`: `cargo run -- --ci host`, exit 0, 108 steps.

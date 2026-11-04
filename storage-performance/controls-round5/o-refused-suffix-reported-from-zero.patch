@@ -1,0 +1,13 @@
+diff --git a/system/fileserver/src/data.rs b/system/fileserver/src/data.rs
+index 0a8c15ac4..a67d7c7d9 100644
+--- a/system/fileserver/src/data.rs
++++ b/system/fileserver/src/data.rs
+@@ -455,7 +455,7 @@ impl<D: Disk> Volume for DataVolume<D> {
+                 "writeback",
+                 self.cache.block_on(self.fs.write_reserved(capacity, offset + done as u64, &data[done..done + len], time(open.mtime))),
+             )
+-            .map_err(|error| (done, error))?;
++            .map_err(|error| (0, error))?;
+             for p in page..page + written.div_ceil(BLOCK).min(run) as u64 {
+                 if written >= ((p - page + 1) as usize * BLOCK).min(len) {
+                     open.pages.remove(&p);

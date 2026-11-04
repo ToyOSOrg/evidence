@@ -1,0 +1,13 @@
+diff --git a/lib/bcachefs/src/engine/mount/data.rs b/lib/bcachefs/src/engine/mount/data.rs
+index ab7dcb1cb..027a78574 100644
+--- a/lib/bcachefs/src/engine/mount/data.rs
++++ b/lib/bcachefs/src/engine/mount/data.rs
+@@ -72,7 +72,7 @@ impl Drop for Reservation {
+         if let Some(reserved) = pool.active.remove(&self.id) {
+             for run in &reserved.runs {
+                 for block in (0..run.blocks).filter(|b| run.written & 1 << b == 0) {
+-                    pool.canceled.push(run.sector + u64::from(block) * reserved.block_sectors);
++                    let _ = run.sector + u64::from(block) * reserved.block_sectors;
+                 }
+             }
+         }

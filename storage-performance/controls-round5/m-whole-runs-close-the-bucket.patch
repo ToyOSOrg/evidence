@@ -1,0 +1,13 @@
+diff --git a/lib/bcachefs/src/engine/mount/data.rs b/lib/bcachefs/src/engine/mount/data.rs
+index ab7dcb1cb..02f84391d 100644
+--- a/lib/bcachefs/src/engine/mount/data.rs
++++ b/lib/bcachefs/src/engine/mount/data.rs
+@@ -450,7 +450,7 @@ impl<D: BlockDev> Mount<D> {
+     /// Up to `sectors` contiguous data sectors, as many as the open bucket
+     /// has left before another is taken: where an extent ends.
+     async fn data_run(&self, sectors: u64, draw: Draw) -> Result<(u64, u64)> {
+-        self.data_space(sectors, draw, false, true).await.map(|(sector, _, got)| (sector, got))
++        self.data_space(sectors, draw, false, false).await.map(|(sector, _, got)| (sector, got))
+     }
+ 
+     async fn data_space(&self, sectors: u64, draw: Draw, fixed: bool, partial: bool) -> Result<(u64, u8, u64)> {
