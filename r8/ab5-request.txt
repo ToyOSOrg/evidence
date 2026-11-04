@@ -1,0 +1,14 @@
+# S0-a A/B round 5 (user copies through the user mapping). base = s0a-ab5-base 62e7c7144 (main a0e8f1333 + probe);
+# head = s0a-ab5-head 3ff1584a2 (PR head e23d11219 + probe); both benchcases run osbench_boot/identity/system/ipc only (no DATA row).
+# testcases = PR head e23d11219, no probe, no /home member.
+# Rules, set before any boot: $SCRATCH/s0a2/ab5/rules.md
+# Hashes: $SCRATCH/s0a2/ab5/image-sha256.txt. Run from the worktree $HOME/Dev/$USER/toyos-s0a; each invocation is `cargo <words>`.
+# On the AMD bench, and on the T14 once its DATA is restored, in this order, each boot with its own --readback dir
+# (runs/<bench>/<n>-<arm>): 1-base, 2-head, 3-base, 4-head (benchcase, the osbench row), then 5-testcases. Five boots per bench.
+
+base benchcase (62e7c7144):
+  cargo run -p toyos-metal -- --image $SCRATCH/s0a2/ab5/base/benchcase/image.img --readback <dir> --fat32-check
+head benchcase (3ff1584a2):
+  cargo run -p toyos-metal -- --image $SCRATCH/s0a2/ab5/head/benchcase/image.img --readback <dir> --fat32-check
+testcases (e23d11219; members messages_are_whole blocking_read_stress pipe_other_end_gone poll_wake_pipe std_io std_process ends_sent_over_each_other_both_end kill_ends_every_wait mio_waker_coalesces query_modules_size user_copy_faults):
+  cargo run -p toyos-metal -- --image $SCRATCH/s0a2/ab5/testcases/testcases/image.img --readback <dir> --fat32-check
