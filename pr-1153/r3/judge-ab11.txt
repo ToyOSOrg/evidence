@@ -1,0 +1,46 @@
+boots: 1-base, 2-spawn, 3-spawn, 4-base, 5-base, 6-spawn
+
+## M: wake.storm homes and drain
+  wake.storm.drain.w4      1-base   p50=67216 homes=11*1+12*1+13*1+14*1_max1_l0
+  wake.storm.drain.w4      2-spawn  p50=55134 homes=0*1+4*1+5*1+6*1_max1_l0
+  wake.storm.drain.w4      3-spawn  p50=59862 homes=8*1+11*1+12*1+13*1_max1_l0
+  wake.storm.drain.w4      4-base   p50=71474 homes=12*1+13*1+14*1+15*1_max1_l0
+  wake.storm.drain.w4      5-base   p50=68018 homes=11*1+12*1+13*1+14*1_max1_l0
+  wake.storm.drain.w4      6-spawn  p50=59382 homes=8*1+11*1+12*1+13*1_max1_l0
+  M2 wake.storm.drain.w4: spawn/base 0.844 -> PASS
+  wake.storm.drain.w16     1-base   p50=79649 homes=3*2+0*1+1*1+4*1+5*1+6*1+7*1+8*1+9*1+10*1+11*1+12*1+13*1+14*1+15*1_max2_l0
+  wake.storm.drain.w16     2-spawn  p50=79940 homes=2*2+0*1+1*1+4*1+5*1+6*1+7*1+8*1+9*1+10*1+11*1+12*1+13*1+14*1+15*1_max2_l0
+  wake.storm.drain.w16     3-spawn  p50=78778 homes=14*2+0*1+1*1+2*1+3*1+4*1+5*1+6*1+7*1+8*1+9*1+10*1+11*1+12*1+13*1_max2_l0
+  wake.storm.drain.w16     4-base   p50=79920 homes=1*2+2*1+3*1+4*1+5*1+6*1+7*1+8*1+9*1+10*1+11*1+12*1+13*1+14*1+15*1_max2_l0
+  wake.storm.drain.w16     5-base   p50=112802 homes=2*2+11*2+3*1+4*1+5*1+6*1+7*1+8*1+9*1+10*1+12*1+13*1+14*1+15*1_max2_l0
+  wake.storm.drain.w16     6-spawn  p50=84879 homes=9*2+0*1+1*1+2*1+3*1+4*1+5*1+6*1+7*1+8*1+10*1+11*1+12*1+13*1+15*1_max2_l0
+  M2 wake.storm.drain.w16: spawn/base 0.894 -> PASS
+  M1 PASS
+
+## S1 pipe
+  pipe.throughput.4096: most split rounds in a spawn boot 0; spawn p50 5044 vs base same-LLC median 5296 -> PASS
+  pipe.throughput.16384: most split rounds in a spawn boot 0; spawn p50 8318 vs base same-LLC median 8505.5 -> PASS
+  pipe.throughput.65536: most split rounds in a spawn boot 0; spawn p50 10138 vs base same-LLC median 10524 -> PASS
+
+## S2 / S3: rows that resolve (moded rows marked "m", not judged)
+  m fs.disk.pread_4k                              ns     spawn/base 1.027 (slower x1.027) base [1453, 1473, 1453] spawn [1482, 1502, 1513]
+  m fs.disk.rename                                ns     spawn/base 0.922 (slower x0.922) base [66004, 68809, 70792] spawn [60763, 63880, 64912]
+    fs.mem.readdir.1000                           ns     spawn/base 0.994 (slower x0.994) base [1060518, 1067431, 1063354] spawn [1058265, 1057573, 1055329]
+    fs.mem.seq_write.1048576                      MB/s   spawn/base 1.031 (slower x0.969) base [3328, 3328, 3355] spawn [3457, 3434, 3435]
+    fs.mem.seq_write.4096                         MB/s   spawn/base 1.031 (slower x0.970) base [2733, 2701, 2719] spawn [2848, 2778, 2777]
+    mem.malloc_churn.1048576.t16                  kops/s spawn/base 1.064 (slower x0.940) base [95, 94, 93] spawn [99, 100, 101]
+    mem.map_touch_unmap.4k                        ns/MiB spawn/base 0.998 (slower x0.998) base [135580, 135616, 135880] spawn [135095, 135577, 135401]
+    pingpong.pipe.same_cpu                        ns     spawn/base 0.979 (slower x0.979) base [5300, 5350, 5370] spawn [5220, 5210, 5260]
+  m pipe.throughput.16384                         MB/s   spawn/base 0.977 (slower x1.023) base [8670, 8404, 8458] spawn [8391, 8294, 8270]
+  m pipe.throughput.256                           MB/s   spawn/base 2.363 (slower x0.423) base [207, 190, 198] spawn [476, 463, 467]
+  m pipe.throughput.4096                          MB/s   spawn/base 2.436 (slower x0.411) base [2245, 2129, 1838] spawn [4965, 5062, 5105]
+  m pipe.throughput.65536                         MB/s   spawn/base 2.085 (slower x0.480) base [4937, 4883, 4769] spawn [10102, 10205, 10107]
+  m thread.spawn_join                             ns     spawn/base 0.777 (slower x0.777) base [26910, 26991, 26991] spawn [20879, 20979, 20969]
+  m thread.spawn_join.default                     ns     spawn/base 1.038 (slower x1.038) base [20428, 20629, 20789] spawn [21530, 21170, 21490]
+  m thread.spawn_join.stack64k                    ns     spawn/base 1.042 (slower x1.042) base [18986, 19326, 19357] spawn [20178, 19837, 20098]
+    time.sleep_late.1us                           ns     spawn/base 0.934 (slower x0.934) base [1365, 1364, 1364] spawn [1244, 1314, 1265]
+    wake.storm.call.w1                            ns     spawn/base 1.026 (slower x1.026) base [7364, 7474, 7484] spawn [7655, 7714, 7534]
+    wake.storm.call.w64                           ns     spawn/base 1.026 (slower x1.026) base [24636, 24926, 24847] spawn [25338, 25177, 25838]
+    wake.storm.drain.w1                           ns     spawn/base 0.750 (slower x0.750) base [68188, 68258, 68238] spawn [50315, 51587, 51617]
+    wake.storm.drain.w4                           ns     spawn/base 0.844 (slower x0.844) base [67216, 71474, 68018] spawn [55134, 59862, 59382]
+    work.build_shaped.j16                         ns     spawn/base 0.974 (slower x0.974) base [274171640, 274480451, 274855455] spawn [266439655, 267888732, 267528646]
