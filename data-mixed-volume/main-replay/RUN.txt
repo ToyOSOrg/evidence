@@ -1,0 +1,10 @@
+revision: main 65c77e6dd (DATA's file server, lib/bcachefs: identical to the a0e8f1333 image the T14 ran)
+          plus system/fileserver/tests/osbench_replay.rs as in this directory, uncommitted
+command:  cargo test --release -p fileserver --test osbench_replay -- --nocapture --test-threads=2
+host:     macOS, aarch64
+exit:     101
+  osbench_on_an_intact_volume_writes_over_nothing_the_tree_reaches ... ok
+  osbench_on_a_volume_the_native_mkfs_wrote_over ... FAILED — the demonstration: it asserts an
+    undamaged volume and prints what it found instead (silent mount from the backup, 12781
+    reached blocks the bitmap calls free before the mount, 41 writes over committed nodes,
+    nodes reached twice, the next mount's BadMagic with file bytes).

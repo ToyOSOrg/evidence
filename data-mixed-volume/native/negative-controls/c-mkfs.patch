@@ -1,0 +1,11 @@
+--- a/lib/bcachefs/src/engine/mkfs.rs
++++ b/lib/bcachefs/src/engine/mkfs.rs
+@@ -120,7 +120,7 @@
+     let reserve = (1usize << volume.header.layout.max_bits) * SECTOR;
+     for &offset in &volume.header.layout.offsets {
+         let mut copy = Superblock::encode(&volume.header, &volume.fields, offset);
+-        copy.resize(reserve, 0);
++        copy.truncate(reserve);
+         write(dev, offset, &copy).await?;
+     }
+     let tail = volume.header.layout.offsets.last().expect("a layout lists copies") * SECTOR as u64 + reserve as u64;

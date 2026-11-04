@@ -1,0 +1,11 @@
+--- a/lib/bcachefs/src/engine/read.rs
++++ b/lib/bcachefs/src/engine/read.rs
+@@ -839,7 +839,7 @@
+             // A primary that still claims to be a copy, with no layout
+             // beside it, is a volume another writer took the front of.
+             Err(_) if read_bytes(dev, PRIMARY * SECTOR as u64, 40).await?[24..40] == MAGIC => {
+-                return Err(Error::Overwritten { sector: LAYOUT });
++                return Err(*failure);
+             }
+             Err(_) => return Err(*failure),
+         },

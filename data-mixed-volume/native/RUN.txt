@@ -1,0 +1,28 @@
+Branch native-mixed-volume on origin/codex/storage-consolidation c12721aa1; host macOS aarch64.
+Final head 2c12e4d43 (commits 938f1e701 issue, 719e0f07c superblock places, adb3b5655 checksum NONE,
+39df624fa mkfs, 2c12e4d43 replay + issue closed).
+
+bcachefs-final.log  cargo test --release -p bcachefs at 2c12e4d43, exit 0: 183 passed.
+ci-host-steps.txt   cargo run -- --ci host at 805417e44, exit 1: 108 of 109 steps green; red: clippy,
+                    two findings in the new engine tests (a complex closure type, a u32::from of a u32).
+                    Both fixed in 2c12e4d43, whose other changes are none; ci-host-lint-steps.txt is
+                    cargo run -- --ci host lint at 2c12e4d43, exit 0: 5 steps, all green.
+
+Earlier runs, at revisions whose sources the final head changes only as noted:
+
+bcachefs.log    cargo test --release -p bcachefs, exit 0: 183 passed. Revision 7d9b85401 (tree 1f80255).
+                Its bcachefs sources equal the final head's but for one test's device size
+                (mkfs_leaves_nothing_..., 8 MiB -> 8 MiB + 8 KiB so a tail exists), rerun alone at the
+                final head's content: mkfs-tail-test.log, exit 0.
+fileserver.log  cargo test --release -p fileserver, exit 0: 108 unit tests and the 3 replays (39.9 s).
+                Revision 52f719507, whose tree equals the final head's for every fileserver and bcachefs
+                source but that one engine test.
+negative-controls/run.sh at 52f719507: each patch applied, its catching tests run with --exact, reverted.
+                exit 101 (red, as wanted) for a-silent, a-layout (engine; fileserver), a-front (engine;
+                fileserver), b-node, c-mkfs. c-tail stayed green there (exit 0): neither geometry had a
+                tail; the test was given one, and c-tail-2.bcachefs.log is the control at the final
+                content, exit 101 ("the tail keeps another writer's bytes").
+Full osbench repetitions on the native role were not run to completion: a tenth of them took
+830 s for the three states on the T14's geometry (all passed; not kept as the committed test).
+replay-tenth-scale-t14-geometry.log: that run — 7d9b85401 with the replay's repetitions cut to a tenth
+                and its large files to an eighth (uncommitted), 170 GiB model, exit 0, 3 passed in 830 s.

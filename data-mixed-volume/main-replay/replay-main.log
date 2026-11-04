@@ -1,0 +1,38 @@
+   Compiling fileserver v0.0.0 (<main worktree>/system/fileserver)
+    Finished `release` profile [optimized] target(s) in 8.34s
+     Running tests/osbench_replay.rs (target/release/deps/osbench_replay-5e6a2f84dbe59804)
+
+running 2 tests
+fileserver: mounted the DATA volume
+block 0 after the native mkfs begins [0, 0, 0, 0]
+block 1 (this format's first bitmap block) begins [253, 205, 162, 130]
+before the mount: 12781 findings, first ["block 1362 ('apps/pkg002/file39') is reached and the bitmap calls it free", "block 1363 ('apps/pkg000/file0') is reached and the bitmap calls it free", "block 1365 ('apps/pkg001/file1') is reached and the bitmap calls it free", "block 1366 ('apps/pkg001/file1') is reached and the bitmap calls it free", "block 1367 ('apps/pkg002/file2') is reached and the bitmap calls it free"]
+fileserver: mounted the DATA volume
+MOUNTED the volume the native mkfs wrote over
+fileserver: create of 'home/osbench-1/big' failed: BadMagic { expected: [66, 84, 78, 68], got: [45, 45, 45, 45] }
+
+thread 'osbench_on_a_volume_the_native_mkfs_wrote_over'  panicked at system/fileserver/tests/osbench_replay.rs:290:40:
+called `Result::unwrap()` on an `Err` value: Io
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+osbench stopped at a refusal
+shutdown sync: Ok(0)
+41 writes over the committed tree, first ["persist: a structure write of [66, 84, 78, 68].. landed on node 12876 of the committed tree", "persist: a structure write of [107, 107, 107, 107].. landed on node 16612 of the committed tree", "persist: a structure write of [107, 107, 107, 107].. landed on node 16612 of the committed tree", "persist: a structure write of [107, 107, 107, 107].. landed on node 16612 of the committed tree", "persist: a structure write of [107, 107, 107, 107].. landed on node 16612 of the committed tree"]
+after: 9534 findings, first ["node 14548 is reached twice", "node 2991 is reached twice", "node 9717 is reached twice", "node 15294 is reached twice", "node 10363 is reached twice", "node 14966 is reached twice", "node 3152 is reached twice", "node 12876 is reached twice"]
+fileserver: mounted the DATA volume
+the next mount: the volume would not list: BadMagic { expected: [66, 84, 78, 68], got: [45, 45, 45, 45] }
+
+thread 'osbench_on_a_volume_the_native_mkfs_wrote_over'  panicked at system/fileserver/tests/osbench_replay.rs:425:5:
+the hybrid volume was damaged
+test osbench_on_a_volume_the_native_mkfs_wrote_over ... FAILED
+fileserver: mounted the DATA volume
+test osbench_on_an_intact_volume_writes_over_nothing_the_tree_reaches ... ok
+
+failures:
+
+failures:
+    osbench_on_a_volume_the_native_mkfs_wrote_over
+
+test result: FAILED. 1 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 6.84s
+
+error: test failed, to rerun pass `-p fileserver --test osbench_replay`
+cargo test --release -p fileserver --test osbench_replay -- --nocapture   7.56s user 0.47s system 52% cpu 15.411 total
