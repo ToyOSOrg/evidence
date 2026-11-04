@@ -1,0 +1,13 @@
+diff --git a/kernel/src/syscall/proc.rs b/kernel/src/syscall/proc.rs
+index 11775baad..f406cb3f8 100644
+--- a/kernel/src/syscall/proc.rs
++++ b/kernel/src/syscall/proc.rs
+@@ -41,7 +41,7 @@ pub(super) fn sys_thread_exit(code: i32, flags: u64, at: u64, len: u64) -> u64 {
+ 
+ /// Let another runnable thread of the caller's band have this CPU.
+ pub(super) fn sys_yield() -> u64 {
+-    crate::scheduler::yield_now();
++    core::hint::spin_loop();
+     0
+ }
+ 

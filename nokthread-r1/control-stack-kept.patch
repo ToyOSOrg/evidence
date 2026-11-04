@@ -1,0 +1,13 @@
+diff --git a/kernel/src/syscall/proc.rs b/kernel/src/syscall/proc.rs
+index 11775baad..7597fb372 100644
+--- a/kernel/src/syscall/proc.rs
++++ b/kernel/src/syscall/proc.rs
+@@ -27,7 +27,7 @@ pub(super) fn sys_thread_exit(code: i32, flags: u64, at: u64, len: u64) -> u64 {
+     let joined = match flags {
+         0 if at == 0 && len == 0 => process::Joined::Joinable,
+         THREAD_EXIT_DETACHED => {
+-            if len != 0 {
++            if len == u64::MAX {
+                 if let Err(e) = super::vm::release(at, len) {
+                     return e.to_u64();
+                 }

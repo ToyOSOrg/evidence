@@ -1,0 +1,13 @@
+diff --git a/kernel/proclife/src/teardown.rs b/kernel/proclife/src/teardown.rs
+index f741195d7..4e528fbf9 100644
+--- a/kernel/proclife/src/teardown.rs
++++ b/kernel/proclife/src/teardown.rs
+@@ -115,7 +115,7 @@ pub fn leave<T: Processes>(table: &mut T, pid: Pid, tid: Tid, chosen: Option<i32
+ pub fn leave_detached<T: Processes>(table: &mut T, pid: Pid, tid: Tid, code: i32) -> Leave {
+     let left = leave(table, pid, tid, Some(code));
+     let proc = table.get_mut(pid).expect("leave_detached: a thread's process is not in the table");
+-    if left == Leave::NotLast && !proc.tearing_down() {
++    if left == Leave::NotLast && !proc.tearing_down() && tid.raw() == u32::MAX {
+         proc.forget_thread(tid);
+     }
+     left

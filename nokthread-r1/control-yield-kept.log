@@ -1,0 +1,53 @@
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.41s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-fb52eeb2ee2fc502)
+
+23:56:38 running 1 tests, 12 wide
+
+23:56:38   RUN   std_threads_count_the_cpus_and_give_back_ended_threads
+23:56:38   BUILD x86_64 std_threads (toyos) of tests/guest/rust-tests, for std_threads_count_the_cpus_and_give_back_ended_threads
+23:56:41   BUILT x86_64 std_threads (toyos) of tests/guest/rust-tests, for std_threads_count_the_cpus_and_give_back_ended_threads  (3s)
+23:56:41   BUILD x86_64 kernel, loader, ROOT of tests/images/testcases.toml, for std_threads_count_the_cpus_and_give_back_ended_threads
+23:56:46 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+23:56:46   BUILT x86_64 kernel, loader, ROOT of tests/images/testcases.toml, for std_threads_count_the_cpus_and_give_back_ended_threads  (6s)
+23:56:58 FAIL std_threads_count_the_cpus_and_give_back_ended_threads: the job ended Some(101):
+std_threads: 2 CPUs
+std_threads: 64 joined threads ran on 1 stacks; 4104 detached threads were all spawned and ran on 2 stacks
+std_threads: a thread detached before it ended left no place and no stack behind it
+
+thread 'main' (1) panicked at src/bin/std_threads.rs:149:5:
+a thread yielding on its one CPU let another run only after 5178 yields
+stack backtrace:
+   0:           0x29ea90 - _Unwind_Backtrace
+   1:           0x272953 - <<std[872afbc93b7b6ebb]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[73b405bef30eeff1]::fmt::Display>::fmt
+   2:           0x2a2e07 - core[73b405bef30eeff1]::fmt::write
+   3:           0x276b1b - <std[872afbc93b7b6ebb]::sys::stdio::toyos::Stderr as core[73b405bef30eeff1]::io::write::Write>::write_fmt
+   4:           0x2539b3 - std[872afbc93b7b6ebb]::panicking::default_hook::{closure#0}
+   5:           0x26e38e - std[872afbc93b7b6ebb]::panicking::default_hook
+   6:           0x26e549 - std[872afbc93b7b6ebb]::panicking::panic_with_hook
+   7:           0x253a6d - std[872afbc93b7b6ebb]::panicking::panic_handler::{closure#0}
+   8:           0x24b849 - std[872afbc93b7b6ebb]::sys::backtrace::__rust_end_short_backtrace::<std[872afbc93b7b6ebb]::panicking::panic_handler::{closure#0}, !>
+   9:           0x2542a8 - __rustc[d0c72ce299f394e5]::rust_begin_unwind
+  10:           0x2a352b - core[73b405bef30eeff1]::panicking::panic_fmt
+  11:           0x22c675 - std_threads[87f5878fddd75965]::main
+  12:           0x230246 - std[872afbc93b7b6ebb]::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  13:           0x22d3f0 - std[872afbc93b7b6ebb]::rt::lang_start::<()>::{closure#0}
+  14:           0x26d386 - std[872afbc93b7b6ebb]::rt::lang_start_internal
+  15:           0x22c9e1 - main
+  16:           0x26fe33 - std[872afbc93b7b6ebb]::sys::pal::toyos::start_rust
+  17:           0x23e716 - _start
+
+23:56:58   FAIL  std_threads_count_the_cpus_and_give_back_ended_threads  (12s)
+23:56:58   --- 1 guests, 0 of them not the shipping kernel, 1 kernel build(s): [""]
+
+23:56:58 host: fastest boot 6920 ms against the reference 1424 ms — liveness ceilings paid at 4.86x
+23:56:58 host: 14 core(s); a guest wider than that waits vcpus/cores longer again
+23:56:58 failures:
+23:56:58     std_threads_count_the_cpus_and_give_back_ended_threads: the job ended Some(101):
+
+23:56:58 test result: FAILED. 0 passed, 1 failed, 0 invalidated, 1 total (20.4s; workers: 8s building, 12s testing)
+23:56:58 [toyos] this red run's serial logs are kept at <dev>/toyos-nokthread/target/red-run-serial/toyos-tmp-45448-0
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `<dev>/toyos-nokthread/target/debug/deps/toyos_build-fb52eeb2ee2fc502 std_threads_count_the_cpus_and_give_back_ended_threads` (exit status: 1)
+exit 1
