@@ -1,0 +1,18 @@
+diff --git a/tests/common/sessionlifecycle.rs b/tests/common/sessionlifecycle.rs
+index dd25d562b..7a3775e47 100644
+--- a/tests/common/sessionlifecycle.rs
++++ b/tests/common/sessionlifecycle.rs
+@@ -130,8 +130,11 @@ fn type_paced(qemu: &mut QemuInstance, text: &str) -> Result<(), String> {
+         same
+     });
+     shown = top(&dump);
+-    for key in qcodes(text) {
+-        press(qemu, &[key]);
++    for (n, key) in qcodes(text).into_iter().enumerate() {
++        // SCOUT (never committed): the negative control, one key never pressed.
++        if n != 9 {
++            press(qemu, &[key]);
++        }
+         let dump = qemu.screendump_while(KEY_SHOWN, Duration::from_millis(20), |d| top(d) != shown);
+         if top(&dump) == shown {
+             return Err(format!("the panel never changed after {key:?} of {text:?} was typed"));
