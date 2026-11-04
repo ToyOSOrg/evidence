@@ -1,0 +1,69 @@
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.08s
+     Running unittests src/lib.rs (target/debug/deps/toyos_tmpdir-6a4601c1fe1bf395)
+
+running 6 tests
+test tests::a_private_directory_is_made_this_users_alone ... ok
+test tests::a_directory_the_sweep_cannot_remove_costs_no_process_but_this_one ... ok
+test tests::a_private_directory_with_another_mode_is_refused ... ok
+test tests::a_private_directory_another_user_owns_is_refused ... ok
+test tests::a_symlink_in_place_of_a_private_directory_is_refused ... ok
+test tests::a_held_global_lock_times_out_naming_its_holder ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.09s
+
+     Running tests/reclaim.rs (target/debug/deps/reclaim-8f976513595edc54)
+
+running 7 tests
+test holder ... ok
+test a_directory_goes_on_a_return_and_on_a_panic ... ok
+error: io error when listing tests: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+test a_killed_process_is_reclaimed_and_a_live_one_is_never_touched ... FAILED
+test a_root_without_an_owner_goes_and_nothing_else_is_touched ... FAILED
+error: io error when listing tests: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+test an_adopted_root_goes_with_its_adopter ... FAILED
+
+thread 'holder' (167864085) panicked at lib/tmpdir/src/lib.rs:178:9:
+remove $TMPDIR/toyos-tmp-11052-3/global-gate-make-0/toyos-tmp-11057-0/owner: No such file or directory (os error 2)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test making_a_root_waits_for_global ... FAILED
+error: io error when listing tests: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+test removing_a_root_waits_for_global ... FAILED
+
+failures:
+
+---- a_killed_process_is_reclaimed_and_a_live_one_is_never_touched stdout ----
+
+thread 'a_killed_process_is_reclaimed_and_a_live_one_is_never_touched' (167864064) panicked at lib/tmpdir/tests/reclaim.rs:161:5:
+$TMPDIR/toyos-tmp-11052-0/reclaim-1/toyos-tmp-11053-0 is not under $TMPDIR/toyos-tmp-11052-0/reclaim-1/toyos-UID
+
+---- a_root_without_an_owner_goes_and_nothing_else_is_touched stdout ----
+
+thread 'a_root_without_an_owner_goes_and_nothing_else_is_touched' (167864065) panicked at lib/tmpdir/tests/reclaim.rs:202:5:
+a sweep took a root outside its user's private directory
+
+---- an_adopted_root_goes_with_its_adopter stdout ----
+
+thread 'an_adopted_root_goes_with_its_adopter' (167864066) panicked at lib/tmpdir/tests/reclaim.rs:318:5:
+$TMPDIR/toyos-tmp-11052-2/adopt-0/toyos-tmp-11056-0 was not adopted
+
+---- making_a_root_waits_for_global stdout ----
+
+thread 'making_a_root_waits_for_global' (167864068) panicked at lib/tmpdir/tests/reclaim.rs:253:5:
+the holder made its directory without GLOBAL
+
+---- removing_a_root_waits_for_global stdout ----
+
+thread 'removing_a_root_waits_for_global' (167864069) panicked at lib/tmpdir/tests/reclaim.rs:281:5:
+a root was removed while GLOBAL was held: $TMPDIR/toyos-tmp-11052-4/global-gate-remove-0/toyos-tmp-11064-0
+
+
+failures:
+    a_killed_process_is_reclaimed_and_a_live_one_is_never_touched
+    a_root_without_an_owner_goes_and_nothing_else_is_touched
+    an_adopted_root_goes_with_its_adopter
+    making_a_root_waits_for_global
+    removing_a_root_waits_for_global
+
+test result: FAILED. 2 passed; 5 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.04s
+
+error: test failed, to rerun pass `-p toyos-tmpdir --test reclaim`

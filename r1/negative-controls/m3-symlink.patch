@@ -1,0 +1,13 @@
+diff --git a/lib/tmpdir/src/lib.rs b/lib/tmpdir/src/lib.rs
+index 3fbe4f450..a2998be56 100644
+--- a/lib/tmpdir/src/lib.rs
++++ b/lib/tmpdir/src/lib.rs
+@@ -347,7 +347,7 @@ fn private_for(base: &Path, uid: u32) -> PathBuf {
+         Err(e) => panic!("create {}: {e}", dir.display()),
+     }
+     let meta =
+-        fs::symlink_metadata(&dir).unwrap_or_else(|e| panic!("inspect {}: {e}", dir.display()));
++        fs::metadata(&dir).unwrap_or_else(|e| panic!("inspect {}: {e}", dir.display()));
+     let refused = if !meta.file_type().is_dir() {
+         Some("is not a directory".to_string())
+     } else if meta.uid() != uid {
