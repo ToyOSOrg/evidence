@@ -1,0 +1,58 @@
+== cargo test --test toyos-build -- virt_jobs_at_el2 virt_fatal_halts_the_others_first at 152cae5d1b424c4d7c2ac15184decc350988ba3d, load 2.53
+   Compiling toyos-build v0.1.0 (<dev>/toyos-nokthread)
+    Finished `test` profile [optimized + debuginfo] target(s) in 8.82s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-35ba3716d2b5918e)
+
+13:07:10 running 2 tests, 12 wide
+
+13:07:10   RUN   virt_fatal_halts_the_others_first
+13:07:10   RUN   virt_jobs_at_el2
+13:07:10   BUILD aarch64 abuse_readonly_copyout (toyos) of tests/guest/rust-tests, for virt_jobs_at_el2
+13:07:10   BUILD aarch64 panic_halts_first (toyos) of tests/guest/rust-tests, for virt_fatal_halts_the_others_first
+13:07:13 [build-lock] waiting for the build lock (exclusive, clean crate targets against changed external deps) — held by pid 40554 (clean crate targets against changed external deps), 0s so far
+13:07:13 external deps changed: cleaning <dev>/toyos-nokthread/tests/guest/rust-tests/target/x86_64-unknown-toyos
+13:07:14 [build-lock] waiting for the build lock (shared, a test binary) — an exclusive phase is queued ahead of it
+13:07:14 [build-lock] acquired the build lock (exclusive, clean crate targets against changed external deps) after 1.2s
+13:07:14 [build-lock] acquired the build lock (shared, a test binary) after 75.6ms
+13:07:14 [build-lock] waiting for the artifact lock (artifact staging) — held by pid 40554 (artifact staging), 0s so far
+13:07:37   BUILT aarch64 abuse_readonly_copyout (toyos) of tests/guest/rust-tests, for virt_jobs_at_el2  (27s)
+13:07:37   BUILD aarch64 ring0_timer_in_syscall (toyos) of tests/guest/rust-tests, for virt_jobs_at_el2
+13:07:37 [build-lock] acquired the artifact lock (artifact staging) after 22.6s
+13:07:37   BUILT aarch64 panic_halts_first (toyos) of tests/guest/rust-tests, for virt_fatal_halts_the_others_first  (27s)
+13:07:37   BUILD aarch64 kernel boot-actuators,test-actuators, loader, ROOT of tests/images/virtpaniccase.toml, for virt_fatal_halts_the_others_first
+13:07:38 [build-lock] waiting for the artifact lock (artifact staging) — held by pid 40554 (artifact staging), 0s so far
+13:07:38   BUILT aarch64 ring0_timer_in_syscall (toyos) of tests/guest/rust-tests, for virt_jobs_at_el2  (1s)
+13:07:38   BUILD aarch64 random_draws (toyos) of tests/guest/rust-tests, for virt_jobs_at_el2
+13:07:38 [build-lock] acquired the artifact lock (artifact staging) after 38.8ms
+13:07:40 [build-lock] waiting for the artifact lock (artifact staging) — held by pid 40554 (artifact staging), 2s so far
+13:07:50 [build-lock] acquired the artifact lock (artifact staging) after 10.7s
+13:07:50 [build-lock] waiting for the artifact lock (artifact staging) — held by pid 40554 (artifact staging), 0s so far
+13:07:51   BUILT aarch64 random_draws (toyos) of tests/guest/rust-tests, for virt_jobs_at_el2  (12s)
+13:07:51   BUILD aarch64 wall_clock_now (toyos) of tests/guest/rust-tests, for virt_jobs_at_el2
+13:07:51 [build-lock] acquired the artifact lock (artifact staging) after 560.4ms
+13:07:52 [build-lock] waiting for the artifact lock (artifact staging) — held by pid 40554 (artifact staging), 1s so far
+13:08:20 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+13:08:20   BUILT aarch64 kernel boot-actuators,test-actuators, loader, ROOT of tests/images/virtpaniccase.toml, for virt_fatal_halts_the_others_first  (43s)
+13:08:20 [build-lock] acquired the artifact lock (artifact staging) after 27.5s
+13:08:20   BUILT aarch64 wall_clock_now (toyos) of tests/guest/rust-tests, for virt_jobs_at_el2  (29s)
+13:08:20   BUILD aarch64 ROOT of tests/images/virtjobcase.toml, for virt_jobs_at_el2
+13:08:22   [panic] the fatal path on cpu0 left every other CPU halted with interrupts masked
+13:08:22   PASS  virt_fatal_halts_the_others_first  (2s)
+13:08:23 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+13:08:23   BUILT aarch64 ROOT of tests/images/virtjobcase.toml, for virt_jobs_at_el2  (3s)
+13:08:25   [virt] [2033-03-07 09:14:25  1.204 test-runner pid=5] preempt: the counting thread was preempted twice, at counts 2197242 and 4438543
+13:08:25   [virt] [2033-03-07 09:14:25  1.245 test-runner pid=6] fp_isolation: v0-v31, FPCR and FPSR survived 3 switches to a thread that loads another state
+13:08:25   [virt] [2033-03-07 09:14:25  1.256 test-runner pid=7] first_entry: x1-x30 were zero at a new thread's first instruction
+13:08:25   [virt] [2033-03-07 09:14:25  1.415 test-runner pid=8] unmap_touch: 4 reads of a page just unmapped on the unmapping thread, and 4 on another, each ended their process
+13:08:25   [virt] [2033-03-07 09:14:25  1.425 test-runner pid=17] debug_refused: SYS_DEBUG's double fault and TLB acknowledgement delay were refused
+13:08:25   [virt] [2033-03-07 09:14:25  1.439 test-runner pid=18] ring0_timer_in_syscall: the timer interrupted the syscall's body and re-armed a quantum
+13:08:25   [virt] [2033-03-07 09:14:25  1.497 test-runner pid=19] random_draws: 8 threads drew 1000 times each and no two draws were alike; one more: 148891d7a8e6e38f2f5822e57e40562ec72978a0385f04567a7c70afe5149b78
+13:08:25   [virt] [2033-03-07 09:14:25  1.509 test-runner pid=20] wall-clock: epoch=1993799665
+13:08:25   [virt] [2033-03-07 09:14:25  1.561 test-runner pid=21] a syscall writes only where its caller could store
+13:08:25   PASS  virt_jobs_at_el2  (2s)
+13:08:25   --- 2 guests, 2 of them not the shipping kernel, 1 kernel build(s): ["boot-actuators,test-actuators"]
+
+13:08:25 host: fastest boot 451 ms against the reference 1424 ms — liveness ceilings paid at 1.00x
+13:08:25 host: 14 core(s); a guest wider than that waits vcpus/cores longer again
+13:08:25 test result: ok. 2 passed, 2 total (75.3s; workers: 143s building, 4s testing)
+exit 0
