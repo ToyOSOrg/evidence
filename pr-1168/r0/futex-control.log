@@ -1,0 +1,25 @@
+   Compiling kernel-loom v0.1.0 ($HOME/Dev/$USER/toyos-liveness/kernel/loom)
+    Finished `test` profile [optimized + debuginfo] target(s) in 3.31s
+     Running tests/loom_watch.rs (target/debug/deps/loom_watch-64d22e0c89eab133)
+
+running 2 tests
+test a_bounded_post_racing_a_killed_commit_reaches_a_live_waiter ... FAILED
+test a_bounded_post_racing_a_timeout_reaches_a_live_waiter ... ok
+
+failures:
+
+---- a_bounded_post_racing_a_killed_commit_reaches_a_live_waiter stdout ----
+
+thread 'a_bounded_post_racing_a_killed_commit_reaches_a_live_waiter' (162009248) panicked at kernel/loom/tests/loom_watch.rs:333:9:
+assertion `left == right` failed: the wake did not reach the live waiter
+  left: []
+ right: [Wake(TaskKey(2), Woken)]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    a_bounded_post_racing_a_killed_commit_reaches_a_live_waiter
+
+test result: FAILED. 1 passed; 1 failed; 0 ignored; 0 measured; 11 filtered out; finished in 0.01s
+
+error: test failed, to rerun pass `-p kernel-loom --test loom_watch`
