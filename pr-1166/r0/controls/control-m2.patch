@@ -1,0 +1,18 @@
+--- $SCRATCH/liveness/buildlock.rs.good	2026-11-04 06:56:43
++++ $SCRATCH/liveness/buildlock.rs.m2	2026-11-04 06:56:44
+@@ -207,6 +207,7 @@
+     let queue_path = dir.join("queue");
+     let queue = open_lock_file(&queue_path);
+     take(&queue, Mode::Exclusive, &queue_path, "guest CPU queue", what, "a wider guest is waiting for host CPUs", deadline);
++    drop(queue);
+     let label = format!("{want} of {cpus}, {what}");
+     let mut held = poll(&dir.join("cpu-0"), "host CPUs", &label, "held by running guests", deadline, || {
+         let mut held = Vec::with_capacity(want);
+@@ -221,7 +222,6 @@
+         }
+         None
+     });
+-    drop(queue);
+     for cpu in &mut held {
+         write_note(&mut cpu.file, &note_text(what));
+     }
