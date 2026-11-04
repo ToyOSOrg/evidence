@@ -1,0 +1,13 @@
+diff --git a<scratch> b/lib/bcachefs/src/engine/mount/mod.rs
+index 76914b4f4..ea6bbfeb8 100644
+--- a<scratch>
++++ b/lib/bcachefs/src/engine/mount/mod.rs
+@@ -373,7 +373,7 @@ impl<D: BlockDev> Mount<D> {
+         let Parts { dev, mut sb, key, roots, key_version, replay, root } = parts;
+         // The superblock this mount runs on, which a device may answer
+         // differently from an earlier read.
+-        writable(&sb)?;
++        // writable(&sb)?;
+         let key_version = key_version.checked_add(if replay.is_some() && key.is_some() { 65_536 } else { 0 }).ok_or(Error::NoSpace("encrypted extent versions"))?;
+         let ring: Vec<u64> = sb.journal.iter().flat_map(|&(first, count)| first..first + count).collect();
+         let bucket_sectors = u64::from(sb.member.bucket_sectors);

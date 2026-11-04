@@ -34,3 +34,12 @@ paths they exercise.
 | `guest-libc-children-e7f2a85b0.log` | `cargo test --test toyos-build -- libc_children` | `e7f2a85b0` | QEMU x86-64, `libccase.toml` | 0 |
 | `bcachefs-lib-f14f79e50.log`, `bcachefs-clippy-f14f79e50.log` | `cargo test -p bcachefs --lib`; `cargo clippy -p bcachefs --lib --no-default-features -- -D warnings` | `f14f79e50` (geometry fix aaa71f0bb, 825b9ba7a) | host | 0, 176 passed; 0 |
 | `ci-host-f14f79e50.log` | `--ci host` | `f14f79e50` | host | 0, 109 steps green |
+
+## Round 3: R1 fix, the 16 KiB node floor, a mount judging the superblock it uses
+
+| file | command | revision | target | exit |
+|---|---|---|---|---|
+| `bcachefs-lib-d5158bd3d.log` | `cargo test -p bcachefs --lib` | `d5158bd3d` (f38dd6ff8, 95c79b51d, 8abd51c20) | host | 0, 179 passed |
+| `neg-turncoat.log`, `neg-turncoat.patch` | `cargo test --lib a_superblock_answered` in `lib/bcachefs`, with `Mount::from`'s judgment of the used superblock removed and restored | `c12721aa1` content | host | 101: the unlock mounts on 8 KiB nodes; restored |
+| `bcachefs-lib-c12721aa1.log`, `bcachefs-clippy-c12721aa1.log` | `cargo test -p bcachefs --lib`; no-default-features clippy | `c12721aa1` | host | 0, 180 passed; 0 |
+| `ci-host-c12721aa1.log` | `cargo run -- --ci host` | `c12721aa1` | host | 0, 109 steps green |
