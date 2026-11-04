@@ -1,0 +1,14 @@
+--- $SCRATCH/liveness/cpu.rs.good	2026-11-04 09:28:37
++++ kernel/pure/sched/cpu.rs	2026-11-04 09:28:37
+@@ -2151,10 +2151,7 @@
+     fn ask_for_work(&mut self, victim: CpuId) {
+         let (cpus, me) = (self.env.cpus, self.cpu.id);
+         if let Some(asked) = self.cpu.asked.filter(|&asked| cpus.get(asked).asked_by(me)) {
+-            if cpus.get(asked).answering(self.now) {
+-                return;
+-            }
+-            cpus.get(asked).retract(me);
++            return;
+         }
+         self.cpu.asked = Some(victim);
+         if cpus.get(victim).ask(me) == Kick::Send {
