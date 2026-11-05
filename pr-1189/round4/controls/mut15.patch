@@ -1,0 +1,12 @@
+--- sdk/toyos/src/elf/program.rs
++++ sdk/toyos/src/elf/program.rs
+@@ -78,9 +78,6 @@
+         let offset = seg.file_offset() & !(PAGE - 1);
+         let bytes = seg.filesz().checked_add(seg.file_offset() % PAGE).ok_or("ELF: a segment past the file")?;
+         let copied = bytes.min((file.len() as u64).saturating_sub(offset));
+-        if seg.flags().executable() && seg.flags().writable() {
+-            return Err("ELF: a PT_LOAD is both writable and executable");
+-        }
+         let prot = if seg.flags().executable() {
+             VmProt::ReadExec
+         } else if seg.flags().writable() {
