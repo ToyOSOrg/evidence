@@ -17,7 +17,7 @@ munmap row's `first_refusal=none` field; there were no refusals.)
     (round 5: 0.94, 0.94, 0.96). That is the hot path's cost.
   - Every 8 KiB row at d 0 and >= 512 is equal to base.
 - D4 holds: the heap pair (distance 16) 1953 -> 80 ns.
-- D5 holds at every size. Round 5's 4 MiB d256 failure is gone: 383740 against 383595 us·1000
+- D5 holds at every size. Round 5's 4 MiB d256 failure is gone: head 383.7 µs against base 383.6 µs
   (both arms rep movsb above 1 MiB). 64 KiB d16 20434 -> 1042 ns, 1 MiB d16 330 -> 21 us.
 - D6 holds: ipc.reqrep.4096 1.01 and 0.75, .65536 1.00 and 0.58 by pair; the slow arm in pair 2 is
   base boot 4.
