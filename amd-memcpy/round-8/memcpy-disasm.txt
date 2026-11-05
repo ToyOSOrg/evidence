@@ -1,0 +1,93 @@
+== base4
+0000000000226b40 <memcpy>:
+  226b40:	push   rbp
+  226b41:	mov    rbp,rsp
+  226b44:	mov    rcx,rdx
+  226b47:	mov    rax,rdi
+  226b4a:	rep movs BYTE PTR [rdi],BYTE PTR [rsi]
+  226b4c:	pop    rbp
+  226b4d:	ret
+
+== base5
+0000000000226d40 <memcpy>:
+  226d40:	push   rbp
+  226d41:	mov    rbp,rsp
+  226d44:	mov    rcx,rdx
+  226d47:	mov    rax,rdi
+  226d4a:	rep movs BYTE PTR [rdi],BYTE PTR [rsi]
+  226d4c:	pop    rbp
+  226d4d:	ret
+
+== head5
+0000000000224f20 <memcpy>:
+  224f20:	push   rbp
+  224f21:	mov    rbp,rsp
+  224f24:	mov    rax,rdi
+  224f27:	cmp    rdx,0xfff
+  224f2e:	jbe    224f39 <memcpy+0x19>
+  224f30:	mov    rdi,rax
+  224f33:	pop    rbp
+  224f34:	jmp    226ee0 <_RNvNtNtCs7Evh1JVXxXZ_10toyos_libc4arch6x86_649copy_long>
+  224f39:	mov    rdi,rax
+  224f3c:	mov    rcx,rdx
+  224f3f:	rep movs BYTE PTR [rdi],BYTE PTR [rsi]
+  224f41:	pop    rbp
+  224f42:	ret
+
+== head4 (rebuilt from 993461c7f after round 7; image sha256 differs from the one that ran, so the binary is a rebuild)
+0000000000227430 <memcpy>:
+  227430:	push   rbp
+  227431:	mov    rbp,rsp
+  227434:	push   rbx
+  227435:	push   rax
+  227436:	mov    rbx,rdi
+  227439:	call   226b60 <_RNvNtNtCs7Evh1JVXxXZ_10toyos_libc4arch6x86_6412copy_forward>
+  22743e:	mov    rax,rbx
+  227441:	add    rsp,0x8
+  227445:	pop    rbx
+  227446:	pop    rbp
+  227447:	ret
+
+0000000000226b60 <_RNvNtNtCs7Evh1JVXxXZ_10toyos_libc4arch6x86_6412copy_forward>:
+  226b60:	push   rbp
+  226b61:	mov    rbp,rsp
+  226b64:	cmp    rdx,0x40
+  226b68:	jb     226b83 <_RNvNtNtCs7Evh1JVXxXZ_10toyos_libc4arch6x86_6412copy_forward+0x23>
+  226b6a:	mov    eax,edi
+  226b6c:	sub    eax,esi
+  226b6e:	and    eax,0xfff
+  226b73:	dec    rax
+  226b76:	cmp    eax,0x1ff
+  226b7b:	jae    226b83 <_RNvNtNtCs7Evh1JVXxXZ_10toyos_libc4arch6x86_6412copy_forward+0x23>
+  226b7d:	pop    rbp
+  226b7e:	jmp    226bf0 <_RNvNtNtCs7Evh1JVXxXZ_10toyos_libc4arch6x86_6416copy_short_alias>
+  226b83:	mov    rcx,rdx
+  226b86:	rep movs BYTE PTR [rdi],BYTE PTR [rsi]
+  226b88:	pop    rbp
+  226b89:	ret
+
+== head5 copy_long
+0000000000226ee0 <_RNvNtNtCs7Evh1JVXxXZ_10toyos_libc4arch6x86_649copy_long>:
+  226ee0:	push   rbp
+  226ee1:	mov    rbp,rsp
+  226ee4:	push   rbx
+  226ee5:	push   rax
+  226ee6:	mov    rbx,rdi
+  226ee9:	cmp    rdx,0x100000
+  226ef0:	ja     226f1e <_RNvNtNtCs7Evh1JVXxXZ_10toyos_libc4arch6x86_649copy_long+0x3e>
+  226ef2:	mov    rax,rbx
+  226ef5:	sub    rax,rsi
+  226ef8:	mov    ecx,eax
+  226efa:	and    ecx,0xfff
+  226f00:	add    rcx,0xfffffffffffffe00
+  226f07:	cmp    ecx,0xfffffe00
+  226f0d:	jbe    226f1e <_RNvNtNtCs7Evh1JVXxXZ_10toyos_libc4arch6x86_649copy_long+0x3e>
+  226f0f:	mov    rcx,rsi
+  226f12:	sub    rcx,rbx
+  226f15:	cmova  rax,rcx
+  226f19:	cmp    rax,rdx
+  226f1c:	jae    226f30 <_RNvNtNtCs7Evh1JVXxXZ_10toyos_libc4arch6x86_649copy_long+0x50>
+  226f1e:	mov    rcx,rdx
+  226f21:	mov    rdi,rbx
+  226f24:	rep movs BYTE PTR [rdi],BYTE PTR [rsi]
+  226f26:	mov    rax,rbx

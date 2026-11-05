@@ -1,0 +1,13 @@
+diff --git a/sdk/libc/src/arch/x86_64.rs b/sdk/libc/src/arch/x86_64.rs
+index b96d3d626..8a194da3a 100644
+--- a/sdk/libc/src/arch/x86_64.rs
++++ b/sdk/libc/src/arch/x86_64.rs
+@@ -52,7 +52,7 @@ unsafe fn copy_long(dest: *mut u8, src: *const u8, n: usize) {
+     // SAFETY: `n` is at least `ROUTED_LEAST`, above the loops' 64; down only
+     // between disjoint ranges.
+     unsafe {
+-        if !short || n > ROUTED_MOST || (dest as usize).abs_diff(src as usize) < n {
++        if !short || n > ROUTED_MOST {
+             movsb(dest, src, n);
+         } else if has_avx() {
+             copy_down_avx(dest, src, n);
