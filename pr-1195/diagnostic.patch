@@ -1,0 +1,96 @@
+From f132a3dcc56d15936c3bdf59990817fdbcfb5d71 Mon Sep 17 00:00:00 2001
+From: <author>
+Date: Thu, 5 Nov 2026 14:30:36 +0100
+Subject: [PATCH] DIAGNOSTIC, not for landing: acpi_press_is_one_sci dumps CPUs
+ and the 16550 trace on a stall
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ tests/common/qemu.rs |  6 ++++++
+ tests/toyos.rs       | 28 +++++++++++++++++++++++++++-
+ 2 files changed, 33 insertions(+), 1 deletion(-)
+
+diff --git a/tests/common/qemu.rs b/tests/common/qemu.rs
+index 519a1c3f4..efedfeccc 100644
+--- a/tests/common/qemu.rs
++++ b/tests/common/qemu.rs
+@@ -1261,6 +1261,8 @@ pub struct BootOptions {
+     /// calling CPU's affinity: the firmware side's own account of what the
+     /// kernel asked of it.
+     pub psci_trace: Option<PathBuf>,
++    /// DIAGNOSTIC: QEMU's 16550 register trace into this file.
++    pub serial_trace: Option<PathBuf>,
+     /// The instant the machine's RTC starts at, as QEMU's `-rtc base=` takes
+     /// it, and the host's own UTC with `None`.
+     pub rtc_base: Option<&'static str>,
+@@ -1311,6 +1313,7 @@ impl Default for BootOptions {
+             root_omits: &[],
+             data_bytes: None,
+             psci_trace: None,
++            serial_trace: None,
+             rtc_base: None,
+             bent: None,
+             forward: None,
+@@ -2747,6 +2750,9 @@ fn qemu_command(
+         );
+         qemu.arg("-trace").arg("arm_psci_call").arg("-D").arg(trace);
+     }
++    if let Some(trace) = &options.serial_trace {
++        qemu.arg("-trace").arg("serial_*").arg("-D").arg(trace);
++    }
+ 
+     qemu
+ }
+diff --git a/tests/toyos.rs b/tests/toyos.rs
+index 41e6e9c55..fc947be45 100644
+--- a/tests/toyos.rs
++++ b/tests/toyos.rs
+@@ -3084,6 +3084,28 @@ const PRESS_ARMED: &str = "acpi: the fixed power button is enabled alone and the
+ /// What it says once the press was served.
+ const PRESS_SERVED: &str = "acpi: the press came as one SCI with its status latched, and no second while it was unserved";
+ 
++/// DIAGNOSTIC: the guest's CPUs and QEMU's 16550 trace, on stderr.
++fn diagnose(qemu: &mut QemuInstance) {
++    let mut monitor = qemu::QmpMonitor::open(qemu.qmp_socket());
++    for command in ["info registers -a", "info pic", "info lapic", "info irq"] {
++        eprintln!("DIAG {command}:\n{}", monitor.human(command));
++    }
++    std::thread::sleep(std::time::Duration::from_secs(2));
++    eprintln!("DIAG info registers -a (2 s later):\n{}", monitor.human("info registers -a"));
++    let trace = fs::read_to_string(common::lane::dir().join("press-serial.trace")).unwrap_or_else(|e| format!("no trace: {e}"));
++    let lines: Vec<&str> = trace.lines().collect();
++    let mut counts = std::collections::BTreeMap::new();
++    for line in &lines {
++        let key: String = line.split_whitespace().take(3).collect::<Vec<_>>().join(" ");
++        let key = key.split(" value").next().unwrap_or("").to_string();
++        *counts.entry(key).or_insert(0u64) += 1;
++    }
++    eprintln!("DIAG serial trace: {} lines; by kind: {counts:#?}", lines.len());
++    let tail = lines.len().saturating_sub(400);
++    eprintln!("DIAG serial trace head:\n{}", lines[..lines.len().min(200)].join("\n"));
++    eprintln!("DIAG serial trace tail:\n{}", lines[tail..].join("\n"));
++}
++
+ /// Boot `tests/images/acpicase.toml` on the shipping kernel with `acpi_mediated`'s
+ /// `press` arm staged: the probe holds the `acpi` claim, and QEMU presses the
+ /// power button once the probe says it is armed. The press reaches the probe
+@@ -3106,11 +3128,15 @@ fn acpi_press_is_one_sci() -> Result<(), String> {
+                 ("share/acpi_mediated_press".to_string(), b"press\n".to_vec()),
+             ],
+             qmp: true,
++            serial_trace: Some(common::lane::dir().join("press-serial.trace")),
+             ..Default::default()
+         },
+     );
+     let mut console = format!("{}\n", qemu.boot_log());
+-    await_marker(&mut qemu, &mut console, PRESS_ARMED, "the probe to arm the power button")?;
++    if let Err(why) = await_marker(&mut qemu, &mut console, PRESS_ARMED, "the probe to arm the power button") {
++        diagnose(&mut qemu);
++        return Err(why);
++    }
+     qemu::QmpShutdown::open(qemu.qmp_socket(), qemu.budget(qemu::GUEST_QUIET)).power_button();
+     let ended = format!("===TEST_END {JOB} ");
+     await_guest(&mut qemu, &mut console, "the probe to serve the press", |said| said.contains(&ended))?;
+-- 
+2.54.0 (Apple Git-157)
+
