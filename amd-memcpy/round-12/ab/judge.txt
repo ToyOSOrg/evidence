@@ -1,0 +1,40 @@
+block 1 H (2-H vs 1-B): 38059.0 / 40926.5 = 0.930 regresses
+block 2 H (5-H vs 8-B): 37998.0 / 40944.0 = 0.928 regresses
+block 3 H (12-H vs 11-B): 32629.0 / 40868.0 = 0.798 regresses
+block 4 H (15-H vs 14-B): 38004.0 / 40658.0 = 0.935 regresses
+block 5 H (19-H vs 17-B): 37793.5 / 41010.0 = 0.922 regresses
+H: regresses in 5 of 5 -> drops
+block 1 N (3-N vs 1-B): 38418.5 / 40926.5 = 0.939 regresses
+block 2 N (6-N vs 8-B): 38263.5 / 40944.0 = 0.935 regresses
+block 3 N (9-N vs 11-B): 36444.0 / 40868.0 = 0.892 regresses
+block 4 N (16-N vs 14-B): 36052.5 / 40658.0 = 0.887 regresses
+block 5 N (18-N vs 17-B): 38075.5 / 41010.0 = 0.928 regresses
+N: regresses in 5 of 5 -> drops
+block 1 S (4-S vs 1-B): 42148.0 / 40926.5 = 1.030 ok
+block 2 S (7-S vs 8-B): 41984.5 / 40944.0 = 1.025 ok
+block 3 S (10-S vs 11-B): 42031.0 / 40868.0 = 1.028 ok
+block 4 S (13-S vs 14-B): 42050.0 / 40658.0 = 1.034 ok
+block 5 S (20-S vs 17-B): 42020.5 / 41010.0 = 1.025 ok
+S: regresses in 0 of 5 -> clears
+A short: N copyat.256.d16 20 <= 1.5 x d0 30: True
+A short: N copyat.1024.d16 30 <= 1.5 x d0 40: True
+A short: N copyat.2048.d16 50 <= 1.5 x d0 41: True
+A short: N copyat.8192.libc.s0.d16 140 <= 1.3 x 90 + 10: False
+A short: N copyat.8192.libc.s0.d32 140 <= 1.3 x 90 + 10: False
+A short: N copyat.8192.libc.s0.d64 140 <= 1.3 x 90 + 10: False
+A short: N copyat.8192.libc.s0.d256 140 <= 1.3 x 90 + 10: False
+A short: N copyat.8192.libc.s0.d384 140 <= 1.3 x 90 + 10: False
+A short: N copyat.8192.libc.s16.d16 140 <= 1.3 x 90 + 10: False
+A short: N copyat.8192.libc.s16.d32 140 <= 1.3 x 90 + 10: False
+A short: N copyat.8192.libc.s16.d64 140 <= 1.3 x 90 + 10: False
+A short: N copyat.8192.libc.s16.d256 140 <= 1.3 x 90 + 10: False
+A short: N copyat.8192.libc.s16.d384 140 <= 1.3 x 90 + 10: False
+premise (H drops): True; A (N clears and fixes the stall): False; P (S drops): False
+Outcome: close #1133; record the measured stall and the 256 KiB cost as a finding
+Reported:
+  mem.memcpy.262144: B [40358, 42085, 41717, 39407, 40259]  H [36084, 35891, 33489, 34787, 33883]  N [41330, 40469, 41816, 40685, 39437]  S [41897, 40998, 42803, 40321, 42308]
+  copyat.262144.libc.s0.d0: B [8416, 8215, 8666, 8416, 8285]  H [9017, 8806, 8506, 9027, 8917]  N [8846, 8706, 9107, 8647, 8916]  S [8917, 8996, 8987, 9257, 8896]
+  mem.memcpy.64: B [4030, 3991, 3990, 3990, 3989]  H [3953, 3952, 3933, 3932, 3930]  N [3896, 3885, 3879, 3874, 3873]  S [4030, 3995, 3988, 3989, 3989]
+  mem.memcpy.256: B [14817, 14678, 14674, 14665, 14669]  H [14547, 14547, 14469, 14462, 14462]  N [13995, 13988, 13944, 13905, 13906]  S [14819, 14732, 14671, 14659, 14666]
+  mem.memcpy.1024: B [44736, 44547, 44538, 44314, 44324]  H [44134, 44116, 44098, 43876, 43867]  N [42914, 42828, 42807, 42579, 42577]  S [44736, 44548, 44547, 44314, 44314]
+  mem.memcpy.4096: B [90614, 90087, 90062, 90051, 90087]  H [89707, 89627, 89626, 89588, 89101]  N [88622, 88231, 88231, 88119, 87752]  S [90435, 90087, 90086, 89561, 89620]
