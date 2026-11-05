@@ -1,0 +1,65 @@
+# amd-memcpy round 10: is round 9's 256 KiB gap code placement? AMD only. Stated before any build or boot.
+# Arms (revisions filled in at staging; layouts in layout.txt):
+#   B = base6 85c7607d5 as round 9 (main + measurement), rebuilt. memcpy at 0x227bc0, rep movsb 0x227bca.
+#   S = base6 + a measurement-only change that moves memcpy (and so its rep movsb) to the address offset
+#       head6's memcpy has modulo 4096, with memcpy's instructions byte-identical to B's. Checked by
+#       disassembly before staging; if that cannot be met, the nearest shift is used and stated.
+#       Met: S = 4f14822ce (branch amd-memcpy-ab7) = B + memcmp jumping over 0x17c bytes of padding;
+#       memcpy at 0x228e40, rep movsb 0x228e4a, memcpy's bytes identical to B's.
+#   H = head6 fb4ca4a2b (#1133 97ae8d604) as round 9, rebuilt. memcpy at 0x228e40, rep movsb 0x228e73.
+# Jobs as round 9 (osbench_copyat, osbench_ipc, osbench_mem). Nine boots, three per arm, in the order
+#   B S H S H B H B S, each into its own readback dir.
+#
+# Per boot: R = mem.memcpy.262144 p50 (MB/s); Q = median over k = 0..7 of copyat.place.p<k> p50.
+# Per arm: med, min and max over its three boots.
+#  Q1 premise: med_H(R) <= 0.95 x med_B(R). If it fails, the gap did not reproduce: D3 on that row is
+#     judged as written on arm medians (med_H(R) >= med_B(R) / 1.1) and S is reported only.
+#  Q2 code placement: med_S(R) in [min_H(R), max_H(R)], med_S(Q) in [min_H(Q), max_H(Q)], and
+#     med_S(R) < min_B(R).
+#   If Q1 and Q2 hold: the row is sensitive to code placement; that is recorded in the issue, and D3
+#     passes on mem.memcpy.262144.
+#   If Q1 holds and Q2 fails: the gap is the PR's, to be found or the routing narrowed until it goes.
+# Reported, not judged: every other mem.memcpy row and copyat.262144.libc.s0.d0 for all three arms; the
+# rest of round 9's verdicts stand (head6's code is unchanged).
+# Images (checksums in <scratch>/r10/image-sha256.txt):
+#   <scratch>/r10/metal/B/copyat/image.img  sha256 abdf7f71c8ef17b3c2fa2d9238c060cb2d71c71cd179ec782e9420835bf7245b
+#   <scratch>/r10/metal/S/copyat/image.img  sha256 b58ffb19a9452db839352e6c76d2fea8b95b9684f6a79f989033e7f3070ac906
+#   <scratch>/r10/metal/H/copyat/image.img  sha256 97af5116f3c7fa3e9a9b6765e00e2e2dc936e764edcd2185a319f45ba125bf10
+# Bench: AMD only. Nine boots in this order, each into its own readback dir.
+# Each invocation is `cargo <words>` from the worktree <worktree> (any revision).
+
+1-B
+  image: <scratch>/r10/metal/B/copyat/image.img
+  cargo run -p toyos-metal -- --image <scratch>/r10/metal/B/copyat/image.img --readback <scratch>/r10/runs/1-B --fat32-check
+
+2-S
+  image: <scratch>/r10/metal/S/copyat/image.img
+  cargo run -p toyos-metal -- --image <scratch>/r10/metal/S/copyat/image.img --readback <scratch>/r10/runs/2-S --fat32-check
+
+3-H
+  image: <scratch>/r10/metal/H/copyat/image.img
+  cargo run -p toyos-metal -- --image <scratch>/r10/metal/H/copyat/image.img --readback <scratch>/r10/runs/3-H --fat32-check
+
+4-S
+  image: <scratch>/r10/metal/S/copyat/image.img
+  cargo run -p toyos-metal -- --image <scratch>/r10/metal/S/copyat/image.img --readback <scratch>/r10/runs/4-S --fat32-check
+
+5-H
+  image: <scratch>/r10/metal/H/copyat/image.img
+  cargo run -p toyos-metal -- --image <scratch>/r10/metal/H/copyat/image.img --readback <scratch>/r10/runs/5-H --fat32-check
+
+6-B
+  image: <scratch>/r10/metal/B/copyat/image.img
+  cargo run -p toyos-metal -- --image <scratch>/r10/metal/B/copyat/image.img --readback <scratch>/r10/runs/6-B --fat32-check
+
+7-H
+  image: <scratch>/r10/metal/H/copyat/image.img
+  cargo run -p toyos-metal -- --image <scratch>/r10/metal/H/copyat/image.img --readback <scratch>/r10/runs/7-H --fat32-check
+
+8-B
+  image: <scratch>/r10/metal/B/copyat/image.img
+  cargo run -p toyos-metal -- --image <scratch>/r10/metal/B/copyat/image.img --readback <scratch>/r10/runs/8-B --fat32-check
+
+9-S
+  image: <scratch>/r10/metal/S/copyat/image.img
+  cargo run -p toyos-metal -- --image <scratch>/r10/metal/S/copyat/image.img --readback <scratch>/r10/runs/9-S --fat32-check
