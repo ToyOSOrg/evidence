@@ -10,3 +10,6 @@
 - `rows-42080820355.txt` at b36b16e12: 18 of 19. `virt_random_differs` red, `virt_random_differs-not-toyoskrn.txt`: a second boot in one process signed the memoized kernel ELF into the slot. Fixed in bb1e9ada6; the local run after the fix is `virt_random_differs-local-after-fix.log`.
 - `rows-42089538985.txt` at bb1e9ada6: 18 of 19, every aarch64 row green, `virt_random_differs` among them. `session_lifecycle` stalled at the desktop reopening (`session_lifecycle-stall.txt`), a supervisor race recorded as `issues/a-desktop-reopened-as-its-session-ends-is-handed-the-ended-session.md`.
 - `metal-request.txt`: the T14 boots staged at bb1e9ada6 with each image's sha256.
+
+- `metal-bb1e9ada6/`: the T14 boots at bb1e9ada6, image hashes as staged: `testcases` (16 members, `abuse_spawn_maps` and `start_refuses_itself` among them) and `shared-debug` (`abuse_kernel_addr`), judged 17 passed, 0 failed (`judge.log`).
+- `control-mut14-request.txt`, `controls/mut14.patch`: the guest negative control staged for the T14: `lay()` ignoring its vacancy check, on a never-pushed commit over bfb75f056. Not yet run.

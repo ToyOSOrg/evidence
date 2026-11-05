@@ -1,0 +1,11 @@
+--- kernel/src/loader/mod.rs
++++ kernel/src/loader/mod.rs
+@@ -103,7 +103,7 @@
+ fn lay(space: &mut crate::mm::space::AddressSpace, maps: &[Map]) -> Result<(), SyscallError> {
+     use crate::mm::space::At;
+     for map in maps {
+-        if !space.vacant(map.at.raw(), map.len) {
++        if !space.vacant(map.at.raw(), map.len) && map.len == 0 {
+             return Err(SyscallError::InvalidArgument);
+         }
+         let at = At::Fixed(map.at);

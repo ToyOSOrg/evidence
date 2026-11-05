@@ -1,0 +1,9 @@
+# One boot per image. Each invocation is `cargo <words>` from this worktree.
+
+testcases
+  image: <scratch>/control-spawn/testcases/image.img
+  cargo run -p toyos-metal -- --image <scratch>/control-spawn/testcases/image.img --readback <scratch>/control-spawn/testcases --fat32-check
+
+# Revision: ae8139783842c09dcad52c60e6d9e557c79f64e4, a never-pushed control commit on bfb75f056 (mut14.patch beside this): kernel/src/loader/mod.rs's lay() ignores its vacancy check. git status --porcelain --ignore-submodules=none: 0 lines
+# testcases/image.img sha256: c818a7031f7ab5afff7a7ead68365f032dc14921df1c313dd0b7699790117c31
+# A negative control: abuse_spawn_maps must go red, at a range on the clock page. A green is the control failing.
