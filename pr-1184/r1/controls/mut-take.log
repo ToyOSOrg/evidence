@@ -1,0 +1,82 @@
+   Compiling toyos-proclife v0.1.0 ($HOME/Dev/$USER/toyos-kfu/kernel/proclife)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.19s
+     Running unittests src/lib.rs ($HOME/Dev/$USER/toyos-kfu/target/debug/deps/toyos_proclife-3f5b1ba4c26ba870)
+
+running 62 tests
+test interleave::tests::a_join_racing_the_kill_that_takes_its_target ... ok
+test interleave::tests::a_kill_racing_a_spawn_leaves_no_unretired_thread ... ok
+test interleave::tests::a_process_that_kills_itself_ends ... ok
+test interleave::tests::a_notices_read_racing_a_second_quit_kills_only_where_the_read_comes_second ... ok
+test interleave::tests::a_quit_reaches_every_process_below_its_target ... ok
+test interleave::tests::a_published_exit_leaves_no_unretired_thread ... ok
+test interleave::tests::a_sibling_join_is_answered_however_the_two_interleave ... ok
+test interleave::tests::a_kill_chain_of_three_ends ... ok
+test interleave::tests::a_spawn_racing_a_quit_on_its_place_asks_each_child_once ... ok
+test interleave::tests::a_spawn_racing_a_kill_and_the_pass_that_reaps_it ... ok
+test interleave::tests::a_quit_of_a_process_that_never_listened_asks_nothing_below_it ... ok
+test interleave::tests::a_sibling_exit_a_spawn_and_the_processs_own_exit ... ok
+test interleave::tests::a_reap_racing_a_teardown_and_a_join_breaks_no_law ... ok
+test interleave::tests::an_exit_and_a_kill_never_both_tear_a_process_down ... ok
+test interleave::tests::the_last_one_out_is_in_its_process_until_its_teardown_is_done ... ok
+test interleave::tests::an_exit_whose_sibling_kills_the_process_killing_it ... ok
+test interleave::tests::the_refusal_that_dropped_without_unmapping_is_the_leak_l5_reports ... ok
+test join::tests::a_join_asked_after_it_collected_keeps_its_answer ... ok
+test join::tests::a_live_thread_answers_wait_and_stays_in_the_table ... ok
+test join::tests::a_process_being_torn_down_gives_up_no_thread ... ok
+test join::tests::a_settled_join_does_not_take_the_table_again ... ok
+test join::tests::a_zombie_is_answered_once_and_the_second_join_finds_nothing ... ok
+test pids::tests::a_pid_given_back_is_taken_again ... ok
+test quit::tests::a_child_starts_holding_its_parents_unread_reason_and_never_listened ... ok
+test quit::tests::a_listener_is_asked_and_one_that_never_listened_is_killed ... ok
+test quit::tests::an_unread_reason_is_the_end_of_a_second_quit ... ok
+test join::tests::the_two_refusals_are_told_apart ... ok
+test reap::tests::nothing_is_taken_from_a_table_of_live_processes ... ok
+test pids::tests::pids_are_issued_in_order_from_zero ... ok
+test pids::tests::the_last_pid_is_one_below_max_and_none_follows_it ... ok
+test quit::tests::a_read_alone_makes_a_listener ... ok
+test reap::tests::only_the_published_are_taken_and_they_come_back_in_pid_order ... ok
+test spawn::tests::a_claimed_process_refuses_at_the_insert_too ... ok
+test spawn::tests::a_claimed_process_refuses_at_the_start_in_both_arms ... ok
+test spawn::tests::a_live_process_admits_a_thread_at_both_moments ... ok
+test spawn::tests::a_process_whose_tids_are_spent_refuses_at_both_moments ... ok
+test teardown::tests::a_detached_thread_leaves_no_zombie_unless_its_process_is_being_torn_down ... ok
+test teardown::tests::a_main_threads_exit_is_the_processs ... ok
+test teardown::tests::a_sibling_join_is_released_by_the_sibling_it_named ... ok
+test teardown::tests::exactly_one_claimant_wins_however_many_arrive ... ok
+test teardown::tests::a_thread_leaves_once - should panic ... ok
+test spawn::tests::a_missing_entry_is_refused_by_name_and_not_by_the_teardown_flag ... ok
+test spawn::tests::a_full_process_refuses_at_the_start_until_a_join_collects ... ok
+test spawn::tests::the_insert_refuses_the_spawn_a_sibling_filled_the_process_under ... ok
+test teardown::tests::a_process_that_is_gone_grants_no_claim ... ok
+test teardown::tests::only_the_thread_that_empties_a_claimed_process_tears_it_down ... ok
+test teardown::tests::the_retire_set_is_every_thread_still_in_but_the_caller ... ok
+test tids::tests::the_last_tid_is_one_below_max_and_none_follows_it ... FAILED
+test tids::tests::tids_are_issued_in_order_from_zero ... ok
+test tree::tests::a_chain_is_refused_at_max_depth_plus_one_below_the_supervisor ... ok
+test tree::tests::a_child_landed_under_a_place_claimed_since_its_admission_is_claimed_with_it ... ok
+test tree::tests::a_place_being_torn_down_admits_nothing ... ok
+test tree::tests::a_published_child_leaves_its_parents_children ... ok
+test tree::tests::a_spawn_past_the_last_pid_is_refused_and_a_refused_spawn_spends_none ... ok
+test interleave::tests::two_spawns_race_one_teardown ... ok
+test interleave::tests::a_sibling_closing_a_spawns_handle_before_the_spawn_returns ... ok
+test interleave::tests::two_processes_killing_each_other_both_end ... ok
+test interleave::tests::a_spawn_racing_the_kill_of_its_own_spawner ... ok
+test interleave::tests::a_childs_exit_racing_its_parents_kill ... ok
+test interleave::tests::an_exit_publishes_after_every_end_below_it ... ok
+test interleave::tests::a_spawn_racing_its_places_kill_leaves_nothing_under_it_and_publishes_it ... ok
+test interleave::tests::a_spawn_under_an_unrelated_process_lands_between_two_claims_of_one_walk ... ok
+
+failures:
+
+---- tids::tests::the_last_tid_is_one_below_max_and_none_follows_it stdout ----
+
+thread 'tids::tests::the_last_tid_is_one_below_max_and_none_follows_it' (176702914) panicked at kernel/proclife/src/tids.rs:39:25:
+attempt to add with overflow
+
+
+failures:
+    tids::tests::the_last_tid_is_one_below_max_and_none_follows_it
+
+test result: FAILED. 61 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+
+error: test failed, to rerun pass `--lib`
