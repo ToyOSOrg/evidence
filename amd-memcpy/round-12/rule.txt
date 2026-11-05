@@ -1,0 +1,28 @@
+# amd-memcpy round 12: find round 11's placement-row drop. AMD only. Its outcome is binding.
+# Stated before any build or boot. Revisions and addresses are filled in at staging.
+# Arms (all on round 11's measurement, b76abc3bd: copyat and mem jobs, address notes):
+#   B  = b76abc3bd (main + measurement); round 11's image. memcpy 0x2282d0, rep movsb 0x2282da.
+#   H  = round 11's head, 3e491cf83 (#1133 code as 97ae8d604); round 11's image. memcpy 0x229560, rep movsb 0x229593.
+#   N  = H with the AVX loop and its CPU check removed: every routed copy takes the SSE2 loop. This
+#        is the candidate #1133 commit, so if it wins it is what ships: 7e7019fb8 (branch amd-memcpy-sse2),
+#        measured as 63a75cb40 (amd-memcpy-ab9n). memcpy 0x226710, rep movsb 0x226744.
+#   S  = B + measurement-only padding in memcmp, the function before memcpy, so B's byte-identical
+#        memcpy sits at H's memcpy address (checked by disassembly; if not exact, nearest stated).
+#        Met: 799334e09 (amd-memcpy-ab9s), memcpy 0x229560, rep movsb 0x22956a, instructions == B's.
+# The AVX loop already ends in vzeroupper (checked in H's binary), so there is no vzeroupper arm.
+# Twenty boots in five blocks; each block holds one boot of every arm, the order rotated:
+#   B H N S | H N S B | N S B H | S B H N | B N H S
+#
+# Per boot: Q = median over k = 0..7 of copyat.place.p<k> p50 (MB/s). For arm X in block i, X
+# regresses when Q(X_i) < 0.95 x Q(B_i). An arm "drops" when it regresses in at least 4 of 5 blocks
+# (round 11's rule); otherwise it "clears".
+#  Premise: H drops. If H clears, the drop did not reproduce: reported, and the orchestrator decides.
+#  A (AVX): N clears, and N still fixes the short-distance stall, on the median of N's five boots:
+#     copyat.<n>.libc.s0.d16 <= 1.5 x N's d0 at n = 256, 1024, 2048 (C6), and every copyat.8192.libc
+#     row at d 16..384, both source offsets, <= 1.3 x N's 8192 d0 + 10 ns (D2).
+#  P (placement): S drops.
+# Outcome, in this order: if the premise and A hold, ship N (the SSE2 loop for routed copies), with a
+# focused review, then land. Else if the premise and P hold, the drop is code placement: record it and
+# land #1133 as is. Else close #1133 and record the measured stall and the 256 KiB cost as a finding.
+# A boot that does not pass, or whose copyat or mem job does not exit 0, is rerun.
+# Reported, not judged: mem.memcpy.*, copyat.262144.libc.s0.d0, every arm's address notes.
