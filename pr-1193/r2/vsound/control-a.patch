@@ -1,0 +1,13 @@
+diff --git a/system/soundserver/virtio-sound/src/lib.rs b/system/soundserver/virtio-sound/src/lib.rs
+index 2fcff4ed7..c59ae93dc 100644
+--- a/system/soundserver/virtio-sound/src/lib.rs
++++ b/system/soundserver/virtio-sound/src/lib.rs
+@@ -370,7 +370,7 @@ impl<M: DmaBuffers, D: Doorbell> Sound<M, D> {
+         let periods = mask.count_ones();
+         let (count, dropped) = match notified {
+             Notified::All(count) => (count, false),
+-            Notified::AtLeast(count) => (count, true),
++            Notified::AtLeast(count) => (count, false),
+         };
+         let fresh = count.saturating_sub(self.unnotified);
+         let clocked = fresh.min(periods);
