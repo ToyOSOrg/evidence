@@ -1,0 +1,19 @@
+# S0-a metal round 9, AMD ONLY, diagnostic: where AMD's pipe.throughput.256 loses (round 8 REGRESSION).
+# Code under test is the PR head's (bdec5ab36; later commits are comments and records). Nothing here is a landing verdict.
+# base = s0a-r10-base-kvm 49496f0a3 (main + probe); head = s0a-r14-ad-kvm ea86ed227 (bdec5ab36 + probe);
+# pbase = s0a-r16-pbase-kvm d635b6ba9 (base + pipe-path probe); phead = s0a-r16-phead-kvm 826483757 (head + pipe-path probe).
+# CAVEAT: the pipe-path probe's output has compiled but not yet been seen on a guest; its KVM check is queued on the
+# runner behind another agent's batch. If its lines prove unreadable, only boots 5-8 are lost.
+# Every image is main's whole benchcase.toml. Rules, set before any boot: $SCRATCH/s0a2/ab9/rules.md
+# Hashes: $SCRATCH/s0a2/ab9/image-sha256.txt. Run from the worktree $HOME/Dev/$USER/toyos-s0a; each invocation is `cargo <words>`.
+# AMD, each boot with its own --readback dir (runs/amd/<n>-<arm>), in exactly this order:
+#   1-base 2-head 3-head 4-base 5-pbase 6-phead 7-phead 8-pbase. Eight boots.
+
+base benchcase (49496f0a3):
+  cargo run -p toyos-metal -- --image $SCRATCH/s0a2/ab9/base/benchcase/image.img --readback <dir> --fat32-check
+head benchcase (ea86ed227):
+  cargo run -p toyos-metal -- --image $SCRATCH/s0a2/ab9/head/benchcase/image.img --readback <dir> --fat32-check
+pbase benchcase (d635b6ba9):
+  cargo run -p toyos-metal -- --image $SCRATCH/s0a2/ab9/pbase/benchcase/image.img --readback <dir> --fat32-check
+phead benchcase (826483757):
+  cargo run -p toyos-metal -- --image $SCRATCH/s0a2/ab9/phead/benchcase/image.img --readback <dir> --fat32-check
