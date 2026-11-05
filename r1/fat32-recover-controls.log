@@ -1,0 +1,16 @@
+== mutation [                    self.set_fat_entry(cluster, 0).await?;] -> [                    let _ = cluster;]: exit=101
+thread 'a_recovery_after_a_stop_at_any_write_leaves_a_consistent_volume' (174951890) panicked at lib/fat32/tests/refused_writes.rs:760:17:
+append: stopped at write 2, Refused: Recovered { mirrors: 0, cut: 0, long_names: 0, lost: 1, unrepaired: 0 }, and still
+1 cluster(s) from 5 are marked allocated and no directory entry reaches them
+== mutation [mirrors: self.reconcile_mirrors().await?,] -> [mirrors: 0,]: exit=101
+thread 'a_recovery_after_a_stop_at_any_write_leaves_a_consistent_volume' (174953379) panicked at lib/fat32/tests/refused_writes.rs:760:17:
+append: stopped at write 1, Refused: Recovered { mirrors: 0, cut: 0, long_names: 0, lost: 0, unrepaired: 0 }, and still
+FAT 1 differs from FAT 0 at entry 5: 0x0FFFFFFF against 0x00000000. BPB_ExtFlags has mirroring on, so every copy must carry every update
+== mutation [done.long_names += self.free_orphan_names(dir, after, end).await?;] -> [let _ = (after, end);]: exit=101
+thread 'a_recovery_after_a_stop_at_any_write_leaves_a_consistent_volume' (174955396) panicked at lib/fat32/tests/refused_writes.rs:760:17:
+extend-dir: stopped at write 6, Refused: Recovered { mirrors: 0, cut: 0, long_names: 0, lost: 0, unrepaired: 0 }, and still
+/: the long-name run at entry 32 is followed by no short entry to name
+== mutation [self.set_fat_entry(last, END_OF_CHAIN).await?;] -> [let _ = last;]: exit=101
+thread 'a_recovery_after_a_stop_at_any_write_leaves_a_consistent_volume' (174959503) panicked at lib/fat32/tests/refused_writes.rs:760:17:
+append: stopped at write 4, Refused: Recovered { mirrors: 0, cut: 1, long_names: 0, lost: 1, unrepaired: 0 }, and still
+/dated.log: cluster 5 links to 0, which is neither a cluster of this volume (2 to 65601) nor an end-of-chain mark
