@@ -1,0 +1,12 @@
+# S0-a metal round 10, AMD ONLY: the hot-row verdict for #1150 (six alternating base/head pairs, no other probe).
+# base = s0a-r10-base-kvm 49496f0a3 (main e11b6a784 + per-syscall probe); head = s0a-r14-ad-kvm ea86ed227 (bdec5ab36 + the same probe).
+# Kernel code at the PR head; commits after bdec5ab36 are comments and records. Restaged: round 8's images were deleted once run.
+# Every image is main's whole benchcase.toml (the osbench row). Rules, set before any boot: $SCRATCH/s0a2/ab10/rules.md
+# Hashes: $SCRATCH/s0a2/ab10/image-sha256.txt. Run from the worktree $HOME/Dev/$USER/toyos-s0a; each invocation is `cargo <words>`.
+# AMD, each boot with its own --readback dir (runs/amd/<n>-<arm>), in exactly this order:
+#   1-base 2-head 3-head 4-base 5-base 6-head 7-head 8-base 9-base 10-head 11-head 12-base. Twelve boots.
+
+base benchcase (49496f0a3):
+  cargo run -p toyos-metal -- --image $SCRATCH/s0a2/ab10/base/benchcase/image.img --readback <dir> --fat32-check
+head benchcase (ea86ed227):
+  cargo run -p toyos-metal -- --image $SCRATCH/s0a2/ab10/head/benchcase/image.img --readback <dir> --fat32-check
