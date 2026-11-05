@@ -32,3 +32,7 @@
   `abuse_elf_segments` (`tls_huge`) exited 101: each asserted the kernel refuses
   a PT_TLS its TLS allocation could not hold, which no longer exists; removed at
   `42ed99c14`, restaged for the T14. Vendor, model and BIOS strings masked.
+- `metal-42ed99c14/`: the T14 boot of `abuse_elf_loader` and
+  `abuse_elf_segments` at `42ed99c14`, image sha256
+  `7c52e4baacb2a9d729ade70be68dd8a39dff3bd760ad3589b06ec04018adabc0`, judged
+  with the readback in place (`judge.log`, exit 0): 2 of 2 passed.
