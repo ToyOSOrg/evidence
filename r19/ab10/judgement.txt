@@ -1,0 +1,33 @@
+1-base passed
+2-head passed
+4-base passed
+3-head passed
+5-base passed
+6-head passed
+8-base passed
+7-head passed
+9-base passed
+10-head passed
+12-base passed
+11-head passed
+
+hot rows (pair change, negative = head worse):
+  pipe.throughput.64         +4.1%   +1.6%   +2.5%   +3.3%   +1.6%   -1.6%  worse 1/6  mean +1.90%  pass
+  pipe.throughput.256        +3.8%   -0.4%   +0.0%   +1.7%   +3.1%   -1.0%  worse 2/6  mean +1.18%  pass
+  pipe.throughput.1024       +1.8%   -1.0%   -0.9%   +3.1%   +0.8%   -1.9%  worse 3/6  mean +0.31%  pass
+  pipe.throughput.4096      +32.2%  +23.0%  +23.4%  +25.6%  +24.1%  +17.7%  worse 0/6  mean +24.33%  pass
+  ipc.reqrep.8               +9.3%   +9.8%  +12.2%  +10.5%  +38.2%  -15.4%  worse 1/6  mean +10.76%  pass
+  ipc.reqrep.4096            +8.7%  +10.5%  +12.8%  +10.8%  +47.9%  -19.5%  worse 1/6  mean +11.88%  pass
+  ipc.reqrep_handle.8       +15.6%  +18.3%  +21.5%  +17.7%  +52.7%  -12.2%  worse 1/6  mean +18.93%  pass
+
+IPC values per boot (slow mode reads well above the fast cluster):
+  ipc.reqrep.8             1-base=8385 2-head=7674 4-base=6612 3-head=6021 5-base=8596 6-head=7664 8-base=6632 7-head=6001 9-base=8306 10-head=6011 12-base=6623 11-head=7825
+  ipc.reqrep.4096          1-base=9979 2-head=9177 4-base=7484 3-head=6773 5-base=10590 6-head=9388 8-base=7504 7-head=6773 9-base=9988 10-head=6752 12-base=7454 11-head=9258
+  ipc.reqrep_handle.8      1-base=9789 2-head=8466 4-base=7585 3-head=6412 5-base=10250 6-head=8436 8-base=7514 7-head=6382 9-base=9788 10-head=6412 12-base=7554 11-head=8606
+
+verdict: every hot row passes
+
+other rows with mean pair change worse than -5%:
+  mem.anon.map                         mean -31.7%  -47.2% +0.0% -48.3% -46.6% +0.5% -48.6%  mhz 4286 4291 4264 4262 4290 4297 4270 4291 4286 4271 4261 4265
+  pingpong.futex.cross_core            mean -31.9%  +0.0% +0.0% -96.6% +0.9% -96.2% +0.6%  mhz 4267 4241 4217 4217 4242 4217 4217 1885 4216 4217 4217 3572
+  proc.spawn_wait.large                mean -9.4%  -9.2% -8.0% -10.3% -8.8% -9.7% -10.5%  mhz 4216 4216 4192 4216 4191 4216 4192 4216 4166 4192 4167 4191
