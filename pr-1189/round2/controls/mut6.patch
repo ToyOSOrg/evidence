@@ -1,0 +1,11 @@
+--- sdk/toyos/src/dl/image/mod.rs
++++ sdk/toyos/src/dl/image/mod.rs
+@@ -362,7 +362,7 @@
+     for (at, value) in writes {
+         let bytes = value.to_le_bytes();
+         mapped.write(at, &bytes);
+-        if let (Some(block), Some(template)) = (block.as_deref_mut(), template) {
++        if let (Some(block), Some(template)) = (None::<&mut [u8]>, template) {
+             let (lo, hi) = (template.start().get(), template.end().get());
+             for (i, byte) in bytes.iter().enumerate() {
+                 let at = at + i as u64;

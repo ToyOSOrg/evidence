@@ -1,0 +1,11 @@
+--- sdk/toyos/src/dl/image/mod.rs
++++ sdk/toyos/src/dl/image/mod.rs
+@@ -344,7 +344,7 @@
+             Op::Relative(target) => base + target.get(),
+             Op::Bind(i) => address(i)?,
+             Op::Call(i) => match address(i) {
+-                Err(Refused::Undefined(_)) if !tables.bind_now => (super::undefined_function as *const ()).addr() as u64,
++                Err(Refused::Undefined(_)) => (super::undefined_function as *const ()).addr() as u64,
+                 bound => bound?,
+             },
+             Op::Absolute(i, addend) => i.map_or(Ok(0), address)?.wrapping_add_signed(addend),

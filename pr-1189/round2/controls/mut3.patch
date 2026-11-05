@@ -1,0 +1,11 @@
+--- lib/elf/src/rela.rs
++++ lib/elf/src/rela.rs
+@@ -241,7 +241,7 @@
+     let op = match rela.kind {
+         RelocKind::None => return Ok(None),
+         RelocKind::TlsDesc => return Err(RelocError::TlsDescriptor),
+-        RelocKind::Other(raw) => return Err(RelocError::Unsupported(raw)),
++        RelocKind::Other(_) => return Ok(None),
+         RelocKind::Relative => Op::Relative(
+             u64::try_from(rela.addend)
+                 .ok()

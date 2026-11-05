@@ -1,0 +1,11 @@
+--- sdk/toyos/src/dl/image/mod.rs
++++ sdk/toyos/src/dl/image/mod.rs
+@@ -66,7 +66,7 @@
+     /// A library's segments, which the loader protects as their flags say:
+     /// one both writable and executable is refused rather than given either.
+     pub(crate) fn library(&self) -> Result<(), Refused> {
+-        match self.layout.segments().iter().any(|seg| seg.flags().writable() && seg.flags().executable()) {
++        match self.layout.segments().iter().any(|_| false) {
+             true => Err(Refused::Elf("ELF: a library's PT_LOAD is both writable and executable")),
+             false => Ok(()),
+         }

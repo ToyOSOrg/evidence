@@ -1,0 +1,58 @@
+patching file 'sdk/toyos/src/dl/image/mod.rs'
+patching file 'sdk/toyos/src/dl/image/mod.rs'
+apply rc=0
+warning: field `bind_now` is never read
+   --> src/dl/image/mod.rs:232:5
+    |
+224 | pub(crate) struct Tables<'a> {
+    |                   ------ field in this struct
+...
+232 |     bind_now: bool,
+    |     ^^^^^^^^
+    |
+    = note: `Tables` has a derived impl for the trait `Clone`, but this is intentionally ignored during dead code analysis
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+build rc=0
+warning: field `bind_now` is never read
+   --> src/dl/image/mod.rs:232:5
+    |
+224 | pub(crate) struct Tables<'a> {
+    |                   ------ field in this struct
+...
+232 |     bind_now: bool,
+    |     ^^^^^^^^
+    |
+    = note: `Tables` has a derived impl for the trait `Clone`, but this is intentionally ignored during dead code analysis
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+
+running 1 test
+dl::image::tests::a_call_nothing_defines_fails_at_the_call_unless_the_image_binds_now --- FAILED
+
+failures:
+
+---- dl::image::tests::a_call_nothing_defines_fails_at_the_call_unless_the_image_binds_now stdout ----
+
+thread 'dl::image::tests::a_call_nothing_defines_fails_at_the_call_unless_the_image_binds_now' (180623423) panicked at src/dl/image/tests.rs:246:5:
+assertion `left == right` failed
+  left: None
+ right: Some("symbol `imported` is defined by no loaded module")
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    dl::image::tests::a_call_nothing_defines_fails_at_the_call_unless_the_image_binds_now
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 175 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--lib`
+test rc=101
+patching file 'sdk/toyos/src/dl/image/mod.rs'
+restore rc=0
+
+running 1 test
+.
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 175 filtered out; finished in 0.00s
+
+restored test rc=0
