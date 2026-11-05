@@ -1,0 +1,15 @@
+# S0-a A/B round 5, restaged on main e11b6a784 (#1152 merged; user copies through the user mapping).
+# base = s0a-r9-base-kvm 51ed02074 (main e11b6a784 + probe); head = s0a-r9-head-kvm f6dc70873 (5c600a4ae + probe).
+# Both benchcases are main's whole benchcase.toml: DATA is #1152's native format on both benches, so rows may read it.
+# testcases = PR head e43c7cfea (5c600a4ae plus two comments), no probe; 15 members in one boot, user_copy_faults and the /home members included.
+# Rules, set before any boot: $SCRATCH/s0a2/ab5/rules.md
+# Hashes: $SCRATCH/s0a2/ab5/image-sha256.txt. Run from the worktree $HOME/Dev/$USER/toyos-s0a; each invocation is `cargo <words>`.
+# On the AMD bench and the T14, in this order, each boot with its own --readback dir
+# (runs/<bench>/<n>-<arm>): 1-base, 2-head, 3-base, 4-head (benchcase, the osbench row), then 5-testcases. Five boots per bench.
+
+base benchcase (51ed02074):
+  cargo run -p toyos-metal -- --image $SCRATCH/s0a2/ab5/base/benchcase/image.img --readback <dir> --fat32-check
+head benchcase (f6dc70873):
+  cargo run -p toyos-metal -- --image $SCRATCH/s0a2/ab5/head/benchcase/image.img --readback <dir> --fat32-check
+testcases (e43c7cfea; members messages_are_whole blocking_read_stress pipe_other_end_gone poll_wake_pipe std_io std_process ends_sent_over_each_other_both_end kill_ends_every_wait mio_waker_coalesces query_modules_size user_copy_faults std_fs std_fs_write lseek_past_eof file_mtime):
+  cargo run -p toyos-metal -- --image $SCRATCH/s0a2/ab5/testcases/testcases/image.img --readback <dir> --fat32-check

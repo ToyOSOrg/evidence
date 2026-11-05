@@ -1,0 +1,53 @@
+   Compiling toyos v0.18.0 ($HOME/Dev/$USER/toyos-s0a/sdk/toyos)
+   Compiling kernel v0.1.0 ($HOME/Dev/$USER/toyos-s0a/kernel)
+   Compiling toyos-userbound v0.1.0 ($HOME/Dev/$USER/toyos-s0a/lib/userbound)
+   Compiling toyos-manifest v0.1.0 ($HOME/Dev/$USER/toyos-s0a/lib/manifest)
+   Compiling toyos-session v0.1.0 ($HOME/Dev/$USER/toyos-s0a/lib/session)
+   Compiling toyos-swap v0.1.0 ($HOME/Dev/$USER/toyos-s0a/lib/swap)
+   Compiling toyos-build v0.1.0 ($HOME/Dev/$USER/toyos-s0a)
+   Compiling toyos-metal v0.1.0 ($HOME/Dev/$USER/toyos-s0a/tests/metal)
+    Finished `test` profile [optimized + debuginfo] target(s) in 12.75s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-5f315722abccb739)
+04:54:36   BUILD x86_64 binaries of tests/guest/rust-tests
+04:54:39 external deps changed: cleaning $HOME/Dev/$USER/toyos-s0a/tests/guest/rust-tests/target/toyos
+04:54:39 external deps changed: cleaning $HOME/Dev/$USER/toyos-s0a/tests/guest/rust-tests/target/toyos-unasserted
+04:54:39 external deps changed: cleaning $HOME/Dev/$USER/toyos-s0a/tests/guest/rust-tests/target/x86_64-unknown-toyos
+04:54:40 external deps changed: cleaning $HOME/Dev/$USER/toyos-s0a/tests/guest/rust-tests/tls-dlopen-lib/target/toyos
+04:54:40 external deps changed: cleaning $HOME/Dev/$USER/toyos-s0a/tests/guest/rust-tests/tls-dlopen-lib/target/x86_64-unknown-toyos
+04:54:40 external deps changed: cleaning $HOME/Dev/$USER/toyos-s0a/tests/guest/rust-tests/tls-lib/target/toyos
+04:54:40 external deps changed: cleaning $HOME/Dev/$USER/toyos-s0a/tests/guest/rust-tests/tls-lib/target/x86_64-unknown-toyos
+04:54:40 external deps changed: cleaning $HOME/Dev/$USER/toyos-s0a/tests/guest/rust-tests/tls-multi-crate/target/toyos
+04:54:40 external deps changed: cleaning $HOME/Dev/$USER/toyos-s0a/tests/guest/rust-tests/tls-multi-crate/target/x86_64-unknown-toyos
+04:54:40 external deps changed: cleaning $HOME/Dev/$USER/toyos-s0a/tests/guest/rust-tests/tls-cranelift/target/toyos
+04:54:40 external deps changed: cleaning $HOME/Dev/$USER/toyos-s0a/tests/guest/rust-tests/tls-cranelift/target/x86_64-unknown-toyos
+04:56:32   BUILT x86_64 binaries of tests/guest/rust-tests  (116s)
+04:56:32   BUILD x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests
+04:57:09   BUILT x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests  (37s)
+04:57:09 [toyos] Compiling 143 C tests, and attempting 24 declared ones...
+04:57:14 [metal] 2 registration(s) and 0 shared member(s) over 2 boot(s)
+04:57:14   BUILD x86_64 kernel, loader, ROOT of $SCRATCH/s0a2/ab5/base/benchcase/system-dc6cb9c143cd50db.toml
+04:57:15 external deps changed: cleaning $HOME/Dev/$USER/toyos-s0a/target/x86_64-unknown-none
+04:57:15 external deps changed: cleaning $HOME/Dev/$USER/toyos-s0a/target/x86_64-unknown-uefi
+04:57:15 external deps changed: cleaning $HOME/Dev/$USER/toyos-s0a/target/aarch64-unknown-none-softfloat
+04:57:15 external deps changed: cleaning $HOME/Dev/$USER/toyos-s0a/target/aarch64-unknown-uefi
+04:59:24 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+04:59:24   BUILT x86_64 kernel, loader, ROOT of $SCRATCH/s0a2/ab5/base/benchcase/system-dc6cb9c143cd50db.toml  (130s)
+04:59:24 [metal] benchcase: 16 job(s) under a list bound of 525000 ms, armed with [] and a boot deadline of 1050000 ms — $SCRATCH/s0a2/ab5/base/benchcase/image.img
+04:59:24   BUILD x86_64 ROOT of $SCRATCH/s0a2/ab5/base/energybenchcase/system-07be32f936817705.toml
+04:59:27 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+04:59:27   BUILT x86_64 ROOT of $SCRATCH/s0a2/ab5/base/energybenchcase/system-07be32f936817705.toml  (3s)
+04:59:27 [metal] energybenchcase: 1 job(s) under a list bound of 360000 ms, armed with [] and a boot deadline of 720000 ms — $SCRATCH/s0a2/ab5/base/energybenchcase/image.img
+# One boot per image. Each invocation is `cargo <words>` from this worktree.
+
+benchcase
+  image: $SCRATCH/s0a2/ab5/base/benchcase/image.img
+  cargo run -p toyos-metal -- --image $SCRATCH/s0a2/ab5/base/benchcase/image.img --readback $SCRATCH/s0a2/ab5/base/benchcase --fat32-check
+
+energybenchcase
+  image: $SCRATCH/s0a2/ab5/base/energybenchcase/image.img
+  cargo run -p toyos-metal -- --image $SCRATCH/s0a2/ab5/base/energybenchcase/image.img --readback $SCRATCH/s0a2/ab5/base/energybenchcase --fat32-check
+04:59:27 [metal] staged 2 image(s); $SCRATCH/s0a2/ab5/base/request.txt lists them. The machine was not touched, so this run establishes nothing about it.
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `$HOME/Dev/$USER/toyos-s0a/target/debug/deps/toyos_build-5f315722abccb739 --metal --metal-readback $SCRATCH/s0a2/ab5/base osbench` (exit status: 2)
