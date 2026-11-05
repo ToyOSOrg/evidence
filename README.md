@@ -11,3 +11,8 @@ Every run is `guest-rows.yml` on the guest runner (x86-64, KVM), its full log ma
 
 - `t14-acpicase-*`: the orchestrator's T14 boot of the `acpicase` image staged at 0383550b0 (`--metal-readback`), rc=0, verdict `passed`; machine model, firmware version, disk identifiers and GUIDs masked.
 - `judge-acpi_server_death.log`: `cargo test --test toyos-build -- --metal --metal-readback <dir> acpi_server_death` over that readback, exit 0, `PASS acpi_server_death`. The job's `acpi_release: claimed from the CPU of x2APIC id 7`; the kernel's `ACPI_ENABLE 0xf0 written to SMI_CMD 0xb2 on cpu0, asked from cpu7`; the disable, left to the scheduler, `asked from cpu3`.
+
+# Round 3: `acpi_press_is_one_sci`
+
+- `press-nocapture-0383550b0-42016111039.log`: filter `acpi_ --nocapture` at the PR head. Four acpi rows green; `acpi_press_is_one_sci` STALL again. Its console (`[serial 0]`) ends at the kernel's `boot: power-on to loader … Boot: complete`.
+- `press-nocapture-main-b27dd3e2-42025888487.log`: the row alone on main at b27dd3e2: the same STALL, the console ending on the same line.
