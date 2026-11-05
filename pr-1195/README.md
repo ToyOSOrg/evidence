@@ -20,3 +20,5 @@ All guest runs are `guest-rows.yml` on the guest runner (x86-64, KVM). Logs are
 - `control-run-42049438240.log`: the negative control, the row at main
   6755d1d64 (this branch's base, without the change). STALL (17 s), with the
   console ending at `Boot: complete`.
+- `r1-run-42068104021.log`: review round 1 at 1131a5acf (`flushed` adopts
+  first): `acpi_press_is_one_sci` and `the_log_lands_on_the_boot_stick`, 2 passed.
