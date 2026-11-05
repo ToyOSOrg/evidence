@@ -13,3 +13,4 @@
 
 - `metal-bb1e9ada6/`: the T14 boots at bb1e9ada6, image hashes as staged: `testcases` (16 members, `abuse_spawn_maps` and `start_refuses_itself` among them) and `shared-debug` (`abuse_kernel_addr`), judged 17 passed, 0 failed (`judge.log`).
 - `control-mut14-request.txt`, `controls/mut14.patch`: the guest negative control staged for the T14: `lay()` ignoring its vacancy check, on a never-pushed commit over bfb75f056. Not yet run.
+- `control-mut14/`: the guest negative control ran on the T14 (image hash as staged). Under a kernel whose `lay()` ignores its vacancy check, `abuse_spawn_maps` went red at "a range on the clock page": the spawn was not refused (the child ran, pid 16, exit 0), and the member exited 101 (`member.txt`). Every refusal before it was still answered.
