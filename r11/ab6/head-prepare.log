@@ -1,0 +1,44 @@
+   Compiling toyos v0.18.0 ($HOME/Dev/$USER/toyos-s0a/sdk/toyos)
+   Compiling kernel v0.1.0 ($HOME/Dev/$USER/toyos-s0a/kernel)
+   Compiling toyos-userbound v0.1.0 ($HOME/Dev/$USER/toyos-s0a/lib/userbound)
+   Compiling toyos-manifest v0.1.0 ($HOME/Dev/$USER/toyos-s0a/lib/manifest)
+   Compiling toyos-session v0.1.0 ($HOME/Dev/$USER/toyos-s0a/lib/session)
+   Compiling toyos-swap v0.1.0 ($HOME/Dev/$USER/toyos-s0a/lib/swap)
+   Compiling toyos-build v0.1.0 ($HOME/Dev/$USER/toyos-s0a)
+   Compiling toyos-metal v0.1.0 ($HOME/Dev/$USER/toyos-s0a/tests/metal)
+    Finished `test` profile [optimized + debuginfo] target(s) in 9.45s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-5f315722abccb739)
+07:21:59   BUILD x86_64 binaries of tests/guest/rust-tests
+07:22:00 external deps changed: cleaning $HOME/Dev/$USER/toyos-s0a/tests/guest/rust-tests/target/x86_64-unknown-toyos
+07:22:01 external deps changed: cleaning $HOME/Dev/$USER/toyos-s0a/tests/guest/rust-tests/tls-dlopen-lib/target/x86_64-unknown-toyos
+07:22:01 external deps changed: cleaning $HOME/Dev/$USER/toyos-s0a/tests/guest/rust-tests/tls-lib/target/x86_64-unknown-toyos
+07:22:01 external deps changed: cleaning $HOME/Dev/$USER/toyos-s0a/tests/guest/rust-tests/tls-multi-crate/target/x86_64-unknown-toyos
+07:22:01 external deps changed: cleaning $HOME/Dev/$USER/toyos-s0a/tests/guest/rust-tests/tls-cranelift/target/x86_64-unknown-toyos
+07:23:14   BUILT x86_64 binaries of tests/guest/rust-tests  (75s)
+07:23:14   BUILD x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests
+07:23:40   BUILT x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests  (26s)
+07:23:40 [toyos] Compiling 143 C tests, and attempting 24 declared ones...
+07:23:44 [metal] 2 registration(s) and 0 shared member(s) over 2 boot(s)
+07:23:44   BUILD x86_64 kernel, loader, ROOT of $SCRATCH/s0a2/ab6/head/benchcase/system-dc6cb9c143cd50db.toml
+07:23:45 external deps changed: cleaning $HOME/Dev/$USER/toyos-s0a/target/x86_64-unknown-toyos
+07:24:39 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+07:24:39   BUILT x86_64 kernel, loader, ROOT of $SCRATCH/s0a2/ab6/head/benchcase/system-dc6cb9c143cd50db.toml  (56s)
+07:24:39 [metal] benchcase: 16 job(s) under a list bound of 525000 ms, armed with [] and a boot deadline of 1050000 ms — $SCRATCH/s0a2/ab6/head/benchcase/image.img
+07:24:39   BUILD x86_64 ROOT of $SCRATCH/s0a2/ab6/head/energybenchcase/system-07be32f936817705.toml
+07:24:42 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+07:24:42   BUILT x86_64 ROOT of $SCRATCH/s0a2/ab6/head/energybenchcase/system-07be32f936817705.toml  (3s)
+07:24:42 [metal] energybenchcase: 1 job(s) under a list bound of 360000 ms, armed with [] and a boot deadline of 720000 ms — $SCRATCH/s0a2/ab6/head/energybenchcase/image.img
+# One boot per image. Each invocation is `cargo <words>` from this worktree.
+
+benchcase
+  image: $SCRATCH/s0a2/ab6/head/benchcase/image.img
+  cargo run -p toyos-metal -- --image $SCRATCH/s0a2/ab6/head/benchcase/image.img --readback $SCRATCH/s0a2/ab6/head/benchcase --fat32-check
+
+energybenchcase
+  image: $SCRATCH/s0a2/ab6/head/energybenchcase/image.img
+  cargo run -p toyos-metal -- --image $SCRATCH/s0a2/ab6/head/energybenchcase/image.img --readback $SCRATCH/s0a2/ab6/head/energybenchcase --fat32-check
+07:24:42 [metal] staged 2 image(s); $SCRATCH/s0a2/ab6/head/request.txt lists them. The machine was not touched, so this run establishes nothing about it.
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `$HOME/Dev/$USER/toyos-s0a/target/debug/deps/toyos_build-5f315722abccb739 --metal --metal-readback $SCRATCH/s0a2/ab6/head osbench` (exit status: 2)

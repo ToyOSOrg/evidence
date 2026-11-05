@@ -1,0 +1,18 @@
+# S0-a A/B round 6 (#1150 at 378cea3a7: a holder's paged read faults its chunk in first).
+# base = s0a-r10-base-kvm 49496f0a3 (main e11b6a784 + probe); head = s0a-r10-fin-kvm 2730ee698 (378cea3a7 + probe);
+# diag (T14 only) = s0a-r10-finsdk-kvm 5860cc9a6 (head with sdk/toyos/src/sync.rs as main's: the malloc-churn diagnostic).
+# Every benchcase is main's whole benchcase.toml. testcases = 378cea3a7, no probe, 19 members in one boot.
+# Rules, set before any boot: $SCRATCH/s0a2/ab6/rules.md
+# Hashes: $SCRATCH/s0a2/ab6/image-sha256.txt. Run from the worktree $HOME/Dev/$USER/toyos-s0a; each invocation is `cargo <words>`.
+# Each boot with its own --readback dir (runs/<bench>/<n>-<arm>), in exactly this order:
+#   AMD: 1-base 2-head 3-head 4-base 5-base 6-head 7-head 8-base (benchcase, the osbench row), then 9-testcases. Nine boots.
+#   T14: 1-base 2-head 3-head 4-base, 5-diag 6-diag (benchcase), then 7-testcases. Seven boots.
+
+base benchcase (49496f0a3):
+  cargo run -p toyos-metal -- --image $SCRATCH/s0a2/ab6/base/benchcase/image.img --readback <dir> --fat32-check
+head benchcase (2730ee698):
+  cargo run -p toyos-metal -- --image $SCRATCH/s0a2/ab6/head/benchcase/image.img --readback <dir> --fat32-check
+diag benchcase (5860cc9a6, T14 only):
+  cargo run -p toyos-metal -- --image $SCRATCH/s0a2/ab6/diag/benchcase/image.img --readback <dir> --fat32-check
+testcases (378cea3a7; members messages_are_whole blocking_read_stress pipe_other_end_gone poll_wake_pipe std_io std_process ends_sent_over_each_other_both_end kill_ends_every_wait mio_waker_coalesces query_modules_size user_copy_faults std_fs std_fs_write lseek_past_eof file_mtime a_served_file_reads_through_its_paged_object a_served_files_read_never_tears_against_its_write a_pager_s_end_answers_its_waiting_holders_gone a_held_files_fstat_is_its_servers_stat):
+  cargo run -p toyos-metal -- --image $SCRATCH/s0a2/ab6/testcases/testcases/image.img --readback <dir> --fat32-check
