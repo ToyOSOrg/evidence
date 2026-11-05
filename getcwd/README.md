@@ -16,3 +16,18 @@ a_row_reaches_its_own_state_and_no_other, a_spawn_from_an_image_frees_it_when_th
 virt_user_mode, virt_smp, virt_readonly_copyout.
 An earlier dispatch (run 41991594542) named shared-boot binaries, which a filtered QEMU run does not boot,
 and was refused before any boot ("No test matches filter").
+
+## Metal (T14), boots of 34c11dea7
+
+The orchestrator ran proctreecase and testcases (rc=0 each; both boot verdicts `passed`) and skipped windowscase:
+a single mask_windows reading is no comparison, so the windows stay owed.
+Judged offline with `cargo test --test toyos-build -- --metal --metal-readback <scratch>/metal app_view std_fs`
+at 34c11dea7: exit 0, `3 passed, 0 failed, 2 boot(s)` (metal/metal-judge.log).
+
+- `app_view` PASS; proctreecase-test-runner.log has `granted: cwd=/home/toy/Games roms=["test.gba"] saved=Ok`.
+- `std_fs` and `std_fs_write` (shared members) exit 0; testcases-test-runner.log has `all fs tests passed`
+  after the new `a_child_starts_where_its_spawn_says`. The `echo` broken-pipe panic (pid 15) in the same log is
+  std_fs's existing `pipe_is_not_a_directory`, which drops echo's read end before echo writes; it precedes the new check.
+
+Only the test-runner lines of each boot's kernel log are published; the full logs carry a MAC address
+and stay local. The machine model and BIOS strings are masked in metal-judge.log.
