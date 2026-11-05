@@ -1,0 +1,34 @@
+   Compiling kernel-loom v0.1.0 ($HOME/Dev/$USER/toyos-storm/kernel/loom)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.93s
+     Running tests/device_irq_gate.rs (target/debug/deps/device_irq_gate-f71d81e45cd4a3a7)
+
+running 2 tests
+test hardware_ends_as_the_record_owes_after_two_messages ... FAILED
+test hardware_ends_as_the_record_owes ... FAILED
+
+failures:
+
+---- hardware_ends_as_the_record_owes_after_two_messages stdout ----
+
+thread 'hardware_ends_as_the_record_owes_after_two_messages' (179329227) panicked at kernel/loom/tests/device_irq_gate.rs:53:9:
+assertion `left == right` failed: the read took 2 of 2 message(s) and hardware is masked with nothing waiting
+  left: true
+ right: false
+
+---- hardware_ends_as_the_record_owes stdout ----
+
+thread 'hardware_ends_as_the_record_owes' (179329226) panicked at kernel/loom/tests/device_irq_gate.rs:53:9:
+assertion `left == right` failed: the read took 1 of 1 message(s) and hardware is masked with nothing waiting
+  left: true
+ right: false
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    hardware_ends_as_the_record_owes
+    hardware_ends_as_the_record_owes_after_two_messages
+
+test result: FAILED. 0 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--test device_irq_gate`
+exit 101
