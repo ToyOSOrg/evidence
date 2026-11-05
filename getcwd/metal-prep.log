@@ -1,0 +1,39 @@
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.25s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-5f315722abccb739)
+08:17:27   BUILD x86_64 binaries of tests/guest/rust-tests
+08:17:30   BUILT x86_64 binaries of tests/guest/rust-tests  (3s)
+08:17:30   BUILD x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests
+08:17:31   BUILT x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests  (1s)
+08:17:31 [toyos] Compiling 143 C tests, and attempting 24 declared ones...
+08:17:35 [metal] 2 registration(s) and 2 shared member(s) over 3 boot(s)
+08:17:35   BUILD x86_64 kernel, loader, ROOT of <scratch>/metal/proctreecase/system-4c54968a1f38c6cf.toml
+08:17:37 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+08:17:37   BUILT x86_64 kernel, loader, ROOT of <scratch>/metal/proctreecase/system-4c54968a1f38c6cf.toml  (2s)
+08:17:37 [metal] proctreecase: 4 job(s) under a list bound of 60000 ms, armed with [] and a boot deadline of 120000 ms — <scratch>/metal/proctreecase/image.img
+08:17:37   BUILD x86_64 ROOT of <scratch>/metal/testcases/system-ce93e768a43e7c38.toml
+08:17:39 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+08:17:39   BUILT x86_64 ROOT of <scratch>/metal/testcases/system-ce93e768a43e7c38.toml  (1s)
+08:17:39 [metal] testcases: 2 job(s) under a list bound of 60600 ms, armed with [] and a boot deadline of 121200 ms — <scratch>/metal/testcases/image.img
+08:17:39   BUILD x86_64 kernel mask-windows, ROOT of <scratch>/metal/windowscase/system-7796c0791a0ff2c2.toml
+08:17:40 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+08:17:41   BUILT x86_64 kernel mask-windows, ROOT of <scratch>/metal/windowscase/system-7796c0791a0ff2c2.toml  (2s)
+08:17:41 [metal] windowscase: 4 job(s) under a list bound of 60000 ms, armed with [] and a boot deadline of 120000 ms — <scratch>/metal/windowscase/image.img
+# One boot per image. Each invocation is `cargo <words>` from this worktree.
+
+proctreecase
+  image: <scratch>/metal/proctreecase/image.img
+  cargo run -p toyos-metal -- --image <scratch>/metal/proctreecase/image.img --readback <scratch>/metal/proctreecase --fat32-check
+
+testcases
+  image: <scratch>/metal/testcases/image.img
+  cargo run -p toyos-metal -- --image <scratch>/metal/testcases/image.img --readback <scratch>/metal/testcases --fat32-check
+
+windowscase
+  image: <scratch>/metal/windowscase/image.img
+  cargo run -p toyos-metal -- --image <scratch>/metal/windowscase/image.img --readback <scratch>/metal/windowscase --fat32-check
+08:17:41 [metal] staged 3 image(s); <scratch>/metal/request.txt lists them. The machine was not touched, so this run establishes nothing about it.
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `<worktree>/target/debug/deps/toyos_build-5f315722abccb739 --metal --metal-readback <scratch>/metal app_view mask_windows std_fs` (exit status: 2)
+exit 2
