@@ -13,3 +13,5 @@
   - mut9: lazy-call trap regardless of BIND_NOW; red, and green once restored.
 - `size.txt`, `hello.rs`: a hello-world's size before and after.
 - `metal-request.txt`: the T14 staging at 125b8929f with each image's sha256.
+
+- `metal-125b8929f/`: the T14 boots `testcases` (15 members) and `shared-debug` (`abuse_kernel_addr`) at 125b8929f, image hashes as staged, judged 16 passed, 0 failed (`judge.log`).
