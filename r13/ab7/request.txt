@@ -1,0 +1,21 @@
+# S0-a metal round 7, DIAGNOSTIC (no #1150 code change since round 6; nothing here is a landing verdict).
+# AMD: where the large spawn's extra ~1.4 us/page goes. cbase = s0a-r10-cbase-kvm 14e7768ac (main + probe + copy probe);
+#      cwin = s0a-r13-cwin-kvm 46effaacf (378cea3a7 + probe + copy probe timing fault_in and splitting copies by Zen 2 window).
+# T14: is malloc churn's loss code placement. base = s0a-r10-base-kvm 49496f0a3; head = s0a-r10-fin-kvm 2730ee698;
+#      pad = s0a-r13-pad-kvm 71a9faa9a (head + 32 inert bytes beside lock_word: allocator functions at diag's alignment).
+# Every image is main's whole benchcase.toml. Rules, set before any boot: $SCRATCH/s0a2/ab7/rules.md
+# Hashes: $SCRATCH/s0a2/ab7/image-sha256.txt. Run from the worktree $HOME/Dev/$USER/toyos-s0a; each invocation is `cargo <words>`.
+# Each boot with its own --readback dir (runs/<bench>/<n>-<arm>), in exactly this order:
+#   AMD: 1-cbase 2-cwin 3-cwin 4-cbase. Four boots.
+#   T14: 1-base 2-pad 3-head 4-pad. Four boots.
+
+cbase benchcase (14e7768ac, AMD):
+  cargo run -p toyos-metal -- --image $SCRATCH/s0a2/ab7/cbase/benchcase/image.img --readback <dir> --fat32-check
+cwin benchcase (46effaacf, AMD):
+  cargo run -p toyos-metal -- --image $SCRATCH/s0a2/ab7/cwin/benchcase/image.img --readback <dir> --fat32-check
+base benchcase (49496f0a3, T14):
+  cargo run -p toyos-metal -- --image $SCRATCH/s0a2/ab7/base/benchcase/image.img --readback <dir> --fat32-check
+head benchcase (2730ee698, T14):
+  cargo run -p toyos-metal -- --image $SCRATCH/s0a2/ab7/head/benchcase/image.img --readback <dir> --fat32-check
+pad benchcase (71a9faa9a, T14):
+  cargo run -p toyos-metal -- --image $SCRATCH/s0a2/ab7/pad/benchcase/image.img --readback <dir> --fat32-check
