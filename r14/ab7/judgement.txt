@@ -1,0 +1,46 @@
+Round 7, judged against ab7/rules.md
+
+## AMD: per large spawn (cpdiff.py, median over 109 consecutive child exits)
+== 1-cbase passed
+  rd: 63 calls 0.00 MiB 39 us  626 ns/call
+  wr: 8248 calls 32.01 MiB 5646 us  684 ns/call
+  zr: 0 calls 0.00 MiB 0 us  0 ns/call
+  pf: 0 calls 0.00 MiB 0 us  0 ns/call
+bench=proc.spawn_wait.large p50=11889216
+== 2-cwin passed
+  rd: 63 calls 0.00 MiB 9 us  147 ns/call
+  wr: 8248 calls 32.01 MiB 15485 us  1877 ns/call
+  zr: 0 calls 0.00 MiB 0 us  0 ns/call
+  pf: 1 calls 0.00 MiB 1 us  601 ns/call
+  rdw: 0 calls 0.00 MiB 0 us  0 ns/call
+  wrw: 0 calls 0.00 MiB 0 us  0 ns/call
+  fi: 512 calls 32.00 MiB 395 us  772 ns/call
+bench=proc.spawn_wait.large p50=22105781
+== 3-cwin passed
+  rd: 63 calls 0.00 MiB 9 us  148 ns/call
+  wr: 8248 calls 32.01 MiB 15430 us  1871 ns/call
+  zr: 0 calls 0.00 MiB 0 us  0 ns/call
+  pf: 1 calls 0.00 MiB 1 us  521 ns/call
+  rdw: 0 calls 0.00 MiB 0 us  0 ns/call
+  wrw: 0 calls 0.00 MiB 0 us  0 ns/call
+  fi: 512 calls 32.00 MiB 395 us  771 ns/call
+bench=proc.spawn_wait.large p50=22047754
+== 4-cbase passed
+  rd: 63 calls 0.00 MiB 46 us  735 ns/call
+  wr: 8248 calls 32.01 MiB 5649 us  685 ns/call
+  zr: 0 calls 0.00 MiB 0 us  0 ns/call
+  pf: 0 calls 0.00 MiB 0 us  0 ns/call
+bench=proc.spawn_wait.large p50=11881740
+
+Verdict: head's copy-out costs 1871-1877 ns per page against cbase's whole reach+pin+copy at 684-685 ns.
+fault_in costs 48 ns per page, and the copy takes 1 fault per spawn. The cost is in the copy through the
+user mapping on Zen 2 (rules: 'designed and measured next').
+
+## T14: malloc churn (p50 kops/s @ mhz)
+1-base  passed 16.t1=36586@4190 4096.t1=31334@4189 1048576.t1=198@4189 4096.t8=3043@4264 
+2-pad   passed 16.t1=36514@4189 4096.t1=31040@4189 1048576.t1=186@4189 4096.t8=3154@4190 
+3-head  passed 16.t1=28800@4189 4096.t1=24921@4189 1048576.t1=186@4190 4096.t8=2782@4189 
+4-pad   passed 16.t1=36658@4189 4096.t1=31004@4189 1048576.t1=186@4189 4096.t8=3140@4189 
+
+Verdict: pad reads base's (16.t1 within 0.2%, 4096.t1 within 1.0%); head reads 21%/20% lower. The loss is code
+placement; the spin stays, recorded as an issue. 1048576.t1 (pad = head = 186, base 198) does not follow placement: reported.

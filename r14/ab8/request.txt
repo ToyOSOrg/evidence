@@ -1,0 +1,18 @@
+# S0-a metal round 8, CONFIRMING (PR head bdec5ab36: x86-64 user leaves made accessed, and dirty where writable).
+# NOT TO BOOT until bdec5ab36 has passed its focused review.
+# base = s0a-r10-base-kvm 49496f0a3 (main e11b6a784 + probe); head = s0a-r14-ad-kvm ea86ed227 (bdec5ab36 + probe);
+# cad (AMD only) = s0a-r14-cad-kvm eb61b94f6 (head + round 7's copy probe); testcases = bdec5ab36, 19 members.
+# Every benchcase is main's whole benchcase.toml. Rules, set before any boot: $SCRATCH/s0a2/ab8/rules.md
+# Hashes: $SCRATCH/s0a2/ab8/image-sha256.txt. Run from the worktree $HOME/Dev/$USER/toyos-s0a; each invocation is `cargo <words>`.
+# Each boot with its own --readback dir (runs/<bench>/<n>-<arm>), in exactly this order:
+#   AMD: 1-base 2-head 3-head 4-base 5-cad 6-testcases. Six boots.
+#   T14: 1-base 2-head 3-head 4-base 5-testcases. Five boots.
+
+base benchcase (49496f0a3):
+  cargo run -p toyos-metal -- --image $SCRATCH/s0a2/ab8/base/benchcase/image.img --readback <dir> --fat32-check
+head benchcase (ea86ed227):
+  cargo run -p toyos-metal -- --image $SCRATCH/s0a2/ab8/head/benchcase/image.img --readback <dir> --fat32-check
+cad benchcase (eb61b94f6, AMD only):
+  cargo run -p toyos-metal -- --image $SCRATCH/s0a2/ab8/cad/benchcase/image.img --readback <dir> --fat32-check
+testcases (bdec5ab36; members messages_are_whole blocking_read_stress pipe_other_end_gone poll_wake_pipe std_io std_process ends_sent_over_each_other_both_end kill_ends_every_wait mio_waker_coalesces query_modules_size user_copy_faults std_fs std_fs_write lseek_past_eof file_mtime a_served_file_reads_through_its_paged_object a_served_files_read_never_tears_against_its_write a_pager_s_end_answers_its_waiting_holders_gone a_held_files_fstat_is_its_servers_stat):
+  cargo run -p toyos-metal -- --image $SCRATCH/s0a2/ab8/testcases/testcases/image.img --readback <dir> --fat32-check
