@@ -1,0 +1,101 @@
+== base6
+0000000000227bc0 <memcpy>:
+  227bc0:	push   rbp
+  227bc1:	mov    rbp,rsp
+  227bc4:	mov    rcx,rdx
+  227bc7:	mov    rax,rdi
+  227bca:	rep movs BYTE PTR [rdi],BYTE PTR [rsi]
+  227bcc:	pop    rbp
+  227bcd:	ret
+
+0000000000227bd0 <memmove>:
+  227bd0:	push   rbp
+  227bd1:	mov    rbp,rsp
+  227bd4:	mov    rax,rdi
+  227bd7:	cmp    rdi,rsi
+  227bda:	seta   cl
+  227bdd:	lea    rdi,[rdx+rsi*1]
+  227be1:	cmp    rdi,rax
+  227be4:	seta   dil
+  227be8:	test   cl,dil
+  227beb:	jne    227bf7 <memmove+0x27>
+  227bed:	mov    rdi,rax
+  227bf0:	mov    rcx,rdx
+  227bf3:	rep movs BYTE PTR [rdi],BYTE PTR [rsi]
+  227bf5:	pop    rbp
+  227bf6:	ret
+  227bf7:	test   rdx,rdx
+  227bfa:	je     227c10 <memmove+0x40>
+  227bfc:	lea    rdi,[rax+rdx*1]
+  227c00:	dec    rdi
+  227c03:	add    rsi,rdx
+  227c06:	dec    rsi
+  227c09:	mov    rcx,rdx
+  227c0c:	std
+  227c0d:	rep movs BYTE PTR [rdi],BYTE PTR [rsi]
+  227c0f:	cld
+  227c10:	pop    rbp
+  227c11:	ret
+
+== head6
+0000000000228e40 <memcpy>:
+  228e40:	push   rbp
+  228e41:	mov    rbp,rsp
+  228e44:	mov    rax,rdi
+  228e47:	cmp    rdx,0xff
+  228e4e:	jbe    228e6d <memcpy+0x2d>
+  228e50:	mov    ecx,eax
+  228e52:	sub    ecx,esi
+  228e54:	and    ecx,0xfff
+  228e5a:	dec    ecx
+  228e5c:	cmp    ecx,0x1fe
+  228e62:	ja     228e6d <memcpy+0x2d>
+  228e64:	mov    rdi,rax
+  228e67:	pop    rbp
+  228e68:	jmp    227c00 <_RNvNtNtCs7Evh1JVXxXZ_10toyos_libc4arch6x86_6416copy_short_alias>
+  228e6d:	mov    rdi,rax
+  228e70:	mov    rcx,rdx
+  228e73:	rep movs BYTE PTR [rdi],BYTE PTR [rsi]
+  228e75:	pop    rbp
+  228e76:	ret
+
+0000000000228e80 <memmove>:
+  228e80:	push   rbp
+  228e81:	mov    rbp,rsp
+  228e84:	mov    rax,rdi
+  228e87:	cmp    rdi,rsi
+  228e8a:	seta   cl
+  228e8d:	lea    rdi,[rdx+rsi*1]
+  228e91:	cmp    rdi,rax
+  228e94:	seta   dil
+  228e98:	test   cl,dil
+  228e9b:	jne    228ec3 <memmove+0x43>
+  228e9d:	cmp    rdx,0xff
+  228ea4:	jbe    228ede <memmove+0x5e>
+  228ea6:	mov    ecx,eax
+  228ea8:	sub    ecx,esi
+  228eaa:	and    ecx,0xfff
+  228eb0:	dec    ecx
+  228eb2:	cmp    ecx,0x1fe
+  228eb8:	ja     228ede <memmove+0x5e>
+  228eba:	mov    rdi,rax
+  228ebd:	pop    rbp
+  228ebe:	jmp    227c00 <_RNvNtNtCs7Evh1JVXxXZ_10toyos_libc4arch6x86_6416copy_short_alias>
+  228ec3:	test   rdx,rdx
+  228ec6:	je     228edc <memmove+0x5c>
+  228ec8:	lea    rdi,[rax+rdx*1]
+  228ecc:	dec    rdi
+  228ecf:	add    rsi,rdx
+  228ed2:	dec    rsi
+  228ed5:	mov    rcx,rdx
+  228ed8:	std
+  228ed9:	rep movs BYTE PTR [rdi],BYTE PTR [rsi]
+  228edb:	cld
+  228edc:	pop    rbp
+  228edd:	ret
+  228ede:	mov    rdi,rax
+  228ee1:	mov    rcx,rdx
+  228ee4:	rep movs BYTE PTR [rdi],BYTE PTR [rsi]
+  228ee6:	pop    rbp
+  228ee7:	ret
+

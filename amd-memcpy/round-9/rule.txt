@@ -1,0 +1,23 @@
+# amd-memcpy round 9: the distance check inline from 256 B, and the 256 KiB placement test. AMD only.
+# Stated before any build or boot. Revisions are filled in at staging.
+# base6 = 85c7607d5 = main 15c26bfbc + the copyat measurement + round 8's sub-4 KiB rows + this round's
+#         measurement-only rows (64 and 128 B at d 0/16; copyat.place.*). head6 = fb4ca4a2b = base6 + #1133 at 97ae8d604. Branch amd-memcpy-ab6.
+# One image config (benchcase, shipping kernel); jobs osbench_copyat, osbench_ipc, osbench_mem.
+# Boots: base, head, head, base (two pairs). The placement rows run inside osbench_copyat in the
+# same boots, so no boot is added for them. T14 not booted (as round 8; copies under 256 B take
+# main's path, and its routed rows were measured in round 5).
+#
+# Mean of the two p50s per arm; "d0" is that arm's copyat.<size>.libc.s0.d0; +10 ns at 8 KiB.
+#  D1-D6 as in rounds 7 and 8, except D3's mem.memcpy.262144 row is judged by P when P1 holds.
+#  C6 (the issue's exit, AMD half): head copyat.<n>.libc.s0.d16 <= 1.5 x head d0 at n = 256, 1024
+#     and 2048, and every mem.memcpy.* row within 1.1 x base (that is D3).
+#  P placement. copyat.place.p<k>, k = 0..7: MB/s of a 256 KiB copy between two fresh 256 KiB
+#     mappings at d = 0 (never routed, mem.memcpy's loop), after a touched ballast of 17 x k pages,
+#     so each k takes other physical pages. Per arm and k, the mean of the two boots' p50s.
+#     G = 1 - (head / base) of mem.memcpy.262144 this round.
+#   P1 the row moves with placement: in each arm, max / min over k of place.p<k> >= 1 + G.
+#   P2 the code is neutral there: median over k of head place.p<k> >= median over k of base / 1.1.
+#   If P1 holds in both arms, D3's mem.memcpy.262144 verdict is P2's. If P1 fails in either arm,
+#   D3 stands as written on that row.
+# #1133 goes for review when D1, D2, D4-D6, C6 and D3 (with P as above) hold.
+# Not judged, reported: copyat.{64,128}.libc.s0.d{0,16} on both arms; copyat.262144.libc.s0.d0.
