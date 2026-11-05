@@ -1,0 +1,11 @@
+--- a/kernel/pure/claimspace.rs
++++ b/kernel/pure/claimspace.rs
+@@ -57,7 +57,7 @@
+     /// `live`, what the claim holds now, taken out of `residue`; and whether
+     /// any of `residue` was there.
+     pub fn grant(self, bytes: u64, live: impl Iterator<Item = Span> + Clone, residue: &mut Vec<Span>) -> Option<(Span, bool)> {
+-        let span = first_free(self.at, self.at + self.grants, bytes, live)?;
++        let span = first_free(self.at, self.at + self.grants, bytes, live.chain(residue.iter().copied()))?;
+         Some((span, carve(residue, span)))
+     }
+ 

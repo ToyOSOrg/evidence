@@ -1,0 +1,39 @@
+   Compiling kernel v0.1.0 ($HOME/Dev/$USER/toyos-kfu-claims/kernel)
+    Finished `test` profile [optimized + debuginfo] target(s) in 3.45s
+     Running unittests pure/lib.rs ($HOME/Dev/$USER/toyos-kfu-claims/target/debug/deps/kernel-fa45b686f8e87f8e)
+
+running 4 tests
+test claimspace::tests::grants_go_lowest_first_in_the_grant_part_and_lends_after_it ... ok
+test claimspace::tests::carving_keeps_what_a_grant_does_not_cover ... FAILED
+test claimspace::tests::a_function_no_reset_quiets_serves_every_holder_whatever_the_last_one_laid_out ... FAILED
+test claimspace::tests::a_lent_region_is_never_placed_over_residue_and_a_grant_may_be ... FAILED
+
+failures:
+
+---- claimspace::tests::carving_keeps_what_a_grant_does_not_cover stdout ----
+
+thread 'claimspace::tests::carving_keeps_what_a_grant_does_not_cover' (177342699) panicked at kernel/pure/claimspace.rs:168:9:
+assertion failed: carve(&mut residue, Span { at: LEAF, bytes: LEAF })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- claimspace::tests::a_function_no_reset_quiets_serves_every_holder_whatever_the_last_one_laid_out stdout ----
+
+thread 'claimspace::tests::a_function_no_reset_quiets_serves_every_holder_whatever_the_last_one_laid_out' (177342697) panicked at kernel/pure/claimspace.rs:206:17:
+claim 1: residue Span { at: 80000000, bytes: 200000 } overlaps another range
+
+---- claimspace::tests::a_lent_region_is_never_placed_over_residue_and_a_grant_may_be stdout ----
+
+thread 'claimspace::tests::a_lent_region_is_never_placed_over_residue_and_a_grant_may_be' (177342698) panicked at kernel/pure/claimspace.rs:161:9:
+assertion `left == right` failed
+  left: Some((Span { at: 2147483648, bytes: 2097152 }, false))
+ right: Some((Span { at: 2147483648, bytes: 2097152 }, true))
+
+
+failures:
+    claimspace::tests::a_function_no_reset_quiets_serves_every_holder_whatever_the_last_one_laid_out
+    claimspace::tests::a_lent_region_is_never_placed_over_residue_and_a_grant_may_be
+    claimspace::tests::carving_keeps_what_a_grant_does_not_cover
+
+test result: FAILED. 1 passed; 3 failed; 0 ignored; 0 measured; 439 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--lib`
