@@ -1,0 +1,39 @@
+rev 2d86471a9ebd9b15a6b83a6c58fe8723c4b6c515
+applied
+   Compiling toyos v0.18.0 (<worktree>/sdk/toyos)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.37s
+     Running unittests src/lib.rs (<worktree>/target/debug/deps/toyos-757a17a5e3c64085)
+
+running 4 tests
+test files::namespace::tests::an_empty_namespace_has_an_empty_root ... ok
+test files::namespace::tests::only_held_filesystem_names_create_directories ... ok
+test files::namespace::tests::an_empty_view_names_nothing_but_an_empty_root ... FAILED
+test files::namespace::tests::a_view_names_only_what_lies_beneath_what_it_holds ... FAILED
+
+failures:
+
+---- files::namespace::tests::an_empty_view_names_nothing_but_an_empty_root stdout ----
+
+thread 'files::namespace::tests::an_empty_view_names_nothing_but_an_empty_root' (170897570) panicked at sdk/toyos/src/files/namespace.rs:117:13:
+assertion `left == right` failed: /system
+  left: Ok(Directory)
+ right: Err(Served(NotHeld))
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- files::namespace::tests::a_view_names_only_what_lies_beneath_what_it_holds stdout ----
+
+thread 'files::namespace::tests::a_view_names_only_what_lies_beneath_what_it_holds' (170897568) panicked at sdk/toyos/src/files/namespace.rs:132:13:
+assertion `left == right` failed: /system/bin/shell
+  left: Ok(Directory)
+ right: Err(Served(NotHeld))
+
+
+failures:
+    files::namespace::tests::a_view_names_only_what_lies_beneath_what_it_holds
+    files::namespace::tests::an_empty_view_names_nothing_but_an_empty_root
+
+test result: FAILED. 2 passed; 2 failed; 0 ignored; 0 measured; 151 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--lib`
+exit 101
+restored

@@ -1,0 +1,11 @@
+--- a/sdk/toyos/src/files/namespace.rs
++++ b/sdk/toyos/src/files/namespace.rs
+@@ -40,7 +40,7 @@ pub(super) fn route<'a, C>(
+     match held("/")? {
+         Some(cap) => Ok(Routed::Served(cap, parts.join("/"))),
+         None if dirs()?.node(abs).is_some() => Ok(Routed::Directory),
+-        None => Err(Error::Served(fs::Error::NotHeld)),
++        None => Ok(Routed::Directory),
+     }
+ }
+ 

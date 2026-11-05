@@ -1,0 +1,40 @@
+rev 2d86471a9ebd9b15a6b83a6c58fe8723c4b6c515
+applied
+   Compiling fileserver v0.0.0 (<worktree>/system/fileserver)
+    Finished `test` profile [optimized + debuginfo] target(s) in 14.61s
+     Running unittests src/lib.rs (<worktree>/target/debug/deps/fileserver-12062fc15c742c19)
+
+running 13 tests
+test resolve::tests::a_client_s_climb_is_by_directory_and_stops_at_the_root ... ok
+test resolve::tests::an_empty_target_names_nothing ... ok
+test resolve::tests::an_absolute_link_is_handed_back_with_the_rest_of_the_path ... ok
+test resolve::tests::the_last_link_is_left_alone_when_asked ... ok
+test resolve::tests::no_link_climbs_out_of_the_root ... ok
+test resolve::tests::a_cycle_is_refused_and_not_followed_for_ever ... ok
+test resolve::tests::no_link_climbs_out_of_a_granted_folder ... ok
+test resolve::tests::a_held_directory_whose_root_was_renamed_names_nothing ... ok
+test resolve::tests::a_plain_path_lands_under_the_root ... ok
+test resolve::tests::a_relative_link_is_read_against_its_own_directory ... ok
+test resolve::tests::a_held_directory_renamed_inside_the_root_resolves_where_it_now_is ... ok
+test resolve::tests::a_link_that_stays_inside_by_going_up_and_back_resolves ... ok
+test resolve::tests::a_held_directory_renamed_out_of_the_root_names_nothing ... FAILED
+
+failures:
+
+---- resolve::tests::a_held_directory_renamed_out_of_the_root_names_nothing stdout ----
+
+thread 'resolve::tests::a_held_directory_renamed_out_of_the_root_names_nothing' (170896934) panicked at system/fileserver/src/resolve.rs:263:17:
+assertion `left == right` failed: home/toy/a -> home/toy2/a, then ""
+  left: Ok(Path("home/toy/2/a"))
+ right: Err(Escape)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    resolve::tests::a_held_directory_renamed_out_of_the_root_names_nothing
+
+test result: FAILED. 12 passed; 1 failed; 0 ignored; 0 measured; 102 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--lib`
+exit 101
+restored
