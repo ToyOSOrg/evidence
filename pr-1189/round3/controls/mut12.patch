@@ -1,0 +1,11 @@
+--- sdk/toyos/src/elf/program.rs
++++ sdk/toyos/src/elf/program.rs
+@@ -100,7 +100,7 @@
+     let address = |offset: u64| at.checked_add(offset).ok_or("ELF: an image past the address space");
+     let mut covered = segments.first().map_or(0, |&(lo, ..)| lo);
+     for &(lo, hi, offset, copied, prot) in segments.iter() {
+-        if lo > covered {
++        if false && lo > covered {
+             let hole = SpawnMap { addr: address(covered)?, len: lo - covered, object: u64::from(HANDLE_INVALID.0), ..SpawnMap::default() };
+             push(hole)?;
+         }

@@ -1,0 +1,11 @@
+--- lib/kimage/src/lib.rs
++++ lib/kimage/src/lib.rs
+@@ -155,7 +155,7 @@
+         if lo > hi || hi > self.memory || lo % PAGE != 0 || hi % PAGE != 0 {
+             return Err("kernel image: RELRO that is not whole pages of its memory");
+         }
+-        if self.relocations().any(|(offset, addend)| offset.checked_add(8).is_none_or(|end| end > self.memory) || addend > self.memory) {
++        if self.relocations().any(|(offset, _)| offset.checked_add(8).is_none()) {
+             return Err("kernel image: a relocation outside its memory");
+         }
+         self.symbols.check()?;
