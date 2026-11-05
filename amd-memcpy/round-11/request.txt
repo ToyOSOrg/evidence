@@ -1,0 +1,64 @@
+# amd-memcpy round 11: is the head's drop on the 256 KiB placement rows the PR's? AMD only. The last
+# bench round on this question; its verdict is acted on. Stated before any build or boot.
+# B = b76abc3bd = base6's measurement (main 15c26bfbc + copyat, copyat.place.*) + this round's measurement-only
+#     changes: jobs osbench_copyat and osbench_mem only, and notes giving each boot's memcpy and
+#     rep movsb addresses and each placement's buffer addresses.
+# H = 3e491cf83 = B + #1133 at e93656701 (code as 97ae8d604). Branch amd-memcpy-ab8.
+# Ten boots, five pairs in order: 1-B 2-H, 3-B 4-H, 5-B 6-H, 7-B 8-H, 9-B 10-H.
+#
+# Per boot: Q = median over k = 0..7 of copyat.place.p<k> p50 (MB/s).
+# Pair i regresses when Q(H_i) < 0.95 x Q(B_i).
+#  Regression: at least 4 of the 5 pairs regress. The drop is the PR's: find it, or narrow the
+#    routing until it goes.
+#  Otherwise: the drop is per-boot noise; it is recorded in the issue and #1133 lands.
+# A boot that does not pass, or whose copyat or mem job does not exit 0, is rerun; the round is judged
+# on five complete pairs.
+# Reported, not judged: mem.memcpy.*, copyat.262144.libc.s0.d0, and the address notes per boot.
+# Link-time layout (layout.txt); the notes give each boot's runtime addresses:
+#   == B memcpy 00000000002282d0 rep_movsb 2282da:
+#   == H memcpy 0000000000229560 rep_movsb 229593:
+# Images (checksums in <scratch>/r11/image-sha256.txt):
+#   <scratch>/r11/metal/B/copyat/image.img  sha256 f3c5fa7d98ab94b79d1a74b6623c6b78dba76e1c18c5b2e68dbdec3f02af0b9e
+#   <scratch>/r11/metal/H/copyat/image.img  sha256 938f288afae0116b64e1ad98328359a4efb3de97788b60d5396e1f4c68ce7d41
+# Bench: AMD only. Ten boots in this order, each into its own readback dir.
+# Each invocation is `cargo <words>` from the worktree <worktree> (any revision).
+
+1-B
+  image: <scratch>/r11/metal/B/copyat/image.img
+  cargo run -p toyos-metal -- --image <scratch>/r11/metal/B/copyat/image.img --readback <scratch>/r11/runs/1-B --fat32-check
+
+2-H
+  image: <scratch>/r11/metal/H/copyat/image.img
+  cargo run -p toyos-metal -- --image <scratch>/r11/metal/H/copyat/image.img --readback <scratch>/r11/runs/2-H --fat32-check
+
+3-B
+  image: <scratch>/r11/metal/B/copyat/image.img
+  cargo run -p toyos-metal -- --image <scratch>/r11/metal/B/copyat/image.img --readback <scratch>/r11/runs/3-B --fat32-check
+
+4-H
+  image: <scratch>/r11/metal/H/copyat/image.img
+  cargo run -p toyos-metal -- --image <scratch>/r11/metal/H/copyat/image.img --readback <scratch>/r11/runs/4-H --fat32-check
+
+5-B
+  image: <scratch>/r11/metal/B/copyat/image.img
+  cargo run -p toyos-metal -- --image <scratch>/r11/metal/B/copyat/image.img --readback <scratch>/r11/runs/5-B --fat32-check
+
+6-H
+  image: <scratch>/r11/metal/H/copyat/image.img
+  cargo run -p toyos-metal -- --image <scratch>/r11/metal/H/copyat/image.img --readback <scratch>/r11/runs/6-H --fat32-check
+
+7-B
+  image: <scratch>/r11/metal/B/copyat/image.img
+  cargo run -p toyos-metal -- --image <scratch>/r11/metal/B/copyat/image.img --readback <scratch>/r11/runs/7-B --fat32-check
+
+8-H
+  image: <scratch>/r11/metal/H/copyat/image.img
+  cargo run -p toyos-metal -- --image <scratch>/r11/metal/H/copyat/image.img --readback <scratch>/r11/runs/8-H --fat32-check
+
+9-B
+  image: <scratch>/r11/metal/B/copyat/image.img
+  cargo run -p toyos-metal -- --image <scratch>/r11/metal/B/copyat/image.img --readback <scratch>/r11/runs/9-B --fat32-check
+
+10-H
+  image: <scratch>/r11/metal/H/copyat/image.img
+  cargo run -p toyos-metal -- --image <scratch>/r11/metal/H/copyat/image.img --readback <scratch>/r11/runs/10-H --fat32-check
