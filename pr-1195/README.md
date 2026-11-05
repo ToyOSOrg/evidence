@@ -15,3 +15,8 @@ All guest runs are `guest-rows.yml` on the guest runner (x86-64, KVM). Logs are
   `the_log_lands_on_the_boot_stick` and `nvme_disk_boots` at 883809d3d, 6 passed.
 - `host-checks-883809d3d.log`: `cargo run -- --ci host`, exit 0, 108 steps
   green, on macOS aarch64.
+- `press-run-42040934202.log`: `acpi_press_is_one_sci` at 883809d3d, PASS
+  (2 s), the fourth of four.
+- `control-run-42049438240.log`: the negative control, the row at main
+  6755d1d64 (this branch's base, without the change). STALL (17 s), with the
+  console ending at `Boot: complete`.
