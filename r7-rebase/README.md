@@ -1,6 +1,6 @@
 # PR #1190 rebased onto main `3022fd718` (head `3d7e96592`)
 
-- `range-diff.txt`: `git range-diff 4937c2bdc..<pre-rebase 17289151b's successor bc1285046> origin/main..3d7e96592`.
+- `range-diff.txt`: `git range-diff 4937c2bdc..bc1285046 origin/main..3d7e96592`, where `bc1285046` is the pre-rebase head.
   The ten pre-rebase commits are folded into three: logkeeper, the row, and issues.
 - `interdiff.txt`: the +/- lines of #1190's whole change before and after the rebase.
   It shows #1195's reconciliation: the opener thread kept, `adopt` reduced to taking
