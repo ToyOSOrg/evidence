@@ -1,0 +1,153 @@
+88,89c88
+< -  laptop with no serial port has no channel there, and it is not a kernel
+< -  record, so the black box's tail does not carry it either.
+---
+> -  laptop with no serial port has no channel there.
+98,99c97,98
+< -record, and the black box's recovery section now carries those across the reset
+< -whether or not the volume got anything.
+---
+> -record, which reaches no file when the volume got nothing and, since the
+> -black-box page went, crosses no reset either.
+127,128c126,127
+< -    ProgramLine, Registration, Tag, CARRIER, FLUSH, FLUSHED, LOG_OPENED, MAX_TAG, ORIGINS, REGISTER, RESUME,
+< +    ProgramLine, Registration, Severity, Tag, CARRIER, FLUSH, FLUSHED, LOG_OPENED, MAX_TAG, ORIGINS, REGISTER, RESUME,
+---
+> -use serve::{Owed, Positions};
+> +use serve::Positions;
+133,140c132,139
+< -    let volume = Volume::open(stem, MAX_LOG_BYTES, |line| say!("{line}"));
+< +    let volume = Volume::open(DIR, stem, MAX_LOG_BYTES, |line| say!("{line}"));
+< -        Some(v) => say!("{LOG_OPENED}{} ({dated})", v.path()),
+< +        Some(v) if v.is_open() => say!("{LOG_OPENED}{} ({dated})", v.path()),
+< +        Some(v) => say!(
+< +            "logkeeper: {} is asked again - this boot's lines are kept until {DIR} takes them ({dated})",
+< +            v.path()
+< +        ),
+---
+> -            let volume = Volume::open(stem, MAX_LOG_BYTES, |line| say!("{line}"));
+> +            let volume = Volume::open(DIR, stem, MAX_LOG_BYTES, |line| say!("{line}"));
+> -                Some(v) => say!("{LOG_OPENED}{} ({dated})", v.path()),
+> +                Some(v) if v.is_open() => say!("{LOG_OPENED}{} ({dated})", v.path()),
+> +                Some(v) => say!(
+> +                    "logkeeper: {} is asked again - this boot's lines are kept until {DIR} takes them ({dated})",
+> +                    v.path()
+> +                ),
+152a152,179
+> -    /// The volume, once its opener answers outside a stop: the file first
+> -    /// takes the boot so far from the replay.
+> +    /// The volume, once its opener answers outside a stop. Its file stands
+> +    /// at the replay's start, so the next round's catch-up gives it the boot
+> +    /// so far, a part at a time.
+> -        let volume = match opening.try_recv() {
+> -            Ok(volume) => volume,
+> -            Err(TryRecvError::Empty) => return,
+> +        match opening.try_recv() {
+> +            Ok(volume) => self.took(volume),
+> +            Err(TryRecvError::Empty) => {}
+> -        };
+> +        }
+> +    }
+> +    /// The opener's answer.
+> +    fn took(&mut self, volume: Option<Volume>) {
+> -        let mut at = 0;
+> -        while self.volume.is_some() {
+> -            let text = match self.hub.owed(&mut at) {
+> -                Owed::Text(text) => text,
+> -                Owed::Gap(lost) => self.hub.own_line(
+> -                    Severity::Warn,
+> -                    &format!("logkeeper: the first {lost} bytes of this boot were let go before {DIR} opened"),
+> -                ),
+> -                Owed::Nothing => break,
+> -            };
+> -            self.to_volume(&text, false);
+> +    }
+202,203c229,230
+< +        }
+< +    }
+---
+> -        let refused = self.sync().err();
+> -        self.answered(refused);
+225a253,254
+> +        }
+> +    }
+230d258
+< +        }
+232,234c260,261
+< +    }
+< -        let refused = self.sync().err();
+< -        self.answered(refused);
+---
+> -        // An opener that answered during the flush's rounds: the file takes
+> -        // the boot before the sync below makes it durable.
+235a263,272
+> +        // An opener that answers during the flush's rounds or the stop's own
+> +        // time: the file takes the boot in the catch-up below.
+> -        if self.opening.is_some() {
+> -            toyos::error!("logkeeper: {DIR} had not opened by the stop - this boot's log is on the console only");
+> +        if let Some(opening) = &self.opening {
+> +            match opening.recv_timeout(deadline.saturating_duration_since(Instant::now())) {
+> +                Ok(volume) => self.took(volume),
+> +                Err(_) => toyos::error!("logkeeper: {DIR} had not opened by the stop - this boot's log is on the console only"),
+> +            }
+> +        }
+259c296,297
+< +        }
+---
+> -        let refused = self.sync().err();
+> -        self.answered(refused);
+261a300,301
+> -        stopping.marked = self.volume.is_some()
+> +        stopping.marked = self.volume.as_ref().is_some_and(Volume::is_open)
+305a346,357
+> -    /// What a file at the replay's offset `at` is owed next, without waiting,
+> -    /// and `at` past it.
+> -    pub fn owed(&self, at: &mut u64) -> Owed {
+> -        match self.lock().replay.next(*at, CHUNK) {
+> -            Next::Bytes(bytes) => {
+> -                *at += bytes.len() as u64;
+> -                Owed::Text(bytes.to_vec())
+> -            }
+> -            Next::Evicted { lost, at: resume } => {
+> -                *at = resume;
+> -                Owed::Gap(lost)
+> -            }
+313,315c365,388
+< +            Next::CaughtUp => Owed::Nothing,
+< +        }
+< +    }
+---
+> -/// What a file is owed of the replay.
+> -pub enum Owed {
+> -    /// Whole lines.
+> -    Text(Vec<u8>),
+> -    /// Bytes the replay let go of before the file took them.
+> -    Gap(u64),
+> -    /// Everything the replay holds.
+> -    Nothing,
+> -}
+> -    /// A volume that opens late is owed the boot from its first line, without
+> -    /// waiting, and told how much the replay let go of before it opened.
+> -    #[test]
+> -    fn a_late_file_is_owed_the_boot_whole_and_what_was_let_go() {
+> -        let hub = Hub::start(12, None);
+> -        hub.append(b"one\n", None);
+> -        let mut at = 0;
+> -        assert!(matches!(hub.owed(&mut at), Owed::Text(text) if text == b"one\n"));
+> -        assert!(matches!(hub.owed(&mut at), Owed::Nothing), "caught up is answered, not waited on");
+> -        hub.append(b"two\nthree\n", None);
+> -        let mut late = 0;
+> -        assert!(matches!(hub.owed(&mut late), Owed::Gap(8)), "past its 12 bytes the replay let `one` and `two` go");
+> -        assert!(matches!(hub.owed(&mut late), Owed::Text(text) if text == b"three\n"));
+> -        assert!(matches!(hub.owed(&mut late), Owed::Nothing));
+> -    }
+425,426c498
+< -    /// Write already-rendered lines at the part's end. The caller batches;
+< -    /// this does no buffering of its own beyond what the file cache is.
+---
+> +    }
+436c508,509
+< +    }
+---
+> -    /// Write already-rendered lines at the part's end. The caller batches;
+> -    /// this does no buffering of its own beyond what the file cache is.

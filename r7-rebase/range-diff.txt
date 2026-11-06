@@ -1,0 +1,1239 @@
+ 1:  1815b9482 <  -:  --------- logkeeper: a volume that refused is asked again and given the boot back
+ 2:  1e70db4a6 <  -:  --------- issues: file locks stay with M4; DATA's commit flushes twice and has no FUA
+ 3:  7d45162c0 !  1:  ab41fde48 logkeeper: the file keeps its own offsets apart from the replay's, and catches up a part at a time
+    @@ Metadata
+     Author: japabu <japa.busse@gmail.com>
+     
+      ## Commit message ##
+    -    logkeeper: the file keeps its own offsets apart from the replay's, and catches up a part at a time
+    +    logkeeper: a refused volume is asked again and given the boot back from the replay
+     
+    -    Review r1 of #1190 found five blockers in the volume's bookkeeping.
+    +    #1190's logkeeper rounds r1 to r5 (1815b9482, 7d45162c0, a99667bf0,
+    +    701156896, bc1285046), rebased onto #1195's opener thread and #1196's stop
+    +    mark as #1195's reviewer planned.
+     
+    -    1. The note for what the replay let go was counted into the file's
+    -       durable length and the next part's start, but never appended to the
+    -       replay, so every later reopen asked the replay from bytes past where
+    -       the file stood. Now `Volume` keeps the file's bytes (`size`, `durable`)
+    -       and the replay's offsets (`from`, `through`, `durable_through`)
+    -       separately. A note moves the first and not the second. A gap resumes
+    -       at the replay's own line start.
+    -    2. `reopen` called `set_len(durable)` without asking the file's length,
+    -       so a missing or short part was padded with zeros. Now a part shorter
+    -       than its last sync left it is rebuilt whole from its own start in the
+    -       replay, and says so. The one hazard left, a swapped stick carrying a
+    -       file under the same name, is named in the record.
+    -    3. `a_refused_file_is_given_back_the_boot_the_replay_holds` drives a real
+    -       `Volume` in a scratch directory through:
+    -       - an unsynced write with bytes torn past it;
+    -       - a refusal long enough for the replay to let go of what the file was
+    -         owed;
+    -       - a continuation whose create is refused;
+    -       - a part cut to nothing behind its back.
+    -       After each step, the parts on disk are the boot with one note where the
+    -       gap was, and no part exceeds its bound by more than a line.
+    -       Negative controls, each applied and restored:
+    -       - counting the note into the replay's offset (blocker 1) fails it
+    -         "across the gap";
+    -       - padding a short part (blocker 2) fails it "after the part was cut";
+    -       - writing the rewrite past a part's room fails it on a part's size.
+    -    4. The rewrite went into the current part in one write of up to 16 MiB.
+    -       Now `Volume::catch_up` takes what is owed from the replay
+    -       (`Hub::owed`) through the same part-sized writes and continuations as
+    -       any round, each part synced as it fills, at most `MAX_LOG_BYTES` a
+    -       round. The round's own text waits in the replay until the file has
+    -       caught up.
+    -    5. `policy::RETRY_*`'s comment claimed a quick recovery loses less. The
+    -       wait trades how often a dead volume is asked against how soon a live
+    -       one is written; nothing is lost while the replay holds it.
+    +    - A refused create, append, sync or continuation is asked again
+    +      (`policy::Retry`, 1 s doubling to 64 s). `Volume` keeps the file's bytes
+    +      (`size`, `durable`) apart from the replay's offsets (`from`, `through`,
+    +      `durable_through`). `catch_up` opens the part again, cut to its last
+    +      sync, or rebuilds it whole where it is shorter, and gives it what it is
+    +      owed from the replay (`Hub::owed(at, max)` → `store::Owed`), a part's
+    +      worth a round, through the ordinary part-sized writes and continuations.
+    +      A gap the replay let go of is said in the file only.
+    +    - The stop (`Volume::finish`) catches up within `STOP_CATCH_UP`, half the
+    +      supervisor's flush bound, syncs what it wrote, and says any shortfall in
+    +      the file and on the console; a refusal there leaves the part lost and the
+    +      count from the last sync.
+    +    - #1195: its opener thread stays; `adopt` only takes the volume, whose
+    +      file stands at the replay's start, so the next round's catch-up gives it
+    +      the boot so far; #1195's own catch-up loop, `Hub::owed(&mut u64)` and
+    +      `serve::Owed` go. A volume still opening at the stop is waited for within
+    +      the same `STOP_CATCH_UP`, then given the boot by `finish`, or said not to
+    +      have opened.
+    +    - #1196: the stop mark is written only over a part that is open, since a
+    +      refused volume's file is not the boot's whole log.
+     
+    -    Also: the storage track states FUA by its specifications instead of by
+    -    another implementation, and the retry paragraph is said once, at
+    -    `store::Volume`.
+    +    Host tests in `store.rs` (27 in all): the bookkeeping through an unsynced
+    +    write, a replay gap, a refused continuation and a part cut behind its
+    +    back; a refused first create; a stop with and without time; a stop whose
+    +    reopen is refused after an unsynced write.
+     
+         Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+     
+    @@ Cargo.lock: dependencies = [
+       "toyos-elide",
+       "toyos-inspect",
+       "toyos-logstream",
+    ++ "toyos-quiesce",
+     + "toyos-tmpdir",
+       "toyos-wallclock",
+      ]
+      
+     
+    - ## issues/storage-is-layers-and-a-role-is-a-filesystem.md ##
+    -@@ issues/storage-is-layers-and-a-role-is-a-filesystem.md: what is left here is built on them.
+    - 
+    - **A DATA commit's durability costs two Flushes per journal entry**, three for
+    - an entry naming itself (`write_entries`, `lib/bcachefs/src/engine/mount/mod.rs`):
+    --a flush, the entry, a flush. Upstream writes the entry as one preflushed
+    --Force Unit Access write. FUA is missing end to end: `toyos-blockring`'s
+    -+a flush, the entry, a flush. A write with Force Unit Access is durable when
+    -+it completes, with no Flush after it (NVM Express NVM Command Set, Write's
+    -+FUA bit; SCSI SBC, WRITE(10)'s FUA bit). FUA is missing end to end: `toyos-blockring`'s
+    - Write carries no flag, the nvme driver never sets Write's FUA bit, usbd
+    - never sets WRITE(10)'s, and bcachefs asks for none. Assigned with #1131,
+    - whose APST wake cost the second Flush is part of.
+    + ## lib/logstream/src/lib.rs ##
+    +@@ lib/logstream/src/lib.rs: pub const REGISTER: u32 = 1;
+    + pub const SERVED: u32 = 2;
+    + 
+    + /// The supervisor → `logkeeper`: the machine is about to be stopped. `logkeeper` reads every ring
+    +-/// and the kernel's records, writes them, makes the volume durable, and
+    ++/// and the kernel's records, writes them, makes the volume durable — or says,
+    ++/// in the file and on the console, what of the boot it could not — and
+    + /// answers [`FLUSHED`]; the supervisor asks for the stop once it has, or once its bound
+    + /// is spent.
+    + pub const FLUSH: u32 = 5;
+     
+      ## system/logkeeper/Cargo.toml ##
+    -@@ system/logkeeper/Cargo.toml: toyos-elide = { path = "../../lib/elide" }
+    +@@ system/logkeeper/Cargo.toml: toyos-logstream = { path = "../../lib/logstream" }
+    + toyos-elide = { path = "../../lib/elide" }
+      toyos-inspect = { path = "../../lib/inspect" }
+      toyos-wallclock = { path = "../../lib/wallclock" }
+    - 
+    ++# The supervisor's bound on the stop's flush, which the stop's catch-up keeps inside.
+    ++toyos-quiesce = { path = "../../lib/quiesce" }
+    ++
+     +[dev-dependencies]
+     +# A scratch `/log` for the volume's own tests.
+     +toyos-tmpdir = { path = "../../lib/tmpdir" }
+    -+
+    + 
+      [package.metadata.toyos.host]
+      exempt.owns = "the kernel's record ring, read under the `logread` SysCap"
+     
+      ## system/logkeeper/src/main.rs ##
+     @@
+    + //! served log is handed what the file holds and no more. A stop the kernel
+      //! refused is the supervisor's [`toyos_logstream::RESUME`], and what was held is written
+      //! then.
+    - //!
+    --//! **A volume that refuses, or whose server ends, is asked again** at a
+    --//! doubling wait ([`policy::Retry`]), and at the stop's flush whatever the
+    --//! wait: its part is opened again, cut to what was durable, and given the rest
+    --//! from the replay, which holds as much of the boot as the volume keeps.
+    ++//!
+     +//! **A volume that refuses, or whose server ends, is asked again**
+     +//! ([`policy::Retry`], and at the stop's flush whatever the wait), and its
+     +//! file given back what it missed ([`store::Volume`]).
+      
+      mod carrier;
+      mod inspect;
+    +@@ system/logkeeper/src/main.rs: use toyos_logstream::{
+    + use toyos_wallclock::Civil;
+    + 
+    + use carrier::Carriers;
+    +-use serve::{Owed, Positions};
+    ++use serve::Positions;
+    + use origin::{Origin, Said};
+    +-use policy::{Step, LOG_WRITE_BUDGET};
+    +-use store::{Volume, DIR, MAX_LOG_BYTES, MAX_LOG_FILES};
+    ++use policy::{Retry, Step, LOG_WRITE_BUDGET};
+    ++use store::{Volume, DIR, MAX_LOG_BYTES, MAX_LOG_FILES, MAX_LOG_PARTS};
+    + 
+    + /// Records asked of `SYS_LOG_READ` at once: large enough that an ordinary
+    + /// boot's burst is a handful of syscalls rather than one per line.
+    +@@ system/logkeeper/src/main.rs: fn main() {
+    +     std::thread::Builder::new()
+    +         .name("log-volume".into())
+    +         .spawn(move || {
+    +-            let volume = Volume::open(stem, MAX_LOG_BYTES, |line| say!("{line}"));
+    ++            let volume = Volume::open(DIR, stem, MAX_LOG_BYTES, |line| say!("{line}"));
+    +             match &volume {
+    +                 // This program's half of the startup report, in one line: the
+    +                 // kernel says whether it has a console, this program whether it
+    +                 // has a volume and what the name it chose was decided by.
+    +-                Some(v) => say!("{LOG_OPENED}{} ({dated})", v.path()),
+    ++                Some(v) if v.is_open() => say!("{LOG_OPENED}{} ({dated})", v.path()),
+    ++                Some(v) => say!(
+    ++                    "logkeeper: {} is asked again - this boot's lines are kept until {DIR} takes them ({dated})",
+    ++                    v.path()
+    ++                ),
+    +                 None => say!(
+    +                     "logkeeper: no {DIR} on this machine - this boot's kernel log is on the console only \
+    +                      ({dated})"
+     @@ system/logkeeper/src/main.rs: fn main() {
+    -     // this program nothing new.
+    -     let (stem, boot_secs, dated) = boot_stamp();
+    - 
+    --    let volume = Volume::open(stem, MAX_LOG_BYTES, |line| say!("{line}"));
+    -+    let volume = Volume::open(DIR, stem, MAX_LOG_BYTES, |line| say!("{line}"));
+    -     match &volume {
+    -         // This program's half of the startup report, in one line: the kernel
+    -         // says whether it has a console, this program whether it has a volume
+    +         waiting: Vec::new(),
+    +         volume: None,
+    +         opening: Some(opening),
+    ++        retry: None,
+    +         degraded: false,
+    +         boot_secs,
+    +         hub,
+    +@@ system/logkeeper/src/main.rs: struct Log {
+    +     volume: Option<Volume>,
+    +     /// The volume's opener, until it answers.
+    +     opening: Option<mpsc::Receiver<Option<Volume>>>,
+    ++    /// When a part the volume refused is next opened again.
+    ++    retry: Option<Retry>,
+    +     /// Whether the volume answers, slower than `LOG_WRITE_BUDGET` a round.
+    +     degraded: bool,
+    +     boot_secs: Option<u64>,
+    +@@ system/logkeeper/src/main.rs: struct Stopping {
+    +     marked: bool,
+    + }
+    + 
+    ++/// How long the stop's flush may spend giving the file what it is owed: half
+    ++/// the supervisor's bound on the whole flush ([`toyos_quiesce::FLUSH_MS`]),
+    ++/// leaving the rest to drain the rings, the final sync and the answer. What
+    ++/// it does not reach is said, in the file and on the console.
+    ++const STOP_CATCH_UP: Duration = Duration::from_millis(toyos_quiesce::FLUSH_MS / 2);
+    ++
+    + /// Text a stop may hold back from the file: a refused stop writes it, and
+    + /// what is past it is counted and said then.
+    + const STOPPING_BYTES: usize = 1 << 20;
+    +@@ system/logkeeper/src/main.rs: impl Log {
+    +             let state = match (&self.volume, self.degraded) {
+    +                 (None, _) if self.opening.is_some() => inspect::State::Opening,
+    +                 (None, _) => inspect::State::ConsoleOnly,
+    ++                (Some(v), _) if !v.is_open() => inspect::State::Degraded,
+    +                 (Some(_), true) => inspect::State::Degraded,
+    +                 (Some(_), false) => inspect::State::Writing,
+    +             };
+     @@ system/logkeeper/src/main.rs: impl Log {
+          /// flush's rounds, which `flushed` makes durable together: a stop's flush
+          /// is bounded by the supervisor, and a sync per round of it is what outruns that.
+          fn to_volume(&mut self, text: &[u8], sync: bool) {
+    --        if !self.reopened(false) {
+    -+        if !self.caught_up(false) {
+    -             return;
+    -         }
+    ++        if !self.caught_up() {
+    ++            return;
+    ++        }
+              let Some(v) = self.volume.as_mut() else { return };
+    +         let began = Instant::now();
+    +         let mut refused = v.write(text).err().map(|e| (Step::Append, e.to_string()));
+     @@ system/logkeeper/src/main.rs: impl Log {
+              self.answered(refused);
+          }
+      
+    --    /// Whether the part is open to write: opened again from the replay where
+    --    /// the volume refused it, once the retry is due or, at the stop, now.
+    --    fn reopened(&mut self, now_or_never: bool) -> bool {
+    +-    /// The volume, once its opener answers outside a stop: the file first
+    +-    /// takes the boot so far from the replay.
+    ++    /// The volume, once its opener answers outside a stop. Its file stands
+    ++    /// at the replay's start, so the next round's catch-up gives it the boot
+    ++    /// so far, a part at a time.
+    +     fn adopt(&mut self) {
+    +         if self.stopping.is_some() {
+    +             return;
+    +         }
+    +         let Some(opening) = &self.opening else { return };
+    +-        let volume = match opening.try_recv() {
+    +-            Ok(volume) => volume,
+    +-            Err(TryRecvError::Empty) => return,
+    ++        match opening.try_recv() {
+    ++            Ok(volume) => self.took(volume),
+    ++            Err(TryRecvError::Empty) => {}
+    +             Err(TryRecvError::Disconnected) => panic!("logkeeper: the volume's thread ended without answering"),
+    +-        };
+    ++        }
+    ++    }
+    ++
+    ++    /// The opener's answer.
+    ++    fn took(&mut self, volume: Option<Volume>) {
+    +         self.opening = None;
+    +         self.volume = volume;
+    +-        let mut at = 0;
+    +-        while self.volume.is_some() {
+    +-            let text = match self.hub.owed(&mut at) {
+    +-                Owed::Text(text) => text,
+    +-                Owed::Gap(lost) => self.hub.own_line(
+    +-                    Severity::Warn,
+    +-                    &format!("logkeeper: the first {lost} bytes of this boot were let go before {DIR} opened"),
+    +-                ),
+    +-                Owed::Nothing => break,
+    +-            };
+    +-            self.to_volume(&text, false);
+    ++    }
+    ++
+     +    /// Whether the file has every byte the replay has, so a round's text
+     +    /// goes after them. A part the volume refused is opened again once the
+    -+    /// retry is due, or at the stop whatever the wait, and the file is given
+    -+    /// what it is owed, a part's worth a round.
+    -+    fn caught_up(&mut self, at_stop: bool) -> bool {
+    ++    /// retry is due, and the file is given what it is owed, a part's worth a
+    ++    /// round.
+    ++    fn caught_up(&mut self) -> bool {
+     +        let now = Instant::now();
+    -         let Some(v) = self.volume.as_mut() else { return false };
+    --        if v.is_open() {
+    ++        let Some(v) = self.volume.as_mut() else { return false };
+     +        let was_open = v.is_open();
+     +        if was_open && v.through() == self.hub.end() {
+    -             return true;
+    -         }
+    --        let now = Instant::now();
+    --        let retry = self.retry.get_or_insert(Retry::after(now));
+    --        if !now_or_never && !retry.due(now) {
+    -+        if !was_open && !at_stop && !self.retry.get_or_insert(Retry::after(now)).due(now) {
+    -             return false;
+    -         }
+    --        let (lost, mut owed) = self.hub.since(v.durable_end());
+    --        if lost > 0 {
+    --            let text = format!("logkeeper: {lost} bytes of this boot were let go before {DIR} answered again");
+    --            owed.splice(0..0, self.hub.own_line(Severity::Warn, &text));
+    --        }
+    --        match v.reopen(&owed) {
+    --            Ok(()) => {
+    --                self.retry = None;
+    --                say!("logkeeper: {DIR} answers again - {} holds this boot's lines", v.path());
+    --                true
+    ++            return true;
+    ++        }
+    ++        if !was_open && !self.retry.get_or_insert(Retry::after(now)).due(now) {
+    ++            return false;
+    ++        }
+     +        let hub = &self.hub;
+     +        let caught = v.catch_up(
+     +            |at, max| hub.owed(at, max),
+    @@ system/logkeeper/src/main.rs: impl Log {
+     +                    self.retry = Some(Retry::after(now));
+     +                }
+     +                caught && v.is_open()
+    -             }
+    --            Err(_) => {
+    --                retry.again(now);
+    ++            }
+     +            Err(e) if v.part() >= MAX_LOG_PARTS => {
+     +                toyos::error!("logkeeper: {DIR} would not take a continuation ({e}) - {}", v.path());
+     +                self.volume = None;
+    @@ system/logkeeper/src/main.rs: impl Log {
+     +                        self.retry = Some(Retry::after(now));
+     +                    }
+     +                }
+    -                 false
+    -             }
+    ++                false
+    ++            }
+              }
+    +-        let refused = self.sync().err();
+    +-        self.answered(refused);
+    +     }
+    + 
+    +     /// Make the volume durable now.
+    +@@ system/logkeeper/src/main.rs: impl Log {
+    +             return;
+    +         };
+    +         match step {
+    +-            // Stop feeding the volume, say so once, and keep running.
+    ++            // Say so once, keep the lines in the replay, and ask again.
+    +             Step::Append | Step::Flush => {
+    +                 toyos::error!(
+    +-                    "logkeeper: {DIR} has not answered ({}: {why}) - this boot's log is on the console \
+    +-                     only from {path}",
+    ++                    "logkeeper: {DIR} has not answered ({}: {why}) - {path} is asked again, and this \
+    ++                     boot's lines are kept until it answers",
+    +                     step.as_str()
+    +                 );
+    +-                self.volume = None;
+    ++                self.lost();
+    +             }
+    +             // Every call answered, slowly: the round is durable.
+    +             Step::TooSlow => {
+     @@ system/logkeeper/src/main.rs: impl Log {
+    +         if !v.full() {
+    +             return;
+              }
+    +-        if let Err(e) = v.rotate(|line| say!("{line}")) {
+    +-            toyos::error!("logkeeper: {DIR} would not take a continuation ({e}) - {}", v.path());
+    +-            self.volume = None;
+    ++        match v.rotate(|line| say!("{line}")) {
+    ++            Ok(()) if v.is_open() => {}
+    ++            Ok(()) => self.lost(),
+    ++            Err(e) if v.part() >= MAX_LOG_PARTS => {
+    ++                toyos::error!("logkeeper: {DIR} would not take a continuation ({e}) - {}", v.path());
+    ++                self.volume = None;
+    ++            }
+    ++            Err(e) => {
+    ++                toyos::error!("logkeeper: {DIR} has not answered ({e}) - {} is asked again", v.path());
+    ++                self.lost();
+    ++            }
+    ++        }
+    ++    }
+    ++
+    ++    /// The volume refused the part: it is asked again once the retry is due.
+    ++    fn lost(&mut self) {
+    ++        if let Some(v) = self.volume.as_mut() {
+    ++            v.lost();
+    +         }
+    ++        self.retry = Some(Retry::after(Instant::now()));
+          }
+      
+    --    /// The volume refused the part: it is opened again, from the replay,
+    --    /// once the retry is due.
+    -+    /// The volume refused the part: it is asked again once the retry is due.
+    -     fn lost(&mut self) {
+    -         if let Some(v) = self.volume.as_mut() {
+    -             v.lost();
+    -@@ system/logkeeper/src/main.rs: impl Log {
+          /// The supervisor asked for the log whole before the machine stops: every line is
+          /// written by now, so the volume is made durable, and the supervisor is told.
+          fn flushed(&mut self) {
+    --        if self.reopened(true) {
+    -+        if self.caught_up(true) {
+    -             let refused = self.sync().err();
+    -             self.answered(refused);
+    +-        // An opener that answered during the flush's rounds: the file takes
+    +-        // the boot before the sync below makes it durable.
+    ++        let deadline = Instant::now() + STOP_CATCH_UP;
+    ++        // An opener that answers during the flush's rounds or the stop's own
+    ++        // time: the file takes the boot in the catch-up below.
+    +         self.adopt();
+    +-        if self.opening.is_some() {
+    +-            toyos::error!("logkeeper: {DIR} had not opened by the stop - this boot's log is on the console only");
+    ++        if let Some(opening) = &self.opening {
+    ++            match opening.recv_timeout(deadline.saturating_duration_since(Instant::now())) {
+    ++                Ok(volume) => self.took(volume),
+    ++                Err(_) => toyos::error!("logkeeper: {DIR} had not opened by the stop - this boot's log is on the console only"),
+    ++            }
+    ++        }
+    ++        if let Some(v) = self.volume.as_mut() {
+    ++            let hub = &self.hub;
+    ++            let finished = v.finish(
+    ++                |at, max| hub.owed(at, max),
+    ++                |lost| hub.own_line(Severity::Warn, &format!("logkeeper: {lost} bytes of this boot were let go before {DIR} took them")),
+    ++                hub.end(),
+    ++                MAX_LOG_BYTES,
+    ++                || Instant::now() < deadline,
+    ++                |short| {
+    ++                    let text = format!("logkeeper: this file ends {short} bytes short of the boot: the stop came before {DIR} took them");
+    ++                    hub.own_line(Severity::Error, &text)
+    ++                },
+    ++                |line| say!("{line}"),
+    ++            );
+    ++            let short = hub.end() - v.through();
+    ++            match finished {
+    ++                Ok(_) if short == 0 => {}
+    ++                Ok(_) => toyos::error!("logkeeper: {} ends {short} bytes short of the boot at the stop", v.path()),
+    ++                Err(e) => toyos::error!(
+    ++                    "logkeeper: {DIR} refused the stop's flush ({e}) - {} ends {short} bytes short of the boot",
+    ++                    v.path()
+    ++                ),
+    ++            }
+              }
+    +-        let refused = self.sync().err();
+    +-        self.answered(refused);
+    +         // The console's carriers take the log up to here, and the UART what
+    +         // the machine says from here as it stops.
+    +         if let Some(carriers) = &self.carriers {
+    +@@ system/logkeeper/src/main.rs: impl Log {
+    +         }
+    +         self.stopping = Some(Stopping { text: String::new(), unwritten: 0, marked: false });
+    +         if let Err(e) = self.from_supervisor.signal(FLUSHED) {
+    +-            panic!("logkeeper: the supervisor could not be told the log is whole: {e:?}");
+    ++            panic!("logkeeper: the supervisor could not be told the flush is done: {e:?}");
+    +         }
+    +     }
+    + 
+    +@@ system/logkeeper/src/main.rs: impl Log {
+    +         let Some(stopping) = self.stopping.as_mut() else {
+    +             panic!("logkeeper: the supervisor asked for the stop mark, and no stop was flushed for");
+    +         };
+    +-        stopping.marked = self.volume.is_some()
+    ++        stopping.marked = self.volume.as_ref().is_some_and(Volume::is_open)
+    +             && store::mark_stopped()
+    +                 .inspect_err(|e| {
+    +                     toyos::error!("logkeeper: {DIR} would not take the stop mark ({e}) - the next boot will not count this one as clean")
+     
+      ## system/logkeeper/src/policy.rs ##
+    -@@ system/logkeeper/src/policy.rs: use std::time::{Duration, Instant};
+    +@@
+    +-use std::time::Duration;
+    ++use std::time::{Duration, Instant};
+    + 
+    + /// The round time past which a volume that answered every call is announced
+    + /// slow. Nothing in this program ends a volume for slowness: only the device's
+    +@@ system/logkeeper/src/policy.rs: use std::time::Duration;
+    + /// learns about it while they are still watching.
+      pub const LOG_WRITE_BUDGET: Duration = Duration::from_secs(5);
+      
+    - /// How soon a volume that refused is asked again, and the longest the wait
+    --/// doubles to. Policy: a stick that recovers within a second or two loses
+    --/// none of the boot's file, and one that does not is asked about once a
+    --/// minute rather than on every round.
+    ++/// How soon a volume that refused is asked again, and the longest the wait
+     +/// doubles to. Policy: how often a dead volume is asked, and its refusal
+     +/// said, against how soon one that answers again is written; the file loses
+     +/// nothing either way while the replay holds what it is owed.
+    - pub const RETRY_FIRST: Duration = Duration::from_secs(1);
+    - pub const RETRY_MAX: Duration = Duration::from_secs(64);
+    ++pub const RETRY_FIRST: Duration = Duration::from_secs(1);
+    ++pub const RETRY_MAX: Duration = Duration::from_secs(64);
+    ++
+    ++/// When a volume that refused is next asked again.
+    ++#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    ++pub struct Retry {
+    ++    at: Instant,
+    ++    wait: Duration,
+    ++}
+    ++
+    ++impl Retry {
+    ++    /// A first refusal at `now`.
+    ++    pub fn after(now: Instant) -> Self {
+    ++        Self { at: now + RETRY_FIRST, wait: RETRY_FIRST }
+    ++    }
+    ++
+    ++    pub fn due(&self, now: Instant) -> bool {
+    ++        now >= self.at
+    ++    }
+    ++
+    ++    /// Asked again at `now` and refused: twice the wait, to [`RETRY_MAX`].
+    ++    pub fn again(&mut self, now: Instant) {
+    ++        self.wait = (self.wait * 2).min(RETRY_MAX);
+    ++        self.at = now + self.wait;
+    ++    }
+    ++}
+    ++
+    + /// Which call refused.
+    + #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    + pub enum Step {
+    +@@ system/logkeeper/src/policy.rs: impl Step {
+    + mod tests {
+    +     use super::*;
+      
+    ++    #[test]
+    ++    fn a_refused_volume_is_asked_again_at_a_doubling_wait_to_a_bound() {
+    ++        let mut now = Instant::now();
+    ++        let mut retry = Retry::after(now);
+    ++        let mut waits = Vec::new();
+    ++        for _ in 0..9 {
+    ++            let next = retry.at;
+    ++            assert!(!retry.due(next - Duration::from_millis(1)));
+    ++            assert!(retry.due(next));
+    ++            waits.push((next - now).as_secs());
+    ++            now = next;
+    ++            retry.again(now);
+    ++        }
+    ++        assert_eq!(waits, [1, 2, 4, 8, 16, 32, 64, 64, 64]);
+    ++    }
+    ++
+    +     /// The console words, which the table in `main` is written against.
+    +     #[test]
+    +     fn every_step_names_itself() {
+     
+      ## system/logkeeper/src/serve.rs ##
+     @@ system/logkeeper/src/serve.rs: use toyos_abi::syscall::SyscallError;
+    @@ system/logkeeper/src/serve.rs: impl Hub {
+              self.lock().replay.end()
+          }
+      
+    --    /// The boot from `at` to now, for a file that lost it: how many bytes
+    --    /// from `at` the replay let go first, and what it holds after them.
+    --    pub fn since(&self, at: u64) -> (u64, Vec<u8>) {
+    --        let held = self.lock();
+    --        let (lost, at) = match held.replay.next(at, 0) {
+    --            Next::Evicted { lost, at } => (lost, at),
+    --            _ => (0, at),
+    --        };
+    --        let mut out = Vec::new();
+    --        while let Next::Bytes(bytes) = held.replay.next(at + out.len() as u64, usize::MAX) {
+    --            out.extend_from_slice(bytes);
+    +-    /// What a file at the replay's offset `at` is owed next, without waiting,
+    +-    /// and `at` past it.
+    +-    pub fn owed(&self, at: &mut u64) -> Owed {
+    +-        match self.lock().replay.next(*at, CHUNK) {
+    +-            Next::Bytes(bytes) => {
+    +-                *at += bytes.len() as u64;
+    +-                Owed::Text(bytes.to_vec())
+    +-            }
+    +-            Next::Evicted { lost, at: resume } => {
+    +-                *at = resume;
+    +-                Owed::Gap(lost)
+    +-            }
+     +    /// What a file at the replay's offset `at` is owed next: at most `max`
+     +    /// bytes of whole lines, or one line longer than that, or the gap the
+     +    /// replay let go of. Never waits.
+    @@ system/logkeeper/src/serve.rs: impl Hub {
+     +        match self.lock().replay.next(at, max) {
+     +            Next::Bytes(bytes) => Owed::Text(bytes.to_vec()),
+     +            Next::Evicted { lost, at } => Owed::Gap { lost, at },
+    -+            Next::CaughtUp => Owed::Nothing,
+    +             Next::CaughtUp => Owed::Nothing,
+              }
+    --        (lost, out)
+          }
+    +@@ system/logkeeper/src/serve.rs: impl Hub {
+    +     }
+    + }
+      
+    -     /// The pipe a reader on `conn` is handed, and the boot's length it starts
+    +-/// What a file is owed of the replay.
+    +-pub enum Owed {
+    +-    /// Whole lines.
+    +-    Text(Vec<u8>),
+    +-    /// Bytes the replay let go of before the file took them.
+    +-    Gap(u64),
+    +-    /// Everything the replay holds.
+    +-    Nothing,
+    +-}
+    +-
+    + /// What a carrier is fed.
+    + pub enum Fed {
+    +     /// Bytes of the replay, which a channel taking them speaks for.
+     @@ system/logkeeper/src/serve.rs: mod tests {
+    -         Some(positions.into())
+    +         assert_eq!(hub.wire_start(15), (15, None));
+    +         assert_eq!(hub.wire_start(3).1.as_deref(), Some(&b"program\n"[..]), "one that took less owes them again");
+          }
+    - 
+    --    /// What a file that lost the boot from an offset is given back: every
+    --    /// byte the replay still holds from there, and how much it let go.
+    +-
+    +-    /// A volume that opens late is owed the boot from its first line, without
+    +-    /// waiting, and told how much the replay let go of before it opened.
+     -    #[test]
+    --    fn a_lost_file_is_given_the_boot_from_where_it_was_durable() {
+    --        let hub = Hub::start(16, None);
+    --        hub.append(b"one\ntwo\n", None);
+    --        assert_eq!(hub.since(4), (0, b"two\n".to_vec()));
+    --        assert_eq!(hub.since(8), (0, Vec::new()), "caught up");
+    --        hub.append(b"three\nfour\nfive\n", None);
+    --        let (lost, held) = hub.since(0);
+    --        assert_eq!(String::from_utf8(held).unwrap(), "four\nfive\n");
+    --        assert_eq!(lost, 14, "one, two and three let go");
+    +-    fn a_late_file_is_owed_the_boot_whole_and_what_was_let_go() {
+    +-        let hub = Hub::start(12, None);
+    +-        hub.append(b"one\n", None);
+    +-        let mut at = 0;
+    +-        assert!(matches!(hub.owed(&mut at), Owed::Text(text) if text == b"one\n"));
+    +-        assert!(matches!(hub.owed(&mut at), Owed::Nothing), "caught up is answered, not waited on");
+    +-        hub.append(b"two\nthree\n", None);
+    +-        let mut late = 0;
+    +-        assert!(matches!(hub.owed(&mut late), Owed::Gap(8)), "past its 12 bytes the replay let `one` and `two` go");
+    +-        assert!(matches!(hub.owed(&mut late), Owed::Text(text) if text == b"three\n"));
+    +-        assert!(matches!(hub.owed(&mut late), Owed::Nothing));
+     -    }
+    --
+    -     /// A channel that has taken the replay up to an offset has spoken the
+    -     /// kernel's log through the positions of the last round wholly before it,
+    -     /// and nothing of a round it has only begun.
+    + }
+     
+      ## system/logkeeper/src/store.rs ##
+    -@@ system/logkeeper/src/store.rs: pub const MAX_LOG_BYTES: u64 = 1024 * 1024;
+    +@@
+    + //! standing between those and `delete_file` is that neither names them.
+    + 
+    + use std::fs::{self, File, OpenOptions};
+    +-use std::io::Write;
+    ++use std::io::{Seek, SeekFrom, Write};
+    + use std::path::PathBuf;
+    + 
+    + use toyos_logstream::LOG_CONTINUES;
+    +@@ system/logkeeper/src/store.rs: fn stopped_path() -> String {
+      
+      /// Where one file of this boot's sequence is: `toyos_wallclock::Part` is its
+      /// name.
+    @@ system/logkeeper/src/store.rs: fn sweep(current: &str, mut say: impl FnMut(Strin
+      }
+      
+      /// This boot's file, and everything about where it is in its own sequence.
+    - ///
+    --/// **A part the volume refused is opened again** ([`Volume::reopen`]): cut
+    --/// to what its last sync made durable and given the rest of the boot from
+    --/// the replay, so a refusal costs the file nothing the replay still holds.
+    ++///
+     +/// **The file is the replay's text** (`crate::serve::Hub`), part after part,
+     +/// with a note where the replay had let go of what the file was owed. Where
+     +/// each part stands is kept twice, in its file's bytes and in the replay's
+    @@ system/logkeeper/src/store.rs: fn sweep(current: &str, mut say: impl FnMut(Strin
+     +/// shorter than that — and given the rest from the replay through the same
+     +/// part-sized writes and continuations as any other.
+      pub struct Volume {
+    +-    file: File,
+     +    dir: String,
+    -     /// `None` while the part must be opened again.
+    -     file: Option<File>,
+    ++    /// `None` while the part must be opened again.
+    ++    file: Option<File>,
+          stem: String,
+          part: u32,
+    --    /// Where this part starts in the boot's text.
+    -+    /// The replay's offset of this part's first byte of the boot.
+    -     from: u64,
+     -    /// Bytes in the current part so far. Kept here rather than read back from
+     -    /// the filesystem so a disagreement shows up as a wrong length rather than
+     -    /// being silently corrected.
+    ++    /// The replay's offset of this part's first byte of the boot.
+    ++    from: u64,
+     +    /// Bytes in the part's file, and the replay's offset its text reaches.
+          size: u64,
+    --    /// Bytes of the current part its last sync made durable.
+     +    through: u64,
+     +    /// The same, as the part's last sync left them.
+    -     durable: u64,
+    ++    durable: u64,
+     +    durable_through: u64,
+          rotate_at: u64,
+      }
+    @@ system/logkeeper/src/store.rs: fn sweep(current: &str, mut say: impl FnMut(Strin
+     +}
+     +
+      impl Volume {
+    --    /// Open this boot's first file, after making room for it. A create the
+    --    /// volume refuses leaves the part to be opened again; `None` is a boot
+    --    /// with no name to write under.
+    +-    /// Open this boot's first file, after making room for it.
+     +    /// Open this boot's first file in `dir`, after making room for it. A
+     +    /// create the volume refuses leaves the part to be opened again; `None`
+     +    /// is a boot with no name to write under.
+    @@ system/logkeeper/src/store.rs: impl Volume {
+                  return None;
+              };
+     -        let full = path(&stem, part);
+    +-        let file = match create(&full) {
+    +-            Ok(file) => file,
+    +-            Err(e) => {
+    +-                say(format!("logkeeper: cannot create {full}: {e}"));
+    +-                return None;
+    +-            }
+    +-        };
+    +-        Some(Volume { file, stem, part, size: 0, rotate_at })
+     +        let full = path(dir, &stem, part);
+    -         let file = create(&full)
+    -             .inspect_err(|e| say(format!("logkeeper: cannot create {full}: {e}; it is asked again")))
+    -             .ok();
+    --        Some(Volume { file, stem, part, from: 0, size: 0, durable: 0, rotate_at })
+    ++        let file = create(&full)
+    ++            .inspect_err(|e| say(format!("logkeeper: cannot create {full}: {e}; it is asked again")))
+    ++            .ok();
+     +        Some(Volume {
+     +            dir: dir.to_string(),
+     +            file,
+    @@ system/logkeeper/src/store.rs: impl Volume {
+          pub fn path(&self) -> String {
+     -        path(&self.stem, self.part)
+     +        path(&self.dir, &self.stem, self.part)
+    -     }
+    - 
+    -     /// Whether the part is open: false once the volume refused it, until
+    --    /// [`Self::reopen`].
+    ++    }
+    ++
+    ++    /// Whether the part is open: false once the volume refused it, until
+     +    /// [`Self::catch_up`] opens it again.
+    -     pub fn is_open(&self) -> bool {
+    -         self.file.is_some()
+    -     }
+    -@@ system/logkeeper/src/store.rs: impl Volume {
+    -         self.file = None;
+    -     }
+    - 
+    --    /// Where in the boot's text the part's file ends what a sync made
+    --    /// durable: what [`Self::reopen`] is given from.
+    --    pub fn durable_end(&self) -> u64 {
+    --        self.from + self.durable
+    ++    pub fn is_open(&self) -> bool {
+    ++        self.file.is_some()
+    ++    }
+    ++
+    ++    /// The volume refused the part: it is opened again before the next
+    ++    /// write, and holds no more than its last sync made durable.
+    ++    pub fn lost(&mut self) {
+    ++        self.file = None;
+    ++        (self.size, self.through) = (self.durable, self.durable_through);
+    ++    }
+    ++
+     +    /// The replay's offset the file's text reaches: anything past it is owed.
+     +    pub fn through(&self) -> u64 {
+     +        self.through
+          }
+      
+    --    /// Open the part again, cut to what its last sync made durable, and write
+    --    /// `owed`, the boot's text from [`Self::durable_end`].
+    --    pub fn reopen(&mut self, owed: &[u8]) -> std::io::Result<()> {
+    --        let mut file = OpenOptions::new().write(true).create(true).open(PathBuf::from(self.path()))?;
+    --        file.set_len(self.durable)?;
+    --        file.seek(SeekFrom::End(0))?;
+    --        file.write_all(owed)?;
+    --        self.size = self.durable + owed.len() as u64;
+    --        self.file = Some(file);
+    +-    /// Write already-rendered lines at the part's end. The caller batches;
+    +-    /// this does no buffering of its own beyond what the file cache is.
+     +    /// Write a round of the boot's text, the replay's next bytes, at the
+     +    /// part's end. The caller batches; this does no buffering of its own
+     +    /// beyond what the file cache is.
+    -+    pub fn write(&mut self, lines: &[u8]) -> std::io::Result<()> {
+    +     pub fn write(&mut self, lines: &[u8]) -> std::io::Result<()> {
+    +-        self.file.write_all(lines)?;
+    +-        self.size += lines.len() as u64;
+     +        self.put(lines)?;
+     +        self.through += lines.len() as u64;
+    -         Ok(())
+    -     }
+    - 
+    --    /// Write already-rendered lines at the part's end. The caller batches;
+    --    /// this does no buffering of its own beyond what the file cache is.
+    --    pub fn write(&mut self, lines: &[u8]) -> std::io::Result<()> {
+    --        self.open_file()?.write_all(lines)?;
+    --        self.size += lines.len() as u64;
+    ++        Ok(())
+    ++    }
+    ++
+     +    /// Bytes into the file that are none of the replay's: a note.
+     +    fn put(&mut self, bytes: &[u8]) -> std::io::Result<()> {
+     +        self.open_file()?.write_all(bytes)?;
+    @@ system/logkeeper/src/store.rs: impl Volume {
+      
+          /// Get everything written so far onto the device, cache flush included.
+          pub fn sync(&mut self) -> std::io::Result<()> {
+    -         self.open_file()?.sync_all()?;
+    --        self.durable = self.size;
+    +-        self.file.sync_all()
+    ++        self.open_file()?.sync_all()?;
+     +        (self.durable, self.durable_through) = (self.size, self.through);
+    -         Ok(())
+    ++        Ok(())
+    ++    }
+    ++
+    ++    fn open_file(&mut self) -> std::io::Result<&mut File> {
+    ++        self.file.as_mut().ok_or_else(|| std::io::Error::other("the part is not open"))
+          }
+      
+    +     /// Bytes in the current part so far.
+     @@ system/logkeeper/src/store.rs: impl Volume {
+              self.size >= self.rotate_at
+          }
+      
+    +-    /// Finish this part and carry on in the next file of this boot's sequence.
+     +    /// Open the part again and write it what it is owed, `owed(offset, max)`
+     +    /// answering the replay from an offset, at most `max` bytes. At most
+     +    /// `budget` bytes of the boot this call, through part-sized writes and
+    @@ system/logkeeper/src/store.rs: impl Volume {
+     +        }
+     +    }
+     +
+    ++    /// The stop: catch up while `more()` says there is time, `budget` at a
+    ++    /// time, then make durable what was written, with `shortfall(bytes)` in
+    ++    /// the file where the replay holds bytes up to `end` it does not. The
+    ++    /// bytes it ends short by; an `Err` is the volume refusing again, the part
+    ++    /// [`Self::lost`] and the file as its last sync left it.
+    ++    #[allow(clippy::too_many_arguments)]
+    ++    pub fn finish(
+    ++        &mut self,
+    ++        mut owed: impl FnMut(u64, usize) -> Owed,
+    ++        note: impl Fn(u64) -> Vec<u8>,
+    ++        end: u64,
+    ++        budget: u64,
+    ++        mut more: impl FnMut() -> bool,
+    ++        shortfall: impl Fn(u64) -> Vec<u8>,
+    ++        mut say: impl FnMut(String),
+    ++    ) -> std::io::Result<u64> {
+    ++        let mut stop = || -> std::io::Result<u64> {
+    ++            while !self.catch_up(&mut owed, &note, budget, &mut say)? && self.is_open() && more() {}
+    ++            let short = end - self.through;
+    ++            if self.is_open() {
+    ++                if short > 0 {
+    ++                    self.put(&shortfall(short))?;
+    ++                }
+    ++                self.sync()?;
+    ++            }
+    ++            Ok(short)
+    ++        };
+    ++        stop().inspect_err(|_| self.lost())
+    ++    }
+    ++
+     +    /// Open the part again at what its last sync made durable, or empty and
+     +    /// from its start where its file is shorter than that: missing, cut, or
+     +    /// never as long as the sync was told.
+    @@ system/logkeeper/src/store.rs: impl Volume {
+     +        Ok(())
+     +    }
+     +
+    -     /// Finish this part and carry on in the next file of this boot's
+    -     /// sequence: `Err` where this part did not finish, and a refused create
+    -     /// leaves the next part to be opened again.
+    ++    /// Finish this part and carry on in the next file of this boot's
+    ++    /// sequence: `Err` where this part did not finish, and a refused create
+    ++    /// leaves the next part to be opened again.
+    +     pub fn rotate(&mut self, mut say: impl FnMut(String)) -> std::io::Result<()> {
+    +         let full = self.path();
+    +         let bytes = self.size;
+     @@ system/logkeeper/src/store.rs: impl Volume {
+    +         }
+              // Durable before it is let go: nothing syncs a part once the next is
+              // the one being written.
+    -         self.sync()?;
+    +-        self.file.sync_all()?;
+     -        sweep(&self.stem, &mut say);
+    ++        self.sync()?;
+     +        sweep(&self.dir, &self.stem, &mut say);
+              self.part += 1;
+    --        self.from += self.size;
+     -        self.size = 0;
+    --        self.durable = 0;
+     +        self.from = self.through;
+     +        (self.size, self.durable, self.durable_through) = (0, 0, self.through);
+              let next = self.path();
+    +-        self.file = create(&next)?;
+              say(format!("logkeeper: {full} reached {bytes}{LOG_CONTINUES}{next}"));
+    -         self.file = create(&next)
+    ++        self.file = create(&next)
+    ++            .inspect_err(|e| say(format!("logkeeper: cannot create {next}: {e}; it is asked again")))
+    ++            .ok();
+    +         Ok(())
+    +     }
+    + }
+     @@ system/logkeeper/src/store.rs: fn create(path: &str) -> std::io::Result<File> {
+      #[cfg(test)]
+      mod tests {
+    @@ system/logkeeper/src/store.rs: fn create(path: &str) -> std::io::Result<File> {
+     +        format!("line {n:04}\n").into_bytes()
+     +    }
+     +
+    ++    /// The record's own case: the first part's create refused at open. The
+    ++    /// part is made at the first catch-up, given the boot from its start.
+    ++    #[test]
+    ++    fn a_first_part_refused_at_open_is_made_and_given_the_boot() {
+    ++        let tmp = toyos_tmpdir::TempDir::new("logkeeper-store");
+    ++        // A log directory not there yet refuses the create, whoever asks.
+    ++        let log = tmp.path().join("log");
+    ++        let dir = log.to_str().unwrap();
+    ++        let hub = Hub::start(1 << 16, None);
+    ++        let mut v = Volume::open(dir, Some(STEM.into()), 1 << 16, |_| {}).unwrap();
+    ++        assert!(!v.is_open(), "a create the volume refused left the part open");
+    ++        let mut boot = line(0);
+    ++        round(&mut v, &hub, &boot);
+    ++        fs::create_dir(&log).unwrap();
+    ++        round(&mut v, &hub, &line(1));
+    ++        boot.extend(line(1));
+    ++        assert_eq!(on_disk(dir, &v), boot);
+    ++    }
+    ++
+    ++    /// **The stop says what it could not write.** A file owed more than the
+    ++    /// stop has time for is synced as far as it got and ends with the
+    ++    /// shortfall; one the stop has time for is whole.
+    ++    #[test]
+    ++    fn a_stop_with_more_owed_than_its_time_syncs_and_says_the_shortfall() {
+    ++        let shortfall = |short: u64| format!("[{short} bytes short]\n").into_bytes();
+    ++        for time in [false, true] {
+    ++            let tmp = toyos_tmpdir::TempDir::new("logkeeper-store");
+    ++            let dir = tmp.path().to_str().unwrap();
+    ++            let hub = Hub::start(1 << 16, None);
+    ++            let mut v = Volume::open(dir, Some(STEM.into()), 1 << 16, |_| {}).unwrap();
+    ++            let mut boot = Vec::new();
+    ++            for n in 0..2 {
+    ++                round(&mut v, &hub, &line(n));
+    ++                boot.extend(line(n));
+    ++            }
+    ++            v.lost();
+    ++            for n in 2..40 {
+    ++                hub.append(&line(n), None);
+    ++                boot.extend(line(n));
+    ++            }
+    ++            let short = v
+    ++                .finish(|at, max| hub.owed(at, max), note, hub.end(), 64, || time, shortfall, |_| {})
+    ++                .unwrap();
+    ++            let mut want = boot[..boot.len() - short as usize].to_vec();
+    ++            if short > 0 {
+    ++                want.extend(shortfall(short));
+    ++            }
+    ++            assert_eq!(short == 0, time, "the stop with time is whole, the one without is short");
+    ++            assert_eq!(fs::read(v.path()).unwrap(), want);
+    ++            assert_eq!(v.durable, v.size, "what was written is synced");
+    ++        }
+    ++    }
+    ++
+    ++    /// A stop whose reopen is refused after an unsynced write: the file is
+    ++    /// what its last sync left, and the bytes it lacks are counted from
+    ++    /// there, the unsynced write's included.
+    ++    #[test]
+    ++    fn a_stop_refused_after_an_unsynced_write_counts_from_the_last_sync() {
+    ++        let tmp = toyos_tmpdir::TempDir::new("logkeeper-store");
+    ++        let dir = tmp.path().to_str().unwrap();
+    ++        let hub = Hub::start(1 << 16, None);
+    ++        let mut v = Volume::open(dir, Some(STEM.into()), 1 << 16, |_| {}).unwrap();
+    ++        round(&mut v, &hub, &line(0));
+    ++        let synced = hub.end();
+    ++        v.write(&line(1)).unwrap();
+    ++        hub.append(&line(1), None);
+    ++        v.lost();
+    ++        hub.append(&line(2), None);
+    ++        // A directory where the part was refuses its reopen, whoever asks.
+    ++        fs::remove_file(v.path()).unwrap();
+    ++        fs::create_dir(v.path()).unwrap();
+    ++        let stopped = v.finish(|at, max| hub.owed(at, max), note, hub.end(), 64, || true, |_| Vec::new(), |_| {});
+    ++        assert!(stopped.is_err(), "a reopen onto a directory was answered");
+    ++        assert_eq!(hub.end() - v.through(), hub.end() - synced, "the shortfall counts from the last sync");
+    ++    }
+    ++
+     +    /// **The file is the replay's text, whatever it was refused.** Through
+     +    /// an unsynced write the volume holds past its sync, a gap the replay let
+     +    /// go of, a continuation whose create is refused, and a part cut short
+ 4:  5809592c0 !  2:  78a84b4ea tests: a boot whose log volume refuses logkeeper's first write
+    @@ Metadata
+      ## Commit message ##
+         tests: a boot whose log volume refuses logkeeper's first write
+     
+    -    By the coordinator's ruling (option d), the logkeeper record's proof needs
+    -    no staged break.
+    -    - `BootOptions::full_log` has the harness leave the stick's log volume
+    -      with no free cluster (`toyos_build::image::fill_log_volume`). The
+    -      loader's `loader.log` and `attempts` are made first at a length past what
+    -      a boot writes, so the loader keeps its room, and `FILLER.BIN` takes the
+    -      rest.
+    -    - `a_refused_log_is_written_whole_once_the_volume_takes_it` boots that
+    -      stick (QEMU x86-64, `Profile::Metal`). It waits for logkeeper to say the
+    -      volume is asked again, then runs `log_unfill`, which removes the filler.
+    -      It waits for `logkeeper: /log answers again` and stops the machine with
+    -      the power button.
+    -    - On the host it reads the stick back: the filler is gone, logkeeper's
+    -      files are a whole boot (`bootlog::verdict`: the kernel's boot record
+    -      through the stop), and they carry both the refusal and the recovery.
+    -
+    -    The record's exit becomes "a boot whose first log write is refused", this
+    -    row green on the guest runner.
+    +    #1190's row (5809592c0, a99667bf0, 0939e4e24, 6405def8d), rebased.
+    +    `BootOptions::full_log` fills the stick's log volume
+    +    (`toyos_build::image::fill_log_volume`).
+    +    `a_refused_log_is_written_whole_once_the_volume_takes_it` waits for the
+    +    refusal, runs `log_unfill`, waits for the volume to answer, stops, and
+    +    reads the stick back. It checks that the stick begins at the boot's first
+    +    kernel record, that each CPU's kernel records are the console's in order,
+    +    and that there is no gap note or shortfall.
+     
+         Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+     
+    @@ build/image.rs: pub fn log_volume_files(file: &mut std::fs::File) -> Result<Vec<
+          })
+      }
+      
+    -+/// Leave the image's log volume with no free cluster: each of `kept` made at
+    -+/// its length, so a writer that truncates and rewrites it has its own room
+    -+/// back, then `filler` over every cluster still free. A boot on it has its
+    -+/// first log write refused until `filler` is gone.
+    -+pub fn fill_log_volume(file: &mut std::fs::File, kept: &[(&str, usize)], filler: &str) -> Result<(), String> {
+    ++/// Leave the image's log volume with no free cluster, `filler` over every
+    ++/// one: a boot on it has every write to the volume refused, its first log
+    ++/// write included, until `filler` is gone. The loader's own files are refused
+    ++/// too, which it says and boots on.
+    ++pub fn fill_log_volume(file: &mut std::fs::File, filler: &str) -> Result<(), String> {
+     +    let part = only_partition(&mut FileSectors(file), toyos_gpt::Guid::MICROSOFT_BASIC)?;
+     +    let (start, len) = (part.first_lba() * u64::from(LBA), part.lba_count().get() * u64::from(LBA));
+     +    let len = usize::try_from(len).map_err(|_| format!("a {len}-byte volume"))?;
+    @@ build/image.rs: pub fn log_volume_files(file: &mut std::fs::File) -> Result<Vec<
+     +        let mut fs = Fat32::mount(device).await.map_err(|e| format!("the log volume does not mount: {e}"))?;
+     +        let time = FatTime::from_unix_secs(0);
+     +        let free = fs.free_bytes().await.map_err(|e| format!("the log volume's room: {e}"))?;
+    -+        let kept_bytes: usize = kept.iter().map(|(_, n)| n).sum();
+    -+        for (name, bytes) in kept.iter().copied().chain([(filler, free as usize - kept_bytes)]) {
+    -+            let mut f = fs.create(name, time).await.map_err(|e| format!("making {name}: {e}"))?;
+    -+            fs.write(&mut f, 0, &vec![0u8; bytes]).await.map_err(|e| format!("writing {name}: {e}"))?;
+    -+            fs.flush_meta(&mut f, time).await.map_err(|e| format!("recording {name}: {e}"))?;
+    -+        }
+    ++        let mut f = fs.create(filler, time).await.map_err(|e| format!("making {filler}: {e}"))?;
+    ++        fs.write(&mut f, 0, &vec![0u8; free as usize]).await.map_err(|e| format!("writing {filler}: {e}"))?;
+    ++        fs.flush_meta(&mut f, time).await.map_err(|e| format!("recording {filler}: {e}"))?;
+     +        fs.sync().await.map_err(|e| format!("syncing the log volume: {e}"))?;
+     +        match fs.free_bytes().await {
+     +            Ok(0) => Ok(()),
+    @@ build/image.rs: pub fn log_volume_files(file: &mut std::fs::File) -> Result<Vec<
+      /// blocks, which every partition this build writes is ([`PARTITION_ALIGN`]).
+      fn device_of(volume: &mut [u8]) -> Result<Bytes<&mut [u8]>, String> {
+     
+    - ## issues/logkeeper-ends-the-boots-log-on-one-refused-create-and-nothing-durable-says-so.md ##
+    -@@ issues/logkeeper-ends-the-boots-log-on-one-refused-create-and-nothing-durable-says-so.md: opened: 2026-09-21
+    - 
+    - # logkeeper ends the boot's log on one refused create, and nothing durable says so
+    - 
+    --T14 run 69 (`usb-transport-break` on the boot stick, `a9adf0d7`) staged a
+    --break that abandoned the boot's first WRITE(10), the create of this boot's
+    --log file, and the stick came back with no log file for the boot: `logd`
+    --gave its volume up on one refused create and said so only on a console the
+    --laptop has no channel for.
+    -+T14 run 69 (`a9adf0d7`) staged a break that abandoned the boot's first
+    -+WRITE(10), the create of this boot's log file, and the stick came back with
+    -+no log file for the boot: `logd` gave its volume up on one refused create
+    -+and said so only on a console the laptop has no channel for.
+    - 
+    --logkeeper now asks a refused volume again (`policy::Retry`, 1 s doubling
+    --to 64 s, and at the stop's flush whatever the wait): the part is opened
+    --again, cut to what its last sync made durable, and given the rest of the
+    --boot from the replay (`Volume::reopen`). A create, an append, a sync and a
+    --continuation's create are all asked again; only a boot with no name or no
+    --part number left gives the volume up. Host tests hold the wait and what the
+    --replay gives back; nothing yet has shown a boot that does it.
+    --
+    --The arm run 69 used was the kernel's and went with its USB stack
+    --(13ed7b4f4); usbd stages no break, so the T14 run the exit asks for needs one.
+    -+logkeeper now asks a refused volume again and gives its file back what the
+    -+replay holds (`system/logkeeper/src/store.rs`, `Volume`); host tests hold the
+    -+bookkeeping. One hazard stays: a part is reopened by its path, so a stick
+    -+swapped for another carrying a file under the same name has that file
+    -+rewritten past what this boot last synced to it. Telling the two apart waits
+    -+on a volume identity
+    -+(`issues/a-file-held-across-a-file-servers-restart-answers-gone.md`).
+    - 
+    - ## Exit condition
+    - 
+    --A boot whose first device write is refused once and whose `/log` still holds
+    --that boot's records.
+    -+A boot whose first log write is refused, and whose `/log` still holds that
+    -+boot's records once the volume takes writes again:
+    -+`a_refused_log_is_written_whole_once_the_volume_takes_it`, green on the guest
+    -+runner.
+    -
+      ## tests/common/qemu.rs ##
+     @@ tests/common/qemu.rs: pub struct BootOptions {
+          /// forwards to the guest's port `.1`: what a peer on the host connects to a
+          /// guest's listener through. Only a profile with a NIC may set it.
+          pub forward: Option<(u16, u16)>,
+    -+    /// The stick's log volume left with no free cluster but those
+    -+    /// [`FULL_LOG_KEPT`] holds, under one [`FULL_LOG_FILLER`]: a boot whose
+    -+    /// first log write is refused until the filler is gone. A stick's
+    ++    /// The stick's log volume left with no free cluster, under one
+    ++    /// [`FULL_LOG_FILLER`]: a boot whose every write to it is refused, its
+    ++    /// first log write included, until the filler is gone. A stick's
+     +    /// profile only.
+     +    pub full_log: bool,
+      }
+      
+    -+/// The loader's own files on a [`BootOptions::full_log`] volume, each made at
+    -+/// a length past what a boot writes, so the loader, which rewrites each at
+    -+/// boot, has its own room back.
+    -+pub const FULL_LOG_KEPT: [(&str, usize); 2] = [("loader.log", 256 << 10), ("attempts", 4 << 10)];
+    -+/// The file that takes every other free cluster.
+    ++/// The file that takes every free cluster of a [`BootOptions::full_log`] volume.
+     +pub const FULL_LOG_FILLER: &str = "FILLER.BIN";
+     +
+      impl BootOptions {
+    @@ tests/common/qemu.rs: impl QemuInstance {
+     +        if options.full_log {
+     +            assert!(matches!(storage, Storage::Stick { .. }), "[qemu] a full log volume is a stick's");
+     +            let mut stick = fs::OpenOptions::new().read(true).write(true).open(&boot_image).expect("[qemu] the stick's image");
+    -+            toyos_build::image::fill_log_volume(&mut stick, &FULL_LOG_KEPT, FULL_LOG_FILLER)
+    ++            toyos_build::image::fill_log_volume(&mut stick, FULL_LOG_FILLER)
+     +                .unwrap_or_else(|why| panic!("[qemu] filling the log volume: {why}"));
+     +        }
+              let carried = c_tests
+    @@ tests/toyos.rs: fn the_log_lands_on_the_boot_stick(test_config: &Path) -> Result
+     +        profile: qemu::Profile::Metal,
+     +        qmp: true,
+     +        full_log: true,
+    -+        extra_root_files: vec![suite_bin(toyos_build::arch::Arch::X86_64, "log_unfill")],
+     +        ..Default::default()
+     +    };
+    -+    let mut qemu = QemuInstance::boot_with_options(test_config, &[], &[], options);
+    ++    let (_, unfill) = suite_bin(toyos_build::arch::Arch::X86_64, "log_unfill");
+    ++    let mut qemu = QemuInstance::boot_with_options(test_config, &[], &[("log_unfill".to_string(), unfill)], options);
+     +    let mut console = qemu.boot_log().to_string();
+     +    qemu::await_marker(&mut qemu, &mut console, ASKED_AGAIN, "logkeeper to find the full volume refusing it")?;
+     +    if console.contains(toyos_logstream::LOG_OPENED) && !console.contains("has not answered") {
+     +        return Err("logkeeper wrote to a log volume that was full".into());
+     +    }
+    -+    let unfilled = qemu.run_test(UNFILL, qemu.budget(Duration::from_secs(30)));
+    -+    if unfilled.exit_code != Some(0) {
+    -+        return Err(format!("{UNFILL} did not free the volume: {:?}\n{}", unfilled.exit_code, unfilled.stdout));
+    -+    }
+    ++    // Typed at the guest rather than run as a test, so every line of its
+    ++    // window stays in `console`, the account the stick is checked against.
+    ++    writeln!(qemu.stdin_mut(), "run {UNFILL}").map_err(|e| e.to_string())?;
+    ++    qemu.flush_stdin();
+    ++    qemu::await_marker(&mut qemu, &mut console, "log_unfill: /log/FILLER.BIN removed", "the job to free the volume")?;
+     +    qemu::await_marker(&mut qemu, &mut console, ANSWERS_AGAIN, "logkeeper to write the volume once it answers")?;
+     +    qemu::QmpShutdown::open(qemu.qmp_socket(), qemu.budget(qemu::GUEST_QUIET)).power_button();
+     +    let by = qemu.budget(Duration::from_secs(60));
+    @@ tests/toyos.rs: fn the_log_lands_on_the_boot_stick(test_config: &Path) -> Result
+     +            return Err(format!("the stick's log does not say `{said}`:\n{log}"));
+     +        }
+     +    }
+    -+    let first = log.lines().next().unwrap_or_default();
+    -+    eprintln!("  [log] {} file(s), {} bytes, from `{first}`", names.len(), log.len());
+    ++    for gap in ["were let go before", "bytes short of the boot"] {
+    ++        if let Some(line) = log.lines().find(|l| l.contains(gap)) {
+    ++            return Err(format!("the stick's log is not the whole boot: {line}"));
+    ++        }
+    ++    }
+    ++    // The independent account is the console's: each CPU's kernel records on
+    ++    // the stick are the console's, in order and from the first, so none was
+    ++    // lost, repeated or moved by the refusal and the rewrite.
+    ++    let (on_stick, on_console) = (kernel_records(&log), kernel_records(&console));
+    ++    let begins = kernel_records(log.lines().next().unwrap_or_default()).pop();
+    ++    if begins.is_none() || begins.as_ref() != on_console.first() {
+    ++        return Err(format!(
+    ++            "the stick's log begins at {begins:?}, not the boot's first kernel record {:?}",
+    ++            on_console.first()
+    ++        ));
+    ++    }
+    ++    for cpu in on_stick.iter().map(|(cpu, _)| cpu).collect::<BTreeSet<_>>() {
+    ++        let of = |records: &[(String, String)]| -> Vec<String> {
+    ++            records.iter().filter(|(c, _)| c == cpu).map(|(_, text)| text.clone()).collect()
+    ++        };
+    ++        let (stick, said) = (of(&on_stick), of(&on_console));
+    ++        if let Some(at) = stick.iter().zip(&said).position(|(a, b)| a != b).or((stick.len() > said.len()).then_some(said.len())) {
+    ++            let near = |records: &[String]| records[at.saturating_sub(4)..(at + 5).min(records.len())].join("\n    ");
+    ++            return Err(format!(
+    ++                "{cpu}'s kernel records on the stick part from the console's at its record {at}:\n  the stick:\n    {}\n  the console:\n    {}",
+    ++                near(&stick),
+    ++                near(&said)
+    ++            ));
+    ++        }
+    ++    }
+    ++    eprintln!("  [log] {} file(s), {} kernel records, the console's in order", names.len(), on_stick.len());
+     +    Ok(())
+     +}
+    ++
+    ++/// Every kernel record in `log` as its CPU and its text, in order: the text
+    ++/// after the head, which a dated and an undated rendering share.
+    ++fn kernel_records(log: &str) -> Vec<(String, String)> {
+    ++    log.lines()
+    ++        .filter_map(|line| {
+    ++            let (head, text) = line[line.find('[')?..].split_once("] ")?;
+    ++            let mut words = head.split_whitespace().rev();
+    ++            (words.next()? == "kernel").then_some(())?;
+    ++            let cpu = words.next().filter(|w| w.starts_with("cpu"))?;
+    ++            Some((cpu.to_string(), text.to_string()))
+    ++        })
+    ++        .collect()
+    ++}
+     +
+      fn stick_load_line(line: &str) -> Option<u64> {
+          let (_, rest) = line.split_once("stick_load: line ")?;
+ 5:  a99667bf0 <  -:  --------- logkeeper: the stop syncs what it wrote and says what it could not; the row's fill holds and it checks the boot
+ 6:  0939e4e24 <  -:  --------- tests: the full-log row hands its job to the boot as a test binary
+ 7:  6405def8d <  -:  --------- tests: the full-log row keeps the whole console it checks the stick against
+ 8:  17289151b <  -:  --------- issues: logkeeper keeps the boot's log through a refused write
+ 9:  701156896 <  -:  --------- logkeeper: a refused stop counts its shortfall from the last sync; no dead stop parameter
+10:  bc1285046 <  -:  --------- logkeeper: a directory squatting a part name takes its number again; finish loses the part on its own refusal
+ -:  --------- >  3:  3d7e96592 issues: logkeeper keeps the boot's log through a refusal; the remaining rulings
