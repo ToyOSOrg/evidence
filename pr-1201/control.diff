@@ -1,0 +1,20 @@
+diff --git a/loader/src/slot.rs b/loader/src/slot.rs
+index 27886e267..e4bb16356 100644
+--- a/loader/src/slot.rs
++++ b/loader/src/slot.rs
+@@ -68,9 +68,13 @@ pub fn marked(
+     );
+     let which = table.marked;
+     let slot = table.slot(which).expect("a slot table that reads carries the slot it marks");
+-    verify(bs, &mut disk, which, slot, floor).map_err(|why| {
++    verify(bs, &mut disk, which, slot, floor).or_else(|why| {
+         println!("{HEAD} {}: REFUSED, {why}", which.letter());
+-        alloc::format!("the marked slot {} {BOOTS_NOTHING}", which.letter())
++        let other = which.other();
++        table
++            .slot(other)
++            .and_then(|slot| verify(bs, &mut disk, other, slot, floor).ok())
++            .ok_or_else(|| alloc::format!("the marked slot {} {BOOTS_NOTHING}", which.letter()))
+     })
+ }
+ 
