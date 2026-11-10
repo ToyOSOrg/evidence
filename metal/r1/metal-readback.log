@@ -1,0 +1,39 @@
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.38s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-12dbe9da1a0c6172)
+23:34:26   BUILD x86_64 binaries of tests/guest/rust-tests
+23:34:32   BUILT x86_64 binaries of tests/guest/rust-tests  (5s)
+23:34:32   BUILD x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests
+23:34:34   BUILT x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests  (2s)
+23:34:34 [toyos] Compiling 143 C tests, and attempting 24 declared ones...
+23:34:39 [metal] 1 registration(s) and 3 shared member(s) over 3 boot(s)
+23:34:39   BUILD x86_64 kernel, loader, ROOT of <scratch>/metal-r1/proctreecase/system-4c54968a1f38c6cf.toml
+23:34:44 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+23:34:44   BUILT x86_64 kernel, loader, ROOT of <scratch>/metal-r1/proctreecase/system-4c54968a1f38c6cf.toml  (4s)
+23:34:44 [metal] proctreecase: 4 job(s) under a list bound of 60000 ms, armed with [] and a boot deadline of 120000 ms — <scratch>/metal-r1/proctreecase/image.img
+23:34:44   BUILD x86_64 kernel boot-actuators,test-actuators, ROOT of <scratch>/metal-r1/shared-debug/system-ee3888c18540531b.toml
+23:35:03 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+23:35:03   BUILT x86_64 kernel boot-actuators,test-actuators, ROOT of <scratch>/metal-r1/shared-debug/system-ee3888c18540531b.toml  (19s)
+23:35:03 [metal] shared-debug: 1 job(s) under a list bound of 60300 ms, armed with ["pci-cap-selftest", "lapic-spurious-selftest", "unclaimed-vector-selftest", "sysret-ss-probe"] and a boot deadline of 120600 ms — <scratch>/metal-r1/shared-debug/image.img
+23:35:03   BUILD x86_64 ROOT of <scratch>/metal-r1/testcases/system-e9535f608888f931.toml
+23:35:06 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+23:35:06   BUILT x86_64 ROOT of <scratch>/metal-r1/testcases/system-e9535f608888f931.toml  (3s)
+23:35:06 [metal] testcases: 2 job(s) under a list bound of 60600 ms, armed with [] and a boot deadline of 121200 ms — <scratch>/metal-r1/testcases/image.img
+# One boot per image. Each invocation is `cargo <words>` from this worktree.
+
+proctreecase
+  image: <scratch>/metal-r1/proctreecase/image.img
+  cargo run -p toyos-metal -- --image <scratch>/metal-r1/proctreecase/image.img --readback <scratch>/metal-r1/proctreecase --fat32-check
+
+shared-debug
+  image: <scratch>/metal-r1/shared-debug/image.img
+  cargo run -p toyos-metal -- --image <scratch>/metal-r1/shared-debug/image.img --readback <scratch>/metal-r1/shared-debug --fat32-check
+
+testcases
+  image: <scratch>/metal-r1/testcases/image.img
+  cargo run -p toyos-metal -- --image <scratch>/metal-r1/testcases/image.img --readback <scratch>/metal-r1/testcases --fat32-check
+23:35:06 [metal] staged 3 image(s); <scratch>/metal-r1/request.txt lists them. The machine was not touched, so this run establishes nothing about it.
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `<scratch>/wt/target/debug/deps/toyos_build-12dbe9da1a0c6172 --metal --metal-readback <scratch>/metal-r1 startup_block abuse_handle_table spawn_child_ends_first process_tree` (exit status: 2)
+exit 2

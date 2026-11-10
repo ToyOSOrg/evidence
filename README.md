@@ -15,3 +15,19 @@ runner's host name and CPU model strings are masked.
 
 cf06504fa differs from 494063cc6 by an issue record and the visibility of one
 constant (`toyos::startup::RESERVED`).
+
+## Review round 1
+
+| file | command | revision | target | exit |
+|---|---|---|---|---|
+| `metal/t14-cf06504fa/judge.log` | `cargo test --test toyos-build -- --metal --metal-readback <dir> <the eleven names above>` over the readbacks the orchestrator's run left | boots of cf06504fa, judged by the harness at 92ce3af8b | T14 | 1: 8 passed, 3 failed |
+| `metal/t14-cf06504fa/*-jobs.log`, `*-verdict.txt` | each boot's job lines out of its kernel log (test-runner's, the kernel's spawn and exit records, the launcher's), and the boot's verdict | cf06504fa | T14 | each boot `passed`; `test_rs_process_tree` exited 101, `test_rs_spawn_child_ends_first` and `test_rs_abuse_handle_table` 134 |
+| `host/r1-ci-host.log` | `cargo run -- --ci host`, nothing else running in the worktree | 92ce3af8b | macOS arm64 host | 1: 1 of 110 steps red, the recorded macOS test |
+| `host/r1-ci-host-concurrent.log` | the same, while a metal staging ran in the same worktree | 60db1b92d | macOS arm64 host | 1: 2 of 110 red; the second is `cargo clippy -p kernel` for AArch64 failing with `couldn't create a temp dir` under `target/`, which the concurrent build was cleaning |
+| `guest/r1-rows.log` | guest-rows run 42923403243, `libc_children session_lifecycle a_launch_gives_each_unsent_stdio_slot_a_null virt_user_mode` | 60db1b92d | guest runner, x86-64 under KVM and AArch64 emulated | green, 4 of 4 |
+| `metal/r1/metal-readback.log`, `metal/r1/request.txt` | `cargo test --test toyos-build -- --metal --metal-readback <dir> startup_block abuse_handle_table spawn_child_ends_first process_tree` | 92ce3af8b | staged for the T14, no machine touched | 2 (staged) |
+
+92ce3af8b differs from 60db1b92d in three guest tests only. The machine's
+vendor, model and firmware version and the runner's name are masked in the
+files at this commit; the first commit of this branch carries the runner's
+label in its guest logs.
