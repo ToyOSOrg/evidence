@@ -1,0 +1,11 @@
+--- a/lib/bcachefs/src/engine/mkfs.rs
++++ b/lib/bcachefs/src/engine/mkfs.rs
+@@ -372,7 +372,7 @@
+ /// [`write`], on the medium once it returns ([`BlockDev::write_durable`]).
+ pub(crate) async fn write_durable(dev: &impl BlockDev, sector: u64, bytes: &[u8]) -> Result<()> {
+     let (lba, blocks) = blocks(sector, bytes);
+-    dev.write_durable(lba, &blocks).await?;
++    dev.write(lba, &blocks).await?;
+     Ok(())
+ }
+ 

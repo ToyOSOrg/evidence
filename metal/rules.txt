@@ -1,0 +1,46 @@
+# DECISION RULES, fixed before any boot, and written before any image was staged.
+# One request, both benches (T14, AMD), three images each, the `osbench_disk` row (files, nvme, persist) on each:
+#   M  c9d6eff6f: main (f9b5d7f12) + the `osbench_disk` row only = the forced-write PR's base arm
+#   F  8a8ff27b9: the forced-write PR (#1202)                  = its change arm, and the APST PR's base arm
+#   P  the APST PR (#1131), rebased onto F, at its head when requested = its change arm
+# Linux on each bench: `osbench persist` and `osbench nvme` from P's revision (it carries
+# `persist.write_4k_fsync_after_idle`), interleaved with the ToyOS boots, 3 runs per bench.
+#
+# Boots: 4 per image per bench, interleaved M F P M F P ..., so 12 ToyOS boots per bench. No probe patch in any
+# arm and no power-state query (pr-1131 r7's instrument caveat): timing alone.
+# Statistic: each boot's row p50 (MB/s rows: the row's own figure), then the median over the arm's boots.
+# "Resolved": every boot of one arm lies beyond every boot of the other.
+#
+# The T14's durable writes run in a slow mode in some boots, on both systems
+# (issues/toyos-durable-writes-on-the-t14s-nvme-run-six-times-slower-in-some-boots.md). A boot is called slow when
+# its `persist.write_4k_fsync` p50 is over 3 ms; every table gives each boot and its mode. Where an arm's boots
+# are not all of one mode, the arms are compared mode by mode as well as by median, and a comparison with fewer
+# than two boots of a mode in either arm is reported as not established rather than passed or failed.
+#
+# ---- Part 1: forced writes (F against M) ----
+# What the change does, by construction: a commit that wrote file data costs data write, Flush, forced journal
+# write, where M cost data write, Flush, journal write, Flush; a commit of names alone costs one forced write,
+# where M cost a write and a Flush. So the prediction is one Flush fewer per durable operation.
+# F1 Gain: `persist.write_4k_fsync`, `persist.append_4k_fsync`, `persist.create_fsync_unlink` and
+#    `persist.write_4k_fsync_beside_1m`: F's median below M's on each row, on each bench.
+#    A row where it is not is reported as no gain on that bench and investigated before handoff; by root's
+#    policy a missing gain on one bench does not by itself reject the change, a regression does (F2).
+# F2 No regression: no `fs.disk.*`, `nvme.*` or `persist.*` row is more than 5% worse in F than in M AND resolved.
+# F3 Correct: every F boot passes its judge; the NVMe driver's bring-up line says a forced write is a Write with
+#    FUA; no boot's log holds a failed request, a `Lost` flush or a journal write reissued; and each boot after an
+#    F boot mounts the DATA volume F left (the next image's `data_on_the_nvme` judge), with no replay refusal.
+# READY (part 1) iff F2 and F3 hold on both benches. F1 is the measured benefit, reported per row and bench.
+#
+# ---- Part 2: APST (P against F and against Linux), pr-1131's r6 gates unchanged ----
+# G1 First durable write after idle, like for like:
+#    cost_P = median over P boots of (persist.write_4k_fsync_after_idle p50 - persist.write_4k_fsync p50)
+#    cost_L = median over Linux persist runs of the same difference. PASS iff cost_P <= cost_L.
+# G2 Worst sample: P's largest after_idle sample over all its boots <= Linux's largest over all its runs.
+# G3 Back to back (fs.disk.*, nvme.*, persist.* except after_idle): none more than 5% worse in P than in F AND
+#    resolved.
+# READY (part 2) iff G1-G3 hold on both benches.
+# Reported, not gated: P's absolute after-idle p50 against Linux's; the APST table each P boot logs against the
+# table Linux's `nvme` group reads; P's after-idle p50 against pr-1131 r7's 17.70 ms (T14) and 11.29 ms (AMD),
+# which is what the forced journal write was expected to shorten by the second Flush's 2.25-2.5 ms on the T14.
+# Idle package power is not measured in this request: no energy boot is asked for, and the T14's idle excursions
+# belong to issues/the-t14s-idle-package-stays-in-pc2.md.
