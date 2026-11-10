@@ -18,13 +18,33 @@
 #      <scratch>/metal/P/request.txt
 #      52b6161306595cdedef58877a2ea102a47d9dca7956fc4650c63f0833435fec5
 #
-# Boots, per bench: 4 of each image, interleaved M F P M F P M F P M F P (12 boots).
-#   One boot per image per round: the images differ, and DATA carries over from boot to boot, which
-#   is part of what F3 judges (each boot mounts the volume the boot before it left).
-#   M and F: list bound 525 s. P: 605 s (its after-idle row idles 80 s).
-# Linux, per bench: 3 runs of `osbench persist` and one of `osbench nvme` (root, for the APST table),
-#   built from P's revision, interleaved with the ToyOS rounds (after rounds 1, 2 and 3).
+# Linux side, staged: <scratch>/metal/linux/README.txt (binary, sha256, commands, what needs root).
+#   <scratch>/metal/linux/osbench
+#   b965e86b76d1fae9ef837c8fa70bd4fafcd96a48e248d7aa4e97f626a4f9b24b
+#
 # No probe patch and no power-state query in any arm (pr-1131 r7's instrument caveat). No energy boot.
+# M and F: list bound 525 s. P: 605 s (its after-idle row idles 80 s).
+# DATA carries over from boot to boot, which is part of what F3 judges: each boot mounts the volume
+# the boot before it left. So the order below is the order to keep.
+#
+# ORDER, the same flat list on each bench. The two benches are independent of each other.
+#    1  boot M   round 1
+#    2  boot F   round 1
+#    3  boot P   round 1
+#    4  linux L1 osbench persist              (no sudo)
+#    5  boot M   round 2
+#    6  boot F   round 2
+#    7  boot P   round 2
+#    8  linux L2 osbench persist              (no sudo)
+#    9  boot M   round 3
+#   10  boot F   round 3
+#   11  boot P   round 3
+#   12  linux L3 osbench persist              (no sudo)
+#   13  boot M   round 4
+#   14  boot F   round 4
+#   15  boot P   round 4
+#   16  linux LN sudo osbench nvme            (root; reported, not gated; skip if the bench refuses)
 #
 # Wanted back per boot: the readback directory (the boot's log with every osbench line and the NVMe
-# driver's bring-up lines), the driver's exit, and the judge's verdict; per Linux run, its stdout.
+# driver's bring-up lines), the driver's exit, and the judge's verdict; per Linux run, its stdout,
+# stderr and exit code.

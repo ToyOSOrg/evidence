@@ -3,8 +3,9 @@
 #   M  c9d6eff6f: main (f9b5d7f12) + the `osbench_disk` row only = the forced-write PR's base arm
 #   F  8a8ff27b9: the forced-write PR (#1202)                  = its change arm, and the APST PR's base arm
 #   P  the APST PR (#1131), rebased onto F, at its head when requested = its change arm
-# Linux on each bench: `osbench persist` and `osbench nvme` from P's revision (it carries
-# `persist.write_4k_fsync_after_idle`), interleaved with the ToyOS boots, 3 runs per bench.
+# Linux on each bench: `osbench persist` from P's revision (it carries
+# `persist.write_4k_fsync_after_idle`), 3 runs per bench, one after each of rounds 1, 2 and 3; and one
+# `osbench nvme` as root after everything else, for the APST table (reported, not gated).
 #
 # Boots: 4 per image per bench, interleaved M F P M F P ..., so 12 ToyOS boots per bench. No probe patch in any
 # arm and no power-state query (pr-1131 r7's instrument caveat): timing alone.
