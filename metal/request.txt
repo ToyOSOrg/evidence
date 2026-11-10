@@ -1,0 +1,30 @@
+# Metal request: forced writes (#1202) and APST (#1131), one request, both benches.
+# Rules, fixed before any boot: <scratch>/metal/rules.txt
+# Nothing here touched a machine. Each image was staged with
+#   cargo test --test toyos-build -- --metal --metal-readback <dir> osbench_disk
+# at the revision named, and its own request.txt gives the driver's invocation.
+#
+# Row: osbench_disk (image label diskbenchcase): osbench files, nvme, persist on the bench's NVMe.
+# Benches: the T14 and the AMD bench.
+#
+# Images (sha256 of the staged image.img):
+#   M  c9d6eff6f2c93c59cfc7232c78bc31808f13ed9b  main f9b5d7f12 + the row only
+#      <scratch>/metal/M/request.txt
+#      b0d9228891ce30aa549faad461a40c02ed65e63cd9ec04b6bcb8377e33a16f33
+#   F  8a8ff27b969b8a0339237ac544f21ea4419546fc  #1202 head (branch block-fua)
+#      <scratch>/metal/F/request.txt
+#      97267eb03c02c09063ed8934b3ff71e67ee6c7c4b95d93952b5cb3eeb804986d
+#   P  24f5de7789377154d59ee41d880447fae37a7cda  #1131 head (branch nvme-apst), rebased onto F
+#      <scratch>/metal/P/request.txt
+#      52b6161306595cdedef58877a2ea102a47d9dca7956fc4650c63f0833435fec5
+#
+# Boots, per bench: 4 of each image, interleaved M F P M F P M F P M F P (12 boots).
+#   One boot per image per round: the images differ, and DATA carries over from boot to boot, which
+#   is part of what F3 judges (each boot mounts the volume the boot before it left).
+#   M and F: list bound 525 s. P: 605 s (its after-idle row idles 80 s).
+# Linux, per bench: 3 runs of `osbench persist` and one of `osbench nvme` (root, for the APST table),
+#   built from P's revision, interleaved with the ToyOS rounds (after rounds 1, 2 and 3).
+# No probe patch and no power-state query in any arm (pr-1131 r7's instrument caveat). No energy boot.
+#
+# Wanted back per boot: the readback directory (the boot's log with every osbench line and the NVMe
+# driver's bring-up lines), the driver's exit, and the judge's verdict; per Linux run, its stdout.
