@@ -24,3 +24,10 @@ Local paths are masked (`<worktree>`, `<scratch>`, `<scratchpad>`, `<home>`, `<t
   `host-r4/shell-copies-fixed.log` are 6aff1970d's derive, linted and tested.
 - `metal-a/`: the shared boots `testcases`, `shared-debug` and `proctreecase` staged at 2bbd17005 for each bench, with each
   bench's request.
+
+## Review round 1, rebased onto main e558cc153
+- `guest/run-43075819858.txt`: the 20 rows at 2bbd17005, 20 pass.
+- `build/build-only-014f2da9d.log`, `host-r5/`, `clippy-r5/`: the image at 014f2da9d, and the touched crates' host suites
+  and clippy at d3643d86e (`rev`), which differs from 014f2da9d by three comments in `tests/images/`. The host-buildable
+  programs (disks, diskserver, fileserver, netstack, nvme, pkg, session, soundserver, sshserver) are tested, not linted.
+- `metal-a-r5/`: the shared boots staged at d3643d86e for each bench, with each bench's request; they supersede `metal-a/`.
