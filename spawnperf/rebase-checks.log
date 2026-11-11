@@ -1,0 +1,400 @@
+### spawnperf rev 4e9f6f2b2b971682fb42d95311a6a630cc47853a
+== cargo test -p kernel --lib --features sched-check vm::
+   Compiling toyos-abi v0.16.0 (<scratch>/spawnperf/wt/sdk/abi)
+   Compiling kernel v0.1.0 (<scratch>/spawnperf/wt/kernel)
+    Finished `test` profile [optimized + debuginfo] target(s) in 17.08s
+     Running unittests pure/lib.rs (target/debug/deps/kernel-a7ca71f2661cd543)
+
+running 16 tests
+test vm::tests::a_copied_page_keeps_nothing_its_frame_held ... ok
+test vm::tests::a_lone_touch_populates_its_own_page ... ok
+test vm::tests::a_copied_range_cut_keeps_its_source_offset_and_length ... ok
+test vm::tests::a_removal_cuts_crossing_entries_and_frees_exactly_its_range ... ok
+test vm::tests::a_removal_over_entries_and_holes_takes_every_entry_it_meets ... ok
+test vm::tests::a_run_stops_at_the_ranges_ends_and_a_neighbour_outside_it_counts_for_nothing ... ok
+test vm::tests::an_empty_space_places_at_its_floor_with_the_alignment_asked ... ok
+test vm::tests::a_touch_beside_a_populated_page_populates_its_run_upward_or_downward ... ok
+test vm::tests::an_update_changes_only_its_range_and_joins_back ... ok
+test vm::tests::backing_is_a_commitment_or_an_object ... ok
+test vm::tests::neighbours_that_continue_each_other_join ... ok
+test vm::tests::no_protection_allows_a_write_and_an_execution ... ok
+test vm::tests::an_insert_over_an_entry_is_a_kernel_bug - should panic ... ok
+test vm::tests::protection_allows_its_accesses_and_bounds_by_its_maximum ... ok
+test vm::tests::placement_takes_the_smallest_free_range_that_fits ... ok
+test vm::tests::a_mixed_load_agrees_with_a_page_map ... ok
+
+test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 448 filtered out; finished in 0.04s
+
+exit 0
+== cargo test -p kernel --lib --features sched-check frames::
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.12s
+     Running unittests pure/lib.rs (target/debug/deps/kernel-a7ca71f2661cd543)
+
+running 39 tests
+test frames::tests::a_charge_made_before_its_floor_grows_from_it ... ok
+test frames::tests::a_hole_is_absent ... ok
+test frames::tests::a_charge_reserves_what_the_heap_grows_into ... ok
+test frames::tests::a_double_free_is_a_kernel_bug - should panic ... ok
+test frames::tests::a_floor_accounts_heap_draws_on_its_floor_and_keeps_it ... ok
+test frames::tests::a_floor_accounts_wait_is_answered_by_its_own_floor ... ok
+test frames::tests::a_floor_is_held_against_every_other_account ... ok
+test frames::tests::a_floor_let_go_releases_what_its_pool_kept ... ok
+test frames::tests::a_floor_is_set_only_where_it_is_free_and_unset_lets_it_go ... ok
+test frames::tests::a_frame_carves_one_superframe_and_its_return_makes_it_whole ... ok
+test frames::tests::a_frame_freed_while_pinned_goes_back_with_its_last_pin ... ok
+test frames::tests::a_floors_superframes_stay_whole_beside_scattered_room ... ok
+test frames::tests::a_kept_superframe_split_answers_a_wait ... ok
+test frames::tests::a_kept_superframe_goes_to_the_kernel_alone ... ok
+test frames::tests::a_pin_count_at_its_limit_refuses_and_pins_nothing ... ok
+test frames::tests::a_pinned_frame_discarded_is_a_panic - should panic ... ok
+test frames::tests::a_promise_holds_its_frames_against_every_other_allocation ... ok
+test frames::tests::a_run_is_contiguous_and_skips_a_gap ... ok
+test frames::tests::a_smaller_refusal_while_waiting_is_what_is_waited_for ... ok
+test frames::tests::a_superframe_and_a_run_come_only_from_whole_superframes ... ok
+test frames::tests::a_superframe_freed_with_a_pinned_frame_is_whole_only_after_the_unpin ... ok
+test frames::tests::a_wait_for_a_run_is_answered_by_a_row ... ok
+test frames::tests::a_wait_for_a_superframe_is_answered_by_one_and_not_by_frames ... ok
+test frames::tests::a_wait_for_memory_is_answered_once_what_it_lacked_comes_back ... ok
+test frames::tests::a_withheld_range_is_never_handed_out ... ok
+test frames::tests::an_uncharge_keeps_one_superframe_of_slack ... ok
+test frames::tests::an_unpin_before_the_free_leaves_nothing_deferred ... ok
+test frames::tests::exhaustion_answers_none_and_a_return_answers_again ... ok
+test frames::tests::frames_fill_a_split_superframe_before_carving_another ... ok
+test frames::tests::fragmentation_never_takes_a_floor ... ok
+test frames::tests::an_unpin_with_no_pin_is_a_kernel_bug - should panic ... ok
+test frames::tests::fragmentation_never_takes_what_charges_or_promises_hold ... ok
+test frames::tests::held_frames_are_taken_whole_or_not_at_all ... ok
+test frames::tests::memory_off_superframe_boundaries_is_used_and_never_whole ... ok
+test frames::tests::memory_outside_the_records_pins_as_nothing ... ok
+test frames::tests::past_its_floor_an_account_is_ordinary_and_gives_back_to_its_floor_first ... ok
+test frames::tests::the_heaps_own_superframes_cover_no_charge ... ok
+test frames::tests::a_mixed_load_keeps_every_frame_once ... ok
+test frames::tests::a_wait_for_memory_is_never_missed ... ok
+
+test result: ok. 39 passed; 0 failed; 0 ignored; 0 measured; 425 filtered out; finished in 0.02s
+
+exit 0
+== cargo clippy -p kernel --target x86_64-unknown-none -- -W clippy::checked_conversions -W clippy::default_trait_access -W clippy::manual_midpoint -W clippy::redundant_clone -W clippy::unchecked_time_subtraction -W clippy::unnecessary_semicolon -D warnings
+    Checking toyos-abi v0.16.0 (<scratch>/spawnperf/wt/sdk/abi)
+    Checking toyos-phys v0.1.0 (<scratch>/spawnperf/wt/kernel/phys)
+    Checking cfg-if v1.0.4
+    Checking toyos-elide v0.1.0 (<scratch>/spawnperf/wt/lib/elide)
+    Checking rustc-demangle v0.1.27
+    Checking toyos-tco v0.1.0 (<scratch>/spawnperf/wt/lib/tco)
+    Checking toyos-rootimage v0.1.0 (<scratch>/spawnperf/wt/lib/rootimage)
+    Checking hashbrown v0.16.1
+    Checking toyos-microcode v0.1.0 (<scratch>/spawnperf/wt/lib/microcode)
+    Checking toyos-register v0.1.0 (<scratch>/spawnperf/wt/kernel/register)
+    Checking toyos-tsc v0.1.0 (<scratch>/spawnperf/wt/lib/tsc)
+    Checking toyos-wallclock v0.1.0 (<scratch>/spawnperf/wt/lib/wallclock)
+    Checking toyos-gicv3 v0.1.0 (<scratch>/spawnperf/wt/kernel/gicv3)
+    Checking toyos-random v0.1.0 (<scratch>/spawnperf/wt/lib/random)
+    Checking toyos-its v0.1.0 (<scratch>/spawnperf/wt/kernel/its)
+    Checking toyos-amdvi v0.1.0 (<scratch>/spawnperf/wt/kernel/amdvi)
+    Checking dlmalloc v0.2.13
+    Checking toyos-bootmap v0.1.0 (<scratch>/spawnperf/wt/lib/bootmap)
+    Checking toyos-kimage v0.1.0 (<scratch>/spawnperf/wt/lib/kimage)
+    Checking toyos-proclife v0.1.0 (<scratch>/spawnperf/wt/kernel/proclife)
+    Checking toyos-symbols v0.1.0 (<scratch>/spawnperf/wt/lib/symbols)
+    Checking toyos-pci v0.1.0 (<scratch>/spawnperf/wt/kernel/pci)
+    Checking toyos-acpi v0.1.0 (<scratch>/spawnperf/wt/lib/acpi)
+    Checking toyos-smmu v0.1.0 (<scratch>/spawnperf/wt/kernel/smmu)
+    Checking toyos-userbound v0.1.0 (<scratch>/spawnperf/wt/lib/userbound)
+    Checking kernel v0.1.0 (<scratch>/spawnperf/wt/kernel)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 7.37s
+exit 0
+== cargo clippy -p kernel --target x86_64-unknown-none --features boot-actuators,test-actuators -- -W clippy::checked_conversions -W clippy::default_trait_access -W clippy::manual_midpoint -W clippy::redundant_clone -W clippy::unchecked_time_subtraction -W clippy::unnecessary_semicolon -D warnings
+    Checking kernel v0.1.0 (<scratch>/spawnperf/wt/kernel)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 9.48s
+exit 0
+== cargo clippy -p kernel --target aarch64-unknown-none-softfloat -- -W clippy::checked_conversions -W clippy::default_trait_access -W clippy::manual_midpoint -W clippy::redundant_clone -W clippy::unchecked_time_subtraction -W clippy::unnecessary_semicolon -D warnings
+    Checking toyos-abi v0.16.0 (<scratch>/spawnperf/wt/sdk/abi)
+    Checking toyos-phys v0.1.0 (<scratch>/spawnperf/wt/kernel/phys)
+    Checking toyos-tco v0.1.0 (<scratch>/spawnperf/wt/lib/tco)
+    Checking cfg-if v1.0.4
+    Checking rustc-demangle v0.1.27
+    Checking toyos-elide v0.1.0 (<scratch>/spawnperf/wt/lib/elide)
+    Checking toyos-tsc v0.1.0 (<scratch>/spawnperf/wt/lib/tsc)
+    Checking toyos-wallclock v0.1.0 (<scratch>/spawnperf/wt/lib/wallclock)
+    Checking toyos-random v0.1.0 (<scratch>/spawnperf/wt/lib/random)
+    Checking toyos-rootimage v0.1.0 (<scratch>/spawnperf/wt/lib/rootimage)
+    Checking toyos-gicv3 v0.1.0 (<scratch>/spawnperf/wt/kernel/gicv3)
+    Checking hashbrown v0.16.1
+    Checking toyos-microcode v0.1.0 (<scratch>/spawnperf/wt/lib/microcode)
+    Checking toyos-register v0.1.0 (<scratch>/spawnperf/wt/kernel/register)
+    Checking toyos-its v0.1.0 (<scratch>/spawnperf/wt/kernel/its)
+    Checking toyos-amdvi v0.1.0 (<scratch>/spawnperf/wt/kernel/amdvi)
+    Checking dlmalloc v0.2.13
+    Checking toyos-bootmap v0.1.0 (<scratch>/spawnperf/wt/lib/bootmap)
+    Checking toyos-proclife v0.1.0 (<scratch>/spawnperf/wt/kernel/proclife)
+    Checking toyos-kimage v0.1.0 (<scratch>/spawnperf/wt/lib/kimage)
+    Checking toyos-pci v0.1.0 (<scratch>/spawnperf/wt/kernel/pci)
+    Checking toyos-symbols v0.1.0 (<scratch>/spawnperf/wt/lib/symbols)
+    Checking toyos-acpi v0.1.0 (<scratch>/spawnperf/wt/lib/acpi)
+    Checking toyos-smmu v0.1.0 (<scratch>/spawnperf/wt/kernel/smmu)
+    Checking toyos-userbound v0.1.0 (<scratch>/spawnperf/wt/lib/userbound)
+    Checking kernel v0.1.0 (<scratch>/spawnperf/wt/kernel)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 8.12s
+exit 0
+== cargo clippy -p kernel --lib --tests --features sched-check -- -W clippy::checked_conversions -W clippy::default_trait_access -W clippy::manual_midpoint -W clippy::redundant_clone -W clippy::unchecked_time_subtraction -W clippy::unnecessary_semicolon -D warnings
+    Checking toyos-abi v0.16.0 (<scratch>/spawnperf/wt/sdk/abi)
+    Checking kernel v0.1.0 (<scratch>/spawnperf/wt/kernel)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 2.66s
+exit 0
+### pmm-batch rev c00a628f1231d4c7bbd267f44d6c71f35669feb1
+== cargo test -p kernel --lib --features sched-check vm::
+   Compiling kernel v0.1.0 (<scratch>/spawnperf/wt/kernel)
+    Finished `test` profile [optimized + debuginfo] target(s) in 8.98s
+     Running unittests pure/lib.rs (target/debug/deps/kernel-a7ca71f2661cd543)
+
+running 16 tests
+test vm::tests::a_lone_touch_populates_its_own_page ... ok
+test vm::tests::a_run_stops_at_the_ranges_ends_and_a_neighbour_outside_it_counts_for_nothing ... ok
+test vm::tests::a_touch_beside_a_populated_page_populates_its_run_upward_or_downward ... ok
+test vm::tests::an_empty_space_places_at_its_floor_with_the_alignment_asked ... ok
+test vm::tests::a_copied_range_cut_keeps_its_source_offset_and_length ... ok
+test vm::tests::a_removal_cuts_crossing_entries_and_frees_exactly_its_range ... ok
+test vm::tests::a_removal_over_entries_and_holes_takes_every_entry_it_meets ... ok
+test vm::tests::an_update_changes_only_its_range_and_joins_back ... ok
+test vm::tests::a_copied_page_keeps_nothing_its_frame_held ... ok
+test vm::tests::backing_is_a_commitment_or_an_object ... ok
+test vm::tests::neighbours_that_continue_each_other_join ... ok
+test vm::tests::no_protection_allows_a_write_and_an_execution ... ok
+test vm::tests::placement_takes_the_smallest_free_range_that_fits ... ok
+test vm::tests::protection_allows_its_accesses_and_bounds_by_its_maximum ... ok
+test vm::tests::an_insert_over_an_entry_is_a_kernel_bug - should panic ... ok
+test vm::tests::a_mixed_load_agrees_with_a_page_map ... ok
+
+test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 449 filtered out; finished in 0.04s
+
+exit 0
+== cargo test -p kernel --lib --features sched-check frames::
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.18s
+     Running unittests pure/lib.rs (target/debug/deps/kernel-a7ca71f2661cd543)
+
+running 40 tests
+test frames::tests::a_batch_of_promised_frames_draws_each_promise_once ... ok
+test frames::tests::a_charge_made_before_its_floor_grows_from_it ... ok
+test frames::tests::a_charge_reserves_what_the_heap_grows_into ... ok
+test frames::tests::a_double_free_is_a_kernel_bug - should panic ... ok
+test frames::tests::a_floor_accounts_heap_draws_on_its_floor_and_keeps_it ... ok
+test frames::tests::a_floor_accounts_wait_is_answered_by_its_own_floor ... ok
+test frames::tests::a_floor_is_held_against_every_other_account ... ok
+test frames::tests::a_floor_is_set_only_where_it_is_free_and_unset_lets_it_go ... ok
+test frames::tests::a_floor_let_go_releases_what_its_pool_kept ... ok
+test frames::tests::a_frame_carves_one_superframe_and_its_return_makes_it_whole ... ok
+test frames::tests::a_frame_freed_while_pinned_goes_back_with_its_last_pin ... ok
+test frames::tests::a_floors_superframes_stay_whole_beside_scattered_room ... ok
+test frames::tests::a_hole_is_absent ... ok
+test frames::tests::a_kept_superframe_goes_to_the_kernel_alone ... ok
+test frames::tests::a_kept_superframe_split_answers_a_wait ... ok
+test frames::tests::a_pin_count_at_its_limit_refuses_and_pins_nothing ... ok
+test frames::tests::a_pinned_frame_discarded_is_a_panic - should panic ... ok
+test frames::tests::a_promise_holds_its_frames_against_every_other_allocation ... ok
+test frames::tests::a_run_is_contiguous_and_skips_a_gap ... ok
+test frames::tests::a_smaller_refusal_while_waiting_is_what_is_waited_for ... ok
+test frames::tests::a_superframe_and_a_run_come_only_from_whole_superframes ... ok
+test frames::tests::a_superframe_freed_with_a_pinned_frame_is_whole_only_after_the_unpin ... ok
+test frames::tests::a_wait_for_a_run_is_answered_by_a_row ... ok
+test frames::tests::a_wait_for_a_superframe_is_answered_by_one_and_not_by_frames ... ok
+test frames::tests::a_wait_for_memory_is_answered_once_what_it_lacked_comes_back ... ok
+test frames::tests::a_withheld_range_is_never_handed_out ... ok
+test frames::tests::an_uncharge_keeps_one_superframe_of_slack ... ok
+test frames::tests::an_unpin_before_the_free_leaves_nothing_deferred ... ok
+test frames::tests::exhaustion_answers_none_and_a_return_answers_again ... ok
+test frames::tests::an_unpin_with_no_pin_is_a_kernel_bug - should panic ... ok
+test frames::tests::fragmentation_never_takes_a_floor ... ok
+test frames::tests::frames_fill_a_split_superframe_before_carving_another ... ok
+test frames::tests::held_frames_are_taken_whole_or_not_at_all ... ok
+test frames::tests::memory_off_superframe_boundaries_is_used_and_never_whole ... ok
+test frames::tests::memory_outside_the_records_pins_as_nothing ... ok
+test frames::tests::past_its_floor_an_account_is_ordinary_and_gives_back_to_its_floor_first ... ok
+test frames::tests::the_heaps_own_superframes_cover_no_charge ... ok
+test frames::tests::fragmentation_never_takes_what_charges_or_promises_hold ... ok
+test frames::tests::a_mixed_load_keeps_every_frame_once ... ok
+test frames::tests::a_wait_for_memory_is_never_missed ... ok
+
+test result: ok. 40 passed; 0 failed; 0 ignored; 0 measured; 425 filtered out; finished in 0.02s
+
+exit 0
+== cargo clippy -p kernel --target x86_64-unknown-none -- -W clippy::checked_conversions -W clippy::default_trait_access -W clippy::manual_midpoint -W clippy::redundant_clone -W clippy::unchecked_time_subtraction -W clippy::unnecessary_semicolon -D warnings
+    Checking kernel v0.1.0 (<scratch>/spawnperf/wt/kernel)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 3.59s
+exit 0
+== cargo clippy -p kernel --target x86_64-unknown-none --features boot-actuators,test-actuators -- -W clippy::checked_conversions -W clippy::default_trait_access -W clippy::manual_midpoint -W clippy::redundant_clone -W clippy::unchecked_time_subtraction -W clippy::unnecessary_semicolon -D warnings
+    Checking kernel v0.1.0 (<scratch>/spawnperf/wt/kernel)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 2.31s
+exit 0
+== cargo clippy -p kernel --target aarch64-unknown-none-softfloat -- -W clippy::checked_conversions -W clippy::default_trait_access -W clippy::manual_midpoint -W clippy::redundant_clone -W clippy::unchecked_time_subtraction -W clippy::unnecessary_semicolon -D warnings
+    Checking kernel v0.1.0 (<scratch>/spawnperf/wt/kernel)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 1.98s
+exit 0
+== cargo clippy -p kernel --lib --tests --features sched-check -- -W clippy::checked_conversions -W clippy::default_trait_access -W clippy::manual_midpoint -W clippy::redundant_clone -W clippy::unchecked_time_subtraction -W clippy::unnecessary_semicolon -D warnings
+    Checking kernel v0.1.0 (<scratch>/spawnperf/wt/kernel)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 2.42s
+exit 0
+### shm-first-touch rev 0c76f7a467c4ebfc6daf710e80d7e607588f06e2
+== cargo test -p kernel --lib --features sched-check vm::
+    Blocking waiting for file lock on package cache
+   Compiling kernel v0.1.0 (<scratch>/spawnperf/wt/kernel)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.30s
+     Running unittests pure/lib.rs (target/debug/deps/kernel-a7ca71f2661cd543)
+
+running 16 tests
+test vm::tests::a_lone_touch_populates_its_own_page ... ok
+test vm::tests::a_run_stops_at_the_ranges_ends_and_a_neighbour_outside_it_counts_for_nothing ... ok
+test vm::tests::a_touch_beside_a_populated_page_populates_its_run_upward_or_downward ... ok
+test vm::tests::a_copied_page_keeps_nothing_its_frame_held ... ok
+test vm::tests::no_protection_allows_a_write_and_an_execution ... ok
+test vm::tests::an_empty_space_places_at_its_floor_with_the_alignment_asked ... ok
+test vm::tests::protection_allows_its_accesses_and_bounds_by_its_maximum ... ok
+test vm::tests::placement_takes_the_smallest_free_range_that_fits ... ok
+test vm::tests::backing_is_a_commitment_or_an_object ... ok
+test vm::tests::a_copied_range_cut_keeps_its_source_offset_and_length ... ok
+test vm::tests::neighbours_that_continue_each_other_join ... ok
+test vm::tests::an_update_changes_only_its_range_and_joins_back ... ok
+test vm::tests::a_removal_over_entries_and_holes_takes_every_entry_it_meets ... ok
+test vm::tests::a_removal_cuts_crossing_entries_and_frees_exactly_its_range ... ok
+test vm::tests::an_insert_over_an_entry_is_a_kernel_bug - should panic ... ok
+test vm::tests::a_mixed_load_agrees_with_a_page_map ... ok
+
+test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 449 filtered out; finished in 0.04s
+
+exit 0
+== cargo test -p kernel --lib --features sched-check frames::
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.11s
+     Running unittests pure/lib.rs (target/debug/deps/kernel-a7ca71f2661cd543)
+
+running 40 tests
+test frames::tests::a_charge_made_before_its_floor_grows_from_it ... ok
+test frames::tests::a_floor_accounts_heap_draws_on_its_floor_and_keeps_it ... ok
+test frames::tests::a_charge_reserves_what_the_heap_grows_into ... ok
+test frames::tests::a_floor_accounts_wait_is_answered_by_its_own_floor ... ok
+test frames::tests::a_batch_of_promised_frames_draws_each_promise_once ... ok
+test frames::tests::a_floor_let_go_releases_what_its_pool_kept ... ok
+test frames::tests::a_floor_is_held_against_every_other_account ... ok
+test frames::tests::a_floor_is_set_only_where_it_is_free_and_unset_lets_it_go ... ok
+test frames::tests::a_frame_carves_one_superframe_and_its_return_makes_it_whole ... ok
+test frames::tests::a_hole_is_absent ... ok
+test frames::tests::a_floors_superframes_stay_whole_beside_scattered_room ... ok
+test frames::tests::a_kept_superframe_goes_to_the_kernel_alone ... ok
+test frames::tests::a_frame_freed_while_pinned_goes_back_with_its_last_pin ... ok
+test frames::tests::a_kept_superframe_split_answers_a_wait ... ok
+test frames::tests::a_double_free_is_a_kernel_bug - should panic ... ok
+test frames::tests::a_pin_count_at_its_limit_refuses_and_pins_nothing ... ok
+test frames::tests::a_pinned_frame_discarded_is_a_panic - should panic ... ok
+test frames::tests::a_promise_holds_its_frames_against_every_other_allocation ... ok
+test frames::tests::a_run_is_contiguous_and_skips_a_gap ... ok
+test frames::tests::a_smaller_refusal_while_waiting_is_what_is_waited_for ... ok
+test frames::tests::a_superframe_and_a_run_come_only_from_whole_superframes ... ok
+test frames::tests::a_superframe_freed_with_a_pinned_frame_is_whole_only_after_the_unpin ... ok
+test frames::tests::a_wait_for_a_run_is_answered_by_a_row ... ok
+test frames::tests::a_wait_for_a_superframe_is_answered_by_one_and_not_by_frames ... ok
+test frames::tests::a_wait_for_memory_is_answered_once_what_it_lacked_comes_back ... ok
+test frames::tests::a_withheld_range_is_never_handed_out ... ok
+test frames::tests::an_uncharge_keeps_one_superframe_of_slack ... ok
+test frames::tests::an_unpin_before_the_free_leaves_nothing_deferred ... ok
+test frames::tests::an_unpin_with_no_pin_is_a_kernel_bug - should panic ... ok
+test frames::tests::exhaustion_answers_none_and_a_return_answers_again ... ok
+test frames::tests::frames_fill_a_split_superframe_before_carving_another ... ok
+test frames::tests::fragmentation_never_takes_a_floor ... ok
+test frames::tests::held_frames_are_taken_whole_or_not_at_all ... ok
+test frames::tests::memory_off_superframe_boundaries_is_used_and_never_whole ... ok
+test frames::tests::memory_outside_the_records_pins_as_nothing ... ok
+test frames::tests::past_its_floor_an_account_is_ordinary_and_gives_back_to_its_floor_first ... ok
+test frames::tests::the_heaps_own_superframes_cover_no_charge ... ok
+test frames::tests::fragmentation_never_takes_what_charges_or_promises_hold ... ok
+test frames::tests::a_mixed_load_keeps_every_frame_once ... ok
+test frames::tests::a_wait_for_memory_is_never_missed ... ok
+
+test result: ok. 40 passed; 0 failed; 0 ignored; 0 measured; 425 filtered out; finished in 0.02s
+
+exit 0
+== cargo clippy -p kernel --target x86_64-unknown-none -- -W clippy::checked_conversions -W clippy::default_trait_access -W clippy::manual_midpoint -W clippy::redundant_clone -W clippy::unchecked_time_subtraction -W clippy::unnecessary_semicolon -D warnings
+    Checking kernel v0.1.0 (<scratch>/spawnperf/wt/kernel)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 1.78s
+exit 0
+== cargo clippy -p kernel --target x86_64-unknown-none --features boot-actuators,test-actuators -- -W clippy::checked_conversions -W clippy::default_trait_access -W clippy::manual_midpoint -W clippy::redundant_clone -W clippy::unchecked_time_subtraction -W clippy::unnecessary_semicolon -D warnings
+    Checking kernel v0.1.0 (<scratch>/spawnperf/wt/kernel)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 1.49s
+exit 0
+== cargo clippy -p kernel --target aarch64-unknown-none-softfloat -- -W clippy::checked_conversions -W clippy::default_trait_access -W clippy::manual_midpoint -W clippy::redundant_clone -W clippy::unchecked_time_subtraction -W clippy::unnecessary_semicolon -D warnings
+    Checking kernel v0.1.0 (<scratch>/spawnperf/wt/kernel)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 1.32s
+exit 0
+== cargo clippy -p kernel --lib --tests --features sched-check -- -W clippy::checked_conversions -W clippy::default_trait_access -W clippy::manual_midpoint -W clippy::redundant_clone -W clippy::unchecked_time_subtraction -W clippy::unnecessary_semicolon -D warnings
+    Checking kernel v0.1.0 (<scratch>/spawnperf/wt/kernel)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.70s
+exit 0
+== cargo test --manifest-path kernel/loom/Cargo.toml --test shm_slot
+   Compiling rustversion v1.0.22
+   Compiling once_cell v1.21.4
+   Compiling find-msvc-tools v0.1.9
+   Compiling shlex v1.3.0
+   Compiling libc v0.2.190
+   Compiling log v0.4.29
+   Compiling regex-syntax v0.8.11
+   Compiling cfg-if v1.0.4
+   Compiling pin-project-lite v0.2.17
+   Compiling lazy_static v1.5.0
+   Compiling nu-ansi-term v0.50.3
+   Compiling smallvec v1.15.1
+   Compiling scoped-tls v1.0.1
+   Compiling thread_local v1.1.10
+   Compiling sharded-slab v0.1.7
+   Compiling tracing-core v0.1.36
+   Compiling cc v1.2.56
+   Compiling tracing v0.1.44
+   Compiling tracing-log v0.2.0
+   Compiling regex-automata v0.4.18
+   Compiling generator v0.8.9
+   Compiling matchers v0.2.0
+   Compiling tracing-subscriber v0.3.23
+   Compiling loom v0.7.2 (https://github.com/ToyOSOrg/loom?branch=toyos#dfe37972)
+   Compiling kernel-loom v0.1.0 (<scratch>/spawnperf/wt/kernel/loom)
+    Finished `test` profile [optimized + debuginfo] target(s) in 22.07s
+     Running tests/shm_slot.rs (target/debug/deps/shm_slot-ac90b682fc578511)
+
+running 3 tests
+test a_touch_after_the_first_draws_nothing ... ok
+test two_touches_draw_once_and_are_handed_one_frame ... ok
+test a_frame_is_handed_over_with_what_its_drawer_wrote ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+exit 0
+== cargo test --manifest-path kernel/loom/Cargo.toml --features slot-install-relaxed --test shm_slot
+   Compiling kernel-loom v0.1.0 (<scratch>/spawnperf/wt/kernel/loom)
+    Finished `test` profile [optimized + debuginfo] target(s) in 3.12s
+     Running tests/shm_slot.rs (target/debug/deps/shm_slot-80ac1b151034fed1)
+
+running 3 tests
+test a_touch_after_the_first_draws_nothing ... ok
+test two_touches_draw_once_and_are_handed_one_frame ... FAILED
+test a_frame_is_handed_over_with_what_its_drawer_wrote ... FAILED
+
+failures:
+
+---- two_touches_draw_once_and_are_handed_one_frame stdout ----
+
+thread 'two_touches_draw_once_and_are_handed_one_frame' (36067722) panicked at <cargo-home>/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/rt/location.rs:115:9:
+Causality violation: Concurrent read and write accesses.
+
+
+---- a_frame_is_handed_over_with_what_its_drawer_wrote stdout ----
+
+thread 'a_frame_is_handed_over_with_what_its_drawer_wrote' (36067720) panicked at <cargo-home>/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/rt/location.rs:115:9:
+Causality violation: Concurrent read and write accesses.
+
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    a_frame_is_handed_over_with_what_its_drawer_wrote
+    two_touches_draw_once_and_are_handed_one_frame
+
+test result: FAILED. 1 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--test shm_slot`
+exit 101
+all done
