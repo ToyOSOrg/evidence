@@ -1,0 +1,41 @@
+HEAD 3861e0efc92bb9f146e5b5784600dc0181aca35c
+
+=== M1 div_rem's power-of-two remainder halved (equivalent: fine(ns) is a multiple of every power-of-two weight up to 2^48)
+  build exit 0; test exit 0: PASSED (mutation survived)
+  
+=== M1b div_rem's other remainder halved
+  build exit 0; test exit 101: FAILED as required
+  thread 'sched::queue::differential::the_run_queue_decides_as_the_one_it_replaced' (28047047) panicked at kernel/pure/sched/queue/differential.rs:236:13:
+  assertion `left == right` failed: standing after leave_running
+    left: (Some(Left { lag: Lag(0), request_left: 515000409663675039744 }), Lag(697267301113639337984))
+=== M2 a lone exit's unfinished request one unit short
+  build exit 0; test exit 101: FAILED as required
+  thread 'sched::queue::differential::the_run_queue_decides_as_the_one_it_replaced' (28048862) panicked at kernel/pure/sched/queue/differential.rs:236:13:
+  assertion `left == right` failed: standing after leave_running
+    left: (Some(Left { lag: Lag(0), request_left: 1125899906842623999999 }), Lag(0))
+=== M3 a group's member pushed at the end, out of job order
+  build exit 0; test exit 101: FAILED as required
+  thread 'sched::queue::differential::the_run_queue_decides_as_the_one_it_replaced' (28053632) panicked at kernel/pure/sched/queue/differential.rs:277:9:
+  assertion `left == right` failed: cpu0
+    left: View { len: 2, fair_len: 2, movable_fair: 2, takers: CpuMask([18446744073709551615, 18446744073709551615, 18446744073709551615, 18446744073709551615, 18446744073709551615, 18446744073709551615, 18446744073709551615, 18446744073709551615, 18446744073709551615, 18446744073709551615, 18446744073709551615, 18446744073709551615, 18446744073709551615, 18446744073709551615, 18446744073709551615, 18446744073709551615]), weight: 81920, groups: [(JobKey(2), 65536, 1), (JobKey(1), 16384, 1)], keys: [TaskKey(7), TaskKey(5)], movable: [TaskKey(7), TaskKey(5)], has_rt: false, running_is_fair: false, decision: None }
+=== M4 a two-CPU mask counted unrestricted
+  build exit 0; test exit 101: FAILED as required
+  thread 'sched::queue::differential::the_run_queue_decides_as_the_one_it_replaced' (28057799) panicked at kernel/pure/sched/queue/differential.rs:277:9:
+  assertion `left == right` failed: cpu0
+    left: View { len: 1, fair_len: 1, movable_fair: 1, takers: CpuMask([18446744073709551615, 18446744073709551615, 18446744073709551615, 18446744073709551615, 18446744073709551615, 18446744073709551615, 18446744073709551615, 18446744073709551615, 18446744073709551615, 18446744073709551615, 18446744073709551615, 18446744073709551615, 18446744073709551615, 18446744073709551615, 18446744073709551615, 18446744073709551615]), weight: 32768, groups: [(JobKey(1), 32768, 1)], keys: [TaskKey(2)], movable: [TaskKey(2)], has_rt: false, running_is_fair: false, decision: None }
+=== M5 the whole-job shortcut taken with one thread elsewhere
+  build exit 0; test exit 101: FAILED as required
+  thread 'sched::queue::differential::the_run_queue_decides_as_the_one_it_replaced' (28061485) panicked at kernel/pure/sched/queue/differential.rs:277:9:
+  assertion `left == right` failed: cpu0
+    left: View { len: 1, fair_len: 1, movable_fair: 1, takers: CpuMask([3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]), weight: 65536, groups: [(JobKey(1), 65536, 1)], keys: [TaskKey(2)], movable: [TaskKey(2)], has_rt: false, running_is_fair: false, decision: None }
+=== M6 a mask's reach not refreshed with it
+  build exit 0; test exit 101: FAILED as required
+  thread 'sched::queue::differential::the_run_queue_decides_as_the_one_it_replaced' (28063525) panicked at kernel/pure/sched/queue/differential.rs:277:9:
+  assertion `left == right` failed: cpu2
+    left: View { len: 4, fair_len: 4, movable_fair: 3, takers: CpuMask([18446744073709551615, 18446744073709551615, 18446744073709551615, 18446744073709551615, 18446744073709551615, 18446744073709551615, 18446744073709551615, 18446744073709551615, 18446744073709551615, 18446744073709551615, 18446744073709551615, 18446744073709551615, 18446744073709551615, 18446744073709551615, 18446744073709551615, 18446744073709551615]), weight: 36408, groups: [(JobKey(1), 36408, 5)], keys: [TaskKey(4), TaskKey(7), TaskKey(2), TaskKey(6)], movable: [TaskKey(4), TaskKey(2), TaskKey(6)], has_rt: false, running_is_fair: true, decision: Some(Nanos(4001000)) }
+=== M7 the power-of-two test off by one
+  build exit 0; test exit 101: FAILED as required
+  thread 'sched::queue::differential::the_run_queue_decides_as_the_one_it_replaced' (28065004) panicked at kernel/pure/sched/queue/differential.rs:248:17:
+  assertion `left == right` failed: standing after pop_surplus
+    left: (Some(Left { lag: Lag(-159544019999268558166), request_left: 856669373093858246656 }), Lag(0))
+restored; status: ''
