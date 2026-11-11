@@ -1,0 +1,58 @@
+revision 5d1abdac1efc3e664307d141a9f660477dc0b6ab
+applied m2-drop-before-read
+diff --git a/sdk/toyos/src/admission.rs b/sdk/toyos/src/admission.rs
+index 5742865de..74226b5ca 100644
+--- a/sdk/toyos/src/admission.rs
++++ b/sdk/toyos/src/admission.rs
+@@ -463,6 +463,10 @@ where
+                 continue;
+             }
+             w.woken = false;
++            if due {
++                let Waiting { conn, key, context, .. } = self.waiting.remove(self.cursor);
++                return Some(Event::Left { conn, key, context, why: Left::Silent, say: None });
++            }
+             let why = match w.conn.pump(&mut w.rx) {
+                 RxStep::Frame { msg_type, payload_len, .. } => {
+                     let Waiting { conn, rx, key, context, .. } = self.waiting.remove(self.cursor);
+$ cargo test -p toyos --lib admission
+   Compiling toyos v0.18.0 (<worktree>/sdk/toyos)
+    Finished `test` profile [optimized + debuginfo] target(s) in 6.17s
+     Running unittests src/lib.rs (target/debug/deps/toyos-d609c66f3e36149d)
+
+running 15 tests
+test admission::tests::a_client_that_never_sends_its_request_is_let_go_at_its_limit_and_not_before ... ok
+test admission::tests::a_key_at_its_share_is_refused_while_another_key_is_taken ... ok
+test admission::tests::a_full_table_accepts_nothing_and_its_port_keeps_the_connection ... ok
+test admission::tests::a_full_table_has_no_room_and_refuses_the_next ... ok
+test admission::tests::a_client_that_reads_no_reply_is_refused_it_and_holds_nobody ... ok
+test admission::tests::an_admitted_client_s_requests_come_one_at_a_time ... ok
+test admission::tests::a_key_s_refusals_are_said_once_a_limit_with_the_count_between ... ok
+test admission::tests::a_request_sent_before_the_accept_is_read_at_the_first_pass ... ok
+test admission::tests::a_connection_is_read_only_when_it_woke_or_its_limit_passed ... ok
+test admission::tests::the_wait_is_what_is_left_of_the_oldest_limit ... ok
+test admission::tests::a_frame_no_protocol_describes_and_a_hang_up_each_free_their_slot ... ok
+test admission::tests::a_key_s_malformed_frames_are_said_once_a_limit_and_hang_ups_never ... ok
+test admission::tests::past_its_slots_keys_a_table_says_one_more_line_a_limit_and_counts_the_rest ... ok
+test admission::tests::two_waiting_connections_never_share_a_slot ... ok
+test admission::tests::a_request_that_is_whole_is_served_on_a_pass_past_its_limit ... FAILED
+
+failures:
+
+---- admission::tests::a_request_that_is_whole_is_served_on_a_pass_past_its_limit stdout ----
+
+thread 'admission::tests::a_request_that_is_whole_is_served_on_a_pass_past_its_limit' (33129579) panicked at sdk/toyos/src/admission.rs:664:9:
+assertion `left == right` failed
+  left: [("late", Err(Silent))]
+ right: [("late", Ok(7))]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    admission::tests::a_request_that_is_whole_is_served_on_a_pass_past_its_limit
+
+test result: FAILED. 14 passed; 1 failed; 0 ignored; 0 measured; 181 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos --lib`
+m2-drop-before-read exit 101
+restored

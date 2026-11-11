@@ -25,3 +25,8 @@ Paths are masked: `<worktree>` is the branch's checkout, `<scratch>` the agent's
 - `metal-stage-602db29e9.log`, `metal-request-602db29e9.txt`: metal images staged at the head; no machine touched.
 - `guest-43050908618-at-97b413994.log`: the job log of guest run 43050908618 at 97b413994, the head before review r1. The runner's machine name is masked as `<host>`.
 - `guest-43066328896-at-602db29e9.log`: the job log of guest run 43066328896 at 602db29e9, all six rows passed. The runner's machine name is masked as `<host>`.
+
+## Review r2, head 5d1abdac1
+
+- `host-5d1abdac1/`: the module's and logkeeper's lint and tests, and a check of the six host-buildable servers, at 5d1abdac1 (`bc262f850 + worktree diff 6e09b8eb22fd` is `git diff bc262f850 5d1abdac1`).
+- `mutations-5d1abdac1/`: the six negative controls of `sdk/toyos/src/admission.rs` at 5d1abdac1, two of them (`m5`, `m6`) of the line bound as it now is.
