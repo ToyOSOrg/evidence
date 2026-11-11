@@ -1,0 +1,28 @@
+diff --git a/tests/common/libcchildren.rs b/tests/common/libcchildren.rs
+index 8932b1329..bbd8ab55a 100644
+--- a/tests/common/libcchildren.rs
++++ b/tests/common/libcchildren.rs
+@@ -29,7 +29,7 @@ use qemu::{BootOptions, QemuInstance, TestResult};
+ const RUST_PROBES: [&str; 5] = ["stdio_named", "libc_recv_beside_close", "quit_tree", "libc_read_restarts", "tty_interrupt"];
+ 
+ /// Each program's bound: `spawn_children_cap` starts and waits for 255.
+-const BOUND: Duration = Duration::from_secs(300);
++const BOUND: Duration = Duration::from_secs(50);
+ 
+ pub fn libc_children() -> Result<(), String> {
+     let dir = compile::repo_root().join("tests/guest/libc");
+diff --git a/tests/guest/rust-tests/src/bin/libc_read_restarts.rs b/tests/guest/rust-tests/src/bin/libc_read_restarts.rs
+index e5b12da98..85930b5e2 100644
+--- a/tests/guest/rust-tests/src/bin/libc_read_restarts.rs
++++ b/tests/guest/rust-tests/src/bin/libc_read_restarts.rs
+@@ -92,6 +92,10 @@ fn main() {
+ }
+ 
+ fn test() {
++    // CONTROL, never to land: this program hangs in silence.
++    while std::env::args().count() < 99 {
++        std::thread::sleep(std::time::Duration::from_secs(3600));
++    }
+     let ran = pipe_pair();
+     // SAFETY: no child, so no handler, runs yet.
+     unsafe { RAN = ran[1] };
