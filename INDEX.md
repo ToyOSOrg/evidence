@@ -25,3 +25,6 @@ Revision: the checks ran at 34cb4c918 plus the change's tree, which is commit ad
 ## r1/ (review round 1, head d8090d44c, rebased onto 6d0cb3ae9)
 - `summary.txt`: compile checks of the type-level fix, as the review asked. They are `cargo test -p toyos --lib ipc::` and clippy in CI's shapes (`toyos --all-targets`, `toyos --lib --features fd-table`, `toyos-abi`), each exit 0.
 - `guest-compile.log`: `--metal --metal-readback <dir> served_file_offset` at d8090d44c, used only as the guest compile. It builds std, libc, every program and every guest binary, then exits 2 (staged, 1 image, not requested).
+
+## r2 (review round 2, head 15fa1e54d: comments only, nothing rerun)
+- Correction to r1: `guest-compile.log` compiled std, libc, the `testcases` image's programs and every guest binary, not every program. That image builds no compositor; the compositor, console, uart and acpiserver call `endow::device`, whose bound is unchanged.
