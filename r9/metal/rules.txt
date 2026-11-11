@@ -26,9 +26,18 @@
 #    Expected from the earlier runs: the AMD at about parity with Linux (r7: 11.29 against 11.36 ms). If it is
 #    not, within 5% of Linux's median, that is reported for the orchestrator to decide again.
 # R2 The wake's cost on each bench: P' after_idle minus M' after_idle (APST's own price for the first write).
-# R3 The T14's slow mode, per boot of each arm: the mode of `persist.write_4k_fsync` (before the idle row) and
-#    of the durable rows after it (`append_4k_fsync`, `create_fsync_unlink`, `write_4k_fsync_beside_1m`).
-#    - If M' boots that begin slow end fast after the idle row: idle alone ends the mode, APST is not needed.
-#    - If only P' boots do: APST ends it, a second reason for #1131.
-#    - A boot that begins fast says nothing; with fewer than two slow-starting boots in an arm the question is
-#      reported as not separated.
+# R3 The T14's slow mode, per boot of each arm (amended before any boot of this request, after review of
+#    the first A/B's record: one of its seven slow-starting boots without idle or APST left the mode by itself,
+#    inside its first durable row).
+#    Per boot: the p50 AND p90 of `persist.write_4k_fsync` (before the idle row) and of the durable rows after
+#    it (`append_4k_fsync`, `create_fsync_unlink`, `write_4k_fsync_beside_1m`). A row is slow when its p50 is
+#    over 3 ms, mixed when its p50 is under and its p90 over, fast otherwise. A boot "begins slow" when its
+#    first durable row is slow or mixed.
+#    Reported as counts: of each arm's boots that begin slow, how many have every durable row after the idle
+#    row fast. The base rate to set them against is 1 in 7 leaving unprompted.
+#    With three boots an arm, no count here establishes a cause. What can be said:
+#    - M' none leave and P' all leave (at least two slow-starting boots in each): consistent with APST ending
+#      the mode; reported as that, not as proved.
+#    - M' all leave (at least two): consistent with idle alone ending it, APST not needed for it.
+#    - Anything else, or fewer than two slow-starting boots in an arm: reported as not separated.
+#    The first A/B's four P boots (4 of 4 left, APST and idle together) are stated beside these, not pooled.
