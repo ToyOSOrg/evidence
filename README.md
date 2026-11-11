@@ -68,3 +68,7 @@ Local paths are masked (`<worktree>`, `<scratch>`, `<scratchpad>`, `<home>`, `<t
   `Handles::table`'s doc drops the stdio clause; `system/diskserver/src/session.rs` says a session reaches its service through
   a connector. 5dd83dcda's tree differs from 64eb00ee6's only in those two comments, so `r9/` and guest run 43112704482,
   dispatched at 64eb00ee6, hold for it.
+
+## The control at main, and 07b5e86b3
+- `guest/run-43102568233.txt`: `kernel_objects_refused_alone` and `a_clean_stop_proves_its_image` at main e10b6fd49, both
+  pass. 07b5e86b3 (records only) adds that result to the `kernel_objects_refused` record; its code is 5dd83dcda's.
