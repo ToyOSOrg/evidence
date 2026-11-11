@@ -1,0 +1,36 @@
+diff --git a/lib/bcachefs/src/engine/tests/data.rs b/lib/bcachefs/src/engine/tests/data.rs
+index 33b72ff69..35c4698e6 100644
+--- a/lib/bcachefs/src/engine/tests/data.rs
++++ b/lib/bcachefs/src/engine/tests/data.rs
+@@ -750,3 +750,31 @@ fn a_reserved_write_inside_a_large_block_lands_on_that_block() {
+     assert_eq!(read_all(&v, neighbour).unwrap(), [0x5a; 16 << 10], "the neighbour's bytes");
+     assert_eq!(block_on_ready(fsck(&v)).unwrap(), []);
+ }
++
++#[test]
++fn scratch_full_volume_unlink_then_write_without_commit() {
++    let dev = formatted(64 << 20, None);
++    let m = block_on_ready(Mount::open(&dev, MEMORY, random())).unwrap();
++    let ino = block_on_ready(m.create(m.root(), b"full", New::File, OWNER, NOW)).unwrap().ino;
++    let bytes = vec![0x62; 1 << 20];
++    let mut written = 0;
++    loop {
++        match block_on_ready(m.write(ino, written, &bytes, NOW)) {
++            Ok(n) => written += n as u64,
++            Err(Error::NoSpace(_)) => break,
++            Err(error) => panic!("fill: {error:?}"),
++        }
++    }
++    block_on_ready(m.commit()).unwrap();
++    let other = block_on_ready(m.create(m.root(), b"again", New::File, OWNER, NOW)).map(|n| n.ino);
++    std::println!("SCRATCH create on full: {other:?}");
++    if let Ok(o) = other { std::println!("SCRATCH control, write before the unlink: {:?}", block_on_ready(m.write(o, 0, &bytes, NOW))); }
++    block_on_ready(m.unlink(m.root(), b"full", false, NOW)).unwrap();
++    block_on_ready(m.release(ino)).unwrap();
++    let other = match other { Ok(i) => i, Err(_) => block_on_ready(m.create(m.root(), b"again", New::File, OWNER, NOW)).unwrap().ino };
++    let first = block_on_ready(m.write(other, 0, &bytes, NOW));
++    std::println!("SCRATCH write after unlink+release, no commit: {first:?} (filled {written})");
++    block_on_ready(m.commit()).unwrap();
++    let second = block_on_ready(m.write(other, 0, &bytes, NOW));
++    std::println!("SCRATCH write after commit: {second:?}");
++}
