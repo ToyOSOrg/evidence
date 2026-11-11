@@ -1,0 +1,14 @@
+revision bcc1c4fdb22dcaa766a18a122b3d8a0d5ae7fd1f + worktree diff 6a6186777b82
+$ cargo clippy -p logkeeper --all-targets --message-format=short -- -W clippy::checked_conversions -W clippy::default_trait_access -W clippy::manual_midpoint -W clippy::redundant_clone -W clippy::unchecked_time_subtraction -W clippy::unnecessary_semicolon
+    Checking toyos-inspect v0.1.0 (<worktree>/lib/inspect)
+    Checking toyos-quiesce v0.1.0 (<worktree>/lib/quiesce)
+    Checking toyos-elide v0.1.0 (<worktree>/lib/elide)
+    Checking toyos-tmpdir v0.1.0 (<worktree>/lib/tmpdir)
+    Checking logkeeper v0.1.0 (<worktree>/system/logkeeper)
+system/logkeeper/src/main.rs:357:24: warning: methods called `from_*` usually take no `self`
+system/logkeeper/src/main.rs:611:18: warning: methods with the following characteristics: (`to_*` and `self` type is not `Copy`) usually take `self` by reference
+warning: `logkeeper` (bin "logkeeper") generated 2 warnings
+system/logkeeper/src/policy.rs:78:32: warning: unchecked subtraction of a `Duration`: help: try: `next.checked_sub(Duration::from_millis(1)).unwrap()`
+warning: `logkeeper` (bin "logkeeper" test) generated 3 warnings (2 duplicates) (run `cargo clippy --fix --bin "logkeeper" -p logkeeper --tests -- -W clippy::checked_conversions -W clippy::default_trait_access -W clippy::manual_midpoint -W clippy::redundant_clone -W clippy::unchecked_time_subtraction -W clippy::unnecessary_semicolon` to apply 1 suggestion)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.89s
+exit 0

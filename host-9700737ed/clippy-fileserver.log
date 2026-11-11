@@ -1,0 +1,16 @@
+revision bcc1c4fdb22dcaa766a18a122b3d8a0d5ae7fd1f + worktree diff 6a6186777b82
+$ cargo clippy -p fileserver --all-targets --message-format=short -- -W clippy::checked_conversions -W clippy::default_trait_access -W clippy::manual_midpoint -W clippy::redundant_clone -W clippy::unchecked_time_subtraction -W clippy::unnecessary_semicolon
+    Checking toyos-logstream v0.1.0 (<worktree>/lib/logstream)
+    Checking toyos-wallclock v0.1.0 (<worktree>/lib/wallclock)
+    Checking toyos-osrelease v0.1.0 (<worktree>/sdk/osrelease)
+    Checking toyos-fat32-check v0.1.0 (<worktree>/lib/fat32/check)
+    Checking toyos-fat32 v0.1.0 (<worktree>/lib/fat32)
+    Checking toyos-manifest v0.1.0 (<worktree>/lib/manifest)
+    Checking fileserver v0.0.0 (<worktree>/system/fileserver)
+system/fileserver/src/listing.rs:94:27: warning: redundant clone: help: remove this
+system/fileserver/src/pages/tests.rs:641:41: warning: redundant clone: help: remove this
+system/fileserver/src/pages/tests.rs:728:41: warning: redundant clone: help: remove this
+system/fileserver/src/writeback.rs:91:34: warning: unchecked subtraction of a `Duration`: help: try: `(now + left).checked_sub(Duration::from_millis(1)).unwrap()`
+warning: `fileserver` (lib test) generated 4 warnings (run `cargo clippy --fix --lib -p fileserver --tests -- -W clippy::checked_conversions -W clippy::default_trait_access -W clippy::manual_midpoint -W clippy::redundant_clone -W clippy::unchecked_time_subtraction -W clippy::unnecessary_semicolon` to apply 4 suggestions)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 1.98s
+exit 0
