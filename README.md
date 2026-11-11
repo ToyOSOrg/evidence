@@ -74,7 +74,7 @@ record into the test's window.
   are in two kernel-log excerpts, which hold neither the record nor the end of
   the boot.
 
-## metal/ (staged at 9f94ce818, not yet run)
+## metal/ (staged at 9f94ce818; its T14 run is in metal-9f94ce818/)
 
 `staging.log` is `cargo test --test toyos-build -- --metal --metal-readback
 <dir> abuse_spawn_path_and_name hda_tone hda_tone_resampled
@@ -82,4 +82,71 @@ tone_beside_a_log_write claim_reuses_its_remapping_entry
 i219_messages_on_its_msi_vector process_tree`. Its compile lines are dropped.
 It exits 2, the harness's code for "staged, nothing judged": 6 registrations
 and 1 shared member over 2 boots. The two system files hold the boots' job
-lists. Readbacks and verdicts are added here when the T14 run returns.
+lists.
+
+## metal-9f94ce818/ (the T14 run of those images)
+
+The orchestrator flashed the two images to the T14 and read back each boot's
+log partition. It judged them with the same command from a clean detached
+worktree at 9f94ce818 (`judge.log`, exit 1: "6 passed, 1 failed, 2
+boot(s)"). Each boot's `kernel.log`, `loader.log`, `boot.txt` and
+`verdict.txt` are here. They are masked: host paths, and the machine's vendor,
+model and firmware strings.
+
+| row | boot | result |
+|---|---|---|
+| `abuse_spawn_path_and_name` (shared member) | testcases | pass: 11 refusals, and the 4096-byte path started a child that exited 0 |
+| `process_tree` | proctreecase | PASS: `a chain of 62 links stopped at a depth refusal` |
+| `hda_tone` | testcases | PASS |
+| `hda_tone_resampled` | testcases | PASS |
+| `tone_beside_a_log_write` | testcases | PASS |
+| `claim_reuses_its_remapping_entry` | testcases | PASS |
+| `i219_messages_on_its_msi_vector` | testcases | FAIL: `test_rs_i219_msi exited 1` |
+
+The i219 red is the job's own exit and is not from this change. Its lines
+repeat the signature of the ToyOS issue
+`i219-msi-passes-only-when-the-network-sends-it-a-frame`: no frame arrived
+under traffic, and the MAC saw 0 frames. The change touches no NIC, interrupt
+or network code.
+
+`testcases-kernel.log` also shows that the runner's own start lines carry no
+`pid=` in their head (0 of 13 do). So the round-2 audio judge, which takes a
+start line only without one, opens the same windows on this readback.
+
+# Round 2 (6cdc1d015): the review's fixes
+
+6cdc1d015 is the PR's one commit, carrying the review's fixes, rebased onto
+main f79df9574. Main's new commit touches none of the PR's files.
+`fixes.diff` is `git diff 9f94ce818 6cdc1d015` limited to the files the fixes
+touch. `range-diff.txt` is `git range-diff b56693152..9f94ce818
+f79df9574..6cdc1d015`.
+
+## r2/host-targeted/ (6cdc1d015, clean tree)
+
+`targeted.sh` ran each command in order. Each log starts with its revision and
+command and ends with its exit code; all exit 0.
+
+- `abi.log`: `cargo test -p toyos-abi`. 50 unit tests plus 4 more pass.
+- `sdk.log`: `cargo test -p toyos --lib spawn`. 7 pass, among them the new
+  `a_path_label_is_the_path_as_the_kernel_takes_one`.
+- `bootlog.log`: `cargo test --lib bootlog`. 16 pass, among them
+  `the_writers_write_the_lines_the_host_reads`, whose supervisor needle is now
+  derived from `LOGKEEPER_STARTED`.
+- `checks.log`: `cargo test --test toyos-checks`. 44 pass, among them
+  `metal_audio_judges` with its new planted case.
+- `clippy-abi.log`, `clippy-sdk.log`, `clippy-build.log`: clippy with warnings
+  denied, in the shapes CI gives each package.
+
+## r2/controls/ (6cdc1d015)
+
+`controls.sh` handles each patch the same way: it checks the patch applies,
+applies it and runs the claim's test. It then restores the tree, shows it
+clean and runs the test again.
+
+- `sdk-label-keeps-control-characters.patch` keeps every character in
+  `path_label`. `a_path_label_is_the_path_as_the_kernel_takes_one` fails with
+  exit 101 on `"/tmp/a\nb…"`, and passes after the restore.
+- `audio-start-takes-a-jobs-line.patch` drops the `pid=` test from the audio
+  judges' start line. `toyos-checks`' `metal_audio_judges` fails with exit 101:
+  "a tone after a job's line that reads as its start refused a log it has to
+  pass". It passes after the restore.
