@@ -1,0 +1,322 @@
+# hot (back to back) ns p50/min
+stage                                                                t14.tiny          t14.large            t14.std           t14.link         t14.tmpstd           amd.tiny          amd.large            amd.std           amd.link         amd.tmpstd
+user: three null handles made                                         998/935          1254/1047            995/941            998/872           1407/963            811/642          1292/1062            862/641            832/661          1513/1262
+user: read_image (open, IMAGE or read whole, close)               36694/35956    7932843/7632718        70329/69656      207628/187115    1480094/1369003        34585/32621  12295002/11948621        66612/62817      182741/178215    2645042/2574344
+user: [replica] startup block made                                  2723/2586          6291/4945          3283/3152          3213/2820          5386/4408          2345/2144        14187/12633          3334/2754          3424/2814        17003/14961
+user: [replica] lay_out                                               666/651          2017/1361          1443/1386          1433/1267          1847/1396            711/581          3286/2856          1362/1122          1362/1151          3515/3024
+user: [replica] startup block dropped                               4258/3921          7202/5677          4197/4062          4223/3749          6090/5152          3596/2054        13255/12083          4085/3474          4246/3685        12568/10404
+user: Helper::spawn whole                                         26640/25171        45911/43027        29619/28828        29637/26424        37121/33683        28444/22913        86983/83407        30011/27568        30222/27608        74282/70186
+  user before SYS_SPAWN (block, lay_out, dups)                      5209/5096          7634/6499          5505/5333          5463/4866          7193/6329          4288/3927          9758/8646          4537/4125          4706/4276          9613/8642
+  kernel: SYS_SPAWN whole                                         18896/17443        34838/32320        21527/20936        21516/19255        26917/24428        22302/17303        73658/70843        23052/21089        23142/21229        61454/55536
+    spawn_program (ranges copied in, objects found)                   416/374            975/755           1001/887            969/860           1157/953            551/471          1513/1162           1122/881           1182/951          2713/2063
+    place, pager, path, name, labels                                  449/421            814/562            446/405            473/390            599/492            441/381          1463/1162            440/371            460/381           1241/931
+    build_child_handles                                               245/222            486/317            300/234            285/217            451/325            301/250            641/551            310/250            340/240            801/551
+    admission, charge                                                 321/307           1014/745            329/302            329/283            829/519            331/261          2485/2044            380/271            391/291          2754/1913
+    Space::new_user                                                   824/699          1605/1248            818/732            796/673           1208/896           1082/722          2785/2214            992/781           1081/851          2734/2033
+    clock page, lay ranges (tables built)                           3862/2861         10054/9081          5685/5517          5699/5155          5622/4982          4208/2736        14437/13685          4727/4356          4777/4456          9483/8452
+    stack reserve                                                   6978/6395          7764/7054          6886/6731          6902/6162          6654/6257          7404/6432          9207/8736          6649/6409          6720/6469          9543/8812
+    image record, kernel stack                                      2286/2223          4301/3936          2327/2248          2261/2009          3904/3623          2625/2034        21991/16932          2914/2454          2864/2433        14480/12748
+    process object, notice                                            412/367           1063/719            457/392            450/341            698/478            451/330          3647/1523            491/360            481/330          1312/1052
+    commit (handles move)                                            1088/994          1949/1587           1097/964           1079/910          1703/1254          1273/1022          4609/2836          1351/1121          1402/1102          3004/2513
+    process data, thread data                                         176/139            281/169            169/126            156/114            178/146            150/120            351/270            171/110            180/120            330/270
+    table insert, enqueue                                           1401/1288          2934/2316          1482/1255          1484/1298          2401/1868          2074/1472          7053/6161          2373/1902          2403/1923          6609/5528
+    the spawn's log line                                              331/292           1224/845            372/316            341/293            893/584            551/441          3056/1402            531/450            590/460          3004/2614
+    return path                                                        106/95            166/109            122/104             116/96            131/102             181/80            311/210            210/120             210/60            320/200
+  user after SYS_SPAWN                                              2577/2463          3206/2730          2603/2477          2556/2264          2795/2342          1844/1573          3477/2535          2323/1762          2133/1662          2904/2533
+user: image dropped (unmap, close)                                  2141/1893        24184/23427          5363/5157          5266/4704          6728/6092          1482/1262        34274/33002          6109/5427          5918/5327          9643/8762
+user: nulls dropped                                                  1705/726            856/732            730/680            720/620            800/668            792/460           1613/822            651/530            671/540           1031/761
+user: wait whole                                                      471/446          84641/779      126238/123066      129615/114788      276837/197338          15259/271          19516/911      172518/140583      173529/140694      280115/172347
+user: stats, process handle dropped                                  1388/475           1387/948            803/686            773/651           1190/950            871/370           1252/611            842/661            861/661          2734/1692
+child: enqueue to its first pick                                    1408/1033         91850/1173          1437/1139          1428/1273         93098/1240          1923/1112        25948/17753          2273/1753          2333/1692         12136/2304
+child: first pick to exit entered (its whole run)                   2195/2080          4976/2361      125003/122172      128051/113298      188345/166247          2505/1323          8496/3627      139552/137038      141135/137049      250445/166509
+child: exit: claim, retire, walk                                      265/227            856/473            333/174            329/192            780/454            531/220           1863/782            281/220            310/250           1132/561
+child: exit: leave to table section                                   449/377            780/584            659/478            527/442            770/579            511/250          1793/1072            420/291            450/350           1232/531
+child: exit: teardown_resources (handles closed)                      742/504          1891/1200           1001/715            997/774          1706/1144           1272/461          2795/1593           1082/851           1161/851          2854/1542
+child: exit: releases run                                               72/70            238/156              89/77              88/76            172/114              90/30            461/291              90/70             100/70            310/140
+child: exit: bookkeeping and the exit's log line                      804/734          1949/1229          1237/1085          1226/1090          2077/1575           1152/912          4198/1733          1602/1411          1663/1472          4356/2003
+child: exit: stats, torn down                                         190/150            213/160            165/141            163/131            193/167            190/100            551/180             160/90            161/100            401/180
+child: exit: publish (the waiter is posted)                           294/221           1152/456            489/439            487/392           1058/661            591/161           1753/692            580/480            601/460           1862/731
+child: exit whole (m300 to m330)                                    2886/2550          7272/5152          4018/3239          3902/3302          6932/5316          4468/2314         13606/7094          4236/3735          4496/3975         12498/5918
+parent: publish to its wake record                              -45610/-49195      5676/-8142510          3638/1259          3598/3213          4312/3624        4669/-50235     1623/-12238736         34968/2854         34838/3324         10895/4266
+parent: its wake record to its pick                                   452/435            877/501            694/534            678/603            765/505            661/411           1353/812            701/560            721/601          1923/1001
+parent: its pick to wait returning in the kernel                    46300/950            854/743            773/707            769/670            844/696            961/702          1603/1052            791/641            791/671          2103/1322
+parent: wait entered to exit entered by the child                 -3572/-5234       60715/-32075      117126/114002      121033/106263      260041/184686         -752/-5490       -8445/-17142      131522/127035      133113/128687      250254/151528
+parent: child's exit whole to wait returned to user                   907/343          6458/2503           4781/971          4728/4174          4953/4013           4930/290           4879/651         36119/4656         35849/3705         14099/7380
+whole: spawn returned to child's exit entered                         588/239         92408/3333      123447/120499      126696/111918      268089/192250         1823/-1503        29887/18355      138852/134846      140614/136548      261390/162984
+
+# after 2 ms idle ns p50/min
+stage                                                                t14.tiny          t14.large            t14.std           t14.link         t14.tmpstd           amd.tiny          amd.large            amd.std           amd.link         amd.tmpstd
+user: three null handles made                                        1041/980          1605/1469           1102/954           1152/875          1957/1456           1022/852          1513/1292            991/811            931/801          3765/1352
+user: read_image (open, IMAGE or read whole, close)               38176/36159    8030527/7688221        67321/65026      245790/197577    1773017/1428223        86814/56486  11852758/11679293        68605/64739      191083/180578    2612735/2430058
+user: [replica] startup block made                                  2752/2649          5948/5259          3354/3052          3534/2891          6668/5310          2555/2374        14106/13155          3385/3164          3785/3375        15844/14221
+user: [replica] lay_out                                               684/669          1852/1299          1454/1369          1430/1273          1865/1441            802/731          3186/2805          1452/1312          1532/1332          3375/2945
+user: [replica] startup block dropped                               4459/4093          8305/6724          5811/4226          4523/3830          9763/6375          4498/3927        14067/12464          4816/4376          4897/3195        13191/11067
+user: Helper::spawn whole                                         27057/25518        49058/44330        39649/28560        30943/26814        50639/39191        32952/25909        87654/84058        33817/30031        34557/30092        77718/67072
+  user before SYS_SPAWN (block, lay_out, dups)                      5180/5105          7697/6804          5370/5119          5608/4932          8489/6805          4589/4248          9668/8816          4756/4546          4787/4527          9595/8723
+  kernel: SYS_SPAWN whole                                         19147/17816        37696/33290        31586/20919        22642/19497        38800/29492        26099/19447        74220/71174        26646/23382        27468/23142        65289/55644
+    spawn_program (ranges copied in, objects found)                   390/353           1112/909           1007/899           1013/827          1722/1240            671/571          1593/1233          1182/1121          1242/1051          2464/1943
+    place, pager, path, name, labels                                  436/402            924/748            470/430            521/427            860/630            481/441          1493/1293            450/430            541/490           1142/912
+    build_child_handles                                               247/227            556/469            305/260            320/230            594/419            350/290            662/561            390/330            350/290            731/571
+    admission, charge                                                 344/312           1172/946            435/381            446/292           1105/794            440/391          2384/2024            420/370            431/400          2424/1893
+    Space::new_user                                                   791/736          1566/1245           1276/775            865/621          1884/1168           1202/811          2866/2524           1252/941           1242/972          2784/2484
+    clock page, lay ranges (tables built)                           3898/2980         10860/8700         10411/5219          5722/4547          8268/6259          5170/2846        15008/14037          6529/4856          6839/4766          9865/8313
+    stack reserve                                                   6814/6417          8180/7834          8152/6111          6950/6218          8769/6941          8546/6473          9277/8776          7530/6639          7861/6549          9715/8893
+    image record, kernel stack                                      2323/2253          4353/3796          3692/2270          2436/2070          4439/3678          3757/2454        22382/14788          2934/2483          3014/2424        15493/13541
+    process object, notice                                            425/387           1067/758            617/424            537/394            950/703            471/380          3176/1383            621/491            541/470           1392/981
+    commit (handles move)                                           1123/1055          2227/1844          1353/1210           1168/925          2318/1696          1563/1263          3697/2815          1372/1231          1623/1372          3164/2493
+    process data, thread data                                         142/135            222/198            195/140            218/116            254/177            161/130            371/280            201/140            180/140            390/260
+    table insert, enqueue                                           1586/1375          3545/2807          2015/1544          1630/1380          3872/2504          2655/2084          6953/6231          2573/2343          2604/2403          6570/5949
+    the spawn's log line                                              368/303           1602/961            548/447            402/297           1266/779            631/571          3086/2164            611/541            641/580          3074/2043
+    return path                                                       118/100            304/260            133/105             225/98            274/202            201/170            321/230            210/160            230/130            341/220
+  user after SYS_SPAWN                                              2588/2501          3550/3246          2651/2452          2707/2286          3746/2894          2154/1843          3446/3066          2223/1813          2393/1882          3245/2333
+user: image dropped (unmap, close)                                  2192/1942        24783/23795          5078/4860          5353/4748          8460/6440          1422/1292        33904/33223          6088/5448          6449/5427          9174/8833
+user: nulls dropped                                                 1906/1031            988/852            700/620            732/627            912/769            561/491           1833/831            711/571            671/540           1032/641
+user: wait whole                                                      482/452        121106/1009      136780/113177      190057/117285      338315/196800        35867/15059          26379/801      174100/134745      176463/142957      372114/256369
+user: stats, process handle dropped                                  1110/450          2753/1100            825/760            885/671          2798/1009           1012/832           1192/621            851/781            921/771           2884/892
+child: enqueue to its first pick                                    1417/1194        107108/4330         11376/1038           1549/968          35595/415         19106/4127        27171/17824          2424/2022          2463/1181        26180/11588
+child: first pick to exit entered (its whole run)                   2252/2139          4930/3135      126595/112970      157051/115957      215958/181979          6632/3848         10650/3346      143147/139251      147533/139803      310801/229638
+child: exit: claim, retire, walk                                      273/257            996/705            275/193            380/301            886/406           1232/641           1873/662            400/240            441/341          1752/1032
+child: exit: leave to table section                                   490/442            808/605            535/475            628/502            917/498           1172/561           1933/961            521/391            541/410          1783/1222
+child: exit: teardown_resources (handles closed)                      816/642          1816/1495            854/724           1215/893          2031/1186          2705/1403          4178/1763          1362/1052          1482/1122          3566/2183
+child: exit: releases run                                               72/71            284/213              86/70              96/78             234/88            311/140            461/321             110/80            130/100            460/310
+child: exit: bookkeeping and the exit's log line                      909/796          1936/1582          1198/1079          1337/1094          2944/1475          3357/1573          4819/1943          1773/1472          1903/1743          5719/2594
+child: exit: stats, torn down                                         196/167            229/187            143/122            173/136            214/123            401/180            541/201            271/120            180/120            450/240
+child: exit: publish (the waiter is posted)                           384/314           1088/731            501/470            533/438           1125/460           1723/832           2675/731            771/500            711/541           2043/681
+child: exit whole (m300 to m330)                                    3207/2966          7483/5907          3639/3320          4618/3557          8259/4809         11101/5971         16742/6853          5127/4306          5297/4637         15794/8663
+parent: publish to its wake record                              -46608/-57902     33919/-8108384          3561/3264         27585/3423         78889/4381          5550/2876    12343/-11955441         34738/2884         34608/3695         11417/1633
+parent: its wake record to its pick                                   455/435           2261/918            529/472            718/615           2850/523            761/631           1212/842            741/601            731/651          1933/1242
+parent: its pick to wait returning in the kernel                  47151/45203           1842/832            692/653            902/674           1950/896            822/721          1402/1102            862/681            841/650          2203/1473
+parent: wait entered to exit entered by the child                 -3705/-5052       73697/-23507      128509/105133      149053/108731      252202/176239         20729/2064       -4899/-15749      135056/121448      138070/128597      315578/243059
+parent: child's exit whole to wait returned to user                   860/276         37463/3155          4489/4142         28846/4449         85126/5995          5550/3437          11952/772         35679/-941         35469/5457         13982/4026
+whole: spawn returned to child's exit entered                        596/-198        106644/3879      134618/110943      155397/114456      262177/184810         23134/4569        31148/19357      142306/137930      145240/136358      326295/254216
+
+t14 spawn_stages: cpus=8 std=/system/bin/osbench
+t14 spawn_stages: current_exe=Ok("/system/bin/test_rs_spawn_stages")
+t14 stages tiny: reps=60 staged_total_p50=78385 command_p50=72644 command_after_p50=72885 command_min=69806
+t14 stages tiny: child faults p50=1 fault_handler_ns p50=583 stats: wall=7540 cpu=4551 faults=1 fault_ns=519 syscalls=0 syscall_ns=0 runqueue_wait=0 peak_memory=4096
+t14 stages tiny: placement {"child on another CPU": 60}
+t14 stages tiny: address space drops seen=4 p50=12312 max=12322
+t14 stages tiny: reap drops seen=57 p50=995 max=22646
+t14 stages tiny.after_idle: reps=20 staged_total_p50=91541 command_p50=72644 command_after_p50=72885 command_min=69806
+t14 stages tiny.after_idle: child faults p50=1 fault_handler_ns p50=588 stats: wall=8099 cpu=4829 faults=1 fault_ns=525 syscalls=0 syscall_ns=0 runqueue_wait=0 peak_memory=4096
+t14 stages tiny.after_idle: placement {"child on another CPU": 20}
+t14 stages tiny.after_idle: address space drops seen=20 p50=11634 max=12190
+t14 stages tiny.after_idle: reap drops seen=20 p50=1008 max=22288
+t14 image tiny: hot loops: read_image p50=34486 open p50=11512
+t14 image tiny: bytes=187 immutable_answers=0 open=13232 fstat=8311 shm_create=1966 read_whole=1052 close=1833 shm_drop=3328 | read_image=34317 its_drop=3329
+t14 stages large: reps=60 staged_total_p50=8144127 command_p50=7896411 command_after_p50=8004437 command_min=7635262
+t14 stages large: child faults p50=1 fault_handler_ns p50=1495 stats: wall=107216 cpu=25012 faults=1 fault_ns=1420 syscalls=0 syscall_ns=0 runqueue_wait=0 peak_memory=4096
+t14 stages large: placement {"child on another CPU": 57, "child on the parent's CPU": 3, "parent moved CPU across the rep": 7}
+t14 stages large: address space drops seen=53 p50=23646 max=45652
+t14 stages large: reap drops seen=58 p50=1607 max=355496
+t14 stages large.after_idle: reps=20 staged_total_p50=8323943 command_p50=7896411 command_after_p50=8004437 command_min=7635262
+t14 stages large.after_idle: child faults p50=1 fault_handler_ns p50=1488 stats: wall=124554 cpu=29673 faults=1 fault_ns=1415 syscalls=0 syscall_ns=0 runqueue_wait=0 peak_memory=4096
+t14 stages large.after_idle: placement {"child on another CPU": 19, "child on the parent's CPU": 1}
+t14 stages large.after_idle: address space drops seen=20 p50=24005 max=49513
+t14 stages large.after_idle: reap drops seen=20 p50=1336 max=307398
+t14 image large: hot loops: read_image p50=7527998 open p50=10730
+t14 image large: bytes=33558528 immutable_answers=0 open=62440 fstat=10927 shm_create=2468909 read_whole=4946700 close=6400 shm_drop=262406 | read_image=7516848 its_drop=262463
+t14 stages std: reps=60 staged_total_p50=244383 command_p50=255100 command_after_p50=250729 command_min=233382
+t14 stages std: child faults p50=59 fault_handler_ns p50=73159 stats: wall=131737 cpu=128231 faults=59 fault_ns=69387 syscalls=5 syscall_ns=4249 runqueue_wait=0 peak_memory=1224704
+t14 stages std: placement {"child on another CPU": 60, "parent moved CPU across the rep": 3}
+t14 stages std: address space drops seen=11 p50=16893 max=19043
+t14 stages std: reap drops seen=60 p50=1310 max=1963
+t14 stages std.after_idle: reps=20 staged_total_p50=263549 command_p50=255100 command_after_p50=250729 command_min=233382
+t14 stages std.after_idle: child faults p50=59 fault_handler_ns p50=68369 stats: wall=143661 cpu=134897 faults=59 fault_ns=64852 syscalls=5 syscall_ns=4055 runqueue_wait=0 peak_memory=1224704
+t14 stages std.after_idle: placement {"child on another CPU": 20}
+t14 stages std.after_idle: address space drops seen=20 p50=15409 max=19204
+t14 stages std.after_idle: reap drops seen=20 p50=1263 max=1988
+t14 image std: hot loops: read_image p50=65573 open p50=52213
+t14 image std: bytes=7039352 immutable_answers=36 open=49022 fstat=7732 shm_create=325736 read_whole=52 close=2815 shm_drop=45686 | read_image=60627 its_drop=4899
+t14 stages link: reps=60 staged_total_p50=384977 command_p50=388892 command_after_p50=392405 command_min=355789
+t14 stages link: child faults p50=59 fault_handler_ns p50=74107 stats: wall=134396 cpu=130899 faults=59 fault_ns=70343 syscalls=5 syscall_ns=4347 runqueue_wait=0 peak_memory=1224704
+t14 stages link: placement {"child on another CPU": 60}
+t14 stages link: address space drops seen=16 p50=16946 max=27948
+t14 stages link: reap drops seen=60 p50=1328 max=1771
+t14 stages link.after_idle: reps=20 staged_total_p50=470348 command_p50=388892 command_after_p50=392405 command_min=355789
+t14 stages link.after_idle: child faults p50=59 fault_handler_ns p50=98788 stats: wall=164447 cpu=160755 faults=59 fault_ns=94966 syscalls=5 syscall_ns=4443 runqueue_wait=0 peak_memory=1224704
+t14 stages link.after_idle: placement {"child on another CPU": 20}
+t14 stages link.after_idle: address space drops seen=20 p50=18862 max=48748
+t14 stages link.after_idle: reap drops seen=20 p50=2287 max=29340
+t14 image link: hot loops: read_image p50=200668 open p50=169770
+t14 image link: bytes=7039352 immutable_answers=36 open=188398 fstat=8456 shm_create=291925 read_whole=53 close=2858 shm_drop=49844 | read_image=202315 its_drop=5253
+t14 stages tmpstd: reps=60 staged_total_p50=1818414 command_p50=1796636 command_after_p50=1823446 command_min=1583641
+t14 stages tmpstd: child faults p50=59 fault_handler_ns p50=127478 stats: wall=279619 cpu=204272 faults=59 fault_ns=123550 syscalls=5 syscall_ns=7218 runqueue_wait=0 peak_memory=1224704
+t14 stages tmpstd: placement {"child on another CPU": 59, "child on the parent's CPU": 1, "parent moved CPU across the rep": 1}
+t14 stages tmpstd: address space drops seen=54 p50=19049 max=35140
+t14 stages tmpstd: reap drops seen=60 p50=903 max=84712
+t14 stages tmpstd.after_idle: reps=20 staged_total_p50=2187858 command_p50=1796636 command_after_p50=1823446 command_min=1583641
+t14 stages tmpstd.after_idle: child faults p50=59 fault_handler_ns p50=149752 stats: wall=278877 cpu=223777 faults=59 fault_ns=145301 syscalls=5 syscall_ns=8892 runqueue_wait=0 peak_memory=1224704
+t14 stages tmpstd.after_idle: placement {"child on another CPU": 20}
+t14 stages tmpstd.after_idle: address space drops seen=20 p50=23409 max=87389
+t14 stages tmpstd.after_idle: reap drops seen=20 p50=1163 max=100677
+t14 image tmpstd: hot loops: read_image p50=1278625 open p50=10445
+t14 image tmpstd: bytes=7039352 immutable_answers=0 open=68010 fstat=10083 shm_create=386117 read_whole=797794 close=5045 shm_drop=50569 | read_image=1284732 its_drop=50692
+t14 build j1 round 1: wall_us=638652 parent: nulls_and_read_image_us=29838 spawn_and_drops_us=12357 waiting_us=595731 | children summed: wall_us=586314 cpu_us=558478 blocked_ipc_us=26400 blocked_other_us=0 blocked_futex_us=0 blocked_io_us=0 blocked_pipe_us=0 runqueue_wait_us=0 fault_us=34853 faults=21759 syscalls=13568 syscall_us=148116
+t14 build j1 round 1: ran fileserver pid=1 tid=0 cpu_us=22306 permille_of_wall=34
+t14 build j1 round 1: ran logkeeper pid=3 tid=0 cpu_us=7030 permille_of_wall=11
+t14 build j1 round 1: ran nvme pid=5 tid=0 cpu_us=21195 permille_of_wall=33
+t14 build j1 round 1: ran fileserver pid=8 tid=0 cpu_us=66833 permille_of_wall=104
+t14 build j1 round 1: ran fileserver pid=10 tid=0 cpu_us=25634 permille_of_wall=40
+t14 build j1 round 1: ran this job pid=14 tid=0 cpu_us=22859 permille_of_wall=35
+t14 build j1 round 2: wall_us=649835 parent: nulls_and_read_image_us=34362 spawn_and_drops_us=14025 waiting_us=600721 | children summed: wall_us=582898 cpu_us=564534 blocked_ipc_us=16540 blocked_other_us=0 blocked_futex_us=0 blocked_io_us=0 blocked_pipe_us=0 runqueue_wait_us=0 fault_us=34806 faults=21759 syscalls=13568 syscall_us=141811
+t14 build j1 round 2: ran fileserver pid=1 tid=0 cpu_us=19466 permille_of_wall=29
+t14 build j1 round 2: ran acpiserver pid=2 tid=0 cpu_us=489 permille_of_wall=0
+t14 build j1 round 2: ran logkeeper pid=3 tid=0 cpu_us=8829 permille_of_wall=13
+t14 build j1 round 2: ran nvme pid=5 tid=0 cpu_us=23120 permille_of_wall=35
+t14 build j1 round 2: ran fileserver pid=8 tid=0 cpu_us=67680 permille_of_wall=104
+t14 build j1 round 2: ran fileserver pid=10 tid=0 cpu_us=25250 permille_of_wall=38
+t14 build j1 round 2: ran this job pid=14 tid=0 cpu_us=28213 permille_of_wall=43
+t14 build j1 round 3: wall_us=663098 parent: nulls_and_read_image_us=29531 spawn_and_drops_us=12410 waiting_us=620453 | children summed: wall_us=613192 cpu_us=579761 blocked_ipc_us=31790 blocked_other_us=0 blocked_futex_us=0 blocked_io_us=0 blocked_pipe_us=0 runqueue_wait_us=5 fault_us=34047 faults=21759 syscalls=13568 syscall_us=155461
+t14 build j1 round 3: ran fileserver pid=1 tid=0 cpu_us=23541 permille_of_wall=35
+t14 build j1 round 3: ran logkeeper pid=3 tid=0 cpu_us=6541 permille_of_wall=9
+t14 build j1 round 3: ran nvme pid=5 tid=0 cpu_us=23486 permille_of_wall=35
+t14 build j1 round 3: ran fileserver pid=8 tid=0 cpu_us=88926 permille_of_wall=134
+t14 build j1 round 3: ran fileserver pid=10 tid=0 cpu_us=28149 permille_of_wall=42
+t14 build j1 round 3: ran this job pid=14 tid=0 cpu_us=22185 permille_of_wall=33
+t14 build j1: std Command rounds wall_us=[658415, 660022, 665693]
+t14 build j8 round 1: wall_us=231767 parent: nulls_and_read_image_us=32459 spawn_and_drops_us=21469 waiting_us=177318 | children summed: wall_us=1663599 cpu_us=1337347 blocked_ipc_us=297511 blocked_other_us=0 blocked_futex_us=0 blocked_io_us=0 blocked_pipe_us=0 runqueue_wait_us=16743 fault_us=137288 faults=21759 syscalls=13568 syscall_us=909172
+t14 build j8 round 1: ran fileserver pid=1 tid=0 cpu_us=23636 permille_of_wall=101
+t14 build j8 round 1: ran logkeeper pid=3 tid=0 cpu_us=6187 permille_of_wall=26
+t14 build j8 round 1: ran nvme pid=5 tid=0 cpu_us=8895 permille_of_wall=38
+t14 build j8 round 1: ran fileserver pid=8 tid=0 cpu_us=15236 permille_of_wall=65
+t14 build j8 round 1: ran fileserver pid=10 tid=0 cpu_us=28057 permille_of_wall=121
+t14 build j8 round 1: ran this job pid=14 tid=0 cpu_us=30196 permille_of_wall=130
+t14 build j8 round 2: wall_us=228080 parent: nulls_and_read_image_us=32921 spawn_and_drops_us=21432 waiting_us=173100 | children summed: wall_us=1648335 cpu_us=1307574 blocked_ipc_us=314757 blocked_other_us=0 blocked_futex_us=0 blocked_io_us=0 blocked_pipe_us=0 runqueue_wait_us=16973 fault_us=129688 faults=21759 syscalls=13568 syscall_us=913065
+t14 build j8 round 2: ran fileserver pid=1 tid=0 cpu_us=24292 permille_of_wall=106
+t14 build j8 round 2: ran logkeeper pid=3 tid=0 cpu_us=5715 permille_of_wall=25
+t14 build j8 round 2: ran nvme pid=5 tid=0 cpu_us=8943 permille_of_wall=39
+t14 build j8 round 2: ran fileserver pid=8 tid=0 cpu_us=17265 permille_of_wall=75
+t14 build j8 round 2: ran fileserver pid=10 tid=0 cpu_us=29280 permille_of_wall=128
+t14 build j8 round 2: ran this job pid=14 tid=0 cpu_us=30610 permille_of_wall=134
+t14 build j8 round 3: wall_us=233604 parent: nulls_and_read_image_us=31332 spawn_and_drops_us=20871 waiting_us=180913 | children summed: wall_us=1669659 cpu_us=1323438 blocked_ipc_us=315787 blocked_other_us=0 blocked_futex_us=0 blocked_io_us=0 blocked_pipe_us=0 runqueue_wait_us=19673 fault_us=129601 faults=21759 syscalls=13568 syscall_us=922689
+t14 build j8 round 3: ran fileserver pid=1 tid=0 cpu_us=23486 permille_of_wall=100
+t14 build j8 round 3: ran acpiserver pid=2 tid=0 cpu_us=1760 permille_of_wall=7
+t14 build j8 round 3: ran logkeeper pid=3 tid=0 cpu_us=6514 permille_of_wall=27
+t14 build j8 round 3: ran nvme pid=5 tid=0 cpu_us=8945 permille_of_wall=38
+t14 build j8 round 3: ran fileserver pid=8 tid=0 cpu_us=19486 permille_of_wall=83
+t14 build j8 round 3: ran fileserver pid=10 tid=0 cpu_us=28415 permille_of_wall=121
+t14 build j8 round 3: ran this job pid=14 tid=0 cpu_us=29316 permille_of_wall=125
+t14 build j8: std Command rounds wall_us=[229973, 232709, 234316]
+t14 spawn_stages: done
+t14 osbench v=2 os=toyos bench=proc.spawn_wait.tiny unit=ns n=200 min=67064 p50=71451 p90=101060 p99=141378 p999=- max=296277 mean=81904 file_bytes=187 ran=fileserver.10@cpu2/llc0:100%,osbench_procs.4720@cpu7/llc0:58%,nvme.5@cpu0/llc0:55%,fileserver.8@cpu4/llc0:100% mhz_settled=4190 mhz_after=4189 mhz=3791
+t14 osbench v=2 os=toyos bench=proc.spawn_wait.large unit=ns n=100 min=7520440 p50=8132089 p90=8413511 p99=9422562 p999=- max=9662478 mean=8123890 file_bytes=33558528 ran=nvme.5@cpu3/llc0:37%,fileserver.8@cpu4/llc0:81%,osbench_procs.4720@cpu1/llc0:36%,fileserver.10@cpu2/llc0:100% mhz_settled=4189 mhz_after=4189 mhz=3740
+t14 osbench v=2 os=toyos bench=proc.spawn_wait_loop.100 unit=ns n=10 min=7432629 p50=7974702 p90=9004897 p99=- p999=- max=9038801 mean=8318611 spawns=100 ran=osbench_procs.4720@cpu2/llc0:55%,fileserver.10@cpu1/llc0:100%,fileserver.8@cpu3/llc0:100%,nvme.5@cpu0/llc0:72% mhz_settled=4189 mhz_after=4189 mhz=3791
+t14 osbench v=2 os=toyos bench=proc.posix_spawn_wait.tiny unit=ns n=200 min=69751 p50=70487 p90=87492 p99=125809 p999=- max=286508 mean=77035 ran=fileserver.10@cpu1/llc0:100%,osbench_procs.4720@cpu2/llc0:100%,nvme.5@cpu0/llc0:100%,fileserver.8@cpu3/llc0:97% mhz_settled=4189 mhz_after=4190 mhz=3791
+t14 osbench v=2 os=toyos bench=proc.posix_spawn_wait.std unit=ns n=100 min=352577 p50=393880 p90=453007 p99=671590 p999=- max=703201 mean=413351 file_bytes=7039352 ran=osbench_procs.4720@cpu2/llc0:63%,fileserver.1@cpu4/llc0:69%,nvme.5@cpu0/llc0:84%,fileserver.8@cpu7/llc0:47% mhz_settled=4189 mhz_after=4189 mhz=3791
+t14 osbench v=2 os=toyos bench=thread.spawn_join.default unit=ns n=1000 min=19792 p50=20002 p90=20111 p99=20933 p999=117459 max=122892 mean=20777 stack_asked=default stack_floor=none ran=osbench_procs.4720@cpu2/llc0:51% mhz_settled=4189 mhz_after=4189 mhz=4189
+t14 osbench v=2 os=toyos bench=thread.spawn_join.stack64k unit=ns n=1000 min=19157 p50=21275 p90=21814 p99=66524 p999=123062 max=135164 mean=22093 stack_asked=65536 stack_floor=none ran=osbench_procs.4720@cpu2/llc0:47%,nvme.5@cpu7/llc0:92%,fileserver.8@cpu1/llc0:100%,log-carrier-stall.3@cpu1/llc0:100% mhz_settled=4189 mhz_after=4189 mhz=3791
+amd spawn_stages: cpus=16 std=/system/bin/osbench
+amd spawn_stages: current_exe=Ok("/system/bin/test_rs_spawn_stages")
+amd stages tiny: reps=60 staged_total_p50=91913 command_p50=90921 command_after_p50=84660 command_min=67247
+amd stages tiny: child faults p50=1 fault_handler_ns p50=931 stats: wall=10690 cpu=6062 faults=1 fault_ns=891 syscalls=0 syscall_ns=0 runqueue_wait=0 peak_memory=4096
+amd stages tiny: placement {"child on another CPU": 60}
+amd stages tiny: address space drops seen=25 p50=15579 max=16931
+amd stages tiny: reap drops seen=60 p50=1223 max=30558
+amd stages tiny.after_idle: reps=20 staged_total_p50=163156 command_p50=90921 command_after_p50=84660 command_min=67247
+amd stages tiny.after_idle: child faults p50=1 fault_handler_ns p50=2304 stats: wall=37651 cpu=17593 faults=1 fault_ns=2184 syscalls=0 syscall_ns=0 runqueue_wait=0 peak_memory=4096
+amd stages tiny.after_idle: placement {"child on another CPU": 20}
+amd stages tiny.after_idle: address space drops seen=20 p50=34906 max=48912
+amd stages tiny.after_idle: reap drops seen=20 p50=1483 max=3457
+amd image tiny: hot loops: read_image p50=42159 open p50=10360
+amd image tiny: bytes=187 immutable_answers=0 open=11081 fstat=7364 shm_create=1503 read_whole=941 close=1452 shm_drop=2665 | read_image=29566 its_drop=2705
+amd stages large: reps=60 staged_total_p50=12484687 command_p50=12559894 command_after_p50=12548794 command_min=12104198
+amd stages large: child faults p50=1 fault_handler_ns p50=3246 stats: wall=57568 cpu=22202 faults=1 fault_ns=3136 syscalls=0 syscall_ns=0 runqueue_wait=0 peak_memory=4096
+amd stages large: placement {"child on another CPU": 56, "child on the parent's CPU": 4}
+amd stages large: address space drops seen=8 p50=31579 max=68799
+amd stages large: reap drops seen=58 p50=3076 max=338935
+amd stages large.after_idle: reps=20 staged_total_p50=12038908 command_p50=12559894 command_after_p50=12548794 command_min=12104198
+amd stages large.after_idle: child faults p50=1 fault_handler_ns p50=3596 stats: wall=59080 cpu=27482 faults=1 fault_ns=3436 syscalls=0 syscall_ns=0 runqueue_wait=0 peak_memory=4096
+amd stages large.after_idle: placement {"child on another CPU": 18, "child on the parent's CPU": 2}
+amd stages large.after_idle: address space drops seen=20 p50=70843 max=115777
+amd stages large.after_idle: reap drops seen=20 p50=3367 max=331813
+amd image large: hot loops: read_image p50=11860252 open p50=43740
+amd image large: bytes=33558528 immutable_answers=0 open=88512 fstat=35809 shm_create=3702037 read_whole=7963155 close=21760 shm_drop=327931 | read_image=11862433 its_drop=328552
+amd stages std: reps=60 staged_total_p50=287716 command_p50=285884 command_after_p50=282199 command_min=248342
+amd stages std: child faults p50=59 fault_handler_ns p50=102439 stats: wall=147913 cpu=142907 faults=59 fault_ns=100085 syscalls=5 syscall_ns=3975 runqueue_wait=0 peak_memory=1224704
+amd stages std: placement {"child on another CPU": 60}
+amd stages std: address space drops seen=59 p50=21729 max=46915
+amd stages std: reap drops seen=60 p50=31313 max=66111
+amd stages std.after_idle: reps=20 staged_total_p50=297009 command_p50=285884 command_after_p50=282199 command_min=248342
+amd stages std.after_idle: child faults p50=59 fault_handler_ns p50=103604 stats: wall=152620 cpu=146562 faults=59 fault_ns=101299 syscalls=5 syscall_ns=4726 runqueue_wait=0 peak_memory=1224704
+amd stages std.after_idle: placement {"child on another CPU": 20}
+amd stages std.after_idle: address space drops seen=20 p50=22251 max=76175
+amd stages std.after_idle: reap drops seen=20 p50=30962 max=99737
+amd image std: hot loops: read_image p50=60924 open p50=45292
+amd image std: bytes=7039352 immutable_answers=36 open=62876 fstat=11907 shm_create=765274 read_whole=360 close=8722 shm_drop=75995 | read_image=97744 its_drop=8912
+amd stages link: reps=60 staged_total_p50=405478 command_p50=399360 command_after_p50=400582 command_min=366625
+amd stages link: child faults p50=59 fault_handler_ns p50=102358 stats: wall=149606 cpu=144318 faults=59 fault_ns=99941 syscalls=5 syscall_ns=4205 runqueue_wait=0 peak_memory=1224704
+amd stages link: placement {"child on another CPU": 60}
+amd stages link: address space drops seen=57 p50=21660 max=35459
+amd stages link: reap drops seen=59 p50=31173 max=38313
+amd stages link.after_idle: reps=20 staged_total_p50=433036 command_p50=399360 command_after_p50=400582 command_min=366625
+amd stages link.after_idle: child faults p50=59 fault_handler_ns p50=106103 stats: wall=156696 cpu=151789 faults=59 fault_ns=103618 syscalls=5 syscall_ns=4966 runqueue_wait=0 peak_memory=1224704
+amd stages link.after_idle: placement {"child on another CPU": 20}
+amd stages link.after_idle: address space drops seen=20 p50=22521 max=68024
+amd stages link.after_idle: reap drops seen=20 p50=31143 max=93268
+amd image link: hot loops: read_image p50=175612 open p50=160401
+amd image link: bytes=7039352 immutable_answers=36 open=162013 fstat=10895 shm_create=773685 read_whole=30 close=8973 shm_drop=68654 | read_image=194307 its_drop=6508
+amd stages tmpstd: reps=60 staged_total_p50=3011246 command_p50=3064590 command_after_p50=3028741 command_min=2830006
+amd stages tmpstd: child faults p50=59 fault_handler_ns p50=163595 stats: wall=287025 cpu=261730 faults=59 fault_ns=158347 syscalls=5 syscall_ns=11896 runqueue_wait=0 peak_memory=1224704
+amd stages tmpstd: placement {"child on another CPU": 60}
+amd stages tmpstd: address space drops seen=42 p50=22795 max=51228
+amd stages tmpstd: reap drops seen=60 p50=1983 max=98960
+amd stages tmpstd.after_idle: reps=20 staged_total_p50=3168819 command_p50=3064590 command_after_p50=3028741 command_min=2830006
+amd stages tmpstd.after_idle: child faults p50=59 fault_handler_ns p50=217333 stats: wall=354538 cpu=325153 faults=59 fault_ns=212093 syscalls=5 syscall_ns=14932 runqueue_wait=0 peak_memory=1224704
+amd stages tmpstd.after_idle: placement {"child on another CPU": 19, "child on the parent's CPU": 1}
+amd stages tmpstd.after_idle: address space drops seen=20 p50=51588 max=86040
+amd stages tmpstd.after_idle: reap drops seen=20 p50=2694 max=95855
+amd image tmpstd: hot loops: read_image p50=2617342 open p50=38118
+amd image tmpstd: bytes=7039352 immutable_answers=0 open=73902 fstat=38999 shm_create=758030 read_whole=1693740 close=22014 shm_drop=83016 | read_image=2640678 its_drop=81544
+amd build j1 round 1: wall_us=822716 parent: nulls_and_read_image_us=51257 spawn_and_drops_us=25423 waiting_us=744883 | children summed: wall_us=744336 cpu_us=694371 blocked_ipc_us=44655 blocked_other_us=0 blocked_futex_us=0 blocked_io_us=0 blocked_pipe_us=0 runqueue_wait_us=54 fault_us=71535 faults=21759 syscalls=13568 syscall_us=221699
+amd build j1 round 1: ran fileserver pid=1 tid=0 cpu_us=40501 permille_of_wall=49
+amd build j1 round 1: ran logkeeper pid=3 tid=0 cpu_us=30853 permille_of_wall=37
+amd build j1 round 1: ran nvme pid=5 tid=0 cpu_us=65626 permille_of_wall=79
+amd build j1 round 1: ran fileserver pid=8 tid=0 cpu_us=219442 permille_of_wall=266
+amd build j1 round 1: ran fileserver pid=10 tid=0 cpu_us=50246 permille_of_wall=61
+amd build j1 round 1: ran this job pid=13 tid=0 cpu_us=44195 permille_of_wall=53
+amd build j1 round 2: wall_us=834263 parent: nulls_and_read_image_us=53210 spawn_and_drops_us=23265 waiting_us=756696 | children summed: wall_us=754859 cpu_us=694012 blocked_ipc_us=55628 blocked_other_us=0 blocked_futex_us=0 blocked_io_us=0 blocked_pipe_us=0 runqueue_wait_us=31 fault_us=71811 faults=21759 syscalls=13568 syscall_us=233951
+amd build j1 round 2: ran fileserver pid=1 tid=0 cpu_us=42664 permille_of_wall=51
+amd build j1 round 2: ran logkeeper pid=3 tid=0 cpu_us=30770 permille_of_wall=36
+amd build j1 round 2: ran nvme pid=5 tid=0 cpu_us=58905 permille_of_wall=70
+amd build j1 round 2: ran fileserver pid=8 tid=0 cpu_us=218892 permille_of_wall=262
+amd build j1 round 2: ran fileserver pid=10 tid=0 cpu_us=56924 permille_of_wall=68
+amd build j1 round 2: ran this job pid=13 tid=0 cpu_us=41865 permille_of_wall=50
+amd build j1 round 3: wall_us=836319 parent: nulls_and_read_image_us=50224 spawn_and_drops_us=21258 waiting_us=763939 | children summed: wall_us=756430 cpu_us=696119 blocked_ipc_us=55086 blocked_other_us=0 blocked_futex_us=0 blocked_io_us=0 blocked_pipe_us=0 runqueue_wait_us=44 fault_us=70903 faults=21759 syscalls=13568 syscall_us=235125
+amd build j1 round 3: ran fileserver pid=1 tid=0 cpu_us=39491 permille_of_wall=47
+amd build j1 round 3: ran logkeeper pid=3 tid=0 cpu_us=31708 permille_of_wall=37
+amd build j1 round 3: ran nvme pid=5 tid=0 cpu_us=57573 permille_of_wall=68
+amd build j1 round 3: ran fileserver pid=8 tid=0 cpu_us=202215 permille_of_wall=241
+amd build j1 round 3: ran fileserver pid=10 tid=0 cpu_us=55944 permille_of_wall=66
+amd build j1 round 3: ran this job pid=13 tid=0 cpu_us=37140 permille_of_wall=44
+amd build j1: std Command rounds wall_us=[839973, 849018, 861661]
+amd build j16 round 1: wall_us=315533 parent: nulls_and_read_image_us=46977 spawn_and_drops_us=50135 waiting_us=217102 | children summed: wall_us=4477188 cpu_us=3855700 blocked_ipc_us=565309 blocked_other_us=0 blocked_futex_us=0 blocked_io_us=0 blocked_pipe_us=0 runqueue_wait_us=22900 fault_us=479339 faults=21759 syscalls=13568 syscall_us=3116398
+amd build j16 round 1: ran fileserver pid=1 tid=0 cpu_us=31348 permille_of_wall=99
+amd build j16 round 1: ran logkeeper pid=3 tid=0 cpu_us=12226 permille_of_wall=38
+amd build j16 round 1: ran nvme pid=5 tid=0 cpu_us=19496 permille_of_wall=61
+amd build j16 round 1: ran fileserver pid=8 tid=0 cpu_us=35990 permille_of_wall=114
+amd build j16 round 1: ran fileserver pid=10 tid=0 cpu_us=56233 permille_of_wall=178
+amd build j16 round 1: ran this job pid=13 tid=0 cpu_us=63697 permille_of_wall=201
+amd build j16 round 2: wall_us=314298 parent: nulls_and_read_image_us=52405 spawn_and_drops_us=50295 waiting_us=210255 | children summed: wall_us=4388705 cpu_us=3864693 blocked_ipc_us=471626 blocked_other_us=0 blocked_futex_us=0 blocked_io_us=0 blocked_pipe_us=0 runqueue_wait_us=26464 fault_us=477791 faults=21759 syscalls=13568 syscall_us=3024897
+amd build j16 round 2: ran fileserver pid=1 tid=0 cpu_us=32670 permille_of_wall=103
+amd build j16 round 2: ran logkeeper pid=3 tid=0 cpu_us=13387 permille_of_wall=42
+amd build j16 round 2: ran nvme pid=5 tid=0 cpu_us=21385 permille_of_wall=68
+amd build j16 round 2: ran fileserver pid=8 tid=0 cpu_us=42778 permille_of_wall=136
+amd build j16 round 2: ran fileserver pid=10 tid=0 cpu_us=58608 permille_of_wall=186
+amd build j16 round 2: ran this job pid=13 tid=0 cpu_us=65583 permille_of_wall=208
+amd build j16 round 3: wall_us=312974 parent: nulls_and_read_image_us=53194 spawn_and_drops_us=52845 waiting_us=205536 | children summed: wall_us=4411998 cpu_us=3863380 blocked_ipc_us=485492 blocked_other_us=0 blocked_futex_us=0 blocked_io_us=0 blocked_pipe_us=0 runqueue_wait_us=38437 fault_us=497290 faults=21759 syscalls=13568 syscall_us=3029951
+amd build j16 round 3: ran fileserver pid=1 tid=0 cpu_us=33164 permille_of_wall=105
+amd build j16 round 3: ran logkeeper pid=3 tid=0 cpu_us=11814 permille_of_wall=37
+amd build j16 round 3: ran nvme pid=5 tid=0 cpu_us=18394 permille_of_wall=58
+amd build j16 round 3: ran fileserver pid=8 tid=0 cpu_us=43101 permille_of_wall=137
+amd build j16 round 3: ran fileserver pid=10 tid=0 cpu_us=60672 permille_of_wall=193
+amd build j16 round 3: ran this job pid=13 tid=0 cpu_us=68394 permille_of_wall=218
+amd build j16: std Command rounds wall_us=[314635, 317421, 323162]
+amd spawn_stages: done
+amd osbench v=2 os=toyos bench=proc.spawn_wait.tiny unit=ns n=200 min=76333 p50=111369 p90=171962 p99=343795 p999=- max=392475 mean=124195 file_bytes=187 ran=fileserver.10@cpu12/llc1:85%,osbench_procs.4718@cpu7/llc0:100%,nvme.5@cpu8/llc1:44%,fileserver.8@cpu8/llc1:74% mhz_settled=4291 mhz_after=4267 mhz=4267
+amd osbench v=2 os=toyos bench=proc.spawn_wait.large unit=ns n=100 min=12303215 p50=12531252 p90=12756896 p99=13050416 p999=- max=14782413 mean=12562535 file_bytes=33558528 ran=nvme.5@cpu12/llc1:66%,fileserver.8@cpu8/llc1:100%,osbench_procs.4718@cpu0/llc0:67%,log-carrier-stall.3@cpu7/llc0:73% mhz_settled=4291 mhz_after=4291 mhz=4292
+amd osbench v=2 os=toyos bench=proc.spawn_wait_loop.100 unit=ns n=10 min=7644917 p50=7772466 p90=7993371 p99=- p999=- max=13244028 mean=8335840 spawns=100 ran=fileserver.10@cpu8/llc1:92%,osbench_procs.4718@cpu0/llc0:100%,nvme.5@cpu10/llc1:100%,fileserver.8@cpu10/llc1:70% mhz_settled=4291 mhz_after=4266 mhz=4208
+amd osbench v=2 os=toyos bench=proc.posix_spawn_wait.tiny unit=ns n=200 min=92834 p50=106159 p90=157816 p99=329108 p999=- max=387728 mean=122377 ran=fileserver.10@cpu8/llc1:100%,osbench_procs.4718@cpu0/llc0:100%,nvme.5@cpu10/llc1:100%,fileserver.8@cpu10/llc1:100% mhz_settled=4291 mhz_after=4291 mhz=4242
+amd osbench v=2 os=toyos bench=proc.posix_spawn_wait.std unit=ns n=100 min=347622 p50=381195 p90=554940 p99=863840 p999=- max=1270132 mean=423820 file_bytes=7039352 ran=osbench_procs.4718@cpu0/llc0:100%,fileserver.1@cpu7/llc0:100%,nvme.5@cpu11/llc1:35%,fileserver.8@cpu10/llc1:81% mhz_settled=4291 mhz_after=4291 mhz=4292
+amd osbench v=2 os=toyos bench=thread.spawn_join.default unit=ns n=1000 min=17643 p50=18254 p90=19456 p99=68288 p999=70632 max=71093 mean=20661 stack_asked=default stack_floor=none ran=osbench_procs.4718@cpu0/llc0:52%,nvme.5@cpu15/llc1:100%,fileserver.8@cpu12/llc1:100%,log-carrier-stall.3@cpu12/llc1:100% mhz_settled=4291 mhz_after=4291 mhz=4244
+amd osbench v=2 os=toyos bench=thread.spawn_join.stack64k unit=ns n=1000 min=15590 p50=15820 p90=16882 p99=65863 p999=69340 max=71724 mean=18164 stack_asked=65536 stack_floor=none ran=osbench_procs.4718@cpu0/llc0:52%,nvme.5@cpu15/llc1:100%,fileserver.8@cpu12/llc1:100%,log-carrier-stall.3@cpu12/llc1:100% mhz_settled=4291 mhz_after=4291 mhz=4267

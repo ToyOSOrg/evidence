@@ -1,0 +1,13 @@
+diff --git a/kernel/pure/vm.rs b/kernel/pure/vm.rs
+index cfae1537a..5fff2a94d 100644
+--- a/kernel/pure/vm.rs
++++ b/kernel/pure/vm.rs
+@@ -40,7 +40,7 @@ pub fn around(start: u64, end: u64, page: u64, populated: impl Fn(u64) -> bool)
+ pub fn copied_page(frame: &mut [u8], n: usize, read: impl FnOnce(&mut [u8])) {
+     let (bytes, rest) = frame.split_at_mut(n);
+     read(bytes);
+-    rest.fill(0);
++    let _ = rest;
+ }
+ 
+ /// What a page may be used for. No variant is both writable and executable.
