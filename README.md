@@ -36,8 +36,7 @@
 
 ## Review round 3 (head 04ced8dae, on #1258's 66de9f97b)
 
-- `r3/checks/`: the tree before its commit and rebase onto #1258's round 6 (`tree.txt`; that rebase touches no file
-  of this change): the SDK's tests and two clippy shapes, toyos-blockring's tests and clippy without the assertion,
+- `r3/checks/`: the head's own tree (`tree.txt`): the SDK's tests and two clippy shapes, toyos-blockring's tests and clippy without the assertion,
   the file server's tests (which compile its assertion that the SDK's block bound is blockring's) and clippy (main's
   four findings), nine loom models and the loom crate's clippy.
 - `r3/controls/`: each patch run model by model and restored (`tags-wakes.sh`, `summary.txt`): the three wake
