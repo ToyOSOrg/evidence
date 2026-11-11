@@ -1,0 +1,10 @@
+CONTROL, never to land: libc_read_restarts hangs in silence, under a 50 s bound
+
+The guest control for the stalled-program change: the row must name the
+program while it stalls and at its guard's expiry, and end without running
+`tty_interrupt`. The bound is 50 s so that the control ends inside the
+driver's 900 s silence guard on any host: the host scale is at most 8, so
+the guard expires by 50 * 8 + 15 = 415 s, and even with the row going on to
+its last program the two waits are 830 s.
+
+Co-Authored-By: Claude Fable 5.2 <noreply@anthropic.com>

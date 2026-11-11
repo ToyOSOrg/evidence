@@ -1,0 +1,28 @@
+   Compiling toyos-build v0.1.0 ($WORKTREE)
+    Finished `test` profile [optimized + debuginfo] target(s) in 8.56s
+     Running tests/checks.rs (target/debug/deps/toyos_checks-17880d9e42fada55)
+
+running 1 test
+test checks::a_stalled_program_ends_its_row_and_is_named ... FAILED
+
+failures:
+
+---- checks::a_stalled_program_ends_its_row_and_is_named stdout ----
+12:37:42   [libc_children] fails: FAILED, it exited 3
+12:37:42   [libc_children] stalls: FAILED, it ended with no exit code; 2 program(s) after it were not run: never_run, nor_this
+12:37:42   [libc_children] never_run: FAILED, it ended with no exit code; 1 program(s) after it were not run: nor_this
+12:37:42   [libc_children] nor_this: FAILED, it ended with no exit code; 0 program(s) after it were not run: 
+
+thread 'checks::a_stalled_program_ends_its_row_and_is_named' (17650869) panicked at tests/checks.rs:189:9:
+assertion `left == right` failed: a boot whose job never ended was asked for more
+  left: ["test_rs_passes", "test_rs_fails", "test_rs_stalls", "test_rs_never_run", "test_rs_nor_this"]
+ right: ["test_rs_passes", "test_rs_fails", "test_rs_stalls"]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    checks::a_stalled_program_ends_its_row_and_is_named
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 44 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--test toyos-checks`
