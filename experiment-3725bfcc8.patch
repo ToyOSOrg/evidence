@@ -1,0 +1,132 @@
+commit 3725bfcc8c8e66204a7ae76ff9ff14cc4ea8368d (parent 1314b4bcb9ed7967c4cc7773790e60c6f0c316fc)
+
+Experiment: the witness says what it refused, and the test kernels build
+
+Not for landing. `stop-budget-spent` is read so a kernel with actuators
+builds, and the mask-windows witness logs the transition it refused before
+its panic, which a CPU already inside a page fault reports without it.
+
+Co-Authored-By: Claude Fable 5.2 <noreply@anthropic.com>
+
+
+diff --git a/build/ci.rs b/build/ci.rs
+index 32a8297bd..cb60e6524 100644
+--- a/build/ci.rs
++++ b/build/ci.rs
+@@ -620,6 +620,12 @@ pub(crate) const CONTROLS: &[Control] = &[
+         test: "a_halted_cpu_with_queued_work_was_kicked",
+         message: "halted with 2 of 2 messages queued and no IPI in flight",
+     }]),
++    // The same edge under a demanded pass, in a run of its own: the model
++    // above ends its process.
++    red(KERNEL_LOOM, "doorbell-kick-relaxed", Some("loom_sleep"), &[Says {
++        test: "a_pass_that_answers_a_demand_reads_what_its_demander_wrote",
++        message: "a pass answered the demand and read the gate closed after it",
++    }]),
+     red(KERNEL_LOOM, "push-fence-relaxed", Some("loom_push"), &[Says {
+         test: "a_cpu_that_halts_without_seeing_the_surplus_was_pushed",
+         message: "published and no push behind it",
+diff --git a/kernel/loom/tests/loom_sleep.rs b/kernel/loom/tests/loom_sleep.rs
+index 7bddea8f0..49c5cd3c8 100644
+--- a/kernel/loom/tests/loom_sleep.rs
++++ b/kernel/loom/tests/loom_sleep.rs
+@@ -30,6 +30,9 @@
+ //! makes that read-modify-write relaxed and this file must red, at
+ //! [`a_halted_cpu_with_queued_work_was_kicked`], whose assertion names the
+ //! failure exactly: halted with messages still queued and no IPI in flight.
++//! A demanded pass rests on the same edge, and
++//! [`a_pass_that_answers_a_demand_reads_what_its_demander_wrote`] must red
++//! with it.
+ 
+ #![cfg(feature = "loom")]
+ 
+@@ -204,3 +207,31 @@ fn an_ask_is_taken_by_the_pass_its_ring_owes() {
+         assert!(taken(victim.take_asks()), "the pass the ask's ring owed did not find it");
+     });
+ }
++
++/// The machine's stop against one CPU's pass. The stop writes its gate, then
++/// demands a pass; once it reads the demand answered, what that CPU reads
++/// after its pass is the gate open. The gate is relaxed on both sides, so the
++/// doorbell's edge alone carries it.
++#[test]
++fn a_pass_that_answers_a_demand_reads_what_its_demander_wrote() {
++    model(|| {
++        let gate = Arc::new(AtomicBool::new(false));
++        let doorbell = Arc::new(Doorbell::new());
++
++        let stop = {
++            let (gate, doorbell) = (gate.clone(), doorbell.clone());
++            loom::thread::spawn(move || {
++                gate.store(true, Ordering::Relaxed);
++                let _ = doorbell.demand_pass();
++                !doorbell.pass_demanded()
++            })
++        };
++
++        doorbell.begin_pass();
++        let open = gate.load(Ordering::Relaxed);
++
++        if stop.join().unwrap() {
++            assert!(open, "a pass answered the demand and read the gate closed after it");
++        }
++    });
++}
+diff --git a/kernel/pure/sched/mailbox.rs b/kernel/pure/sched/mailbox.rs
+index 9000f67ca..4ba79bf59 100644
+--- a/kernel/pure/sched/mailbox.rs
++++ b/kernel/pure/sched/mailbox.rs
+@@ -691,6 +691,23 @@ mod tests {
+         assert!(!d.kick_pending() && !d.sleeping());
+     }
+ 
++    /// A demand stands until a pass begins, whoever else rings meanwhile.
++    #[test]
++    fn a_demanded_pass_is_answered_by_the_next_pass_and_nothing_else() {
++        let d = Doorbell::new();
++        assert!(!d.pass_demanded());
++        assert_eq!(d.demand_pass(), Kick::Send);
++        assert_eq!(d.ring(Urgency::Normal), Kick::Elide, "the demand raised the edge");
++        d.arm_sleep().abandon();
++        assert!(d.pass_demanded());
++        d.begin_pass();
++        assert!(!d.pass_demanded());
++        // A demand behind an edge already raised sends nothing and still stands.
++        assert_eq!(d.ring(Urgency::Normal), Kick::Send);
++        assert_eq!(d.demand_pass(), Kick::Elide);
++        assert!(d.pass_demanded());
++    }
++
+     #[test]
+     fn sleep_needs_an_empty_mailbox_and_a_quiet_doorbell() {
+         let (tx, mut rx) = mailbox::<Msg>();
+diff --git a/kernel/src/quiesce.rs b/kernel/src/quiesce.rs
+index a40f87dff..496d416f3 100644
+--- a/kernel/src/quiesce.rs
++++ b/kernel/src/quiesce.rs
+@@ -143,6 +143,7 @@ pub fn stop() -> (Record, Stopping) {
+     // Last: a gate that sees the stop sees the caller it must not stop.
+     STAGE.open(STOPPING);
+     let began = crate::clock::now();
++    let _ = crate::actuator::stop_budget_spent();
+     crate::sched::driver::pass_on_every_other_cpu();
+     (
+         Record {
+diff --git a/kernel/src/windows.rs b/kernel/src/windows.rs
+index d2b2ba5cb..ad651cdec 100644
+--- a/kernel/src/windows.rs
++++ b/kernel/src/windows.rs
+@@ -76,6 +76,13 @@ fn refuse(unseen: Unseen) -> ! {
+     let cpu = percpu::cpu_id();
+     here().windows.stop();
+     stand_down();
++    crate::alert!(
++        "mask-windows diagnostic: cpu{cpu} {unseen}; stop begun={} pid={:?} tid={:?} in_handler={}",
++        crate::quiesce::begun(),
++        percpu::current_pid().map(|p| p.raw()),
++        percpu::current_tid().map(|t| t.raw()),
++        here().in_handler.load(Relaxed),
++    );
+     panic!("mask-windows: cpu{cpu} {unseen}");
+ }
+ 

@@ -1,0 +1,200 @@
+commit 1314b4bcb9ed7967c4cc7773790e60c6f0c316fc (parent 422915e2c597ce264f474186b7d08d42d59fa29a)
+
+Experiment: the stop without its sweep and wait, every other CPU answering from Ring 0
+
+Not for landing as it stands: the check the stop's removal rests on, run
+before anything is deleted. `quiesce::stop` opens the gate, demands a pass of
+every other CPU through its doorbell and returns once each has begun one; it
+sweeps nothing and waits for no thread. The record is written with zero
+threads and zero sweeps so its readers still find a line.
+
+Co-Authored-By: Claude Fable 5.2 <noreply@anthropic.com>
+
+
+diff --git a/kernel/pure/sched/mailbox.rs b/kernel/pure/sched/mailbox.rs
+index 3c74849c8..9000f67ca 100644
+--- a/kernel/pure/sched/mailbox.rs
++++ b/kernel/pure/sched/mailbox.rs
+@@ -439,6 +439,8 @@ pub enum Kick {
+ 
+ const KICK_PENDING: u32 = 1 << 0;
+ const SLEEPING: u32 = 1 << 1;
++/// A pass was demanded and none has begun since ([`Doorbell::demand_pass`]).
++const PASS_DEMANDED: u32 = 1 << 2;
+ 
+ /// The ordering [`Doorbell::ring`]'s read-modify-write carries.
+ ///
+@@ -495,12 +497,31 @@ impl Doorbell {
+         }
+     }
+ 
++    /// Raise the edge with a mark only this CPU's next pass clears, for a
++    /// caller that waits on [`Self::pass_demanded`] to know a pass began after
++    /// this call. That pass's acquire reads this release, so what the CPU
++    /// reads after it follows everything the caller wrote before.
++    pub fn demand_pass(&self) -> Kick {
++        let prev = self.bits.fetch_or(KICK_PENDING | PASS_DEMANDED, KICK);
++        if prev & KICK_PENDING == 0 {
++            Kick::Send
++        } else {
++            Kick::Elide
++        }
++    }
++
++    /// Whether a demanded pass has yet to begin.
++    pub fn pass_demanded(&self) -> bool {
++        self.bits.load(Ordering::Acquire) & PASS_DEMANDED != 0
++    }
++
+     /// Consumer side, at pass start: clear the edge *before* draining, so a
+     /// message posted after the drain re-raises it. Also clears
+-    /// SLEEPING — a CPU running a pass is by definition awake.
++    /// SLEEPING — a CPU running a pass is by definition awake — and answers
++    /// a demand for this pass.
+     pub fn begin_pass(&self) {
+         self.bits
+-            .fetch_and(!(KICK_PENDING | SLEEPING), Ordering::AcqRel);
++            .fetch_and(!(KICK_PENDING | SLEEPING | PASS_DEMANDED), Ordering::AcqRel);
+     }
+ 
+     /// Consumer side, idle path: publish SLEEPING *before* the final
+diff --git a/kernel/src/quiesce.rs b/kernel/src/quiesce.rs
+index d9549277d..a40f87dff 100644
+--- a/kernel/src/quiesce.rs
++++ b/kernel/src/quiesce.rs
+@@ -33,6 +33,8 @@
+ //!
+ //! Lock order: [`process::PROCESS_TABLE`] alone.
+ 
++#![allow(dead_code, unused_imports)]
++
+ use core::sync::atomic::{AtomicBool, AtomicU32, Ordering::AcqRel, Ordering::Relaxed};
+ 
+ use toyos_quiesce::{must_stop, Record, Sweep, ThreadId};
+@@ -136,52 +138,25 @@ pub fn stop() -> (Record, Stopping) {
+         pid: percpu::current_pid().expect("quiesce::stop: the caller holds no process").raw(),
+         tid: percpu::current_tid().expect("quiesce::stop: the caller holds no thread").raw(),
+     };
+-    // Armed before the first sweep, so a transition landing between a sweep
+-    // and the park after it leaves a record that park returns on at once; and
+-    // before the stage opens, so nothing between the opening and the first
+-    // sweep is a point where a pass can take this CPU.
+-    let parkable = crate::scheduler::Parkable::at_entry();
+-    let armed = watch::arm(&PROGRESS, 0, WaitClass::Other)
+-        .expect("quiesce::stop: the caller holds no task to park");
+     CALLER_PID.store(caller.pid, Relaxed);
+     CALLER_TID.store(caller.tid, Relaxed);
+     // Last: a gate that sees the stop sees the caller it must not stop.
+     STAGE.open(STOPPING);
+-
+-    crate::sched::driver::ring_all_but_self();
+-    let cpus = crate::smp::cpu_count();
+-
+     let began = crate::clock::now();
+-    let budget = if crate::actuator::stop_budget_spent() { Duration::from_nanos(0) } else { PARK.duration() };
+-    let deadline = Deadline::at(began + budget);
+-    let mut sweeps = 0;
+-    loop {
+-        let swept = sweep(caller);
+-        sweeps += 1;
+-        let elapsed = (crate::clock::now() - began).nanos();
+-        if swept.keep_waiting(elapsed, budget.nanos()) {
+-            // Uncancellable: the claim is taken, and a caller that left here
+-            // would leave a machine nothing else may turn off. The deadline is
+-            // `keep_waiting`'s own, so an expiry ends the loop at the next sweep.
+-            watch::wait_uncancellable(&parkable, &armed, deadline);
+-            continue;
+-        }
+-        // Read here and not by the caller: the question is what was open at the
+-        // moment the stop ended, and every line between here and the record's
+-        // own would open more.
+-        return (
+-            Record {
+-                sweep: swept,
+-                elapsed_ms: elapsed / 1_000_000,
+-                budget_ms: budget.nanos() / 1_000_000,
+-                sweeps,
+-                cpus,
+-            },
+-            Stopping(()),
+-        );
+-    }
++    crate::sched::driver::pass_on_every_other_cpu();
++    (
++        Record {
++            sweep: Sweep::default(),
++            elapsed_ms: (crate::clock::now() - began).nanos() / 1_000_000,
++            budget_ms: 0,
++            sweeps: 0,
++            cpus: crate::smp::cpu_count(),
++        },
++        Stopping(()),
++    )
+ }
+ 
++#[allow(dead_code)]
+ /// Mark every parked thread but the caller and count the rest.
+ ///
+ /// The table lock is held for the walk and given up before the park: a thread
+diff --git a/kernel/src/sched/driver.rs b/kernel/src/sched/driver.rs
+index 835b302c1..1ff3b1364 100644
+--- a/kernel/src/sched/driver.rs
++++ b/kernel/src/sched/driver.rs
+@@ -727,17 +727,30 @@ pub fn pass_owed() -> bool {
+     cpus().get(current_cpu()).doorbell().kick_pending()
+ }
+ 
+-/// Ring every other CPU's doorbell with nothing behind it and kick each whose
+-/// edge this raised, so each runs a pass: what a machine-wide stop needs of a
+-/// CPU halted with its timer stopped, or running a thread that never enters
+-/// the kernel.
+-pub fn ring_all_but_self() {
++/// Demand a pass of every other CPU and return once each has begun one. A
++/// pass runs in Ring 0, so whatever a CPU returns to Ring 3 after its own
++/// read what this caller wrote before the call. A CPU that begins none
++/// inside [`crate::time::DEAF_CPU`] is wedged, and a panic.
++pub fn pass_on_every_other_cpu() {
+     let me = current_cpu();
+-    for cpu in (0..cpus().len() as u32).map(CpuId).filter(|&cpu| cpu != me) {
+-        if cpus().get(cpu).poke() == Kick::Send {
++    let others = || (0..cpus().len() as u32).map(CpuId).filter(move |&cpu| cpu != me);
++    for cpu in others() {
++        if cpus().get(cpu).doorbell().demand_pass() == Kick::Send {
+             HW.kick(cpu);
+         }
+     }
++    let deadline = crate::time::Deadline::at(crate::clock::now() + crate::time::Duration::from_nanos(crate::time::DEAF_CPU.nanos()));
++    for cpu in others() {
++        while cpus().get(cpu).doorbell().pass_demanded() {
++            assert!(
++                !deadline.reached(crate::clock::now()),
++                "sched: cpu{} began no pass in {} of being kicked for one",
++                cpu.0,
++                crate::time::DEAF_CPU,
++            );
++            core::hint::spin_loop();
++        }
++    }
+ }
+ 
+ /// Count the running thread's syscall `num`, which took `ticks` of the counter.
+diff --git a/kernel/src/watch.rs b/kernel/src/watch.rs
+index c07c1fd75..7f9242227 100644
+--- a/kernel/src/watch.rs
++++ b/kernel/src/watch.rs
+@@ -193,6 +193,7 @@ enum Ended {
+ }
+ 
+ /// Only a futex's watch is revoked, and only [`wait_until`] waits on one.
++#[allow(dead_code)]
+ #[track_caller]
+ fn not_revocable() -> ! {
+     panic!("watch: a revoke reached a wait that does not end on one");
+@@ -201,6 +202,7 @@ fn not_revocable() -> ! {
+ /// Park once, for a wait a kill may not end: until a post reaches this
+ /// registration or the deadline passes. A return is not an answer — the
+ /// caller re-reads its condition.
++#[allow(dead_code)]
+ #[track_caller]
+ pub fn wait_uncancellable<L: CellLock<List>>(p: &Parkable, armed: &Armed<'_, L>, deadline: Deadline) {
+     match wait_inner(p, armed, deadline, Cancel::Ignores) {

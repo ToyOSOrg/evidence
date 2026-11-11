@@ -1,0 +1,21 @@
+Evidence for ToyOSOrg/ToyOS PR #1241 (branch stop-gate-without-wait): the machine's
+stop keeps its gate and waits for no thread. Logs are masked (host paths,
+temporary paths, addresses, the runner's host name).
+
+The experiment that came first, before anything was deleted: the stop with
+its sweep and wait removed (the stop-budget-spent condition made permanent).
+  experiment-1314b4bcb.patch, experiment-3725bfcc8.patch   the two experiment commits
+  guest-experiment-1314b4bcb-43024839173.log   guest-rows; its actuator kernels did not build
+  guest-experiment-3725bfcc8-43026246044.log   guest-rows after the build fix
+  uart-experiment-*.log                        two of those boots' UARTs: a two-CPU stop and
+                                               the one-CPU short stop, each recording zero swept
+
+The branch's guest rows (code identical to the PR head outside issues/):
+  guest-rows-8502f16d7-43030668596.log         15 of 15 pass
+
+virt_mask_windows on main, without the branch:
+  guest-main-422915e2c-43027396712.log         red: data abort from a lower EL, double panic
+  guest-main-34cb4c918-43026252506.log         green
+
+host/   targeted host checks at 141a667a5 (same code as the head); each log
+        names its command and ends with its exit code; summary.txt lists them.
