@@ -28,3 +28,8 @@ Revision: the checks ran at 34cb4c918 plus the change's tree, which is commit ad
 
 ## r2 (review round 2, head 15fa1e54d: comments only, nothing rerun)
 - Correction to r1: `guest-compile.log` compiled std, libc, the `testcases` image's programs and every guest binary, not every program. That image builds no compositor; the compositor, console, uart and acpiserver call `endow::device`, whose bound is unchanged.
+
+## rebase-1246/ (head 451269586, rebased onto main 06fcb81ea, which holds #1246)
+- The conflict was `undelivered` in `kernel/src/syscall/ipc.rs`. It now takes this change's `&[ReceivedEntry]` and closes them through #1246's `process::with_handles`.
+- `summary.txt`: the kernel's host tests and clippy shapes at 451269586, each exit 0. They are `cargo test -p kernel --lib --features sched-check` and clippy on the kernel's host library, x86-64 default and with `boot-actuators,test-actuators`, and AArch64.
+- `guest/rows-43092098455.log`: run 43092098455 at 15fa1e54d, 5 of 5 passed. It is superseded by the rebased head's run 43108314485.
