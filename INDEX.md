@@ -12,3 +12,5 @@ below.
 - `metal-stage-head.log`, `metal-request.txt`: metal images staged at 4d1fad663; no machine touched.
 
 Paths are masked: `<worktree>` is the branch's checkout, `<scratch>` the agent's scratch directory, `<home>` and `<tmp>` the host's.
+
+`host-97b413994/checks.sh` also ran `cargo fmt --check -p toyos -p diskserver`, which exited 1 (`fmt-check.log`). No gate in the repository runs rustfmt, and main's own files differ from its defaults as well (31 hunks in `sdk/toyos/src/ipc.rs` alone), so the result decides nothing about this change.
