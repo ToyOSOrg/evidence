@@ -4,3 +4,5 @@
   its exit code; `summary.txt` lists them.
 - `controls/`: four negative controls (`step1-controls.py`), each a patch in `patches/` applied, built and run, then
   restored; each log ends with the test's red.
+- `host-checks/fileserver-moved.log`: the file server's tests again at ee1f81480, the head that narrows when the
+  server answers a file's size and time from its object.
