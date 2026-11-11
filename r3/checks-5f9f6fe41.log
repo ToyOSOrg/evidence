@@ -1,0 +1,32 @@
+=== cargo test -p kernel --lib --features sched-check
+test result: ok. 472 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 7.15s
+=== exit 0
+=== cargo run -- --ci host lint
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.09s
+21:29:53 === clippy: cargo clippy -p osbench --target x86_64-unknown-linux-musl -- $ADOPTED -D warnings
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.13s
+21:29:53 === clippy: cargo clippy -p osbench --target aarch64-unknown-linux-musl -- $ADOPTED -D warnings
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.12s
+21:29:53 === clippy: cargo clippy -p toyos-abi --all-targets --keep-going --target-dir target/clippy-abi -- -W clippy::undocumented_unsafe_blocks -D warnings
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.08s
+21:29:53 [ci] clippy, warnings denied: clean
+
+21:29:53 === [ci] nothing left in $TMPDIR or /tmp
+21:29:53 [ci] nothing left in $TMPDIR or /tmp: every test took its scratch with it
+21:29:53 [ci] Host(Some(Lint)): 5 step(s), all green
+=== exit 0
+=== cargo run -- --ci host models
+failures:
+    fd::table::model::a_call_on_a_closed_descriptor_never_holds_the_object_that_took_its_slot
+    fd::table::model::a_call_on_a_reopened_descriptor_holds_the_old_object_or_the_new
+
+test result: FAILED. 0 passed; 2 failed; 0 ignored; 0 measured; 188 filtered out; finished in 0.04s
+
+error: test failed, to rerun pass `-p toyos --lib`
+21:34:18 [ci] control `fd-reuse-relaxed`: 2 verdict(s) reached
+
+21:34:18 === [ci] nothing left in $TMPDIR or /tmp
+21:34:18 [ci] nothing left in $TMPDIR or /tmp: every test took its scratch with it
+21:34:18 [ci] Host(Some(Models)): 84 step(s), all green
+=== exit 0
+done
