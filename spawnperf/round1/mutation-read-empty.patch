@@ -1,0 +1,15 @@
+diff --git a/kernel/pure/vm.rs b/kernel/pure/vm.rs
+index 188f5b99b..df6d91d31 100644
+--- a/kernel/pure/vm.rs
++++ b/kernel/pure/vm.rs
+@@ -44,9 +44,7 @@ pub fn copied_page(frame: &mut [u8], at: u64, offset: u64, copied: u64, size: u6
+     let from = offset.saturating_add(at);
+     let n = copied.saturating_sub(at).min(frame.len() as u64).min(size.saturating_sub(from)) as usize;
+     let (bytes, rest) = frame.split_at_mut(n);
+-    if n > 0 {
+-        read(from, bytes);
+-    }
++    read(from, bytes);
+     rest.fill(0);
+ }
+ 

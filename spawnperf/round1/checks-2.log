@@ -1,0 +1,125 @@
+rev 1d151cba1b4dac7c374fd1d0f48c7bdf54c0a4cd
+== cargo test -p kernel --lib --features sched-check vm::
+   Compiling kernel v0.1.0 (<scratch>/spawnperf/wt/kernel)
+    Finished `test` profile [optimized + debuginfo] target(s) in 5.81s
+     Running unittests pure/lib.rs (target/debug/deps/kernel-a7ca71f2661cd543)
+
+running 17 tests
+test vm::tests::a_lone_touch_populates_its_own_page ... ok
+test vm::tests::a_page_wholly_past_its_source_reads_nothing_from_it ... ok
+test vm::tests::a_copied_page_keeps_nothing_its_frame_held ... ok
+test vm::tests::a_run_stops_at_the_ranges_ends_and_a_neighbour_outside_it_counts_for_nothing ... ok
+test vm::tests::a_touch_beside_a_populated_page_populates_its_run_upward_or_downward ... ok
+test vm::tests::no_protection_allows_a_write_and_an_execution ... ok
+test vm::tests::protection_allows_its_accesses_and_bounds_by_its_maximum ... ok
+test vm::tests::an_empty_space_places_at_its_floor_with_the_alignment_asked ... ok
+test vm::tests::backing_is_a_commitment_or_an_object ... ok
+test vm::tests::placement_takes_the_smallest_free_range_that_fits ... ok
+test vm::tests::an_update_changes_only_its_range_and_joins_back ... ok
+test vm::tests::a_copied_range_cut_keeps_its_source_offset_and_length ... ok
+test vm::tests::neighbours_that_continue_each_other_join ... ok
+test vm::tests::a_removal_over_entries_and_holes_takes_every_entry_it_meets ... ok
+test vm::tests::a_removal_cuts_crossing_entries_and_frees_exactly_its_range ... ok
+test vm::tests::an_insert_over_an_entry_is_a_kernel_bug - should panic ... ok
+test vm::tests::a_mixed_load_agrees_with_a_page_map ... ok
+
+test result: ok. 17 passed; 0 failed; 0 ignored; 0 measured; 444 filtered out; finished in 0.03s
+
+exit 0
+== cargo test -p kernel --lib --features sched-check frames::
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.10s
+     Running unittests pure/lib.rs (target/debug/deps/kernel-a7ca71f2661cd543)
+
+running 39 tests
+test frames::tests::a_charge_reserves_what_the_heap_grows_into ... ok
+test frames::tests::a_charge_made_before_its_floor_grows_from_it ... ok
+test frames::tests::a_floor_accounts_heap_draws_on_its_floor_and_keeps_it ... ok
+test frames::tests::a_floor_is_held_against_every_other_account ... ok
+test frames::tests::a_floor_accounts_wait_is_answered_by_its_own_floor ... ok
+test frames::tests::a_floor_is_set_only_where_it_is_free_and_unset_lets_it_go ... ok
+test frames::tests::a_frame_carves_one_superframe_and_its_return_makes_it_whole ... ok
+test frames::tests::a_floor_let_go_releases_what_its_pool_kept ... ok
+test frames::tests::a_floors_superframes_stay_whole_beside_scattered_room ... ok
+test frames::tests::a_frame_freed_while_pinned_goes_back_with_its_last_pin ... ok
+test frames::tests::a_hole_is_absent ... ok
+test frames::tests::a_kept_superframe_split_answers_a_wait ... ok
+test frames::tests::a_kept_superframe_goes_to_the_kernel_alone ... ok
+test frames::tests::a_double_free_is_a_kernel_bug - should panic ... ok
+test frames::tests::a_pin_count_at_its_limit_refuses_and_pins_nothing ... ok
+test frames::tests::a_promise_holds_its_frames_against_every_other_allocation ... ok
+test frames::tests::a_pinned_frame_discarded_is_a_panic - should panic ... ok
+test frames::tests::a_run_is_contiguous_and_skips_a_gap ... ok
+test frames::tests::a_smaller_refusal_while_waiting_is_what_is_waited_for ... ok
+test frames::tests::a_superframe_and_a_run_come_only_from_whole_superframes ... ok
+test frames::tests::a_superframe_freed_with_a_pinned_frame_is_whole_only_after_the_unpin ... ok
+test frames::tests::a_wait_for_a_run_is_answered_by_a_row ... ok
+test frames::tests::a_wait_for_memory_is_answered_once_what_it_lacked_comes_back ... ok
+test frames::tests::a_wait_for_a_superframe_is_answered_by_one_and_not_by_frames ... ok
+test frames::tests::an_uncharge_keeps_one_superframe_of_slack ... ok
+test frames::tests::a_withheld_range_is_never_handed_out ... ok
+test frames::tests::an_unpin_before_the_free_leaves_nothing_deferred ... ok
+test frames::tests::an_unpin_with_no_pin_is_a_kernel_bug - should panic ... ok
+test frames::tests::exhaustion_answers_none_and_a_return_answers_again ... ok
+test frames::tests::frames_fill_a_split_superframe_before_carving_another ... ok
+test frames::tests::held_frames_are_taken_whole_or_not_at_all ... ok
+test frames::tests::memory_off_superframe_boundaries_is_used_and_never_whole ... ok
+test frames::tests::memory_outside_the_records_pins_as_nothing ... ok
+test frames::tests::past_its_floor_an_account_is_ordinary_and_gives_back_to_its_floor_first ... ok
+test frames::tests::the_heaps_own_superframes_cover_no_charge ... ok
+test frames::tests::fragmentation_never_takes_a_floor ... ok
+test frames::tests::fragmentation_never_takes_what_charges_or_promises_hold ... ok
+test frames::tests::a_mixed_load_keeps_every_frame_once ... ok
+test frames::tests::a_wait_for_memory_is_never_missed ... ok
+
+test result: ok. 39 passed; 0 failed; 0 ignored; 0 measured; 422 filtered out; finished in 0.01s
+
+exit 0
+== mutation: a page that takes no bytes reads the source anyway
+== cargo test -p kernel --lib --features sched-check vm::tests::a_
+   Compiling kernel v0.1.0 (<scratch>/spawnperf/wt/kernel)
+    Finished `test` profile [optimized + debuginfo] target(s) in 3.21s
+     Running unittests pure/lib.rs (target/debug/deps/kernel-a7ca71f2661cd543)
+
+running 9 tests
+test vm::tests::a_lone_touch_populates_its_own_page ... ok
+test vm::tests::a_run_stops_at_the_ranges_ends_and_a_neighbour_outside_it_counts_for_nothing ... ok
+test vm::tests::a_touch_beside_a_populated_page_populates_its_run_upward_or_downward ... ok
+test vm::tests::a_removal_cuts_crossing_entries_and_frees_exactly_its_range ... ok
+test vm::tests::a_removal_over_entries_and_holes_takes_every_entry_it_meets ... ok
+test vm::tests::a_copied_range_cut_keeps_its_source_offset_and_length ... ok
+test vm::tests::a_page_wholly_past_its_source_reads_nothing_from_it ... FAILED
+test vm::tests::a_copied_page_keeps_nothing_its_frame_held ... FAILED
+test vm::tests::a_mixed_load_agrees_with_a_page_map ... ok
+
+failures:
+
+---- vm::tests::a_page_wholly_past_its_source_reads_nothing_from_it stdout ----
+
+thread 'vm::tests::a_page_wholly_past_its_source_reads_nothing_from_it' (31174088) panicked at kernel/pure/vm.rs:418:9:
+assertion `left == right` failed: a read past the source's end
+  left: Some((8192, 0))
+ right: None
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- vm::tests::a_copied_page_keeps_nothing_its_frame_held stdout ----
+
+thread 'vm::tests::a_copied_page_keeps_nothing_its_frame_held' (31174084) panicked at kernel/pure/vm.rs:406:13:
+assertion `left == right` failed: page 0x1000 of 0x64 bytes copied from 0x0 of 0x4000: what it read
+  left: Some((4096, 0))
+ right: None
+
+
+failures:
+    vm::tests::a_copied_page_keeps_nothing_its_frame_held
+    vm::tests::a_page_wholly_past_its_source_reads_nothing_from_it
+
+test result: FAILED. 7 passed; 2 failed; 0 ignored; 0 measured; 452 filtered out; finished in 0.03s
+
+error: test failed, to rerun pass `-p kernel --lib`
+exit 101
+mutation reverted
+== cargo clippy -p kernel --lib --tests --features sched-check -- -W clippy::checked_conversions -W clippy::default_trait_access -W clippy::manual_midpoint -W clippy::redundant_clone -W clippy::unchecked_time_subtraction -W clippy::unnecessary_semicolon -D warnings
+    Checking kernel v0.1.0 (<scratch>/spawnperf/wt/kernel)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 1.64s
+exit 0
+all done

@@ -38,3 +38,13 @@ Figures the PR cites, hot (back to back), ns p50/min, tiny program:
 - `checks/guest-rows-43052895137.txt`: guest-rows run 43052895137 at f3a8c4000, the result lines of its log:
   `osbench_capability_groups_exit_0`, `virt_user_mode`, `a_spawn_from_an_image_frees_it_when_the_child_ends` and
   `virt_smp` pass, 4 of 4 (https://github.com/ToyOSOrg/ToyOS/actions/runs/43052895137).
+
+## Review round 1 (head 1d151cba1)
+
+- `round1/checks-1.log` at 2a9e60755: kernel clippy for x86_64-unknown-none, x86_64 with `boot-actuators,test-actuators`
+  and aarch64-unknown-none-softfloat, exit 0 each; the guest test binaries built while staging the `spawn_cost` row's
+  image (`exit 2` there is staging's own: it touched no machine). Its host tests failed to compile (`format!` not
+  imported in `vm`'s test module), fixed in 1d151cba1, which differs from 2a9e60755 only there.
+- `round1/checks-2.log` at 1d151cba1 (`round1/checks.sh` as then): `vm::` exit 0 (17 passed), `frames::` exit 0 (39
+  passed); `round1/mutation-read-empty.patch` applied (a page that takes no bytes reads the source anyway): exit 101,
+  both `vm` tests named `a_*` fail; reverted; library clippy exit 0.

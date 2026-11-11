@@ -1,0 +1,162 @@
+rev 2a9e60755ec5af0270a714941f7051bdcb026996
+== cargo test -p kernel --lib --features sched-check vm::
+   Compiling kernel v0.1.0 (<scratch>/spawnperf/wt/kernel)
+error: cannot find macro `format` in this scope
+   --> kernel/pure/vm.rs:406:24
+    |
+406 |             let what = format!("page {at:#x} of {copied:#x} bytes copied from {offset:#x} of {size:#x}");
+    |                        ^^^^^^
+    |
+help: consider importing one of these macros
+    |
+376 +     use std::format;
+    |
+376 +     use alloc::format;
+    |
+
+error: could not compile `kernel` (lib test) due to 1 previous error
+exit 101
+== cargo test -p kernel --lib --features sched-check frames::
+   Compiling kernel v0.1.0 (<scratch>/spawnperf/wt/kernel)
+error: cannot find macro `format` in this scope
+   --> kernel/pure/vm.rs:406:24
+    |
+406 |             let what = format!("page {at:#x} of {copied:#x} bytes copied from {offset:#x} of {size:#x}");
+    |                        ^^^^^^
+    |
+help: consider importing one of these macros
+    |
+376 +     use std::format;
+    |
+376 +     use alloc::format;
+    |
+
+error: could not compile `kernel` (lib test) due to 1 previous error
+exit 101
+== mutation: a page that takes no bytes reads the source anyway
+== cargo test -p kernel --lib --features sched-check vm::tests::a_
+   Compiling kernel v0.1.0 (<scratch>/spawnperf/wt/kernel)
+error: cannot find macro `format` in this scope
+   --> kernel/pure/vm.rs:404:24
+    |
+404 |             let what = format!("page {at:#x} of {copied:#x} bytes copied from {offset:#x} of {size:#x}");
+    |                        ^^^^^^
+    |
+help: consider importing one of these macros
+    |
+374 +     use std::format;
+    |
+374 +     use alloc::format;
+    |
+
+error: could not compile `kernel` (lib test) due to 1 previous error
+exit 101
+mutation reverted
+== cargo clippy -p kernel --target x86_64-unknown-none -- -W clippy::checked_conversions -W clippy::default_trait_access -W clippy::manual_midpoint -W clippy::redundant_clone -W clippy::unchecked_time_subtraction -W clippy::unnecessary_semicolon -D warnings
+    Checking toyos-abi v0.16.0 (<scratch>/spawnperf/wt/sdk/abi)
+    Checking toyos-phys v0.1.0 (<scratch>/spawnperf/wt/kernel/phys)
+    Checking rustc-demangle v0.1.27
+    Checking toyos-elide v0.1.0 (<scratch>/spawnperf/wt/lib/elide)
+    Checking toyos-tco v0.1.0 (<scratch>/spawnperf/wt/lib/tco)
+    Checking cfg-if v1.0.4
+    Checking hashbrown v0.16.1
+    Checking toyos-tsc v0.1.0 (<scratch>/spawnperf/wt/lib/tsc)
+    Checking toyos-gicv3 v0.1.0 (<scratch>/spawnperf/wt/kernel/gicv3)
+    Checking toyos-random v0.1.0 (<scratch>/spawnperf/wt/lib/random)
+    Checking toyos-rootimage v0.1.0 (<scratch>/spawnperf/wt/lib/rootimage)
+    Checking toyos-wallclock v0.1.0 (<scratch>/spawnperf/wt/lib/wallclock)
+    Checking toyos-quiesce v0.1.0 (<scratch>/spawnperf/wt/lib/quiesce)
+    Checking toyos-register v0.1.0 (<scratch>/spawnperf/wt/kernel/register)
+    Checking toyos-microcode v0.1.0 (<scratch>/spawnperf/wt/lib/microcode)
+    Checking toyos-its v0.1.0 (<scratch>/spawnperf/wt/kernel/its)
+    Checking toyos-amdvi v0.1.0 (<scratch>/spawnperf/wt/kernel/amdvi)
+    Checking dlmalloc v0.2.13
+    Checking toyos-bootmap v0.1.0 (<scratch>/spawnperf/wt/lib/bootmap)
+    Checking toyos-pci v0.1.0 (<scratch>/spawnperf/wt/kernel/pci)
+    Checking toyos-kimage v0.1.0 (<scratch>/spawnperf/wt/lib/kimage)
+    Checking toyos-symbols v0.1.0 (<scratch>/spawnperf/wt/lib/symbols)
+    Checking toyos-proclife v0.1.0 (<scratch>/spawnperf/wt/kernel/proclife)
+    Checking toyos-acpi v0.1.0 (<scratch>/spawnperf/wt/lib/acpi)
+    Checking toyos-smmu v0.1.0 (<scratch>/spawnperf/wt/kernel/smmu)
+    Checking toyos-userbound v0.1.0 (<scratch>/spawnperf/wt/lib/userbound)
+    Checking kernel v0.1.0 (<scratch>/spawnperf/wt/kernel)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 6.11s
+exit 0
+== cargo clippy -p kernel --target x86_64-unknown-none --features boot-actuators,test-actuators -- -W clippy::checked_conversions -W clippy::default_trait_access -W clippy::manual_midpoint -W clippy::redundant_clone -W clippy::unchecked_time_subtraction -W clippy::unnecessary_semicolon -D warnings
+    Checking kernel v0.1.0 (<scratch>/spawnperf/wt/kernel)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 4.56s
+exit 0
+== cargo clippy -p kernel --target aarch64-unknown-none-softfloat -- -W clippy::checked_conversions -W clippy::default_trait_access -W clippy::manual_midpoint -W clippy::redundant_clone -W clippy::unchecked_time_subtraction -W clippy::unnecessary_semicolon -D warnings
+    Checking toyos-abi v0.16.0 (<scratch>/spawnperf/wt/sdk/abi)
+    Checking toyos-phys v0.1.0 (<scratch>/spawnperf/wt/kernel/phys)
+    Checking toyos-elide v0.1.0 (<scratch>/spawnperf/wt/lib/elide)
+    Checking cfg-if v1.0.4
+    Checking rustc-demangle v0.1.27
+    Checking toyos-tco v0.1.0 (<scratch>/spawnperf/wt/lib/tco)
+    Checking toyos-wallclock v0.1.0 (<scratch>/spawnperf/wt/lib/wallclock)
+    Checking toyos-microcode v0.1.0 (<scratch>/spawnperf/wt/lib/microcode)
+    Checking toyos-random v0.1.0 (<scratch>/spawnperf/wt/lib/random)
+    Checking toyos-rootimage v0.1.0 (<scratch>/spawnperf/wt/lib/rootimage)
+    Checking toyos-quiesce v0.1.0 (<scratch>/spawnperf/wt/lib/quiesce)
+    Checking toyos-register v0.1.0 (<scratch>/spawnperf/wt/kernel/register)
+    Checking toyos-gicv3 v0.1.0 (<scratch>/spawnperf/wt/kernel/gicv3)
+    Checking hashbrown v0.16.1
+    Checking dlmalloc v0.2.13
+    Checking toyos-tsc v0.1.0 (<scratch>/spawnperf/wt/lib/tsc)
+    Checking toyos-its v0.1.0 (<scratch>/spawnperf/wt/kernel/its)
+    Checking toyos-amdvi v0.1.0 (<scratch>/spawnperf/wt/kernel/amdvi)
+    Checking toyos-bootmap v0.1.0 (<scratch>/spawnperf/wt/lib/bootmap)
+    Checking toyos-pci v0.1.0 (<scratch>/spawnperf/wt/kernel/pci)
+    Checking toyos-proclife v0.1.0 (<scratch>/spawnperf/wt/kernel/proclife)
+    Checking toyos-symbols v0.1.0 (<scratch>/spawnperf/wt/lib/symbols)
+    Checking toyos-kimage v0.1.0 (<scratch>/spawnperf/wt/lib/kimage)
+    Checking toyos-acpi v0.1.0 (<scratch>/spawnperf/wt/lib/acpi)
+    Checking toyos-smmu v0.1.0 (<scratch>/spawnperf/wt/kernel/smmu)
+    Checking toyos-userbound v0.1.0 (<scratch>/spawnperf/wt/lib/userbound)
+    Checking kernel v0.1.0 (<scratch>/spawnperf/wt/kernel)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 4.46s
+exit 0
+== cargo clippy -p kernel --lib --tests --features sched-check -- -W clippy::checked_conversions -W clippy::default_trait_access -W clippy::manual_midpoint -W clippy::redundant_clone -W clippy::unchecked_time_subtraction -W clippy::unnecessary_semicolon -D warnings
+    Checking kernel v0.1.0 (<scratch>/spawnperf/wt/kernel)
+error: cannot find macro `format` in this scope
+   --> kernel/pure/vm.rs:406:24
+    |
+406 |             let what = format!("page {at:#x} of {copied:#x} bytes copied from {offset:#x} of {size:#x}");
+    |                        ^^^^^^
+    |
+help: consider importing one of these macros
+    |
+376 +     use std::format;
+    |
+376 +     use alloc::format;
+    |
+
+error: could not compile `kernel` (lib test) due to 1 previous error
+exit 101
+== cargo test --test toyos-build -- --metal --metal-readback <scratch>/spawnperf/r1/compile-stage spawn_cost
+   Compiling kernel v0.1.0 (<scratch>/spawnperf/wt/kernel)
+   Compiling toyos-build v0.1.0 (<scratch>/spawnperf/wt)
+    Finished `test` profile [optimized + debuginfo] target(s) in 11.96s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-b8f4c5141ecc8947)
+18:38:51   BUILD x86_64 binaries of tests/guest/rust-tests
+18:38:55   BUILT x86_64 binaries of tests/guest/rust-tests  (5s)
+18:38:55   BUILD x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests
+18:38:58   BUILT x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests  (2s)
+18:38:58 [toyos] Compiling 143 C tests, and attempting 24 declared ones...
+18:39:03 [metal] 1 registration(s) and 0 shared member(s) over 1 boot(s)
+18:39:03   BUILD x86_64 kernel, loader, ROOT of <scratch>/spawnperf/r1/compile-stage/testcases/system-348a97974e8c31f3.toml
+18:40:17 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+18:40:17   BUILT x86_64 kernel, loader, ROOT of <scratch>/spawnperf/r1/compile-stage/testcases/system-348a97974e8c31f3.toml  (74s)
+18:40:18 [metal] testcases: 10 job(s) under a list bound of 60000 ms, armed with [] and a boot deadline of 120000 ms — <scratch>/spawnperf/r1/compile-stage/testcases/image.img
+# One boot per image. Each invocation is `cargo <words>` from this worktree.
+
+testcases
+  image: <scratch>/spawnperf/r1/compile-stage/testcases/image.img
+  cargo run -p toyos-metal -- --image <scratch>/spawnperf/r1/compile-stage/testcases/image.img --readback <scratch>/spawnperf/r1/compile-stage/testcases --fat32-check
+18:40:18 [metal] staged 1 image(s); <scratch>/spawnperf/r1/compile-stage/request.txt lists them. The machine was not touched, so this run establishes nothing about it.
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `<scratch>/spawnperf/wt/target/debug/deps/toyos_build-b8f4c5141ecc8947 --metal --metal-readback <scratch>/spawnperf/r1/compile-stage spawn_cost` (exit status: 2)
+exit 2
+all done
