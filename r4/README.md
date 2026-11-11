@@ -1,0 +1,4 @@
+# PR #1269, round 4: review r3 answered
+
+- `checks-156878eac.log`, at 156878eac on macOS arm64, exit 0 each: `cargo test -p kernel --lib --features sched-check` (473 passed, `a_page_marked_during_the_sweep_is_swept_before_its_frame_goes_back` among them); `cargo run -- --ci host lint` (5 steps, all green); `cargo run -- --ci host models` (84 steps, all green).
+- `mut-b10-sweep-once.patch` / `.log`: the sweep rule before r3, sweep once per walk (`o.swept.is_none()` for `o.swept != Some(o.epoch)`), applied as a checked one-line patch to the uncommitted round-3 tree: `cargo test -p kernel --lib paged::` exit 101, red in `a_page_marked_during_the_sweep_is_swept_before_its_frame_goes_back`, `every_interleaving_keeps_each_leaf_on_its_pages_one_frame` and `long_runs_keep_each_leaf_on_its_pages_one_frame`; the file restored byte-identical (`cmp`) before the commit.

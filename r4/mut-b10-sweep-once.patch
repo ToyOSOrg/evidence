@@ -1,0 +1,11 @@
+--- a/kernel/pure/paged.rs
++++ b/kernel/pure/paged.rs
+@@ -752,7 +752,7 @@
+                     o.epoch += 1;
+                     o.walk = Walk::Running { again: false };
+                 }
+-                Walk::Running { again: false } if o.swept != Some(o.epoch) => {
++                Walk::Running { again: false } if o.swept.is_none() => {
+                     o.swept = Some(o.epoch);
+                     return Next::Sweep;
+                 }
