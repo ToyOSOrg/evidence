@@ -1,0 +1,41 @@
+# Metal request: PR #1236's A/B, a DATA listing's inodes read in one pass. The T14 only.
+# Rules, fixed before any boot: <path>
+# Nothing here touched a machine. Each image was staged with
+#   cargo test --test toyos-build -- --metal --metal-readback <dir> osbench_disk
+# (exit 2, the harness's "staged") from the worktree
+#   <path>
+# which is where each invocation below runs (`cargo <words>`); it is back on the branch head and keeps its target/.
+#
+# Row: osbench_disk (image label diskbenchcase): osbench files, nvme, persist on the bench's NVMe. List bound 525 s.
+# Images (sha256 of image.img). No scratch commits: each is its revision as is.
+#   H  7d00a1f6c (branch data-listing-inodes-one-pass, PR #1236's head)
+#      <path>
+#      7df5abe29a2e0b149132d0ade6fe69936c6874966e8acc662f3e1f7e7fe3e1a1
+#   B  422915e2c (its parent, main then)
+#      <path>
+#      dcc25a8690a77ce8e1d923b97b9c2608bd444c922d174ab5a6669bfa28865a7e
+#
+# Timing runs: AC power, nothing else on the bench during a boot. No Linux runs.
+# DATA carries over from boot to boot; neither revision changes its format, and each boot's judge
+# (data_on_the_nvme) checks the volume the boot before left. Keep the order.
+#
+# ORDER (8 boots), counterbalanced (the orchestrator's, before any boot). Four a side is the least under which
+# the A/B can resolve (rules.txt).
+#   1 B-1   2 H-1   3 H-2   4 B-2   5 H-3   6 B-3   7 B-4   8 H-4
+#
+# Each boot, with <arm> H or B and <n> its round:
+cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check
+#
+# Spelled out:
+B-1  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check
+H-1  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check
+H-2  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check
+B-2  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check
+H-3  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check
+B-3  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check
+B-4  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check
+H-4  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check
+#
+# Wanted back per boot: the readback directory (kernel.log with every osbench line), the driver's exit code.
+# I judge each offline: cargo test --test toyos-build -- --metal --metal-readback metal/runs/t14/<arm>-<n> osbench_disk
+ORDER CHANGED by orchestrator before any boot (review of #1236): B-1 H-1 H-2 B-2 H-3 B-3 B-4 H-4 (counterbalanced).

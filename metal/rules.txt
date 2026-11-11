@@ -1,0 +1,31 @@
+# PR #1236's metal A/B: rules fixed before any boot.
+
+Question: does reading a DATA listing's inodes in one pass over each run of them (H, 7d00a1f6c) lower
+osbench's fs.disk.readdir.1000 against the same tree without it (B, its parent 422915e2c), on the T14?
+
+Images: H and B, row osbench_disk, staged from one worktree. No scratch commits: each image is its revision as is.
+Bench: the T14 only (the brief's one-bench A/B). On AC power, otherwise idle.
+Order (counterbalanced, set by the orchestrator before any boot, on #1236's review): B-1, H-1, H-2, B-2, H-3, B-3,
+B-4, H-4. DATA carries over, so each boot inherits the journal and btree history of every boot before it and lists a
+directory made at ever-higher inode numbers; the alternating order B,H,B,H,... first written here put every H boot
+right after a B boot, which confounds a steady drift with the change. Neither revision changes the format, and each
+boot's judge (data_on_the_nvme) checks the volume the boot before left.
+
+Read per boot: each fs.disk.* row's p50 from kernel.log, and the row's judge verdict. A boot is valid when its
+data_on_the_nvme judge passes, it did not format DATA, and, on an H boot, readdir.1000 is reported (its own check that
+1 000 names were listed). An invalid boot is reported and does not count; the count of valid boots is reported.
+
+Primary: fs.disk.readdir.1000. Exact two-sided Mann-Whitney over the 4 per-boot p50s a side at 0.05; with 4 a side
+only complete separation (every H boot below every B boot, or the reverse) resolves. Reported with each side's
+range and the ratio of medians.
+Watch: every other fs.disk.* row by the same test, as no-regression evidence, each reported with its ratio of
+medians (H over B); a row that resolves against H is a finding to explain before landing, not to be averaged away,
+and a row whose H range lies wholly above its B range is named. About 2.9% of rows resolve by chance.
+Landing (the reviewer's): every boot valid; readdir.1000 resolves with every H boot below every B boot (if it does not,
+that contradicts the premise and is investigated, not landed on direction); no other fs.disk.* row resolves against H.
+Record exit (issues/a-data-directory-listing-is-read-whole-for-every-readdir-request.md): readdir.1000 within 1.5x
+main's 0.91 ms (T14, dc1a8642e, nightly 2026-10-31-2316), i.e. at or under about 1.37 ms. Stated, not decided here:
+that reference is one boot of another format.
+
+Fewer boots: with fewer than 4 a side nothing resolves under this rule; the result is then reported as direction
+only.
