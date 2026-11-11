@@ -18,3 +18,6 @@ Revision: the checks ran at 34cb4c918 plus the change's tree, which is commit ad
 ## metal/
 - `stage.log`: `cargo test --test toyos-build -- --metal --metal-readback <dir> boot:testcases boot:shared-debug process_tree` at ad7d762c2. It exits 2, the harness's word for staged with the machine untouched: 4 images, 47 registrations and 245 shared members.
 - `request.txt`: the boots requested (proctreecase, shared-debug, testcases, testcases-watchdog).
+
+## guest/
+- `rows-43049964255.log`: guest-rows run 43049964255 at ad7d762c2. It ran session_lifecycle, a_launch_gives_each_unsent_stdio_slot_a_null, netstack_holders_exported_to_children and hda_plays_to_the_controller_that_reaches_an_output: 4 passed, 4 total. The runner's machine name and CPU model are masked.
