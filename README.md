@@ -66,3 +66,13 @@ branch's own, red on every host (`382 passed; 2 failed`).
 166944c21 differs from 98853704a in `build/bootlog.rs`, `tests/toyos.rs`, a
 comment in one guest test and issue records. The other 108 host steps were
 not rerun.
+
+## The T14 at 98853704a, and the rebased head
+
+| file | command | revision | target | exit |
+|---|---|---|---|---|
+| `metal/t14-98853704a/judge.log` | `cargo test --test toyos-build -- --metal --metal-readback <dir> startup_block abuse_handle_table spawn_child_ends_first process_tree abuse_spawn_path_and_name abuse_spawn_maps abuse_page_straddle spawn_image_object spawn_lands_claimed start_refuses_itself` over the readbacks the orchestrator's run left | boots of 98853704a, judged by the harness at 166944c21 (the repaired `process_tree` judge) | T14 | 0: 10 passed, 0 failed, 3 boots |
+| `metal/t14-98853704a/*-jobs.log`, `*-verdict.txt` | each boot's job lines out of its kernel log, and the boot's verdict | 98853704a | T14 | every job `exit=0` |
+| `host/r5-ci-host.log` | `cargo run -- --ci host` | ebf926940, the branch rebased onto main 1cab347fd | macOS arm64 host | 1: 1 of 110 steps red, `the build system`: 384 passed, 1 failed, `llvm::tests::the_caller_s_environment_reaches_neither_the_build_nor_the_key` (and `keyed_and_built`, the child it runs). Every other `FAILED` in the log is under a `control` step, 73 of them, each a mutation reaching its verdict |
+
+The machine's vendor, model and firmware version are masked.
