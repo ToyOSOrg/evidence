@@ -1,0 +1,10 @@
+# AMD bench, machine_reboot at #1232's 9108a464a (image sha256 b1a7007c9f376aa61d100cc2170c62e6f06527bee3197128f3929ddddad5f4d2), run by the orchestrator.
+verdict.txt: passed 
+$ grep -E 'exit: test_rs_ps2server_hold |Boot: complete|the machine stops|ACPI: reset register|no reset register this kernel writes' kernel.log
+[---------- -------- --.--- cpu0 kernel] ACPI: reset register SystemIO 0xb0 <- 0xfb, which is SMI_CMD too
+[2026-11-11 17:29:33  4.296 cpu0 kernel] Boot: complete (242ms)
+[2026-11-11 17:29:33  4.297 cpu0 kernel] boot: power-on to loader 3723 ms, loader 286 ms (ROOT read 17 ms), kernel to Boot: complete 286 ms
+[2026-11-11 17:29:34  5.459 cpu2 kernel] exit: test_rs_ps2server_hold pid=17 code=0 cpu=1ms peak=0MB allocs=14 frees=2 syscalls=52 syscall_wall=642ms 6=1 10=3 14=1 50=1 51=1 63=3 66=23 89=1 90=11 99=2
+[2026-11-11 17:29:34  5.461 supervisor] supervisor: power: the machine stops, and logkeeper makes the log whole first (Reboot)
+$ grep -cE "had not answered the stop|stop mark was asked|answers but slowly|refusing reader|letting reader" kernel.log
+0
