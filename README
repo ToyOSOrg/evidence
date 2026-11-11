@@ -47,3 +47,15 @@ Negative control (never lands): branch guest-timing-nc.
     boot-actuators,test-actuators: exit 0 each).
 
     The corrected control's guest run is appended to this branch when it completes.
+
+Negative control, corrected (appended): guest-nc-b8c2cae91-43052660175.log
+    gh workflow run guest-rows.yml --ref guest-timing-nc
+      -f filter='screen_panic_muted usbd_drives_the_spare udp_receive_times_out'
+    Run 43052660175 at b8c2cae91: conclusion failure, 0 of 3 passed, each red its own mutation's:
+    - screen_panic_muted: after its 30 s ceiling, `"panic: rebooting in 60 s, timed by " not
+      on screen of a guest with no serial port at all`; the decoded screen carries `PANIC:`,
+      `test-late-panic: on-screen console check` and `late_panic::Nest`.
+    - usbd_drives_the_spare: in the `test_rs_usbd_spare fault` window, `after the aimed fetch
+      the claim answered a record of 1, not the unit's refusal`.
+    - udp_receive_times_out: STALL at its 120 s run_test ceiling scaled 1.81x (216 s of
+      guard), receives 0 and 1 printed and receive 2 not.
