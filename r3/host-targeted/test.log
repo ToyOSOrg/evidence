@@ -1,0 +1,479 @@
+$ cargo test -p toyos-blockring -p diskserver -p toyos -p nvme
+   Compiling nvme v0.0.0 (<path>
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.89s
+     Running unittests src/lib.rs (target/debug/deps/diskserver-6ad1203cbdef2ebe)
+
+running 5 tests
+test disk::tests::answers_reach_the_tasks_that_asked_whatever_their_order ... ok
+test disk::tests::a_refused_reconnect_makes_the_disk_gone_for_every_request ... ok
+test disk::tests::a_request_on_the_wire_at_a_session_end_is_asked_again_after_the_reconnect ... ok
+test disk::tests::a_request_refused_at_more_ends_than_the_bound_is_answered_gone ... ok
+test disk::tests::transfers_are_split_bounded_and_answered_in_the_device_word ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (target/debug/deps/diskserver-b4fa074ca937d6a0)
+
+running 10 tests
+test tests::a_driver_that_ends_before_it_settles_is_unusable_at_once ... ok
+test tests::a_driver_that_ended_is_awaited_until_it_settles_again_under_either_grant ... ok
+test tests::a_guid_a_late_disk_also_carries_is_never_routed_to_the_first ... ok
+test tests::a_late_driver_never_stands_in_for_one_started_before_the_service ... ok
+test tests::a_listing_names_only_what_its_grant_admits ... ok
+test tests::a_partition_on_two_disks_or_unserved_is_unusable ... ok
+test tests::an_unusable_or_undriven_controller_is_refused_and_an_absent_one_lists_nothing ... ok
+test tests::an_open_reaches_only_what_its_grant_admits ... ok
+test tests::only_its_own_badge_describes_or_designates ... ok
+test tests::nothing_is_answered_until_every_driver_started_before_the_service_has_settled ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (target/debug/deps/nvme-8bc2af80a4064600)
+
+running 8 tests
+test nvme::tests::a_command_left_silent_is_answered_within_355_s ... ok
+test nvme::tests::a_controller_whose_smallest_page_is_not_4_kib_is_refused ... ok
+test nvme::tests::a_format_index_past_the_count_is_refused ... ok
+test nvme::tests::a_format_with_metadata_is_refused_extended_or_separate ... ok
+test nvme::tests::a_sector_outside_512_to_4096_bytes_is_refused ... ok
+test nvme::tests::a_namespace_past_sixteen_formats_takes_the_index_high_bits ... ok
+test nvme::tests::a_wake_before_the_bound_buys_no_second_bound ... ok
+test nvme::tests::an_answer_ends_the_wait ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running unittests src/lib.rs (target/debug/deps/toyos-d609c66f3e36149d)
+
+running 182 tests
+test dl::tests::a_published_library_is_not_laid_again ... ok
+test dl::tests::a_refusal_ends_the_set ... ok
+test dl::tests::a_cycle_of_names_is_laid_once_breadth_first ... ok
+test dl::image::tests::an_executables_pass_writes_into_the_main_threads_block_what_it_writes_into_the_template ... ok
+test dl::image::tests::each_relocation_is_worth_what_its_psabi_says ... ok
+test dl::tests::a_needed_name_is_a_path_or_a_system_library ... ok
+test dl::image::tests::an_executables_pass_leaves_the_relatives_it_applied_itself ... ok
+test dl::image::tests::a_modules_thread_local_has_no_one_address ... ok
+test dl::image::tests::a_library_segment_both_writable_and_executable_is_refused ... ok
+test dl::image::tests::a_relocation_table_a_relocation_could_write_is_refused ... ok
+test dl::image::tests::an_image_off_zero_or_with_segments_sharing_a_page_is_refused ... ok
+test dl::image::tests::a_call_nothing_defines_fails_at_the_call_unless_the_image_binds_now ... ok
+test dl::image::tests::what_it_cannot_honour_is_refused_before_any_write ... ok
+test dl::image::tests::a_symbol_nothing_defines_is_refused_by_name_unless_it_is_weak ... ok
+test dl::tests::constructors_run_after_those_of_the_libraries_named ... ok
+test fd::table::tests::a_close_during_a_call_releases_the_object_when_the_call_is_done ... ok
+test fd::table::tests::an_endowment_is_installed_at_its_number_or_refused ... ok
+test fd::table::tests::an_inconsistent_table_is_answered_not_panicked_on ... ok
+test fd::table::tests::an_object_goes_with_its_last_descriptor_and_flags_are_per_descriptor ... ok
+test fd::table::tests::descriptors_are_numbered_lowest_free_from_the_floor ... ok
+test fd::table::tests::dup2_displaces_what_the_target_named_and_onto_itself_changes_nothing ... ok
+test fd::table::tests::endowed_aliases_share_one_object_and_cannot_displace_an_endowment ... ok
+test fd::table::tests::replace_keeps_the_number_and_the_flag_and_releases_the_old_object ... ok
+test fd::tests::an_fd_label_names_its_number_and_kind_and_no_other_label_names_one ... ok
+test fd::tests::the_c_words_round_trip_every_refusal ... ok
+test files::namespace::tests::a_view_names_only_what_lies_beneath_what_it_holds ... ok
+test files::namespace::tests::an_empty_namespace_has_an_empty_root ... ok
+test files::namespace::tests::an_empty_view_names_nothing_but_an_empty_root ... ok
+test files::namespace::tests::only_held_filesystem_names_create_directories ... ok
+test files::tests::a_child_starts_where_its_spawn_says_and_nowhere_its_environment_said ... ok
+test files::tests::a_directory_no_child_can_read_back_is_never_stated ... ok
+test files::tests::a_path_is_made_absolute_and_lexically_clean ... ok
+test files::tests::a_spawn_stating_no_directory_starts_its_child_at_the_root ... ok
+test files::tests::every_error_crosses_the_c_interface_and_comes_back ... ok
+test files::tests::the_empty_path_names_nothing ... ok
+test fs::tests::a_grant_round_trips_at_every_bound ... ok
+test fs::tests::a_listing_entry_round_trips_and_a_short_one_is_refused ... ok
+test fs::tests::a_path_from_a_directory_keeps_its_climbs_and_drops_its_dots ... ok
+test fs::tests::a_reply_outside_the_protocol_is_malformed ... ok
+test fs::tests::a_stat_crosses_the_wire_whole_and_its_volume_is_marked_served ... ok
+test fs::tests::a_wire_path_may_climb_and_a_grant_root_never_does ... ok
+test fs::tests::bytes_no_grant_was_encoded_as_are_refused ... ok
+test fs::tests::every_change_round_trips_through_its_flags_and_a_time_set_two_ways_is_refused ... ok
+test fs::tests::every_server_refusal_round_trips_through_its_code ... ok
+test fs::tests::no_grant_carries_a_root_the_wire_refuses_or_one_past_the_badge ... ok
+test ipc::tests::a_batch_past_the_bound_is_refused_and_closed ... ok
+test ipc::tests::a_frame_is_its_type_then_exactly_its_payload ... ok
+test ipc::tests::a_message_shorter_than_a_type_is_malformed ... ok
+test ipc::tests::a_payload_decodes_only_at_exactly_its_width ... ok
+test ipc::tests::a_payload_past_the_frame_bound_is_refused ... ok
+test ipc::tests::a_payload_too_large_closes_its_handles ... ok
+test ipc::tests::a_receive_refused_is_the_error_a_client_acts_on ... ok
+test ipc::tests::a_receive_refused_is_the_step_a_server_acts_on ... ok
+test ipc::tests::a_refused_move_closes_every_handle_it_consumed ... ok
+test fs::tests::the_client_s_own_words_never_cross_the_wire ... ok
+test ipc::tests::a_taken_move_closes_nothing ... ok
+test launch::tests::a_descriptor_crosses_with_its_kind ... ok
+test launch::tests::a_path_the_normalizer_would_change_is_not_canonical ... ok
+test launch::tests::a_request_names_its_parent_by_one_word ... ok
+test launch::tests::what_a_shell_resolves_is_what_the_launcher_accepts ... ok
+test fs::tests::every_kernel_refusal_the_calls_can_see_is_one_named_error ... ok
+test log::proof::a_placeholder_owned_ring_keeps_its_slots_from_every_pid_until_named ... ok
+test log::proof::a_position_that_never_lands_is_counted_by_the_sweep ... ok
+test log::proof::a_ring_has_four_lanes_to_claim ... ok
+test log::proof::scribbled_words_bound_the_reader_and_never_panic_it ... ok
+test log::proof::slots_left_to_others_are_theirs ... ok
+test log::proof::the_region_carries_a_record_whole ... ok
+test log::stdio::tests::a_formatted_line_is_one_ended_record ... ok
+test log::stdio::tests::a_line_a_flush_opened_is_closed_at_its_end ... ok
+test log::stdio::tests::a_line_in_pieces_is_one_record ... ok
+test log::proof::a_lane_gives_its_reader_every_record_in_order_or_counts_it_refused ... ok
+test log::proof::a_full_lane_counts_the_mix_thread_s_line_and_returns ... ok
+test log::proof::a_real_time_write_allocates_nothing ... ok
+test log::stdio::tests::a_newline_ends_a_record_and_a_carriage_return_before_it_goes ... ok
+test log::stdio::tests::a_long_line_is_records_in_order_with_nothing_lost ... ok
+test net::ends::tests::a_handle_no_end_was_made_for_reaches_nothing ... ok
+test net::ends::tests::an_end_goes_with_its_handle_and_its_last_call ... ok
+test net::socket::tests::a_datagram_is_one_frame_read_back_whole ... ok
+test net::ends::tests::past_the_bound_no_slot_is_reserved ... ok
+test net::socket::tests::a_kind_is_its_word_and_no_other_word_is_one ... ok
+test net::socket::tests::a_peers_answer_ends_in_the_address_it_is_sent_from ... ok
+test net::socket::tests::what_no_datagram_carries_is_refused_both_ways ... ok
+test net::socket::tests::the_holder_that_found_nothing_takes_the_next_arrival ... ok
+test net::stream::tests::a_gate_wait_that_lasts_is_reported_and_goes_on ... ok
+test net::stream::tests::a_streams_own_end_is_a_unicast_address_and_a_port ... ok
+test net::tests::a_code_netstack_chose_is_still_its_own_answer ... ok
+test net::tests::a_gone_handle_transfer_is_a_netstack_that_is_not_there ... ok
+test log::stdio::tests::a_stream_held_by_two_writers_keeps_each_line_whole ... ok
+test net::tests::a_listens_request_ends_in_its_listeners_options ... ok
+test net::tests::a_not_found_is_not_a_netstack_that_is_not_there ... ok
+test net::tests::a_read_that_hung_up_is_a_netstack_that_is_not_there ... ok
+test net::tests::an_accepts_answer_ends_in_its_streams_nodelay ... ok
+test log::proof::a_full_ring_or_lane_refuses_at_once_and_never_waits ... ok
+test net::tests::nothing_else_becomes_a_missing_netstack ... ok
+test log::proof::every_record_is_read_once_in_its_writers_order_or_counted_refused ... ok
+test poller::tests::a_submission_is_the_whole_entry_where_the_kernel_reads_it ... ok
+test poller::tests::a_tail_the_kernel_publishes_mid_drain_is_observed ... ok
+test poller::tests::every_accessor_lands_on_the_abi_offset ... ok
+test poller::tests::pending_counts_what_the_kernel_has_not_claimed ... ok
+test poller::tests::the_drop_counter_is_read_from_the_page ... ok
+test power::tests::bytes_no_encoder_writes_are_refused ... ok
+test power::tests::each_word_reads_back_as_written ... ok
+test process::tests::each_end_is_its_classes_signal ... ok
+test relocate::tests::a_dynamic_section_in_no_file_bytes_is_refused ... ok
+test relocate::tests::a_header_no_read_only_segment_holds_is_refused ... ok
+test relocate::tests::a_header_this_does_not_know_is_refused ... ok
+test relocate::tests::a_pointer_in_the_tls_template_is_written ... ok
+test relocate::tests::a_rela_table_of_the_wrong_shape_or_place_is_refused ... ok
+test relocate::tests::a_write_is_bias_plus_addend_inside_a_writable_segment ... ok
+test relocate::tests::a_write_outside_a_writable_segment_is_refused ... ok
+test relocate::tests::aarch64_writes_what_lld_writes ... ok
+test relocate::tests::an_image_that_names_a_library_leaves_every_symbol_to_the_loader ... ok
+test relocate::tests::every_dynamic_form_it_does_not_apply_is_refused_by_name ... ok
+test relocate::tests::every_type_but_the_machines_relative_is_refused ... ok
+test relocate::tests::the_bias_is_where_the_header_is_found_less_its_link_address ... ok
+test relocate::tests::x86_64_writes_what_lld_writes ... ok
+test shm::tests::a_length_whose_rounding_overflows_is_refused ... ok
+test shm::tests::a_region_longer_than_the_protocol_says_is_refused ... ok
+test shm::tests::a_region_shorter_than_the_protocol_says_is_refused ... ok
+test shm::tests::a_region_that_is_not_ram_is_refused_whatever_its_length ... ok
+test shm::tests::a_region_the_kernel_made_for_the_length_is_taken ... ok
+test shm::tests::a_read_past_the_range_panics - should panic ... ok
+test shm::tests::a_sub_range_is_its_own_bytes ... ok
+test shm::tests::a_zeroed_range_is_zero_and_nothing_beside_it ... ok
+test shm::tests::an_adopted_view_is_at_most_the_region ... ok
+test shm::tests::a_write_past_the_range_panics - should panic ... ok
+test shm::tests::only_a_writable_region_is_adopted ... ok
+test shm::tests::an_offset_that_overflows_panics - should panic ... ok
+test spawn::tests::a_name_is_the_program_s_last_component_as_the_kernel_takes_one ... ok
+test spawn::tests::a_named_image_runs_under_its_program_s_name ... ok
+test spawn::tests::a_plain_spawn_is_a_helper ... ok
+test spawn::tests::each_kind_refuses_what_the_other_alone_takes ... ok
+test startup::tests::a_block_s_pointers_name_its_strings_in_order ... ok
+test startup::tests::a_block_that_says_nothing_is_zeros ... ok
+test surface::tests::a_host_asks_its_shell_to_hang_up_only_when_closed ... ok
+test surface::tests::a_line_holds_at_most_its_bound ... ok
+test surface::tests::the_foreground_is_the_line_set_last ... ok
+test syscap::tests::a_machine_that_grew_once_is_read_grown ... ok
+test syscap::tests::a_machine_that_grows_every_round_is_refused_by_name ... ok
+test syscap::tests::a_record_that_does_not_decode_is_refused_and_not_dropped ... ok
+test syscap::tests::a_refused_count_is_refused_and_not_an_empty_inventory ... ok
+test syscap::tests::a_refused_read_is_refused_and_not_an_empty_inventory ... ok
+test syscap::tests::an_empty_inventory_is_its_count ... ok
+test syscap::tests::every_record_is_read ... ok
+test tls::layout::tests::an_alignment_that_is_no_power_of_two_or_a_size_past_the_space_is_refused ... ok
+test tls::layout::tests::the_data_is_where_lld_linked_it ... ok
+test tls::layout::tests::the_data_is_where_the_linker_fixed_it_and_clear_of_everything_else ... ok
+test transport::arena::tests::a_run_a_peer_names_is_inside_the_arena ... ok
+test transport::arena::tests::an_arena_is_whole_slots_after_the_header ... ok
+test transport::inflight::tests::a_reply_refused_leaves_its_request_in_flight ... ok
+test transport::inflight::tests::a_tag_is_answered_once_and_its_slot_takes_a_new_one ... ok
+test transport::inflight::tests::an_end_answers_every_tag_once_and_a_late_completion_nothing ... ok
+test shm::tests::every_length_and_alignment_is_copied_whole_and_nothing_beside_it ... ok
+test transport::session::tests::a_blocking_write_under_another_holders_gate_waits_for_that_holders_gate ... ok
+test transport::queue::tests::a_head_stepped_past_each_push_is_refused_at_the_depth ... ok
+test transport::inflight::tests::a_slot_refilled_past_sixteen_bits_refuses_its_first_tag ... ok
+test transport::queue::tests::a_tail_stepped_past_each_pop_is_refused_at_the_depth ... ok
+test transport::queue::tests::a_peer_cursor_out_of_reach_is_a_violation ... ok
+test transport::queue::tests::an_entry_is_nobodys_before_it_is_published ... ok
+test transport::session::tests::a_copy_that_unwinds_lets_the_gate_go_and_rings ... ok
+test transport::queue::tests::the_ring_wraps_and_counts_its_space ... ok
+test transport::session::tests::a_hang_up_one_holder_saw_is_every_holders ... ok
+test transport::session::tests::a_departure_frees_only_the_departed_holders_gates ... ok
+test transport::session::tests::a_gate_is_one_holders_and_its_release_rings_only_for_a_want ... ok
+test transport::session::tests::a_read_shutdown_is_every_holders ... ok
+test transport::session::tests::a_read_takes_every_byte_before_the_end ... ok
+test transport::session::tests::a_ring_that_finds_the_server_gone_is_every_holders ... ok
+test transport::session::tests::a_shutdown_under_another_holders_gate_is_stored_by_its_release ... ok
+test transport::session::tests::a_watch_under_another_holders_gate_names_that_holder ... ok
+test transport::session::tests::a_write_after_another_holders_shutdown_answers_shut_and_publishes_nothing ... ok
+test transport::session::tests::a_write_under_another_holders_gate_arms_both_wants_and_would_block ... ok
+test transport::session::tests::a_write_with_room_after_a_reset_answers_it_and_copies_nothing ... ok
+test transport::stream::tests::a_cursor_is_believed_up_to_the_ring_and_no_further ... ok
+test transport::stream::tests::a_resumed_cursor_is_believed_below_the_lap_and_no_further ... ok
+test transport::stream::tests::a_ring_back_answers_only_a_peer_that_armed_and_is_ready ... ok
+test transport::stream::tests::an_end_rings_only_a_peer_that_armed ... ok
+test sync::tests::contenders_for_a_lock_each_hold_it_alone ... ok
+test startup::tests::a_block_past_its_reservation_is_refused ... ok
+test sync::tests::the_value_goes_to_the_tickets_in_the_order_they_were_taken ... ok
+test transport::stream::tests::a_hostile_consumer_gives_the_producer_at_most_the_ring ... ok
+test transport::stream::tests::a_hostile_producer_hands_the_consumer_at_most_the_ring ... ok
+test transport::stream::tests::the_ring_agrees_with_a_stream_that_never_wraps ... ok
+
+test result: ok. 182 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests/elf_crafted.rs (target/debug/deps/elf_crafted-e5c902ffbe3a896a)
+
+running 31 tests
+test a_file_extent_that_overflows_is_refused ... ok
+test a_header_one_byte_short_is_too_small ... ok
+test a_file_with_no_load_segment_is_refused ... ok
+test a_program_header_count_past_the_buffer_is_refused ... ok
+test a_header_naming_a_vaddr_outside_the_image_is_refused_by_name ... ok
+test a_program_header_offset_inside_the_file_header_is_refused_by_name ... ok
+test a_program_header_offset_that_overflows_is_refused ... ok
+test a_segment_extent_that_overflows_is_refused ... ok
+test a_section_table_the_loader_cannot_index_is_dropped_not_refused ... ok
+test a_program_header_size_that_is_not_56_is_refused ... ok
+test a_table_no_segment_holds_whole_is_absent ... ok
+test a_zero_size_tls_segment_is_present_not_absent ... ok
+test an_empty_file_is_too_small ... ok
+test an_entry_point_outside_the_image_is_refused ... ok
+test a_tls_template_starting_in_bss_has_no_file_offset ... ok
+test an_image_for_the_other_machine_is_refused_and_one_for_this_machine_is_not ... ok
+test class_endianness_version_type_and_machine_are_each_refused_by_name ... ok
+test filesz_above_memsz_is_refused_for_load_and_for_tls ... ok
+test no_program_headers_is_refused ... ok
+test only_a_segments_file_bytes_have_a_file_offset ... ok
+test only_a_tls_segment_with_bytes_is_occupied ... ok
+test relro_pages_are_the_whole_pages_it_covers ... ok
+test segment_flags_survive_the_parse ... ok
+test segments_that_share_a_page_are_an_overlap ... ok
+test the_load_segment_count_is_bounded_and_the_bound_is_generous ... ok
+test the_magic_is_checked ... ok
+test the_program_header_table_is_where_its_segment_places_it ... ok
+test the_stack_after_an_image_is_aligned_wherever_the_image_ends ... ok
+test the_writable_window_spans_every_writable_segment ... ok
+test tls_alignment_is_a_power_of_two_within_a_page_or_it_is_refused ... ok
+test tls_bss_may_extend_past_the_image ... ok
+
+test result: ok. 31 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/elf_fuzz.rs (target/debug/deps/elf_fuzz-a63c61c753617efb)
+
+running 2 tests
+test no_note_segment_panics_the_build_id_read ... ok
+test every_derived_address_lies_inside_the_image_or_the_image_is_refused ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.93s
+
+     Running tests/elf_note.rs (target/debug/deps/elf_note-5d277d64bf5ea3fb)
+
+running 13 tests
+test a_build_id_of_the_wrong_type_is_none ... ok
+test a_build_id_under_another_name_is_none ... ok
+test a_descriptor_of_0_or_past_32_bytes_is_no_build_id ... ok
+test a_header_with_no_readable_table_lists_no_note ... ok
+test a_lone_build_id_is_read ... ok
+test an_alignment_no_note_section_has_names_none ... ok
+test a_note_running_past_its_segment_names_none ... ok
+test an_eight_aligned_segment_pads_to_eight ... ok
+test every_pt_note_is_listed_wherever_its_bytes_are ... ok
+test no_build_id_note_names_none ... ok
+test the_build_id_after_an_unpadded_name_is_found ... ok
+test the_constant_is_the_gabis ... ok
+test the_first_of_two_build_ids_is_the_answer ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/elf_program.rs (target/debug/deps/elf_program-784e17e4c965023d)
+
+running 6 tests
+test a_copy_stops_at_the_files_end ... ok
+test a_writable_executable_segment_is_refused ... ok
+test the_build_id_is_carried ... ok
+test lld_images_are_laid_out_as_object_reads_them ... ok
+test the_image_lies_at_the_base_above_an_empty_startup_block ... ok
+test what_a_spawn_cannot_start_is_refused_by_name ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/elf_real.rs (target/debug/deps/elf_real-967aaa08bc8af784)
+
+running 2 tests
+test an_lld_binarys_build_id_is_what_object_and_readelf_read ... ok
+test a_linked_binary_parses_to_what_readelf_says ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/elf_symbols.rs (target/debug/deps/elf_symbols-cee995bba257fa11)
+
+running 3 tests
+test a_file_header_it_cannot_read_answers_none ... ok
+test locate_finds_the_same_tables_readelf_reports ... ok
+test a_real_binarys_own_functions_resolve_to_their_own_names ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/elf_tables.rs (target/debug/deps/elf_tables-256653931445f5e9)
+
+running 41 tests
+test a_bucket_below_the_symbol_offset_is_the_symbol_offset ... ok
+test a_bucket_pointing_past_the_chain_array_yields_no_symbol_count ... ok
+test a_chain_index_below_the_symbol_offset_ends_the_lookup ... ok
+test a_chain_naming_a_symbol_the_table_does_not_hold_resolves_to_nothing ... ok
+test a_chain_that_never_terminates_yields_no_symbol_count ... ok
+test a_consistent_table_finds_its_symbol_and_counts_it ... ok
+test a_dynamic_table_with_no_null_terminator_stops_at_the_buffer ... ok
+test a_hash_header_that_cannot_be_used_is_refused ... ok
+test a_read_table_inside_the_write_window_is_refused_by_name ... ok
+test a_name_offset_past_the_string_table_is_empty ... ok
+test a_name_that_is_not_utf8_matches_nothing ... ok
+test a_relocation_form_a_rela_loader_would_not_apply_is_refused ... ok
+test a_read_table_on_a_page_of_the_write_window_is_refused ... ok
+test a_symbol_index_at_the_edge_of_the_bytes_reads_nothing ... ok
+test a_symbol_index_is_bounded_by_the_whole_entries_of_its_table ... ok
+test a_symbol_index_past_the_table_is_refused_except_for_relative ... ok
+test a_symbol_section_whose_link_names_nothing_is_no_symbol_section ... ok
+test a_symbol_table_that_cannot_be_read_names_nothing ... ok
+test a_symbol_with_no_size_owns_everything_above_it ... ok
+test a_table_needs_both_of_its_tags_and_a_non_zero_size ... ok
+test a_tag_is_absent_or_present_never_zero_meaning_absent ... ok
+test a_trailing_partial_relocation_is_not_a_relocation ... ok
+test a_truncated_section_table_names_the_sections_it_covers ... ok
+test an_absolute_relocation_carries_its_symbol_and_addend ... ok
+test a_type_this_loader_does_not_apply_is_refused_by_number ... ok
+test an_aarch64_tls_descriptor_is_refused_by_name ... ok
+test an_address_resolves_to_the_function_that_contains_it ... ok
+test an_alias_pair_resolves_to_the_one_that_carries_a_size ... ok
+test an_empty_symbol_table_answers_every_question_with_nothing ... ok
+test an_image_binds_now_by_any_of_its_three_tags ... ok
+test an_unterminated_name_is_the_rest_of_the_string_table ... ok
+test data_symbols_and_zero_valued_ones_name_no_frame ... ok
+test dladdr_names_the_symbol_glibc_names ... ok
+test each_machine_reads_its_own_relocation_numbers ... ok
+test each_type_is_bounded_by_the_bytes_it_writes ... ok
+test every_written_type_is_validated ... ok
+test everything_after_dt_null_is_ignored ... ok
+test lookups_skip_undefined_symbols_and_the_null_entry ... ok
+test one_byte_past_a_sized_symbol_is_not_that_symbol ... ok
+test the_symbol_count_is_the_hash_tables_or_the_gap ... ok
+test validation_refuses_a_write_outside_the_window_by_name ... ok
+
+test result: ok. 41 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/transport_loom.rs (target/debug/deps/transport_loom-8dfd7197362c38f5)
+
+running 28 tests
+test a_published_entry_is_read_whole ... ok
+test a_producer_that_looked_again_is_rung_for_room_it_missed ... ok
+test a_consumer_that_looked_again_is_rung_for_bytes_it_missed ... ok
+test a_source_registered_after_bytes_arrived_gets_its_first_event ... ok
+test a_hostile_producer_yields_entries_or_a_violation ... ok
+test a_source_registered_after_the_end_gets_its_first_event ... ok
+test a_source_registered_as_the_end_arrives_gets_its_first_event ... ok
+test a_source_registered_as_bytes_arrive_gets_its_first_event ... ok
+test a_source_registered_as_room_is_released_gets_its_first_event ... ok
+test a_source_registered_over_a_full_ring_as_a_reset_arrives_gets_its_first_event ... ok
+test a_source_registered_over_a_full_ring_after_a_reset_gets_its_first_event ... ok
+test a_source_registered_with_room_gets_its_first_event ... ok
+test a_published_byte_is_read_as_written ... ok
+test a_hostile_consumer_yields_room_or_a_violation ... ok
+test two_sleepers_each_wake_when_data_is_published_first ... ok
+test a_write_after_another_holders_shutdown_answers_shut ... ok
+test two_sleepers_each_wake_when_room_is_released_first ... ok
+test a_holder_waiting_for_the_gate_is_woken_by_its_owners_departure ... ok
+test looks_without_the_gate_lose_no_wake ... ok
+test a_holder_waiting_for_the_gate_is_woken_by_its_release ... ok
+test two_holders_read_each_byte_once ... ok
+test a_poll_beside_a_blocking_read_is_answered_for_the_end_it_left ... ok
+test a_shutdown_racing_a_write_is_never_written_past ... ok
+test a_poll_beside_a_blocking_read_is_answered_for_the_bytes_it_left ... ok
+test a_poll_beside_a_blocking_write_is_answered_for_the_room_it_left ... ok
+test two_holders_read_each_byte_once_whenever_one_dies ... ok
+test two_holders_write_whole_calls_in_gate_order_whenever_one_dies ... ok
+test a_shutdown_racing_a_write_is_never_written_past_whenever_the_writer_dies ... ok
+
+test result: ok. 28 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 35.73s
+
+     Running unittests src/lib.rs (target/debug/deps/toyos_blockring-3cfcb6f214b2c0a3)
+
+running 46 tests
+test client::tests::a_write_given_up_poisons_every_later_flush ... ok
+test client::tests::a_write_holds_arena_blocks_only_on_the_wire ... ok
+test client::tests::nothing_goes_out_before_a_session ... ok
+test client::tests::a_lost_flush_reissues_then_asks_again ... ok
+test client::tests::a_flush_every_session_ends_over_is_answered_device ... ok
+test client::tests::a_reissue_every_session_ends_over_is_given_up ... ok
+test client::tests::overlapping_writes_go_out_again_in_order ... ok
+test client::tests::a_reissue_answered_a_word_no_server_says_of_it_is_kept ... ok
+test client::tests::a_second_answer_for_one_tag_is_a_violation ... ok
+test client::tests::a_failed_own_flush_refuses_writes_until_a_flush_succeeds ... ok
+test client::tests::a_request_without_arena_room_waits_for_it ... ok
+test client::tests::a_write_at_the_limit_waits_for_a_callers_flush_on_the_wire ... ok
+test client::tests::what_was_on_the_wire_at_the_end_is_refused_and_what_was_not_waits ... ok
+test client::tests::read_only_answers_a_write_alone ... ok
+test client::tests::writes_past_the_limit_wait_for_the_clients_own_flush ... ok
+test disk::tests::every_frame_survives_its_bytes_and_nothing_else_decodes ... ok
+test ends::tests::a_completion_that_decodes_to_nothing_ends_the_session ... ok
+test ends::tests::a_completion_renews_the_servers_patience ... ok
+test ends::tests::a_dropped_answer_runs_out_the_servers_patience ... ok
+test ends::tests::a_second_answer_for_one_request_ends_the_session ... ok
+test ends::tests::a_server_past_the_completion_ring_ends_the_session ... ok
+test ends::tests::a_server_past_the_request_ring_before_anything_went_ends_over_what_waited ... ok
+test ends::tests::a_server_past_the_request_ring_ends_the_session ... ok
+test ends::tests::a_server_that_ends_every_session_over_one_write_holds_nothing_for_good ... ok
+test ends::tests::a_server_that_frees_no_request_entry_is_owed_for_what_cannot_go ... ok
+test ends::tests::a_write_answered_lost_is_answered_by_the_sessions_end ... ok
+test ends::tests::an_answer_for_a_request_never_asked_ends_the_session ... ok
+test ends::tests::an_answer_the_last_send_decides_is_never_waited_past ... ok
+test ends::tests::requests_go_out_and_their_completions_come_back ... ok
+test entry::tests::a_completion_survives_its_words_and_refuses_what_it_does_not_define ... ok
+test entry::tests::a_request_outside_its_bounds_is_refused_by_tag ... ok
+test entry::tests::a_request_survives_its_words ... ok
+test model::tests::a_used_page_reads_fresh_once_a_servers_ends_are_made_over_it ... ok
+test server::tests::a_flush_after_a_loss_answers_lost_once ... ok
+test server::tests::a_read_only_session_refuses_a_write_unissued ... ok
+test server::tests::a_reset_answers_in_the_order_taken ... ok
+test server::tests::a_reset_answers_once_and_the_late_device_answer_is_dropped ... ok
+test server::tests::a_tag_in_flight_twice_is_refused_unissued ... ok
+test wire::tests::a_grant_reaches_its_own_partitions_and_decodes_only_whole ... ok
+test wire::tests::opened_and_refusal_survive_their_bytes_and_nothing_else_decodes ... ok
+test model::tests::states_named_alike_act_alike ... ok
+test model::tests::the_model_reaches_the_end_it_should ... ok
+test model::tests::the_model_reaches_a_write_given_up ... ok
+test model::tests::every_request_is_answered_exactly_once ... ok
+test model::tests::no_write_goes_out_while_the_client_keeps_its_limit ... ok
+test model::tests::what_a_flush_calls_durable_is_on_the_medium ... ok
+
+test result: ok. 46 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.23s
+
+   Doc-tests toyos
+
+running 6 tests
+test sdk/toyos/src/transport/queue.rs - transport::queue::Place (line 34) - compile fail ... ok
+test sdk/toyos/src/transport/queue.rs - transport::queue::Place (line 29) - compile fail ... ok
+test sdk/toyos/src/transport/queue.rs - transport::queue::Place (line 24) - compile fail ... ok
+test sdk/toyos/src/transport/stream.rs - transport::stream::Place (line 67) - compile fail ... ok
+test sdk/toyos/src/transport/queue.rs - transport::queue::Place (line 17) ... ok
+test sdk/toyos/src/transport/stream.rs - transport::stream::Place (line 60) ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.24s
+
+   Doc-tests toyos_blockring
+
+running 2 tests
+test lib/blockring/src/wire.rs - wire::Opened (line 93) - compile fail ... ok
+test lib/blockring/src/wire.rs - wire::Opened (line 84) ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.23s
+
+exit 0

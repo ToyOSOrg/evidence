@@ -1,0 +1,22 @@
+$ cargo clippy -p nvme -p diskserver --all-targets -- -W clippy::checked_conversions -W clippy::default_trait_access -W clippy::manual_midpoint -W clippy::redundant_clone -W clippy::unchecked_time_subtraction -W clippy::unnecessary_semicolon -D warnings
+    Checking toyos-blockdev v0.1.0 (<path>
+    Checking toyos-crypto v0.1.0 (<path>
+    Checking toyos-gpt v0.1.0 (<path>
+    Checking toyos-quiesce v0.1.0 (<path>
+    Checking bcachefs v0.1.0 (<path>
+    Checking toyos-blockserve v0.1.0 (<path>
+    Checking diskserver v0.0.0 (<path>
+    Checking nvme v0.0.0 (<path>
+error: unchecked subtraction of a `Duration`
+   --> system/nvme/src/nvme.rs:785:46
+    |
+785 |             let woke = if waits.len() == 2 { left - Duration::from_millis(1) } else { left };
+    |                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: try: `left.checked_sub(Duration::from_millis(1)).unwrap()`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#unchecked_time_subtraction
+    = note: `-D clippy::unchecked-time-subtraction` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::unchecked_time_subtraction)]`
+
+error: could not compile `nvme` (bin "nvme" test) due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+exit 101

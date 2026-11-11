@@ -44,3 +44,18 @@ Host checks only, on a macOS arm64 host. Paths are masked; each log ends with it
   two deaths, a flush answered `Device` after five attempts, which is why its law now weighs failures by attempts.
 - Guest: `nvme_disk_boots` at 4eb8b1f52, https://github.com/ToyOSOrg/ToyOS/actions/runs/43062272826 (pending when
   this was written).
+
+## B2, the protocol's silence bound (r3/), at 941ac6f18
+
+- `host-targeted/`: by `a-r3-checks.sh` at 941ac6f18 (`revision.txt`): `cargo test -p toyos-blockring -p diskserver -p toyos -p nvme`
+  (`test.log`, exit 0; the driver's `a_command_left_silent_is_answered_within_355_s`,
+  `a_wake_before_the_bound_buys_no_second_bound` and `an_answer_ends_the_wait` among them);
+  `cargo clippy -p toyos-blockring -p toyos --all-targets`, the gate's adopted lints, `-D warnings` (`clippy.log`, exit 0);
+  the same over `nvme` and `diskserver`, programs the gate does not lint (`clippy-programs.log`, exit 0).
+- `controls/`: two patches to `system/nvme/src/nvme.rs`, each applied, built, run with `cargo test -p nvme` and reverted:
+  - n1, the old wait, a whole bound after every wake: exit 101, `a_wake_before_the_bound_buys_no_second_bound` red;
+  - n2, the reset's admin commands bounded by `CAP.TO`'s largest value again: exit 101, the driver does not build, the
+    compile-time assertion failing with "a command the controller leaves silent would be answered past the block
+    protocol's bound".
+- `first-try/clippy-programs.log`: the first run, at the commit before its amendment: `unchecked_time_subtraction` in the
+  new test, fixed by the amendment (the test's subtraction saturates).
