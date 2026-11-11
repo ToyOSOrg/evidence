@@ -1,0 +1,22 @@
+HEAD 8f2d2dbe530bef0408b387946892cfc2a361f006
+
+=== F0 every request a whole slice (main's policy)
+  exit 101: FAILED as required: 4 test(s) red
+  thread 'sched::cpu::tests::a_brief_sleeper_owing_its_last_burst_runs_within_the_minimum_run' (32353696) panicked at kernel/pure/sched/cpu.rs:4446:9:
+  every wake, the first owing for its burst included, waits at most the minimum run: [4000000, 0, 0, 0, 0, 0, 0, 0]
+  test an_interactive_wake_waits_out_at_most_one_request ... FAILED
+  at 4 hog(s) on one CPU, more than one wake per run waited out more than the minimum run: the second-worst wake of some run took 4000000 ns against 2250000 ns. A wake due first is waiting for the running request instead of taking the CPU after the minimum run.
+=== F1 a group keeps the whole slice
+  exit 101: FAILED as required: 4 test(s) red
+  thread 'sched::cpu::tests::a_brief_sleeper_owing_its_last_burst_runs_within_the_minimum_run' (32355383) panicked at kernel/pure/sched/cpu.rs:4446:9:
+  every wake, the first owing for its burst included, waits at most the minimum run: [4000000, 0, 0, 0, 0, 0, 0, 0]
+  test an_interactive_wake_waits_out_at_most_one_request ... FAILED
+  at 4 hog(s) on one CPU, more than one wake per run waited out more than the minimum run: the second-worst wake of some run took 5000000 ns against 2250000 ns. A wake due first is waiting for the running request instead of taking the CPU after the minimum run.
+=== R1 a request never moves while its thread runs
+  exit 101: FAILED as required: 2 test(s) red
+  thread 'sched::cpu::tests::a_thread_that_stops_sleeping_gets_back_to_the_full_slice' (32356500) panicked at kernel/pure/sched/cpu.rs:4475:9:
+  twelve requests on it is back to the full slice: 264648 ns
+=== S1 a short request also weighs more
+  exit 101: FAILED as required: 1 test(s) red
+  test a_short_request_buys_no_share ... FAILED
+restored; status: ''
