@@ -1,0 +1,85 @@
+Lines quoted from the T14 readbacks of the images staged at 23f692c91a68c5ec2ce1e669fe703f379bc53db9.
+Timestamps and backtraces are dropped; nothing else is edited.
+
+## testcases (branch)
+===TEST_END test_rs_moved_rights exit=0===
+===TEST_END test_rs_endowment_denied exit=0===
+===TEST_END test_rs_messages_are_whole exit=0===
+===TEST_END test_rs_abuse_handle_table exit=0===
+===TEST_END test_rs_abuse_inbox exit=0===
+===TEST_END test_rs_audio_tone exit=0===
+===TEST_END test_rs_audio_tone_resampled exit=0===
+===TEST_END test_rs_cpal_drop_unreleased exit=0===
+moved_rights: a handle sent as WRITE alone writes and moves no further
+moved_rights: a send past the handle's rights, or of no rights set, moves nothing
+moved_rights: a refused narrowed send leaves the handle its rights
+moved_rights: an endowment arrives with what it named, and a wider one is refused
+moved_rights: a ring is never moved
+moved_rights: ok
+
+every member that ended nonzero:
+===TEST_END test_rs_wake_onto_busy exit=49===
+===TEST_END test_rs_i219_msi exit=1===
+===TEST_END test_rs_usbd_spare_vector exit=101===
+===TEST_END test_rs_served_file_offset exit=101===
+===TEST_END 206_libc_refusals exit=1===
+
+their own lines:
+    Err(toyos::spawn::Refused::Syscall(toyos_abi::syscall::SyscallError::InvalidArgument)))
+assertion failed: matches!(helper.spawn(None),
+i219_msi: FAILED: no frame arrived on a message under traffic
+thread 'main' (1) panicked at src/bin/served_file_offset.rs:124:5:
+usbd_spare: the function has no MSI-X capability
+ccheck: 206_libc_refusals: differed at byte 1638 — 2052 byte(s) produced against 2050 expected
+  got:      sysconf _SC_ARG_MAX: 2093056, no errno
+  expected: sysconf _SC_ARG_MAX: 65536, no errno
+
+## shared-debug (branch)
+===TEST_END test_rs_handle_lifetime exit=0===
+===TEST_END test_rs_spawn_child_ends_first exit=0===
+===TEST_END test_rs_spawn_lands_claimed exit=0===
+===TEST_END test_rs_spawn_returns_the_census exit=0===
+members that ended nonzero: 0
+
+## mutant-a
+thread 'main' (1) panicked at src/bin/moved_rights.rs:131:5:
+assertion `left == right` failed: what a handle sent as WRITE alone (writes, duplicates, moves)
+  left: (true, true, true)
+thread 'main' (1) panicked at src/bin/moved_rights.rs:146:5:
+assertion `left == right` failed: a send asking for READ
+  left: Ok(())
+thread 'main' (1) panicked at src/bin/moved_rights.rs:210:5:
+assertion `left == right` failed: what a child endowed WRITE alone found
+  left: Ok(Exited(17))
+thread 'main' (1) panicked at src/bin/moved_rights.rs:234:9:
+assertion `left == right` failed: a ring sent to a peer
+  left: Ok(())
+thread 'main' (1) panicked at src/bin/moved_rights.rs:60:5:
+moved_rights: red: [
+    "a handle sent as WRITE alone writes and moves no further",
+moved_rights: a refused narrowed send leaves the handle its rights
+moved_rights: red: [
+    "a handle sent as WRITE alone writes and moves no further",
+    "a send past the handle's rights, or of no rights set, moves nothing",
+    "an endowment arrives with what it named, and a wider one is refused",
+    "a ring is never moved",
+]
+===TEST_END test_rs_moved_rights exit=101===
+
+## mutant-b
+thread 'main' (1) panicked at src/bin/moved_rights.rs:130:77:
+a send narrowed to WRITE: PermissionDenied
+thread 'main' (1) panicked at src/bin/moved_rights.rs:165:5:
+assertion `left == right` failed: what a refused narrowed send left (writes, duplicates, moves)
+  left: (false, false, false)
+thread 'main' (1) panicked at src/bin/moved_rights.rs:60:5:
+moved_rights: red: [
+    "a handle sent as WRITE alone writes and moves no further",
+moved_rights: a send past the handle's rights, or of no rights set, moves nothing
+moved_rights: an endowment arrives with what it named, and a wider one is refused
+moved_rights: a ring is never moved
+moved_rights: red: [
+    "a handle sent as WRITE alone writes and moves no further",
+    "a refused narrowed send leaves the handle its rights",
+]
+===TEST_END test_rs_moved_rights exit=101===
