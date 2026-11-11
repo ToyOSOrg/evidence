@@ -1,0 +1,84 @@
+diff --git a/kernel/pure/sched/cpu.rs b/kernel/pure/sched/cpu.rs
+index 4e55c872d..4f5f2a343 100644
+--- a/kernel/pure/sched/cpu.rs
++++ b/kernel/pure/sched/cpu.rs
+@@ -4288,6 +4288,47 @@ mod tests {
+         w.abandon();
+     }
+ 
++    /// SCRATCH: the interactive wake that lands as the running request ends.
++    #[test]
++    fn scratch_wake_at_request_end() {
++        let mut w = World::new(1);
++        let (sleeper, s_shared) = w.spawn(C0);
++        let (h1, _) = w.spawn(C0);
++        for _ in 0..3 { w.spawn_sibling(C0, h1); }
++        let ms = 1_000_000u64;
++        let at = |t: u64| Nanos(NOW.0 + t);
++        w.run_a_pass_at(C0, at(0));
++        std::println!("t=0 running {:?} groups {:?}", w.cpus[0].running().map(|t| t.key()), w.cpus[0].rq().debug_groups());
++        // park the sleeper (or whoever runs) at t=0
++        let park = |w: &mut World, t: Nanos| {
++            let (cpus, env) = w.split();
++            let sched = &mut cpus[0];
++            let current = CurrentTask::new(sched.running().unwrap().shared(), C0);
++            let ticket = crate::sched::park::prepare(&current, crate::sched::park::Cancel::Answers, WaitClass::Other).unwrap();
++            let crate::sched::park::Commit::Parked(c) = ticket.commit() else { panic!() };
++            let pass = SchedPass::begin(sched, env, t);
++            let _ = pass.dispose_block(c, None).finish();
++        };
++        for round in 0..6u64 {
++            let base = round * 3 * ms;
++            assert_eq!(w.cpus[0].running().map(|t| t.key()), Some(sleeper), "round {round}");
++            park(&mut w, at(base + ms / 4));
++            std::println!("r{round} parked at {} running {:?} groups {:?}", base + ms/4, w.cpus[0].running().map(|t| t.key()), w.cpus[0].rq().debug_groups());
++            wake(&w, C0, &s_shared);
++            // the next pass is at the running request's end, or the IRQ pass at base+3ms
++            let armed = w.cpus[0].armed().unwrap();
++            let t = (armed.0 - NOW.0).min(base + 3 * ms);
++            w.run_a_pass_at(C0, at(t));
++            std::println!("r{round} pass at {t} running {:?} groups {:?} armed {:?}", w.cpus[0].running().map(|t| t.key()), w.cpus[0].rq().debug_groups(), w.cpus[0].armed().map(|a| a.0 - NOW.0));
++            while w.cpus[0].running().map(|t| t.key()) != Some(sleeper) {
++                let a = w.cpus[0].armed().unwrap().0 - NOW.0;
++                w.run_a_pass_at(C0, at(a));
++                std::println!("   pass at {a} running {:?}", w.cpus[0].running().map(|t| t.key()));
++            }
++        }
++        w.abandon();
++    }
++
+     /// Claim a parked task's wake and post it, as `park::notify` does.
+     fn wake(w: &World, cpu: CpuId, shared: &Arc<TaskShared<Msg<TestPayload>>>) {
+         assert_eq!(shared.claim_wake(), Claim::Parked(cpu), "the task is parked there");
+diff --git a/kernel/pure/sched/eevdf.rs b/kernel/pure/sched/eevdf.rs
+index e68874307..8253acc73 100644
+--- a/kernel/pure/sched/eevdf.rs
++++ b/kernel/pure/sched/eevdf.rs
+@@ -617,6 +617,11 @@ impl Queue {
+         }
+     }
+ 
++    /// SCRATCH DEBUG
++    pub fn debug<K: Copy + core::fmt::Debug, P>(&self, arena: &Arena<K, P>) -> alloc::vec::Vec<(K, i128, i128, i128, u64, u64)> {
++        self.slots(arena).map(|s| { let e = arena.node(s.0); (e.key, (e.v - self.base) >> 32, (e.vd - self.base) >> 32, self.lag_of(arena, s.0).0 >> 40, e.seq, e.weight) }).collect()
++    }
++
+     /// Every entity queued, in no particular order.
+     pub fn slots<'a, K: Copy, P>(&self, arena: &'a Arena<K, P>) -> Slots<'a, K, P> {
+         let mut stack = [NIL; MAX_HEIGHT];
+diff --git a/kernel/pure/sched/queue.rs b/kernel/pure/sched/queue.rs
+index 17915b5cd..8443ae248 100644
+--- a/kernel/pure/sched/queue.rs
++++ b/kernel/pure/sched/queue.rs
+@@ -450,6 +450,11 @@ impl<X: SchedPayload> RunQueue<X> {
+             .map(|&(jk, group)| (jk, self.group_slots.weight(group), self.group_slots.payload(group).threads.len()))
+     }
+ 
++    /// SCRATCH DEBUG
++    pub fn debug_groups(&self) -> alloc::vec::Vec<(JobKey, i128, i128, i128, u64, u64)> {
++        self.groups.debug(&self.group_slots)
++    }
++
+     /// Residents, for the invariant walks: the real-time band, then each
+     /// group's ready threads.
+     pub fn keys(&self) -> impl Iterator<Item = TaskKey> + '_ {

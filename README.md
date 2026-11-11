@@ -15,3 +15,5 @@ The diagnosis this PR acts on is PR #1260's: https://github.com/ToyOSOrg/evidenc
 - `policy-runnerup-seeds.txt`: of 400 seeds of `kernel-sim run interactive_mix:1:4`, those whose sleeper waited more than 2.25 ms on two or more wakes, under main's timer behaviour (`base`: #1263 with the skip's guard ANDed with `false`) and under #1263 (`head`).
 - `simdbg.patch`: the measurement-only prints those counts were read with, and the counting command.
 - `base-seed15-excerpt.txt`, `head-seed0-excerpt.txt`: the events before each long wait: the sleeper's wake lands in the pass that ends a hog's request, and the next hog is scheduled.
+- `breach-classification.txt`: each breaching run's long wakes, by how long the sleeper ran before it blocked: the first after 0 µs (a zero-lag tie with the hogs' fresh request), the second after 250 or 500 µs (the debt its group carries back).
+- `core-reproduction.txt`, `core-reproduction.patch`: a scratch core test (never committed) printing the groups' virtual time, deadline and lag at each pass: the sleeper's group rejoins with negative lag after a burst and its deadline falls behind the hogs' fresh request.
