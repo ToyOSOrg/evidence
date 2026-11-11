@@ -1,0 +1,39 @@
+# handle-model-security at 23f692c91 (base origin/main 2ec4ad950): four boots asked, at the rebased head.
+# Supersedes every earlier request of this branch.
+#
+# Boots 1-2 are the branch, whole, and must be green:
+#   testcases:    test_rs_moved_rights exit 0 with all five claim lines; test_rs_messages_are_whole,
+#                 test_rs_abuse_handle_table, test_rs_abuse_inbox, test_rs_endowment_denied,
+#                 test_rs_audio_tone, test_rs_cpal_drop_unreleased; no member newly red.
+#   shared-debug: test_rs_handle_lifetime, test_rs_spawn_child_ends_first,
+#                 test_rs_spawn_lands_claimed, test_rs_spawn_returns_the_census.
+# testcases-watchdog was staged with boot:testcases, carries no job, and is NOT asked for.
+#
+# Boots 3-4 are negative controls, the branch plus one checked patch each, test_rs_moved_rights alone,
+# and must be RED with the binary's 'moved_rights: red: [...]' line naming exactly:
+#   mutant-a (<scratch>/mutant-a.patch): arms 1, 2, 4 and 5.
+#   mutant-b (<scratch>/mutant-b.patch): arm 3.
+# A red without that line (a kernel death, a boot failure) is not the control.
+
+## branch
+# One boot per image. Each invocation is `cargo <words>` from this worktree.
+
+shared-debug
+  image: <scratch>/metal/shared-debug/image.img
+  cargo run -p toyos-metal -- --image <scratch>/metal/shared-debug/image.img --readback <scratch>/metal/shared-debug --fat32-check
+
+testcases
+  image: <scratch>/metal/testcases/image.img
+  cargo run -p toyos-metal -- --image <scratch>/metal/testcases/image.img --readback <scratch>/metal/testcases --fat32-check
+
+## mutant-a (expected red)
+
+testcases
+  image: <scratch>/metal-mutant-a/testcases/image.img
+  cargo run -p toyos-metal -- --image <scratch>/metal-mutant-a/testcases/image.img --readback <scratch>/metal-mutant-a/testcases --fat32-check
+
+## mutant-b (expected red)
+
+testcases
+  image: <scratch>/metal-mutant-b/testcases/image.img
+  cargo run -p toyos-metal -- --image <scratch>/metal-mutant-b/testcases/image.img --readback <scratch>/metal-mutant-b/testcases --fat32-check
