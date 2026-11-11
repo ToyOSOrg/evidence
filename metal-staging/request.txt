@@ -1,0 +1,42 @@
+# PR #1252 (endow): metal boots for the T14 and the AMD bench. One boot per image; each command is
+# `cargo <words>` run from <worktree>. Every image boots on both benches unless marked.
+
+## A. The head's whole shared boots, at 1fa5d42d1 (needed: every syscall/object-surface claim)
+testcases (257 jobs: every discovered guest binary, endowment_denied, abuse_handle_table, abuse_connect_flood,
+           abuse_listener_hijack, user_copy_faults, adopted_services_stay, spawn_cost, ...)
+  image: <scratch>/metal-head/testcases/image.img
+  cargo run -p toyos-metal -- --image <scratch>/metal-head/testcases/image.img --readback <scratch>/metal-head/testcases --fat32-check
+
+shared-debug (15 jobs: handle_lifetime and the actuator members)
+  image: <scratch>/metal-head/shared-debug/image.img
+  cargo run -p toyos-metal -- --image <scratch>/metal-head/shared-debug/image.img --readback <scratch>/metal-head/shared-debug --fat32-check
+
+proctreecase (4 jobs: process_tree, launch_toctou, port_badge, app_view)
+  image: <scratch>/metal-head/proctreecase/image.img
+  cargo run -p toyos-metal -- --image <scratch>/metal-head/proctreecase/image.img --readback <scratch>/metal-head/proctreecase --fat32-check
+
+testcases-watchdog (0 jobs; came with boot:testcases through loader_watchdog_arms, which this change does not touch: skip it)
+  image: <scratch>/metal-head/testcases-watchdog/image.img
+  cargo run -p toyos-metal -- --image <scratch>/metal-head/testcases-watchdog/image.img --readback <scratch>/metal-head/testcases-watchdog --fat32-check
+
+## B. Spawn cost, head against base (both benches, same session; matched images)
+head spawn_cost arm alone (testcases, 10 jobs) at 1fa5d42d1
+  image: <scratch>/metal-head-spawn/testcases/image.img
+  cargo run -p toyos-metal -- --image <scratch>/metal-head-spawn/testcases/image.img --readback <scratch>/metal-head-spawn/testcases --fat32-check
+
+base spawn_cost arm alone (testcases, 10 jobs) at b56693152
+  image: <scratch>/metal-base/testcases/image.img
+  cargo run -p toyos-metal -- --image <scratch>/metal-base/testcases/image.img --readback <scratch>/metal-base/testcases --fat32-check
+
+head osbench (benchcase, 17 jobs) at 1fa5d42d1
+  image: <scratch>/metal-head/benchcase/image.img
+  cargo run -p toyos-metal -- --image <scratch>/metal-head/benchcase/image.img --readback <scratch>/metal-head/benchcase --fat32-check
+
+base osbench (benchcase, 17 jobs) at b56693152
+  image: <scratch>/metal-base/benchcase/image.img
+  cargo run -p toyos-metal -- --image <scratch>/metal-base/benchcase/image.img --readback <scratch>/metal-base/benchcase --fat32-check
+
+## C. Negative control: the head with sys_connect asking no right (scratch/mut-connect.patch), one job;
+##    endowment_denied must red at "a connector without WRITE connected". One bench suffices (T14).
+  image: <scratch>/metal-mut/testcases/image.img
+  cargo run -p toyos-metal -- --image <scratch>/metal-mut/testcases/image.img --readback <scratch>/metal-mut/testcases --fat32-check

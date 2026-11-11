@@ -1,0 +1,37 @@
+revision c06d210bee2f20c9ba2dd507a74a880152083d10
+applied mut-connect
+ kernel/src/syscall/ipc.rs | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.37s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-b8f4c5141ecc8947)
+16:26:51   BUILD x86_64 binaries of tests/guest/rust-tests
+error[E0599]: no method named `saturating_sub` found for struct `RawHandle` in the current scope
+  --> src/bin/abuse_connect_flood.rs:99:22
+   |
+99 |     let grew = after.saturating_sub(before);
+   |                      ^^^^^^^^^^^^^^ method not found in `RawHandle`
+   |
+note: there's an earlier shadowed binding `after` of type `u64` that has method `saturating_sub` available
+  --> src/bin/abuse_connect_flood.rs:60:9
+   |
+60 |     let after = used_bytes();
+   |         ^^^^^ `after` of type `u64` that has method `saturating_sub` defined earlier here
+...
+87 |     let after = made_and_closed();
+   |         ----- earlier `after` shadowed here with type `RawHandle`
+help: one of the expressions' fields has a method of the same name
+   |
+99 |     let grew = after.0.saturating_sub(before);
+   |                      ++
+
+For more information about this error, try `rustc --explain E0599`.
+error: could not compile `toyos-rust-tests` (bin "abuse_connect_flood") due to 1 previous error
+
+thread 'main' (26981133) panicked at build/build.rs:503:9:
+cargo build failed in <worktree>/tests/guest/rust-tests
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+16:27:04   FAIL  x86_64 binaries of tests/guest/rust-tests  (13s)
+16:27:04 [toyos] this run's serial logs are kept at <worktree>/target/red-run-serial/toyos-tmp-27459-0
+error: test failed, to rerun pass `--test toyos-build`
+exit 101
+restored

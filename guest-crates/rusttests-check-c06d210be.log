@@ -1,0 +1,63 @@
+   Compiling ring v0.17.14 (https://github.com/ToyOSOrg/ring?branch=toyos-0.17.14#34818c45)
+    Checking toyos-rust-tests v0.1.0 (<worktree>/tests/guest/rust-tests)
+error[E0599]: no method named `saturating_sub` found for struct `RawHandle` in the current scope
+  --> src/bin/abuse_connect_flood.rs:99:22
+   |
+99 |     let grew = after.saturating_sub(before);
+   |                      ^^^^^^^^^^^^^^ method not found in `RawHandle`
+   |
+note: there's an earlier shadowed binding `after` of type `u64` that has method `saturating_sub` available
+  --> src/bin/abuse_connect_flood.rs:60:9
+   |
+60 |     let after = used_bytes();
+   |         ^^^^^ `after` of type `u64` that has method `saturating_sub` defined earlier here
+...
+87 |     let after = made_and_closed();
+   |         ----- earlier `after` shadowed here with type `RawHandle`
+help: one of the expressions' fields has a method of the same name
+   |
+99 |     let grew = after.0.saturating_sub(before);
+   |                      ++
+
+For more information about this error, try `rustc --explain E0599`.
+error: could not compile `toyos-rust-tests` (bin "abuse_connect_flood") due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+error[E0425]: cannot find value `SERVICE` in this scope
+   --> src/bin/handle_lifetime.rs:224:44
+    |
+224 |     command.endow(&format!("{SERVE_PREFIX}{SERVICE}"), acceptor.into());
+    |                                            ^^^^^^^ not found in this scope
+    |
+help: consider importing one of these constants
+    |
+  6 + use toyos::surface::SERVICE;
+    |
+  6 + use toyos_logstream::SERVICE;
+    |
+
+error[E0425]: cannot find value `SERVICE` in this scope
+   --> src/bin/handle_lifetime.rs:266:40
+    |
+266 |                 toyos::endow::acceptor(SERVICE).expect("holder: the acceptor it was endowed");
+    |                                        ^^^^^^^ not found in this scope
+    |
+help: consider importing one of these constants
+    |
+  6 + use toyos::surface::SERVICE;
+    |
+  6 + use toyos_logstream::SERVICE;
+    |
+
+For more information about this error, try `rustc --explain E0425`.
+error: could not compile `toyos-rust-tests` (bin "handle_lifetime") due to 2 previous errors
+error[E0599]: no method named `open` found for reference `&toyos::port::Connector` in the current scope
+   --> src/bin/process_tree.rs:218:10
+    |
+216 | /     endow::launcher()
+217 | |         .expect("test-runner endows every job its launcher")
+218 | |         .open(LAUNCHER)
+    | |         -^^^^ method not found in `&toyos::port::Connector`
+    | |_________|
+    |
+
+error: could not compile `toyos-rust-tests` (bin "process_tree") due to 1 previous error

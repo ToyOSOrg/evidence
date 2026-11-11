@@ -8,3 +8,7 @@ Local paths are masked (`<worktree>`, `<scratch>`, `<scratchpad>`, `<home>`, `<t
   `mut-connect.patch` is the kernel control staged for metal.
 - `clippy-r0/`: clippy with the workspace's adopted lints and `-D warnings` on every shape that builds touched code, at 9186185dd (`rev`); `clippy.sh` and `host.sh` are the commands.
 - `host-r1/`, `clippy-r1/`: the same host suites and clippy shapes again at c06d210be, the PR's head (`rev`), a clean tree.
+- `guest-crates/`: every touched guest crate checked against the head's sysroot (the image build compiles none).
+- `guest/run-43053472977.txt`: the first guest run's verdicts at 8f5cfaf65: 19 of 20 pass; `libc_children` red in `tty_interrupt`.
+- `metal-staging/`: the staging logs (exit 2 is staged, machine untouched) and `request.txt`, the boots asked for. `-r1` logs are
+  the first attempt, which the guest-test compile errors ended.
