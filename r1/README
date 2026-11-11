@@ -1,0 +1,16 @@
+Evidence for ToyOSOrg/ToyOS#1209, round 1.
+
+guest-*.log: `gh run view <id> --log` of guest-rows runs, masked. All but the last are `libc_children`.
+  fix                   the branch at a35358bc4: green.
+  control-main-late     main plus control-shell-ends-its-line-late.patch: red, `tty_interrupt: stalled at the
+                        nested line held`.
+  control-probe-only    main plus the branch's probe alone: red, the same stall.
+  fix-late              the branch plus control-shell-ends-its-line-late.patch: `tty_interrupt` green; the run is
+                        red for `signal_quit: stalled driving the child that reloads`, which runs no shell. Its
+                        `-uart.log` is the run's kept serial log, which ends where the console port takes the log.
+  terminal-and-console-shell  `session_lifecycle a_usb_key_reaches_the_console` at the head ecb718f5f: green.
+host-ci-macos.log       `cargo run -- --ci host` on a macOS host at a35358bc4, exit 1: 1 of 110 steps red, the build
+                        system's `the_caller_s_environment_reaches_neither_the_build_nor_the_key`, recorded in
+                        issues/the-llvm-environment-test-breaks-git-on-macos.md.
+
+Masked: usernames, home and temporary paths, CPU model strings, runner names.

@@ -1,0 +1,13 @@
+diff --git a/system/shell/src/main.rs b/system/shell/src/main.rs
+index 1373dae68..549698db0 100644
+--- a/system/shell/src/main.rs
++++ b/system/shell/src/main.rs
+@@ -96,6 +96,8 @@ fn waiting_for(line: &[&Child]) {
+ /// meanwhile ends the shell, a hang-up or a terminate always and an interrupt
+ /// in `-c`, with `status` for the last.
+ fn waited(status: i32) {
++    // CONTROL, not for merge: the line's end reaches the surface 100 ms late.
++    std::thread::sleep(std::time::Duration::from_millis(100));
+     if let Some(foreground) = FOREGROUND.lock().unwrap().as_mut() {
+         foreground.clear();
+     }
