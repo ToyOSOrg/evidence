@@ -1,0 +1,37 @@
+Evidence for ToyOS #1247: a screen row waits for every line it reads off the panel.
+
+The PR's head is 83c1113f9. The guest rows ran on guest-timing-rows 90fefb314, a
+branch whose tree is #1247's and #1248's changes together (both on b56693152); the two
+touch disjoint files, and the screen rows run none of #1248's guest programs.
+
+Logs are masked: hostnames, home and temporary paths, user names.
+
+guest-rows-90fefb314-43039793677.log
+    gh workflow run guest-rows.yml --ref guest-timing-rows
+      -f filter='screen_panic_muted virt_early_panic virt_early_fault usbd_drives_the_spare udp_receive_times_out'
+    Run 43039793677 on the guest runner: conclusion success, "5 passed, 5 total".
+    screen_panic_muted on QEMU x86-64 Profile::Metal with its 16550 taken away;
+    virt_early_panic and virt_early_fault on QEMU AArch64 virt (TCG).
+
+host/checks.sh, host/checks.log
+    The targeted host checks, at 90fefb314 on the development Mac:
+    cargo test --test toyos-checks (the harness's own checks): exit 0, 44 passed.
+    cargo clippy -p toyos-build --all-targets with the workspace's adopted lints and
+    -D warnings (this compiles tests/toyos.rs and tests/common/): exit 0.
+
+Negative control (never lands): branch guest-timing-nc.
+    nc-mutations-b8c2cae91.patch is guest-timing-rows..b8c2cae91. This PR's mutation is
+    kernel/src/panic_reboot.rs: the armed line `panic: rebooting in N s, timed by ...` is
+    never written, so the muted panel never carries it. screen_panic_muted must red.
+    (The other two mutations are #1248's and touch no code this row runs.)
+
+    guest-nc-invalid-3712ff985-43039799183.log: the first control, INVALID. Its mutation
+    left `ARMED` unused, the kernel's -Dwarnings refused it, and every row red at build
+    ("constant `ARMED` is never used"). It establishes nothing.
+
+    nc-kernel-check-b8c2cae91.log: the corrected mutation compiles:
+    cargo check -p kernel --target x86_64-unknown-none --features boot-actuators,test-actuators
+    (exit 0) and cargo check -p kernel --target x86_64-unknown-none (exit 0), on
+    3712ff985 plus the one-line fix that is b8c2cae91; the target's rustflags carry -Dwarnings.
+
+    The corrected control's guest run is appended to this branch when it completes.

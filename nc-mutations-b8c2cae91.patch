@@ -1,0 +1,41 @@
+diff --git a/kernel/src/panic_reboot.rs b/kernel/src/panic_reboot.rs
+index 99c387092..5f1154bd9 100644
+--- a/kernel/src/panic_reboot.rs
++++ b/kernel/src/panic_reboot.rs
+@@ -104,7 +104,7 @@ pub fn arm(on_the_record: bool) -> Bound {
+     match (deadline(budget), crate::power::can_reboot()) {
+         (Some((cycles, source)), true) => {
+             if on_the_record {
+-                alert!("{ARMED} in {secs} s, timed by {}", source.named());
++                let _ = (ARMED, secs, source); // NEGATIVE CONTROL: the armed line is never written
+             } else {
+                 serial::panic_registers().write(b"panic: rebooting\n");
+             }
+diff --git a/kernel/src/pcidev/mod.rs b/kernel/src/pcidev/mod.rs
+index ee0962f69..e89d07143 100644
+--- a/kernel/src/pcidev/mod.rs
++++ b/kernel/src/pcidev/mod.rs
+@@ -1987,7 +1987,8 @@ pub fn take_record(binding: &Binding) -> Result<Option<DeviceIrqRecord>, Syscall
+         return Err(SyscallError::Gone);
+     }
+     if function.irq.faulted() {
+-        return Err(SyscallError::Io);
++        // NEGATIVE CONTROL: the refusal answered as a record
++        return Ok(Some(DeviceIrqRecord { count: 1, _pad: 0, first_nanos: 0, last_nanos: 0 }));
+     }
+     let taken = function.irq.take_opening(&function.gate);
+     if taken.is_some() && function.irq.take_unannounced() {
+diff --git a/sdk/std/sys/net/connection.rs b/sdk/std/sys/net/connection.rs
+index a8859e1a5..d44b6a750 100644
+--- a/sdk/std/sys/net/connection.rs
++++ b/sdk/std/sys/net/connection.rs
+@@ -68,7 +68,8 @@ fn addr_to_v4(addr: &SocketAddr) -> io::Result<([u8; 4], u16)> {
+ fn timeout_ms(d: Option<Duration>) -> io::Result<u32> {
+     match d {
+         Some(Duration::ZERO) => Err(io::Error::ZERO_TIMEOUT),
+-        Some(d) => Ok(d.as_millis().clamp(1, u32::MAX as u128) as u32),
++        // NEGATIVE CONTROL: truncated to whole milliseconds, 0 for one under one
++        Some(d) => Ok(d.as_millis().min(u32::MAX as u128) as u32),
+         None => Ok(0),
+     }
+ }
