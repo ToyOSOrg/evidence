@@ -1,0 +1,20 @@
+Measurement only: the prints the runner-up counts were read with (applied to the sim, then reverted).
+--- a/kernel/sim/src/invariants.rs
++++ b/kernel/sim/src/invariants.rs
+@@ for (key, cause, ns) in dispatched {
+     for (key, cause, ns) in dispatched {
++        if std::env::var_os("SIMDBG").is_some() && ns > 2_250_000 { eprintln!("DBG long wait {key:?} {cause:?} {ns} at {:?}", now); }
+         if let Some(process) = vm.process_of(key) {
+--- a/kernel/sim/src/hw_impl.rs
++++ b/kernel/sim/src/hw_impl.rs
+@@ fn set_timer
+             let cpu = Self::cpu(s);
++            if std::env::var_os("SIMDBG").is_some() { eprintln!("DBG set_timer cpu{cpu} {:?} -> {deadline:?} at {:?}", s.armed[cpu], s.now); }
+             s.armed[cpu] = Some(deadline);
+@@ fn trace
+     fn trace(&self, ev: TraceEvent) {
++        if std::env::var_os("SIMDBG").is_some() { eprintln!("DBG ev {ev:?}"); }
+# A run breaks the runner-up bound when it holds two or more sleeper (TaskKey(1)) `Woken` waits over 2,250,000 ns:
+#   SIMDBG=1 kernel-sim run interactive_mix:1:4 <seed> 2>&1 >/dev/null | grep "DBG long wait TaskKey(1) Woken" | awk '$6 > 2250000'
+# "base" is #1263's head with the skip's guard ANDed with `false` (main's timer behaviour; the ask read and the mask value
+# change nothing in a one-CPU scenario); "head" is #1263's head.

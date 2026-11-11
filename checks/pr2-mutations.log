@@ -1,0 +1,31 @@
+HEAD 564d662b163a02b36c068f711cd3613a9f011188
+
+=== T1 the skip ignores whether the one-shot fired
+  `cargo test -p kernel --lib sched:: 2>&1` exit 101: exit 101 without a test verdict
+  thread 'sched::cpu::tests::a_running_cpu_leaves_a_pending_one_shot_due_no_later' (29281670) panicked at kernel/pure/sched/cpu.rs:4924:9:
+  thread 'sched::cpu::tests::a_running_cpu_leaves_a_pending_one_shot_due_no_later' (29281670) panicked at kernel/pure/sched/task.rs:815:9:
+  thread 'sched::cpu::tests::a_running_cpu_leaves_a_pending_one_shot_due_no_later' (29281670) panicked at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/panicking.rs:233:5:
+=== T2 an idle CPU leaves a pending earlier one-shot too
+  `cargo test -p kernel --lib sched:: 2>&1` exit 101: exit 101 without a test verdict
+  thread 'sched::cpu::tests::a_cpu_going_idle_writes_its_deadline_over_a_pending_earlier_one_shot' (29282327) panicked at kernel/pure/sched/cpu.rs:4978:9:
+  thread 'sched::cpu::tests::a_cpu_going_idle_writes_its_deadline_over_a_pending_earlier_one_shot' (29282327) panicked at kernel/pure/sched/task.rs:815:9:
+  thread 'sched::cpu::tests::a_cpu_going_idle_writes_its_deadline_over_a_pending_earlier_one_shot' (29282327) panicked at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/panicking.rs:233:5:
+=== T3 the skip leaves a one-shot due later than needed
+  `cargo test -p kernel --lib sched:: 2>&1` exit 101: exit 101 without a test verdict
+  thread 'sched::cpu::tests::a_running_cpu_leaves_a_pending_one_shot_due_no_later' (29284550) panicked at kernel/pure/sched/cpu.rs:4941:9:
+  thread 'sched::cpu::tests::a_running_cpu_leaves_a_pending_one_shot_due_no_later' (29284550) panicked at kernel/pure/sched/task.rs:815:9:
+  thread 'sched::cpu::tests::a_running_cpu_leaves_a_pending_one_shot_due_no_later' (29284550) panicked at kernel/pure/sched/task.rs:815:9:
+  thread 'sched::cpu::tests::a_running_cpu_leaves_a_pending_one_shot_due_no_later' (29284550) panicked at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/panicking.rs:233:5:
+=== A1 an ask word read set is not cleared
+  `(cargo test -p kernel --lib sched:: 2>&1; a=$?; cargo test -p kernel-loom --test loom_sleep 2>&1; b=$?; exit $((a|b)))` exit 101: FAILED as required (1 binary red)
+  test sched::cpu::tests::a_taken_ask_is_gone ... FAILED
+  thread 'sched::cpu::tests::a_taken_ask_is_gone' (29285635) panicked at kernel/pure/sched/cpu.rs:4956:9:
+=== A2 a set ask word is read as empty
+  `(cargo test -p kernel --lib sched:: 2>&1; a=$?; cargo test -p kernel-loom --test loom_sleep 2>&1; b=$?; exit $((a|b)))` exit 101: FAILED as required (1 binary red)
+  test sched::cpu::tests::a_taken_ask_is_gone ... FAILED
+  thread 'sched::cpu::tests::a_steal_probe_goes_to_surplus_and_not_to_a_cpu_full_of_corpses' (29289077) panicked at kernel/pure/sched/cpu.rs:4229:9:
+  thread 'sched::cpu::tests::a_steal_probe_goes_to_surplus_and_not_to_a_cpu_full_of_corpses' (29289077) panicked at kernel/pure/sched/task.rs:815:9:
+  thread 'sched::cpu::tests::a_steal_probe_goes_to_surplus_and_not_to_a_cpu_full_of_corpses' (29289077) panicked at kernel/pure/sched/task.rs:815:9:
+  thread 'sched::cpu::tests::a_steal_probe_goes_to_surplus_and_not_to_a_cpu_full_of_corpses' (29289077) panicked at kernel/pure/sched/task.rs:815:9:
+  thread 'sched::cpu::tests::a_steal_probe_goes_to_surplus_and_not_to_a_cpu_full_of_corpses' (29289077) panicked at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/panicking.rs:233:5:
+restored; status: ''

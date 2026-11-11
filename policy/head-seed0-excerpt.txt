@@ -1,0 +1,30 @@
+DBG ev TraceEvent { ts: Nanos(0), cpu: CpuId(0), kind: Adopt { task: TaskKey(5), name: 5 } }
+DBG ev TraceEvent { ts: Nanos(0), cpu: CpuId(0), kind: Schedule { task: TaskKey(1), name: 1 } }
+DBG set_timer cpu0 None -> Nanos(4000000) at Nanos(0)
+DBG ev TraceEvent { ts: Nanos(0), cpu: CpuId(0), kind: ParkCommit { task: TaskKey(1), name: 1 } }
+DBG ev TraceEvent { ts: Nanos(0), cpu: CpuId(0), kind: Schedule { task: TaskKey(2), name: 2 } }
+DBG ev TraceEvent { ts: Nanos(4000000), cpu: CpuId(0), kind: Schedule { task: TaskKey(3), name: 3 } }
+DBG set_timer cpu0 None -> Nanos(8000000) at Nanos(4000000)
+DBG long wait TaskKey(3) Fresh 4000000 at Nanos(4000000)
+DBG ev TraceEvent { ts: Nanos(8000000), cpu: CpuId(0), kind: Wake { task: TaskKey(1), name: 1 } }
+DBG ev TraceEvent { ts: Nanos(8000000), cpu: CpuId(0), kind: Schedule { task: TaskKey(4), name: 4 } }
+DBG set_timer cpu0 None -> Nanos(12000000) at Nanos(8000000)
+DBG long wait TaskKey(4) Fresh 8000000 at Nanos(8000000)
+DBG ev TraceEvent { ts: Nanos(12000000), cpu: CpuId(0), kind: Schedule { task: TaskKey(1), name: 1 } }
+DBG set_timer cpu0 None -> Nanos(16000000) at Nanos(12000000)
+DBG long wait TaskKey(1) Woken 4000000 at Nanos(12000000)
+DBG ev TraceEvent { ts: Nanos(51750000), cpu: CpuId(0), kind: Wake { task: TaskKey(1), name: 1 } }
+DBG ev TraceEvent { ts: Nanos(51750000), cpu: CpuId(0), kind: Schedule { task: TaskKey(1), name: 1 } }
+DBG set_timer cpu0 None -> Nanos(52000000) at Nanos(51750000)
+DBG ev TraceEvent { ts: Nanos(52000000), cpu: CpuId(0), kind: Schedule { task: TaskKey(1), name: 1 } }
+DBG set_timer cpu0 None -> Nanos(55750000) at Nanos(52000000)
+DBG ev TraceEvent { ts: Nanos(52250000), cpu: CpuId(0), kind: ParkCommit { task: TaskKey(1), name: 1 } }
+DBG ev TraceEvent { ts: Nanos(52250000), cpu: CpuId(0), kind: Schedule { task: TaskKey(2), name: 2 } }
+DBG long wait TaskKey(2) Preempted 9000000 at Nanos(52250000)
+DBG ev TraceEvent { ts: Nanos(56250000), cpu: CpuId(0), kind: Wake { task: TaskKey(1), name: 1 } }
+DBG ev TraceEvent { ts: Nanos(56250000), cpu: CpuId(0), kind: Schedule { task: TaskKey(3), name: 3 } }
+DBG set_timer cpu0 None -> Nanos(60250000) at Nanos(56250000)
+DBG long wait TaskKey(3) Preempted 11000000 at Nanos(56250000)
+DBG ev TraceEvent { ts: Nanos(60250000), cpu: CpuId(0), kind: Schedule { task: TaskKey(1), name: 1 } }
+DBG set_timer cpu0 None -> Nanos(64000000) at Nanos(60250000)
+DBG long wait TaskKey(1) Woken 4000000 at Nanos(60250000)
