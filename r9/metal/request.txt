@@ -1,0 +1,37 @@
+# Metal request: the measurement that finishes PR #1131 (NVMe APST), both benches.
+# Rules, written before any image was staged: <scratch>/metal2/rules.txt
+# Nothing here touched a machine. Each image was staged with
+#   cargo test --test toyos-build -- --metal --metal-readback <dir> osbench_disk
+# at the revision named; its own request.txt gives the driver's invocation.
+#
+# Row: osbench_disk (image label diskbenchcase): osbench files, nvme, persist. List bound 605 s for both
+# arms (each idles 80 s in the after-idle row).
+#
+# Images (sha256 of the staged image.img):
+#   M'  349ccb26b245a535ac2f589aa9aa7fecfdfeb720  main ad5db5a65 + the row + the after-idle row; no APST
+#       <scratch>/metal2/M/request.txt
+#       41243cf31d9035418cc4f0fb01d959a587c2fa7947848d5fc721d78a875fb80a
+#   P'  047e0a708ffcbe976370f1f8643465589cb24dbd  PR #1131's head: M' + the driver's APST
+#       <scratch>/metal2/P/request.txt
+#       7321fc9fd4adc3438c9568cde7e0ae6b6e47be89323a7b0501c97e353fe1b618
+# Linux side: <scratch>/metal2/linux/README.txt (commands and what needs root, as last time)
+#       <scratch>/metal2/linux/osbench  (x86_64 musl static, built at P')
+#       05f78cb6800c48874f83c509281d3595efce66b794cdc6b0fff72e0f4d29f993
+#
+# No probe patch and no power-state query in any arm. No energy boot.
+# DATA carries over from boot to boot; keep the order.
+#
+# ORDER, the same flat list on each bench; the benches are independent of each other.
+#    1  boot M'  round 1
+#    2  boot P'  round 1
+#    3  linux L1 osbench persist              (no sudo)
+#    4  boot M'  round 2
+#    5  boot P'  round 2
+#    6  linux L2 osbench persist              (no sudo)
+#    7  boot M'  round 3
+#    8  boot P'  round 3
+#    9  linux L3 osbench persist              (no sudo)
+#   10  linux LN sudo osbench nvme            (root; last; its APST table is what rule L2 compares)
+#
+# Wanted back per boot: the readback directory, the driver's exit and the judge's verdict; per Linux
+# run, stdout, stderr and the exit code. Suggested: runs2/<bench>/r<N>-<M|P> and runs2/<bench>/linux/.

@@ -1,0 +1,34 @@
+# RULES for the measurement that finishes PR #1131, written before any image was staged or booted.
+# The landing rule is the orchestrator's, stated to the implementer before this file was written.
+#
+# Row: osbench_disk (files, nvme, persist) on the T14 and the AMD bench.
+# Arms:
+#   M'  349ccb26b: main (ad5db5a65) + the row + the after-idle row. No driver change: the disk idles without APST.
+#   P'  047e0a708: M' + the NVMe driver's APST. PR #1131's head.
+#   The two differ by APST alone.
+# Boots: 3 of each per bench, interleaved M' P' M' P' M' P'. Linux `osbench persist` after rounds 1, 2 and 3,
+# `sudo osbench nvme` last, from P's revision. No probe and no power-state query in any arm.
+# Statistic: each boot's row p50 (MB/s rows: the row's figure), then the median over the arm's boots.
+# "Resolved": every boot of one arm beyond every boot of the other.
+# A T14 boot is called slow when its `persist.write_4k_fsync` p50 is over 3 ms; each boot's mode is reported.
+#
+# L1 (the landing gate) Back to back: no `fs.disk.*`, `nvme.*` or `persist.*` row except after_idle is more
+#    than 5% worse in P' than in M' AND resolved, on either bench. On the T14, where the arms' boots are not
+#    all of one mode, rows are also compared mode by mode, and fewer than two boots of a mode in either arm is
+#    reported as not established, neither passed nor failed.
+# L2 (correct) Every P' boot passes its judge and logs the APST table it set; the table equals the one Linux's
+#    `nvme` group reads on that bench.
+# READY iff L1 and L2 hold on both benches.
+#
+# REPORTED, not gated (APST's purpose is idle power, and its table matches Linux's):
+# R1 `persist.write_4k_fsync_after_idle` p50 and worst sample, P' and M' against Linux, per boot.
+#    The remainder of P' over Linux is recorded as a defect of the commit path with its own exit.
+#    Expected from the earlier runs: the AMD at about parity with Linux (r7: 11.29 against 11.36 ms). If it is
+#    not, within 5% of Linux's median, that is reported for the orchestrator to decide again.
+# R2 The wake's cost on each bench: P' after_idle minus M' after_idle (APST's own price for the first write).
+# R3 The T14's slow mode, per boot of each arm: the mode of `persist.write_4k_fsync` (before the idle row) and
+#    of the durable rows after it (`append_4k_fsync`, `create_fsync_unlink`, `write_4k_fsync_beside_1m`).
+#    - If M' boots that begin slow end fast after the idle row: idle alone ends the mode, APST is not needed.
+#    - If only P' boots do: APST ends it, a second reason for #1131.
+#    - A boot that begins fast says nothing; with fewer than two slow-starting boots in an arm the question is
+#      reported as not separated.
