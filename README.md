@@ -15,3 +15,5 @@ Paths, user names, the runner's names and its CPU model are masked.
 `bytes/`: every binary `cargo run -- --build-only` leaves under `target/*/toyos`, hashed at `3b2d0a999` (the staged revision) and at `f7a54f7ae`, both built in one worktree. 42 of 45 are identical. `sections.txt` and `symbols.txt` compare the other three (`elfcmp.py`, `symcmp.py`): every allocated section but the build-id note is identical, and the symbols are equal once the `.llvm.<hash>` suffix of a ThinLTO-promoted name is set aside.
 
 `metal/judge-t14.log`, `metal/judge-amd.log`: the readbacks of the two bench boots of the `3b2d0a999` images, judged from the worktree at `f7a54f7ae`; both exit 0. `metal/names-t14.txt`, `metal/names-amd.txt`: from each readback, the loader's own lines and the kernel's and supervisor's lines they are read against. The machines' vendor, product and BIOS strings and the disks' EUI-64 are masked; the EUI-64 was the same on both sides of each comparison before masking.
+
+`host/ci-host-lint.log`: `cargo run -- --ci host lint` at `4ef2f55c6` on macOS arm64, exit 0, 5 steps green.
