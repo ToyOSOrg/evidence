@@ -1,0 +1,15 @@
+$ cargo test -p nvme   (with n2-admin-commands-bounded-by-cap-to.patch applied, at 31fda554e)
+   Compiling nvme v0.0.0 (<path>
+error[E0080]: evaluation panicked: a command the controller leaves silent would be answered past the block protocol's bound
+   --> system/nvme/src/nvme.rs:177:15
+    |
+177 |   const _: () = assert!(
+    |  _______________^
+178 | |     ANSWERED_WITHIN.as_nanos() <= toyos_blockring::SILENCE_BOUND_NS as u128,
+179 | |     "a command the controller leaves silent would be answered past the block protocol's bound"
+180 | | );
+    | |_^ evaluation of `nvme::_` failed here
+
+For more information about this error, try `rustc --explain E0080`.
+error: could not compile `nvme` (bin "nvme" test) due to 1 previous error
+exit 101

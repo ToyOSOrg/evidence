@@ -1,0 +1,34 @@
+$ cargo test -p nvme   (with n1-a-wake-buys-a-whole-bound.patch applied, at 31fda554e)
+   Compiling nvme v0.0.0 (<path>
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.42s
+     Running unittests src/main.rs (target/debug/deps/nvme-e698c414c9a43eeb)
+
+running 9 tests
+test nvme::tests::a_command_left_silent_is_answered_within_365_s ... ok
+test nvme::tests::a_format_with_metadata_is_refused_extended_or_separate ... ok
+test nvme::tests::a_controller_whose_smallest_page_is_not_4_kib_is_refused ... ok
+test nvme::tests::a_namespace_past_sixteen_formats_takes_the_index_high_bits ... ok
+test nvme::tests::a_format_index_past_the_count_is_refused ... ok
+test nvme::tests::a_reset_steps_through_the_queues_then_the_power_table ... ok
+test nvme::tests::a_sector_outside_512_to_4096_bytes_is_refused ... ok
+test nvme::tests::an_answer_ends_the_wait ... ok
+test nvme::tests::a_wake_before_the_bound_buys_no_second_bound ... FAILED
+
+failures:
+
+---- nvme::tests::a_wake_before_the_bound_buys_no_second_bound stdout ----
+
+thread 'nvme::tests::a_wake_before_the_bound_buys_no_second_bound' (29256049) panicked at system/nvme/src/nvme.rs:903:9:
+assertion `left == right` failed
+  left: 19.999s
+ right: 10s
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    nvme::tests::a_wake_before_the_bound_buys_no_second_bound
+
+test result: FAILED. 8 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p nvme --bin nvme`
+exit 101

@@ -59,3 +59,19 @@ Host checks only, on a macOS arm64 host. Paths are masked; each log ends with it
     protocol's bound".
 - `first-try/clippy-programs.log`: the first run, at the commit before its amendment: `unchecked_time_subtraction` in the
   new test, fixed by the amendment (the test's subtraction saturates).
+
+## Rebased onto #1131 (r4/), at 31fda554e
+
+The branch is rebased onto main 6d4b7e4ce, which carries #1131 (NVMe APST). The reset sets the APST table too, a tenth
+admin command; the reset's admin commands are now the const list `STEPS` that `Controller::configure` steps through at
+bring-up and in a reset, so the bound counts the list's length: 365 s.
+
+- `host-targeted/`: by `a-r4-checks.sh` at 31fda554e (`revision.txt`): `cargo test -p toyos-blockring -p diskserver -p toyos -p nvme`
+  (`test.log`, exit 0; `a_command_left_silent_is_answered_within_365_s` and `a_reset_steps_through_the_queues_then_the_power_table`
+  among the driver's); clippy over the gate's packages (`clippy.log`, exit 0) and over `nvme` and `diskserver`
+  (`clippy-programs.log`, exit 0).
+- `controls/`: each applied, built, run with `cargo test -p nvme` and reverted, all exit 101: n1 the old wait reds
+  `a_wake_before_the_bound_buys_no_second_bound`; n2 admin commands bounded by `CAP.TO`'s largest value and n3 one more step
+  in `STEPS` each fail the build at the bound's compile-time assertion.
+- Guest: `nvme_disk_boots` at 31fda554e, https://github.com/ToyOSOrg/ToyOS/actions/runs/43069269031. Run 43062272826 at
+  4eb8b1f52 was cancelled unrun, superseded by this head.

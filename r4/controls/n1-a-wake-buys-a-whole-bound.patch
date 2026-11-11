@@ -1,0 +1,13 @@
+diff --git a/system/nvme/src/nvme.rs b/system/nvme/src/nvme.rs
+index 176797a..ec2b691 100644
+--- a/system/nvme/src/nvme.rs
++++ b/system/nvme/src/nvme.rs
+@@ -195,7 +195,7 @@ fn within<T>(bound: Duration, elapsed: impl Fn() -> Duration, mut step: impl FnM
+         if let Some(answer) = step(left) {
+             return Some(answer);
+         }
+-        left = bound.saturating_sub(elapsed());
++        left = if elapsed() >= bound { Duration::ZERO } else { bound };
+         if left.is_zero() {
+             return None;
+         }

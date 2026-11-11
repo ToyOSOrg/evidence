@@ -1,0 +1,16 @@
+diff --git a/system/nvme/src/nvme.rs b/system/nvme/src/nvme.rs
+index 176797a..1bc78a9 100644
+--- a/system/nvme/src/nvme.rs
++++ b/system/nvme/src/nvme.rs
+@@ -151,8 +151,9 @@ impl Step {
+ 
+ /// Every step [`Controller::configure`] takes, at bring-up and in a reset,
+ /// each at most one admin command: the reset waits for no other.
+-const STEPS: [Step; 2 + 2 * MAX_IO_QUEUES as usize] = {
+-    let mut steps = [Step::QueueCount; 2 + 2 * MAX_IO_QUEUES as usize];
++const STEPS: [Step; 3 + 2 * MAX_IO_QUEUES as usize] = {
++    let mut steps = [Step::PowerTable; 3 + 2 * MAX_IO_QUEUES as usize];
++    steps[0] = Step::QueueCount;
+     let mut q = 0;
+     while q < MAX_IO_QUEUES {
+         steps[1 + 2 * q as usize] = Step::CompletionQueue(q);
