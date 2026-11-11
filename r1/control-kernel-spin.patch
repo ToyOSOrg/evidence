@@ -1,0 +1,19 @@
+diff --git a/kernel/src/process.rs b/kernel/src/process.rs
+index 212cc60a3..26a9f1785 100644
+--- a/kernel/src/process.rs
++++ b/kernel/src/process.rs
+@@ -795,6 +795,14 @@ fn teardown(pid: Pid, tid: Tid, end: End, mark: i32, process_data: &Arc<Lock<Pro
+     let releases = crate::object::Releases::open();
+     let consumed = teardown_resources(process_data, &main_thread, pid);
+     let released = releases.run();
++    // CONTROL, not for merge: a session owner's exit stays unpublished for
++    // 300 ms after its handles closed.
++    if PROCESS_TABLE.lock().as_ref().unwrap().get(pid).is_some_and(|proc| proc.name_str() == "session") {
++        let until = crate::clock::nanos_since_boot() + 300_000_000;
++        while crate::clock::nanos_since_boot() < until {
++            core::hint::spin_loop();
++        }
++    }
+     let cpu_ns = {
+         let mut guard = PROCESS_TABLE.lock();
+         teardown_bookkeeping(guard.as_mut().unwrap(), pid, end, &consumed)
