@@ -28,3 +28,13 @@ Figures the PR cites, hot (back to back), ns p50/min, tiny program:
 |---|---|---|
 | t14 | 18896/17443 | 6978/6395 |
 | amd | 22302/17303 | 7404/6432 |
+
+## Round 3, after the rebase onto main 45935f4b9 (head daf84f482)
+
+- `checks/checks-pr-3.sh` -> `checks/checks-pr-3.log`: `cargo test -p kernel --lib --features sched-check vm::`
+  exit 0 (16 passed); kernel clippy for x86_64-unknown-none, the same with `boot-actuators,test-actuators`,
+  aarch64-unknown-none-softfloat, and the library's tests with `sched-check`: exit 0 each. The rebased diff is the
+  same as f3a8c4000's but for context lines.
+- `checks/guest-rows-43052895137.txt`: guest-rows run 43052895137 at f3a8c4000, the result lines of its log:
+  `osbench_capability_groups_exit_0`, `virt_user_mode`, `a_spawn_from_an_image_frees_it_when_the_child_ends` and
+  `virt_smp` pass, 4 of 4 (https://github.com/ToyOSOrg/ToyOS/actions/runs/43052895137).

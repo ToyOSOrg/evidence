@@ -1,0 +1,98 @@
+rev daf84f4829869d18b1075ee571de279ab807638e
+== cargo test -p kernel --lib --features sched-check vm::
+   Compiling toyos-abi v0.16.0 (<scratch>/spawnperf/wt/sdk/abi)
+   Compiling kernel v0.1.0 (<scratch>/spawnperf/wt/kernel)
+    Finished `test` profile [optimized + debuginfo] target(s) in 21.77s
+     Running unittests pure/lib.rs (target/debug/deps/kernel-a7ca71f2661cd543)
+
+running 16 tests
+test vm::tests::a_lone_touch_populates_its_own_page ... ok
+test vm::tests::a_copied_page_keeps_nothing_its_frame_held ... ok
+test vm::tests::a_touch_beside_a_populated_page_populates_its_run_upward_or_downward ... ok
+test vm::tests::a_run_stops_at_the_ranges_ends_and_a_neighbour_outside_it_counts_for_nothing ... ok
+test vm::tests::an_empty_space_places_at_its_floor_with_the_alignment_asked ... ok
+test vm::tests::backing_is_a_commitment_or_an_object ... ok
+test vm::tests::a_copied_range_cut_keeps_its_source_offset_and_length ... ok
+test vm::tests::neighbours_that_continue_each_other_join ... ok
+test vm::tests::no_protection_allows_a_write_and_an_execution ... ok
+test vm::tests::a_removal_over_entries_and_holes_takes_every_entry_it_meets ... ok
+test vm::tests::a_removal_cuts_crossing_entries_and_frees_exactly_its_range ... ok
+test vm::tests::an_update_changes_only_its_range_and_joins_back ... ok
+test vm::tests::placement_takes_the_smallest_free_range_that_fits ... ok
+test vm::tests::protection_allows_its_accesses_and_bounds_by_its_maximum ... ok
+test vm::tests::an_insert_over_an_entry_is_a_kernel_bug - should panic ... ok
+test vm::tests::a_mixed_load_agrees_with_a_page_map ... ok
+
+test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 444 filtered out; finished in 0.04s
+
+exit 0
+== cargo clippy -p kernel --target x86_64-unknown-none -- -W clippy::checked_conversions -W clippy::default_trait_access -W clippy::manual_midpoint -W clippy::redundant_clone -W clippy::unchecked_time_subtraction -W clippy::unnecessary_semicolon -D warnings
+    Checking toyos-abi v0.16.0 (<scratch>/spawnperf/wt/sdk/abi)
+    Checking toyos-phys v0.1.0 (<scratch>/spawnperf/wt/kernel/phys)
+    Checking toyos-tco v0.1.0 (<scratch>/spawnperf/wt/lib/tco)
+    Checking rustc-demangle v0.1.27
+    Checking toyos-elide v0.1.0 (<scratch>/spawnperf/wt/lib/elide)
+    Checking cfg-if v1.0.4
+    Checking toyos-gicv3 v0.1.0 (<scratch>/spawnperf/wt/kernel/gicv3)
+    Checking toyos-random v0.1.0 (<scratch>/spawnperf/wt/lib/random)
+    Checking toyos-rootimage v0.1.0 (<scratch>/spawnperf/wt/lib/rootimage)
+    Checking toyos-register v0.1.0 (<scratch>/spawnperf/wt/kernel/register)
+    Checking toyos-tsc v0.1.0 (<scratch>/spawnperf/wt/lib/tsc)
+    Checking toyos-wallclock v0.1.0 (<scratch>/spawnperf/wt/lib/wallclock)
+    Checking toyos-quiesce v0.1.0 (<scratch>/spawnperf/wt/lib/quiesce)
+    Checking toyos-microcode v0.1.0 (<scratch>/spawnperf/wt/lib/microcode)
+    Checking dlmalloc v0.2.13
+    Checking hashbrown v0.16.1
+    Checking toyos-its v0.1.0 (<scratch>/spawnperf/wt/kernel/its)
+    Checking toyos-amdvi v0.1.0 (<scratch>/spawnperf/wt/kernel/amdvi)
+    Checking toyos-bootmap v0.1.0 (<scratch>/spawnperf/wt/lib/bootmap)
+    Checking toyos-proclife v0.1.0 (<scratch>/spawnperf/wt/kernel/proclife)
+    Checking toyos-kimage v0.1.0 (<scratch>/spawnperf/wt/lib/kimage)
+    Checking toyos-symbols v0.1.0 (<scratch>/spawnperf/wt/lib/symbols)
+    Checking toyos-pci v0.1.0 (<scratch>/spawnperf/wt/kernel/pci)
+    Checking toyos-acpi v0.1.0 (<scratch>/spawnperf/wt/lib/acpi)
+    Checking toyos-smmu v0.1.0 (<scratch>/spawnperf/wt/kernel/smmu)
+    Checking toyos-userbound v0.1.0 (<scratch>/spawnperf/wt/lib/userbound)
+    Checking kernel v0.1.0 (<scratch>/spawnperf/wt/kernel)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 11.36s
+exit 0
+== cargo clippy -p kernel --target x86_64-unknown-none --features boot-actuators,test-actuators -- -W clippy::checked_conversions -W clippy::default_trait_access -W clippy::manual_midpoint -W clippy::redundant_clone -W clippy::unchecked_time_subtraction -W clippy::unnecessary_semicolon -D warnings
+    Checking kernel v0.1.0 (<scratch>/spawnperf/wt/kernel)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 4.37s
+exit 0
+== cargo clippy -p kernel --target aarch64-unknown-none-softfloat -- -W clippy::checked_conversions -W clippy::default_trait_access -W clippy::manual_midpoint -W clippy::redundant_clone -W clippy::unchecked_time_subtraction -W clippy::unnecessary_semicolon -D warnings
+    Checking toyos-abi v0.16.0 (<scratch>/spawnperf/wt/sdk/abi)
+    Checking toyos-phys v0.1.0 (<scratch>/spawnperf/wt/kernel/phys)
+    Checking cfg-if v1.0.4
+    Checking toyos-elide v0.1.0 (<scratch>/spawnperf/wt/lib/elide)
+    Checking rustc-demangle v0.1.27
+    Checking toyos-tco v0.1.0 (<scratch>/spawnperf/wt/lib/tco)
+    Checking toyos-quiesce v0.1.0 (<scratch>/spawnperf/wt/lib/quiesce)
+    Checking toyos-gicv3 v0.1.0 (<scratch>/spawnperf/wt/kernel/gicv3)
+    Checking toyos-register v0.1.0 (<scratch>/spawnperf/wt/kernel/register)
+    Checking toyos-microcode v0.1.0 (<scratch>/spawnperf/wt/lib/microcode)
+    Checking toyos-random v0.1.0 (<scratch>/spawnperf/wt/lib/random)
+    Checking toyos-rootimage v0.1.0 (<scratch>/spawnperf/wt/lib/rootimage)
+    Checking toyos-tsc v0.1.0 (<scratch>/spawnperf/wt/lib/tsc)
+    Checking hashbrown v0.16.1
+    Checking dlmalloc v0.2.13
+    Checking toyos-amdvi v0.1.0 (<scratch>/spawnperf/wt/kernel/amdvi)
+    Checking toyos-its v0.1.0 (<scratch>/spawnperf/wt/kernel/its)
+    Checking toyos-wallclock v0.1.0 (<scratch>/spawnperf/wt/lib/wallclock)
+    Checking toyos-bootmap v0.1.0 (<scratch>/spawnperf/wt/lib/bootmap)
+    Checking toyos-kimage v0.1.0 (<scratch>/spawnperf/wt/lib/kimage)
+    Checking toyos-pci v0.1.0 (<scratch>/spawnperf/wt/kernel/pci)
+    Checking toyos-proclife v0.1.0 (<scratch>/spawnperf/wt/kernel/proclife)
+    Checking toyos-symbols v0.1.0 (<scratch>/spawnperf/wt/lib/symbols)
+    Checking toyos-acpi v0.1.0 (<scratch>/spawnperf/wt/lib/acpi)
+    Checking toyos-smmu v0.1.0 (<scratch>/spawnperf/wt/kernel/smmu)
+    Checking toyos-userbound v0.1.0 (<scratch>/spawnperf/wt/lib/userbound)
+    Checking kernel v0.1.0 (<scratch>/spawnperf/wt/kernel)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 4.05s
+exit 0
+== cargo clippy -p kernel --lib --tests --features sched-check -- -W clippy::checked_conversions -W clippy::default_trait_access -W clippy::manual_midpoint -W clippy::redundant_clone -W clippy::unchecked_time_subtraction -W clippy::unnecessary_semicolon -D warnings
+    Checking toyos-abi v0.16.0 (<scratch>/spawnperf/wt/sdk/abi)
+    Checking kernel v0.1.0 (<scratch>/spawnperf/wt/kernel)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 2.31s
+exit 0
+all done
