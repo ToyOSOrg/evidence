@@ -1,0 +1,47 @@
+$ cargo test -p toyos --features fd-hold-revives --lib -- --exact fd::table::model::a_call_beside_a_close_holds_a_live_object_or_none fd::table::model::two_calls_beside_a_close_let_the_object_go_once fd::table::model::a_call_beside_a_dup2_holds_the_old_object_or_the_new
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+   Compiling toyos v0.18.0 ($SCRATCH/wt/sdk/toyos)
+    Finished `test` profile [optimized + debuginfo] target(s) in 10.23s
+     Running unittests src/lib.rs (target/debug/deps/toyos-26bfff22c406c57e)
+
+running 3 tests
+test fd::table::model::a_call_beside_a_close_holds_a_live_object_or_none ... FAILED
+test fd::table::model::a_call_beside_a_dup2_holds_the_old_object_or_the_new ... FAILED
+test fd::table::model::two_calls_beside_a_close_let_the_object_go_once ... FAILED
+
+failures:
+
+---- fd::table::model::a_call_beside_a_close_holds_a_live_object_or_none stdout ----
+
+thread 'fd::table::model::a_call_beside_a_close_holds_a_live_object_or_none' (24584156) panicked at sdk/toyos/src/fd/table/model.rs:83:9:
+assertion `left == right` failed: object 0 was let go twice
+  left: 1
+ right: 0
+
+---- fd::table::model::a_call_beside_a_dup2_holds_the_old_object_or_the_new stdout ----
+
+thread 'fd::table::model::a_call_beside_a_dup2_holds_the_old_object_or_the_new' (24584157) panicked at sdk/toyos/src/fd/table/model.rs:83:9:
+assertion `left == right` failed: object 1 was let go twice
+  left: 1
+ right: 0
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- fd::table::model::two_calls_beside_a_close_let_the_object_go_once stdout ----
+
+thread 'fd::table::model::two_calls_beside_a_close_let_the_object_go_once' (24584158) panicked at sdk/toyos/src/fd/table/model.rs:83:9:
+assertion `left == right` failed: object 0 was let go twice
+  left: 1
+ right: 0
+
+
+failures:
+    fd::table::model::a_call_beside_a_close_holds_a_live_object_or_none
+    fd::table::model::a_call_beside_a_dup2_holds_the_old_object_or_the_new
+    fd::table::model::two_calls_beside_a_close_let_the_object_go_once
+
+test result: FAILED. 0 passed; 3 failed; 0 ignored; 0 measured; 183 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos --lib`
+exit 101
