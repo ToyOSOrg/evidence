@@ -1,0 +1,15 @@
+kernel-lib: cargo test -p kernel --lib exit=0
+toyos-abi: cargo test -p toyos-abi exit=0
+toyos-sdk: cargo test -p toyos exit=0
+fileserver: cargo test --manifest-path system/fileserver/Cargo.toml exit=0
+build-configs: cargo test --lib -- build::tests exit=0
+toyos-checks: cargo test --test toyos-checks exit=0
+harness-list: sh -c cargo test --test toyos-build -- --list | grep -E 'tmp_holds_empty_files_by_what_each_costs|^tmp_empty_files' exit=0
+clippy: cargo run -- --clippy exit=0
+done
+build-only exit=0
+clippy-2 exit=0
+fileserver-2 exit=0
+toyos-checks@d2b9c877e exit=0
+2
+build-only@d2b9c877e exit=0

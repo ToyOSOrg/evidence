@@ -27,3 +27,16 @@ m1 was run at the tree that became `47d8525a2`. m2 was run on round 2's tree bef
 | `kernel-slots-test-3.log` | `cargo test -p kernel --lib slots` | 0 |
 | `toyos-checks-2.log` | `cargo test --test toyos-checks` | 0 |
 | `build-only-4.log` | `cargo run -- --build-only` | 0 |
+
+## Round 2's checks
+
+The working tree that became `07ea739c3`, then `d2b9c877e` after a clean
+rebase onto main `3b93f3770`. Each `checks-*.log` is one command, and
+`checks-summary.txt` lists each with its exit:
+
+- `cargo test -p kernel --lib`, `-p toyos-abi`, `-p toyos`, the file server's tests and the build's config gates (`cargo test --lib -- build::tests`), every one exit 0;
+- `cargo test --test toyos-checks`, exit 0;
+- `cargo run -- --clippy`, exit 0, 26 invocations clean, run twice: after the round's change, and after dropping `Slots::held`;
+- the harness's `--list` naming `tmp_empty_files`, `tmp_holds_empty_files_by_what_each_costs` and `virt_tmp_holds_empty_files_by_what_each_costs`.
+
+At `d2b9c877e`: `toyos-checks` exit 0, and `--build-only` exit 0.
