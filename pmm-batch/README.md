@@ -9,3 +9,9 @@
   staged for both benches (`exit 2` is staging's own: it touched no machine).
 - `ab-registration.patch`: the MEASUREMENT ONLY `batch_ab` row both sides carry (never to land).
 - `request5.txt`: the metal request, A B B A on each bench. Results land here when the boots are run.
+
+## Review r1 (head 1047f13f1, on PR 1250's 8245c9d03)
+
+- `checks-r1.log` (`checks-r1.sh`): `frames::` exit 0 (40 passed), `vm::` exit 0 (16 passed), clippy of the library's
+  tests and of the kernel for x86_64-unknown-none exit 0. The test of the batch's up-front check is deleted (a draw
+  past the promises already panics), and with it the mutation above, which showed only a different message.
