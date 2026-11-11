@@ -211,3 +211,57 @@ provided for.
 The branch's last commit changes only the issue record's text, adding this A/B's figures. The one host check that
 reads a record's body is the identifier gate: `cargo test --lib sourcegate` at e64953f85, exit 0, 10 passed
 (`r3/sourcegate-e64953f85.log`).
+
+## r4: review r2's fixes, d3d67f8b5 (`r4/`)
+
+Review r2 found `POINTED`'s derivation false (each piece of a group changed its bucket, and so its LRU entry, on its
+own) and the crash-model test not grouping. The branch's head is now d3d67f8b5: da1c40c45 (a group of fresh extents
+changes its bucket once; the tests) and d3d67f8b5 (the record).
+
+### Footprint, measured on the host
+
+`r4/logs/verify-measure.log`: each variant built fresh, its `data.rs` hash printed beside its figures, the fix, then
+the code before it (`r4/controls/per-piece-bucket-change.diff`: each piece of a group changes its bucket on its own),
+then the fix again. Largest transaction, journal u64s and nodes changed:
+
+| case | the fix | a bucket change a piece |
+|---|---|---|
+| streaming 5 MiB over 2 MiB buckets, plain | 212, 7 | 247, 7 |
+| the same, encrypted | 228, 7 | 263, 7 |
+| its truncation | 202, 8 | 202, 8 |
+| a full group, bucket entry 1/16 to 9/16 full, 1 MiB buckets of 16 KiB nodes, LRU in one leaf | 203, 6 | 238, 6 |
+| the same, LRU spread over many leaves by 1500 buckets left at every fill | 203, 8 | 238, 11 |
+
+The margins the tests hold are a quarter of the 512 u64 bound and half the 28-node footprint; both variants are
+within them, so the code before the fix is no red, and its figures are above it. `r4/logs/repeat-measure.log` repeats the
+streaming case three times (212 and 228 each time). `r4/logs/diag-*.log` hold a one-off print of the largest
+transactions' keys by tree (`r4/controls/diag-txn-prints.diff`).
+
+`r4/controls/controls-r3.log` and the two logs it names first (`measure-fix.log`, `control-per-piece-bucket-change.log`)
+are superseded: their figures came out swapped against three later builds that print their source's hash, for a
+reason not found (a stale build is suspected). Nothing is concluded from them.
+
+### Negative controls (`r4/controls/controls2-r3.log`, each applied, built with its hash printed, run, reverted)
+
+| control | result |
+|---|---|
+| `grouping-off.diff`: no piece is fresh, so no group | exit 101: the crash test sees 2 of 3 extents pointed at request 16; the bounds tests count 80 pointer transactions for 80 extents and 8 for the group |
+| `refill-keeps-sectors.diff`: a bucket drained one sector short | exit 101: the reuse-cycle test's fsck after round 2 finds alloc keys that differ from what the extents derive |
+
+### Host checks on the touched crates (`r4/logs/r3-checks.log`), at da1c40c45's code
+
+| check | command | exit |
+|---|---|---|
+| engine suite | `cargo test --release --manifest-path lib/bcachefs/Cargo.toml` | 0, 204 passed |
+| file server suite | `cargo test --release --manifest-path system/fileserver/Cargo.toml` | 0 |
+| served disk suite | `cargo test --release --manifest-path system/diskserver/Cargo.toml` | 0 |
+| clippy, the touched packages | `cargo clippy -p bcachefs -p diskserver --all-targets -- <the adopted lints> -D warnings` | 0 |
+| identifier gate, d3d67f8b5 | `cargo test --lib sourcegate` | 0, 10 passed |
+
+A comment in `write_reserved` was reworded after these ran; nothing else changed.
+
+### The second A/B, staged (`r4/metal/`)
+
+Rules fixed before P' was staged: `r4/metal/rules-ab2.txt`; the request: `r4/metal/request-ab2.txt`. P' is the head
+plus the `osbench_disk` row (ec98464cd, `r4/logs/stage-P2.log`, exit 2: staged); M is the first A/B's image. ABBA on
+each bench, 8 boots, every mount's free figure recorded.

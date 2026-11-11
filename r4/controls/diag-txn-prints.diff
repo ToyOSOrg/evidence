@@ -1,0 +1,17 @@
+--- a/lib/bcachefs/src/engine/mount/mod.rs
++++ b/lib/bcachefs/src/engine/mount/mod.rs
+@@ -1364,6 +1364,14 @@
+         #[cfg(test)]
+         {
+             st.applied += 1;
++            if size > st.largest[0] && std::env::var_os("DIAG_TXN").is_some() {
++                let mut by: BTreeMap<String, (usize, usize)> = BTreeMap::new();
++                for ((btree, _, _), v) in &txn.updates {
++                    let e = by.entry(format!("{btree:?}")).or_default();
++                    if v.is_some() { e.0 += 1 } else { e.1 += 1 }
++                }
++                std::eprintln!("DIAG txn {size} u64s {} nodes: set/deleted by btree {by:?}, accounting {}", txn.dirtied.len(), txn.accounting.len());
++            }
+             st.largest = [st.largest[0].max(size), st.largest[1].max(txn.dirtied.len() as u64)];
+         }
+         if !st.journal.fits(size) {

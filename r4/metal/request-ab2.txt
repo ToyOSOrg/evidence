@@ -1,0 +1,29 @@
+# Metal request: PR #1216's second A/B, P' (the reviewed head) against M. Both benches, 8 boots, no Linux run.
+# Rules, fixed before any boot and before P' was staged: <scratch>/metal/rules-ab2.txt
+# It replaces metal/request-t14-fast.txt (pulled: its P image is the old code).
+# Nothing here touched a machine.
+#
+# Images (sha256 of image.img), row osbench_disk, list bound 525 s:
+#   M   822ac54b8 (refs/scratch/seqwrite-M), main ad5db5a65 + the row only: the SAME image as the first A/B
+#       <scratch>/metal/M/diskbenchcase/image.img
+#       9ac00db2dc9d199bff310a29020d819b3398364febe5c3ffc8ebbf7d96885cbd
+#   P'  ec98464cd (refs/scratch/seqwrite-P2), PR head d3d67f8b5 + the same row only
+#       <scratch>/metal/P2/diskbenchcase/image.img
+#       3b7ed2cc6bfd9c4ac7203db3731fed3719eba203ae3e5edc52af39b1531609a6
+#       staged with `cargo test --test toyos-build -- --metal --metal-readback <dir> osbench_disk` (exit 2, staged)
+# Driver, from <scratch>/wt (branch seqwrite, clean; tests/metal
+# is the same at M, P' and the branch), a fresh readback directory per boot:
+#   cargo run -p toyos-metal -- --image <image.img above> --readback <dir> --fat32-check
+#
+# ORDER, counterbalanced ABBA on each bench; keep it: DATA carries over from boot to boot, and each boot's mount
+# line reads what the boot before left. The last M of a bench follows its last P', so it reads what P' left.
+#   T14:  1 M  -> t14/s1-M     2 P' -> t14/s2-P2     3 P' -> t14/s3-P2     4 M  -> t14/s4-M
+#   AMD:  1 M  -> amd/s1-M     2 P' -> amd/s2-P2     3 P' -> amd/s3-P2     4 M  -> amd/s4-M
+# (directories under metal/runs-ab2/). The benches are independent; either may go first or both at once.
+# If a boot comes back without a verdict, retry it in place before the next boot, as in the first A/B.
+#
+# Wanted back per boot: the readback directory, the driver's exit and verdict, and a chain.log line per try.
+# Please note in chain.log any boot that ran on a bench between two of these (another job's), since the free
+# figure reads the boot before: the first M of each bench reads whatever ran last there.
+#
+# Boots: 8 in all (4 a bench). No Linux runs: the first A/B's stand for the comparison with Linux, which is no gate.

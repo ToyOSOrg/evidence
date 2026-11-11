@@ -1,0 +1,11 @@
+--- a/lib/bcachefs/src/engine/mount/data.rs
++++ b/lib/bcachefs/src/engine/mount/data.rs
+@@ -795,7 +795,7 @@
+             if delta > 0 {
+                 after.fill_as(data_type::USER, delta as u32, self.st.borrow().clocks[1], self.sb.member.bucket_sectors as u32)?;
+             } else {
+-                after.drain_as(data_type::USER, (-delta) as u32)?;
++                after.drain_as(data_type::USER, (-delta) as u32 - 1)?;
+             }
+             self.bucket_changed(txn, b, before, after).await?;
+         }

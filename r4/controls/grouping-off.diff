@@ -1,0 +1,11 @@
+--- a/lib/bcachefs/src/engine/mount/data.rs
++++ b/lib/bcachefs/src/engine/mount/data.rs
+@@ -314,7 +314,7 @@
+             buf.resize(blocks.end, [0; BLOCK]);
+             self.fill(ino, first, end, at, &input[..n], buf[blocks.clone()].as_flattened_mut()).await?;
+             let seal = self.seal(&mut buf[blocks.clone()], version)?;
+-            pieces.push(Piece { at, n, first, end, blocks, sector, version, seal, fresh: old.is_empty() });
++            pieces.push(Piece { at, n, first, end, blocks, sector, version, seal, fresh: false && old.is_empty() });
+             planned += n;
+         }
+         for stretch in pieces.chunk_by(|a, b| b.sector == a.sector + (a.end - a.first) / SECTOR as u64) {

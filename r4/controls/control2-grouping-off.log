@@ -1,0 +1,41 @@
+   Compiling bcachefs v0.1.0 (<scratch>/wt/lib/bcachefs)
+    Finished `release` profile [optimized] target(s) in 1m 07s
+     Running unittests src/lib.rs (target/release/deps/bcachefs-fccbf3ba13011d3a)
+
+running 3 tests
+test engine::tests::data::a_group_moving_its_lru_entry_across_leaves_stays_within_a_transaction ... FAILED
+test engine::tests::data::extents_pointed_and_removed_together_stay_within_a_transaction ... FAILED
+test engine::tests::data::a_reserved_write_cut_anywhere_points_its_group_whole ... FAILED
+
+failures:
+
+---- engine::tests::data::a_group_moving_its_lru_entry_across_leaves_stays_within_a_transaction stdout ----
+
+thread 'engine::tests::data::a_group_moving_its_lru_entry_across_leaves_stays_within_a_transaction' (29304287) panicked at lib/bcachefs/src/engine/tests/data.rs:974:9:
+assertion `left == right` failed: eight fresh extents of one bucket, fragmented false
+  left: 8
+ right: 1
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- engine::tests::data::extents_pointed_and_removed_together_stay_within_a_transaction stdout ----
+
+thread 'engine::tests::data::extents_pointed_and_removed_together_stay_within_a_transaction' (29304289) panicked at lib/bcachefs/src/engine/tests/data.rs:913:9:
+assertion `left == right` failed: pointer transactions for 80 extents
+  left: 80
+ right: 10
+
+---- engine::tests::data::a_reserved_write_cut_anywhere_points_its_group_whole stdout ----
+
+thread 'engine::tests::data::a_reserved_write_cut_anywhere_points_its_group_whole' (29304288) panicked at lib/bcachefs/src/engine/tests/data.rs:872:37:
+crash state 0 of every 1: 2 of three extents pointed at request 16, committed false
+
+
+failures:
+    engine::tests::data::a_group_moving_its_lru_entry_across_leaves_stays_within_a_transaction
+    engine::tests::data::a_reserved_write_cut_anywhere_points_its_group_whole
+    engine::tests::data::extents_pointed_and_removed_together_stay_within_a_transaction
+
+test result: FAILED. 0 passed; 3 failed; 0 ignored; 0 measured; 201 filtered out; finished in 0.22s
+
+error: test failed, to rerun pass `--lib`
+exit 101

@@ -1,0 +1,18 @@
+--- a/lib/bcachefs/src/engine/tests/data.rs
++++ b/lib/bcachefs/src/engine/tests/data.rs
+@@ -913,6 +913,7 @@
+         assert_eq!(transactions, extents.div_ceil(POINTED as u64) + u64::from(encrypted), "pointer transactions for {extents} extents");
+         block_on_ready(m.truncate(ino, 0, NOW)).unwrap();
+         let (_, removed) = m.test_applied();
++        eprintln!("MEASURE streaming encrypted={encrypted}: write {transactions} transactions, largest pointed {pointed:?}, largest removed {removed:?}");
+         within_margins(pointed);
+         within_margins(removed);
+         block_on_ready(m.unmount()).unwrap();
+@@ -971,6 +972,7 @@
+         block_on_ready(m.unmount()).unwrap();
+         let (transactions, largest) = measured;
+         assert_eq!(transactions, 1, "eight fresh extents of one bucket, fragmented {fragmented}");
++        eprintln!("MEASURE group fragmented={fragmented}: {transactions} transactions, largest {largest:?}");
+         within_margins(largest);
+         let v = block_on_ready(Volume::open(&dev)).unwrap();
+         let spread = v.roots().iter().any(|r| r.btree == Btree::Lru && r.level > 0);

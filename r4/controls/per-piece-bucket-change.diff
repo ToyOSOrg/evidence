@@ -1,0 +1,16 @@
+--- a/lib/bcachefs/src/engine/mount/data.rs
++++ b/lib/bcachefs/src/engine/mount/data.rs
+@@ -346,9 +346,10 @@
+                         // Nothing else reaches a fresh piece's blocks, and the
+                         // group's one bucket changes once for all of them.
+                         _ => {
+-                            let gen = self.bucket(txn, group[0].sector / bucket).await?.reused_gen();
+-                            let new = group.iter().map(|p| self.new_extent(ino, p.first..p.end, p.version, Ptr { sector: p.sector, dev: 0, gen, cached: false, unwritten: false }, p.seal)).collect();
+-                            self.replace_data_keys(txn, &mut inode, Vec::new(), new).await?;
++                            // CONTROL: each piece changes its bucket on its own, as before the fix.
++                            for p in group {
++                                self.point_extent(txn, ino, &mut inode, p.first..p.end, Vec::new(), p.version, p.sector, p.seal).await?;
++                            }
+                         }
+                     }
+                     inode.size = group.iter().fold(inode.size, |size, p| size.max(p.at + p.n as u64));

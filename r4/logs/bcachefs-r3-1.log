@@ -1,0 +1,48 @@
+   Compiling crc32fast v1.5.0
+   Compiling cfg-if v1.0.4
+   Compiling adler2 v2.0.1
+   Compiling simd-adler32 v0.3.10
+   Compiling toyos-crypto v0.1.0 (<scratch>/wt/lib/crypto)
+   Compiling toyos-blockdev v0.1.0 (<scratch>/wt/lib/blockdev)
+   Compiling miniz_oxide v0.9.1
+   Compiling flate2 v1.1.10
+   Compiling bcachefs v0.1.0 (<scratch>/wt/lib/bcachefs)
+    Finished `release` profile [optimized] target(s) in 1m 48s
+     Running unittests src/lib.rs (target/release/deps/bcachefs-fccbf3ba13011d3a)
+
+running 10 tests
+test engine::tests::data::a_group_moving_its_lru_entry_across_leaves_stays_within_a_transaction ... FAILED
+test engine::tests::data::a_failed_reserved_data_write_keeps_the_old_contents_and_reports_failure ... ok
+test engine::tests::data::a_reserved_slot_survives_its_bucket_emptying_and_generation_change ... ok
+test engine::tests::data::a_reserved_write_sends_each_contiguous_stretch_once_before_any_pointer ... ok
+test engine::tests::data::a_reserved_write_inside_a_large_block_lands_on_that_block ... ok
+test engine::tests::data::pending_allocation_failure_precedes_data_reservation_and_reserved_write_preparation ... ok
+test engine::tests::data::extents_pointed_and_removed_together_stay_within_a_transaction ... ok
+test engine::tests::data::reserved_blocks_write_after_capacity_refusal_and_dropped_tokens_return_capacity ... ok
+test engine::tests::data::buckets_refilled_in_groups_come_back_empty ... ok
+test engine::tests::data::a_reserved_write_cut_anywhere_points_its_group_whole ... FAILED
+
+failures:
+
+---- engine::tests::data::a_group_moving_its_lru_entry_across_leaves_stays_within_a_transaction stdout ----
+
+thread 'engine::tests::data::a_group_moving_its_lru_entry_across_leaves_stays_within_a_transaction' (29043087) panicked at lib/bcachefs/src/engine/tests/data.rs:940:97:
+called `Result::unwrap()` on an `Err` value: Unsupported("writing a volume of btree nodes too small for reclaim's largest split")
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- engine::tests::data::a_reserved_write_cut_anywhere_points_its_group_whole stdout ----
+
+thread 'engine::tests::data::a_reserved_write_cut_anywhere_points_its_group_whole' (29043089) panicked at lib/bcachefs/src/engine/tests/data.rs:881:5:
+assertion `left == right` failed: the crashes did not cut between the lone extent and the group
+  left: {0, 3}
+ right: {0, 1, 3}
+
+
+failures:
+    engine::tests::data::a_group_moving_its_lru_entry_across_leaves_stays_within_a_transaction
+    engine::tests::data::a_reserved_write_cut_anywhere_points_its_group_whole
+
+test result: FAILED. 8 passed; 2 failed; 0 ignored; 0 measured; 194 filtered out; finished in 0.36s
+
+error: test failed, to rerun pass `--lib`
+exit 101
