@@ -1,0 +1,32 @@
+worktree wt-batch revision 9108a464a92803096f9accd02d090aff48ca5a41 + worktree diff b25417ac356d
+$ cargo test --manifest-path system/logkeeper/Cargo.toml store::tests
+   Compiling logkeeper v0.1.0 ($WORKTREE/system/logkeeper)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.29s
+     Running unittests src/main.rs (target/debug/deps/logkeeper-0d32471bebb3d0bd)
+
+running 8 tests
+test store::tests::nothing_goes_while_there_is_room ... ok
+test store::tests::a_flooding_boot_costs_its_own_middle_and_nobody_elses_start ... ok
+test store::tests::whole_old_boots_go_first_then_earlier_continuations ... ok
+test store::tests::a_budget_spent_on_the_replays_last_line_is_caught_up_and_synced ... FAILED
+test store::tests::a_first_part_refused_at_open_is_made_and_given_the_boot ... ok
+test store::tests::a_stop_refused_after_an_unsynced_write_counts_from_the_last_sync ... ok
+test store::tests::a_stop_with_more_owed_than_its_time_syncs_and_says_the_shortfall ... ok
+test store::tests::a_refused_file_is_given_back_the_boot_the_replay_holds ... ok
+
+failures:
+
+---- store::tests::a_budget_spent_on_the_replays_last_line_is_caught_up_and_synced stdout ----
+
+thread 'store::tests::a_budget_spent_on_the_replays_last_line_is_caught_up_and_synced' (29366834) panicked at system/logkeeper/src/store.rs:561:9:
+the file has every byte
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    store::tests::a_budget_spent_on_the_replays_last_line_is_caught_up_and_synced
+
+test result: FAILED. 7 passed; 1 failed; 0 ignored; 0 measured; 26 filtered out; finished in 0.16s
+
+error: test failed, to rerun pass `--bin logkeeper`
+exit 101

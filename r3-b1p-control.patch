@@ -1,0 +1,12 @@
+--- a/system/logkeeper/src/store.rs
++++ b/system/logkeeper/src/store.rs
+@@ -350,6 +350,9 @@
+                     return Ok(false);
+                 }
+             }
++            if written >= budget {
++                return Ok(false);
++            }
+             let room = (self.rotate_at - self.size).min(budget.saturating_sub(written));
+             match owed(self.through, room as usize) {
+                 Owed::Nothing => {
