@@ -1,0 +1,14 @@
+diff --git a/kernel/src/sched/futex.rs b/kernel/src/sched/futex.rs
+index 9d77c2dff..d239ee25c 100644
+--- a/kernel/src/sched/futex.rs
++++ b/kernel/src/sched/futex.rs
+@@ -66,7 +66,8 @@ fn revoke(ended: impl Fn(u64) -> bool + Copy) -> usize {
+     // its translation under that lock once registered, finds the frame gone
+     // and never parks. One that read its translation first counted itself
+     // before that read, which the lock orders before the clear and this.
+-    if WAITING.load(SeqCst) == 0 {
++    // MUTATION, never lands: the walk skipped though a thread waits.
++    if WAITING.load(SeqCst) != usize::MAX {
+         return 0;
+     }
+     // A frame spans buckets by construction, so every bucket is walked.
