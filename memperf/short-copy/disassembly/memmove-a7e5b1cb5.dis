@@ -1,0 +1,157 @@
+000000000022f600 <memmove>:
+  22f600:	push   rbp
+  22f601:	mov    rbp,rsp
+  22f604:	mov    rax,rdi
+  22f607:	cmp    rdi,rsi
+  22f60a:	seta   cl
+  22f60d:	lea    rdi,[rdx+rsi*1]
+  22f611:	cmp    rdi,rax
+  22f614:	seta   dil
+  22f618:	test   cl,dil
+  22f61b:	jne    22f645 <memmove+0x45>
+  22f61d:	mov    rcx,QWORD PTR [rip+0x2c90a4]        # 4f86c8 <_RNvNtNtCsccMOlwaB8cH_10toyos_libc4arch6x86_6411MOVES_BELOW>
+  22f624:	cmp    rdx,rcx
+  22f627:	jae    22f660 <memmove+0x60>
+  22f629:	cmp    rcx,0xffffffffffffffff
+  22f62d:	je     22f7ee <memmove+0x1ee>
+  22f633:	test   rdx,rdx
+  22f636:	je     22f65e <memmove+0x5e>
+  22f638:	cmp    rdx,0x1
+  22f63c:	jne    22f66a <memmove+0x6a>
+  22f63e:	movzx  ecx,BYTE PTR [rsi]
+  22f641:	mov    BYTE PTR [rax],cl
+  22f643:	pop    rbp
+  22f644:	ret
+  22f645:	test   rdx,rdx
+  22f648:	je     22f65e <memmove+0x5e>
+  22f64a:	lea    rdi,[rax+rdx*1]
+  22f64e:	dec    rdi
+  22f651:	add    rsi,rdx
+  22f654:	dec    rsi
+  22f657:	mov    rcx,rdx
+  22f65a:	std
+  22f65b:	rep movs BYTE PTR [rdi],BYTE PTR [rsi]
+  22f65d:	cld
+  22f65e:	pop    rbp
+  22f65f:	ret
+  22f660:	mov    rdi,rax
+  22f663:	mov    rcx,rdx
+  22f666:	rep movs BYTE PTR [rdi],BYTE PTR [rsi]
+  22f668:	pop    rbp
+  22f669:	ret
+  22f66a:	mov    rcx,rdx
+  22f66d:	and    rcx,0xfffffffffffffffe
+  22f671:	cmp    rcx,0x2
+  22f675:	jne    22f689 <memmove+0x89>
+  22f677:	movzx  ecx,WORD PTR [rsi]
+  22f67a:	movzx  esi,WORD PTR [rsi+rdx*1-0x2]
+  22f67f:	mov    WORD PTR [rax],cx
+  22f682:	mov    WORD PTR [rax+rdx*1-0x2],si
+  22f687:	pop    rbp
+  22f688:	ret
+  22f689:	mov    rcx,rdx
+  22f68c:	and    rcx,0xfffffffffffffffc
+  22f690:	cmp    rcx,0x4
+  22f694:	jne    22f6a4 <memmove+0xa4>
+  22f696:	mov    ecx,DWORD PTR [rsi]
+  22f698:	mov    esi,DWORD PTR [rsi+rdx*1-0x4]
+  22f69c:	mov    DWORD PTR [rax],ecx
+  22f69e:	mov    DWORD PTR [rax+rdx*1-0x4],esi
+  22f6a2:	pop    rbp
+  22f6a3:	ret
+  22f6a4:	mov    rcx,rdx
+  22f6a7:	and    rcx,0xfffffffffffffff8
+  22f6ab:	cmp    rcx,0x8
+  22f6af:	jne    22f6c3 <memmove+0xc3>
+  22f6b1:	mov    rcx,QWORD PTR [rsi]
+  22f6b4:	mov    rsi,QWORD PTR [rsi+rdx*1-0x8]
+  22f6b9:	mov    QWORD PTR [rax],rcx
+  22f6bc:	mov    QWORD PTR [rax+rdx*1-0x8],rsi
+  22f6c1:	pop    rbp
+  22f6c2:	ret
+  22f6c3:	lea    rcx,[rdx-0x10]
+  22f6c7:	cmp    rcx,0x11
+  22f6cb:	jae    22f6dd <memmove+0xdd>
+  22f6cd:	movups xmm0,XMMWORD PTR [rsi]
+  22f6d0:	movups xmm1,XMMWORD PTR [rsi+rcx*1]
+  22f6d4:	movups XMMWORD PTR [rax],xmm0
+  22f6d7:	movups XMMWORD PTR [rax+rcx*1],xmm1
+  22f6db:	pop    rbp
+  22f6dc:	ret
+  22f6dd:	lea    rcx,[rdx-0x21]
+  22f6e1:	cmp    rcx,0x20
+  22f6e5:	jae    22f70b <memmove+0x10b>
+  22f6e7:	movups xmm0,XMMWORD PTR [rsi]
+  22f6ea:	movups xmm1,XMMWORD PTR [rsi+0x10]
+  22f6ee:	movups xmm2,XMMWORD PTR [rsi+rdx*1-0x20]
+  22f6f3:	movups xmm3,XMMWORD PTR [rsi+rdx*1-0x10]
+  22f6f8:	movups XMMWORD PTR [rax],xmm0
+  22f6fb:	movups XMMWORD PTR [rax+0x10],xmm1
+  22f6ff:	movups XMMWORD PTR [rax+rdx*1-0x20],xmm2
+  22f704:	movups XMMWORD PTR [rax+rdx*1-0x10],xmm3
+  22f709:	pop    rbp
+  22f70a:	ret
+  22f70b:	lea    rcx,[rdx-0x41]
+  22f70f:	movups xmm3,XMMWORD PTR [rsi]
+  22f712:	movups xmm2,XMMWORD PTR [rsi+0x10]
+  22f716:	movups xmm1,XMMWORD PTR [rsi+0x20]
+  22f71a:	movups xmm0,XMMWORD PTR [rsi+0x30]
+  22f71e:	cmp    rcx,0x40
+  22f722:	jae    22f75d <memmove+0x15d>
+  22f724:	movups xmm4,XMMWORD PTR [rsi+rdx*1-0x40]
+  22f729:	movups xmm5,XMMWORD PTR [rsi+rdx*1-0x30]
+  22f72e:	movups xmm6,XMMWORD PTR [rsi+rdx*1-0x20]
+  22f733:	movups xmm7,XMMWORD PTR [rsi+rdx*1-0x10]
+  22f738:	movups XMMWORD PTR [rax],xmm3
+  22f73b:	movups XMMWORD PTR [rax+0x10],xmm2
+  22f73f:	movups XMMWORD PTR [rax+0x20],xmm1
+  22f743:	movups XMMWORD PTR [rax+0x30],xmm0
+  22f747:	movups XMMWORD PTR [rax+rdx*1-0x40],xmm4
+  22f74c:	movups XMMWORD PTR [rax+rdx*1-0x30],xmm5
+  22f751:	movups XMMWORD PTR [rax+rdx*1-0x20],xmm6
+  22f756:	movups XMMWORD PTR [rax+rdx*1-0x10],xmm7
+  22f75b:	pop    rbp
+  22f75c:	ret
+  22f75d:	movups xmm4,XMMWORD PTR [rsi+0x40]
+  22f761:	movups xmm5,XMMWORD PTR [rsi+0x50]
+  22f765:	movups xmm6,XMMWORD PTR [rsi+0x60]
+  22f769:	movups xmm7,XMMWORD PTR [rsi+0x70]
+  22f76d:	movups xmm8,XMMWORD PTR [rsi+rdx*1-0x80]
+  22f773:	movups xmm9,XMMWORD PTR [rsi+rdx*1-0x70]
+  22f779:	movups xmm10,XMMWORD PTR [rsi+rdx*1-0x60]
+  22f77f:	movups xmm11,XMMWORD PTR [rsi+rdx*1-0x50]
+  22f785:	movups xmm12,XMMWORD PTR [rsi+rdx*1-0x40]
+  22f78b:	movups xmm13,XMMWORD PTR [rsi+rdx*1-0x30]
+  22f791:	movups xmm14,XMMWORD PTR [rsi+rdx*1-0x20]
+  22f797:	movups xmm15,XMMWORD PTR [rsi+rdx*1-0x10]
+  22f79d:	movups XMMWORD PTR [rax],xmm3
+  22f7a0:	movups XMMWORD PTR [rax+0x10],xmm2
+  22f7a4:	movups XMMWORD PTR [rax+0x20],xmm1
+  22f7a8:	movups XMMWORD PTR [rax+0x30],xmm0
+  22f7ac:	movups XMMWORD PTR [rax+0x40],xmm4
+  22f7b0:	movups XMMWORD PTR [rax+0x50],xmm5
+  22f7b4:	movups XMMWORD PTR [rax+0x60],xmm6
+  22f7b8:	movups XMMWORD PTR [rax+0x70],xmm7
+  22f7bc:	movups XMMWORD PTR [rax+rdx*1-0x80],xmm8
+  22f7c2:	movups XMMWORD PTR [rax+rdx*1-0x70],xmm9
+  22f7c8:	movups XMMWORD PTR [rax+rdx*1-0x60],xmm10
+  22f7ce:	movups XMMWORD PTR [rax+rdx*1-0x50],xmm11
+  22f7d4:	movups XMMWORD PTR [rax+rdx*1-0x40],xmm12
+  22f7da:	movups XMMWORD PTR [rax+rdx*1-0x30],xmm13
+  22f7e0:	movups XMMWORD PTR [rax+rdx*1-0x20],xmm14
+  22f7e6:	movups XMMWORD PTR [rax+rdx*1-0x10],xmm15
+  22f7ec:	pop    rbp
+  22f7ed:	ret
+  22f7ee:	mov    rdi,rax
+  22f7f1:	pop    rbp
+  22f7f2:	jmp    231e60 <_RNvNtNtCsccMOlwaB8cH_10toyos_libc4arch6x86_6410first_copy>
+  22f7f7:	int3
+  22f7f8:	int3
+  22f7f9:	int3
+  22f7fa:	int3
+  22f7fb:	int3
+  22f7fc:	int3
+  22f7fd:	int3
+  22f7fe:	int3
+  22f7ff:	int3
+

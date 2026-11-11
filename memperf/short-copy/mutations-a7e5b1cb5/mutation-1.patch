@@ -1,0 +1,12 @@
+--- logs/libc/v3/x86_64.rs.orig	2026-11-11 18:55:34
++++ libc/x86_64.rs	2026-11-11 18:55:34
+@@ -76,8 +76,8 @@
+         use core::arch::x86_64::{_mm_loadu_si128 as load, _mm_storeu_si128 as store};
+         let t = $n - 16 * [$($i),+].len();
+         let head = ($(load($s.add(16 * $i).cast()),)+);
+-        let tail = ($(load($s.add(t + 16 * $i).cast()),)+);
+         $(store($d.add(16 * $i).cast(), head.$i);)+
++        let tail = ($(load($s.add(t + 16 * $i).cast()),)+);
+         $(store($d.add(t + 16 * $i).cast(), tail.$i);)+
+     }};
+ }

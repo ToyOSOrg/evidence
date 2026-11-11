@@ -15,3 +15,15 @@ The PR's own checks of the committed crate are in the PR description.
 ## Host checks of the committed branch
 
 `host-checks/` holds the three commands at 23d112929; `exits.txt` gives each exit code, all 0. They are the copies crate's tests for x86-64 under Rosetta and natively on aarch64, and its clippy run for x86-64 with the adopted lints and `-D warnings`.
+
+## The guest build's code, and two follow-up commits
+
+`disassembly/` is `memcpy`, `memmove` and the cold first-copy function, taken with GNU objdump from the x86-64 `osbench` that each staging linked: guest profile, ToyOS sysroot.
+
+- **23d112929**: no call to `memcpy` inside `memcpy` or `memmove`, and the 129-256 byte arm keeps all sixteen loads in xmm0-15 with no spill. But the FSRM question was an out-of-line call on every copy of up to 256 bytes, so the prologue saved three registers on every CPU.
+- **b6c8d0001**: the question moved into a cold first copy. The prologue still saved one register, to keep `dest` across that call, and tested two states.
+- **a7e5b1cb5**, the PR head: one word, the length below which a copy is moves, read and compared once. The first copy is a tail jump. A CPU with FSRM runs `push rbp; mov rbp,rsp; mov rax,rdi; mov rcx,[word]; cmp rdx,rcx; jae; mov rdi,rax; mov rcx,rdx; rep movsb`. Main ran `push rbp; mov rbp,rsp; mov rcx,rdx; mov rax,rdi; rep movsb`.
+
+`host-checks-a7e5b1cb5/` holds the head's checks, each exit 0: the crate's tests for x86-64 under Rosetta and on aarch64, and clippy on both. `copy_forward`'s aarch64 signature changed too: it now answers `dest`.
+
+`mutations-a7e5b1cb5/` holds the same three mutations against the head's module, each caught (exit 101). The unmutated file was restored and compared with `cmp` against the committed one.
