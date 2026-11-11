@@ -1,0 +1,69 @@
+1:  ef688fa94 ! 1:  ffb041ac3 A pure function decides a CPU's speculation mitigations, and each boot says its verdict
+    @@ kernel/src/arch/x86_64/boot.rs: pub fn after_console(args: &KernelArgs, _maps: &
+     +    mitigation::report(0);
+      
+          let rule = match cpu::vendor() {
+    -         kernel::cpu::Vendor::Amd => copy::Rule::AMD,
+    +         _ if crate::actuator::copies_go_down() => copy::Rule { window: 4096 },
+     
+      ## kernel/src/arch/x86_64/cpu.rs ##
+     @@ kernel/src/arch/x86_64/cpu.rs: pub fn topology_keys() -> Result<kernel::sched::topology::CpuKeys, kernel::cpu::
+    @@ tests/checks.rs: mod checks {
+     
+      ## tests/toyos.rs ##
+     @@ tests/toyos.rs: const METAL: &[(&str, metal::Metal)] = &[
+    -             judge: |b| microcode_on_metal(b[0].loader().text(), b[0].kernel().text(), b[0].cpus()?),
+    +             judge: |b| microcode_on_metal(b[0].bench, b[0].loader().text(), b[0].kernel().text(), b[0].cpus()?),
+              },
+          ),
+     +    (
+    @@ tests/toyos.rs: const METAL: &[(&str, metal::Metal)] = &[
+          (
+              // The machine came back to Ubuntu's ssh server, which is what tells a reset from the
+              // S5 power-off the QEMU stop reason exists to catch — the driver
+    -@@ tests/toyos.rs: fn microcode_on_metal(loader: &str, log: &str, cpus: u32) -> Result<(), String>
+    +@@ tests/toyos.rs: fn microcode_on_metal(bench: Bench, loader: &str, log: &str, cpus: u32) -> Resul
+          Ok(())
+      }
+      
+2:  0b7aa4fb5 ! 2:  a8b447397 Review round 1 of #1243: every CPU judged, its core's threads counted from the CPUs up, and ToyOS's policy marked
+    @@ kernel/src/arch/x86_64/boot.rs: pub fn after_console(args: &KernelArgs, _maps: &
+     +    mitigation::record(0, c001_1029_found);
+      
+          let rule = match cpu::vendor() {
+    -         kernel::cpu::Vendor::Amd => copy::Rule::AMD,
+    +         _ if crate::actuator::copies_go_down() => copy::Rule { window: 4096 },
+     
+      ## kernel/src/arch/x86_64/cpu.rs ##
+     @@ kernel/src/arch/x86_64/cpu.rs: pub fn topology_keys() -> Result<kernel::sched::topology::CpuKeys, kernel::cpu::
+    @@ tests/toyos.rs: const METAL: &[(&str, metal::Metal)] = &[
+              "mitigations",
+              metal::Metal { arms: METALCASE, judge: |b| mitigations_on_metal(b[0].kernel().text()) },
+          ),
+    -@@ tests/toyos.rs: fn microcode_on_metal(loader: &str, log: &str, cpus: u32) -> Result<(), String>
+    +@@ tests/toyos.rs: fn microcode_on_metal(bench: Bench, loader: &str, log: &str, cpus: u32) -> Resul
+          Ok(())
+      }
+      
+3:  21ae6c243 ! 3:  336af15bf The T14's words pinned, and MMIO stale data decided by which propagators a part has
+    @@ tests/checks.rs: mod checks {
+              refused("words without a field", lines(0, &words(READ).replace(" smt=true", ""), &AMD_BENCH_LINES), "carry no smt")?;
+     
+      ## tests/toyos.rs ##
+    -@@ tests/toyos.rs: fn microcode_on_metal(loader: &str, log: &str, cpus: u32) -> Result<(), String>
+    +@@ tests/toyos.rs: fn microcode_on_metal(bench: Bench, loader: &str, log: &str, cpus: u32) -> Resul
+      /// revision, which the `microcode` row holds: a boot of that machine reads
+      /// these again, and `checks::the_benches_words_decide_as_their_vendors_rows`
+      /// holds what they decide to each vendor's row for that CPU.
+4:  8d57dcf87 ! 4:  f2267753d Review round 2 of #1243: no allocation before the allocator, the kernel's SMT exposure named, and PSDP as Intel conditions it
+    @@ kernel/src/arch/x86_64/boot.rs: pub fn after_console(args: &KernelArgs, _maps: &
+     +    mitigation::record_boot_cpu(mitigation::apply());
+      
+          let rule = match cpu::vendor() {
+    -         kernel::cpu::Vendor::Amd => copy::Rule::AMD,
+    +         _ if crate::actuator::copies_go_down() => copy::Rule { window: 4096 },
+     
+      ## kernel/src/arch/x86_64/mitigation.rs ##
+     @@
+5:  8c203f6e8 = 5:  b2740bf49 Review round 3 of #1243: what is owed on metal, the MDS_NO term held, and two stale comments
+-:  --------- > 6:  003c0e3e2 The mitigations metal row runs on every bench
