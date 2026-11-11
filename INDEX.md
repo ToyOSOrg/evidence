@@ -21,3 +21,7 @@ Revision: the checks ran at 34cb4c918 plus the change's tree, which is commit ad
 
 ## guest/
 - `rows-43049964255.log`: guest-rows run 43049964255 at ad7d762c2. It ran session_lifecycle, a_launch_gives_each_unsent_stdio_slot_a_null, netstack_holders_exported_to_children and hda_plays_to_the_controller_that_reaches_an_output: 4 passed, 4 total. The runner's machine name and CPU model are masked.
+
+## r1/ (review round 1, head d8090d44c, rebased onto 6d0cb3ae9)
+- `summary.txt`: compile checks of the type-level fix, as the review asked. They are `cargo test -p toyos --lib ipc::` and clippy in CI's shapes (`toyos --all-targets`, `toyos --lib --features fd-table`, `toyos-abi`), each exit 0.
+- `guest-compile.log`: `--metal --metal-readback <dir> served_file_offset` at d8090d44c, used only as the guest compile. It builds std, libc, every program and every guest binary, then exits 2 (staged, 1 image, not requested).
