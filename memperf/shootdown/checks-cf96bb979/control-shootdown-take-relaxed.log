@@ -1,0 +1,51 @@
+   Compiling kernel-loom v0.1.0 (<path>
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.53s
+     Running tests/tlb_shootdown.rs (target/debug/deps/tlb_shootdown-38e437ba5b9ff28e)
+
+running 12 tests
+test an_initiator_answers_while_it_waits ... ok
+test two_cpus_asking_each_other_answer_from_their_waits ... ok
+test two_asks_of_one_cpu_are_each_answered_for_their_own_page ... FAILED
+test an_answered_ask_flushed_its_range_after_the_write ... FAILED
+test only_a_kernel_half_shootdown_asks_a_wide_answer ... ok
+test a_mailbox_reused_waits_for_its_new_answer ... FAILED
+test a_nested_serve_is_not_undone_by_the_one_it_interrupted ... ok
+test an_acknowledged_kernel_half_shootdown_dropped_the_global_translation ... ok
+test an_acknowledged_flush_postdates_the_page_table_write ... ok
+test a_serve_nested_in_an_unfinished_wide_one_answers_wide ... ok
+test one_serve_answering_a_user_half_and_a_kernel_half_shootdown_answers_wide ... ok
+test one_serve_answers_two_concurrent_shootdowns ... ok
+
+failures:
+
+---- two_asks_of_one_cpu_are_each_answered_for_their_own_page stdout ----
+
+thread 'two_asks_of_one_cpu_are_each_answered_for_their_own_page' (30535842) panicked at kernel/loom/tests/tlb_shootdown.rs:537:13:
+assertion `left == right` failed: cpu 2 was answered while cpu 1 still held page 1
+  left: 1
+ right: 0
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- an_answered_ask_flushed_its_range_after_the_write stdout ----
+
+thread 'an_answered_ask_flushed_its_range_after_the_write' (30535837) panicked at kernel/loom/tests/tlb_shootdown.rs:506:13:
+assertion `left == right` failed: cpu 1 answered the ask while still holding the page asked
+  left: 1
+ right: 0
+
+---- a_mailbox_reused_waits_for_its_new_answer stdout ----
+
+thread 'a_mailbox_reused_waits_for_its_new_answer' (30535832) panicked at kernel/loom/tests/tlb_shootdown.rs:565:17:
+assertion `left == right` failed: cpu 0's second ask was answered while cpu 1 still held page 1
+  left: 1
+ right: 0
+
+
+failures:
+    a_mailbox_reused_waits_for_its_new_answer
+    an_answered_ask_flushed_its_range_after_the_write
+    two_asks_of_one_cpu_are_each_answered_for_their_own_page
+
+test result: FAILED. 9 passed; 3 failed; 0 ignored; 0 measured; 0 filtered out; finished in 7.99s
+
+error: test failed, to rerun pass `-p kernel-loom --test tlb_shootdown`
