@@ -1,0 +1,33 @@
+$ cargo test -p toyos --features fd-reuse-relaxed --lib -- --exact fd::table::model::a_call_on_a_closed_descriptor_never_holds_the_object_that_took_its_slot fd::table::model::a_call_on_a_reopened_descriptor_holds_the_old_object_or_the_new
+   Compiling toyos v0.18.0 ($SCRATCH/wt/sdk/toyos)
+    Finished `test` profile [optimized + debuginfo] target(s) in 3.15s
+     Running unittests src/lib.rs (target/debug/deps/toyos-0a326c3f0f2a5280)
+
+running 2 tests
+test fd::table::model::a_call_on_a_reopened_descriptor_holds_the_old_object_or_the_new ... FAILED
+test fd::table::model::a_call_on_a_closed_descriptor_never_holds_the_object_that_took_its_slot ... FAILED
+
+failures:
+
+---- fd::table::model::a_call_on_a_reopened_descriptor_holds_the_old_object_or_the_new stdout ----
+
+thread 'fd::table::model::a_call_on_a_reopened_descriptor_holds_the_old_object_or_the_new' (27833752) panicked at $CARGO_HOME/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/rt/location.rs:115:9:
+Causality violation: Concurrent read and write accesses to `UnsafeCell`.
+
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- fd::table::model::a_call_on_a_closed_descriptor_never_holds_the_object_that_took_its_slot stdout ----
+
+thread 'fd::table::model::a_call_on_a_closed_descriptor_never_holds_the_object_that_took_its_slot' (27833751) panicked at $CARGO_HOME/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/rt/location.rs:115:9:
+Causality violation: Concurrent read and write accesses to `UnsafeCell`.
+
+
+
+failures:
+    fd::table::model::a_call_on_a_closed_descriptor_never_holds_the_object_that_took_its_slot
+    fd::table::model::a_call_on_a_reopened_descriptor_holds_the_old_object_or_the_new
+
+test result: FAILED. 0 passed; 2 failed; 0 ignored; 0 measured; 185 filtered out; finished in 0.04s
+
+error: test failed, to rerun pass `-p toyos --lib`
+exit 101

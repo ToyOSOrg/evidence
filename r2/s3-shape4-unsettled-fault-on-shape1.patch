@@ -1,0 +1,137 @@
+diff --git a/sdk/toyos/src/fd.rs b/sdk/toyos/src/fd.rs
+index d76c4d2ff..4ffe6dd87 100644
+--- a/sdk/toyos/src/fd.rs
++++ b/sdk/toyos/src/fd.rs
+@@ -409,7 +409,8 @@ mod owner {
+     fn refusal(fault: Fault) -> Error {
+         match fault {
+             Fault::Refused(e) => e,
+-            Fault::Broken => panic!("toyos::fd: the descriptor table is inconsistent"),
++            // Under the writer a descriptor naming a free slot is broken.
++            Fault::Broken | Fault::Unsettled => panic!("toyos::fd: the descriptor table is inconsistent"),
+         }
+     }
+ 
+@@ -464,7 +465,7 @@ mod owner {
+                 match table.alias_at(source, fd) {
+                     Ok(()) => {},
+                     Err(Fault::Refused(_)) => refused += 1,
+-                    Err(Fault::Broken) => return Err(Fault::Broken),
++                    Err(fault) => return Err(fault),
+                 }
+                 continue;
+             }
+@@ -491,7 +492,7 @@ mod owner {
+                     unsafe { record.release() };
+                     refused += 1;
+                 }
+-                Err(Fault::Broken) => return Err(Fault::Broken),
++                Err(fault) => return Err(fault),
+             }
+         }
+         Ok(refused)
+@@ -518,13 +519,17 @@ mod owner {
+     /// lock, where that is a finished close or a broken table.
+     #[cold]
+     #[inline(never)]
+-    fn settled(fd: Fd) -> Result<(usize, Record), Fault> {
+-        Ok(change(|t| t.acquire(fd))?)
++    fn settled(fd: Fd) -> Result<(usize, Record), Error> {
++        change(|t| t.acquire(fd))
+     }
+ 
+     #[no_mangle]
+     unsafe extern "C" fn toyos_fd_acquire(fd: Fd, out: *mut Record) -> i32 {
+-        let held = table().and_then(|t| t.acquire(fd, |record| released(Some(record)), || settled(fd)).map_err(refusal));
++        let held = table().map_err(Fault::Refused).and_then(|t| t.acquire(fd, |record| released(Some(record))));
++        let held = match held {
++            Err(Fault::Unsettled) => settled(fd),
++            held => held.map_err(refusal),
++        };
+         match held {
+             Ok((token, object)) => {
+                 // SAFETY: the caller's live place.
+diff --git a/sdk/toyos/src/fd/table.rs b/sdk/toyos/src/fd/table.rs
+index 942086747..bc777462f 100644
+--- a/sdk/toyos/src/fd/table.rs
++++ b/sdk/toyos/src/fd/table.rs
+@@ -92,6 +92,9 @@ impl<O: Copy> Place for ObjectCell<O> {
+ pub(super) enum Fault {
+     Refused(Error),
+     Broken,
++    /// A call's descriptor named a free slot: a close in flight or a broken
++    /// table, which only [`Writer::acquire`] tells apart.
++    Unsettled,
+ }
+ 
+ impl From<Error> for Fault {
+@@ -171,20 +174,13 @@ impl<W: Word, P: Place, const N: usize> Table<W, P, N> {
+ 
+     /// `fd`'s object, held until [`Self::unuse`] of the token answered. An
+     /// object whose last reference a lost race left with this call goes to
+-    /// `let_go`. A descriptor naming a free slot is a close in flight or a
+-    /// broken table, which only the writer tells apart: `settle` answers the
+-    /// call then, as [`Writer::acquire`].
+-    pub(super) fn acquire(
+-        &self,
+-        fd: Fd,
+-        mut let_go: impl FnMut(P::Object),
+-        settle: impl FnOnce() -> Result<(usize, P::Object), Fault>,
+-    ) -> Result<(usize, P::Object), Fault> {
++    /// `let_go`.
++    pub(super) fn acquire(&self, fd: Fd, mut let_go: impl FnMut(P::Object)) -> Result<(usize, P::Object), Fault> {
+         let word = self.word(fd)?;
+         loop {
+             let slot = Self::named(word.load(Ordering::Acquire))?;
+             if !self.reference(slot)? {
+-                return settle();
++                return Err(Fault::Unsettled);
+             }
+             // SAFETY: the reference just taken.
+             let object = unsafe { self.slots[slot].object.read() };
+@@ -391,7 +387,7 @@ mod tests {
+     }
+ 
+     fn acquire(t: &T, fd: Fd) -> Result<(usize, Record), Fault> {
+-        t.acquire(fd, |_| panic!("a call with no race was left an object"), || panic!("a call with no race found a free slot"))
++        t.acquire(fd, |_| panic!("a call with no race was left an object"))
+     }
+ 
+     /// The objects something still references.
+@@ -530,7 +526,7 @@ mod tests {
+ 
+     /// A descriptor naming no slot, or a free one under the writer, is a
+     /// broken table, which the table answers rather than panics on. A call
+-    /// that finds its descriptor naming a free slot asks the writer.
++    /// that finds its descriptor naming a free slot is left to the writer.
+     #[test]
+     fn an_inconsistent_table_is_answered_not_panicked_on() {
+         let table = T::new();
+@@ -541,8 +537,8 @@ mod tests {
+         table.fds[2].store(INHERITABLE, Ordering::Relaxed);
+         assert_eq!(table.inheritable(2), Err(Fault::Broken));
+         table.fds[2].store(1, Ordering::Relaxed);
+-        let call = table.acquire(2, |_| panic!("a call with no race was left an object"), || t.acquire(2));
+-        assert_eq!(call.map(|_| ()), Err(Fault::Broken));
++        assert_eq!(acquire(&table, 2).map(|_| ()), Err(Fault::Unsettled));
++        assert_eq!(t.acquire(2).map(|_| ()), Err(Fault::Broken));
+         assert_eq!(w(t.close(2)), Err(Fault::Broken));
+         assert_eq!(t.dup(2, 0, false), Err(Fault::Broken));
+     }
+diff --git a/sdk/toyos/src/fd/table/model.rs b/sdk/toyos/src/fd/table/model.rs
+index 5bbeeea0d..56a2ee449 100644
+--- a/sdk/toyos/src/fd/table/model.rs
++++ b/sdk/toyos/src/fd/table/model.rs
+@@ -102,7 +102,11 @@ impl World {
+ 
+     /// A call's hold of `fd`: its token and object.
+     fn hold(&self, fd: Fd) -> Option<(usize, usize)> {
+-        match self.table.acquire(fd, |object| self.let_go(object), || self.writing(|w| w.acquire(fd))) {
++        let held = match self.table.acquire(fd, |object| self.let_go(object)) {
++            Err(Fault::Unsettled) => self.writing(|w| w.acquire(fd)),
++            held => held,
++        };
++        match held {
+             Ok(held) => Some(held),
+             Err(Fault::Refused(Error::BadFd)) => None,
+             Err(fault) => panic!("a call answered {fault:?}"),

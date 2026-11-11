@@ -1,0 +1,169 @@
+diff --git a/sdk/toyos/src/fd.rs b/sdk/toyos/src/fd.rs
+index c1051cf36..711897b4a 100644
+--- a/sdk/toyos/src/fd.rs
++++ b/sdk/toyos/src/fd.rs
+@@ -514,9 +514,21 @@ mod owner {
+         })
+     }
+ 
++    /// A call whose descriptor named a free slot, held under the writer's
++    /// lock, where that is a finished close or a broken table.
++    #[cold]
++    #[inline(never)]
++    fn settled(fd: Fd) -> Result<(usize, Record), Error> {
++        change(|t| t.acquire(fd))
++    }
++
+     #[no_mangle]
+     unsafe extern "C" fn toyos_fd_acquire(fd: Fd, out: *mut Record) -> i32 {
+-        let held = table().and_then(|t| t.acquire(fd, |record| released(Some(record))).map_err(refusal));
++        let held = table().and_then(|t| match t.acquire(fd, |record| released(Some(record))) {
++            Ok(Some(held)) => Ok(held),
++            Ok(None) => settled(fd),
++            Err(fault) => Err(refusal(fault)),
++        });
+         match held {
+             Ok((token, object)) => {
+                 // SAFETY: the caller's live place.
+diff --git a/sdk/toyos/src/fd/table.rs b/sdk/toyos/src/fd/table.rs
+index c7b6312e5..ca5d98d99 100644
+--- a/sdk/toyos/src/fd/table.rs
++++ b/sdk/toyos/src/fd/table.rs
+@@ -169,22 +169,21 @@ impl<W: Word, P: Place, const N: usize> Table<W, P, N> {
+         }
+     }
+ 
+-    /// `fd`'s object, held until [`Self::unuse`] of the token answered. An
+-    /// object whose last reference a lost race left with this call goes to
+-    /// `let_go`.
+-    pub(super) fn acquire(&self, fd: Fd, mut let_go: impl FnMut(P::Object)) -> Result<(usize, P::Object), Fault> {
++    /// `fd`'s object, held until [`Self::unuse`] of the token answered, or
++    /// `None` for a descriptor naming a free slot: a close in flight or a
++    /// broken table, which only [`Writer::acquire`] tells apart. An object
++    /// whose last reference a lost race left with this call goes to `let_go`.
++    pub(super) fn acquire(&self, fd: Fd, mut let_go: impl FnMut(P::Object)) -> Result<Option<(usize, P::Object)>, Fault> {
+         let word = self.word(fd)?;
+         loop {
+             let slot = Self::named(word.load(Ordering::Acquire))?;
+-            // A free slot was closed since the word was read, which the next
+-            // read of the word shows.
+             if !self.reference(slot)? {
+-                continue;
++                return Ok(None);
+             }
+             // SAFETY: the reference just taken.
+             let object = unsafe { self.slots[slot].object.read() };
+             if cfg!(feature = "fd-hold-unchecked") || Self::named(word.load(Ordering::Acquire)) == Ok(slot) {
+-                return Ok((slot, object));
++                return Ok(Some((slot, object)));
+             }
+             // SAFETY: the reference just taken.
+             if let Some(last) = unsafe { self.unref(slot) }? {
+@@ -197,8 +196,8 @@ impl<W: Word, P: Place, const N: usize> Table<W, P, N> {
+     /// names it any more.
+     ///
+     /// # Safety
+-    /// `token` is one this table's [`Self::acquire`] answered, given back
+-    /// once.
++    /// `token` is one this table's [`Self::acquire`] or [`Writer::acquire`]
++    /// answered, given back once.
+     pub(super) unsafe fn unuse(&self, token: usize) -> Result<Option<P::Object>, Fault> {
+         // SAFETY: the call's reference.
+         unsafe { self.unref(token) }
+@@ -276,6 +275,16 @@ impl<W: Word, P: Place, const N: usize> Writer<'_, W, P, N> {
+         unsafe { self.0.unref(slot) }
+     }
+ 
++    /// `fd`'s object for a call, held as [`Table::acquire`] holds it. Under
++    /// the writer no slot a descriptor names is freed, so one named free is
++    /// a broken table.
++    pub(super) fn acquire(&mut self, fd: Fd) -> Result<(usize, P::Object), Fault> {
++        let (_, slot, _) = self.entry(fd)?;
++        self.reference(slot)?;
++        // SAFETY: the reference just taken.
++        Ok((slot, unsafe { self.0.slots[slot].object.read() }))
++    }
++
+     /// Name `object` by the lowest free descriptor at or above `floor`.
+     pub(super) fn install(&mut self, object: P::Object, inheritable: bool, floor: Fd) -> Result<Fd, Fault> {
+         let fd = self.lowest_free(floor)?;
+@@ -376,7 +385,8 @@ mod tests {
+     }
+ 
+     fn acquire(t: &T, fd: Fd) -> Result<(usize, Record), Fault> {
+-        t.acquire(fd, |_| panic!("a call with no race was left an object"))
++        let held = t.acquire(fd, |_| panic!("a call with no race was left an object"))?;
++        Ok(held.expect("a call with no race found a free slot"))
+     }
+ 
+     /// The objects something still references.
+@@ -498,8 +508,24 @@ mod tests {
+         assert_eq!(w(t.close(0)), Ok(Some(1)));
+     }
+ 
++    /// A call the writer answers holds its object as any call does.
++    #[test]
++    fn a_call_the_writer_answers_holds_its_object_until_it_is_done() {
++        let table = T::new();
++        let mut t = writer(&table);
++        let fd = t.install(o(5), false, 0).unwrap();
++        let (token, object) = t.acquire(fd).unwrap();
++        assert_eq!(object.word, 5);
++        assert_eq!(w(t.close(fd)), Ok(None), "the object went under a call");
++        assert!(matches!(t.acquire(fd), Err(Fault::Refused(Error::BadFd))), "a closed descriptor still answered");
++        // SAFETY: a token the writer's `acquire` answered, given back once.
++        assert_eq!(w(unsafe { table.unuse(token) }), Ok(Some(5)));
++        assert_eq!(held(&table), 0, "an object outlived its call");
++    }
++
+     /// A descriptor naming no slot, or a free one under the writer, is a
+-    /// broken table, which the table answers rather than panics on.
++    /// broken table, which the table answers rather than panics on. A call
++    /// whose descriptor names a free slot is left to the writer.
+     #[test]
+     fn an_inconsistent_table_is_answered_not_panicked_on() {
+         let table = T::new();
+@@ -510,6 +536,8 @@ mod tests {
+         table.fds[2].store(INHERITABLE, Ordering::Relaxed);
+         assert_eq!(table.inheritable(2), Err(Fault::Broken));
+         table.fds[2].store(1, Ordering::Relaxed);
++        assert!(matches!(table.acquire(2, |_| panic!("a call with no race was left an object")), Ok(None)));
++        assert_eq!(t.acquire(2).map(|_| ()), Err(Fault::Broken));
+         assert_eq!(w(t.close(2)), Err(Fault::Broken));
+         assert_eq!(t.dup(2, 0, false), Err(Fault::Broken));
+     }
+diff --git a/sdk/toyos/src/fd/table/model.rs b/sdk/toyos/src/fd/table/model.rs
+index bc72a7432..497bb0a75 100644
+--- a/sdk/toyos/src/fd/table/model.rs
++++ b/sdk/toyos/src/fd/table/model.rs
+@@ -72,10 +72,14 @@ impl World {
+         })
+     }
+ 
+-    fn write<R>(&self, f: impl FnOnce(&mut Writer<'_, AtomicU32, Tracked, N>) -> Result<R, Fault>) -> R {
++    fn writer<R>(&self, f: impl FnOnce(&mut Writer<'_, AtomicU32, Tracked, N>) -> Result<R, Fault>) -> Result<R, Fault> {
+         let _held = self.writing.lock().unwrap();
+         // SAFETY: the one writer while `writing` is held.
+-        f(&mut unsafe { self.table.writer() }).expect("the writer was refused")
++        f(&mut unsafe { self.table.writer() })
++    }
++
++    fn write<R>(&self, f: impl FnOnce(&mut Writer<'_, AtomicU32, Tracked, N>) -> Result<R, Fault>) -> R {
++        self.writer(f).expect("the writer was refused")
+     }
+ 
+     fn let_go(&self, object: usize) {
+@@ -98,7 +102,12 @@ impl World {
+ 
+     /// A call's hold of `fd`: its token and object.
+     fn hold(&self, fd: Fd) -> Option<(usize, usize)> {
+-        match self.table.acquire(fd, |object| self.let_go(object)) {
++        let held = match self.table.acquire(fd, |object| self.let_go(object)) {
++            Ok(Some(held)) => Ok(held),
++            Ok(None) => self.writer(|w| w.acquire(fd)),
++            Err(fault) => Err(fault),
++        };
++        match held {
+             Ok(held) => Some(held),
+             Err(Fault::Refused(Error::BadFd)) => None,
+             Err(fault) => panic!("a call answered {fault:?}"),
