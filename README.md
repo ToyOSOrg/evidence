@@ -13,3 +13,4 @@
   ends with the command's exit code.
 - `guest/run-43054675576.log`: the guest runner's log of `a_row_reaches_its_own_state_and_no_other` at 6f2ea3427,
   PASS (`--ci rows`, 5 steps all green).
+- `host-checks-r1/`: review round 1 (5386a47a4): the SDK's `files::` tests (11 passed) and clippy's two `toyos` shapes, rc 0.
