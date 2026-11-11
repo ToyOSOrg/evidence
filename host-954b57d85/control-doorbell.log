@@ -1,0 +1,30 @@
+== control-doorbell
+rev 954b57d85f0754177dfdc70158a7e1fa2dd8f695
+cmd: cargo test -p kernel-loom --features doorbell-kick-relaxed --test loom_sleep -- --exact a_pass_that_answers_a_demand_reads_what_its_demander_wrote
+Wed Nov 11 18:45:24 EET 2026
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+   Compiling kernel-loom v0.1.0 (<path>
+    Finished `test` profile [optimized + debuginfo] target(s) in 2.93s
+     Running tests/loom_sleep.rs (target/debug/deps/loom_sleep-fbeb36964b587f51)
+
+running 1 test
+test a_pass_that_answers_a_demand_reads_what_its_demander_wrote ... FAILED
+
+failures:
+
+---- a_pass_that_answers_a_demand_reads_what_its_demander_wrote stdout ----
+
+thread 'a_pass_that_answers_a_demand_reads_what_its_demander_wrote' (27857917) panicked at kernel/loom/tests/loom_sleep.rs:234:13:
+a pass answered the demand and read the gate closed after it
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    a_pass_that_answers_a_demand_reads_what_its_demander_wrote
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p kernel-loom --test loom_sleep`
+Wed Nov 11 18:45:27 EET 2026
+exit=101
