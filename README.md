@@ -75,3 +75,5 @@ bring-up and in a reset, so the bound counts the list's length: 365 s.
   in `STEPS` each fail the build at the bound's compile-time assertion.
 - Guest: `nvme_disk_boots` at 31fda554e, https://github.com/ToyOSOrg/ToyOS/actions/runs/43069269031. Run 43062272826 at
   4eb8b1f52 was cancelled unrun, superseded by this head.
+- Guest result: run 43069269031 at 31fda554e passed, `PASS nvme_disk_boots`, 1 of 1, all five steps green. The PR's head
+  19c3b5f3a differs from 31fda554e in comments and records alone.
