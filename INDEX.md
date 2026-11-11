@@ -30,3 +30,13 @@ Revision: the checks ran at f79df9574 plus the change's tree (logs/summary.txt n
 
 ## guest/
 - `rows-43064052517.log`: guest-rows run 43064052517 at dd1d57622, 5 passed of 5 (session_lifecycle, stream_holders, libc_children, virt_jobs_at_el2, netstack_holders_exported_to_children). The runner's machine name and CPU model are masked. Later rounds change nothing these rows build.
+
+## rebase-1246/ (head 39f9da686, rebased onto main 06fcb81ea, which holds #1246)
+- There were two conflicts:
+  - `resolve` and `ThisProcess` in `kernel/src/inbox/mod.rs` now look up through #1246's `with_handles`, and keep the table's id;
+  - `kernel/pure/sched/watch.rs`'s import is main's (#1241 removed the gate's atomics) plus `poll::Via`.
+- After the rebase `CPU1` was an unused import in `loom_watch`. A commit of its own (39f9da686) removes it.
+- `summary.txt`: run at fe1128e76.
+  - Exit 0: the kernel's host tests and clippy shapes (host library, x86-64 default and with actuators, AArch64), the loom models `loom_watch`, `inbox_answer` and `poll_once`, and `every_model_control_is_run`.
+  - Exit 101: `clippy-loom`, on that unused import. `clippy-loom-2.log` and `clippy-loom-3.log` show exit 0 at 39f9da686, the second with `loom_watch.rs` touched to force the recheck.
+- Guest run 43108631616 is at 39f9da686.
