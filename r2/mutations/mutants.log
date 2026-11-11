@@ -1,0 +1,188 @@
+rev 01e092da86443b15af15fee398c554d75c0fc41c diff e3b0c44298fc1c14
+== mutant no-keepalive: the_ssh_line_carries_the_key_and_nothing_interactive
+   Compiling toyos-metal v0.1.0 (<path>
+    Finished `test` profile [optimized + debuginfo] target(s) in 7.39s
+     Running unittests src/lib.rs (target/debug/deps/toyos_metal-b880688b0e6c35b0)
+
+running 1 test
+test tests::the_ssh_line_carries_the_key_and_nothing_interactive ... FAILED
+
+failures:
+
+---- tests::the_ssh_line_carries_the_key_and_nothing_interactive stdout ----
+
+thread 'tests::the_ssh_line_carries_the_key_and_nothing_interactive' (28507149) panicked at tests/metal/src/lib.rs:2854:9:
+assertion `left == right` failed
+  left: ["-i", "<path> "-o", "IdentitiesOnly=yes", "-o", "BatchMode=yes", "-o", "ConnectTimeout=10", "toyos@bench-t14", "true"]
+ right: ["-i", "<path> "-o", "IdentitiesOnly=yes", "-o", "BatchMode=yes", "-o", "ConnectTimeout=10", "-o", "ServerAliveInterval=10", "-o", "ServerAliveCountMax=3", "toyos@bench-t14", "true"]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    tests::the_ssh_line_carries_the_key_and_nothing_interactive
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 76 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-metal --lib`
+mutant no-keepalive exit 101
+== mutant unbounded-wait: a_command_that_outlasts_its_bound_is_ended_and_refused
+   Compiling toyos-metal v0.1.0 (<path>
+warning: unused variable: `deadline`
+    --> tests/metal/src/lib.rs:1023:9
+     |
+1023 |     let deadline = std::time::Instant::now() + std::time::Duration::from_secs(secs);
+     |         ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_deadline`
+     |
+     = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `toyos-metal` (lib test) generated 1 warning (run `cargo fix --lib -p toyos-metal --tests` to apply 1 suggestion)
+    Finished `test` profile [optimized + debuginfo] target(s) in 4.67s
+     Running unittests src/lib.rs (target/debug/deps/toyos_metal-b880688b0e6c35b0)
+
+running 1 test
+test tests::a_command_that_outlasts_its_bound_is_ended_and_refused ... FAILED
+
+failures:
+
+---- tests::a_command_that_outlasts_its_bound_is_ended_and_refused stdout ----
+
+thread 'tests::a_command_that_outlasts_its_bound_is_ended_and_refused' (28514116) panicked at tests/metal/src/lib.rs:2913:9:
+assertion `left == right` failed
+  left: Ok(Output { status: ExitStatus(unix_wait_status(0)), stdout: "", stderr: "" })
+ right: Err(Expired { what: "sleeping", secs: 1 })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    tests::a_command_that_outlasts_its_bound_is_ended_and_refused
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 76 filtered out; finished in 30.01s
+
+error: test failed, to rerun pass `-p toyos-metal --lib`
+mutant unbounded-wait exit 101
+== mutant no-kill: a_command_that_outlasts_its_bound_is_ended_and_refused
+   Compiling toyos-metal v0.1.0 (<path>
+    Finished `test` profile [optimized + debuginfo] target(s) in 6.34s
+     Running unittests src/lib.rs (target/debug/deps/toyos_metal-b880688b0e6c35b0)
+
+running 1 test
+test tests::a_command_that_outlasts_its_bound_is_ended_and_refused ... FAILED
+
+failures:
+
+---- tests::a_command_that_outlasts_its_bound_is_ended_and_refused stdout ----
+
+thread 'tests::a_command_that_outlasts_its_bound_is_ended_and_refused' (28535635) panicked at tests/metal/src/lib.rs:2913:9:
+30.014691083s
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    tests::a_command_that_outlasts_its_bound_is_ended_and_refused
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 76 filtered out; finished in 30.02s
+
+error: test failed, to rerun pass `-p toyos-metal --lib`
+mutant no-kill exit 101
+== mutant reboot-255-refused: only_a_reboot_the_machine_started_is_ridden_when_ssh_fails
+   Compiling toyos-metal v0.1.0 (<path>
+    Finished `test` profile [optimized + debuginfo] target(s) in 3.98s
+     Running unittests src/lib.rs (target/debug/deps/toyos_metal-b880688b0e6c35b0)
+
+running 1 test
+test tests::only_a_reboot_the_machine_started_is_ridden_when_ssh_fails ... FAILED
+
+failures:
+
+---- tests::only_a_reboot_the_machine_started_is_ridden_when_ssh_fails stdout ----
+
+thread 'tests::only_a_reboot_the_machine_started_is_ridden_when_ssh_fails' (28565590) panicked at tests/metal/src/lib.rs:2946:9:
+assertion `left == right` failed
+  left: Err(Remote { what: "rebooting", status: "exited exit status: 255", stderr: "said" })
+ right: Ok(())
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    tests::only_a_reboot_the_machine_started_is_ridden_when_ssh_fails
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 76 filtered out; finished in 0.02s
+
+error: test failed, to rerun pass `-p toyos-metal --lib`
+mutant reboot-255-refused exit 101
+== mutant unstarted-255-ridden: only_a_reboot_the_machine_started_is_ridden_when_ssh_fails
+   Compiling toyos-metal v0.1.0 (<path>
+warning: unused variable: `started`
+    --> tests/metal/src/lib.rs:1063:9
+     |
+1063 |     let started = String::from_utf8_lossy(&out.stdout).lines().any(|line| line == REBOOT_STARTED);
+     |         ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_started`
+     |
+     = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `toyos-metal` (lib test) generated 1 warning (run `cargo fix --lib -p toyos-metal --tests` to apply 1 suggestion)
+    Finished `test` profile [optimized + debuginfo] target(s) in 5.62s
+     Running unittests src/lib.rs (target/debug/deps/toyos_metal-b880688b0e6c35b0)
+
+running 1 test
+test tests::only_a_reboot_the_machine_started_is_ridden_when_ssh_fails ... FAILED
+
+failures:
+
+---- tests::only_a_reboot_the_machine_started_is_ridden_when_ssh_fails stdout ----
+  ssh failed itself once the machine had started the reboot (said); it is ridden
+  ssh failed itself once the machine had started the reboot (said); it is ridden
+
+thread 'tests::only_a_reboot_the_machine_started_is_ridden_when_ssh_fails' (28567435) panicked at tests/metal/src/lib.rs:2950:49:
+refused: ()
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    tests::only_a_reboot_the_machine_started_is_ridden_when_ssh_fails
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 76 filtered out; finished in 0.02s
+
+error: test failed, to rerun pass `-p toyos-metal --lib`
+mutant unstarted-255-ridden exit 101
+== mutant bootnext-ignored: a_machine_still_holding_bootnext_never_booted_its_entry
+   Compiling toyos-metal v0.1.0 (<path>
+    Finished `test` profile [optimized + debuginfo] target(s) in 2.46s
+     Running unittests src/lib.rs (target/debug/deps/toyos_metal-b880688b0e6c35b0)
+
+running 1 test
+test tests::a_machine_still_holding_bootnext_never_booted_its_entry ... FAILED
+
+failures:
+
+---- tests::a_machine_still_holding_bootnext_never_booted_its_entry stdout ----
+
+thread 'tests::a_machine_still_holding_bootnext_never_booted_its_entry' (28568589) panicked at tests/metal/src/lib.rs:2965:9:
+assertion `left == right` failed
+  left: Ok(())
+ right: Err(Untaken { next: "0004" })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    tests::a_machine_still_holding_bootnext_never_booted_its_entry
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 76 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-metal --lib`
+mutant bootnext-ignored exit 101
+== restored: diff e3b0c44298fc1c14
+   Compiling toyos-metal v0.1.0 (<path>
+    Finished `test` profile [optimized + debuginfo] target(s) in 6.88s
+     Running unittests src/lib.rs (target/debug/deps/toyos_metal-b880688b0e6c35b0)
+
+running 5 tests
+test tests::a_machine_still_holding_bootnext_never_booted_its_entry ... ok
+test tests::the_ssh_line_carries_the_key_and_nothing_interactive ... ok
+test tests::only_a_reboot_the_machine_started_is_ridden_when_ssh_fails ... ok
+test tests::a_bounded_command_is_fed_its_slice_and_answers_whole ... ok
+test tests::a_command_that_outlasts_its_bound_is_ended_and_refused ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 72 filtered out; finished in 1.01s
+
+restored exit 0

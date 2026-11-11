@@ -1,0 +1,19 @@
+The slowest flash in the orchestrator's local metal logs of 2026-11-11 (an AMD-bench testcases image), the lines
+naming its pieces and its phases; the machine's own lines are left out. Pieces sum to 153255936 bytes;
+dd took 832.7 s over them, 184 kB/s. A piece's bound is 120 + bytes/32768 s: RootA's 45252608 bytes get 1501 s,
+against about 246 s at that rate.
+
+image <path> Esp 35651584 bytes, Slots 1048576 bytes, Log 35651584 bytes, BootA 35651584 bytes, RootA 45252608 bytes
+  run: sudo -n '/usr/bin/dd' 'of=/dev/nvme0n1p5' 'bs=4M' 'conv=fsync,nocreat'
+  run: sudo -n '/usr/bin/dd' 'of=/dev/nvme0n1p6' 'bs=4M' 'conv=fsync,nocreat'
+  run: sudo -n '/usr/bin/dd' 'of=/dev/nvme0n1p7' 'bs=4M' 'conv=fsync,nocreat'
+  run: sudo -n '/usr/bin/dd' 'of=/dev/nvme0n1p8' 'bs=4M' 'conv=fsync,nocreat'
+  run: sudo -n '/usr/bin/dd' 'of=/dev/nvme0n1p9' 'bs=4M' 'conv=fsync,nocreat'
+  run: sudo -n '/usr/bin/dd' 'if=/dev/nvme0n1p7' 'bs=4M' 'iflag=count_bytes' 'count=35651584'
+phases: preamble 9.2 s, flash 853.0 s (dd 832.7 s), entry 5.5 s, down 10.0 s, read_log 23.4 s, raw_log 38.9 s
+
+The slowest read of the log volume in the same logs (a T14 run): 35651584 bytes in at most 214.3 s (the raw_log
+phase, which also holds the check), 166 kB/s; its bound is 120 + 35651584/32768 = 1208 s.
+
+  run: sudo -n '/usr/bin/dd' 'if=/dev/nvme0n1p7' 'bs=4M' 'iflag=count_bytes' 'count=35651584'
+phases: preamble 4.7 s, flash 441.8 s (dd 419.3 s), entry 7.5 s, down 10.0 s, read_log 26.8 s, raw_log 214.3 s
