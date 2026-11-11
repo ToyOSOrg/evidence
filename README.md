@@ -18,3 +18,4 @@ The diagnosis this PR acts on is PR #1260's: https://github.com/ToyOSOrg/evidenc
 - `breach-classification.txt`: each breaching run's long wakes, by how long the sleeper ran before it blocked: the first after 0 µs (a zero-lag tie with the hogs' fresh request), the second after 250 or 500 µs (the debt its group carries back).
 - `core-reproduction.txt`, `core-reproduction.patch`: a scratch core test (never committed) printing the groups' virtual time, deadline and lag at each pass: the sleeper's group rejoins with negative lag after a burst and its deadline falls behind the hogs' fresh request.
 - `pr2r-checks.log`, `pr2r-models.log`: at the head rebased onto #1266, 000bc1d72: tests and clippy exit 0; models 79 steps green.
+- Round 2 at 9ca012645: `pr2r-checks.log`, `pr2r-models.log` (79 green), `pr2-corpus-replay.txt` (each trace's header and its replay's first violation), `pr2-corpus-control.txt` (a header naming another invariant reds the corpus test).
