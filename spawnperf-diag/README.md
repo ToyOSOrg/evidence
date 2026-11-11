@@ -27,3 +27,6 @@ interrupt-masked lock reached through its wrapper, so its caller is not named.
 
 The instrumentation adds a probe to every system call once it is on: the `j16` round's wall is 331 ms against boot
 2's 313 to 316 ms without it.
+
+Review r1: `attrib.py` breaks ties in its sort by site name and syscall number, so its order is the same on every run
+(string hashing no longer decides it); `attrib.md` is unchanged by it.

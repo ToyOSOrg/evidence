@@ -120,7 +120,8 @@ def report(bench, path):
                                  mean([r['sites'].get(name, (0, 0))[1] for r in rs]))
     print('| site | ' + ' | '.join(f'j{j} waits | j{j} us' for j in sorted(by)) + ' |')
     print('|---|' + '---|---|' * len(by))
-    for name, d in sorted(sites.items(), key=lambda kv: -kv[1].get(hi, (0, 0))[1])[:14]:
+    # Ties broken by name, so the order is the same on every run.
+    for name, d in sorted(sites.items(), key=lambda kv: (-kv[1].get(hi, (0, 0))[1], kv[0]))[:14]:
         print(f'| {name} | ' + ' | '.join(f'{d.get(j, (0, 0))[0]:.0f} | {d.get(j, (0, 0))[1]:.0f}' for j in sorted(by)) + ' |')
     print(f'\n### {bench} per syscall at j{hi}, mean per round (calls, on-CPU ms, spin ms) against j{lo}')
     print(f'| syscall | calls | j{lo} cpu | j{hi} cpu | j{hi} spin | x |')
@@ -129,7 +130,7 @@ def report(bench, path):
     for jobs in (lo, hi):
         for n in set().union(*[r['syscall'] for r in by[jobs]]):
             per.setdefault(n, {})[jobs] = [mean([r['syscall'][n][k] for r in by[jobs]]) for k in range(6)]
-    for n, d in sorted(per.items(), key=lambda kv: -kv[1].get(hi, [0] * 6)[2]):
+    for n, d in sorted(per.items(), key=lambda kv: (-kv[1].get(hi, [0] * 6)[2], kv[0])):
         a, z = d.get(lo, [0] * 6), d.get(hi, [0] * 6)
         x = z[2] / a[2] if a[2] else float('nan')
         print(f'| {NAMES.get(n, n)} | {z[0]:.0f} | {a[2] / 1000:.1f} | {z[2] / 1000:.1f} | {z[3] / 1000:.1f} | {x:.1f} |')
