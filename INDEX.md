@@ -27,3 +27,6 @@ Revision: the checks ran at f79df9574 plus the change's tree (logs/summary.txt n
 - The branch is rebased onto main 45935f4b9, keeping main's deletion of `issues/parallel-tests-red-under-other-suites.md`, and it carries one record edit. `git range-diff` shows the main commit unchanged and round 1 changed only by that deleted record. No code changed, so the images staged at f897ae424 (r1/) stand.
 - `lock-check-rust-tests.log`: `cargo metadata --locked` in `tests/guest/rust-tests` at 8e8b85256, exit 0. It resolves mio from `ToyOSOrg/mio?branch=toyos#4108eff…`, manifest `git/checkouts/mio-c4440d7c13afb477/4108eff/Cargo.toml`.
 - `t14-request.txt`: the request with the A/B rule restated before any boot ran. The four boots are a screen; candidates get a second B, H, H, B round; a row is slower only if all 4 head p50s lie above all 4 base p50s; each row is reported as a ratio beside both sides' ranges. It is evidence, not a landing condition.
+
+## guest/
+- `rows-43064052517.log`: guest-rows run 43064052517 at dd1d57622, 5 passed of 5 (session_lifecycle, stream_holders, libc_children, virt_jobs_at_el2, netstack_holders_exported_to_children). The runner's machine name and CPU model are masked. Later rounds change nothing these rows build.
