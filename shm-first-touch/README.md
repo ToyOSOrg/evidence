@@ -21,3 +21,12 @@
   (461 passed); `cargo run -- --ci host models` exit 0, 84 steps all green, `slot-install-relaxed` reaching both
   verdicts; kernel clippy for x86_64 (default, boot+test actuators, boot actuators), aarch64 (default, boot+test
   actuators) and the library's tests: exit 0 each.
+
+## Rebased onto main 818809583 (2026-11-12)
+
+`rebase-checks.log` (`rebase-checks.sh`): the stack rebased onto main, conflicts resolved in `kernel/src/mm/space.rs`
+(main's populate now fills an object range's run too, #1245) and in the spawn and frame-allocator records. At each
+head (#1250 4e9f6f2b2, #1268 c00a628f1, #1270 0c76f7a46): `vm::` and `frames::` tests exit 0; kernel clippy for
+x86_64-unknown-none, x86_64 with `boot-actuators,test-actuators`, aarch64-unknown-none-softfloat and the library's
+tests, exit 0 each. At #1270's head: `--test shm_slot` exit 0 (3 passed), and with `slot-install-relaxed` exit 101,
+the two hand-over models failing.
