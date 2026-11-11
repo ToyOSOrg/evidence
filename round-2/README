@@ -1,0 +1,19 @@
+Round 2 of ToyOS #1248, after review: head 53478ea36 (the branch was rewritten from
+dd286c9a9; the files at the top level of this branch are round 1's).
+
+range-diff-dd286c9a9-53478ea36.txt
+    git range-diff b56693152 dd286c9a9 53478ea36. adc2e7f02 is dd286c9a9 with the fault
+    arm's named ceiling and the two host_scale record edits; 53478ea36 is new: the
+    no-unit wait and the boot-log record's close.
+
+boot-log-readers-audit-53478ea36.md
+    Every boot_log() and Serial::boot reader under tests/ at 53478ea36 (68 sites), each
+    with what it asserts and what orders it. Read by the implementer, not run.
+
+host-checks-53478ea36.log (masked; the script is ../host/checks.sh)
+    cargo test --test toyos-checks: exit 0, 44 passed.
+    cargo clippy -p toyos-build --all-targets, adopted lints, -D warnings: exit 0.
+
+Guest rows for this head, run 43060029382 (usbd_drives_the_spare udp_receive_times_out
+iommu_virtio_platform), and the negative-control run 43052660175 are appended when they
+complete.
