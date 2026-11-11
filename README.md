@@ -31,3 +31,10 @@ Local paths are masked (`<worktree>`, `<scratch>`, `<scratchpad>`, `<home>`, `<t
   and clippy at d3643d86e (`rev`), which differs from 014f2da9d by three comments in `tests/images/`. The host-buildable
   programs (disks, diskserver, fileserver, netstack, nvme, pkg, session, soundserver, sshserver) are tested, not linted.
 - `metal-a-r5/`: the shared boots staged at d3643d86e for each bench, with each bench's request; they supersede `metal-a/`.
+
+## Review round 1, rebased onto main e10b6fd49 (head 041f1b81e; b3ac6637f adds an issue record)
+- `guest/run-43082964430.txt`: `a_launch_gives_each_unsent_stdio_slot_a_null`, `session_lifecycle`, `libc_children` at
+  d3643d86e, before the second rebase: 3 pass.
+- `build/build-only-041f1b81e.log`, `host-r6/`, `clippy-r6/`: the image, the touched crates' host suites and clippy at
+  041f1b81e. The benches are down, so no metal was staged for this head: `metal-a-r5/` is not to be run, and what is owed
+  on metal is in `issues/the-kernel-is-small-interrupts-post-and-threads-wait.md`.
