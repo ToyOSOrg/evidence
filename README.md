@@ -50,3 +50,11 @@ Local paths are masked (`<worktree>`, `<scratch>`, `<scratchpad>`, `<home>`, `<t
   `toybox-copies` and `toyos`, at 90ef8869e (`summary.txt`). The changes: `SYS_SYSINFO` checks its thread bound after the
   header-only return, and the roster's refusal is named for both its causes in `SysCap::roster`, toybox's roster helper and
   `ps`.
+
+## Rebased onto main 818809583, head 64eb00ee6
+- `guest/run-43107173240.txt`: `kernel_objects_refused_alone`, `a_clean_stop_proves_its_image`, `session_lifecycle` at
+  90ef8869e, all 3 pass.
+- `r9/`: at 64eb00ee6, a clean tree (`summary.txt`, the commands in `checks9.sh`): the image; the host suites of every touched
+  crate; every kernel clippy shape of `build/clippy.rs` (host, host with the kernel's controls, x86_64 default, both actuator
+  sets, the instrument set, the two heap-band sets; aarch64 default, both actuator sets, its instrument set); clippy on
+  `toyos` (all targets, `fd-table`), the libraries, `shell-copies`, `toybox-copies` and `toyos-abi`. All exit 0.
