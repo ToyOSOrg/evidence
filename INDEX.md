@@ -16,3 +16,9 @@ Revision: the checks ran at f79df9574 plus the change's tree (logs/summary.txt n
 ## metal/
 - `stage.log`: `cargo test --test toyos-build -- --metal --metal-readback <dir> boot:testcases boot:shared-debug mask_windows` at dd1d57622. It exits 2, the harness's word for staged with the machine untouched: 4 images, 47 registrations and 245 shared members. It compiles every guest binary, `poll_belongs_to_its_handle` and `ring_park_herd` among them, and mio at 4108eff.
 - `request.txt`: the boots requested (shared-debug, testcases, testcases-watchdog, windowscase).
+
+## r1/ (review round 1, head f897ae424)
+- Correction: the first staging (`metal/stage.log`, dd1d57622) compiled mio at **fe42def**, not 4108eff. `tests/guest/rust-tests` keeps its own lockfile, which still pinned fe42def, so the INDEX line above claiming 4108eff was false. f897ae424 pins 4108eff there too; `lock-check-rust-tests.log` is `cargo metadata --locked` in that directory, exit 0.
+- `stage-head.log`: `--metal --metal-readback <dir> boot:testcases boot:shared-debug mask_windows osbench` at f897ae424, exit 2 (staged, 6 images). `mio-a8e64fdb4dc81efd.d` is the dep-info that build wrote at 19:43:08 local time, after the commit. It lists `checkouts/mio-c4440d7c13afb477/4108eff/src/sys/toyos/selector.rs`. `mio_waker_coalesces` was relinked at 19:43:10.
+- `stage-base.log`: the same `osbench` staging at f79df9574, head's parent, exit 2. Its benchcase config (`system-dc6cb9c143cd50db.toml`) is the head's.
+- `t14-request.txt`: the round's request. It has head's testcases, testcases-watchdog, shared-debug and windowscase, then the A/B benchcase boots in the order B, H, H, B, with the rule stated before measuring. `request-*-staged.txt` are the two stagings' own lists.

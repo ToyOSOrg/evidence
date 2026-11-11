@@ -1,0 +1,33 @@
+# PR #1261 review round 1: one T14 session. Each invocation is `cargo <words>` run
+# from the worktree named above it. Neither touches anything else.
+# Head: handles3-poll-via at f897ae424 (worktree <path>
+# Base: f79df9574, head's parent (worktree <path>
+
+## 1. Head's boots, one each (from wt-b)
+
+testcases
+  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check
+testcases-watchdog
+  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check
+shared-debug
+  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check
+windowscase   (mask_windows over the reshaped ring_park_herd; also shows the job admits 256 rings)
+  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check
+
+
+## 2. Hot-path A/B: the osbench benchcase image, base against head, 2 boots a side,
+## in this order: B, H, H, B. Each boot reads back into its own directory.
+
+B1 (from wt-base)
+  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check
+H1 (from wt-b)
+  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check
+H2 (from wt-b)
+  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check
+B2 (from wt-base)
+  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check
+
+Rule, stated before measuring: for every row named wake.*, pingpong.pipe.* or ipc.*,
+head is slower when both head boots' p50 lie above both base boots' p50. The rule
+holds when no such row is slower. energybenchcase is staged on both sides and is
+not requested.
