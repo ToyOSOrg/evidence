@@ -108,3 +108,26 @@ on a tree at `4f3efa786`. Machine model and BIOS strings are masked.
 - **The pool passed the `LoaderData` check on both firmware maps**: both boots got through `mm::init` to their `pmm:` line and on.
 - The AMD judge log carries a `clock: TSC STEP` line from that boot. It is the clock's own report and no row judged it; this
   change touches no clock code.
+
+# The rebased head: `388be26667b6cef17e520f2a323e551024f1ee11`
+
+After the bench boots the branch was rebased three times as main moved, last onto `cb3f9c062` (#1213). The benches booted
+`4f3efa786`; nothing below was run on a bench.
+
+- The first rebase, onto `ad5db5a65` (#1210), had two conflicts. In `kernel/src/main.rs` main's new `names` region and this
+  branch's `boot_map` region both join the `loader` list and its destructuring. In `docs/src/architecture/boot.md` both
+  bullets are kept.
+- The second, over #1200, and the third, over #1213, applied without conflict; `git range-diff` shows the three commits
+  unchanged across both.
+- So the rebase touched built code: main's own changes, among them `kernel/src/main.rs` and both `boot.rs`, and the one
+  hand-resolved line.
+
+| check | command | target | exit | log |
+|---|---|---|---|---|
+| host checks | `cargo run -- --ci host` | macOS arm64 host, `388be2666` | 1: 1 of 110 steps red, the same macOS-only test | `rebased/ci-host.log` |
+| guest rows | `gh workflow run guest-rows.yml --ref boot-map-wx -f filter='std_threads_count_the_cpus_and_give_back_ended_threads virt_smp'` | guest runner, run 42988634474, `388be2666` | success, 2 passed | `rebased/guest-rows-42988634474.log` |
+
+The host run's one red step is `the build system: cargo test --lib`, 384 passed and 1 failed,
+`llvm::tests::the_caller_s_environment_reaches_neither_the_build_nor_the_key`; every other failure list in the log is under a
+`control` step. Clippy's 26 invocations are in the run. The same two checks were also green at the two earlier rebased heads,
+`42c738f11` (guest run 42982730363) and `36898f8d4` (guest run 42986543196); those logs are not published.
