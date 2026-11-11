@@ -1,0 +1,13 @@
+diff --git a/kernel/pure/mitigation.rs b/kernel/pure/mitigation.rs
+index 6d34c77..c0d085d 100644
+--- a/kernel/pure/mitigation.rs
++++ b/kernel/pure/mitigation.rs
+@@ -625,7 +625,7 @@ fn intel(f: &Facts, of: Vulnerability) -> Verdict {
+             branches
+                 .and(Mitigation::Smep, true)
+                 .and(Mitigation::Ibpb, ibrs)
+-                .and_if(f.smt && !enhanced, Mitigation::Stibp, edx & STIBP != 0)
++                .and_if(f.smt, Mitigation::Stibp, edx & STIBP != 0)
+                 .affected()
+         }
+         // "Branch History Injection and Intra-mode Branch Target Injection",

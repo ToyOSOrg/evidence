@@ -1,0 +1,34 @@
+rev a2350e61360567592ea6f4090472f2077036d867 dirty=[]
+=== 19:41:03 staging: cargo test --test toyos-build -- --metal --metal-readback <scratch>/metal-a2 mitigations microcode
+   Compiling toyos-build v0.1.0 (<scratch>/wt-mitig)
+    Finished `test` profile [optimized + debuginfo] target(s) in 10.93s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-b8f4c5141ecc8947)
+17:41:14   BUILD x86_64 binaries of tests/guest/rust-tests
+17:41:18 external deps changed: cleaning <scratch>/wt-mitig/tests/guest/rust-tests/target/x86_64-unknown-toyos
+17:41:20 external deps changed: cleaning <scratch>/wt-mitig/tests/guest/rust-tests/tls-dlopen-lib/target/x86_64-unknown-toyos
+17:41:20 external deps changed: cleaning <scratch>/wt-mitig/tests/guest/rust-tests/tls-lib/target/x86_64-unknown-toyos
+17:41:20 external deps changed: cleaning <scratch>/wt-mitig/tests/guest/rust-tests/tls-multi-crate/target/x86_64-unknown-toyos
+17:41:20 external deps changed: cleaning <scratch>/wt-mitig/tests/guest/rust-tests/tls-cranelift/target/x86_64-unknown-toyos
+17:43:19   BUILT x86_64 binaries of tests/guest/rust-tests  (125s)
+17:43:19   BUILD x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests
+17:44:13   BUILT x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests  (54s)
+17:44:13 [toyos] Compiling 143 C tests, and attempting 24 declared ones...
+17:44:22 [metal] 2 registration(s) and 0 shared member(s) over 1 boot(s)
+17:44:22   BUILD x86_64 kernel, loader, ROOT of <scratch>/metal-a2/metalcase/system-4ac94ba7ceffec1f.toml
+17:44:27 external deps changed: cleaning <scratch>/wt-mitig/target/x86_64-unknown-none
+17:47:13 assets: leaving out share/soundfont.sf2 — only /system/bin/doom opens it and this image builds no doom
+17:47:13 assets: leaving out share/doom1.wad — only /system/bin/doom opens it and this image builds no doom
+17:47:14   BUILT x86_64 kernel, loader, ROOT of <scratch>/metal-a2/metalcase/system-4ac94ba7ceffec1f.toml  (172s)
+17:47:15 [metal] metalcase: 1 job(s) under a list bound of 60000 ms, armed with [] and a boot deadline of 120000 ms — <scratch>/metal-a2/metalcase/image.img
+# One boot per image. Each invocation is `cargo <words>` from this worktree.
+
+metalcase
+  image: <scratch>/metal-a2/metalcase/image.img
+  cargo run -p toyos-metal -- --image <scratch>/metal-a2/metalcase/image.img --readback <scratch>/metal-a2/metalcase --fat32-check
+17:47:15 [metal] staged 1 image(s); <scratch>/metal-a2/request.txt lists them. The machine was not touched, so this run establishes nothing about it.
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `<scratch>/wt-mitig/target/debug/deps/toyos_build-b8f4c5141ecc8947 --metal --metal-readback <scratch>/metal-a2 mitigations microcode` (exit status: 2)
+=== staging exit 2 (2 = staged, no machine reached)
+slot exit 2

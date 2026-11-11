@@ -1,0 +1,19 @@
+diff --git a/kernel/pure/mitigation.rs b/kernel/pure/mitigation.rs
+index 6d34c77..65ed38b 100644
+--- a/kernel/pure/mitigation.rs
++++ b/kernel/pure/mitigation.rs
+@@ -779,13 +779,7 @@ fn amd(f: &Facts, of: Vulnerability) -> Verdict {
+         // serialize and have no MSR; 10h, 12h to 17h and "all future
+         // processors" have it, unless APM Vol. 3's LFENCE says CPUID makes it
+         // always so. A guest cannot write its host's MSR.
+-        Vulnerability::SpectreV1 => Asks::of(Mitigation::UserPointerClamp, true)
+-            .and_if(
+-                eax & amd::LFENCE_ALWAYS_SERIALIZING == 0 && !matches!(id.family, 0x0f | 0x11),
+-                Mitigation::LfenceDispatchSerializing,
+-                !f.hypervisor,
+-            )
+-            .affected(),
++        Vulnerability::SpectreV1 => Asks::of(Mitigation::UserPointerClamp, true).affected(),
+         // 70586 V2-1, V2-4 and G-3, with the CPUID words' own preference
+         // for IBRS (APM Vol. 3 Fn8000_0008_EBX, Fn8000_0021_EAX). Branch
+         // Type Confusion §5 keeps the return address predictor safe with "a
