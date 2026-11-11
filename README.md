@@ -278,3 +278,13 @@ fast mode is not established no more boots are asked for and the description and
 free figure after an M boot is reported and not attributed to P', and a drop after any P' boot sends the PR back
 even if a later mount recovers it. `r5/rules-ab2.txt` is the whole file with the amendment; the text above it is
 r4's unchanged.
+
+## r6: the benches are down; what is owed on metal (7ad9bcaeb)
+
+Both benches went down before the second A/B ran; it never booted, and no P' readback exists. #1216 lands on its
+reviews, its host checks and its guest row `nvme_disk_boots` at d3d67f8b5 (7ad9bcaeb changes only the issue record, so
+it is code-identical). The speed-up of the code that lands is not measured on metal: the first A/B (r3) measured
+cc718f61f, before review r1's fix. The record now names what main owes when a bench returns, each a bullet
+beginning **Owed on metal:** (the A/B of main before and after #1216, the durable rows against Linux, the reboot
+round trip on the T14). The record commit's identifier gate: `cargo test --lib sourcegate` at 7ad9bcaeb, exit 0,
+10 passed (`r6/sourcegate-7ad9bcaeb.log`). The staged images were deleted.
