@@ -1,0 +1,35 @@
+$ cargo test -p kernel-loom --features commit-ignores-notify --test loom_watch -- --exact a_post_racing_a_registration_leaves_nobody_parked a_fire_racing_a_submitters_park_is_never_lost
+   Compiling kernel-loom v0.1.0 (<path>
+    Finished `test` profile [optimized + debuginfo] target(s) in 3.45s
+     Running tests/loom_watch.rs (<path>
+
+running 2 tests
+test a_post_racing_a_registration_leaves_nobody_parked ... FAILED
+test a_fire_racing_a_submitters_park_is_never_lost ... FAILED
+
+failures:
+
+---- a_post_racing_a_registration_leaves_nobody_parked stdout ----
+
+thread 'a_post_racing_a_registration_leaves_nobody_parked' (28069028) panicked at kernel/loom/tests/loom_watch.rs:260:13:
+assertion `left == right` failed: parked with the condition true and no wake owed: the post was lost
+  left: []
+ right: [Wake(TaskKey(1), Woken)]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- a_fire_racing_a_submitters_park_is_never_lost stdout ----
+
+thread 'a_fire_racing_a_submitters_park_is_never_lost' (28069027) panicked at kernel/loom/tests/loom_watch.rs:887:13:
+assertion `left == right` failed: parked over a fired poll and no wake owed: a fire was lost
+  left: []
+ right: [Wake(TaskKey(1), Woken)]
+
+
+failures:
+    a_fire_racing_a_submitters_park_is_never_lost
+    a_post_racing_a_registration_leaves_nobody_parked
+
+test result: FAILED. 0 passed; 2 failed; 0 ignored; 0 measured; 13 filtered out; finished in 0.29s
+
+error: test failed, to rerun pass `-p kernel-loom --test loom_watch`
+exit 101

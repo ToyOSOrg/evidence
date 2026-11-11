@@ -1,0 +1,26 @@
+$ cargo test -p kernel-loom --features register-outside-table --test loom_watch -- --exact a_close_racing_a_registration_leaves_nothing_through_the_handle
+   Compiling kernel-loom v0.1.0 (<path>
+    Finished `test` profile [optimized + debuginfo] target(s) in 4.63s
+     Running tests/loom_watch.rs (<path>
+
+running 1 test
+test a_close_racing_a_registration_leaves_nothing_through_the_handle ... FAILED
+
+failures:
+
+---- a_close_racing_a_registration_leaves_nothing_through_the_handle stdout ----
+
+thread 'a_close_racing_a_registration_leaves_nothing_through_the_handle' (28071602) panicked at kernel/loom/tests/loom_watch.rs:986:9:
+assertion `left == right` failed: an entry made through a closed handle is live
+  left: 1
+ right: 0
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    a_close_racing_a_registration_leaves_nothing_through_the_handle
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 14 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p kernel-loom --test loom_watch`
+exit 101

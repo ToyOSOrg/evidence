@@ -1,0 +1,52 @@
+$ cargo test -p kernel-loom --test loom_watch --test inbox_answer --test poll_once
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.09s
+     Running tests/inbox_answer.rs (<path>
+
+running 14 tests
+test a_post_with_nothing_to_read_answers_nothing ... ok
+test a_poll_fired_as_it_is_renewed_waits_for_the_next_look ... ok
+test a_post_that_lands_after_its_bytes_were_read_answers_nothing ... ok
+test a_replaced_poll_is_withdrawn_from_its_watch ... ok
+test a_handle_closed_since_its_watch_is_answered_with_the_refusal ... ok
+test a_poll_left_standing_still_answers ... ok
+test a_poll_armed_again_does_not_end_the_look ... ok
+test a_watch_replaces_a_poll_a_post_already_fired ... ok
+test an_ended_source_is_answered_gone_without_a_look ... ok
+test a_ring_torn_down_withdraws_every_poll ... ok
+test a_full_ring_leaves_a_fired_poll_for_the_next_look ... ok
+test a_post_answers_for_an_object_with_nothing_to_look_at ... ok
+test a_ring_keeps_its_cap_of_polls_and_no_more ... ok
+test a_submitter_parks_only_with_nothing_it_could_answer ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/loom_watch.rs (<path>
+
+running 15 tests
+test an_end_racing_a_post_answers_a_poll_once ... ok
+test a_close_racing_a_post_answers_a_poll_once ... ok
+test an_end_racing_a_post_in_place_answers_a_poll_once ... ok
+test a_bounded_post_racing_a_timeout_reaches_a_live_waiter ... ok
+test a_close_racing_a_registration_leaves_nothing_through_the_handle ... ok
+test a_poll_registered_racing_a_post_in_place_completes_exactly_once ... ok
+test a_poll_registered_racing_a_post_completes_exactly_once ... ok
+test a_revoke_racing_the_wait_loop_ends_it_in_every_arm ... ok
+test a_replacing_watch_racing_a_post_answers_once_under_the_newest_token ... ok
+test a_teardown_racing_a_park_returns_the_submit ... ok
+test a_post_racing_a_registration_leaves_nobody_parked ... ok
+test a_transition_racing_an_opening_gate_is_never_missed ... ok
+test a_poll_on_two_watches_racing_both_posts_completes_exactly_once ... ok
+test a_second_post_is_not_lost_to_a_flag_the_waiter_consumed ... ok
+test a_fire_racing_a_submitters_park_is_never_lost ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 48.03s
+
+     Running tests/poll_once.rs (<path>
+
+running 2 tests
+test a_withdrawal_and_a_post_never_both_take_a_poll ... ok
+test a_post_and_a_recheck_answer_a_poll_once ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+exit 0

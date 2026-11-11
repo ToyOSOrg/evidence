@@ -1,0 +1,53 @@
+$ cargo test -p kernel-loom --features poll-fire-load-store --test loom_watch -- --exact a_poll_registered_racing_a_post_completes_exactly_once a_poll_registered_racing_a_post_in_place_completes_exactly_once a_poll_on_two_watches_racing_both_posts_completes_exactly_once a_close_racing_a_post_answers_a_poll_once
+   Compiling kernel-loom v0.1.0 (<path>
+    Finished `test` profile [optimized + debuginfo] target(s) in 3.42s
+     Running tests/loom_watch.rs (<path>
+
+running 4 tests
+test a_close_racing_a_post_answers_a_poll_once ... FAILED
+test a_poll_on_two_watches_racing_both_posts_completes_exactly_once ... FAILED
+test a_poll_registered_racing_a_post_in_place_completes_exactly_once ... FAILED
+test a_poll_registered_racing_a_post_completes_exactly_once ... FAILED
+
+failures:
+
+---- a_close_racing_a_post_answers_a_poll_once stdout ----
+
+thread 'a_close_racing_a_post_answers_a_poll_once' (28310160) panicked at kernel/loom/tests/loom_watch.rs:932:9:
+assertion `left == right` failed: a post and a close both took the poll
+  left: 2
+ right: 1
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- a_poll_on_two_watches_racing_both_posts_completes_exactly_once stdout ----
+
+thread 'a_poll_on_two_watches_racing_both_posts_completes_exactly_once' (28310161) panicked at kernel/loom/tests/loom_watch.rs:674:9:
+assertion `left == right` failed: a poll over a ready object completes once
+  left: 2
+ right: 1
+
+---- a_poll_registered_racing_a_post_in_place_completes_exactly_once stdout ----
+
+thread 'a_poll_registered_racing_a_post_in_place_completes_exactly_once' (28310163) panicked at kernel/loom/tests/loom_watch.rs:367:5:
+assertion `left == right` failed: a poll over a ready object completes once
+  left: 2
+ right: 1
+
+---- a_poll_registered_racing_a_post_completes_exactly_once stdout ----
+
+thread 'a_poll_registered_racing_a_post_completes_exactly_once' (28310162) panicked at kernel/loom/tests/loom_watch.rs:367:5:
+assertion `left == right` failed: a poll over a ready object completes once
+  left: 2
+ right: 1
+
+
+failures:
+    a_close_racing_a_post_answers_a_poll_once
+    a_poll_on_two_watches_racing_both_posts_completes_exactly_once
+    a_poll_registered_racing_a_post_completes_exactly_once
+    a_poll_registered_racing_a_post_in_place_completes_exactly_once
+
+test result: FAILED. 0 passed; 4 failed; 0 ignored; 0 measured; 11 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p kernel-loom --test loom_watch`
+exit 101

@@ -1,0 +1,26 @@
+$ cargo test -p kernel-loom --features teardown-posts-nothing --test loom_watch -- --exact a_teardown_racing_a_park_returns_the_submit
+   Compiling kernel-loom v0.1.0 (<path>
+    Finished `test` profile [optimized + debuginfo] target(s) in 2.77s
+     Running tests/loom_watch.rs (<path>
+
+running 1 test
+test a_teardown_racing_a_park_returns_the_submit ... FAILED
+
+failures:
+
+---- a_teardown_racing_a_park_returns_the_submit stdout ----
+
+thread 'a_teardown_racing_a_park_returns_the_submit' (28074325) panicked at kernel/loom/tests/loom_watch.rs:1060:13:
+assertion `left == right` failed: parked on a ring torn down and no wake owed
+  left: []
+ right: [Wake(TaskKey(1), Woken)]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    a_teardown_racing_a_park_returns_the_submit
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 14 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p kernel-loom --test loom_watch`
+exit 101

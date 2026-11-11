@@ -1,0 +1,8 @@
+revision f79df95746f95dd9d33d3553b131cfebcc79fbc1 plus the tree; diff sha d43e59489903741c
+pure: exit 0 (cargo test -p kernel --lib --features sched-check)
+clippy-kernel-lib: exit 0 (cargo clippy -p kernel --lib --tests --features sched-check -- -W clippy::checked_conversions -W clippy::default_trait_access -W clippy::manual_midpoint -W clippy::redundant_clone -W clippy::unchecked_time_subtraction -W clippy::unnecessary_semicolon -D warnings)
+loom: exit 0 (cargo test -p kernel-loom --test loom_watch --test inbox_answer --test poll_once)
+ctl-poll-fire-loom_watch: exit 101 (cargo test -p kernel-loom --features poll-fire-load-store --test loom_watch -- --exact a_poll_registered_racing_a_post_completes_exactly_once a_poll_registered_racing_a_post_in_place_completes_exactly_once a_poll_on_two_watches_racing_both_posts_completes_exactly_once a_close_racing_a_post_answers_a_poll_once)
+clippy-host: exit 0 (cargo clippy -p kernel-loom -p kernel-sim -p toyos-build --all-targets -- -W clippy::checked_conversions -W clippy::default_trait_access -W clippy::manual_midpoint -W clippy::redundant_clone -W clippy::unchecked_time_subtraction -W clippy::unnecessary_semicolon -D warnings)
+harness-checks: exit 0 (cargo test --test toyos-checks)
+llvm-env-on-pr-a-tree: exit 101 (cargo test -p toyos-build --lib llvm::tests::the_caller_s_environment_reaches_neither_the_build_nor_the_key)

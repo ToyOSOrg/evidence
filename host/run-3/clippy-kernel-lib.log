@@ -1,0 +1,29 @@
+$ cargo clippy -p kernel --lib --tests --features sched-check -- -W clippy::checked_conversions -W clippy::default_trait_access -W clippy::manual_midpoint -W clippy::redundant_clone -W clippy::unchecked_time_subtraction -W clippy::unnecessary_semicolon -D warnings
+    Checking toyos-abi v0.16.0 (<path>
+    Checking kernel v0.1.0 (<path>
+error: usage of an `Arc` that is not `Send` and `Sync`
+   --> kernel/pure/sched/poll.rs:442:9
+    |
+442 |         Arc::new(Poll::new(ring.clone(), token, via(handle), 1))
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: `Arc<Poll<Counted>>` is not `Send` and `Sync` as `Poll<Counted>` is neither `Send` nor `Sync`
+    = help: if the `Arc` will not be used across threads replace it with an `Rc`
+    = help: otherwise make `Poll<Counted>` `Send` and `Sync` or consider a wrapper type such as `Mutex`
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#arc_with_non_send_sync
+    = note: `-D clippy::arc-with-non-send-sync` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::arc_with_non_send_sync)]`
+
+error: usage of an `Arc` that is not `Send` and `Sync`
+   --> kernel/pure/sched/poll.rs:523:25
+    |
+523 |             let again = Arc::new(Poll::new(poll.ring.clone(), poll.user_data, poll.via, poll.flags));
+    |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: `Arc<Poll<Counted>>` is not `Send` and `Sync` as `Poll<Counted>` is neither `Send` nor `Sync`
+    = help: if the `Arc` will not be used across threads replace it with an `Rc`
+    = help: otherwise make `Poll<Counted>` `Send` and `Sync` or consider a wrapper type such as `Mutex`
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#arc_with_non_send_sync
+
+error: could not compile `kernel` (lib test) due to 2 previous errors
+exit 101

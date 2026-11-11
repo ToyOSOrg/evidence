@@ -1,0 +1,18 @@
+# pr-1261: a poll belongs to the handle it was made through, and a ring to its one submitter
+
+Revision: the checks ran at f79df9574 plus the change's tree (logs/summary.txt names each run's diff hash), which is commit dd1d57622. Host: arm64 macOS. mio: ToyOSOrg/mio `toyos` at 4108eff, pinned in Cargo.lock.
+
+## host/ (targeted checks, the owner's policy)
+- `summary.txt` lists every command and its exit code; each `<name>.log` holds the full output and ends with `exit N`. `checks-b.sh` is the script.
+- `pure`: the kernel's host library, including `sched::poll`'s new tests and `watch_list`'s `end_rings` test.
+- `loom-compiles` and `loom`: every kernel-loom test target compiles; `loom_watch`, `inbox_answer` and `poll_once` pass.
+- `ctl-*`: each negative control whose model this change touches, run as build/ci.rs runs it. A control must exit non-zero, with the named test red for the reason its row says.
+- `build-system`: toyos-build's tests, which read build/ci.rs's control table against the manifests and the source gates.
+- `clippy-*`: CI's shapes for the kernel (host library, x86-64 default, and x86-64 with boot and test actuators), the touched host members, the SDK and the ABI.
+- `build-only`: `cargo run -- --build-only`, which compiles the kernel, std, libc, mio at 4108eff, every guest binary and the image.
+- Run 3 (`host/run-3/`) ran every step. Run 4 (`host/run-4/`) reran what edits after run 3 could change: the close-racing-a-post model, now over two watches (under run 3 it did not red under `poll-fire-load-store`, because one watch's list lock already serializes a post and a close); redundant clones clippy named; and the pure tests' ring counter, an `Arc` clippy named. In run 4, `poll-fire-load-store` reds all four named `loom_watch` tests.
+- `build-system` in run 3 exits 101 on one test, `llvm::tests::the_caller_s_environment_reaches_neither_the_build_nor_the_key`, which is `issues/the-llvm-environment-test-breaks-git-on-macos.md`. Run 4's `llvm-env-on-pr-a-tree` shows the same red on PR #1239's tree, which carries none of this change's build edits. The other 383 tests pass.
+
+## metal/
+- `stage.log`: `cargo test --test toyos-build -- --metal --metal-readback <dir> boot:testcases boot:shared-debug mask_windows` at dd1d57622. It exits 2, the harness's word for staged with the machine untouched: 4 images, 47 registrations and 245 shared members. It compiles every guest binary, `poll_belongs_to_its_handle` and `ring_park_herd` among them, and mio at 4108eff.
+- `request.txt`: the boots requested (shared-debug, testcases, testcases-watchdog, windowscase).

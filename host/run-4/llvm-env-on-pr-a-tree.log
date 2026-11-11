@@ -1,0 +1,42 @@
+$ cargo test -p toyos-build --lib llvm::tests::the_caller_s_environment_reaches_neither_the_build_nor_the_key
+   Compiling kernel v0.1.0 (<path>
+   Compiling toyos-build v0.1.0 (<path>
+    Finished `test` profile [optimized + debuginfo] target(s) in 26.45s
+     Running unittests build/lib.rs (<path>
+
+running 1 test
+test llvm::tests::the_caller_s_environment_reaches_neither_the_build_nor_the_key ... FAILED
+
+failures:
+
+---- llvm::tests::the_caller_s_environment_reaches_neither_the_build_nor_the_key stdout ----
+
+thread 'llvm::tests::the_caller_s_environment_reaches_neither_the_build_nor_the_key' (28338978) panicked at build/llvm.rs:946:9:
+
+running 1 test
+test llvm::tests::keyed_and_built ... FAILED
+
+failures:
+
+failures:
+    llvm::tests::keyed_and_built
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 401 filtered out; finished in 1.74s
+
+
+thread 'llvm::tests::keyed_and_built' (28339689) panicked at build/sysroot.rs:1210:43:
+git ["config", "--blob", "HEAD:.gitmodules", "--get", "submodule.src/llvm-project.url"] in <tmp> git: error: Failed to determine realpath of '/no/such.sdk' (errno=No such file or directory)
+git: error: sh -c '/Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild -sdk /no/such.sdk -find git 2> /dev/null' failed with exit code 16384: (null) (errno=No such file or directory)
+xcode-select: Failed to locate 'git', requesting installation of command line developer tools.
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    llvm::tests::the_caller_s_environment_reaches_neither_the_build_nor_the_key
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 401 filtered out; finished in 3.38s
+
+error: test failed, to rerun pass `-p toyos-build --lib`
+exit 101

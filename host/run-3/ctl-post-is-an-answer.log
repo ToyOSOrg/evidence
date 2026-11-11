@@ -1,0 +1,44 @@
+$ cargo test -p kernel-loom --features post-is-an-answer --test inbox_answer -- --exact a_post_with_nothing_to_read_answers_nothing a_post_that_lands_after_its_bytes_were_read_answers_nothing a_poll_armed_again_does_not_end_the_look
+   Compiling kernel-loom v0.1.0 (<path>
+    Finished `test` profile [optimized + debuginfo] target(s) in 2.64s
+     Running tests/inbox_answer.rs (<path>
+
+running 3 tests
+test a_poll_armed_again_does_not_end_the_look ... FAILED
+test a_post_with_nothing_to_read_answers_nothing ... FAILED
+test a_post_that_lands_after_its_bytes_were_read_answers_nothing ... FAILED
+
+failures:
+
+---- a_poll_armed_again_does_not_end_the_look stdout ----
+
+thread 'a_poll_armed_again_does_not_end_the_look' (28065629) panicked at kernel/loom/tests/inbox_answer.rs:301:9:
+assertion `left == right` failed
+  left: [(3, 1), (4, 1)]
+ right: [(4, 1)]
+
+---- a_post_with_nothing_to_read_answers_nothing stdout ----
+
+thread 'a_post_with_nothing_to_read_answers_nothing' (28065631) panicked at kernel/loom/tests/inbox_answer.rs:238:9:
+assertion `left == right` failed: a post with nothing behind it was answered
+  left: [(7, 1)]
+ right: []
+
+---- a_post_that_lands_after_its_bytes_were_read_answers_nothing stdout ----
+
+thread 'a_post_that_lands_after_its_bytes_were_read_answers_nothing' (28065630) panicked at kernel/loom/tests/inbox_answer.rs:267:9:
+assertion `left == right` failed: the payload's late post was answered
+  left: [(7, 1)]
+ right: []
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    a_poll_armed_again_does_not_end_the_look
+    a_post_that_lands_after_its_bytes_were_read_answers_nothing
+    a_post_with_nothing_to_read_answers_nothing
+
+test result: FAILED. 0 passed; 3 failed; 0 ignored; 0 measured; 11 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p kernel-loom --test inbox_answer`
+exit 101

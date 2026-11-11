@@ -1,0 +1,33 @@
+$ cargo test -p kernel-loom --features poll-fire-load-store --test poll_once -- --exact a_post_and_a_recheck_answer_a_poll_once a_withdrawal_and_a_post_never_both_take_a_poll
+   Compiling kernel-loom v0.1.0 (<path>
+    Finished `test` profile [optimized + debuginfo] target(s) in 4.32s
+     Running tests/poll_once.rs (<path>
+
+running 2 tests
+test a_withdrawal_and_a_post_never_both_take_a_poll ... FAILED
+test a_post_and_a_recheck_answer_a_poll_once ... FAILED
+
+failures:
+
+---- a_withdrawal_and_a_post_never_both_take_a_poll stdout ----
+
+thread 'a_withdrawal_and_a_post_never_both_take_a_poll' (28064216) panicked at kernel/loom/tests/poll_once.rs:72:9:
+answered=true withdrawn=true
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- a_post_and_a_recheck_answer_a_poll_once stdout ----
+
+thread 'a_post_and_a_recheck_answer_a_poll_once' (28064215) panicked at kernel/loom/tests/poll_once.rs:49:9:
+assertion `left == right` failed: a ready poll is answered exactly once
+  left: 2
+ right: 1
+
+
+failures:
+    a_post_and_a_recheck_answer_a_poll_once
+    a_withdrawal_and_a_post_never_both_take_a_poll
+
+test result: FAILED. 0 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p kernel-loom --test poll_once`
+exit 101
