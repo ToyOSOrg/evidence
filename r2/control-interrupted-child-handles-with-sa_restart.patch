@@ -1,0 +1,14 @@
+diff --git a/tests/guest/rust-tests/src/bin/libc_read_restarts.rs b/tests/guest/rust-tests/src/bin/libc_read_restarts.rs
+index 7ab7b052d..c168af443 100644
+--- a/tests/guest/rust-tests/src/bin/libc_read_restarts.rs
++++ b/tests/guest/rust-tests/src/bin/libc_read_restarts.rs
+@@ -114,7 +114,8 @@ extern "C" fn on_interrupt(_: i32) {
+ /// The child: `SIGINT` handled without `SA_RESTART`, [`ARMED`] said, then a
+ /// read of its empty standard input, which the interrupt ends with `EINTR`.
+ fn interrupted() {
+-    let action = SigAction { handler: on_interrupt as extern "C" fn(i32) as usize, flags: 0, restorer: 0, mask: 0 };
++    // CONTROL, not for merge: the handler restarts the read.
++    let action = SigAction { handler: on_interrupt as extern "C" fn(i32) as usize, flags: SA_RESTART, restorer: 0, mask: 0 };
+     // SAFETY: a `struct sigaction` as `<signal.h>` lays it out.
+     assert_eq!(unsafe { sigaction(SIGINT, &action, std::ptr::null_mut()) }, 0, "sigaction");
+     // SAFETY: the bytes of a constant, to this process's standard output.
