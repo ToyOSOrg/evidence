@@ -9,14 +9,19 @@ The verdict rule, set before the runs:
               ToyOS's median is the worse one. The direction is the unit's:
               times lower, rates higher (compare itself names none for ps).
   ahead       the same, with ToyOS's median the better one
+              At four against five p is under 0.05 with no inversion (2/126)
+              or one (4/126).
   at parity   not resolved, and the medians within 1.10 of each other
   unresolved  not resolved, and the medians more than 1.10 apart: the spread
               hides a difference of that size, and the row needs more runs
-Rows without a better direction, or measured by one system only, are listed
-apart and get no verdict.
+Rows without a better direction, measured by one system only, or measured in
+fewer than four runs of a system are listed apart and get no verdict.
+The AMD table is ordered by the ratio against Linux's TSC runs.
 
 Hotness is this scoreboard's own ordering, not a declaration in the tree:
-  0  what the manual's performance page names: build throughput, app launch
+  0  the product's stated performance requirements, by proxy: build
+     throughput (`work.build_shaped` compresses files) and application launch
+     (the spawn rows end at the child's exit)
   1  paths every program pays per operation: system call, clock read, IPC,
      wake and switch, pipe, user copy, page fault, cached file read/write/stat
   2  per-object paths: thread and mapping creation, file metadata, durable
@@ -69,37 +74,34 @@ def area(name):
     return "other"
 
 
+# (row pattern, the one record that owns the row's gap against Linux, the bench it holds for or None for both)
 RECORDS = [
-    (r"^proc\.spawn_wait\.large", "spawning-a-process-costs-toyos-up-to-four-times-linuxs-on-the-t14, a-large-spawn-on-the-amd-bench-is-a-seventh-slower-than-mains"),
-    (r"^(proc\.|process\.|thread\.|work\.build_shaped)", "spawning-a-process-costs-toyos-up-to-four-times-linuxs-on-the-t14"),
-    (r"^fs\.disk\.write_4k_at", "a-file-server-request-costs-three-to-twelve-times-a-kernel-file-call, a-4-kib-overwrite-on-data-costs-about-2-4-times-mains"),
-    (r"^fs\.disk\.readdir", "a-file-server-request-costs-three-to-twelve-times-a-kernel-file-call, a-data-directory-listing-reads-every-entrys-inode-alone"),
-    (r"^fs\.disk\.seq_read\.4096", "a-file-server-request-costs-three-to-twelve-times-a-kernel-file-call, a-sequential-read-of-a-file-as-large-as-datas-clean-cache-reads-the-disk"),
-    (r"^fs\.disk\.(tree|stat|fstat|seq_write\.4096)", "a-file-server-request-costs-three-to-twelve-times-a-kernel-file-call, smaller-data-rows-trail-main-by-up-to-half"),
-    (r"^(fs\.disk\.|persist\.seq_read_cached)", "a-file-server-request-costs-three-to-twelve-times-a-kernel-file-call"),
-    (r"^fs\.mem\.", "a-tmpfs-metadata-call-costs-toyos-up-to-six-times-linuxs"),
-    (r"^persist\.create_fsync_unlink", "a-created-fsynced-and-unlinked-file-costs-toyos-more-than-linux, toyos-durable-writes-on-the-t14s-nvme-run-six-times-slower-in-some-boots"),
-    (r"^persist\.seq_write_fsync", "toyos-durable-writes-on-the-t14s-nvme-run-six-times-slower-in-some-boots (the T14); none on main for the AMD bench, whose row another assignment holds"),
-    (r"^persist\.", "toyos-durable-writes-on-the-t14s-nvme-run-six-times-slower-in-some-boots"),
-    (r"^pingpong\.", "a-two-thread-ping-pong-costs-toyos-up-to-twice-linuxs-on-the-t14"),
-    (r"^wake\.onto_busy", "a-wake-onto-a-busy-cpu-costs-toyos-1-8-times-linuxs (new)"),
-    (r"^wake\.storm\.drain", "a-wake-storm-drains-up-to-a-quarter-slower-than-linuxs-on-the-t14 (new)"),
-    (r"^ipc\.reqrep(_handle)?\.8", "a-small-message-round-trip-over-a-native-connection-costs-twice-linuxs-on-the-t14"),
-    (r"^(ipc\.reqrep\.|pipe\.throughput|mem\.bw\.copy)", "user-memory-hot-paths-are-slower-than-2-mib-pages"),
-    (r"^mem\.memcpy", "a-small-memcpy-on-the-amd-bench-runs-at-as-little-as-six-tenths-of-linuxs"),
-    (r"^mem\.munmap", "a-tlb-shootdown-reaches-only-the-cpus-that-ran-the-space"),
-    (r"^mem\.(map_unmap_4k|anon)", "user-memory-hot-paths-are-slower-than-2-mib-pages"),
-    (r"^time\.now", "a-clock-read-costs-toyos-half-again-linuxs-on-the-t14 (new)"),
-    (r"^time\.yield", "a-yield-costs-toyos-up-to-3-4-times-linuxs (was toyos-yield-is-not-yet-measured-against-linux)"),
-    (r"^fair\.shared", "all-cpu-throughput-in-one-group-reads-under-linuxs (new)"),
-    (r"^crunch\.single", "toyos-uses-what-modern-hardware-offers-for-speed"),
+    (r"^(proc\.|process\.|thread\.|work\.build_shaped)", "spawning-a-process-costs-toyos-up-to-147-times-linuxs", None),
+    (r"^(fs\.disk\.|persist\.seq_read_cached)", "a-file-server-request-costs-three-to-twelve-times-a-kernel-file-call", None),
+    (r"^fs\.mem\.", "a-memory-filesystem-call-costs-toyos-up-to-35-times-linuxs", None),
+    (r"^persist\.seq_write_fsync", "a-sequential-durable-write-on-data-runs-at-about-half-linuxs (open PR #1216's)", "amd"),
+    (r"^persist\.", "toyos-durable-writes-on-the-t14s-nvme-run-six-times-slower-in-some-boots", "t14"),
+    (r"^persist\.create_fsync_unlink", "a-created-fsynced-and-unlinked-file-costs-toyos-more-than-linux", "amd"),
+    (r"^pingpong\.", "a-two-thread-ping-pong-costs-toyos-up-to-twice-linuxs-on-the-t14", None),
+    (r"^wake\.onto_busy", "a-wake-onto-a-busy-cpu-costs-toyos-1-8-times-linuxs", None),
+    (r"^wake\.storm\.drain", "a-wake-storm-drains-up-to-a-quarter-slower-than-linuxs-on-the-t14", None),
+    (r"^(wake\.periodic|time\.sleep_late|time\.timer_1ms)", "a-timed-wake-is-later-than-linuxs-without-its-timer-slack", None),
+    (r"^ipc\.reqrep(_handle)?\.8", "a-small-message-round-trip-over-a-native-connection-costs-twice-linuxs-on-the-t14", None),
+    (r"^(ipc\.reqrep\.|pipe\.throughput|mem\.bw\.copy)", "user-memory-hot-paths-are-slower-than-2-mib-pages", None),
+    (r"^mem\.memcpy", "a-small-memcpy-on-the-amd-bench-runs-at-as-little-as-six-tenths-of-linuxs", None),
+    (r"^mem\.munmap", "a-tlb-shootdown-reaches-only-the-cpus-that-ran-the-space", None),
+    (r"^mem\.(map_unmap_4k|anon)", "user-memory-hot-paths-are-slower-than-2-mib-pages", None),
+    (r"^time\.now", "a-clock-read-costs-toyos-half-again-linuxs-on-the-t14", None),
+    (r"^time\.yield", "a-yield-costs-toyos-up-to-3-4-times-linuxs", None),
+    (r"^fair\.shared", "all-cpu-throughput-in-one-group-reads-under-linuxs", None),
+    (r"^crunch\.single", "toyos-uses-what-modern-hardware-offers-for-speed", None),
 ]
 
 
 def records(name, issues):
-    """The record that owns the row, by hand: a name search matches records that only mention a row."""
-    for pat, rec in RECORDS:
-        if re.match(pat, name):
+    """The one record that owns the row's gap against Linux, by hand: a name search matches mentions."""
+    for pat, rec, bench in RECORDS:
+        if re.match(pat, name) and bench in (None, BENCH):
             return [rec]
     return []
 
@@ -118,11 +120,14 @@ def rows(path):
         except ValueError:
             lmv = tmv = None
         worse = None
-        if lmv and tmv:
+        few = min(len([v for v in lp.split(",") if v.strip()]), len([v for v in tp.split(",") if v.strip()])) < 4
+        if lmv and tmv and not few:
             if unit in LOWER:
                 worse = tmv / lmv
             elif unit in HIGHER:
                 worse = lmv / tmv
+        if few and lmv and tmv:
+            verdict = "fewer than four runs of a system measured it: no verdict"
         out.append(dict(name=name, unit=unit, lp=lp, lm=lm, lr=lr, tp=tp, tm=tm, tr=tr, p=p, said=verdict, worse=worse))
     return out
 
@@ -167,6 +172,23 @@ def line(r, issues, with_record):
 
 
 TSC = [int(i) - 1 for i in sys.argv[4].split(",")] if len(sys.argv) > 4 else []
+BENCH = "amd" if TSC else "t14"
+
+
+def tsc_worse(r):
+    """ToyOS's median against the mean of Linux's TSC runs, above 1 slower."""
+    lt = [float(r["lp"].split(",")[i]) for i in TSC]
+    mid = sum(lt) / len(lt)
+    return float(r["tm"]) / mid if r["unit"] in LOWER else mid / float(r["tm"])
+
+
+def beats_both(r):
+    """Whether every ToyOS boot is better than both of Linux's TSC runs."""
+    lt = [float(r["lp"].split(",")[i]) for i in TSC]
+    tp = [float(v) for v in r["tp"].split(",")]
+    if r["unit"] in LOWER:
+        return max(tp) < min(lt)
+    return min(tp) > max(lt)
 
 
 def main():
@@ -187,8 +209,12 @@ def main():
         rule += "---|"
     print("### Behind Linux, by hotness and then ratio\n")
     print(head + " record |\n" + rule + "---|")
-    for r in sorted(by["behind"], key=lambda r: (tier(r["name"]), -r["worse"])):
+    for r in sorted(by["behind"], key=lambda r: (tier(r["name"]), -(tsc_worse(r) if TSC else r["worse"]))):
         print(line(r, issues, True))
+    if TSC:
+        n = sum(beats_both(r) for r in by["ahead"])
+        print(f"\nOf the {len(by['ahead'])} rows ahead, every boot beats both TSC runs in {n}; the others: "
+              + ", ".join("`" + r["name"] + "`" for r in by["ahead"] if not beats_both(r)) + ".")
     print("\n### Unresolved and reading behind by more than 1.10\n")
     print(head + " record |\n" + rule + "---|")
     for r in sorted([r for r in by["unresolved"] if r["worse"] > 1], key=lambda r: (tier(r["name"]), -r["worse"])):

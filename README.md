@@ -56,3 +56,15 @@ The hotness order is this scoreboard's own; the tree declares none. 0: what the 
 ## Masking
 
 The identity group (PCI, USB, DMI, NVMe identity) is dropped from every run. The CPU model reads `<bench>-bench-cpu`, the disk model `masked`; paths, the bench's host name and the machine and firmware names in the judge logs are masked.
+
+## Corrections after review r1 of #1217
+
+The run files, compare tables and first scoreboards above are unchanged. These statements of this README were wrong or incomplete:
+
+- **"About 1.6% of rows resolve by chance"** is 3.2% at four against five: p is under 0.05 with no inversion (2/126) or with one (4/126). Every row behind has none.
+- **"`pingpong.futex.cross_core` ... is bimodal per boot"** is wrong. In three of the T14's four boots the row did not measure a parked round trip: p50 257, 250 and 257 ns, the third mixing both shapes in one run (p90 4,578, mean 1,188 ns), as the AMD bench's fourth boot did. The fourth T14 boot read 4,573 ns, as all four did on 2026-10-28, 1.37x Linux's 3,346 ns. The row counts no parks, so a run's p50 is not its value.
+- **The timer rows.** Eight rows a bench count ahead against a Linux that pads each sleep by its 50 µs timer slack. `<bench>/slack.md` (from `method/slack.py`) judges them against Linux's `.slack1ns` runs, which these run files hold: the T14's `time.sleep_late.100us` (2.85x), `wake.periodic.loaded` (1.53x) and `wake.periodic.idle` (1.18x) and the AMD bench's `time.timer_1ms.late` (2.03x) are behind there. The rule was set against the default rows, so that reading is exploratory; later scoreboards judge against the slack-free rows.
+- **The hotness order** cited another document; tier 0 is the product's stated performance requirements by proxy (build throughput off `work.build_shaped`, which compresses files; application launch off the spawn rows, which end at the child's exit). Battery life is the third and has no row.
+- **`<bench>/scoreboard-r2.md`** supersede `scoreboard.md`: one owning record a row, the AMD table ordered by the ratio against the two TSC runs, and `crunch.single.parse` on the AMD bench without a verdict (two Linux runs measured it; three stopped at the package limit), so the AMD bench reads 35 behind, 76 ahead, 8 at parity and 14 unresolved of 133.
+- **The AMD bench.** Every row behind is worse than both TSC runs in every boot, and 74 of the 76 ahead beat both in every boot, so the verdicts barely depend on the HPET runs; the ratios do. Linux as installed there also pays system-call mitigations ToyOS has none of, and after 23 of the 76 ahead rows, all block-and-wake shapes, Linux's reporting thread read its clock at 1.37 to 1.9 GHz (the median run's `mhz`) against ToyOS's 4.2 to 4.3 GHz.
+- **Not measured**, more exactly: Linux's `nvme.read.*` was unmeasured too (not run as root); the all-core crunch is `unmeasured` on ToyOS; the six `fair.*` share rows have no direction; boot to a usable state is reported as conditions, not rows.
