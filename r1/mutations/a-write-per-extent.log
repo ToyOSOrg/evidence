@@ -1,0 +1,32 @@
+
+running 7 tests
+test engine::tests::data::a_failed_reserved_data_write_keeps_the_old_contents_and_reports_failure ... ok
+test engine::tests::data::a_reserved_write_sends_each_contiguous_stretch_once_before_any_pointer ... FAILED
+test engine::tests::data::pending_allocation_failure_precedes_data_reservation_and_reserved_write_preparation ... ok
+test engine::tests::data::a_reserved_slot_survives_its_bucket_emptying_and_generation_change ... ok
+test engine::tests::data::a_reserved_write_inside_a_large_block_lands_on_that_block ... ok
+test engine::tests::data::reserved_blocks_write_after_capacity_refusal_and_dropped_tokens_return_capacity ... ok
+test engine::tests::data::a_reserved_write_of_several_extents_survives_torn_reordered_writes ... ok
+
+failures:
+
+---- engine::tests::data::a_reserved_write_sends_each_contiguous_stretch_once_before_any_pointer stdout ----
+
+thread 'engine::tests::data::a_reserved_write_sends_each_contiguous_stretch_once_before_any_pointer' (14791099) panicked at lib/bcachefs/src/engine/tests/data.rs:803:9:
+assertion `left != right` failed: two writes for one stretch of contiguous sectors
+  left: 1616
+ right: 1616
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    engine::tests::data::a_reserved_write_sends_each_contiguous_stretch_once_before_any_pointer
+
+test result: FAILED. 6 passed; 1 failed; 0 ignored; 0 measured; 194 filtered out; finished in 0.56s
+
+   Compiling bcachefs v0.1.0 (<scratch>/wt/lib/bcachefs)
+    Finished `release` profile [optimized] target(s) in 1m 38s
+     Running unittests src/lib.rs (target/release/deps/bcachefs-fccbf3ba13011d3a)
+error: test failed, to rerun pass `--lib`
+
+exit 101

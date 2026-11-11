@@ -1,0 +1,36 @@
+
+running 7 tests
+test engine::tests::data::a_failed_reserved_data_write_keeps_the_old_contents_and_reports_failure ... FAILED
+test engine::tests::data::a_reserved_slot_survives_its_bucket_emptying_and_generation_change ... ok
+test engine::tests::data::pending_allocation_failure_precedes_data_reservation_and_reserved_write_preparation ... ok
+test engine::tests::data::a_reserved_write_sends_each_contiguous_stretch_once_before_any_pointer ... FAILED
+test engine::tests::data::a_reserved_write_inside_a_large_block_lands_on_that_block ... ok
+test engine::tests::data::reserved_blocks_write_after_capacity_refusal_and_dropped_tokens_return_capacity ... ok
+test engine::tests::data::a_reserved_write_of_several_extents_survives_torn_reordered_writes ... ok
+
+failures:
+
+---- engine::tests::data::a_failed_reserved_data_write_keeps_the_old_contents_and_reports_failure stdout ----
+
+thread 'engine::tests::data::a_failed_reserved_data_write_keeps_the_old_contents_and_reports_failure' (14702480) panicked at lib/bcachefs/src/engine/tests/data.rs:300:46:
+called `Result::unwrap()` on an `Err` value: Checksum("extent")
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- engine::tests::data::a_reserved_write_sends_each_contiguous_stretch_once_before_any_pointer stdout ----
+
+thread 'engine::tests::data::a_reserved_write_sends_each_contiguous_stretch_once_before_any_pointer' (14702484) panicked at lib/bcachefs/src/engine/tests/data.rs:810:46:
+called `Result::unwrap()` on an `Err` value: Checksum("extent")
+
+
+failures:
+    engine::tests::data::a_failed_reserved_data_write_keeps_the_old_contents_and_reports_failure
+    engine::tests::data::a_reserved_write_sends_each_contiguous_stretch_once_before_any_pointer
+
+test result: FAILED. 5 passed; 2 failed; 0 ignored; 0 measured; 194 filtered out; finished in 0.40s
+
+   Compiling bcachefs v0.1.0 (<scratch>/wt/lib/bcachefs)
+    Finished `release` profile [optimized] target(s) in 1m 40s
+     Running unittests src/lib.rs (target/release/deps/bcachefs-fccbf3ba13011d3a)
+error: test failed, to rerun pass `--lib`
+
+exit 101
