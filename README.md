@@ -27,3 +27,6 @@ the machine's SMBIOS line left out. Both exited 0 (the queue runner's rc=0, the 
 and no Untaken; each reboot was `echo rebooting && sudo -n '/usr/sbin/reboot'` answered cleanly; every piece
 printed its dd seconds against its bound, the largest share 17.4 s of 1208 s. The two readbacks were deleted
 before a judge read them, so wall_clock_is_firmwares was not judged. The T14's two flashes never ran.
+
+r3/ (review round 2, at 636b71537, which db7f1e57f differs from only in an issue record): toyos-metal's
+tests (77 passed) and clippy (exit 0) with a failed --delete-bootnext now printed.
