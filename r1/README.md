@@ -19,3 +19,21 @@
 ## Metal
 Staged from e63e985c2, not run: whole testcases, shared-debug and benchcase boots; the FPU mutant
 (`fpu-skip-ignores-left.patch`) running vector_state, which must red; osbench base b56693152 against the head.
+
+## Guest at e63e985c2
+- `guest/x86-43052915315-at-e63e985c2.log`: run 43052915315: vector_state_survives_a_switch (16 trips, AVX),
+  std_threads_count_the_cpus_and_give_back_ended_threads, affinity_pins_hold_on_every_cpu, libc_children: 4 passed.
+- aarch64 run 43052933164: queued when this was written.
+
+## Reused (`reused/`)
+- `check-harness.log` (`cargo check --test toyos-build`) and `test-model-controls.log`
+  (`cargo test --lib -- every_model_control_is_run`), exit 0, at the tree of 3785475ab (the branch before its rebase
+  onto b56693152, which brought only `issues/`; neither the harness nor `build/ci.rs` changed since).
+
+## Metal staging (`stage/`)
+`stage.sh` staged, from one clean worktree: the head's boot:testcases boot:shared-debug boot:benchcase (4 images, the
+fourth `testcases-watchdog` brought by a row with an arm on testcases); the mutant (`../fpu-skip-ignores-left.patch`
+applied, staged, reverted, tree clean again) with only vector_state; base b56693152's boot:benchcase. Each staging
+exits 2, the harness's code for "staged, nothing established". `kernel-elfs.txt`: the mutant's kernel differs from
+the head's, so the mutation is compiled in. `request.txt` is the run request (verdict boots, the T14 mutant, the
+4-a-side alternating A/B on both benches).
