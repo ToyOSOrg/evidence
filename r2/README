@@ -1,0 +1,16 @@
+Evidence for ToyOSOrg/ToyOS#1206, round 2, at the head 9b3e6e286. Every patch is a diff against that head.
+
+guest-*.log: `gh run view <id> --log` of guest-rows `session_lifecycle` runs, masked.
+  head                       9b3e6e286: green.
+  control-owner-never-exits  the head plus control-owner-never-exits.patch: the session's controls go and its owner
+                             never exits. Red, and the compositor says the expiry: `no desktop session: the supervisor
+                             handed over a session whose controls are gone 145833 times in 5 s`.
+  control-spin-without-reask the head plus control-spin-without-reask.patch: r1's kernel spin, with lib/session as
+                             on main, so no re-ask. Green.
+  control-spin-without-reask-decision-ignores-hang-up
+                             the same plus the decision ignoring the hang-up. Green too, so the spin does not
+                             reproduce the stall and the arm above shows nothing about the hang-up.
+host-ci-macos-9b3e6e286.log  `cargo run -- --ci host` on a macOS host at the head, exit 1: the same one step of 110
+                             red as in r1.
+
+Masked: usernames, home and temporary paths, CPU model strings, runner names.

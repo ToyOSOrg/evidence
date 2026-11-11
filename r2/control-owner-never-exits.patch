@@ -1,0 +1,21 @@
+diff --git a/system/session/src/main.rs b/system/session/src/main.rs
+index a84a9f33e..1742431f2 100644
+--- a/system/session/src/main.rs
++++ b/system/session/src/main.rs
+@@ -122,6 +122,16 @@ fn main() {
+             }
+         }
+         for act in acts {
++            // CONTROL, not for merge: the session's controls go and its owner
++            // never does, its link staying up.
++            if matches!(act, Act::Exit) {
++                say!("session: every app has ended; the session ends");
++                controls.clear();
++                drop(controls_acceptor);
++                loop {
++                    std::thread::park();
++                }
++            }
+             act_on(act, &mut apps, &controls, &link);
+         }
+     }
