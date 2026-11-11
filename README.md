@@ -40,3 +40,11 @@
   clippy over every target at the head and at main e10b6fd49 (`clippy-fileserver-all*.log`): the same four
   findings at both, in lines the PR does not change. `r2/controls-reach/`: the span checked against the last page
   rather than a holder's reach, red (`reach.sh`).
+
+## Review round 3 (head 4a2d78dd3)
+
+- `r3/build-head/`: the `testcases` image built at 1ee3e6da9 plus the round's diff (`tree.txt`; committed as 4a2d78dd3),
+  which compiles pagerprobe's holder writes, rc 0 (`step1-r3-build.sh`).
+- `r3/control-refuse/`: the negative control for pagerprobe's holder writes, the kernel refusing every holder write
+  (`refuse-holder-writes.patch`), built into the same image and restored, rc 0 (`refuse-holder-writes.sh`). Its run
+  waits for a guest row that runs pagerprobe.

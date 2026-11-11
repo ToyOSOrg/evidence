@@ -1,0 +1,12 @@
+--- <scratch>/logs/step1-r3-control/paged.rs.orig	2026-11-11 22:26:11
++++ kernel/src/object/paged.rs	2026-11-11 22:26:11
+@@ -1138,6 +1138,9 @@
+     /// is the object's for the call.
+     fn holder_write(&self, slot: u32, src: &UserBytes, at: Option<u64>) -> u64 {
+         let len = src.len();
++        if len < usize::MAX {
++            return SyscallError::WouldBlock.to_u64();
++        }
+         if len == 0 {
+             let state = self.state.lock();
+             let object = &state.entry(slot).object;
