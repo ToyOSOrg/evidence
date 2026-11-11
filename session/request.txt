@@ -1,0 +1,101 @@
+# Scoreboard session, ToyOS at main ad5db5a6527aad5ef8a37f9f7599dcbc69de6cee against each bench's Linux as installed.
+# Worktree <scratch>/wt (branch score/scoreboard-2026-11-11, head = origin/main ad5db5a65, clean).
+# Each ToyOS invocation is `cargo <words>` from a check tree at ad5db5a65. Nothing here has touched a machine.
+# Image and binary hashes: <scratch>/logs/sha256.txt
+#
+# RULE, set before the runs (tests/guest/osbench/README.md's): a run's value is its p50; a row resolves when the exact
+# two-sided Mann-Whitney test over the runs gives p < 0.05. Three boots a side cannot reach that (least p 2/20), nor
+# three against four (2/35); FOUR ToyOS boots against FIVE Linux runs can (2/126), the 2026-10-28 scoreboard's shape.
+# So each bench's main chain is L1 T1 L2 T2 L3 T3 L4 T4 L5. If a boot must be dropped, three boots against five Linux
+# runs still resolve (2/56); fewer do not. A row left unresolved with medians more than 1.10 apart is reported as
+# needing more runs, not as parity.
+#
+# BENCH ALONE: every boot and every Linux run below is a timing run. Each bench runs nothing else from its L1 to its
+# last run (no other agent's boot between them, no build on the bench's Linux, on AC, no stick change mid-chain).
+# The two benches' main chains may run in parallel with each other. The T14's LAN chain needs BOTH benches: the AMD
+# bench in its Linux running only the peer, so it comes after the AMD bench's own chain has ended.
+# A boot or Linux run aborted by a host network drop is rerun in place, keeping the interleaving.
+#
+# A ToyOS main run counts once its readback passes the row; I judge offline from the readbacks (no machine touched):
+#   cargo test --test toyos-build -- --metal --metal-readback <dir> [--metal-host <amd>] osbench
+# A boot that formatted DATA is refused by the judge and is repeated.
+
+## Linux binaries (static musl, built at ad5db5a65 with
+##   cargo +nightly-2026-07-22 build -p osbench --target x86_64-unknown-linux-musl --profile toyos
+##   cargo +nightly-2026-07-22 build -p osbench-lan --bin osbench-peer --target x86_64-unknown-linux-musl --profile toyos)
+#   <scratch>/linux-bin/osbench        sha256 3a535edcf6ccfa358e6cdc3c28870aaf752e335b5664ab55ac9b52f64666fe7d
+#   <scratch>/linux-bin/osbench-peer   sha256 adea42c60de4b9285d75e6398de604890996f75cb40a6e8a08a66dc53ee903d6
+# Copy osbench to each bench's runner home (osbench-peer to the AMD bench's) and check the sha256 there before L1.
+# Linux as installed: no governor change, no cache drop, the runner's own user, from its home (persist and fs.disk
+# write ext4 under $HOME on the bench's NVMe).
+
+## Linux main run i (both benches), stdout kept whole:
+#   timeout 2100 ./osbench all </dev/null > linux-<i>.txt 2> linux-<i>.err ; echo $?
+#   -> <scratch>/runs/<bench>/linux-<i>.txt, linux-<i>.err, and the exit code
+
+## T14 main chain: L1 T1 L2 T2 L3 T3 L4 T4 L5
+t14 toyos-1 (benchcase)
+  image: <scratch>/stage-t14/benchcase/image.img
+  cargo run -p toyos-metal -- --image <scratch>/stage-t14/benchcase/image.img --readback <scratch>/runs/t14/toyos-1/benchcase --fat32-check
+t14 toyos-2 (benchcase)
+  image: <scratch>/stage-t14/benchcase/image.img
+  cargo run -p toyos-metal -- --image <scratch>/stage-t14/benchcase/image.img --readback <scratch>/runs/t14/toyos-2/benchcase --fat32-check
+t14 toyos-3 (benchcase)
+  image: <scratch>/stage-t14/benchcase/image.img
+  cargo run -p toyos-metal -- --image <scratch>/stage-t14/benchcase/image.img --readback <scratch>/runs/t14/toyos-3/benchcase --fat32-check
+t14 toyos-4 (benchcase)
+  image: <scratch>/stage-t14/benchcase/image.img
+  cargo run -p toyos-metal -- --image <scratch>/stage-t14/benchcase/image.img --readback <scratch>/runs/t14/toyos-4/benchcase --fat32-check
+
+## AMD bench main chain: L1 T1 L2 T2 L3 T3 L4 T4 L5
+amd toyos-1 (benchcase)
+  image: <scratch>/stage-amd/benchcase/image.img
+  cargo run -p toyos-metal -- --image <scratch>/stage-amd/benchcase/image.img --readback <scratch>/runs/amd/toyos-1/benchcase --fat32-check --host <bench>
+amd toyos-2 (benchcase)
+  image: <scratch>/stage-amd/benchcase/image.img
+  cargo run -p toyos-metal -- --image <scratch>/stage-amd/benchcase/image.img --readback <scratch>/runs/amd/toyos-2/benchcase --fat32-check --host <bench>
+amd toyos-3 (benchcase)
+  image: <scratch>/stage-amd/benchcase/image.img
+  cargo run -p toyos-metal -- --image <scratch>/stage-amd/benchcase/image.img --readback <scratch>/runs/amd/toyos-3/benchcase --fat32-check --host <bench>
+amd toyos-4 (benchcase)
+  image: <scratch>/stage-amd/benchcase/image.img
+  cargo run -p toyos-metal -- --image <scratch>/stage-amd/benchcase/image.img --readback <scratch>/runs/amd/toyos-4/benchcase --fat32-check --host <bench>
+
+## Energy, one pair a bench, after its main chain (exploratory: one run a side resolves nothing). Droppable if bench
+## time is short; the speed scoreboard does not depend on it.
+t14 toyos-energy (energybenchcase)
+  image: <scratch>/stage-t14/energybenchcase/image.img
+  cargo run -p toyos-metal -- --image <scratch>/stage-t14/energybenchcase/image.img --readback <scratch>/runs/t14/toyos-energy/energybenchcase --fat32-check
+amd toyos-energy (energybenchcase)
+  image: <scratch>/stage-amd/energybenchcase/image.img
+  cargo run -p toyos-metal -- --image <scratch>/stage-amd/energybenchcase/image.img --readback <scratch>/runs/amd/toyos-energy/energybenchcase --fat32-check --host <bench>
+# Linux energy, as root, radios blocked for the run and given back (the nightly runner's form, with its backstop):
+#   sudo modprobe msr
+#   sudo systemd-run --on-active=10min --unit=score-rfkill-backstop /usr/sbin/rfkill unblock all
+#   sudo systemd-run --wait --unit=score-osbench-energy sh -c 'rfkill block all; timeout 900 <home>/osbench energy </dev/null >/tmp/score-energy.txt 2>&1; rfkill unblock all'
+#   (the AMD bench's only link is its Wi-Fi: start the unit without --wait, leave it 240 s, then poll, as the nightly does)
+#   -> <scratch>/runs/<bench>/linux-energy.txt
+
+## LAN, the T14 only (the AMD bench has no card ToyOS drives). The AMD bench boots its Linux and runs only the peer:
+#   ./osbench-peer        (left running for the whole chain; stop it after)
+## T14 chain: Llan1 Tlan1 Llan2 Tlan2 Llan3 Tlan3 Llan4 Tlan4 Llan5
+#   Linux:  timeout 600 ./osbench lan </dev/null > linux-lan-<i>.txt 2> linux-lan-<i>.err ; echo $?
+#   -> <scratch>/runs/t14/linux-lan-<i>.txt
+t14 toyos-lan-1 (netbenchcase)
+  image: <scratch>/stage-t14/netbenchcase/image.img
+  cargo run -p toyos-metal -- --image <scratch>/stage-t14/netbenchcase/image.img --readback <scratch>/runs/t14/toyos-lan-1/netbenchcase --fat32-check
+t14 toyos-lan-2 (netbenchcase)
+  image: <scratch>/stage-t14/netbenchcase/image.img
+  cargo run -p toyos-metal -- --image <scratch>/stage-t14/netbenchcase/image.img --readback <scratch>/runs/t14/toyos-lan-2/netbenchcase --fat32-check
+t14 toyos-lan-3 (netbenchcase)
+  image: <scratch>/stage-t14/netbenchcase/image.img
+  cargo run -p toyos-metal -- --image <scratch>/stage-t14/netbenchcase/image.img --readback <scratch>/runs/t14/toyos-lan-3/netbenchcase --fat32-check
+t14 toyos-lan-4 (netbenchcase)
+  image: <scratch>/stage-t14/netbenchcase/image.img
+  cargo run -p toyos-metal -- --image <scratch>/stage-t14/netbenchcase/image.img --readback <scratch>/runs/t14/toyos-lan-4/netbenchcase --fat32-check
+
+## Not requested, and why
+# osbench_internet: the public internet, exploratory by the tree's own rule; no scoreboard row depends on it.
+# The AMD bench's lan.* : Linux alone can measure it (no card ToyOS drives), so it is no comparison.
+#
+# Return to me: the runs/ tree as filled, each step's exit code, and the wall-clock order actually run.
