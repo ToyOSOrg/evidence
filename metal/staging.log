@@ -1,0 +1,33 @@
+rev=9f94ce818120363ced15ea52b745bee328002d28
+status=       0
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.87s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-b8f4c5141ecc8947)
+15:33:25   BUILD x86_64 binaries of tests/guest/rust-tests
+15:33:43   BUILT x86_64 binaries of tests/guest/rust-tests  (17s)
+15:33:43   BUILD x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests
+15:33:51   BUILT x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests  (8s)
+15:33:51 [toyos] Compiling 143 C tests, and attempting 24 declared ones...
+15:33:57 [metal] 6 registration(s) and 1 shared member(s) over 2 boot(s)
+15:33:57   BUILD x86_64 kernel, loader, ROOT of <path>
+15:35:45 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+15:35:46   BUILT x86_64 kernel, loader, ROOT of <path>  (108s)
+15:35:46 [metal] proctreecase: 4 job(s) under a list bound of 60000 ms, armed with [] and a boot deadline of 120000 ms — <path>
+15:35:46   BUILD x86_64 ROOT of <path>
+15:35:55 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+15:35:56   BUILT x86_64 ROOT of <path>  (10s)
+15:35:56 [metal] testcases: 12 job(s) under a list bound of 60300 ms, armed with [] and a boot deadline of 120600 ms — <path>
+# One boot per image. Each invocation is `cargo <words>` from this worktree.
+
+proctreecase
+  image: <path>
+  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check
+
+testcases
+  image: <path>
+  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check
+15:35:56 [metal] staged 2 image(s); <path> lists them. The machine was not touched, so this run establishes nothing about it.
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `<path> --metal --metal-readback <path> abuse_spawn_path_and_name hda_tone hda_tone_resampled tone_beside_a_log_write claim_reuses_its_remapping_entry i219_messages_on_its_msi_vector process_tree` (exit status: 2)
+exit=2
