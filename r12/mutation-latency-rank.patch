@@ -1,0 +1,11 @@
+--- a/system/nvme/apst/src/lib.rs
++++ b/system/nvme/apst/src/lib.rs
+@@ -129,7 +129,7 @@
+                 .filter_map(|(t, to)| Some((t, to.round_trip_us()?)))
+                 .collect();
+             TIERS.iter().find_map(|&(within_us, after_ms)| {
+-                let &(to, _) = targets.iter().rev().find(|&&(_, trip)| trip <= within_us)?;
++                let &(to, _) = targets.iter().filter(|&&(_, trip)| trip <= within_us).max_by_key(|&&(_, trip)| trip)?;
+                 Some(Transition { to: to as u8, after_ms })
+             })
+         })

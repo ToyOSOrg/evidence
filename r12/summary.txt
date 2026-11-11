@@ -1,0 +1,35 @@
+revision a84c64a88da779653956ad57fe1b8df672efd781
+porcelain: []
+rustc 1.98.1 (48a229cea 2026-09-01)
+Wed Nov 11 16:24:02 UTC 2026
+=== test-nvme-apst: cargo test -p nvme-apst
+exit 0
+=== test-nvme: cargo test --manifest-path system/nvme/Cargo.toml
+exit 0
+=== clippy-nvme-apst: cargo clippy -p nvme-apst --all-targets -- -W clippy::checked_conversions -W clippy::default_trait_access -W clippy::manual_midpoint -W clippy::redundant_clone -W clippy::unchecked_time_subtraction -W clippy::unnecessary_semicolon -D warnings
+exit 0
+=== clippy-nvme: cargo clippy --manifest-path system/nvme/Cargo.toml --all-targets -- -W clippy::checked_conversions -W clippy::default_trait_access -W clippy::manual_midpoint -W clippy::redundant_clone -W clippy::unchecked_time_subtraction -W clippy::unnecessary_semicolon -D warnings
+exit 0
+=== mutation-bound: git apply mutation-bound.patch
+=== mutation-bound-test: cargo test -p nvme-apst
+exit 101
+  failed: test tests::a_state_whose_round_trip_exceeds_the_bound_is_never_a_target ... FAILED
+  test result: FAILED. 11 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+reverted
+source identical to before
+=== mutation-latency-rank: git apply mutation-latency-rank.patch
+=== mutation-latency-rank-test: cargo test -p nvme-apst
+exit 101
+  failed: test tests::the_target_is_the_highest_numbered_whatever_the_latencies ... FAILED
+  failed: test tests::an_npss_past_31_is_refused_and_31_reads_all_32_states ... FAILED
+  test result: FAILED. 10 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+reverted
+source identical to before
+=== mutation-npss-unchecked: git apply mutation-npss-unchecked.patch
+=== mutation-npss-unchecked-test: cargo test -p nvme-apst
+exit 101
+  failed: test tests::an_npss_past_31_is_refused_and_31_reads_all_32_states ... FAILED
+  test result: FAILED. 11 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+reverted
+source identical to before
+Wed Nov 11 16:24:27 UTC 2026

@@ -1,0 +1,43 @@
+   Compiling nvme-apst v0.1.0 (<scratch>/wt-apst/system/nvme/apst)
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.75s
+     Running unittests src/lib.rs (target/debug/deps/nvme_apst-6fa03160b788963d)
+
+running 12 tests
+test tests::a_descriptor_reads_as_figure_313_lays_it_out ... ok
+test tests::a_state_whose_round_trip_exceeds_the_bound_is_never_a_target ... ok
+test tests::a_state_past_the_first_tier_is_reached_from_the_first_tiers_after_the_second_tiers_time ... ok
+test tests::a_state_with_an_unreported_latency_is_never_a_target ... ok
+test tests::an_operational_state_is_never_a_target ... ok
+test tests::npss_is_zero_based_and_apsta_is_bit_0 ... ok
+test tests::no_target_reports_more_idle_power_than_the_state_it_leaves ... ok
+test tests::the_amd_benchs_drive_gets_the_table_linux_sets ... ok
+test tests::the_table_encodes_itpt_in_bits_31_8_and_itps_in_7_3 ... ok
+test tests::the_t14s_drive_gets_the_table_linux_sets ... ok
+test tests::the_target_is_the_highest_numbered_whatever_the_latencies ... FAILED
+test tests::an_npss_past_31_is_refused_and_31_reads_all_32_states ... FAILED
+
+failures:
+
+---- tests::the_target_is_the_highest_numbered_whatever_the_latencies stdout ----
+
+thread 'tests::the_target_is_the_highest_numbered_whatever_the_latencies' (26913346) panicked at system/nvme/apst/src/lib.rs:261:9:
+assertion `left == right` failed
+  left: [Some(Transition { to: 1, after_ms: 100 }), Some(Transition { to: 2, after_ms: 100 }), None]
+ right: [Some(Transition { to: 2, after_ms: 100 }), Some(Transition { to: 2, after_ms: 100 }), None]
+
+---- tests::an_npss_past_31_is_refused_and_31_reads_all_32_states stdout ----
+
+thread 'tests::an_npss_past_31_is_refused_and_31_reads_all_32_states' (26913339) panicked at system/nvme/apst/src/lib.rs:233:9:
+assertion `left == right` failed
+  left: Some(Transition { to: 3, after_ms: 100 })
+ right: Some(Transition { to: 31, after_ms: 100 })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    tests::an_npss_past_31_is_refused_and_31_reads_all_32_states
+    tests::the_target_is_the_highest_numbered_whatever_the_latencies
+
+test result: FAILED. 10 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p nvme-apst --lib`

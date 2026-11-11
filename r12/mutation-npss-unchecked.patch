@@ -1,0 +1,12 @@
+--- a/system/nvme/apst/src/lib.rs
++++ b/system/nvme/apst/src/lib.rs
+@@ -93,9 +93,6 @@
+ pub fn states(identify: &[u8; IDENTIFY_BYTES]) -> Result<(bool, Vec<PowerState>), TooManyStates> {
+     let npss = identify[NPSS];
+     let count = usize::from(npss) + 1;
+-    if count > STATES {
+-        return Err(TooManyStates(npss));
+-    }
+     let descriptors = &identify[DESCRIPTORS..DESCRIPTORS + count * DESCRIPTOR_BYTES];
+     let states = descriptors.as_chunks::<DESCRIPTOR_BYTES>().0.iter().map(PowerState::parse).collect();
+     Ok((identify[APSTA] & 1 != 0, states))
