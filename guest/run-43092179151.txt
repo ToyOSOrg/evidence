@@ -1,0 +1,87 @@
+guest-rows run 43092179151 at 041f1b81e257f06ddc9071e3ed51f3340c9c8fd5: https://github.com/ToyOSOrg/ToyOS/actions/runs/43092179151 (its serial artifact failed to upload: GitHub's CreateArtifact answered HTML)
+20:34:31   FAIL  a_clean_stop_proves_its_image  (6s)
+20:36:15   PASS  nvme_disk_boots  (3s)
+20:36:28   PASS  the_data_partition_beside_the_stick_is_designated  (3s)
+20:36:39   PASS  osbench_capability_groups_exit_0  (28s)
+20:37:13   PASS  session_lifecycle  (5s)
+20:38:36   PASS  a_spawn_from_an_image_frees_it_when_the_child_ends  (4s)
+20:39:28   PASS  memory_floor_holds_the_controls  (6s)
+20:39:28   PASS  a_row_reaches_its_own_state_and_no_other  (6s)
+20:40:58   PASS  virt_user_mode  (3s)
+20:40:59   FAIL  kernel_objects_refused_alone  (4s)
+20:41:00   PASS  a_launch_gives_each_unsent_stdio_slot_a_null  (3s)
+20:41:01   PASS  a_user_copy_faults_in_mid_copy_or_ends_as_bad_address  (4s)
+20:41:03   PASS  usbd_drives_the_spare  (5s)
+20:41:05   PASS  a_window_is_drawn_at_the_scale_and_relaid_at_the_next  (3s)
+20:41:27   PASS  libc_children  (259s)
+20:41:49   PASS  netstack_holders_exported_to_children  (6s)
+20:41:51   PASS  virt_user_copy_faults  (167s)
+20:41:51   PASS  virt_jobs_at_el2  (115s)
+20:41:52   PASS  virt_first_entry  (3s)
+20:41:58   PASS  virt_smp  (116s)
+20:41:58 test result: FAILED. 18 passed, 2 failed, 0 invalidated, 20 total (946.0s; workers: 10204s building, 748s testing)
+20:41:58 [ci] the suite: test result: FAILED. 18 passed, 2 failed, 0 invalidated, 20 total (946.0s; workers: 10204s building, 748s testing)
+20:41:58   - RED: the suite: test result: FAILED. 18 passed, 2 failed, 0 invalidated, 20 total (946.0s; workers: 10204s building, 748s testing)
+
+--- kernel_objects_refused_alone, as the run reported it
+20:40:59 FAIL kernel_objects_refused_alone: the job ended Some(101):
+  kernel_objects_refused: taking every frame a process may
+logkeeper: /log has not answered (the file server is gone) - /log/2026-11-11-204057.log is asked again
+nvme 00:02.0: session 0 on B88D4293-A3EC-4AD9-99DC-9B8E98360F5A closed after 138 requests
+nvme 00:02.0: the device has held at most 16 commands at once, issued per queue 9/11/31/647
+supervisor: fileserver log (pid 9) ended and could not start again for want of memory (out of memory; it lacked 13662 KiB, to hold 27992 KiB in all); it starts again once memory comes back, and its clients wait on its ports meanwhile
+supervisor: started fileserver pid=17
+supervisor: fileserver log started again as pid 17 once memory came back, 38 ms after its start was refused
+fileserver: diskserver would not open the partition: Kernel(ResourceExhausted)
+fileserver: Log serving /log — absent: the Log partition B88D4293-A3EC-4AD9-99DC-9B8E98360F5A is on no disk this server reaches
+
+thread 'main' (1) panicked at system/fileserver/src/main.rs:290:29:
+fileserver: the Log server makes no pager (ResourceExhausted); its row is no pager row
+stack backtrace:
+supervisor: fileserver log (pid 17) ended and could not start again for want of memory (no memory left for it; it lacked 2054 KiB, to hold 15808 KiB in all); it starts again once memory comes back, and its clients wait on its ports meanwhile
+supervisor: started fileserver pid=18
+supervisor: fileserver log started again as pid 18 once memory came back, 0 ms after its start was refused
+fileserver: diskserver would not open the partition: Kernel(ResourceExhausted)
+fileserver: Log serving /log — absent: the Log partition B88D4293-A3EC-4AD9-99DC-9B8E98360F5A is on no disk this server reaches
+
+thread 'main' (1) panicked at system/fileserver/src/main.rs:290:29:
+fileserver: the Log server makes no pager (ResourceExhausted); its row is no pager row
+stack backtrace:
+supervisor: fileserver log (pid 18) ended and could not start again for want of memory (no memory left for it; it lacked 2054 KiB, to hold 15808 KiB in all); it starts again once memory comes back, and its clients wait on its ports meanwhile
+supervisor: started fileserver pid=19
+supervisor: fileserver log started again as pid 19 once memory came back, 0 ms after its start was refused
+fileserver: diskserver would not open the partition: Kernel(ResourceExhausted)
+fileserver: Log serving /log — absent: the Log partition B88D4293-A3EC-4AD9-99DC-9B8E98360F5A is on no disk this server reaches
+
+thread 'main' (1) panicked at system/fileserver/src/main.rs:290:29:
+fileserver: the Log server makes no pager (ResourceExhausted); its row is no pager row
+stack backtrace:
+supervisor: fileserver log ended 4 times in 10 s; its ports are closed, its clients answered Gone, and a program started from now on is given none of its directories
+  PASS: 12437 ranges, then 42 null objects, and the next of each was refused
+  PASS: a pipe is refused, ResourceExhausted
+  PASS: a port is refused, ResourceExhausted
+  PASS: an event is refused, ResourceExhausted
+  PASS: a null object is refused, ResourceExhausted
+
+thread 'main' (1) panicked at src/bin/kernel_objects_refused.rs:47:9:
+assertion `left == right` failed: a pipe's first write, its frame with every frame taken
+  left: Ok(())
+ right: Err(ResourceExhausted)
+stack backtrace:
+
+20:40:59   FAIL  kernel_objects_refused_alone  (4s)
+
+--- a_clean_stop_proves_its_image, its first 12 lines
+20:34:31 FAIL a_clean_stop_proves_its_image: "Proof: the last boot left no stop mark, so it proves no image" never reached the the first loader pass:
+
+[---------- -------- --.--- cpu0 kernel] serial: 16550 loopback read 0xae (present)
+[---------- -------- --.--- cpu0 kernel] microcode: cpu0 Intel signature 0x906ea found 0xfa loads nothing: a hypervisor owns this CPU's microcode running 0xfa
+[---------- -------- --.--- cpu0 kernel] memcpy: highest first Rule { window: 0 }
+[---------- -------- --.--- cpu0 kernel] PAT: IA32_PAT=0x0007040100070406, entry 4 = WC
+[---------- -------- --.--- cpu0 kernel] boot: memory map 0x7d2a4018+0xb10, kernel 0x7a000000+0xac5000, stack image+0x2c5000+0x800000
+[---------- -------- --.--- cpu0 kernel] boot: kernel image 0x7d2cd018+0x1e5b88, rsdp 0x7fe63014, boot pml4 0x7d2a7000
+[---------- -------- --.--- cpu0 kernel] boot: gop 0x0+0x0 0x0 stride 0 format 0
+[---------- -------- --.--- cpu0 kernel] boot: cmdline 0x7d4dbf18+11
+[---------- -------- --.--- cpu0 kernel] boot: slot A, the one the slot table marks
+[---------- -------- --.--- cpu0 kernel] random: the loader's seed is mixed into the generator's key
+[---------- -------- --.--- cpu0 kernel] random: RDSEED is mixed into the generator's key

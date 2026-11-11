@@ -38,3 +38,9 @@ Local paths are masked (`<worktree>`, `<scratch>`, `<scratchpad>`, `<home>`, `<t
 - `build/build-only-041f1b81e.log`, `host-r6/`, `clippy-r6/`: the image, the touched crates' host suites and clippy at
   041f1b81e. The benches are down, so no metal was staged for this head: `metal-a-r5/` is not to be run, and what is owed
   on metal is in `issues/the-kernel-is-small-interrupts-post-and-threads-wait.md`.
+
+## The two reds at 041f1b81e, and the fix at ec556f5ce
+- `guest/run-43092179151.txt`: the 20 rows at 041f1b81e, 18 pass. `kernel_objects_refused_alone` and
+  `a_clean_stop_proves_its_image` are red; what each said is quoted.
+- `r7/`: `cargo test -p toyos-abi`, `-p kernel --lib --features sched-check` and the kernel's and the ABI's clippy shapes at
+  ec556f5ce (`summary.txt`), whose one change is that `SYS_SYSINFO` charges a roster and never the header alone.
