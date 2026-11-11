@@ -1,0 +1,11 @@
+--- a/system/fileserver/src/pages.rs
++++ b/system/fileserver/src/pages.rs
+@@ -551,7 +551,7 @@
+     /// Every file that may owe a write-back written back, for room, the pages
+     /// holders dirtied among them: whether any page was.
+     fn write_back_some(&mut self, volume: &mut dyn Volume) -> bool {
+-        let dirty: Vec<u64> = self.files.iter().filter(|(_, f)| f.may_owe()).map(|(id, _)| *id).collect();
++        let dirty: Vec<u64> = self.files.iter().filter(|(_, f)| f.dirty.is_some()).map(|(id, _)| *id).collect();
+         let mut cleaned = false;
+         for id in dirty {
+             match self.write_back(volume, id) {

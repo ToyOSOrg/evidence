@@ -1,0 +1,11 @@
+--- a/kernel/pure/paged.rs
++++ b/kernel/pure/paged.rs
+@@ -385,7 +385,7 @@
+     /// holds it or waits for it: it never waits, and its writer asks the
+     /// pager instead.
+     pub fn take_holder(&mut self) -> bool {
+-        let free = self.side == Side::Free && self.readers_waiting == 0 && !self.pager_waiting;
++        let free = self.side == Side::Free && !self.pager_waiting;
+         if free {
+             self.side = Side::Holder;
+             self.version += 1;

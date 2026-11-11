@@ -1,0 +1,11 @@
+--- a/kernel/pure/paged.rs
++++ b/kernel/pure/paged.rs
+@@ -464,7 +464,7 @@
+ /// in [`HOLDER_PAGES`] pages from `offset`'s. `None` for a span past the last
+ /// page.
+ pub fn holder_span(offset: u64, len: u64) -> Option<u64> {
+-    within_reach(offset, len).then(|| len.min(HOLDER_PAGES * PAGE - offset % PAGE))
++    within_reach(offset, len).then(|| len.min((offset / PAGE + HOLDER_PAGES) * PAGE - offset))
+ }
+ 
+ /// Whether a holder's append of `len` bytes fits [`HOLDER_PAGES`] wherever

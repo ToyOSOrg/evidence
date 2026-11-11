@@ -1,0 +1,15 @@
+--- a/system/fileserver/src/pages.rs
++++ b/system/fileserver/src/pages.rs
+@@ -577,7 +577,11 @@
+             }
+             return Ok(end);
+         }
+-        let end = self.under_hold(identity, |files, size| {
++        let unheld = |files: &mut Self, f: &mut dyn FnMut(&mut Self, u64) -> Result<u64, Error>| {
++            let size = files.pg().status(files.files[&identity].object).map_err(word)?.size;
++            f(files, size)
++        };
++        let end = unheld(self, &mut |files, size| {
+             let offset = at.unwrap_or(size);
+             let end = crate::bounds::in_a_file(offset, data.len() as u64)?;
+             if !data.is_empty() {

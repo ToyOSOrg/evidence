@@ -1,0 +1,13 @@
+--- a/system/fileserver/src/pages.rs
++++ b/system/fileserver/src/pages.rs
+@@ -577,8 +577,9 @@
+             }
+             return Ok(end);
+         }
++        let stale = volume.node_meta(node)?.size;
+         let end = self.under_hold(identity, |files, size| {
+-            let offset = at.unwrap_or(size);
++            let offset = at.unwrap_or(stale);
+             let end = crate::bounds::in_a_file(offset, data.len() as u64)?;
+             if !data.is_empty() {
+                 files.write_held(volume, identity, node, size, offset, data)?;
