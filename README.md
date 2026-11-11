@@ -11,3 +11,5 @@
 - `host-checks/`: the host checks at 6f2ea3427 (`revision.txt`), run by `route-checks.sh` (paths masked): the SDK's
   `files::` tests (12 passed) and clippy's two `toyos` shapes from the build's lint list, warnings denied; each log
   ends with the command's exit code.
+- `guest/run-43054675576.log`: the guest runner's log of `a_row_reaches_its_own_state_and_no_other` at 6f2ea3427,
+  PASS (`--ci rows`, 5 steps all green).
