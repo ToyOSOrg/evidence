@@ -53,3 +53,10 @@
 
 - `r4/`: the `testcases` image built at 4a2d78dd3 plus the round's diff (`tree.txt`; committed as 230a2ad3d), with
   pagerprobe compiled after its 65-page check went, rc 0.
+
+## Review round 6 (head 66de9f97b)
+
+- `r6/`: the head's tree (`tree.txt`): `cargo test -p bcachefs --lib` (208, among them
+  `a_placed_write_sends_each_contiguous_stretch_once_before_any_pointer`) and its clippy; the file server's tests and
+  clippy, whose findings are main's four. `each-piece-alone` sends each piece as its own device write: the placed
+  test reds on "two writes for one stretch of contiguous sectors", and the file is restored.

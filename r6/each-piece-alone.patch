@@ -1,0 +1,11 @@
+--- ../logs/step1-r6/data.rs.orig	2026-11-12 01:03:37
++++ lib/bcachefs/src/engine/mount/data.rs	2026-11-12 01:03:37
+@@ -348,7 +348,7 @@
+         let block = self.sb.block_bytes() as u64;
+         let bucket = u64::from(self.sb.member.bucket_sectors);
+         let Plan { pieces, buf } = plan;
+-        for stretch in pieces.chunk_by(|a, b| b.sector == a.sector + (a.end - a.first) / SECTOR as u64) {
++        for stretch in pieces.chunks(1) {
+             let (head, last) = (&stretch[0], &stretch[stretch.len() - 1]);
+             let bytes = &buf[head.blocks.start..last.blocks.end];
+             self.reissue("file data write failed", async || {
