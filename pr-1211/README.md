@@ -200,3 +200,41 @@ Where round four's items are, for review r4's list, all at `6d7e3557a`:
   were not compared: no AArch64 image is staged.
 - Not rerun at `22a577abe`: the full host run, clippy and the guest rows. They stand at `6d7e3557a` on the hash above.
 - The staged boots are still the ones built at `6d7e3557a` (head) and `422915e2c` (base).
+
+# Metal: four boots, not judged
+
+The orchestrator ran four boots, base `422915e2c` and head `6d7e3557a` on each bench; each readback's boot verdict is
+`passed`. **No row has been judged.** The judge at the branch's head refuses every readback before it reads a row:
+
+```
+FAIL testcases: testcases's boot file names no `back_unix_secs`
+[metal] 0 passed, 7 failed, 1 boot(s)
+```
+
+The boots were driven by a `toyos-metal` from before #1213, which added that field to the boot file; the judge in the
+branch, rebased over #1213, requires it. So the reds in `metal/t14-head-judge.log` and `metal/amd-head-judge.log` say
+nothing about the rows. The base readbacks were not put to the judge: they lack the field too.
+
+What follows is read by hand from the readbacks' logs (`metal/*-lines.txt`, cut from each; whole logs not published). It is
+not a judge's verdict, and the timings' check against each bench's recorded value was not made.
+
+| | T14 base | T14 head | AMD base | AMD head |
+|---|---|---|---|---|
+| revision, from the boot's own `supervisor: build` record | `422915e2c` | `6d7e3557a` | `422915e2c` | `6d7e3557a` |
+| `syscall_cost`, cycles a syscall | 159 | 163 | 87 | 87 |
+| `spawn_cost` min / median, µs over 50 | 214 / 241 | 216 / 234 | 209 / 265 | 230 / 280 |
+| `SMP` | 8 of 8 | 8 of 8 | 16 of 16 | 16 of 16 |
+| `control_regs: N of N cpus hold` | 8 of 8 | 8 of 8 | 16 of 16 | 16 of 16 |
+
+- **Head, both benches:** the audit line reads `none writable and executable` (10493 leaves on the T14, 10330 on the AMD
+  bench); `abuse_thread_table` printed `4095 threads exited unjoined and the next was refused; a join is room for one`; the
+  kernel log has no line naming `LOCK CONTENTION`, `DEADLOCK`, `stack slots:`, `DOUBLE FAULT` or `KERNEL STACK OVERFLOW`.
+- **Every AP came up on its idle stack under the W^X boot map** on both benches: these are the first metal boots of that
+  combination, the base containing #1212.
+- **Cost, one boot each:** the T14's syscall is 4 cycles dearer and its spawn within 2 µs at the minimum, 7 µs cheaper at the
+  median. The AMD bench's syscall is unchanged and its spawn 21 µs dearer at the minimum (10%), 15 µs at the median (6%). One
+  boot a side is not a distribution; nothing here says how much of that is the change.
+- **The census `tlb:` line is in no readback, base or head.** The kernel logs the census where the machine stops, after
+  logkeeper has made the log file whole, so the file a readback reads ends before it. `stack=` is therefore unread: no machine
+  is shown to have run the flush arm or the gate, and what `abuse_thread_table` exercised (stacks alive together, or retired
+  one by one) is not known from these boots.
