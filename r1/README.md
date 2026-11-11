@@ -10,4 +10,4 @@ Paths are masked: `$SCRATCH` is the assignment's scratch directory (its worktree
   - `clippy-*.log`: the `toyos` clippy shapes, each exit 0.
   - `build-only.log`: `cargo run -- --build-only`, exit 0.
 - `guest/run-43036214335.log`: guest rows at the head, 7 of 7 green.
-- `metal-staging/`: `--metal-readback` staging of the `osbench` row at base and head for both benches (exit 2 is the harness's "staged, not judged"). No machine was touched.
+- `metal-staging/`: `--metal-readback` staging of the `osbench` row at base and head for both benches, and the T14 `testcases` shared boot at head (exit 2 is the harness's "staged, not judged"). No machine was touched.

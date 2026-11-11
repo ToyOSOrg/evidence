@@ -1,0 +1,34 @@
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.81s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-b8f4c5141ecc8947)
+15:33:24   BUILD x86_64 binaries of tests/guest/rust-tests
+15:33:31   BUILT x86_64 binaries of tests/guest/rust-tests  (7s)
+15:33:31   BUILD x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests
+15:33:35   BUILT x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests  (5s)
+15:33:35 [toyos] Compiling 143 C tests, and attempting 24 declared ones...
+15:33:47 [metal] 37 registration(s) and 236 shared member(s) over 2 boot(s)
+15:33:47   BUILD x86_64 kernel, loader, ROOT of $SCRATCH/metal/head/t14-testcases/testcases/system-18557c40bff2b00c.toml
+15:35:17 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+15:35:19   BUILT x86_64 kernel, loader, ROOT of $SCRATCH/metal/head/t14-testcases/testcases/system-18557c40bff2b00c.toml  (92s)
+15:35:20 [metal] testcases: 256 job(s) under a list bound of 102200 ms, armed with [] and a boot deadline of 204400 ms — $SCRATCH/metal/head/t14-testcases/testcases/image.img
+15:35:20   BUILD x86_64 ROOT of $SCRATCH/metal/head/t14-testcases/testcases-watchdog/system-fe97fbc5dae578fa.toml
+15:35:25 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+15:35:25   BUILT x86_64 ROOT of $SCRATCH/metal/head/t14-testcases/testcases-watchdog/system-fe97fbc5dae578fa.toml  (5s)
+15:35:25 [metal] testcases-watchdog: 0 job(s) under a list bound of 60000 ms, armed with ["watchdog"] and a boot deadline of 120000 ms — $SCRATCH/metal/head/t14-testcases/testcases-watchdog/image.img
+# One boot per image. Each invocation is `cargo <words>` from this worktree.
+
+testcases
+  image: $SCRATCH/metal/head/t14-testcases/testcases/image.img
+  cargo run -p toyos-metal -- --image $SCRATCH/metal/head/t14-testcases/testcases/image.img --readback $SCRATCH/metal/head/t14-testcases/testcases --fat32-check
+
+testcases-watchdog
+  image: $SCRATCH/metal/head/t14-testcases/testcases-watchdog/image.img
+  cargo run -p toyos-metal -- --image $SCRATCH/metal/head/t14-testcases/testcases-watchdog/image.img --readback $SCRATCH/metal/head/t14-testcases/testcases-watchdog --fat32-check
+15:35:25 [metal] staged 2 image(s); $SCRATCH/metal/head/t14-testcases/request.txt lists them. The machine was not touched, so this run establishes nothing about it.
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `$SCRATCH/check-head/target/debug/deps/toyos_build-b8f4c5141ecc8947 --metal --metal-readback $SCRATCH/metal/head/t14-testcases 'boot:testcases'` (exit status: 2)
+head $SCRATCH/metal/head/t14-testcases boot:testcases: exit 2
