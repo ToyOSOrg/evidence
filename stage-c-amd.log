@@ -1,0 +1,26 @@
+revision 9108a464a92803096f9accd02d090aff48ca5a41 status [0 changed]
+$ cargo test --test toyos-build -- --metal --metal-readback $SCRATCH/r3/stage-c-amd --metal-host toyos@bench-amd machine_reboot
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.26s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-b8f4c5141ecc8947)
+17:20:20   BUILD x86_64 binaries of tests/guest/rust-tests
+17:20:23   BUILT x86_64 binaries of tests/guest/rust-tests  (3s)
+17:20:23   BUILD x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests
+17:20:24   BUILT x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests  (1s)
+17:20:24 [toyos] Compiling 143 C tests, and attempting 24 declared ones...
+17:20:28 [metal] 1 registration(s) and 0 shared member(s) over 1 boot(s)
+17:20:28   BUILD x86_64 kernel, loader, ROOT of $SCRATCH/r3/stage-c-amd/metalcase/system-4ac94ba7ceffec1f.toml
+17:20:30 assets: leaving out share/soundfont.sf2 — only /system/bin/doom opens it and this image builds no doom
+17:20:30 assets: leaving out share/doom1.wad — only /system/bin/doom opens it and this image builds no doom
+17:20:31   BUILT x86_64 kernel, loader, ROOT of $SCRATCH/r3/stage-c-amd/metalcase/system-4ac94ba7ceffec1f.toml  (2s)
+17:20:31 [metal] metalcase: 1 job(s) under a list bound of 60000 ms, armed with [] and a boot deadline of 120000 ms — $SCRATCH/r3/stage-c-amd/metalcase/image.img
+# One boot per image. Each invocation is `cargo <words>` from this worktree.
+
+metalcase
+  image: $SCRATCH/r3/stage-c-amd/metalcase/image.img
+  cargo run -p toyos-metal -- --image $SCRATCH/r3/stage-c-amd/metalcase/image.img --readback $SCRATCH/r3/stage-c-amd/metalcase --fat32-check --host toyos@bench-amd
+17:20:31 [metal] staged 1 image(s); $SCRATCH/r3/stage-c-amd/request.txt lists them. The machine was not touched, so this run establishes nothing about it.
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `$WORKTREE/target/debug/deps/toyos_build-b8f4c5141ecc8947 --metal --metal-readback $SCRATCH/r3/stage-c-amd --metal-host 'toyos@bench-amd' machine_reboot` (exit status: 2)
+exit 2

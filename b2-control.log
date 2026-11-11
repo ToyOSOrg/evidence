@@ -1,0 +1,30 @@
+worktree wt-batch revision ab336ebb3e043a08e127b9c61a6fdf4b5a6a6060 + worktree diff d00ef479abe2
+$ cargo test --manifest-path system/logkeeper/Cargo.toml file::tests
+   Compiling logkeeper v0.1.0 ($WORKTREE/system/logkeeper)
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.79s
+     Running unittests src/main.rs (target/debug/deps/logkeeper-0d32471bebb3d0bd)
+
+running 6 tests
+test file::tests::a_batch_falls_due_at_its_size_its_age_or_an_urgent_line ... ok
+test file::tests::rounds_the_file_has_not_taken_are_one_ask ... ok
+test file::tests::a_growth_already_written_starts_no_wait ... ok
+test file::tests::nothing_reaches_the_file_between_the_stops_flush_and_its_refusal ... ok
+test file::tests::the_file_takes_the_replay_a_batch_at_a_time ... ok
+test file::tests::a_refused_stop_takes_back_the_mark_it_asked_for ... FAILED
+
+failures:
+
+---- file::tests::a_refused_stop_takes_back_the_mark_it_asked_for stdout ----
+
+thread 'file::tests::a_refused_stop_takes_back_the_mark_it_asked_for' (28971800) panicked at system/logkeeper/src/file.rs:549:9:
+a refused stop leaves no mark
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    file::tests::a_refused_stop_takes_back_the_mark_it_asked_for
+
+test result: FAILED. 5 passed; 1 failed; 0 ignored; 0 measured; 27 filtered out; finished in 0.03s
+
+error: test failed, to rerun pass `--bin logkeeper`
+exit 101

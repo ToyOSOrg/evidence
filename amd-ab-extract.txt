@@ -1,0 +1,47 @@
+# AMD bench, #1232's metal A/B, run by the orchestrator 16:53-16:59Z. A = fd5d2628f (per-round writes), B = ab336ebb3 (batched).
+# Each block: the loop's verdict.txt, then lines of the readback's kernel.log (the log volume), by grep.
+
+== stage-a-amd/testcases
+verdict.txt: passed 
+$ grep -E 'spawn_cost: |exit: test_rs_(spawn_cost|ps2server_hold) |Boot: complete|the machine stops|ACPI: reset register' kernel.log
+[---------- -------- --.--- cpu0 kernel] ACPI: reset register SystemIO 0xb0 <- 0xfb, which is SMI_CMD too
+[2026-11-11 16:52:00  4.298 cpu0 kernel] Boot: complete (242ms)
+[2026-11-11 16:52:00  4.300 cpu0 kernel] boot: power-on to loader 3731 ms, loader 280 ms (ROOT read 15 ms), kernel to Boot: complete 286 ms
+[2026-11-11 16:52:10 14.743 test-runner pid=22] spawn_cost: /system/bin/toybox min 224 us median 288 us over 50, the machine busy 430 us a spawn
+[2026-11-11 16:52:10 14.743 cpu5 kernel] exit: test_rs_spawn_cost pid=22 code=0 cpu=4ms peak=0MB allocs=117 frees=105 syscalls=1560 syscall_wall=16ms 6=1 10=308 14=106 25=51 45=2 50=206 51=1 59=153 63
+[2026-11-11 16:52:14 18.323 supervisor] supervisor: power: the machine stops, and logkeeper makes the log whole first (Reboot)
+$ grep -cE "had not answered the stop|stop mark was asked|answers but slowly|refusing reader|letting reader" kernel.log
+0
+$ grep -c 'spawn: /system/bin/toybox' kernel.log; first spawn and last exit (s since boot)
+51
+[2026-11-11 16:52:10 14.727 cpu1 kernel] spawn: /system/bin/toybox pid=23 (total=0ms)
+[2026-11-11 16:52:10 14.743 cpu0 kernel] exit: toybox pid=73 code=0 cpu=0ms peak=1MB alloc
+
+== stage-b-amd/testcases
+verdict.txt: passed 
+$ grep -E 'spawn_cost: |exit: test_rs_(spawn_cost|ps2server_hold) |Boot: complete|the machine stops|ACPI: reset register' kernel.log
+[---------- -------- --.--- cpu0 kernel] ACPI: reset register SystemIO 0xb0 <- 0xfb, which is SMI_CMD too
+[2026-11-11 16:54:33  4.279 cpu0 kernel] Boot: complete (242ms)
+[2026-11-11 16:54:33  4.281 cpu0 kernel] boot: power-on to loader 3712 ms, loader 280 ms (ROOT read 15 ms), kernel to Boot: complete 286 ms
+[2026-11-11 16:54:43 14.722 test-runner pid=22] spawn_cost: /system/bin/toybox min 228 us median 276 us over 50, the machine busy 360 us a spawn
+[2026-11-11 16:54:43 14.722 cpu13 kernel] exit: test_rs_spawn_cost pid=22 code=0 cpu=5ms peak=0MB allocs=117 frees=105 syscalls=1560 syscall_wall=16ms 6=1 10=308 14=106 25=51 45=2 50=206 51=1 59=153 6
+[2026-11-11 16:54:47 18.319 supervisor] supervisor: power: the machine stops, and logkeeper makes the log whole first (Reboot)
+$ grep -cE "had not answered the stop|stop mark was asked|answers but slowly|refusing reader|letting reader" kernel.log
+0
+$ grep -c 'spawn: /system/bin/toybox' kernel.log; first spawn and last exit (s since boot)
+51
+[2026-11-11 16:54:43 14.706 cpu13 kernel] spawn: /system/bin/toybox pid=23 (total=0ms)
+[2026-11-11 16:54:43 14.722 cpu7 kernel] exit: toybox pid=73 code=0 cpu=0ms peak=1MB alloc
+
+== stage-b-amd/metalcase
+verdict.txt: passed 
+$ grep -E 'spawn_cost: |exit: test_rs_(spawn_cost|ps2server_hold) |Boot: complete|the machine stops|ACPI: reset register' kernel.log
+[---------- -------- --.--- cpu0 kernel] ACPI: reset register SystemIO 0xb0 <- 0xfb, which is SMI_CMD too
+[2026-11-11 16:58:00  4.294 cpu0 kernel] Boot: complete (242ms)
+[2026-11-11 16:58:00  4.296 cpu0 kernel] boot: power-on to loader 3722 ms, loader 286 ms (ROOT read 18 ms), kernel to Boot: complete 286 ms
+[2026-11-11 16:58:01  5.546 cpu0 kernel] exit: test_rs_ps2server_hold pid=17 code=0 cpu=1ms peak=0MB allocs=14 frees=2 syscalls=49 syscall_wall=696ms 6=1 10=3 14=1 50=1 51=1 63=3 66=21 89=1 90=10 99=2
+[2026-11-11 16:58:01  5.549 supervisor] supervisor: power: the machine stops, and logkeeper makes the log whole first (Reboot)
+$ grep -cE "had not answered the stop|stop mark was asked|answers but slowly|refusing reader|letting reader" kernel.log
+0
+$ grep -c 'spawn: /system/bin/toybox' kernel.log; first spawn and last exit (s since boot)
+0
