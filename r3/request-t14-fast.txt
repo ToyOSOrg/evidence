@@ -1,0 +1,31 @@
+# Metal request: PR #1216's A/B, the T14's fast mode. T14 only; up to 4 boots, no Linux run.
+# Rules (unchanged, fixed before the A/B's first boot): <scratch>/metal/rules-ab.txt
+# The A/B's request this extends: <scratch>/metal/request-ab.txt
+#
+# Why: after rounds 1 to 4 each arm has one boot in the drive's fast mode (M: r4-M; P: r1-P), and the rules
+# report a mode with fewer than two boots in either arm as not established. The A/B's request provided for up
+# to two more M P pairs on the T14 for this. Nothing here touched a machine.
+#
+# Images: the same staged images as the A/B, unchanged since (sha256 checked 2026-11-11 after the A/B):
+#   M  822ac54b8 (main ad5db5a65 + the osbench_disk row only)
+#      <scratch>/metal/M/diskbenchcase/image.img
+#      9ac00db2dc9d199bff310a29020d819b3398364febe5c3ffc8ebbf7d96885cbd
+#   P  d1ea387ef (PR head cc718f61f + the same row only)
+#      <scratch>/metal/P/diskbenchcase/image.img
+#      9e7377b8efcd1637cd30aaaf2ad96671f36dc985bc92c86f675a20c447d9839c
+# Driver, from <scratch>/wt (branch seqwrite; tests/metal is the
+# same at M, P and the branch), with <dir> a fresh readback directory for each boot:
+#   cargo run -p toyos-metal -- --image <image.img above> --readback <dir> --fat32-check
+#
+# ORDER (T14), readback directories under metal/runs-ab/t14/ beside rounds 1 to 4:
+#   1  boot M  -> r5-M
+#   2  boot P  -> r5-P
+#   3  boot M  -> r6-M
+#   4  boot P  -> r6-P
+# Stop early after step 2 if r5-M and r5-P are both fast; otherwise run all four. A boot is fast when the
+# p50 of its persist.write_4k_fsync line is under 3 ms:
+#   grep -o 'bench=persist.write_4k_fsync unit=ns .* p50=[0-9]*' <dir>/kernel.log   (p50 < 3000000)
+# Keep the order: DATA carries over from boot to boot, and each boot's mount line reads what the boot before
+# left (the A2 check, and the free-count observation in the A/B's verdict).
+#
+# Wanted back per boot: the readback directory, the driver's exit and the verdict, and a chain.log line as before.

@@ -1,0 +1,15 @@
+diff --git a/tests/common/metal.rs b/tests/common/metal.rs
+index e792f31fd..cfe39cdec 100644
+--- a/tests/common/metal.rs
++++ b/tests/common/metal.rs
+@@ -977,7 +977,9 @@ pub fn run(
+         };
+         readbacks.insert(label.clone(), back);
+     }
+-    if judge_readbacks(&timings::dir(), &readbacks, &runs, shared) {
++    // LOCAL JUDGING PATCH, never committed: judge against a copy of the benches'
++    // records, so this run adds nothing to the shared ones.
++    if judge_readbacks(&PathBuf::from(std::env::var_os("JUDGE_RECORDS").expect("JUDGE_RECORDS")), &readbacks, &runs, shared) {
+         Verdict::Red
+     } else {
+         Verdict::Green

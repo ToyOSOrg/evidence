@@ -1,7 +1,8 @@
 # PR #1216: a reserved write's bytes go to the device at once
 
-Host and guest evidence for https://github.com/ToyOSOrg/ToyOS/pull/1216. No bench has run this branch; the
-metal round is requested, not done. Paths, the runner's identity and CPU model strings are masked.
+Host, guest and metal evidence for https://github.com/ToyOSOrg/ToyOS/pull/1216: r1 the host and guest checks,
+r2 the diagnostic metal round, r3 the A/B judged. Paths, the runner's identity, machine and drive model strings
+and the boots' network lines are masked or left out.
 
 ## r1: branch `seqwrite` at 5a90355df (code) and b0b6dd840 (the same code plus an issue record)
 
@@ -104,3 +105,103 @@ Rules fixed before staging: `r2/ab/rules-ab.txt`; the request with the images' h
 M (main + the row) and P (cc718f61f + the row), four boots each a bench, interleaved, Linux after rounds 1 to 3;
 C2 (P + corrected timers) one boot a bench last, no arm; R2 (cc718f61f, `bench_data_survives_reboot`) first on one
 bench. The row and the timers are local scratch commits that never land.
+
+## r3: the A/B, judged (`r3/`)
+
+The rules were fixed before the A/B's first boot and before its images were staged: `r2/ab/rules-ab.txt`; the
+request with the images' hashes: `r2/ab/request-ab.txt`. M is main ad5db5a65 with the `osbench_disk` row only
+(822ac54b8), P the PR head cc718f61f with the same row only (d1ea387ef); C2 is P with stage timers and no arm.
+Four boots an arm a bench, interleaved M P, Linux's `osbench persist` after rounds 1 to 3; on the T14 the
+reboot round trip at the head (R2) first. Each boot's log here is the lines the A/B reads (osbench's, the test
+markers, the file server's DATA lines and C2's `SEQDIAG` lines), masked: the rest of a log names the
+machine's network. `r3/chain/` has each bench's chain log: every try and its verdict or exit.
+
+The tables are `r3/ab.md`, written by `r3/ab.py` (`python3 -I ab.py <runs>`) from the boots' and Linux's
+lines; A2's log checks are `r3/a2.txt`, written by `r3/a2.sh`.
+
+### A1, no regression: holds on both benches
+
+No `fs.disk.*`, `nvme.*` or `persist.*` row is more than 5% worse in P than in M and resolved (every P boot
+beyond every M boot), on either bench, over all boots, and on the T14 in its slow mode alone (three boots an
+arm). The `nvme.*` rows report unsupported on both benches: the NVMe holds another system. The T14's fast
+mode has one boot an arm (r4-M, r1-P), so it is not established.
+
+Rows P reads more than 5% worse at the median, none resolved:
+
+- AMD: `fs.disk.fstat`, `stat`, `open_close`, `reopen_read_4k` and the `direct.*` rows, 7 to 12%. Each is
+  a request to the file server, and each boot's figure follows where the client and the server ran: about
+  9 µs for `fstat` on two cores of one LLC, about 11 µs across LLCs or on what the numbering suggests are
+  two threads of one core (`ran=` on each line). M has one such boot, P two. The `fs.mem.*` rows, served
+  by the memory file system this change does not reach, split the same way in both arms.
+- T14: `fs.disk.seek` (244 to 254 ns, and 375 and 387 in r3-P and r4-P) and `fs.disk.read_4k` (730 to 837 ns
+  in both arms). Each answers in under a microsecond, where a request to the file server costs 9 µs or more
+  (`fs.disk.fstat`), so neither reaches the server, and P changes no client code: M and P differ in
+  `lib/bcachefs`, `system/diskserver` and the issue record only.
+
+### A2, correct: holds
+
+Every boot's verdict is `passed`; every boot mounted DATA once and formatted nothing, found its
+directories (`DATA mkdir: Exists`), printed no other DATA error and none of the storage path's refusal lines
+(a failed or refused request, a reconnect, `Lost`, a request asked again, a stopped or failed mount, a
+controller reset, a panic); every test exited 0 (`r3/a2.txt`). R2 (the PR head, 256 KiB written and synced,
+then read back after a reboot) passed both boots on the T14.
+
+The row judges passed every boot, run offline over the readbacks (`r3/judge/`): `osbench_disk` for each M, P
+and C2 boot and `bench_data_survives_reboot` for R2's two, each `cargo test --test toyos-build -- --metal
+--metal-readback <dir> <row>` at d1ea387ef (the harness is the same at M and P: they differ in no file under
+`tests/` or `build/`), exit 0 and `1 passed, 0 failed` each (`r3/judge/run.log`, `r3/judge.sh`). These readbacks
+predate `back_unix_secs`, and this base's judge does not read it, so no patch was needed for it. One uncommitted
+local patch, `r3/judge-local.diff` as #1211's, points the judge at a fresh copy of the benches' records for each
+run, so judging added nothing to the shared records; each run judged 0 numbers past their record, and the two it
+measured (the boot's `complete_ms` and `back_secs` under this new boot label) were new to the record and so
+recorded in the copy, not judged.
+
+DATA's free count at each mount (`r3/free.txt`) is the same at every boot of a bench but one: C2 on the T14
+mounted with one 512 KiB bucket fewer free than r4-P did, so r4-P left one bucket more in use than it found.
+The three P boots before it and every boot on the AMD left the count unchanged, and r4-P's log refuses
+nothing. On the host the grouped path leaves no bucket behind where it is tested: the engine's test that writes
+5 MiB in grouped transactions, truncates it and unmounts runs fsck, which derives every bucket's allocation
+from the keys, and finds nothing (r2's engine suite). The bench's one bucket is not explained; the T14 boots
+requested next read the count again across each boot.
+
+On the AMD, r3-P's first two tries came back without a verdict (network drops, a hung reboot); the third
+passed 87 minutes after r3-M. Each try's readback was cleared before the next. Whether another boot ran on
+the AMD in that gap is not recorded here; r3-P's mount read the same free count as r3-M's.
+
+### A3, the gain
+
+`persist.seq_write_fsync` and `fs.disk.seq_write.1048576`, MB/s, each boot (T14 mode: `persist.write_4k_fsync`
+p50 over 3 ms is slow):
+
+| bench | M | P | P against M, medians | resolved |
+|---|---|---|---|---|
+| AMD | 242, 241, 262, 239; 452, 454, 460, 455 | 375, 404, 409, 403; 668, 672, 676, 681 | +67%; +48% | both |
+| T14 slow | 156, 169, 182; 455, 485, 466 | 228, 217, 202; 563, 573, 569 | +28%; +22% | both |
+| T14 fast | 245; 368 | 349; 498 | one boot an arm | not established |
+
+### A4, against Linux: does not hold
+
+| bench | P | Linux (L1, L2, L3) |
+|---|---|---|
+| AMD | 375 to 409; 668 to 681 | 491, 495, 468; 806, 805, 800 |
+| T14 fast | 349; 498 (one boot) | 579, 603, 609; 347, 349, 344 |
+| T14 slow | 202 to 228; 563 to 573 | no Linux run of this session was slow |
+
+On the T14 P's 1 MiB row without a sync is above Linux's; the durable row is not, in either bench.
+
+The split of P's round (C2, one boot a bench; `create_write_fsync_us` and the `SEQDIAG` lines of the same boot):
+
+- AMD, ms a round: create 1.6 to 3.1, writes 4.6 to 6.7, fsync 14.1 to 18.5 (14.1 and 14.2 in rounds 3 and 4);
+  Linux this session 1.8 to 3.2, 5.4 to 6.3, 8.7 to 10.3 (16.6 in one first round). Of P's fsync: the write-back 9.7 ms, of which the
+  device's call 5.3 ms (up to 15 commands held; 1.2 ms of it copies the blocks for the session) and the
+  extents' lookups, building and checksums before it and pointer transactions after it 4.0 ms, none of it
+  beside the device's time; the commit 2.2 to 2.6 ms (6.6 in round 2), two Flushes; reading the pages out
+  0.8 ms; about 1.3 ms not split.
+- T14, slow: fsync 29.0 to 30.8 ms: the write-back 16.9 to 18.7 ms, of which the device 11.1 to 13.4 ms for
+  the 8 MiB; the commit 9.2 to 11.7 ms, two Flushes of 8.5 to 11.4 ms in sum. Expected before the boots was
+  22 to 26 ms; the drive's slow mode writes slower than that.
+
+### The T14's fast mode: more boots requested
+
+`r3/request-t14-fast.txt`: up to two more M P pairs on the T14 from the same images, as the A/B's request
+provided for.
