@@ -50,3 +50,19 @@ label in its guest logs.
 No guest row was run at 98853704a: against e9bbb2961 its code changes are
 four lines (a constant's definition, an `expect` for an `unwrap_or`, one
 parameter's type spelling, one `pub` removed) and a test's rename.
+
+## Review round 3
+
+**Correction.** The row above for `host/r3-ci-host.log` is wrong: at 98853704a
+the `the build system` step had two failing tests, not one. The second,
+`bootlog::tests::the_kernel_writes_the_records_the_host_reads`, was this
+branch's own, red on every host (`382 passed; 2 failed`).
+
+| file | command | revision | target | exit |
+|---|---|---|---|---|
+| `host/r4-build-system.log` | `cargo test --lib`, the `the build system` step | 166944c21 | macOS arm64 host | 101: 383 passed, 1 failed, the recorded macOS test (`llvm::tests::the_caller_s_environment_reaches_neither_the_build_nor_the_key`, and `keyed_and_built`, the child process it runs) |
+| `host/r4-harness-checks.log` | `cargo test --test toyos-checks`, the `the harness's own checks` step | 166944c21 | macOS arm64 host | 0: 42 passed |
+
+166944c21 differs from 98853704a in `build/bootlog.rs`, `tests/toyos.rs`, a
+comment in one guest test and issue records. The other 108 host steps were
+not rerun.
