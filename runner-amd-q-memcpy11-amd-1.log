@@ -1,0 +1,19 @@
+saved  67108864 bytes of the install area log to <scratch>/orch/amd-saves/20261105T170704Z-before-q-memcpy11-amd-1-nvme-log.img
+f3c5fa7d98ab94b79d1a74b6623c6b78dba76e1c18c5b2e68dbdec3f02af0b9e  <scratch>/agents/memcpy/r11/metal/B/copyat/image.img
+flasher: HEAD, origin/gh-readonly-queue/main/pr-1187-0f085b199a9e482be9a77b58485c5ed2c7f1af4d e162a443e
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.25s
+     Running `target/debug/toyos-metal --image <scratch>/agents/memcpy/r11/metal/B/copyat/image.img --readback <scratch>/agents/memcpy/r11/runs/1-B --host '<user>@<bench>' --fat32-check`
+image <scratch>/agents/memcpy/r11/metal/B/copyat/image.img: Esp 35651584 bytes, Slots 1048576 bytes, Log 35651584 bytes, BootA 35651584 bytes, RootA 42336256 bytes
+image <scratch>/agents/memcpy/r11/metal/B/copyat/image.img: armed with ["boot-deadline=840000"], so it is waited 1140 s to come back
+machine <vendor> <model>, BIOS <version>
+  run: sudo -n '/usr/sbin/sgdisk' '--partition-guid=7:<guid>' '--partition-guid=8:<guid>' '--partition-guid=9:<guid>' '--partition-guid=10:<guid>' '--partition-guid=11:<guid>' '/dev/nvme0n1'
+  run: sudo -n '/usr/bin/udevadm' 'settle' '--timeout=180'
+  run: sudo -n '/usr/bin/dd' 'of=/dev/nvme0n1p5' 'bs=4M' 'conv=fsync,nocreat'
+  run: sudo -n '/usr/bin/dd' 'of=/dev/nvme0n1p6' 'bs=4M' 'conv=fsync,nocreat'
+  run: sudo -n '/usr/bin/dd' 'of=/dev/nvme0n1p7' 'bs=4M' 'conv=fsync,nocreat'
+  run: sudo -n '/usr/bin/dd' 'of=/dev/nvme0n1p8' 'bs=4M' 'conv=fsync,nocreat'
+  run: sudo -n '/usr/bin/dd' 'of=/dev/nvme0n1p9' 'bs=4M' 'conv=fsync,nocreat'
+installed <scratch>/agents/memcpy/r11/metal/B/copyat/image.img on /dev/nvme0n1; Boot0002 (ToyOS-internal) boots it
+  run: sudo -n '/usr/bin/efibootmgr' '--bootnext' '0002'
+  run: sudo -n '/usr/sbin/reboot'
+17:26:35 toyos-metal: the machine did not come back within 1140 s, which is longer than every watchdog a boot runs under plus the time coming back costs; why it did not is what the panel and the log partition say, and neither is readable from here
