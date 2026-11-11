@@ -1,0 +1,382 @@
+rev 2cfa7887b42f7f3826e171e01f7d0034b22249b3
+== cargo test -p kernel --lib --features sched-check frames::
+   Compiling toyos-abi v0.16.0 (<scratch>/spawnperf/wt/sdk/abi)
+   Compiling kernel v0.1.0 (<scratch>/spawnperf/wt/kernel)
+    Finished `test` profile [optimized + debuginfo] target(s) in 9.11s
+     Running unittests pure/lib.rs (target/debug/deps/kernel-a7ca71f2661cd543)
+
+running 41 tests
+test frames::tests::a_charge_made_before_its_floor_grows_from_it ... ok
+test frames::tests::a_charge_reserves_what_the_heap_grows_into ... ok
+test frames::tests::a_floor_accounts_heap_draws_on_its_floor_and_keeps_it ... ok
+test frames::tests::a_batch_of_promised_frames_draws_each_promise_once ... ok
+test frames::tests::a_floor_accounts_wait_is_answered_by_its_own_floor ... ok
+test frames::tests::a_floor_is_held_against_every_other_account ... ok
+test frames::tests::a_floor_is_set_only_where_it_is_free_and_unset_lets_it_go ... ok
+test frames::tests::a_floor_let_go_releases_what_its_pool_kept ... ok
+test frames::tests::a_frame_carves_one_superframe_and_its_return_makes_it_whole ... ok
+test frames::tests::a_frame_freed_while_pinned_goes_back_with_its_last_pin ... ok
+test frames::tests::a_hole_is_absent ... ok
+test frames::tests::a_double_free_is_a_kernel_bug - should panic ... ok
+test frames::tests::a_batch_past_its_promises_is_a_panic - should panic ... ok
+test frames::tests::a_floors_superframes_stay_whole_beside_scattered_room ... ok
+test frames::tests::a_kept_superframe_split_answers_a_wait ... ok
+test frames::tests::a_kept_superframe_goes_to_the_kernel_alone ... ok
+test frames::tests::a_pin_count_at_its_limit_refuses_and_pins_nothing ... ok
+test frames::tests::a_pinned_frame_discarded_is_a_panic - should panic ... ok
+test frames::tests::a_run_is_contiguous_and_skips_a_gap ... ok
+test frames::tests::a_smaller_refusal_while_waiting_is_what_is_waited_for ... ok
+test frames::tests::a_promise_holds_its_frames_against_every_other_allocation ... ok
+test frames::tests::a_superframe_and_a_run_come_only_from_whole_superframes ... ok
+test frames::tests::a_superframe_freed_with_a_pinned_frame_is_whole_only_after_the_unpin ... ok
+test frames::tests::a_wait_for_a_run_is_answered_by_a_row ... ok
+test frames::tests::a_wait_for_memory_is_answered_once_what_it_lacked_comes_back ... ok
+test frames::tests::a_wait_for_a_superframe_is_answered_by_one_and_not_by_frames ... ok
+test frames::tests::an_uncharge_keeps_one_superframe_of_slack ... ok
+test frames::tests::a_withheld_range_is_never_handed_out ... ok
+test frames::tests::an_unpin_before_the_free_leaves_nothing_deferred ... ok
+test frames::tests::exhaustion_answers_none_and_a_return_answers_again ... ok
+test frames::tests::an_unpin_with_no_pin_is_a_kernel_bug - should panic ... ok
+test frames::tests::held_frames_are_taken_whole_or_not_at_all ... ok
+test frames::tests::memory_off_superframe_boundaries_is_used_and_never_whole ... ok
+test frames::tests::frames_fill_a_split_superframe_before_carving_another ... ok
+test frames::tests::memory_outside_the_records_pins_as_nothing ... ok
+test frames::tests::past_its_floor_an_account_is_ordinary_and_gives_back_to_its_floor_first ... ok
+test frames::tests::the_heaps_own_superframes_cover_no_charge ... ok
+test frames::tests::fragmentation_never_takes_a_floor ... ok
+test frames::tests::fragmentation_never_takes_what_charges_or_promises_hold ... ok
+test frames::tests::a_mixed_load_keeps_every_frame_once ... ok
+test frames::tests::a_wait_for_memory_is_never_missed ... ok
+
+test result: ok. 41 passed; 0 failed; 0 ignored; 0 measured; 422 filtered out; finished in 0.01s
+
+exit 0
+== cargo test -p kernel --lib --features sched-check vm::
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.11s
+     Running unittests pure/lib.rs (target/debug/deps/kernel-a7ca71f2661cd543)
+
+running 17 tests
+test vm::tests::a_lone_touch_populates_its_own_page ... ok
+test vm::tests::a_copied_page_keeps_nothing_its_frame_held ... ok
+test vm::tests::a_page_wholly_past_its_source_reads_nothing_from_it ... ok
+test vm::tests::a_run_stops_at_the_ranges_ends_and_a_neighbour_outside_it_counts_for_nothing ... ok
+test vm::tests::a_touch_beside_a_populated_page_populates_its_run_upward_or_downward ... ok
+test vm::tests::an_empty_space_places_at_its_floor_with_the_alignment_asked ... ok
+test vm::tests::a_removal_over_entries_and_holes_takes_every_entry_it_meets ... ok
+test vm::tests::a_copied_range_cut_keeps_its_source_offset_and_length ... ok
+test vm::tests::a_removal_cuts_crossing_entries_and_frees_exactly_its_range ... ok
+test vm::tests::an_update_changes_only_its_range_and_joins_back ... ok
+test vm::tests::neighbours_that_continue_each_other_join ... ok
+test vm::tests::backing_is_a_commitment_or_an_object ... ok
+test vm::tests::no_protection_allows_a_write_and_an_execution ... ok
+test vm::tests::an_insert_over_an_entry_is_a_kernel_bug - should panic ... ok
+test vm::tests::placement_takes_the_smallest_free_range_that_fits ... ok
+test vm::tests::protection_allows_its_accesses_and_bounds_by_its_maximum ... ok
+test vm::tests::a_mixed_load_agrees_with_a_page_map ... ok
+
+test result: ok. 17 passed; 0 failed; 0 ignored; 0 measured; 446 filtered out; finished in 0.03s
+
+exit 0
+== mutation: the batch takes frames before checking its promises
+== cargo test -p kernel --lib --features sched-check frames::tests::a_batch
+   Compiling kernel v0.1.0 (<scratch>/spawnperf/wt/kernel)
+    Finished `test` profile [optimized + debuginfo] target(s) in 6.39s
+     Running unittests pure/lib.rs (target/debug/deps/kernel-a7ca71f2661cd543)
+
+running 2 tests
+test frames::tests::a_batch_of_promised_frames_draws_each_promise_once ... ok
+test frames::tests::a_batch_past_its_promises_is_a_panic - should panic ... FAILED
+
+failures:
+
+---- frames::tests::a_batch_past_its_promises_is_a_panic stdout ----
+
+thread 'frames::tests::a_batch_past_its_promises_is_a_panic' (31382245) panicked at kernel/pure/frames.rs:765:9:
+frames: a promised frame drawn and none was promised
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+note: panic did not contain expected string
+      panic message: "frames: a promised frame drawn and none was promised"
+ expected substring: "11 promised frames drawn of 10 promised"
+
+failures:
+    frames::tests::a_batch_past_its_promises_is_a_panic
+
+test result: FAILED. 1 passed; 1 failed; 0 ignored; 0 measured; 461 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p kernel --lib`
+exit 101
+mutation reverted
+== cargo clippy -p kernel --target x86_64-unknown-none -- -W clippy::checked_conversions -W clippy::default_trait_access -W clippy::manual_midpoint -W clippy::redundant_clone -W clippy::unchecked_time_subtraction -W clippy::unnecessary_semicolon -D warnings
+    Checking toyos-abi v0.16.0 (<scratch>/spawnperf/wt/sdk/abi)
+    Checking toyos-phys v0.1.0 (<scratch>/spawnperf/wt/kernel/phys)
+    Checking rustc-demangle v0.1.27
+    Checking toyos-tco v0.1.0 (<scratch>/spawnperf/wt/lib/tco)
+    Checking toyos-elide v0.1.0 (<scratch>/spawnperf/wt/lib/elide)
+    Checking cfg-if v1.0.4
+    Checking toyos-random v0.1.0 (<scratch>/spawnperf/wt/lib/random)
+    Checking toyos-rootimage v0.1.0 (<scratch>/spawnperf/wt/lib/rootimage)
+    Checking toyos-tsc v0.1.0 (<scratch>/spawnperf/wt/lib/tsc)
+    Checking toyos-wallclock v0.1.0 (<scratch>/spawnperf/wt/lib/wallclock)
+    Checking toyos-gicv3 v0.1.0 (<scratch>/spawnperf/wt/kernel/gicv3)
+    Checking toyos-quiesce v0.1.0 (<scratch>/spawnperf/wt/lib/quiesce)
+    Checking toyos-register v0.1.0 (<scratch>/spawnperf/wt/kernel/register)
+    Checking toyos-microcode v0.1.0 (<scratch>/spawnperf/wt/lib/microcode)
+    Checking hashbrown v0.16.1
+    Checking toyos-amdvi v0.1.0 (<scratch>/spawnperf/wt/kernel/amdvi)
+    Checking toyos-its v0.1.0 (<scratch>/spawnperf/wt/kernel/its)
+    Checking dlmalloc v0.2.13
+    Checking toyos-bootmap v0.1.0 (<scratch>/spawnperf/wt/lib/bootmap)
+    Checking toyos-kimage v0.1.0 (<scratch>/spawnperf/wt/lib/kimage)
+    Checking toyos-pci v0.1.0 (<scratch>/spawnperf/wt/kernel/pci)
+    Checking toyos-proclife v0.1.0 (<scratch>/spawnperf/wt/kernel/proclife)
+    Checking toyos-symbols v0.1.0 (<scratch>/spawnperf/wt/lib/symbols)
+    Checking toyos-acpi v0.1.0 (<scratch>/spawnperf/wt/lib/acpi)
+    Checking toyos-smmu v0.1.0 (<scratch>/spawnperf/wt/kernel/smmu)
+    Checking toyos-userbound v0.1.0 (<scratch>/spawnperf/wt/lib/userbound)
+    Checking kernel v0.1.0 (<scratch>/spawnperf/wt/kernel)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 5.08s
+exit 0
+== cargo clippy -p kernel --target x86_64-unknown-none --features boot-actuators,test-actuators -- -W clippy::checked_conversions -W clippy::default_trait_access -W clippy::manual_midpoint -W clippy::redundant_clone -W clippy::unchecked_time_subtraction -W clippy::unnecessary_semicolon -D warnings
+    Checking kernel v0.1.0 (<scratch>/spawnperf/wt/kernel)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 3.31s
+exit 0
+== cargo clippy -p kernel --target aarch64-unknown-none-softfloat -- -W clippy::checked_conversions -W clippy::default_trait_access -W clippy::manual_midpoint -W clippy::redundant_clone -W clippy::unchecked_time_subtraction -W clippy::unnecessary_semicolon -D warnings
+    Checking toyos-abi v0.16.0 (<scratch>/spawnperf/wt/sdk/abi)
+    Checking toyos-phys v0.1.0 (<scratch>/spawnperf/wt/kernel/phys)
+    Checking toyos-tco v0.1.0 (<scratch>/spawnperf/wt/lib/tco)
+    Checking cfg-if v1.0.4
+    Checking rustc-demangle v0.1.27
+    Checking toyos-elide v0.1.0 (<scratch>/spawnperf/wt/lib/elide)
+    Checking toyos-rootimage v0.1.0 (<scratch>/spawnperf/wt/lib/rootimage)
+    Checking toyos-gicv3 v0.1.0 (<scratch>/spawnperf/wt/kernel/gicv3)
+    Checking hashbrown v0.16.1
+    Checking toyos-microcode v0.1.0 (<scratch>/spawnperf/wt/lib/microcode)
+    Checking toyos-random v0.1.0 (<scratch>/spawnperf/wt/lib/random)
+    Checking toyos-tsc v0.1.0 (<scratch>/spawnperf/wt/lib/tsc)
+    Checking toyos-quiesce v0.1.0 (<scratch>/spawnperf/wt/lib/quiesce)
+    Checking toyos-wallclock v0.1.0 (<scratch>/spawnperf/wt/lib/wallclock)
+    Checking toyos-register v0.1.0 (<scratch>/spawnperf/wt/kernel/register)
+    Checking toyos-amdvi v0.1.0 (<scratch>/spawnperf/wt/kernel/amdvi)
+    Checking toyos-its v0.1.0 (<scratch>/spawnperf/wt/kernel/its)
+    Checking dlmalloc v0.2.13
+    Checking toyos-bootmap v0.1.0 (<scratch>/spawnperf/wt/lib/bootmap)
+    Checking toyos-kimage v0.1.0 (<scratch>/spawnperf/wt/lib/kimage)
+    Checking toyos-symbols v0.1.0 (<scratch>/spawnperf/wt/lib/symbols)
+    Checking toyos-proclife v0.1.0 (<scratch>/spawnperf/wt/kernel/proclife)
+    Checking toyos-pci v0.1.0 (<scratch>/spawnperf/wt/kernel/pci)
+    Checking toyos-acpi v0.1.0 (<scratch>/spawnperf/wt/lib/acpi)
+    Checking toyos-smmu v0.1.0 (<scratch>/spawnperf/wt/kernel/smmu)
+    Checking toyos-userbound v0.1.0 (<scratch>/spawnperf/wt/lib/userbound)
+    Checking kernel v0.1.0 (<scratch>/spawnperf/wt/kernel)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 4.41s
+exit 0
+== cargo clippy -p kernel --lib --tests --features sched-check -- -W clippy::checked_conversions -W clippy::default_trait_access -W clippy::manual_midpoint -W clippy::redundant_clone -W clippy::unchecked_time_subtraction -W clippy::unnecessary_semicolon -D warnings
+    Checking toyos-abi v0.16.0 (<scratch>/spawnperf/wt/sdk/abi)
+    Checking kernel v0.1.0 (<scratch>/spawnperf/wt/kernel)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 2.90s
+exit 0
+== side a rev 6ecb26f7de6b7002647100fec3c856a53b116b5b
+   Compiling zeroize v1.9.0
+   Compiling proc-macro2 v1.0.106
+   Compiling unicode-ident v1.0.24
+   Compiling log v0.4.29
+   Compiling quote v1.0.45
+   Compiling untrusted v0.9.0
+   Compiling serde_core v1.0.228
+   Compiling rustls v0.23.45
+   Compiling subtle v2.6.1
+   Compiling once_cell v1.21.4
+   Compiling libc v0.2.190
+   Compiling serde v1.0.228
+   Compiling equivalent v1.0.2
+   Compiling cfg-if v1.0.4
+   Compiling itoa v1.0.17
+   Compiling rustls-pki-types v1.15.1
+   Compiling httparse v1.10.1
+   Compiling toyos v0.18.0 (<scratch>/spawnperf/wt/sdk/toyos)
+   Compiling foldhash v0.1.5
+   Compiling zmij v1.0.21
+   Compiling bytes v1.12.1
+   Compiling hashbrown v0.16.1
+   Compiling rustls-webpki v0.103.15
+   Compiling toyos-wallclock v0.1.0 (<scratch>/spawnperf/wt/lib/wallclock)
+   Compiling libm v0.2.16
+   Compiling crc32fast v1.5.0
+   Compiling base64 v0.23.1
+   Compiling allocator-api2 v0.2.21
+   Compiling indexmap v2.13.0
+   Compiling http v1.5.0
+   Compiling hashbrown v0.15.5
+   Compiling toyos-logstream v0.1.0 (<scratch>/spawnperf/wt/lib/logstream)
+   Compiling ttf-parser v0.21.1
+   Compiling winnow v0.7.15
+   Compiling toyos-ieee80211 v0.1.0 (<scratch>/spawnperf/wt/lib/ieee80211)
+   Compiling adler2 v2.0.1
+   Compiling syn v2.0.117
+   Compiling toyos-blockdev v0.1.0 (<scratch>/spawnperf/wt/lib/blockdev)
+   Compiling serde_json v1.0.149
+   Compiling toml_write v0.1.2
+   Compiling getrandom v0.3.4 (https://github.com/ToyOSOrg/getrandom?branch=toyos-0.3-sdk-0.12#67c17e0a)
+   Compiling simd-adler32 v0.3.10
+   Compiling ureq-proto v0.6.4
+   Compiling filetime v0.2.29
+   Compiling miniz_oxide v0.9.1
+   Compiling toyos-radio v0.1.0 (<scratch>/spawnperf/wt/lib/radio)
+   Compiling webpki-roots v1.0.9
+   Compiling toyos-tco v0.1.0 (<scratch>/spawnperf/wt/lib/tco)
+   Compiling utf8-zero v0.8.1
+   Compiling toyos-elide v0.1.0 (<scratch>/spawnperf/wt/lib/elide)
+   Compiling lazy_static v1.5.0
+   Compiling memchr v2.8.0
+   Compiling percent-encoding v2.3.2
+   Compiling rustc-demangle v0.1.27
+   Compiling toyos-keymap v0.1.0 (<scratch>/spawnperf/wt/sdk/keymap)
+   Compiling fontdue v0.9.3
+   Compiling toyos-font v0.2.0 (<scratch>/spawnperf/wt/sdk/font)
+   Compiling toyos-symbols v0.1.0 (<scratch>/spawnperf/wt/lib/symbols)
+   Compiling toyos-manifest v0.1.0 (<scratch>/spawnperf/wt/lib/manifest)
+   Compiling serde_derive v1.0.228
+   Compiling toyos-icon v0.1.0 (<scratch>/spawnperf/wt/sdk/icon)
+   Compiling toyos-session v0.1.0 (<scratch>/spawnperf/wt/lib/session)
+   Compiling iced-x86 v1.21.0
+   Compiling flate2 v1.1.10
+   Compiling toyos-wifi v0.1.0 (<scratch>/spawnperf/wt/lib/wifi)
+   Compiling tar v0.4.46
+   Compiling toyos-fat32 v0.1.0 (<scratch>/spawnperf/wt/lib/fat32)
+   Compiling toyos-tmpdir v0.1.0 (<scratch>/spawnperf/wt/lib/tmpdir)
+   Compiling pem v4.0.0
+   Compiling webpki-root-certs v1.0.9
+   Compiling toyos-kimage v0.1.0 (<scratch>/spawnperf/wt/lib/kimage)
+   Compiling toyos-input v0.1.0 (<scratch>/spawnperf/wt/lib/input)
+   Compiling toyos-gpt v0.1.0 (<scratch>/spawnperf/wt/lib/gpt)
+   Compiling toyos-fat32-check v0.1.0 (<scratch>/spawnperf/wt/lib/fat32/check)
+   Compiling toyos-microcode v0.1.0 (<scratch>/spawnperf/wt/lib/microcode)
+   Compiling toyos-osrelease v0.1.0 (<scratch>/spawnperf/wt/sdk/osrelease)
+   Compiling toyos-virtio-serial v0.1.0 (<scratch>/spawnperf/wt/lib/virtio-serial)
+   Compiling toyos-vdagent v0.1.0 (<scratch>/spawnperf/wt/lib/vdagent)
+   Compiling autocfg v1.5.1
+   Compiling core-foundation-sys v0.8.7
+   Compiling toyos-bootmap v0.1.0 (<scratch>/spawnperf/wt/lib/bootmap)
+   Compiling iana-time-zone v0.1.65
+   Compiling num-traits v0.2.19
+   Compiling toyos-acpi v0.1.0 (<scratch>/spawnperf/wt/lib/acpi)
+   Compiling byteorder v1.5.0
+   Compiling bitflags v1.3.2
+   Compiling kernel v0.1.0 (<scratch>/spawnperf/wt/kernel)
+   Compiling osbench-rules v0.1.0 (<scratch>/spawnperf/wt/tests/guest/osbench/rules)
+   Compiling toyos-quiesce v0.1.0 (<scratch>/spawnperf/wt/lib/quiesce)
+   Compiling toyos-parity v0.1.0 (<scratch>/spawnperf/wt/lib/parity)
+   Compiling toyos-crypto v0.1.0 (<scratch>/spawnperf/wt/lib/crypto)
+   Compiling ureq v3.4.2
+   Compiling toyos-userbound v0.1.0 (<scratch>/spawnperf/wt/lib/userbound)
+   Compiling acpiserver-api v0.1.0 (<scratch>/spawnperf/wt/lib/acpiserver-api)
+   Compiling toml_datetime v0.6.11
+   Compiling serde_spanned v0.6.9
+   Compiling toml_edit v0.22.27
+   Compiling chrono v0.4.44
+   Compiling fatfs v0.3.6
+   Compiling toml v0.8.23
+   Compiling toyos-update v0.1.0 (<scratch>/spawnperf/wt/lib/update)
+   Compiling toyos-swap v0.1.0 (<scratch>/spawnperf/wt/lib/swap)
+   Compiling bcachefs v0.1.0 (<scratch>/spawnperf/wt/lib/bcachefs)
+   Compiling toyos-ssh v0.1.0 (<scratch>/spawnperf/wt/lib/ssh)
+   Compiling toyos-build v0.1.0 (<scratch>/spawnperf/wt)
+   Compiling toyos-metal v0.1.0 (<scratch>/spawnperf/wt/tests/metal)
+    Finished `test` profile [optimized + debuginfo] target(s) in 54.85s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-b8f4c5141ecc8947)
+18:48:08   BUILD x86_64 binaries of tests/guest/rust-tests
+18:49:16   BUILT x86_64 binaries of tests/guest/rust-tests  (68s)
+18:49:16   BUILD x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests
+18:50:17   BUILT x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests  (60s)
+18:50:17 [toyos] Compiling 143 C tests, and attempting 24 declared ones...
+18:50:26 [metal] 1 registration(s) and 0 shared member(s) over 1 boot(s)
+18:50:26   BUILD x86_64 kernel, loader, ROOT of <scratch>/spawnperf/batch/stage-a-t14/batchabcase/system-f177ed87484d0378.toml
+18:50:28 external deps changed: cleaning <scratch>/spawnperf/wt/target/x86_64-unknown-none
+18:50:28 external deps changed: cleaning <scratch>/spawnperf/wt/target/aarch64-unknown-none-softfloat
+18:53:53 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+18:53:53   BUILT x86_64 kernel, loader, ROOT of <scratch>/spawnperf/batch/stage-a-t14/batchabcase/system-f177ed87484d0378.toml  (208s)
+18:53:54 [metal] batchabcase: 3 job(s) under a list bound of 240000 ms, armed with [] and a boot deadline of 480000 ms — <scratch>/spawnperf/batch/stage-a-t14/batchabcase/image.img
+# One boot per image. Each invocation is `cargo <words>` from this worktree.
+
+batchabcase
+  image: <scratch>/spawnperf/batch/stage-a-t14/batchabcase/image.img
+  cargo run -p toyos-metal -- --image <scratch>/spawnperf/batch/stage-a-t14/batchabcase/image.img --readback <scratch>/spawnperf/batch/stage-a-t14/batchabcase --fat32-check
+18:53:54 [metal] staged 1 image(s); <scratch>/spawnperf/batch/stage-a-t14/request.txt lists them. The machine was not touched, so this run establishes nothing about it.
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `<scratch>/spawnperf/wt/target/debug/deps/toyos_build-b8f4c5141ecc8947 --metal --metal-readback <scratch>/spawnperf/batch/stage-a-t14 batch_ab` (exit status: 2)
+exit 2 (a t14)
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.33s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-b8f4c5141ecc8947)
+18:53:54   BUILD x86_64 binaries of tests/guest/rust-tests
+18:53:59   BUILT x86_64 binaries of tests/guest/rust-tests  (5s)
+18:53:59   BUILD x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests
+18:54:01   BUILT x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests  (2s)
+18:54:01 [toyos] Compiling 143 C tests, and attempting 24 declared ones...
+18:54:08 [metal] 1 registration(s) and 0 shared member(s) over 1 boot(s)
+18:54:08   BUILD x86_64 kernel, loader, ROOT of <scratch>/spawnperf/batch/stage-a-amd/batchabcase/system-f177ed87484d0378.toml
+18:54:13 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+18:54:13   BUILT x86_64 kernel, loader, ROOT of <scratch>/spawnperf/batch/stage-a-amd/batchabcase/system-f177ed87484d0378.toml  (5s)
+18:54:13 [metal] batchabcase: 3 job(s) under a list bound of 240000 ms, armed with [] and a boot deadline of 480000 ms — <scratch>/spawnperf/batch/stage-a-amd/batchabcase/image.img
+# One boot per image. Each invocation is `cargo <words>` from this worktree.
+
+batchabcase
+  image: <scratch>/spawnperf/batch/stage-a-amd/batchabcase/image.img
+  cargo run -p toyos-metal -- --image <scratch>/spawnperf/batch/stage-a-amd/batchabcase/image.img --readback <scratch>/spawnperf/batch/stage-a-amd/batchabcase --fat32-check --host <amd-bench-host>
+18:54:13 [metal] staged 1 image(s); <scratch>/spawnperf/batch/stage-a-amd/request.txt lists them. The machine was not touched, so this run establishes nothing about it.
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `<scratch>/spawnperf/wt/target/debug/deps/toyos_build-b8f4c5141ecc8947 --metal --metal-readback <scratch>/spawnperf/batch/stage-a-amd --metal-host '<amd-bench-host>' batch_ab` (exit status: 2)
+exit 2 (a amd)
+== side b rev 294e372325f558c590b75301a84336b698a6da43
+   Compiling kernel v0.1.0 (<scratch>/spawnperf/wt/kernel)
+   Compiling toyos-build v0.1.0 (<scratch>/spawnperf/wt)
+    Finished `test` profile [optimized + debuginfo] target(s) in 2.86s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-b8f4c5141ecc8947)
+18:54:17   BUILD x86_64 binaries of tests/guest/rust-tests
+18:54:20   BUILT x86_64 binaries of tests/guest/rust-tests  (2s)
+18:54:20   BUILD x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests
+18:54:23   BUILT x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests  (3s)
+18:54:23 [toyos] Compiling 143 C tests, and attempting 24 declared ones...
+18:54:27 [metal] 1 registration(s) and 0 shared member(s) over 1 boot(s)
+18:54:27   BUILD x86_64 kernel, loader, ROOT of <scratch>/spawnperf/batch/stage-b-t14/batchabcase/system-f177ed87484d0378.toml
+18:54:38 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+18:54:38   BUILT x86_64 kernel, loader, ROOT of <scratch>/spawnperf/batch/stage-b-t14/batchabcase/system-f177ed87484d0378.toml  (11s)
+18:54:38 [metal] batchabcase: 3 job(s) under a list bound of 240000 ms, armed with [] and a boot deadline of 480000 ms — <scratch>/spawnperf/batch/stage-b-t14/batchabcase/image.img
+# One boot per image. Each invocation is `cargo <words>` from this worktree.
+
+batchabcase
+  image: <scratch>/spawnperf/batch/stage-b-t14/batchabcase/image.img
+  cargo run -p toyos-metal -- --image <scratch>/spawnperf/batch/stage-b-t14/batchabcase/image.img --readback <scratch>/spawnperf/batch/stage-b-t14/batchabcase --fat32-check
+18:54:38 [metal] staged 1 image(s); <scratch>/spawnperf/batch/stage-b-t14/request.txt lists them. The machine was not touched, so this run establishes nothing about it.
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `<scratch>/spawnperf/wt/target/debug/deps/toyos_build-b8f4c5141ecc8947 --metal --metal-readback <scratch>/spawnperf/batch/stage-b-t14 batch_ab` (exit status: 2)
+exit 2 (b t14)
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.28s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-b8f4c5141ecc8947)
+18:54:39   BUILD x86_64 binaries of tests/guest/rust-tests
+18:54:41   BUILT x86_64 binaries of tests/guest/rust-tests  (2s)
+18:54:41   BUILD x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests
+18:54:42   BUILT x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests  (1s)
+18:54:42 [toyos] Compiling 143 C tests, and attempting 24 declared ones...
+18:54:46 [metal] 1 registration(s) and 0 shared member(s) over 1 boot(s)
+18:54:46   BUILD x86_64 kernel, loader, ROOT of <scratch>/spawnperf/batch/stage-b-amd/batchabcase/system-f177ed87484d0378.toml
+18:54:49 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+18:54:49   BUILT x86_64 kernel, loader, ROOT of <scratch>/spawnperf/batch/stage-b-amd/batchabcase/system-f177ed87484d0378.toml  (2s)
+18:54:49 [metal] batchabcase: 3 job(s) under a list bound of 240000 ms, armed with [] and a boot deadline of 480000 ms — <scratch>/spawnperf/batch/stage-b-amd/batchabcase/image.img
+# One boot per image. Each invocation is `cargo <words>` from this worktree.
+
+batchabcase
+  image: <scratch>/spawnperf/batch/stage-b-amd/batchabcase/image.img
+  cargo run -p toyos-metal -- --image <scratch>/spawnperf/batch/stage-b-amd/batchabcase/image.img --readback <scratch>/spawnperf/batch/stage-b-amd/batchabcase --fat32-check --host <amd-bench-host>
+18:54:49 [metal] staged 1 image(s); <scratch>/spawnperf/batch/stage-b-amd/request.txt lists them. The machine was not touched, so this run establishes nothing about it.
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `<scratch>/spawnperf/wt/target/debug/deps/toyos_build-b8f4c5141ecc8947 --metal --metal-readback <scratch>/spawnperf/batch/stage-b-amd --metal-host '<amd-bench-host>' batch_ab` (exit status: 2)
+exit 2 (b amd)
+all done

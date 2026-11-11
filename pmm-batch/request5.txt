@@ -1,0 +1,35 @@
+# spawnperf, boot 5: the A/B of PR 1268 (a draw of many promised frames takes the frame allocator's lock once).
+# A = pmm-batch-ab-a 6ecb26f7de6b7002647100fec3c856a53b116b5b: PR 1250's head 1d151cba1 + one MEASUREMENT ONLY row.
+# B = pmm-batch-ab-b 294e372325f558c590b75301a84336b698a6da43: the same with PR 1268's commit 2cfa7887b;
+#     `git diff pmm-batch-ab-a pmm-batch-ab-b` is that commit.
+# The row `batch_ab` runs, in one boot of the bench image: test_rs_spawn_cost (spawn_cost: toybox min/median),
+# osbench_procs (proc.spawn_wait.*, posix_spawn_wait.*, process.spawn_wait) and osbench_work (work.build_shaped.j1 and
+# .j<cpus>, which the claim is about). Read off the log; the verdict is only that each job ran.
+# ORDER (the orchestrator's choice, counterbalanced, 2 boots a side): on each bench A, B, B, A, back to back, bench
+# alone (timing). The same image is flashed twice a side; the readback directories keep the boots apart.
+# Each invocation is `cargo <words>` from a checkout at either side. Nothing here has touched a machine.
+# sha256: A t14 b47c48b2b287731b59aba852c19244cac713143f5d2553047415e885bc07e70d
+#         A amd aea08301e0366fa98bd7b44385685e474591fa1449c8bd2fa9870f88fdec80f3
+#         B t14 0aa84a04dd49ca36d0d97f9d56db7daeb6c12bac2dea55b6ed672189989634b0
+#         B amd e572af5e137df0a738d76c4e7f058d9f613044e3d13bd58ef374effc3ac9f174
+
+t14 1 A
+  cargo run -p toyos-metal -- --image <scratch>/spawnperf/batch/stage-a-t14/batchabcase/image.img --readback <scratch>/spawnperf/batch/runs/t14-1-a/batchabcase --fat32-check
+t14 2 B
+  cargo run -p toyos-metal -- --image <scratch>/spawnperf/batch/stage-b-t14/batchabcase/image.img --readback <scratch>/spawnperf/batch/runs/t14-2-b/batchabcase --fat32-check
+t14 3 B
+  cargo run -p toyos-metal -- --image <scratch>/spawnperf/batch/stage-b-t14/batchabcase/image.img --readback <scratch>/spawnperf/batch/runs/t14-3-b/batchabcase --fat32-check
+t14 4 A
+  cargo run -p toyos-metal -- --image <scratch>/spawnperf/batch/stage-a-t14/batchabcase/image.img --readback <scratch>/spawnperf/batch/runs/t14-4-a/batchabcase --fat32-check
+
+amd 1 A
+  cargo run -p toyos-metal -- --image <scratch>/spawnperf/batch/stage-a-amd/batchabcase/image.img --readback <scratch>/spawnperf/batch/runs/amd-1-a/batchabcase --fat32-check --host <amd-bench-host>
+amd 2 B
+  cargo run -p toyos-metal -- --image <scratch>/spawnperf/batch/stage-b-amd/batchabcase/image.img --readback <scratch>/spawnperf/batch/runs/amd-2-b/batchabcase --fat32-check --host <amd-bench-host>
+amd 3 B
+  cargo run -p toyos-metal -- --image <scratch>/spawnperf/batch/stage-b-amd/batchabcase/image.img --readback <scratch>/spawnperf/batch/runs/amd-3-b/batchabcase --fat32-check --host <amd-bench-host>
+amd 4 A
+  cargo run -p toyos-metal -- --image <scratch>/spawnperf/batch/stage-a-amd/batchabcase/image.img --readback <scratch>/spawnperf/batch/runs/amd-4-a/batchabcase --fat32-check --host <amd-bench-host>
+
+# Judge each boot offline: cargo test --test toyos-build -- --metal --metal-readback <runs/<bench>-<n>-<side>> [--metal-host <amd-bench-host>] batch_ab
+# Return to me: the runs/ tree as filled and each step's exit code.
