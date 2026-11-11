@@ -1,0 +1,75 @@
+worktree wt-batch revision ab336ebb3e043a08e127b9c61a6fdf4b5a6a6060 + worktree diff da39a3ee5e6b
+$ cargo clippy --manifest-path system/logkeeper/Cargo.toml --all-targets -- -W clippy::checked_conversions -W clippy::default_trait_access -W clippy::manual_midpoint -W clippy::redundant_clone -W clippy::unchecked_time_subtraction -W clippy::unnecessary_semicolon -D warnings
+    Checking toyos-abi v0.16.0 ($WORKTREE/sdk/abi)
+    Checking toyos-inspect v0.1.0 ($WORKTREE/lib/inspect)
+    Checking toyos-logstream v0.1.0 ($WORKTREE/lib/logstream)
+    Checking toyos v0.18.0 ($WORKTREE/sdk/toyos)
+    Checking logkeeper v0.1.0 ($WORKTREE/system/logkeeper)
+error: this `if` statement can be collapsed
+   --> system/logkeeper/src/inspect.rs:162:9
+    |
+162 | /         if ready.contains(&ACCEPT) {
+163 | |             if let Ok(conn) = acceptor.accept() {
+164 | |                 if pending.len() < MAX_PENDING {
+165 | |                     pending.push(Pending { conn, rx: FrameRx::new(), since: now });
+...   |
+168 | |         }
+    | |_________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#collapsible_if
+    = note: `-D clippy::collapsible-if` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::collapsible_if)]`
+help: collapse nested if block
+    |
+162 ~         if ready.contains(&ACCEPT)
+163 ~             && let Ok(conn) = acceptor.accept() {
+164 |                 if pending.len() < MAX_PENDING {
+165 |                     pending.push(Pending { conn, rx: FrameRx::new(), since: now });
+166 |                 }
+167 ~             }
+    |
+
+error: this `if` statement can be collapsed
+   --> system/logkeeper/src/inspect.rs:163:13
+    |
+163 | /             if let Ok(conn) = acceptor.accept() {
+164 | |                 if pending.len() < MAX_PENDING {
+165 | |                     pending.push(Pending { conn, rx: FrameRx::new(), since: now });
+166 | |                 }
+167 | |             }
+    | |_____________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#collapsible_if
+help: collapse nested if block
+    |
+163 ~             if let Ok(conn) = acceptor.accept()
+164 ~                 && pending.len() < MAX_PENDING {
+165 |                     pending.push(Pending { conn, rx: FrameRx::new(), since: now });
+166 ~                 }
+    |
+
+error: methods called `from_*` usually take no `self`
+   --> system/logkeeper/src/main.rs:352:24
+    |
+352 |     fn from_supervisor(&mut self) -> bool {
+    |                        ^^^^^^^^^
+    |
+    = help: consider choosing a less ambiguous name
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#wrong_self_convention
+    = note: `-D clippy::wrong-self-convention` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::wrong_self_convention)]`
+
+error: could not compile `logkeeper` (bin "logkeeper") due to 3 previous errors
+warning: build failed, waiting for other jobs to finish...
+error: unchecked subtraction of a `Duration`
+  --> system/logkeeper/src/policy.rs:59:32
+   |
+59 |             assert!(!retry.due(next - Duration::from_millis(1)));
+   |                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: try: `next.checked_sub(Duration::from_millis(1)).unwrap()`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#unchecked_time_subtraction
+   = note: `-D clippy::unchecked-time-subtraction` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::unchecked_time_subtraction)]`
+
+error: could not compile `logkeeper` (bin "logkeeper" test) due to 4 previous errors
+exit 101

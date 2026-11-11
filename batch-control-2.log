@@ -1,0 +1,66 @@
+revision a7ed6021110ff410983956510092f8e825a3fbda + batch-control-2
+diff --git a/system/logkeeper/src/file.rs b/system/logkeeper/src/file.rs
+index 38808292f..dede89b0c 100644
+--- a/system/logkeeper/src/file.rs
++++ b/system/logkeeper/src/file.rs
+@@ -218,7 +218,7 @@ impl Writer {
+     }
+ 
+     fn due(&self, now: Instant) -> bool {
+-        let Some(v) = self.volume.as_ref().filter(|_| !self.stopped) else { return false };
++        let Some(v) = self.volume.as_ref() else { return false };
+         if !v.is_open() {
+             return self.retry.is_some_and(|retry| retry.due(now));
+         }
+   Compiling logkeeper v0.1.0 ($WORKTREE/system/logkeeper)
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.69s
+     Running unittests src/main.rs ($WORKTREE/target/debug/deps/logkeeper-0d32471bebb3d0bd)
+
+running 30 tests
+test carrier::tests::a_carrier_that_carried_nothing_changes_nothing ... ok
+test carrier::tests::a_channel_that_stops_taking_the_log_has_the_uart_carry_it_until_it_takes_more ... ok
+test carrier::tests::a_count_past_what_was_sent_or_backwards_is_refused ... ok
+test carrier::tests::a_second_carrier_is_refused_while_one_is_served ... ok
+test carrier::tests::an_idle_log_is_no_stall ... ok
+test carrier::tests::the_carriers_end_gives_the_log_back_to_the_uart ... ok
+test carrier::tests::the_stop_takes_the_log_to_the_uart_and_a_refused_one_gives_it_back ... ok
+test carrier::tests::the_uart_goes_quiet_once_the_carriers_channel_takes_a_byte ... ok
+test file::tests::a_batch_falls_due_at_its_size_its_age_or_an_urgent_line ... ok
+test origin::tests::a_closing_record_ends_its_writers_line_and_nothing_else ... ok
+test origin::tests::a_stamp_ahead_of_the_clock_is_read_as_now ... ok
+test origin::tests::a_writers_pieces_are_its_line_whoever_wrote_between_them ... ok
+test origin::tests::what_is_held_is_bounded_and_said ... ok
+test policy::tests::a_refused_volume_is_asked_again_at_a_doubling_wait_to_a_bound ... ok
+test serve::tests::a_uart_carrier_started_again_resumes_where_its_channel_left_off ... ok
+test serve::tests::the_wire_starts_after_the_kernel_and_takes_the_stops_lines_last ... ok
+test serve::tests::what_a_channel_took_speaks_for_the_rounds_it_took_whole ... ok
+test store::tests::a_flooding_boot_costs_its_own_middle_and_nobody_elses_start ... ok
+test store::tests::nothing_goes_while_there_is_room ... ok
+test store::tests::whole_old_boots_go_first_then_earlier_continuations ... ok
+test tests::a_round_is_through_the_cursor_but_what_waits ... ok
+test tests::the_wire_starts_at_its_bound_whatever_the_rounds_have_read ... ok
+test tests::readers_and_inspect_share_one_port_and_never_one_request ... ok
+test tests::what_the_uart_carried_is_told_by_position ... ok
+test file::tests::nothing_reaches_the_file_between_the_stops_flush_and_its_refusal ... FAILED
+test store::tests::a_first_part_refused_at_open_is_made_and_given_the_boot ... ok
+test store::tests::a_stop_refused_after_an_unsynced_write_counts_from_the_last_sync ... ok
+test file::tests::the_file_takes_the_replay_a_batch_at_a_time ... ok
+test store::tests::a_stop_with_more_owed_than_its_time_syncs_and_says_the_shortfall ... ok
+test store::tests::a_refused_file_is_given_back_the_boot_the_replay_holds ... ok
+
+failures:
+
+---- file::tests::nothing_reaches_the_file_between_the_stops_flush_and_its_refusal stdout ----
+
+thread 'file::tests::nothing_reaches_the_file_between_the_stops_flush_and_its_refusal' (23239971) panicked at system/logkeeper/src/file.rs:433:9:
+a stopped file is written nothing
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    file::tests::nothing_reaches_the_file_between_the_stops_flush_and_its_refusal
+
+test result: FAILED. 29 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s
+
+error: test failed, to rerun pass `--bin logkeeper`
+exit 101
