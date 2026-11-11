@@ -1,0 +1,49 @@
+Evidence for ToyOS #1248: two guest programs judge no span of the guest's clock.
+
+The PR's head is dd286c9a9. The guest rows ran on guest-timing-rows 90fefb314, a
+branch whose tree is #1247's and #1248's changes together (both on b56693152); the two
+touch disjoint files, and #1247 changes only the screen rows' harness code.
+
+Logs are masked: hostnames, home and temporary paths, user names.
+
+guest-rows-90fefb314-43039793677.log
+    gh workflow run guest-rows.yml --ref guest-timing-rows
+      -f filter='screen_panic_muted virt_early_panic virt_early_fault usbd_drives_the_spare udp_receive_times_out'
+    Run 43039793677 on the guest runner: conclusion success, "5 passed, 5 total".
+    usbd_drives_the_spare on QEMU x86-64 HeadlessUsbSpare (its fault arm included);
+    udp_receive_times_out on x86-64 netcase. Both guest programs were built for the
+    guest under the toyos target's -Dwarnings in this run.
+
+host/checks.sh, host/checks.log
+    The targeted host checks, at 90fefb314 on the development Mac:
+    cargo test --test toyos-checks (the harness's own checks): exit 0, 44 passed.
+    cargo clippy -p toyos-build --all-targets with the workspace's adopted lints and
+    -D warnings: exit 0. This PR's harness change is two doc comments.
+    No clippy shape builds tests/guest/rust-tests (a guest package); its compile is the
+    guest run's.
+
+nightly-41295058073-extract.log
+    The kvm and tcg lanes of nightly run 41295058073 (2026-11-01, 3add613c1): GitHub-hosted
+    ubuntu-24.04 jobs, whose host scale reads 1.07x (kvm) and 1.00x (tcg). Why host_scale
+    stays: nightly guest jobs do not run on the idle guest runner.
+
+Negative control (never lands): branch guest-timing-nc.
+    nc-mutations-b8c2cae91.patch is guest-timing-rows..b8c2cae91. This PR's mutations:
+    - kernel/src/pcidev/mod.rs: a faulted claim answers a record instead of refusing Io.
+      usbd_drives_the_spare's fault arm must red (it now waits for the refusal with no
+      deadline, then judges it).
+    - sdk/std/sys/net/connection.rs: a socket timeout truncated to whole milliseconds, so
+      udp_recv_timeout's 500 us receive becomes an unbounded one. udp_receive_times_out
+      must red at the job's ceiling, the in-guest 30 s ceiling being gone.
+    (The third mutation is #1247's and touches no code these rows run.)
+
+    guest-nc-invalid-3712ff985-43039799183.log: the first control, INVALID. Its kernel
+    mutation for #1247 left a constant unused, the kernel's -Dwarnings refused it, and
+    every row red at build. It establishes nothing. Its std build with this PR's
+    truncation compiled (udp_recv_timeout BUILT).
+
+    nc-kernel-check-b8c2cae91.log: the corrected kernel compiles under -Dwarnings
+    (cargo check -p kernel --target x86_64-unknown-none, with and without
+    boot-actuators,test-actuators: exit 0 each).
+
+    The corrected control's guest run is appended to this branch when it completes.
