@@ -1,0 +1,10 @@
+--- ../logs/futex-r5/process.rs.orig	2026-11-12 01:09:35
++++ kernel/src/process.rs	2026-11-12 01:09:35
+@@ -965,6 +965,7 @@
+         return toyos_abi::syscall::SyscallError::BadAddress.to_u64();
+     };
+ 
++    drop(wait);
+     // 0 covers both woken and never-blocked (the caller re-checks the word either way); 1 means only the caller's own deadline ended it.
+     match scheduler::futex_wait(&word, expected, deadline) {
+         scheduler::FutexEnd::Changed => 0,

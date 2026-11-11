@@ -1,0 +1,19 @@
+    Checking kernel v0.1.0 (<path>
+error[E0308]: mismatched types
+   --> kernel/src/process.rs:969:33
+    |
+969 |     match scheduler::futex_wait(&word, expected, deadline) {
+    |           --------------------- ^^^^^ expected `&Translation<'_>`, found `&u64`
+    |           |
+    |           arguments to this function are incorrect
+    |
+    = note: expected reference `&Translation<'_>`
+               found reference `&u64`
+note: function defined here
+   --> kernel/src/scheduler.rs:259:8
+    |
+259 | pub fn futex_wait(word: &crate::mm::space::Translation<'_>, expected: u32, deadline: Deadline) -> FutexEnd {
+    |        ^^^^^^^^^^ ----------------------------------------
+
+For more information about this error, try `rustc --explain E0308`.
+error: could not compile `kernel` (bin "kernel") due to 1 previous error

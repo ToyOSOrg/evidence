@@ -1,0 +1,11 @@
+--- ../logs/futex-r5/process.rs.orig	2026-11-12 01:09:35
++++ kernel/src/process.rs	2026-11-12 01:09:47
+@@ -961,7 +961,7 @@
+ 
+     let wait = crate::user_ptr::begin_futex_wait();
+     // Physical, so a futex in shared memory works across processes.
+-    let Some(word) = futex_word(addr).and_then(|addr| wait.translate(addr)) else {
++    let Some(word) = futex_word(addr).and_then(|addr| crate::user_ptr::translate_user(addr, crate::user_ptr::Access::Read)) else {
+         return toyos_abi::syscall::SyscallError::BadAddress.to_u64();
+     };
+ 

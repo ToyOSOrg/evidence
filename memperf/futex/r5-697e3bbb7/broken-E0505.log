@@ -1,0 +1,17 @@
+    Checking kernel v0.1.0 (<path>
+error[E0505]: cannot move out of `wait` because it is borrowed
+   --> kernel/src/process.rs:968:10
+    |
+964 |     let Some(word) = futex_word(addr).and_then(|addr| wait.translate(addr)) else {
+    |                                                ------ ---- borrow occurs due to use in closure
+    |                                                |
+    |                                                borrow of `wait` occurs here
+...
+968 |     drop(wait);
+    |          ^^^^ move out of `wait` occurs here
+969 |     // 0 covers both woken and never-blocked (the caller re-checks the word eit...
+970 |     match scheduler::futex_wait(&word, expected, deadline) {
+    |                                 ----- borrow later used here
+
+For more information about this error, try `rustc --explain E0505`.
+error: could not compile `kernel` (bin "kernel") due to 1 previous error
