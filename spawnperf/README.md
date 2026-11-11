@@ -48,3 +48,9 @@ Figures the PR cites, hot (back to back), ns p50/min, tiny program:
 - `round1/checks-2.log` at 1d151cba1 (`round1/checks.sh` as then): `vm::` exit 0 (17 passed), `frames::` exit 0 (39
   passed); `round1/mutation-read-empty.patch` applied (a page that takes no bytes reads the source anyway): exit 101,
   both `vm` tests named `a_*` fail; reverted; library clippy exit 0.
+
+## Review round 2 (head 8245c9d03)
+
+- `round2/checks.log` (`round2/checks.sh`): `vm::` exit 0 (16 passed), `frames::` exit 0 (39 passed);
+  `round1/mutation-read-empty.patch` applied: exit 101, `a_copied_page_keeps_nothing_its_frame_held` fails at its
+  first row that takes no bytes; reverted; library clippy exit 0.
