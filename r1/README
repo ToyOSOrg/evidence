@@ -1,0 +1,15 @@
+Evidence for ToyOSOrg/ToyOS#1207, round 1.
+
+guest-*.log: `gh run view <id> --log` of guest-rows runs, masked.
+  guest-virt-fix                      virt_reboot_refused_without_psci, virt_reboot, virt_smp at fa3559395: green.
+  guest-failed-ap-and-console-fix     virt_failed_ap_leaves_no_hole, console_image_boots at fa3559395: green.
+  guest-virt_reboot_refused-main      the row on main ec8912181: red, the stall.
+  guest-virt_reboot_refused-diagnostic  main d49f4834e plus diagnostic-kernel-keeps-the-wire.patch: still the
+                                      stall, and the kernel's own records show the job refused and ended, exit 1.
+host-log_cursor.log          kernel-loom's log_cursor at fa3559395's tree: 5 passed, exit 0.
+host-log_cursor-control.log  the same with control-reverted.patch applied in reverse: exit 101.
+host-ci-macos.log            `cargo run -- --ci host` on a macOS host at fa3559395, exit 1: 1 of 110 steps red, the
+                             build system's `the_caller_s_environment_reaches_neither_the_build_nor_the_key`,
+                             recorded in issues/the-llvm-environment-test-breaks-git-on-macos.md.
+
+Masked: usernames, home and temporary paths, CPU model strings, runner names.

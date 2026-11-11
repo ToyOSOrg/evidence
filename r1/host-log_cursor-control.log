@@ -1,0 +1,35 @@
+   Compiling kernel-loom v0.1.0 (/Users/<user>/.claude/jobs/2280e09e/tmp/scratchpad/agents/stalls/wt/kernel/loom)
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.96s
+     Running tests/log_cursor.rs (target/debug/deps/log_cursor-223926e38c938d7e)
+
+running 5 tests
+test a_cursors_loss_claim_is_not_read ... ok
+test a_cursor_ahead_of_a_shard_is_refused ... ok
+test reads_of_one_record_take_the_merge_in_order ... ok
+test an_offline_cpus_shard_is_read_beside_the_online_ones ... FAILED
+test a_read_reaches_the_consoles_position_in_an_unpublished_ring ... FAILED
+
+failures:
+
+---- an_offline_cpus_shard_is_read_beside_the_online_ones stdout ----
+
+thread 'an_offline_cpus_shard_is_read_beside_the_online_ones' (6470803) panicked at kernel/loom/tests/log_cursor.rs:120:5:
+assertion `left == right` failed: a hole is read at its first number
+  left: [4, 0, 3, 0]
+ right: [4, 1, 3, 1]
+
+---- a_read_reaches_the_consoles_position_in_an_unpublished_ring stdout ----
+
+thread 'a_read_reaches_the_consoles_position_in_an_unpublished_ring' (6470802) panicked at kernel/loom/tests/log_cursor.rs:139:5:
+[3, 0] is behind [3, 1]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    a_read_reaches_the_consoles_position_in_an_unpublished_ring
+    an_offline_cpus_shard_is_read_beside_the_online_ones
+
+test result: FAILED. 3 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--test log_cursor`
+exit 101

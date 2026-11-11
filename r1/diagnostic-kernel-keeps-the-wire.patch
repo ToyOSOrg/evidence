@@ -1,0 +1,950 @@
+diff --git a/build/bootlog.rs b/build/bootlog.rs
+index e86d03666..99b8d7f0b 100644
+--- a/build/bootlog.rs
++++ b/build/bootlog.rs
+@@ -49,10 +49,6 @@ pub const LOADER_LOG: &str = "loader.log";
+ pub const LOADER_FIRST_LINE: &str = "ToyOS Bootloader 1.0";
+ pub const LOADER_LAST_LINE: &str = "Loader log: the kernel handoff begins, so this file ends here";
+ 
+-/// How the loader's line ends that says the marked slot was refused, in
+-/// `loader/src/slot.rs`: the last it says before the pass ends.
+-pub const LOADER_BOOTS_NOTHING: &str = "is refused, and no other slot is booted; the remedy is a newer image";
+-
+ /// The kernel's record for a process that ended, in `kernel/src/process.rs`.
+ ///
+ /// **The one channel a guest binary's verdict crosses on a machine with no
+@@ -449,7 +445,6 @@ mod tests {
+             ("loader/src/loaderlog.rs", format!("cstr16!(\"{LOADER_LOG}\")")),
+             ("loader/src/loaderlog.rs", format!("\"{LOADER_FIRST_LINE}\"")),
+             ("loader/src/loaderlog.rs", format!("\"{LOADER_LAST_LINE}\"")),
+-            ("loader/src/slot.rs", format!("\"{LOADER_BOOTS_NOTHING}\"")),
+         ];
+         for (file, rhs) in wanted {
+             let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(file);
+diff --git a/build/build.rs b/build/build.rs
+index 75a517399..e7830d068 100644
+--- a/build/build.rs
++++ b/build/build.rs
+@@ -1530,8 +1530,9 @@ fn check_params(root: &Path, params: &[String]) {
+ /// other — a prefix only one of them knows is an image the other refuses.
+ const VALUED_PARAMS: &[(&str, &str)] = &[
+     ("toyos_tco::DEADLINE_PARAM", toyos_tco::DEADLINE_PARAM),
+-    // The loader's word naming the slot it booted.
++    // The loader's words about the slot it booted.
+     ("toyos_abi::boot::SLOT_PARAM", toyos_abi::boot::SLOT_PARAM),
++    ("toyos_abi::boot::SLOT_REFUSED_PARAM", toyos_abi::boot::SLOT_REFUSED_PARAM),
+ ];
+ 
+ /// The names in [`VALUED_PARAMS`], for a refusal that says what it would have
+diff --git a/docs/src/architecture/boot.md b/docs/src/architecture/boot.md
+index e6e436296..b332de276 100644
+--- a/docs/src/architecture/boot.md
++++ b/docs/src/architecture/boot.md
+@@ -40,9 +40,7 @@
+   table. An update is written to the slot the machine is not running.
+ - Updates fix forward. The loader boots the slot marked to boot next and no
+   other; a slot that is refused or fails is reported, never replaced by the
+-  previous one automatically. After a refusal the machine reports it and
+-  powers off; it does not reset into anything else. The remedy is a newer
+-  image.
++  previous one automatically. The remedy is a newer image.
+ - Updating is an ordinary program: a signed image on standard input, written to
+   the idle slot and marked to boot next. The signature is its whole authority,
+   and how the bytes arrived does not matter.
+diff --git a/issues/an-unreadable-newest-slot-table-copy-boots-the-previous-mark-unreported.md b/issues/an-unreadable-newest-slot-table-copy-boots-the-previous-mark-unreported.md
+deleted file mode 100644
+index 65365ae57..000000000
+--- a/issues/an-unreadable-newest-slot-table-copy-boots-the-previous-mark-unreported.md
++++ /dev/null
+@@ -1,25 +0,0 @@
+----
+-status: open
+-kind: finding
+-opened: 2026-11-11
+----
+-
+-# An unreadable newest slot-table copy boots the previous mark, unreported
+-
+-`toyos_update::slots::current` takes the other copy of the slot table when one
+-does not decode, and the loader (`Disk::slot_table`, `loader/src/rootimage.rs`)
+-says nothing of the copy it could not read. For a mark move that tore, that is
+-the designed atomicity: the machine boots the old mark or the new one. For a
+-newest copy that stops decoding after the mark moved (a block gone bad, a
+-stray write), the pass boots the slot the older copy marks and no line says
+-so. Found by inspection in the review of #1201; no boot has shown it.
+-
+-Updates fix forward, and this is the one path left by which a pass boots the
+-previous slot. The table is unauthenticated and the slot it boots is still
+-held to the signature and the floor, so it changes nothing about what may run.
+-
+-Owner: the update track (`issues/the-machine-updates-itself-without-ubuntu.md`).
+-
+-**Exit**: the loader says which copy it read and why the other was not, in
+-`loader.log` and to the kernel, or the design rules that an unreadable copy
+-refuses the pass; a host test of `slots::current` holds whichever it is.
+diff --git a/issues/the-loader-does-only-what-must-precede-the-handover.md b/issues/the-loader-does-only-what-must-precede-the-handover.md
+index 6707d604b..a5eb93d27 100644
+--- a/issues/the-loader-does-only-what-must-precede-the-handover.md
++++ b/issues/the-loader-does-only-what-must-precede-the-handover.md
+@@ -149,9 +149,8 @@ Each stage lands on its own, in this order.
+      From `EXITING` on (the first `ExitBootServices` call) it skips `loaderlog`
+      and goes straight to `ResetSystem`'s shutdown, since UEFI 2.10 §7.4.6
+      forbids the File protocol from that call on as it forbids the console.
+-     The refused-floor site and the refused-slot site (`slot::marked`'s
+-     caller) stop writing their reason to `loader.log` before their `panic!`:
+-     the handler writes it.
++     The refused-floor site stops writing its reason to `loader.log` before
++     its `panic!`: the handler writes it.
+    - `alloc_kernel_memory` stops building a `Vec<u8>` over a 2 MiB-aligned
+      allocation. Both relocation unsafes go.
+    - The layout word and every field before it keep their offsets, each
+@@ -160,7 +159,7 @@ Each stage lands on its own, in this order.
+      `repr(C)` sub-structs, and `#[repr(C, u32)]` enums for the optional parts
+      in place of `u32` presence flags and zero sentinels; a field the typing
+      changes moves after the word. The slot booted is a field, not
+-     `boot-slot=` text.
++     `boot-slot=` text; `slot-refused=` leaves with the fallback.
+      `params.rs`' last-one-wins and kernel `main.rs`' branch for a format
+      never emitted go. `kernel_stack_addr` is renamed for the offset it
+      holds. x86's `_start` reads by `const offset_of!`.
+@@ -197,9 +196,10 @@ Each stage lands on its own, in this order.
+    rises. It replaces the proof record (`loader/src/proof.rs`,
+    `lib/update/src/record.rs`), logkeeper's stop mark and `slot::proven` as
+    how an image is proven.
+-   Which slot a pass boots is the marked one or none: updates fix forward
+-   (stage 2 of `issues/the-machine-updates-itself-without-ubuntu.md`, done).
+-   #1196 moved that proof from the black-box page to the stop mark.
++   Which slot a pass boots is the marked one or none: updates fix forward, and
++   the loader's fallback leaves in stage 2 of
++   `issues/the-machine-updates-itself-without-ubuntu.md`, which this stage
++   follows. #1196 moved that proof from the black-box page to the stop mark.
+    - An install writes its slot with the good flag clear, whatever the slot
+      held before.
+    - Any failure after `verify` in `start_kernel` that the image causes is a
+diff --git a/issues/the-machine-updates-itself-without-ubuntu.md b/issues/the-machine-updates-itself-without-ubuntu.md
+index 098a43210..3a01c2f5b 100644
+--- a/issues/the-machine-updates-itself-without-ubuntu.md
++++ b/issues/the-machine-updates-itself-without-ubuntu.md
+@@ -15,7 +15,9 @@ stdin — and the machine installs nothing the owner did not sign.
+ ## Stage 1 — slots, signatures and `update`, proven in QEMU (done)
+ 
+ Done: the signed image (`toyos-update`), the two slots and their table, and
+-the loader's verification.
++the loader's verification. The loader boots the marked slot and today the
++other where the marked one is refused; the kernel logs which and why. That
++fallback leaves in stage 2.
+ 
+ - **`update`** holds the slot table and the idle slot's two partitions, which
+   init claims against the ROOT the kernel holds, writes the image and moves the
+@@ -26,29 +28,38 @@ the loader's verification.
+   (`--owner-key`, `--update-image`, minted by `--signing-key-new`) for an image
+   installed on the owner's machine, whose loader keeps the machine's floor.
+ 
+-## Stage 2 — fix forward: the loader boots the marked slot or nothing (done)
++## Stage 2 — fix forward: the loader boots the marked slot or nothing
+ 
+ Owner ruling, 2026-11-05, answering #1191's open decisions: updates fix
+ forward, with no automatic fallback to the previous slot.
+ 
+-Done: a pass tries and boots the marked slot and no other. Where it is
+-refused, the loader names the refusal on the console and in `loader.log` and
+-ends as its panic does. The other slot is read only where the proof record
+-names it: its signed header is verified to raise the floor, and nothing of it
+-boots. The kernel is told only the slot it was booted from. #1196 took the
+-death-driven fallback out with the black-box page.
+-
+-Not yet the design: the machine is to power off after a refusal and reset
+-into nothing else. Today's handler powers off, but resets where a `BootNext`
+-bought this boot and the firmware's default entry is another. The exit is
+-stage 4 of `issues/the-loader-does-only-what-must-precede-the-handover.md`,
+-whose handler never resets.
+-
+-`a_bent_supervisor_is_refused_and_nothing_boots` holds it on both
+-architectures' QEMU machines. It has no metal row: the metal loop judges a
+-boot by the kernel's own record, which a refused pass never writes, so a
+-refused slot on the T14 is stage 6's exit in that track. A one-shot
+-`update --once` is a request, not a fallback, and stays that track's stage 5.
++The loader falls back today in three ways, all of which go:
++
++- `policy::order` names the other slot after the marked one, and
++  `slot::choose` boots it when the marked one is refused;
++- `Refusal::Died` refuses an image whose last boot the record says died or
++  hung, so the other slot boots instead;
++- where no slot verifies but a dead one, `slot::choose` boots that one,
++  which may be the other slot.
++
++A pass verifies the marked slot alone and boots it whether or not its last
++boot died. Where it is refused, the loader names the refusal on the panel and
++in `loader.log` and powers the machine off. `slot-refused=` and the kernel's
++line that logs it go with the fallback. A one-shot `update --once` is a
++request, not a fallback, and stays the loader track's stage 5.
++
++With the fallback gone, marking an image dead in the boot record on the
++black-box page no longer refuses anything, but the next boot still reports the
++last boot's death; #1196 (the memory-overwrite request) decides what carries
++that report if the page goes. This stage removes only the fallback's use of
++the record.
++
++**Exit**: `policy`'s host tests hold that a pass names only the marked slot
++and that a dead image in it is still booted.
++`a_bent_supervisor_is_refused_and_the_other_slot_boots` and its metal row
++`bent_supervisor_falls_back` become a bent marked supervisor refused by name,
++nothing booted and the machine powered off; putting the other slot back into
++`policy::order` reds them.
+ 
+ ## Stage 3 — the T14 installs ToyOS on its NVMe
+ 
+diff --git a/issues/toyos-crypto-is-in-the-tree-on-par-with-ring-and-secure.md b/issues/toyos-crypto-is-in-the-tree-on-par-with-ring-and-secure.md
+index d03da2141..12927162f 100644
+--- a/issues/toyos-crypto-is-in-the-tree-on-par-with-ring-and-secure.md
++++ b/issues/toyos-crypto-is-in-the-tree-on-par-with-ring-and-secure.md
+@@ -675,7 +675,7 @@ Not consumers:
+      2.4192 GHz, about 105 µs, and 122,724 on the AMD bench, whose CPU states
+      no counter rate.
+    - An AArch64 QEMU loader boot verifies a signed image. Done:
+-     `a_bent_supervisor_is_refused_and_nothing_boots` boots QEMU's
++     `a_bent_supervisor_is_refused_and_the_other_slot_boots` boots QEMU's
+      AArch64 machine too.
+    - `ed25519-dalek` and the loader's `sha2` leave `Cargo.lock`'s non-dev
+      packages. Done (#1019).
+diff --git a/kernel/src/log/console.rs b/kernel/src/log/console.rs
+index 8bc057d32..6ffc7af86 100644
+--- a/kernel/src/log/console.rs
++++ b/kernel/src/log/console.rs
+@@ -86,7 +86,9 @@ pub fn hand_over() {
+     if serial::has_console() {
+         drain_records();
+     }
+-    HANDED.store(true, Ordering::Release);
++    // DIAGNOSTIC: the kernel keeps the wire, so every record reaches the UART.
++    HANDED.store(false, Ordering::Release);
++    WIRE.store(false, Ordering::Release);
+ }
+ 
+ /// Every record the console has not spoken onto the UART, through its
+diff --git a/kernel/src/main.rs b/kernel/src/main.rs
+index 1ff6576e9..f0ae19a20 100644
+--- a/kernel/src/main.rs
++++ b/kernel/src/main.rs
+@@ -285,10 +285,15 @@ pub(crate) unsafe extern "C" fn kernel_main(loader_args: &mut KernelArgs) -> ! {
+         "boot: cmdline {:#x}+{}",
+         kernel_args.cmdline_addr, kernel_args.cmdline_len
+     );
+-    // Before `mm::init`, which may hand the parameter's memory out.
++    // Before `mm::init`, which may hand the parameter's memory out. This record
++    // is how a slot that died or was refused reaches the next boot's `/log`.
+     match params::slot(cmdline) {
+-        Some(slot) => log!("{} {slot}, the one the slot table marks", params::SLOT_RECORD),
+-        None => log!("{} none: the loader named no slot", params::SLOT_RECORD),
++        (Some(slot), None) => log!("{} {slot}, the one the slot table marks", params::SLOT_RECORD),
++        (Some(slot), Some(refused)) => match refused.split_once(':') {
++            Some((marked, why)) => log!("{} {slot}, because the marked slot {marked} was refused: {why}", params::SLOT_RECORD),
++            None => log!("{} {slot}, because the marked slot was refused: {refused}", params::SLOT_RECORD),
++        },
++        (None, _) => log!("{} none: the loader named no slot", params::SLOT_RECORD),
+     }
+ 
+     // The signed kernel section the loader laid this kernel out of, kept for
+diff --git a/kernel/src/params.rs b/kernel/src/params.rs
+index aa64e6dab..1425e2ae3 100644
+--- a/kernel/src/params.rs
++++ b/kernel/src/params.rs
+@@ -35,15 +35,18 @@ pub fn claims(token: &str) -> bool {
+     PARAMS.iter().any(|(name, _)| *name == token)
+         || token.starts_with(toyos_tco::DEADLINE_PARAM)
+         || token.starts_with(toyos_abi::boot::SLOT_PARAM)
++        || token.starts_with(toyos_abi::boot::SLOT_REFUSED_PARAM)
+ }
+ 
+ /// The head of the record naming the slot this boot came from.
+ pub const SLOT_RECORD: &str = "boot: slot";
+ 
+-/// The slot the loader booted, as the loader wrote it: the last one, because
+-/// the loader appends its word after the slot's own parameter.
+-pub fn slot(cmdline: &str) -> Option<&str> {
+-    toyos_abi::boot::tokens(cmdline).filter_map(|t| t.strip_prefix(toyos_abi::boot::SLOT_PARAM)).last()
++/// The slot the loader booted, and the marked slot it refused and why, as the
++/// loader wrote them: the last of each, because the loader appends its words
++/// after the slot's own parameter and so has the last one.
++pub fn slot(cmdline: &str) -> (Option<&str>, Option<&str>) {
++    let word = |prefix: &str| toyos_abi::boot::tokens(cmdline).filter_map(|t| t.strip_prefix(prefix)).last();
++    (word(toyos_abi::boot::SLOT_PARAM), word(toyos_abi::boot::SLOT_REFUSED_PARAM))
+ }
+ 
+ pub fn watchdog() -> bool {
+diff --git a/lib/update/src/lib.rs b/lib/update/src/lib.rs
+index 069a8cb36..3071e0d5e 100644
+--- a/lib/update/src/lib.rs
++++ b/lib/update/src/lib.rs
+@@ -16,8 +16,9 @@
+ //! A machine carries two [`slots`], each a FAT partition holding the kernel,
+ //! its boot parameter, the two programs and the signed header, and a ROOT partition holding
+ //! ROOT; the slot table names both slots and marks one. The loader boots the
+-//! marked slot or nothing; the updater writes only the slot the machine is not
+-//! running, and moves the mark last.
++//! marked slot, and falls back to the other where the marked one is refused;
++//! the updater writes only the slot the machine is not running, and moves the
++//! mark last.
+ 
+ #![cfg_attr(not(test), no_std)]
+ #![forbid(unsafe_code)]
+diff --git a/lib/update/src/policy.rs b/lib/update/src/policy.rs
+index 5f5e42a65..345d68d22 100644
+--- a/lib/update/src/policy.rs
++++ b/lib/update/src/policy.rs
+@@ -1,5 +1,5 @@
+-//! Whether a boot may take the marked slot's image, which image an update may
+-//! install, and every reason one is refused.
++//! Which slot a boot may take, which image an update may install, and every
++//! reason one is refused, by the word the loader hands the kernel for it.
+ //!
+ //! **The anti-rollback floor** is the highest version a boot has proven by
+ //! stopping cleanly. The loader refuses an image below it, and raises it only
+@@ -24,9 +24,13 @@
+ //! hand clearing its NVRAM, lowers the floor to nothing. Only a monotonic
+ //! counter the platform refuses to lower — a TPM's NV counter — closes that.
+ 
++use crate::slots::{Table, Which};
++
+ /// Why a slot was not booted, or an image not installed.
+ #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+ pub enum Refusal {
++    /// The table carries no such slot.
++    Absent,
+     /// It carries no signed header.
+     Unsigned,
+     /// Its signed header is not one.
+@@ -45,9 +49,27 @@ pub enum Refusal {
+     Type(&'static str),
+ }
+ 
++impl Refusal {
++    /// The word the loader hands the kernel for this refusal: one token of the
++    /// boot parameter, so no comma and no space.
++    pub fn word(&self) -> &'static str {
++        match self {
++            Self::Absent => "absent",
++            Self::Unsigned => "unsigned",
++            Self::Malformed => "malformed",
++            Self::Signature => "signature",
++            Self::BelowFloor { .. } | Self::Older { .. } => "version",
++            Self::Hash(_) => "hash",
++            Self::Unreadable(_) => "unreadable",
++            Self::Type(_) => "type",
++        }
++    }
++}
++
+ impl core::fmt::Display for Refusal {
+     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+         match *self {
++            Self::Absent => write!(f, "the slot table carries no such slot"),
+             Self::Unsigned => write!(f, "it carries no signed header, so it is unsigned"),
+             Self::Malformed => write!(f, "its signed header is not one"),
+             Self::Signature => write!(f, "its signature is not this machine's key's"),
+@@ -70,6 +92,13 @@ pub fn admits(floor: u64, version: u64) -> Result<(), Refusal> {
+     Ok(())
+ }
+ 
++/// The slots a boot tries, in order: the marked one, then the other where the
++/// table carries it.
++pub fn order(table: &Table) -> [Option<Which>; 2] {
++    let other = table.marked.other();
++    [Some(table.marked), table.slot(other).map(|_| other)]
++}
++
+ /// The floor after a boot proved `proven`: it only rises.
+ pub fn raised(floor: u64, proven: u64) -> u64 {
+     floor.max(proven)
+@@ -95,6 +124,7 @@ pub fn installable(version: u64, running: u64, idle: Option<u64>) -> Result<(),
+ #[cfg(test)]
+ mod tests {
+     use super::*;
++    use crate::slots::Slot;
+ 
+     #[test]
+     fn the_floor_admits_its_own_version_and_above_and_only_rises() {
+@@ -113,4 +143,30 @@ mod tests {
+         assert_eq!(installable(11, 10, Some(12)), Err(Refusal::Older { version: 11, than: 12 }));
+         assert_eq!(installable(12, 10, Some(12)), Ok(()));
+     }
++
++    #[test]
++    fn a_boot_tries_the_marked_slot_first_and_the_other_only_if_there_is_one() {
++        let slot = Some(Slot { boot: [1; 16], root: [2; 16], version: 1 });
++        let both = Table { sequence: 1, marked: Which::B, slots: [slot, slot] };
++        assert_eq!(order(&both), [Some(Which::B), Some(Which::A)]);
++        let one = Table { sequence: 1, marked: Which::A, slots: [slot, None] };
++        assert_eq!(order(&one), [Some(Which::A), None]);
++    }
++
++    /// Each word is one token of a comma-separated boot parameter.
++    #[test]
++    fn every_word_is_one_parameter_token() {
++        for r in [
++            Refusal::Absent,
++            Refusal::Unsigned,
++            Refusal::Malformed,
++            Refusal::Signature,
++            Refusal::BelowFloor { version: 1, floor: 2 },
++            Refusal::Hash("kernel"),
++            Refusal::Unreadable("root"),
++            Refusal::Type("root"),
++        ] {
++            assert!(!r.word().is_empty() && !r.word().contains([',', ' ', ':', '=']), "{r:?}");
++        }
++    }
+ }
+diff --git a/loader/src/efi/boot.rs b/loader/src/efi/boot.rs
+index 3fec9fcd1..409f8caec 100644
+--- a/loader/src/efi/boot.rs
++++ b/loader/src/efi/boot.rs
+@@ -31,7 +31,7 @@ pub struct BootServices {
+     raise_tpl: Unused,
+     restore_tpl: Unused,
+     allocate_pages: unsafe extern "efiapi" fn(kind: u32, memory: u32, pages: usize, at: *mut u64) -> Status,
+-    free_pages: Unused,
++    free_pages: unsafe extern "efiapi" fn(at: u64, pages: usize) -> Status,
+     get_memory_map: unsafe extern "efiapi" fn(
+         size: *mut usize,
+         map: *mut u64,
+@@ -279,6 +279,16 @@ impl BootServices {
+         unsafe { (self.allocate_pages)(kind, LOADER_DATA, pages, &mut at) }.ok().map(|()| at)
+     }
+ 
++    /// `FreePages` (§7.2.2).
++    ///
++    /// # Safety
++    /// `at` and `pages` are an allocation `allocate_pages` made, and nothing
++    /// reads or writes it after.
++    pub unsafe fn free_pages(&self, at: u64, pages: usize) -> Result<(), Status> {
++        // SAFETY: the caller's contract.
++        unsafe { (self.free_pages)(at, pages) }.ok()
++    }
++
+     /// `AllocatePool` (§7.2.4), as `EfiLoaderData`: 8-byte aligned.
+     pub fn allocate_pool(&self, size: usize) -> Result<*mut u8, Status> {
+         let mut at = ptr::null_mut();
+diff --git a/loader/src/main.rs b/loader/src/main.rs
+index 80ec2e57a..9835e26b9 100644
+--- a/loader/src/main.rs
++++ b/loader/src/main.rs
+@@ -791,14 +791,8 @@ fn main(handle: Handle, system_table: SystemTable) -> Status {
+     // programs and ROOT — is one the chosen slot's signed header names. ROOT is read before the
+     // kernel is loaded and not after: it is the allocation the image pages come
+     // from, and a slot whose ROOT is refused has no use for the kernel's.
+-    //
+-    // Updates fix forward: a refused slot boots nothing, and the pass ends as
+-    // the `Panic:` line above says a panic does. Said first, so the stick
+-    // holds it.
+-    let chosen = slot::marked(handle, &system_table, image_floor.value).unwrap_or_else(|why| {
+-        println!("Slots: {why}");
+-        panic!("Slots: {why}")
+-    });
++    let chosen = slot::choose(handle, &system_table, image_floor.value)
++        .unwrap_or_else(|why| panic!("Slots: {why}"));
+     // Only once the mark is gone: otherwise the next pass could credit this
+     // boot with a stop mark an earlier boot left.
+     if last.unmarked {
+@@ -815,14 +809,20 @@ fn main(handle: Handle, system_table: SystemTable) -> Status {
+     let kernel_bytes = chosen.kernel;
+     println!("Kernel: {} bytes", kernel_bytes.len());
+ 
+-    // The word naming the slot is appended to what the slot carried, because
+-    // it is a fact only this loader has: the kernel is handed one line and
+-    // reads its own parameters out of it.
++    // The words naming the slot are appended to what the slot
++    // carried, because each is a fact only this loader has: the kernel is
++    // handed one line and reads its own parameters out of it.
+     let mut cmdline = chosen.cmdline;
+-    if !cmdline.is_empty() {
+-        cmdline.push(b',');
++    let mut append = |word: &str| {
++        if !cmdline.is_empty() {
++            cmdline.push(b',');
++        }
++        cmdline.extend_from_slice(word.as_bytes());
++    };
++    append(&alloc::format!("{}{}", toyos_abi::boot::SLOT_PARAM, chosen.which.letter()));
++    if let Some((refused, why)) = chosen.refused {
++        append(&alloc::format!("{}{}:{}", toyos_abi::boot::SLOT_REFUSED_PARAM, refused.letter(), why.word()));
+     }
+-    cmdline.extend_from_slice(alloc::format!("{}{}", toyos_abi::boot::SLOT_PARAM, chosen.which.letter()).as_bytes());
+     let params = core::str::from_utf8(&cmdline)
+         .unwrap_or_else(|e| panic!("slot {}'s cmdline is not UTF-8: {e}", chosen.which.letter()));
+     println!("Boot parameter: {params:?}");
+diff --git a/loader/src/payload.rs b/loader/src/payload.rs
+index b95c824a0..e685135c8 100644
+--- a/loader/src/payload.rs
++++ b/loader/src/payload.rs
+@@ -36,7 +36,8 @@ impl Payload {
+ 
+     pub fn bytes(&self) -> &[u8] {
+         // SAFETY: `at` and `len` are the pages `allocate` took, identity-mapped
+-        // while boot services live, and never released.
++        // while boot services live, and released only by `free`, which takes
++        // `self`.
+         unsafe { core::slice::from_raw_parts(self.at as *const u8, self.len as usize) }
+     }
+ 
+@@ -45,6 +46,16 @@ impl Payload {
+         unsafe { core::slice::from_raw_parts_mut(self.at as *mut u8, self.len as usize) }
+     }
+ 
++    /// Give the pages back: a payload whose slot was refused is not the kernel's.
++    pub fn free(self, bs: &BootServices) {
++        let pages = self.len.div_ceil(PAGE_SIZE as u64) as usize;
++        // SAFETY: the pages are this payload's own allocation, and `self` is
++        // consumed, so nothing reads them after this.
++        if let Err(e) = unsafe { bs.free_pages(self.at, pages) } {
++            println!("Payload: firmware would not take back the {} bytes at {:#x} ({e:?})", self.len, self.at);
++        }
++    }
++
+     /// Where the kernel is told the payload is.
+     pub fn handoff(&self) -> BootImage {
+         BootImage { addr: self.at, len: self.len }
+diff --git a/loader/src/rootimage.rs b/loader/src/rootimage.rs
+index 2c4d4935d..d39ba28e6 100644
+--- a/loader/src/rootimage.rs
++++ b/loader/src/rootimage.rs
+@@ -163,7 +163,8 @@ impl<'a> Disk<'a> {
+     /// timeout and says nothing while it runs, so a firmware driver that stalls
+     /// holds this loader until the firmware watchdog `main` armed at entry
+     /// resets the machine, if the firmware honours it. What shows where it
+-    /// stopped is the slot's line before the read.
++    /// stopped is the slot's line before the read and the attempt count the
++    /// next pass reads.
+     pub fn read_root(&mut self, bs: &BootServices, part: &Located, len: u64) -> Result<RootImage, String> {
+         let part = part.partition();
+         let capacity = part.lba_count().get().saturating_mul(u64::from(self.lba_bytes));
+@@ -182,13 +183,15 @@ impl<'a> Disk<'a> {
+         let read = chunk::read(&mut device, part.first_lba(), self.lba_bytes, chunk, pages.bytes_mut());
+         let image = RootImage { pages, partition: part.unique_guid().0, ticks: crate::arch::counter().wrapping_sub(began) };
+         if let Err(failed) = read {
+-            return Err(alloc::format!(
++            let why = alloc::format!(
+                 "the read of {} blocks at LBA {} failed: {:?}, after {} of {len} bytes read",
+                 failed.blocks,
+                 failed.lba,
+                 failed.error,
+                 failed.read
+-            ));
++            );
++            image.pages.free(bs);
++            return Err(why);
+         }
+         println!(
+             "{READ_AT} {at:#x}+{len:#x} from LBA {}+{}, {chunk} bytes a request (optimal granularity: {}), in {} counter ticks",
+diff --git a/loader/src/slot.rs b/loader/src/slot.rs
+index 074a19c29..78e17df05 100644
+--- a/loader/src/slot.rs
++++ b/loader/src/slot.rs
+@@ -1,12 +1,15 @@
+-//! The slot this boot hands the machine to, and every byte of it held to the
++//! Which slot this boot hands the machine to, and every byte of it held to the
+ //! owner's signature before it is.
+ //!
+-//! The slot table marks one slot, and that one is booted or nothing is: a
+-//! refusal is said by name and no other slot is tried. The slot is booted
+-//! only once, in this order: its signed header is on its FAT partition, the
+-//! signature is [`KEY`]'s, its version is at or above the floor a boot has
+-//! proven, and its kernel, boot parameter, supervisor, file server and ROOT
+-//! each hash to what the header names.
++//! The slot table marks one slot; that one is tried first and the other only
++//! when the marked one is refused (`toyos_update::policy::order`). A slot is
++//! booted only once, in this order: its signed header is on its FAT
++//! partition, the signature is [`KEY`]'s, its version is at or above the floor
++//! a boot has proven, and its
++//! kernel, boot parameter, supervisor, file server and ROOT each hash to what
++//! the header names. Each
++//! refusal is said by name, and the boot that falls back tells the kernel
++//! which slot it refused and why, so the next boot's log carries it.
+ //!
+ //! **The loader is the part signing does not cover**: it reads the key it
+ //! checks against out of its own binary, and only UEFI Secure Boot over the
+@@ -32,9 +35,6 @@ pub const KEY: [u8; 32] = sig::key_from_hex(env!("TOYOS_IMAGE_KEY"));
+ /// The head of every line this module writes.
+ const HEAD: &str = "Slot";
+ 
+-/// How the line ends that says the marked slot was refused.
+-const BOOTS_NOTHING: &str = "is refused, and no other slot is booted; the remedy is a newer image";
+-
+ /// A slot every byte of which its signature vouches for.
+ pub struct Chosen {
+     pub which: Which,
+@@ -47,10 +47,12 @@ pub struct Chosen {
+     pub root: RootImage,
+     /// The unique GUID of its volume, which the kernel and its parameter were read from.
+     pub volume: [u8; 16],
++    /// The slot tried before this one, and why it was refused.
++    pub refused: Option<(Which, Refusal)>,
+ }
+ 
+-/// The slot the table marks, verified, or why this pass boots nothing.
+-pub fn marked(
++/// The slot to boot, or every refusal and why there is nothing to boot.
++pub fn choose(
+     handle: Handle,
+     system_table: &SystemTable,
+     floor: u64,
+@@ -66,12 +68,27 @@ pub fn marked(
+         if table.slots[0].is_some() { "present" } else { "absent" },
+         if table.slots[1].is_some() { "present" } else { "absent" },
+     );
+-    let which = table.marked;
+-    let slot = table.slot(which).expect("a slot table that reads carries the slot it marks");
+-    verify(bs, &mut disk, which, slot, floor).map_err(|why| {
+-        println!("{HEAD} {}: REFUSED, {why}", which.letter());
+-        alloc::format!("the marked slot {} {BOOTS_NOTHING}", which.letter())
+-    })
++    let mut refused: Option<(Which, Refusal)> = None;
++    for which in policy::order(&table).into_iter().flatten() {
++        let slot = table.slot(which).expect("`order` names only slots the table carries");
++        match verify(bs, &mut disk, which, slot, floor) {
++            Ok(mut chosen) => {
++                chosen.refused = refused;
++                return Ok(chosen);
++            }
++            Err(why) => {
++                println!("{HEAD} {}: REFUSED, {why}", which.letter());
++                // The marked slot's refusal is the one the kernel is told: it
++                // is why this boot is not the one the table asked for.
++                refused.get_or_insert((which, why));
++            }
++        }
++    }
++    Err(alloc::format!(
++        "no slot verifies: the marked slot {} was refused ({})",
++        table.marked.letter(),
++        refused.map_or(String::new(), |(_, why)| alloc::format!("{why}"))
++    ))
+ }
+ 
+ /// `slot`, held to [`KEY`] and the floor.
+@@ -103,16 +120,30 @@ fn verify(
+     let cmdline = read_section(bs, &slot.boot, slots::CMDLINE_FILE, header.cmdline().len, "cmdline")?;
+     held(&cmdline, header.cmdline().sha256, "cmdline")?;
+     let supervisor = program(bs, &slot.boot, slots::SUPERVISOR_FILE, header.supervisor(), "supervisor")?;
+-    let fileserver = program(bs, &slot.boot, slots::FILESERVER_FILE, header.fileserver(), "fileserver")?;
++    let fileserver = match program(bs, &slot.boot, slots::FILESERVER_FILE, header.fileserver(), "fileserver") {
++        Ok(fileserver) => fileserver,
++        Err(why) => {
++            supervisor.free(bs);
++            return Err(why);
++        }
++    };
+ 
+-    let root = disk.read_root(bs, &part, header.root().len).map_err(|why| {
+-        println!("{HEAD} {letter}: ROOT: {why}");
+-        Refusal::Unreadable("root")
+-    })?;
++    let root = match disk.read_root(bs, &part, header.root().len) {
++        Ok(root) => root,
++        Err(why) => {
++            println!("{HEAD} {letter}: ROOT: {why}");
++            supervisor.free(bs);
++            fileserver.free(bs);
++            return Err(Refusal::Unreadable("root"));
++        }
++    };
+     let began = crate::arch::counter();
+     let root_hash = toyos_update::sha256(root.pages.bytes());
+     println!("{HEAD} {letter}: ROOT hashed in {} counter ticks", crate::arch::counter().wrapping_sub(began));
+     if root_hash != header.root().sha256 {
++        root.pages.free(bs);
++        supervisor.free(bs);
++        fileserver.free(bs);
+         return Err(Refusal::Hash("root"));
+     }
+     println!("{HEAD} {letter}: kernel, cmdline, supervisor, fileserver and ROOT are the bytes the signed header names");
+@@ -125,6 +156,7 @@ fn verify(
+         fileserver,
+         root,
+         volume: slot.boot,
++        refused: None,
+     })
+ }
+ 
+@@ -139,7 +171,10 @@ fn program(bs: &BootServices, guid: &[u8; 16], path: &str, section: Section, nam
+     pages.bytes_mut().copy_from_slice(&bytes);
+     drop(bytes);
+     // Over the pages the kernel is handed, not over the buffer they came from.
+-    held(pages.bytes(), section.sha256, name)?;
++    if let Err(why) = held(pages.bytes(), section.sha256, name) {
++        pages.free(bs);
++        return Err(why);
++    }
+     Ok(pages)
+ }
+ 
+diff --git a/sdk/abi/src/boot.rs b/sdk/abi/src/boot.rs
+index eddce8b76..a4fdf5e6a 100644
+--- a/sdk/abi/src/boot.rs
++++ b/sdk/abi/src/boot.rs
+@@ -62,8 +62,8 @@ pub struct KernelArgs {
+     /// layout.
+     pub layout: u32,
+     /// The boot parameter, as ASCII with no terminator: comma-separated tokens
+-    /// read out of `\toyos\cmdline` on the slot's volume, with the word the
+-    /// loader appends ([`SLOT_PARAM`]), read by [`tokens`].
++    /// read out of `\toyos\cmdline` on the slot's volume, with the words the
++    /// loader appends ([`SLOT_PARAM`] among them), read by [`tokens`].
+     ///
+     /// Every token is a parameter the kernel claims (`kernel/src/params.rs`)
+     /// or an actuator its table declares, and a kernel that carries no
+@@ -280,6 +280,12 @@ pub const WRITE_NO_LAYOUT_PARAM: &str = "loader-writes-no-layout";
+ /// fact only the loader has.
+ pub const SLOT_PARAM: &str = "boot-slot=";
+ 
++/// The word the loader appends when it booted the other slot than the one the
++/// slot table marks: the marked slot and why it was refused, `B:died`. The
++/// kernel logs it, which is how a dead or refused boot reaches the next boot's
++/// log.
++pub const SLOT_REFUSED_PARAM: &str = "slot-refused=";
++
+ /// Every token of the boot parameter: each one a parameter of the kernel's (`params`) or an actuator its table declares.
+ pub fn tokens(cmdline: &str) -> impl Iterator<Item = &str> {
+     cmdline.split(',').filter(|t| !t.is_empty())
+diff --git a/tests/common/metal.rs b/tests/common/metal.rs
+index e792f31fd..c20ee07ca 100644
+--- a/tests/common/metal.rs
++++ b/tests/common/metal.rs
+@@ -66,6 +66,10 @@ pub struct Arm {
+     /// fit the bound every boot has, and a measurement's own span for one that
+     /// runs longer on purpose. Two arms on one boot add both.
+     pub adds_ms: u64,
++    /// A slot file bent in the marked slot, with the other slot carrying the
++    /// image whole (`super::slots`): a boot whose subject is the loader's
++    /// refusal and fallback. `None` for the one-slot image every other boot is.
++    pub bent: Option<&'static str>,
+     /// A pass takes this arm's row only by the row's whole name or this
+     /// arm's boot, never unfiltered or by part of a name ([`select`]): a boot
+     /// a bench gives hours to evidence no suite pass asks for.
+@@ -83,7 +87,7 @@ pub const fn once(
+     params: &'static [&'static str],
+     jobs: &'static [&'static str],
+ ) -> Arm {
+-    Arm { boot, config, params, jobs, features: &[], last: None, adds_ms: 0, named_only: false }
++    Arm { boot, config, params, jobs, features: &[], last: None, adds_ms: 0, bent: None, named_only: false }
+ }
+ 
+ /// One boot carrying members that are **discovered rather than registered**.
+@@ -449,6 +453,7 @@ pub struct Batch {
+     config: &'static str,
+     params: Vec<&'static str>,
+     features: &'static [&'static str],
++    bent: Option<&'static str>,
+     /// What the runner spawns, in order.
+     pub jobs: Vec<String>,
+     /// What its arms and the members riding it add to the bound of its list.
+@@ -489,6 +494,7 @@ impl Batch {
+ 
+ /// The batch of the boot `boot`, which `who` rides as `(config, params,
+ /// features)`: a new one, or the one an earlier rider made where the two agree.
++#[allow(clippy::too_many_arguments)]
+ fn ride<'a>(
+     out: &'a mut BTreeMap<String, Batch>,
+     who: &str,
+@@ -496,22 +502,24 @@ fn ride<'a>(
+     config: &'static str,
+     params: &'static [&'static str],
+     features: &'static [&'static str],
++    bent: Option<&'static str>,
+ ) -> Result<&'a mut Batch, String> {
+     let batch = out.entry(boot.to_string()).or_insert_with(|| Batch {
+         config,
+         params: params.to_vec(),
+         features,
++        bent,
+         jobs: Vec::new(),
+         adds_ms: 0,
+         last: None,
+         files: Vec::new(),
+         links: Vec::new(),
+     });
+-    if batch.config != config || batch.params != params || batch.features != features {
++    if batch.config != config || batch.params != params || batch.features != features || batch.bent != bent {
+         return Err(format!(
+-            "{who} rides the boot {boot:?} as ({config}, {params:?}, {features:?}) and another \
+-             rides it as ({}, {:?}, {:?}); one boot is one image",
+-            batch.config, batch.params, batch.features
++            "{who} rides the boot {boot:?} as ({config}, {params:?}, {features:?}, bent {bent:?}) and another \
++             rides it as ({}, {:?}, {:?}, bent {:?}); one boot is one image",
++            batch.config, batch.params, batch.features, batch.bent
+         ));
+     }
+     Ok(batch)
+@@ -543,7 +551,7 @@ pub fn batches(
+     for (name, decl) in tests {
+         let Metal { arms, .. } = decl;
+         for arm in *arms {
+-            let batch = ride(&mut out, name, arm.boot, arm.config, arm.params, arm.features)?;
++            let batch = ride(&mut out, name, arm.boot, arm.config, arm.params, arm.features, arm.bent)?;
+             batch.add(arm.jobs.iter().map(|j| (*j).to_string()));
+             batch.adds_ms += arm.adds_ms;
+             match (batch.last, arm.last) {
+@@ -571,7 +579,7 @@ pub fn batches(
+             return Err(format!("two shared boots are both named {:?}", boot.boot));
+         }
+         let who = format!("the shared boot {:?}", boot.boot);
+-        let batch = ride(&mut out, &who, &boot.boot, boot.config, boot.params, boot.features)?;
++        let batch = ride(&mut out, &who, &boot.boot, boot.config, boot.params, boot.features, None)?;
+         batch.add(boot.members.iter().map(|member| member.job.clone()));
+         batch.adds_ms += boot.members_ms();
+         batch.files.extend(boot.files.iter().cloned());
+@@ -732,7 +740,14 @@ fn build(
+     params.push(&deadline);
+     let mut plan = toyos_build::build::Plan::new(toyos_build::arch::Arch::X86_64, &config, features, &params);
+     plan.machines = toyos_build::microcode::Machines::Benches;
+-    let bytes = toyos_build::build::build_test_image(root, &plan, quiet, &extra);
++    let bytes = match batch.bent {
++        None => toyos_build::build::build_test_image(root, &plan, quiet, &extra),
++        Some(file) => {
++            let parts = toyos_build::build::build_test_parts(root, &plan, quiet, &extra);
++            let signing = toyos_build::image::Signing { key: toyos_build::signing::key(), version: plan.version };
++            super::slots::bent_fallback(plan.arch, &parts, &plan.params.join(","), signing, file)
++        }
++    };
+     let image = home.join("image.img");
+     std::fs::write(&image, &bytes).map_err(|e| format!("{}: {e}", image.display()))?;
+     Ok(image)
+diff --git a/tests/common/qemu.rs b/tests/common/qemu.rs
+index 90319ca9d..1933c5a78 100644
+--- a/tests/common/qemu.rs
++++ b/tests/common/qemu.rs
+@@ -1507,7 +1507,7 @@ fn build_boot_image_with(
+         Some(file) => {
+             let parts = toyos_build::build::build_test_parts(&root, &plan, quiet, &extra_files);
+             let signing = toyos_build::image::Signing { key: toyos_build::signing::key(), version: plan.version };
+-            super::slots::bent_marked(arch, &parts, &plan.params.join(","), signing, file)
++            super::slots::bent_fallback(arch, &parts, &plan.params.join(","), signing, file)
+         }
+     }
+ }
+diff --git a/tests/common/slots.rs b/tests/common/slots.rs
+index 8cf730794..fbf3d1457 100644
+--- a/tests/common/slots.rs
++++ b/tests/common/slots.rs
+@@ -1,7 +1,9 @@
+ //! An image whose marked slot's `file` carries one bent byte and whose other
+ //! slot carries the same image whole: the loader refuses the marked slot by
+-//! the section that file is, before it exits boot services, and boots
+-//! nothing, though a slot that verifies is beside it.
++//! the section that file is, before it exits boot services, and boots the
++//! other. A boot that falls back, rather than one with nothing to boot, is the
++//! only refusal a metal bench comes back from, since a loader with no slot
++//! powers the machine off.
+ 
+ use std::io::{Seek, SeekFrom, Write};
+ 
+@@ -10,7 +12,7 @@ use toyos_build::image::{self, SecondSlot, Signing};
+ 
+ /// The bytes of `parts` as such an image, its slot A's `file` (a
+ /// `toyos_update::slots::*_FILE`) bent.
+-pub fn bent_marked(
++pub fn bent_fallback(
+     arch: toyos_build::arch::Arch,
+     parts: &Parts,
+     params: &str,
+diff --git a/tests/toyos.rs b/tests/toyos.rs
+index 238517750..c114b8e35 100644
+--- a/tests/toyos.rs
++++ b/tests/toyos.rs
+@@ -646,14 +646,11 @@ const MACHINE_TESTS: &[&str] = &[
+     // `images/console.toml`'s image, which runs no job and hands no machine
+     // back: a metal boot of it ends with a hand on the power button.
+     "console_image_boots",
+-    // The UEFI loader's check of a boot program and what follows its refusal,
+-    // which no host test reaches: a marked slot whose supervisor is bent is
+-    // refused before boot services end, and the machine stops with the whole
+-    // slot beside it unread. On both architectures' QEMU machines, each with
+-    // the loader's serial port as its console; no metal row, since the metal
+-    // loop judges a boot by the kernel's own record, which this one never
+-    // writes.
+-    "a_bent_supervisor_is_refused_and_nothing_boots",
++    // The UEFI loader's check of a boot program, which no host test reaches:
++    // a slot whose supervisor is bent is refused before boot services end,
++    // and the other slot boots. On both architectures' QEMU machines; the
++    // `bent_supervisor_falls_back` metal row runs it on a bench.
++    "a_bent_supervisor_is_refused_and_the_other_slot_boots",
+     // A spawn and its child's end leave the census as it was, for a program
+     // the root server holds in memory, and one each on DATA and `/tmp` read
+     // whole: the image's
+@@ -867,6 +864,10 @@ const MACHINE_TESTS: &[&str] = &[
+ /// than derived from its config and parameters, because sharing is not always
+ /// safe and only the author knows.
+ const METAL: &[(&str, metal::Metal)] = &[
++    (
++        "bent_supervisor_falls_back",
++        metal::Metal { arms: BENT_SUPERVISOR, judge: |b| bent_supervisor_fell_back(&b[0].loader(), &b[0].kernel()) },
++    ),
+     // ---- one image: tests/images/testcases.toml, no parameters, one job list ----
+     (
+         // The machine's own CPU count, off the SMP bring-up records — a source
+@@ -3260,33 +3261,22 @@ fn a_user_copy_faults_in_mid_copy_or_ends_as_bad_address(test_config: &Path) ->
+     Ok(())
+ }
+ 
+-/// A boot whose marked slot's supervisor is bent, beside a slot that
+-/// verifies: the loader refuses the marked slot by the section, reads nothing
+-/// of the other, hands no kernel the machine, and the machine stops.
+-fn a_bent_supervisor_is_refused_and_nothing_boots(profile: qemu::Profile, test_config: &Path) -> Result<(), String> {
+-    let options = BootOptions {
+-        profile,
+-        bent: Some(toyos_update::slots::SUPERVISOR_FILE),
+-        ready_marker: bootlog::LOADER_BOOTS_NOTHING,
+-        ..Default::default()
+-    };
+-    let mut qemu = QemuInstance::boot_with_options(test_config, &[], &[], options);
+-    let by = qemu.budget(qemu::GUEST_QUIET);
+-    let after = qemu.await_exit(by)?;
+-    let said = serial::Serial::named("the refused boot's serial", format!("{}{after}", qemu.boot_log()));
++/// What a boot whose marked slot's supervisor is bent says: the loader refused
++/// that slot by the section, and the kernel was booted from the other.
++fn bent_supervisor_fell_back(loader: &serial::Serial, kernel: &serial::Serial) -> Result<(), String> {
+     let refused = toyos_update::policy::Refusal::Hash(toyos_update::image::SUPERVISOR);
+-    said.must_say(&format!("Slot A: REFUSED, {refused}"))?;
+-    said.must_say(&format!("Slots: the marked slot A {}", bootlog::LOADER_BOOTS_NOTHING))?;
+-    // A slot the loader verifies says `Slot <letter>: signed header` first.
+-    if let Some(line) = said.text().lines().find(|l| l.contains("Slot B:")) {
+-        return Err(format!("the loader read slot B after refusing the marked slot: {line:?}\n{}", said.text()));
+-    }
+-    match said.kernel_lines() {
+-        0 => Ok(()),
+-        n => Err(format!("a kernel said {n} lines on a machine whose marked slot was refused:\n{}", said.text())),
+-    }
++    loader.must_say(&format!("Slot A: REFUSED, {refused}"))?;
++    // `kernel/src/params.rs`'s `SLOT_RECORD`, which the kernel's binary keeps.
++    kernel.must_say(&format!("boot: slot B, because the marked slot A was refused: {}", refused.word()))?;
++    Ok(())
+ }
+ 
++/// [`bent_supervisor_fell_back`] on a bench, whose loader keeps its own log.
++const BENT_SUPERVISOR: &[metal::Arm] = &[metal::Arm {
++    bent: Some(toyos_update::slots::SUPERVISOR_FILE),
++    ..metal::once("bentsupervisor", "tests/images/testcases.toml", &[], &[])
++}];
++
+ /// Boot `tests/images/testcases.toml` from a USB stick, as a metal boot does,
+ /// write the stick through usbd ([`metal::STICK_LOAD_JOB`]), press the power
+ /// button while it writes, and read the stick's log volume back with the metal
+@@ -4891,9 +4881,15 @@ fn run_machine_test(name: &str, test_config: &Path) -> Result<(), String> {
+         "a_supervisor_that_fails_early_says_why_on_the_uart" => a_supervisor_that_fails_early_says_why_on_the_uart(),
+         "a_spawn_from_an_image_frees_it_when_the_child_ends" => a_spawn_from_an_image_frees_it_when_the_child_ends(test_config),
+         "a_user_copy_faults_in_mid_copy_or_ends_as_bad_address" => a_user_copy_faults_in_mid_copy_or_ends_as_bad_address(test_config),
+-        "a_bent_supervisor_is_refused_and_nothing_boots" => [qemu::Profile::HeadlessNoConsolePort, qemu::Profile::Virt]
+-            .into_iter()
+-            .try_for_each(|profile| a_bent_supervisor_is_refused_and_nothing_boots(profile, test_config)),
++        "a_bent_supervisor_is_refused_and_the_other_slot_boots" => {
++            [qemu::Profile::Headless, qemu::Profile::Virt].into_iter().try_for_each(|profile| {
++                let options = BootOptions { profile, bent: Some(toyos_update::slots::SUPERVISOR_FILE), ..Default::default() };
++                let qemu = QemuInstance::boot_with_options(test_config, &[], &[], options);
++                let loader = serial::Serial::named("loader's serial", qemu.loader_log());
++                let kernel = serial::Serial::named("boot's console", qemu.boot_log().to_string());
++                bent_supervisor_fell_back(&loader, &kernel)
++            })
++        }
+         "the_log_lands_on_the_boot_stick" => the_log_lands_on_the_boot_stick(test_config),
+         "a_usb_key_reaches_the_console" => a_usb_key_reaches_the_console(),
+         "desktop_without_x2apic" => desktop_without_x2apic(),
