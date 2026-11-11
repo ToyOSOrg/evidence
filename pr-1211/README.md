@@ -97,3 +97,44 @@ the log. `6f1f01b12` waits for them instead, and run 42954506304 is green with a
   part is unmapped by never having been mapped, and a mutation that maps it still leaves the slot's first page and the test green.
 - A guest row cannot run `abuse_thread_table` (it is a member of the metal shared boot); it is in the staged metal boots.
 - No metal bench has booted this revision.
+
+# Round three: `6dc26300d5fde278f7a5390d18d175e27e2d40b9`
+
+Review r2's fixes, two commits on `6f1f01b12`: `4b1ca3bcd` (the fixes) and `6dc26300d`, which changes only the tests in
+`kernel/pure/stackslots.rs`.
+
+- A refused spawn no longer builds and forgets a `Stack`, so it keeps no reference to the job.
+- Which slot a stack is handed, and when a retired one is clean, is `kernel::stackslots`: pure, three fixed bitmaps over
+  262144 slots, host-tested. Nothing allocates under the slot lock and a take past the range's bound is refused.
+- x86-64 stack leaves are written accessed and dirty; the range's walk asserts it meets tables; an unmap looks its table up
+  without making one.
+- The record of the never-freed tables is a question for the owner and says the design is the orchestrator's decision.
+
+| check | command | target | exit | log |
+|---|---|---|---|---|
+| host checks | `cargo run -- --ci host` | macOS arm64 host, `6dc26300d` | 1: 1 of 110 steps red, the same macOS-only test | `r3/ci-host.log` |
+| the slots' tests | `cargo test -p kernel --lib stackslots` | macOS arm64 host, `6dc26300d` | 0: 5 passed | `r3/stackslots-tests.log` |
+| negative control | the same on `6dc26300d` plus `r3/control-no-wait.diff` | macOS arm64 host | 101: 3 of 5 red, as intended | `r3/control-no-wait.log` |
+| guest rows | `gh workflow run guest-rows.yml --ref kmem-guards-wx -f filter='a_kernel_stack_overflow_names_its_stack nested_nmi_is_loud std_threads_count_the_cpus_and_give_back_ended_threads libc_children kernel_wx_leaf_is_refused virt_smp virt_user_mode'` | guest runner, run 42980721935, `4b1ca3bcd` | success, 8 passed | `r3/guest-rows-42980721935.log` |
+| metal boots staged | head, per bench: `… --metal --metal-readback <dir> kernel_wx smp_roster_and_tsc_trail topology_readback pmm_accounting spawn_cost syscall_cost abuse_thread_table` at `6dc26300d`; base, per bench: `… spawn_cost syscall_cost` at `9349705ce` | no machine touched | 2: staged, not run | `r3/metal-prepare-*.log` |
+
+## Reading the host log
+
+The verdict is 1 of 110 steps red: `the build system: cargo test --lib`, 383 passed and 1 failed,
+`llvm::tests::the_caller_s_environment_reaches_neither_the_build_nor_the_key`. Every other `failures:` list in the log is under a
+`control` step, a mutation reaching its verdict. The run includes clippy's 26 invocations, clean.
+
+## The control
+
+The mutation makes retired slots clean when a flush is asked for instead of when it has reached every CPU. Three tests red:
+`a_slot_retired_during_a_flush_waits_for_the_next`, `a_spent_range_flushes_for_one_retired_slot_and_refuses_with_none`, and the
+property test `no_slot_retired_since_the_last_flush_is_handed_out`. The property test as first written at `4b1ca3bcd` ran each
+flush straight through and stayed green under this mutation; `6dc26300d` lands a take and a drop inside every flush, and it
+now reds. Restored with `git checkout` on the committed tree and rerun green (`r3/stackslots-tests.log`).
+
+## What is reused
+
+The guest rows ran at `4b1ca3bcd`. `6dc26300d` changes test code inside a `#[cfg(test)]` module of the pure crate, which no
+kernel image contains.
+
+Not run: metal. Both benches are reserved; the staged boots run after.

@@ -1,0 +1,13 @@
+diff --git a/kernel/pure/stackslots.rs b/kernel/pure/stackslots.rs
+index c92cd8c2e..646d6126a 100644
+--- a/kernel/pure/stackslots.rs
++++ b/kernel/pure/stackslots.rs
+@@ -101,7 +101,7 @@ impl Slots {
+         let waiting = self.retired.count;
+         if !self.in_flush && (waiting >= FLUSH_BATCH || (self.fresh == SLOTS && waiting > 0)) {
+             self.in_flush = true;
+-            self.flushing.absorb(&mut self.retired);
++            self.clean.absorb(&mut self.retired);
+             return Take::Flush;
+         }
+         if self.fresh == SLOTS {
