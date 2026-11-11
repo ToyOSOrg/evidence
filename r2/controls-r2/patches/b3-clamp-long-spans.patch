@@ -1,0 +1,14 @@
+--- a/kernel/pure/paged.rs
++++ b/kernel/pure/paged.rs
+@@ -450,10 +450,7 @@
+         return Err(Refused::PastEnd);
+     }
+     let pages = (offset % PAGE + len).div_ceil(PAGE);
+-    if pages > HOLDER_PAGES {
+-        return Err(Refused::TooLong);
+-    }
+-    Ok(pages)
++    Ok(pages.min(HOLDER_PAGES))
+ }
+ 
+ /// A pager's table: `capacity` slots and a hash of them, both made here.

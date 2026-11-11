@@ -1,0 +1,15 @@
+--- a/system/fileserver/src/pages.rs
++++ b/system/fileserver/src/pages.rs
+@@ -583,11 +583,11 @@
+             let end = crate::bounds::in_a_file(offset, data.len() as u64)?;
+             if !data.is_empty() {
+                 files.write_held(volume, identity, node, size, offset, data)?;
+-                files.stamp(identity, volume.node_meta(node)?.mtime)?;
+             }
+             Ok(end)
+         })?;
+         if !data.is_empty() {
++            self.stamp(identity, volume.node_meta(node)?.mtime)?;
+             // A holder asks this server once its credit is spent.
+             self.top_up(volume, identity);
+         }

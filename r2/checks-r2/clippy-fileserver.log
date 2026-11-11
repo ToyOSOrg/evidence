@@ -1,0 +1,70 @@
+== cargo clippy --manifest-path system/fileserver/Cargo.toml --all-targets -- -W clippy::checked_conversions -W clippy::default_trait_access -W clippy::manual_midpoint -W clippy::redundant_clone -W clippy::unchecked_time_subtraction -W clippy::unnecessary_semicolon -D warnings
+    Checking toyos-blockdev v0.1.0 (<scratch>/wt-step1/lib/blockdev)
+    Checking toyos-blockhold v0.1.0 (<scratch>/wt-step1/lib/blockhold)
+    Checking toyos-gpt v0.1.0 (<scratch>/wt-step1/lib/gpt)
+    Checking toyos-logstream v0.1.0 (<scratch>/wt-step1/lib/logstream)
+    Checking toyos-wallclock v0.1.0 (<scratch>/wt-step1/lib/wallclock)
+    Checking toyos-osrelease v0.1.0 (<scratch>/wt-step1/sdk/osrelease)
+    Checking toyos-fat32-check v0.1.0 (<scratch>/wt-step1/lib/fat32/check)
+    Checking libc v0.2.190
+    Checking toyos-blockring v0.1.0 (<scratch>/wt-step1/lib/blockring)
+    Checking bcachefs v0.1.0 (<scratch>/wt-step1/lib/bcachefs)
+    Checking toyos-fat32 v0.1.0 (<scratch>/wt-step1/lib/fat32)
+    Checking toyos-manifest v0.1.0 (<scratch>/wt-step1/lib/manifest)
+    Checking getrandom v0.3.4 (https://github.com/ToyOSOrg/getrandom?branch=toyos-0.3-sdk-0.12#67c17e0a)
+    Checking toyos-blockserve v0.1.0 (<scratch>/wt-step1/lib/blockserve)
+    Checking diskserver v0.0.0 (<scratch>/wt-step1/system/diskserver)
+    Checking fileserver v0.0.0 (<scratch>/wt-step1/system/fileserver)
+error: redundant clone
+  --> system/fileserver/src/listing.rs:94:27
+   |
+94 |         let mut want = all.clone();
+   |                           ^^^^^^^^ help: remove this
+   |
+note: this value is dropped without further use
+  --> system/fileserver/src/listing.rs:94:24
+   |
+94 |         let mut want = all.clone();
+   |                        ^^^
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#redundant_clone
+   = note: `-D clippy::redundant-clone` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::redundant_clone)]`
+
+error: redundant clone
+   --> system/fileserver/src/pages/tests.rs:792:41
+    |
+792 |     let mut files = Files::new(Some(fake.clone()));
+    |                                         ^^^^^^^^ help: remove this
+    |
+note: this value is dropped without further use
+   --> system/fileserver/src/pages/tests.rs:792:37
+    |
+792 |     let mut files = Files::new(Some(fake.clone()));
+    |                                     ^^^^
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#redundant_clone
+
+error: redundant clone
+   --> system/fileserver/src/pages/tests.rs:879:41
+    |
+879 |     let mut files = Files::new(Some(fake.clone()));
+    |                                         ^^^^^^^^ help: remove this
+    |
+note: this value is dropped without further use
+   --> system/fileserver/src/pages/tests.rs:879:37
+    |
+879 |     let mut files = Files::new(Some(fake.clone()));
+    |                                     ^^^^
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#redundant_clone
+
+error: unchecked subtraction of a `Duration`
+  --> system/fileserver/src/writeback.rs:91:34
+   |
+91 |             assert!(!wb.take_due(now + left - Duration::from_millis(1)));
+   |                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: try: `(now + left).checked_sub(Duration::from_millis(1)).unwrap()`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#unchecked_time_subtraction
+   = note: `-D clippy::unchecked-time-subtraction` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::unchecked_time_subtraction)]`
+
+error: could not compile `fileserver` (lib test) due to 4 previous errors
+rc=101

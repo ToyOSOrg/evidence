@@ -1,0 +1,14 @@
+--- a/kernel/pure/paged.rs
++++ b/kernel/pure/paged.rs
+@@ -446,10 +446,7 @@
+ /// call takes whole: `PastEnd` for a span past the last page, `TooLong` for
+ /// one past [`HOLDER_PAGES`], which the holder asks the pager to write.
+ pub fn holder_span(offset: u64, len: u64) -> Result<u64, Refused> {
+-    if !within_reach(offset, len) {
+-        return Err(Refused::PastEnd);
+-    }
+-    let pages = (offset % PAGE + len).div_ceil(PAGE);
++    let pages = (offset % PAGE).wrapping_add(len).div_ceil(PAGE);
+     if pages > HOLDER_PAGES {
+         return Err(Refused::TooLong);
+     }

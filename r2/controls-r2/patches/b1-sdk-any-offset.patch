@@ -1,0 +1,12 @@
+--- a/sdk/toyos/src/files.rs
++++ b/sdk/toyos/src/files.rs
+@@ -446,7 +446,8 @@
+ /// a write past it is the server's to refuse, as for a file with none.
+ #[cfg_attr(not(all(feature = "fd-table", not(test))), allow(dead_code))]
+ fn in_a_file(offset: u64, len: usize) -> bool {
+-    offset.checked_add(len as u64).is_some_and(|end| end <= fs::MAX_FILE_BYTES)
++    let _ = (offset, len);
++    true
+ }
+ 
+ /// `path` as a path names something: UTF-8, and not empty, which names

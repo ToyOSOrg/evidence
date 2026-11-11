@@ -1,0 +1,11 @@
+--- <scratch>/logs/step1-reach-controls/paged.rs.orig	2026-11-11 22:00:47
++++ kernel/pure/paged.rs	2026-11-11 22:00:47
+@@ -518,7 +518,7 @@
+ /// call takes whole: `OutOfReach` for one past [`HOLDER_PAGES`] or ending
+ /// past [`HOLDER_END`], which the holder asks the pager to write.
+ pub fn holder_span(offset: u64, len: u64) -> Result<u64, Refused> {
+-    if !offset.checked_add(len).is_some_and(|end| end <= HOLDER_END) {
++    if !within_reach(offset, len) {
+         return Err(Refused::OutOfReach);
+     }
+     let pages = (offset % PAGE + len).div_ceil(PAGE);
