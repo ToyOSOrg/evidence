@@ -1,0 +1,11 @@
+--- a/kernel/pure/paged.rs
++++ b/kernel/pure/paged.rs
+@@ -540,7 +540,7 @@
+     /// `page` looks again: the page is no longer absent, or a write or resize
+     /// moved the version, which the read answers `WouldBlock`.
+     pub fn wait_over(&self, o: &Object, page: u64, since: Version) -> bool {
+-        !o.unchanged(since) || !matches!(self.lookup(o, page), Lookup::Absent)
++        !matches!(self.lookup(o, page), Lookup::Absent)
+     }
+ 
+     pub fn lookup(&self, o: &Object, page: u64) -> Lookup<F> {

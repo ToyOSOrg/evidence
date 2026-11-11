@@ -27,9 +27,29 @@ Dispatched at ab4ba05ab: run 43048940831, naming
 the filter before running anything (`No test matches filter`): both are shared binaries of the metal boots, not
 QEMU rows. A mistake of the dispatch, not a result. No QEMU row reaches a holder's waiting read.
 
-## Metal (staged, not run)
+## Metal
 
 At ab4ba05ab, the T14's `testcases` boot with exactly those two jobs:
 `cargo test --test toyos-build -- --metal --metal-readback <dir> a_pager_s_end_answers_its_waiting_holders_gone a_served_file_reads_through_its_paged_object`,
-exit 2 (staged; the machine untouched), log `r1/metal/stage-t14.log`. Its readback and verdict are added here when
-the orchestrator has run it.
+exit 2 (staged; the machine untouched), log `r1/metal/stage-t14.log`. The orchestrator ran it: verdict `passed`,
+both jobs `exit=0`, no "has a read overdue" line (`r1/metal/t14-ab4ba05ab-readback.txt`: the verdict and the two jobs'
+lines). Review r1's fix changes the wait those jobs exercise, so this boot does not cover the head below.
+
+## r2: branch `paged-rereport` at 43fa98206 (review r1's fix)
+
+A holder's wait also ends where the object's version moved (`Pages::wait_over`); the withdraw marks its waiters in
+the pure `Pages::withdraw` (`Waiters`), in the hold that removes the pages. Host: macOS arm64.
+
+| check | command | revision | exit | log |
+|---|---|---|---|---|
+| the kernel's paged tests, the wait model among them | `cargo test -p kernel --lib -- paged::` | 43fa98206 | 0 (22 passed) | `r2/host/host-paged-r2.log` |
+| control: the wait ends only on the page (no version exit) | `r2/host/mut-no-version-r2.patch`, the same command | 43fa98206 | 101, restored identical | `r2/host/mut-no-version-r2.log` |
+| control: the withdraw marks no waiter | `r2/host/mut-no-mark-r2.patch` | 43fa98206 | 101, restored identical | `r2/host/mut-no-mark-r2.log` |
+| control: `Want::withdrawn` never news | `r2/host/mut-withdrawn-r2.patch` | 43fa98206 | 101, restored identical | `r2/host/mut-withdrawn-r2.log` |
+| clippy, the kernel's four shapes (as in r1) | `cargo clippy ... -- <adopted lints> -D warnings` | 43fa98206 | 0 each | `r2/host/clippy-r2.log` |
+
+The model's red lines: without the version exit, `after [Report, Answer, Supply, Supply, Shrink, Grow]: the read
+waits for ever`; without the marking, `after [Report, Answer, Supply, Supply, Supply, Withdraw]`.
+
+Metal: the T14 `testcases` boot with the same two jobs, staged at 43fa98206, exit 2 (`r2/metal/stage-t14-r2.log`),
+requested. It must show both jobs `exit=0` and no "has a read overdue" line; its readback is added here.
