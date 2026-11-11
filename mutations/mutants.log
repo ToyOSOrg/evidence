@@ -1,0 +1,153 @@
+rev f79df95746f95dd9d33d3553b131cfebcc79fbc1 diff c3413c490a3fc089
+== mutant no-keepalive: the_ssh_line_carries_the_key_and_nothing_interactive
+   Compiling toyos-metal v0.1.0 (<path>
+    Finished `test` profile [optimized + debuginfo] target(s) in 4.70s
+     Running unittests src/lib.rs (target/debug/deps/toyos_metal-b880688b0e6c35b0)
+
+running 1 test
+test tests::the_ssh_line_carries_the_key_and_nothing_interactive ... FAILED
+
+failures:
+
+---- tests::the_ssh_line_carries_the_key_and_nothing_interactive stdout ----
+
+thread 'tests::the_ssh_line_carries_the_key_and_nothing_interactive' (26171755) panicked at tests/metal/src/lib.rs:2824:9:
+assertion `left == right` failed
+  left: ["-i", "<path> "-o", "IdentitiesOnly=yes", "-o", "BatchMode=yes", "-o", "ConnectTimeout=10", "toyos@bench-t14", "true"]
+ right: ["-i", "<path> "-o", "IdentitiesOnly=yes", "-o", "BatchMode=yes", "-o", "ConnectTimeout=10", "-o", "ServerAliveInterval=10", "-o", "ServerAliveCountMax=3", "toyos@bench-t14", "true"]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    tests::the_ssh_line_carries_the_key_and_nothing_interactive
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 76 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-metal --lib`
+mutant no-keepalive exit 101
+== mutant unbounded-wait: a_command_that_outlasts_its_bound_is_ended_and_refused
+   Compiling toyos-metal v0.1.0 (<path>
+warning: unused variable: `deadline`
+    --> tests/metal/src/lib.rs:1011:9
+     |
+1011 |     let deadline = std::time::Instant::now() + std::time::Duration::from_secs(secs);
+     |         ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_deadline`
+     |
+     = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `toyos-metal` (lib test) generated 1 warning (run `cargo fix --lib -p toyos-metal --tests` to apply 1 suggestion)
+    Finished `test` profile [optimized + debuginfo] target(s) in 5.99s
+     Running unittests src/lib.rs (target/debug/deps/toyos_metal-b880688b0e6c35b0)
+
+running 1 test
+test tests::a_command_that_outlasts_its_bound_is_ended_and_refused ... FAILED
+
+failures:
+
+---- tests::a_command_that_outlasts_its_bound_is_ended_and_refused stdout ----
+
+thread 'tests::a_command_that_outlasts_its_bound_is_ended_and_refused' (26173191) panicked at tests/metal/src/lib.rs:2882:9:
+assertion `left == right` failed
+  left: Ok(Output { status: ExitStatus(unix_wait_status(0)), stdout: "", stderr: "" })
+ right: Err(Expired { what: "sleeping", secs: 1 })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    tests::a_command_that_outlasts_its_bound_is_ended_and_refused
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 76 filtered out; finished in 30.01s
+
+error: test failed, to rerun pass `-p toyos-metal --lib`
+mutant unbounded-wait exit 101
+== mutant no-kill: a_command_that_outlasts_its_bound_is_ended_and_refused
+   Compiling toyos-metal v0.1.0 (<path>
+    Finished `test` profile [optimized + debuginfo] target(s) in 15.90s
+     Running unittests src/lib.rs (target/debug/deps/toyos_metal-b880688b0e6c35b0)
+
+running 1 test
+test tests::a_command_that_outlasts_its_bound_is_ended_and_refused ... FAILED
+
+failures:
+
+---- tests::a_command_that_outlasts_its_bound_is_ended_and_refused stdout ----
+
+thread 'tests::a_command_that_outlasts_its_bound_is_ended_and_refused' (26223190) panicked at tests/metal/src/lib.rs:2882:9:
+30.013606042s
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    tests::a_command_that_outlasts_its_bound_is_ended_and_refused
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 76 filtered out; finished in 30.02s
+
+error: test failed, to rerun pass `-p toyos-metal --lib`
+mutant no-kill exit 101
+== mutant reboot-255-refused: a_reboot_whose_connection_failed_is_ridden_and_a_refused_one_is_not
+   Compiling toyos-metal v0.1.0 (<path>
+    Finished `test` profile [optimized + debuginfo] target(s) in 5.22s
+     Running unittests src/lib.rs (target/debug/deps/toyos_metal-b880688b0e6c35b0)
+
+running 1 test
+test tests::a_reboot_whose_connection_failed_is_ridden_and_a_refused_one_is_not ... FAILED
+
+failures:
+
+---- tests::a_reboot_whose_connection_failed_is_ridden_and_a_refused_one_is_not stdout ----
+
+thread 'tests::a_reboot_whose_connection_failed_is_ridden_and_a_refused_one_is_not' (26248647) panicked at tests/metal/src/lib.rs:2912:9:
+assertion `left == right` failed
+  left: Err(Remote { what: "rebooting", status: "exited exit status: 255", stderr: "said" })
+ right: Ok(())
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    tests::a_reboot_whose_connection_failed_is_ridden_and_a_refused_one_is_not
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 76 filtered out; finished in 0.03s
+
+error: test failed, to rerun pass `-p toyos-metal --lib`
+mutant reboot-255-refused exit 101
+== mutant bootnext-ignored: a_machine_still_holding_bootnext_never_booted_its_entry
+   Compiling toyos-metal v0.1.0 (<path>
+    Finished `test` profile [optimized + debuginfo] target(s) in 6.90s
+     Running unittests src/lib.rs (target/debug/deps/toyos_metal-b880688b0e6c35b0)
+
+running 1 test
+test tests::a_machine_still_holding_bootnext_never_booted_its_entry ... FAILED
+
+failures:
+
+---- tests::a_machine_still_holding_bootnext_never_booted_its_entry stdout ----
+
+thread 'tests::a_machine_still_holding_bootnext_never_booted_its_entry' (26251370) panicked at tests/metal/src/lib.rs:2928:9:
+assertion `left == right` failed
+  left: Ok(())
+ right: Err(Untaken { next: "0004" })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    tests::a_machine_still_holding_bootnext_never_booted_its_entry
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 76 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos-metal --lib`
+mutant bootnext-ignored exit 101
+== restored: diff c3413c490a3fc089
+   Compiling toyos-metal v0.1.0 (<path>
+    Finished `test` profile [optimized + debuginfo] target(s) in 5.13s
+     Running unittests src/lib.rs (target/debug/deps/toyos_metal-b880688b0e6c35b0)
+
+running 5 tests
+test tests::a_machine_still_holding_bootnext_never_booted_its_entry ... ok
+test tests::the_ssh_line_carries_the_key_and_nothing_interactive ... ok
+test tests::a_bounded_command_is_fed_its_slice_and_answers_whole ... ok
+test tests::a_reboot_whose_connection_failed_is_ridden_and_a_refused_one_is_not ... ok
+test tests::a_command_that_outlasts_its_bound_is_ended_and_refused ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 72 filtered out; finished in 1.02s
+
+restored exit 0

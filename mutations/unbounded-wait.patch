@@ -1,0 +1,11 @@
+--- a/tests/metal/src/lib.rs
++++ b/tests/metal/src/lib.rs
+@@ -1009,7 +1009,7 @@
+     });
+     // Both pipes close as the command exits.
+     let deadline = std::time::Instant::now() + std::time::Duration::from_secs(secs);
+-    let ended = (0..2).all(|_| closing.recv_timeout(deadline.saturating_duration_since(std::time::Instant::now())).is_ok());
++    let ended = (0..2).all(|_| closing.recv().is_ok());
+     if !ended {
+         // One that exited meanwhile is waited on below all the same.
+         let _ = child.kill();

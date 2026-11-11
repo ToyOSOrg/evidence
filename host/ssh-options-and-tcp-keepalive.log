@@ -1,0 +1,18 @@
+cmd ssh -V
+OpenSSH_10.5p1, LibreSSL 3.3.6
+exit 0
+cmd ssh -G -i /dev/null -o IdentitiesOnly=yes -o BatchMode=yes -o ConnectTimeout=10 -o ServerAliveInterval=10 -o ServerAliveCountMax=3 toyos@example.invalid  (whole output in ssh-G-full.txt; the options the loop sets below)
+exit 0
+user toyos
+hostname example.invalid
+batchmode yes
+identitiesonly yes
+tcpkeepalive yes
+serveralivecountmax 3
+serveraliveinterval 10
+connecttimeout 10
+cmd sysctl net.inet.tcp.keepidle net.inet.tcp.keepintvl net.inet.tcp.keepcnt
+net.inet.tcp.keepidle: 7200000
+net.inet.tcp.keepintvl: 75000
+net.inet.tcp.keepcnt: 8
+exit 0
