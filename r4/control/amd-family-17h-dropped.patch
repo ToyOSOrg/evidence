@@ -1,0 +1,13 @@
+diff --git a/kernel/pure/mitigation.rs b/kernel/pure/mitigation.rs
+index 15d3142..24bfdcd 100644
+--- a/kernel/pure/mitigation.rs
++++ b/kernel/pure/mitigation.rs
+@@ -892,7 +892,7 @@ fn amd(f: &Facts, of: Vulnerability) -> Verdict {
+                 // A guest cannot write its host's DE_CFG2.
+                 .and_if(zen2(&id) && !f.hypervisor, Mitigation::SuppressBpOnNonBr, true)
+                 .exposed_to_smt(f.smt, stibp)
+-                .assumed(!matches!(id.family, 0x15 | 0x17))
++                .assumed(!matches!(id.family, 0x15))
+         }
+         // "Technical Update Regarding Speculative Return Stack Overflow":
+         // `SRSO_NO`; across user and kernel `SRSO_USER_KERNEL_NO`. Between

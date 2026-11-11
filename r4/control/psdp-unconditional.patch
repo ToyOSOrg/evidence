@@ -1,0 +1,14 @@
+diff --git a/kernel/pure/mitigation.rs b/kernel/pure/mitigation.rs
+index 15d3142..400daee 100644
+--- a/kernel/pure/mitigation.rs
++++ b/kernel/pure/mitigation.rs
+@@ -789,7 +789,8 @@ fn intel(f: &Facts, of: Vulnerability) -> Verdict {
+             let asks = Asks::NOTHING
+                 .and_if(!f.cap(cap::FBSDP_NO), Mitigation::Verw, f.cap(cap::FB_CLEAR) || implicit)
+                 .and_if(!f.cap(cap::SBDR_SSDP_NO), Mitigation::SrbdsMicrocode, edx & SRBDS_CTRL != 0)
+-                .and_if(!f.cap(cap::PSDP_NO) && !fill_buffers_unread, Mitigation::ReadAfterSecret, true);
++;
++            let _ = fill_buffers_unread;
+             // Only the primary propagator, and nothing reads what it leaves.
+             if asks.needs.is_empty() {
+                 return Verdict::NotAffected;

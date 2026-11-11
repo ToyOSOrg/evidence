@@ -1,0 +1,13 @@
+diff --git a/kernel/pure/mitigation.rs b/kernel/pure/mitigation.rs
+index 15d3142..1ec368c 100644
+--- a/kernel/pure/mitigation.rs
++++ b/kernel/pure/mitigation.rs
+@@ -905,7 +905,7 @@ fn amd(f: &Facts, of: Vulnerability) -> Verdict {
+                 return Verdict::NotAffected;
+             }
+             Asks::NOTHING
+-                .by_policy(true, Mitigation::Ibpb, ibpb)
++                .and(Mitigation::Ibpb, ibpb)
+                 .and_if(eax & amd::SRSO_USER_KERNEL_NO == 0, Mitigation::SafeRet, true)
+                 .assumed(id.family > 0x19)
+         }
