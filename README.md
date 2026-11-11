@@ -265,3 +265,6 @@ A comment in `write_reserved` was reworded after these ran; nothing else changed
 Rules fixed before P' was staged: `r4/metal/rules-ab2.txt`; the request: `r4/metal/request-ab2.txt`. P' is the head
 plus the `osbench_disk` row (ec98464cd, `r4/logs/stage-P2.log`, exit 2: staged); M is the first A/B's image. ABBA on
 each bench, 8 boots, every mount's free figure recorded.
+
+Correction to r4: the review it answers is the PR's first (r1, on e64953f85); r4 and `r4/metal/rules-ab2.txt` call it
+"review r2". Nothing else in them changes.
