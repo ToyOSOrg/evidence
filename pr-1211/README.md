@@ -138,3 +138,40 @@ The guest rows ran at `4b1ca3bcd`. `6dc26300d` changes test code inside a `#[cfg
 kernel image contains.
 
 Not run: metal. Both benches are reserved; the staged boots run after.
+
+# Round four: `6d7e3557a4632fd7d11637c2bf4067d76a97082c`
+
+Review r3's blocker D, fixed in code by the orchestrator's decision, then rebased twice: onto `cb3f9c062` (one conflict, in
+x86-64 `paging.rs`, where main had deleted `wrote_code` beside the new `map_stack`) and, once #1212 had merged and GitHub showed
+a conflict, onto `422915e2c` (one conflict, in the list of
+`issues/the-kernel-is-at-least-as-secure-as-linux-on-every-machine-toyos-supports.md`). The branch is seven commits on
+`422915e2c`; the fix for D is the last.
+
+- A take that finds no clean slot while a flush is under way, or with a batch of retired slots waiting, answers `Flush` and
+  changes nothing. The kernel passes such takers through a gate one at a time: the first flushes, the rest find the slots it
+  cleaned. A never-used slot is drawn only where fewer than the batch are retired and no flush is under way.
+- So the slots ever used are at most the most alive at once and 64 more, and the model's property test asserts that with no
+  term for raced takes.
+
+| check | command | target | exit | log |
+|---|---|---|---|---|
+| host checks | `cargo run -- --ci host` | macOS arm64 host, `6d7e3557a` | 1: 1 of 110 steps red, the same macOS-only test | `r4/ci-host.log` |
+| the slots' tests | `cargo test -p kernel --lib stackslots` | macOS arm64 host, `6d7e3557a` | 0: 5 passed | `r4/stackslots-tests.log` |
+| negative control | the same on `eb23be19c` plus `r4/control-raced-fresh.diff` | macOS arm64 host | 101: 3 of 5 red, as intended | `r4/control-raced-fresh.log` |
+| guest rows | `gh workflow run guest-rows.yml --ref kmem-guards-wx -f filter='a_kernel_stack_overflow_names_its_stack nested_nmi_is_loud std_threads_count_the_cpus_and_give_back_ended_threads libc_children kernel_wx_leaf_is_refused virt_smp virt_user_mode'` | guest runner, run 43013777372, `6d7e3557a` | success, 8 passed | `r4/guest-rows-43013777372.log` |
+| metal boots staged | head, per bench, at `6d7e3557a`: `kernel_wx smp_roster_and_tsc_trail topology_readback pmm_accounting spawn_cost syscall_cost abuse_thread_table`; base, per bench, at `422915e2c`: `spawn_cost syscall_cost` | no machine touched | 2: staged, not run | `r4/metal-prepare-*.log` |
+
+- The host run's one red step is `the build system: cargo test --lib`, 384 passed and 1 failed,
+  `llvm::tests::the_caller_s_environment_reaches_neither_the_build_nor_the_key`; every other failure list is under a `control`
+  step. Clippy's 26 invocations and the five `stackslots` tests are in the run.
+- The control ran on `eb23be19c`, the fix's commit before the rebases; `kernel/pure/stackslots.rs` is byte-identical at
+  `6d7e3557a`. Its mutation lets a take beside a flush draw a never-used slot. Red:
+  `a_take_beside_a_flush_waits_for_it_and_a_slot_retired_during_it_waits_for_the_next`,
+  `a_spent_range_flushes_for_one_retired_slot_and_refuses_with_none` and the property test.
+- Round three's control (retired slots made clean before the flush is done) was not rerun on the new model.
+- The same guest rows were also green at the first rebased head `bf0d25eb1` (run 42990708879, not published); the host run at
+  that head was cut by a network outage and has no verdict.
+- The cost baseline is `422915e2c`, the commit the head sits on, so the pair measures this change alone. Earlier rounds'
+  stagings against `9349705ce` are deleted.
+
+Not run: metal.

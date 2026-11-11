@@ -1,0 +1,13 @@
+diff --git a/kernel/pure/stackslots.rs b/kernel/pure/stackslots.rs
+index 5f2167099..e6d2bb5dd 100644
+--- a/kernel/pure/stackslots.rs
++++ b/kernel/pure/stackslots.rs
+@@ -110,7 +110,7 @@ impl Slots {
+         if let Some(slot) = self.clean.pop() {
+             return Take::Slot(slot);
+         }
+-        if self.in_flush || self.owed() {
++        if !self.in_flush && self.owed() {
+             return Take::Flush;
+         }
+         if self.fresh == SLOTS {
