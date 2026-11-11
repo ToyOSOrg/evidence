@@ -1,0 +1,15 @@
+diff --git a/kernel/src/log/console.rs b/kernel/src/log/console.rs
+index 8bc057d32..6ffc7af86 100644
+--- a/kernel/src/log/console.rs
++++ b/kernel/src/log/console.rs
+@@ -86,7 +86,9 @@ pub fn hand_over() {
+     if serial::has_console() {
+         drain_records();
+     }
+-    HANDED.store(true, Ordering::Release);
++    // DIAGNOSTIC: the kernel keeps the wire, so every record reaches the UART.
++    HANDED.store(false, Ordering::Release);
++    WIRE.store(false, Ordering::Release);
+ }
+ 
+ /// Every record the console has not spoken onto the UART, through its
