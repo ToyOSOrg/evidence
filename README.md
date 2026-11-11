@@ -11,3 +11,5 @@ Where a boot came from is the supervisor's to read, not the kernel's.
 - `metal/`: the staged requests for both benches and the staging runs' logs. No machine was touched.
 
 Paths, user names, the runner's names and its CPU model are masked.
+
+`bytes/`: every binary `cargo run -- --build-only` leaves under `target/*/toyos`, hashed at `3b2d0a999` (the staged revision) and at `f7a54f7ae`, both built in one worktree. 42 of 45 are identical. `sections.txt` and `symbols.txt` compare the other three (`elfcmp.py`, `symcmp.py`): every allocated section but the build-id note is identical, and the symbols are equal once the `.llvm.<hash>` suffix of a ThinLTO-promoted name is set aside.
