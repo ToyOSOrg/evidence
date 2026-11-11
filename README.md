@@ -43,3 +43,19 @@ r3/toyos-rs-against-main.diff
 r3/merge-tree.txt     the head merges with origin/main dda500c39 without a conflict
 r3/toyos-build-compiles.log, r3/toyos-checks.log
                       cargo test --test toyos-build --no-run (exit 0), cargo test --test toyos-checks (49 passed)
+
+r4/ (rebased onto main e10b6fd49; logs on the clean tree):
+r4/range-diff.txt   the branch on be76e6f85 against the branch on e10b6fd49 (149aaf72e): the review commits
+                    unchanged, the first commit differing where main renamed a machine test (#1241) and
+                    changed virt_user_mode's arm and the spawn record (#1238)
+r4/moves.txt        every machine test's MACHINE_TESTS entry equals main's run_machine_test arm (machcmp.pl;
+                    two differ only by a trailing comma inside the call), and the eight moved screen tests
+                    equal main's arms (armcmp.pl); each with a control against main before the change
+r4/toyos-metal-tests.log, r4/clippy.log
+                    at 149aaf72e: 77 passed; clippy on toyos-build and toyos-metal exit 0
+r4/toyos-checks-before-fixtures.log
+                    at 149aaf72e: 49 passed, 1 failed: the fixture readbacks, written before #1238, carry
+                    spawn records its readers no longer read
+r4/toyos-checks.log, r4/toyos-build-compiles.log
+                    at b7a90efc1, the fixtures' spawn and supervisor lines in main's form: 50 passed; the
+                    harness compiles

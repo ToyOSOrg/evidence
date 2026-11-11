@@ -1,0 +1,140 @@
+1:  afcbf27ec ! 1:  29dc4ce58 A metal row declares its benches, a boot names its bench, and judges name the one they judged
+    @@ tests/checks/metal.rs: pub fn the_loader_the_kernel_and_a_program_count_from_one
+              let kernel = format!(
+     -            "[2026-10-04 09:30:00 {kernel_ms} cpu0 kernel] panic console: armed\n\
+     +            "{ON_T14}[2026-10-04 09:30:00 {kernel_ms} cpu0 kernel] panic console: armed\n\
+    -              [2026-10-04 09:30:00 12.000 cpu0 kernel] spawn: /system/bin/logkeeper pid=6\n\
+    +              [2026-10-04 09:30:00 11.900 cpu0 kernel] spawn: pid=5 (total=0ms) /system/bin/logkeeper\n\
+    +              [2026-10-04 09:30:00 12.000 cpu0 kernel] spawn: pid=6 (total=0ms) /system/bin/logkeeper\n\
+                   {said}\
+    -              [2026-10-04 09:30:00 15.000 cpu0 kernel] Boot: complete (3335ms)\n"
+     @@ tests/checks/metal.rs: pub fn the_bench_disk_judge_admits_data_and_the_loaders_volumes_alone() {
+          assert!(why.contains(&host_esp.to_string()), "{why}");
+          assert!(common::hostdisk::loader_named(&serial::Serial::named("loader.log", "Loading kernel elf...\n")).is_err());
+    @@ tests/toyos.rs: const MACHINE_TESTS: &[&str] = &[
+          // power off.
+     -    "acpi_supply_outlives_holder",
+     +    ("acpi_supply_outlives_holder", |_| acpi_supply_outlives_holder()),
+    -     // The power-off after a stop that left a thread running, in ACPI mode: it
+    -     // ends the machine, so only one QEMU reports stopping can be asked, and
+    -     // the T14 hands over in legacy mode, where no holder means no quieting.
+    --    "machine_shutdown_short_stop",
+    -+    ("machine_shutdown_short_stop", |test_config| power::machine_shutdown_short_stop(test_config)),
+    +     // The power-off asked for with a thread spinning in userland on another
+    +     // CPU, in ACPI mode: it ends the machine, so only one QEMU reports
+    +     // stopping can be asked, and the T14 hands over in legacy mode, where no
+    +     // holder means no quieting.
+    +-    "machine_shutdown_with_a_thread_spinning",
+    ++    ("machine_shutdown_with_a_thread_spinning", |test_config| power::machine_shutdown_with_a_thread_spinning(test_config)),
+          // A clean stop proves its image: the stop mark `logkeeper` writes at the
+          // stop's flush, and the next loader pass's floor raise. x86-64 q35: it
+          // takes the loader's second pass on the same disk and firmware variables,
+    @@ tests/toyos.rs: const METAL: &[(&str, metal::Metal)] = &[
+          (
+              // `osbench persist` without the rest of the suite, for a change to
+     @@ tests/toyos.rs: const METAL: &[(&str, metal::Metal)] = &[
+    -         // bench.
+    +         // runs it. The T14 and the AMD bench.
+              "osbench_disk",
+              metal::Metal {
+     +            on: On::Every,
+    @@ tests/toyos.rs: const METAL: &[(&str, metal::Metal)] = &[
+          // ---- one image: tests/images/proctreecase.toml ----
+          (
+              // A parent's end takes its children down. The guest carries every
+    -         // verdict but two the kernel speaks.
+    +         // verdict but the kernel's silence on a refused spawn.
+              "process_tree",
+     -        metal::Metal { arms: PROCTREECASE, judge: |b| process_tree(b[0]) },
+     +        metal::Metal { on: On::Every, arms: PROCTREECASE, judge: |b| process_tree(b[0]) },
+    @@ tests/toyos.rs: fn virt_selftest(
+     -            // The port's stage 4: the generator keyed from the seed the loader
+     -            // read from firmware's virtio-rng, the kernel's own tables, the GIC
+     -            // and the timer, and a process at EL0 — the supervisor, whose every
+    --            // page arrives by a demand fault and whose spawn of `logkeeper` is
+    --            // a syscall the kernel answered.
+    +-            // page arrives by a demand fault and whose first spawn is a syscall
+    +-            // the kernel answered.
+     -            let options =
+     -                BootOptions { profile, ready_marker: "control registers: SCTLR_EL1=", ..Default::default() };
+     -            let argv = qemu::profile_argv(&options);
+    @@ tests/toyos.rs: fn virt_selftest(
+     -                return Err(format!("`virt` has no virtio-rng for firmware's EFI_RNG_PROTOCOL: {argv:?}"));
+     -            }
+     -            let mut qemu = QemuInstance::boot_with_options(test_config, &[], &[], options);
+    --            const SPAWNED: &str = "spawn: /system/bin/logkeeper pid=";
+    --            let rest = qemu.drain_until(Duration::from_secs(30), |l| l.contains(SPAWNED));
+    --            let serial = format!("{}\n{rest}", qemu.boot_log());
+    +-            let serial = until_a_program_spawns(&mut qemu)?;
+     -            for want in [
+     -                LOADER_SEED_MIXED,
+     -                "random: the generator is keyed from",
+    @@ tests/toyos.rs: fn virt_selftest(
+     -                "GIC: v",
+     -                "clock: the generic timer counts at",
+     -                "spawned the supervisor pid=",
+    --                SPAWNED,
+     -            ] {
+     -                if !serial.contains(want) {
+     -                    return Err(format!("{want:?} not on the PL011\nserial:\n{serial}"));
+    @@ tests/toyos.rs: fn virt_selftest(
+     +    ] {
+     +        if !serial.contains(want) {
+     +            return Err(format!("{want:?} not on the PL011\nserial:\n{serial}"));
+    -         }
+    --        other => Err(format!("unknown screen test {other}")),
+    -     }
+    ++        }
+    ++    }
+     +    Ok(())
+     +}
+     +
+    @@ tests/toyos.rs: fn virt_selftest(
+     +    // The port's stage 4: the generator keyed from the seed the loader
+     +    // read from firmware's virtio-rng, the kernel's own tables, the GIC
+     +    // and the timer, and a process at EL0 — the supervisor, whose every
+    -+    // page arrives by a demand fault and whose spawn of `logkeeper` is
+    -+    // a syscall the kernel answered.
+    ++    // page arrives by a demand fault and whose first spawn is a syscall
+    ++    // the kernel answered.
+     +    let options =
+     +        BootOptions { profile, ready_marker: "control registers: SCTLR_EL1=", ..Default::default() };
+     +    let argv = qemu::profile_argv(&options);
+    @@ tests/toyos.rs: fn virt_selftest(
+     +        return Err(format!("`virt` has no virtio-rng for firmware's EFI_RNG_PROTOCOL: {argv:?}"));
+     +    }
+     +    let mut qemu = QemuInstance::boot_with_options(test_config, &[], &[], options);
+    -+    const SPAWNED: &str = "spawn: /system/bin/logkeeper pid=";
+    -+    let rest = qemu.drain_until(Duration::from_secs(30), |l| l.contains(SPAWNED));
+    -+    let serial = format!("{}\n{rest}", qemu.boot_log());
+    ++    let serial = until_a_program_spawns(&mut qemu)?;
+     +    for want in [
+     +        LOADER_SEED_MIXED,
+     +        "random: the generator is keyed from",
+    @@ tests/toyos.rs: fn virt_selftest(
+     +        "GIC: v",
+     +        "clock: the generic timer counts at",
+     +        "spawned the supervisor pid=",
+    -+        SPAWNED,
+     +    ] {
+     +        if !serial.contains(want) {
+     +            return Err(format!("{want:?} not on the PL011\nserial:\n{serial}"));
+    -+        }
+    -+    }
+    +         }
+    +-        other => Err(format!("unknown screen test {other}")),
+    +     }
+     +    Ok(())
+     +}
+     +
+    @@ tests/toyos.rs: fn scanout_wc(console: &str) -> Result<(), String> {
+     -        "acpi_mediated_access" => acpi_mediated_access(2),
+     -        "acpi_lock_given_back_on_one_cpu" => acpi_mediated_access(1),
+     -        "acpi_supply_outlives_holder" => acpi_supply_outlives_holder(),
+    --        "machine_shutdown_short_stop" => power::machine_shutdown_short_stop(test_config),
+    +-        "machine_shutdown_with_a_thread_spinning" => power::machine_shutdown_with_a_thread_spinning(test_config),
+     -        "a_clean_stop_proves_its_image" => power::a_clean_stop_proves_its_image(test_config),
+     -        "bar_map_again" => bar_map_again(test_config),
+     -        "bar_map_behind_a_bridge" => bar_map_behind_a_bridge(test_config),
+2:  4e529a08c = 2:  2d41e356c Review r1 of #1254: a run's machine is its bench's own, and no line sends one bench's boots to the other's
+3:  2bde8bdaf = 3:  149aaf72e Review r2 of #1254: the bench declarations' first judged run is owed on metal
