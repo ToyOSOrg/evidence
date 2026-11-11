@@ -53,3 +53,18 @@ waits for ever`; without the marking, `after [Report, Answer, Supply, Supply, Su
 
 Metal: the T14 `testcases` boot with the same two jobs, staged at 43fa98206, exit 2 (`r2/metal/stage-t14-r2.log`),
 requested. It must show both jobs `exit=0` and no "has a read overdue" line; its readback is added here.
+
+## r3: branch `paged-rereport` at 7ce1e832e (review r2's B3)
+
+`write_end` and `end_write` post `changed`, so a holder parked across a pager write is woken at its end, as the
+module header and design rev 5 say; `changed`'s doc lists a write's end. Two posts and a comment: a post only makes
+a waiter look again at its pure `ready`.
+
+| check | command | revision | exit | log |
+|---|---|---|---|---|
+| clippy, the x86-64 kernel | `cargo clippy -p kernel --target x86_64-unknown-none -- <adopted lints> -D warnings` | 7ce1e832e | 0 | `r3/host/clippy-r3.log` |
+| the AArch64 kernel compiles | `cargo check -p kernel --target aarch64-unknown-none-softfloat` | 7ce1e832e | 0 | `r3/host/check-r3-aarch64.log` |
+
+Per review r2, r2's host tests, controls and the T14 boot staged at 43fa98206 stand for this head: the change adds
+posts the pure logic those cover never sees. No host test reaches the post itself (kernel code); a wake test would
+need a guest or loom harness for `PagerObject`, which is not cheap.
