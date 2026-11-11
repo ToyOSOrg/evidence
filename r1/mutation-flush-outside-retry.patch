@@ -1,0 +1,12 @@
+--- lib/bcachefs/src/engine/mount/mod.rs	2026-11-11 01:36:51
++++ /tmp/_m.rs	2026-11-11 01:36:51
+@@ -1467,8 +1467,8 @@
+                 // every entry below it as upstream reads (A2.T1): its header
+                 // goes last, so a crash leaves it whole or not there at all.
+                 let header_last = last_seq == seq;
++                self.dev.flush().await?;
+                 self.reissue("journal write failed", async || {
+-                    self.dev.flush().await?;
+                     if header_last {
+                         let mut headless = bytes.clone();
+                         headless[..SECTOR].fill(0);
