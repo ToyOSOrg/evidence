@@ -12,10 +12,10 @@ Controls, each applied with `git apply`, tested, reversed with `git apply -R`; t
 |---|---|---|---|
 | `drop-amd-g2` | 5 fail | the AMD bench's `spectre_v1` | |
 | `amd-family-17h-dropped` | 2 fail | the AMD bench's `retbleed` | |
-| `intel-row-dropped` (the record's mutation) | 4 fail | the T14's `indirect_target_selection` | |
+| `intel-row-dropped` (the record's mutation) | 2 fail | the T14's `indirect_target_selection` | |
 | `stibp-with-enhanced-ibrs` (R1) | 2 fail | the T14's `spectre_v2` | |
 | `policy-unmarked` (R2) | 2 fail | the AMD bench's `retbleed` | |
-| `mmio-verw-wherever-listed` (the old MMIO rule) | fail | the T14's `mmio_stale_data` | |
+| `mmio-verw-wherever-listed` (the old MMIO rule) | 5 fail | the T14's `mmio_stale_data` | |
 | `judge-reads-cpu0-alone` (R6) | | | "a later CPU's LFENCE bit read clear was accepted" |
 | `judge-holds-no-pin` | | | "a misread the lines agree with was accepted" |
 | `judge-skips-the-kernels-lfence` | | | "cpu0's LFENCE bit read clear was accepted" |
