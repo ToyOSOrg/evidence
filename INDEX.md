@@ -24,3 +24,16 @@ one later commit rewords a test comment). Paths are masked.
   `llvm` test as round 1.
 - `r2/metal-readback.log`, `.exit`, `.rev`, `r2/request.txt`: `app_view` restaged, exit 2, the
   staging verdict. No machine was touched.
+
+## Round 3: the T14's `proctreecase` boot of e78085e47, judged
+
+The orchestrator ran the boot; its verdict was `passed`. The image's SHA-256 is `r3/image.sha256`.
+
+- `r3/judge.log`, `.exit`, `.rev`: `cargo test --test toyos-build -- --metal --metal-readback <dir>
+  process_tree launch_toctou port_badge app_view` over that readback, exit 1: `app_view`,
+  `launch_toctou` and `port_badge` PASS; `process_tree` FAIL, "the loader refused the invalid
+  executable 0 times, not once per B".
+- `r3/kernel-log-excerpt.txt`: from the boot's log: `process_tree`'s start and end (the job exits 0),
+  and `launch_toctou`'s end through `app_view`'s, with both shell-arm lines.
+- The `process_tree` red is its judge's, on main too:
+  `issues/process-trees-metal-judge-waits-for-a-kernel-line-no-spawn-prints.md` in the PR.
