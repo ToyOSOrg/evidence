@@ -1,0 +1,163 @@
+rev 917b8ef1aeb3553d35b72e6dc0836b16285bf7a3
+== cargo test --manifest-path kernel/loom/Cargo.toml --test shm_slot
+   Compiling rustversion v1.0.22
+   Compiling once_cell v1.21.4
+   Compiling find-msvc-tools v0.1.9
+   Compiling shlex v1.3.0
+   Compiling libc v0.2.190
+   Compiling cfg-if v1.0.4
+   Compiling log v0.4.29
+   Compiling regex-syntax v0.8.11
+   Compiling lazy_static v1.5.0
+   Compiling pin-project-lite v0.2.17
+   Compiling smallvec v1.15.1
+   Compiling nu-ansi-term v0.50.3
+   Compiling scoped-tls v1.0.1
+   Compiling toyos-abi v0.16.0 (<scratch>/spawnperf/wt/sdk/abi)
+   Compiling thread_local v1.1.10
+   Compiling sharded-slab v0.1.7
+   Compiling cc v1.2.56
+   Compiling tracing-core v0.1.36
+   Compiling tracing v0.1.44
+   Compiling tracing-log v0.2.0
+   Compiling generator v0.8.9
+   Compiling regex-automata v0.4.18
+   Compiling matchers v0.2.0
+   Compiling tracing-subscriber v0.3.23
+   Compiling loom v0.7.2 (https://github.com/ToyOSOrg/loom?branch=toyos#dfe37972)
+   Compiling kernel-loom v0.1.0 (<scratch>/spawnperf/wt/kernel/loom)
+    Finished `test` profile [optimized + debuginfo] target(s) in 7.49s
+     Running tests/shm_slot.rs (target/debug/deps/shm_slot-ac90b682fc578511)
+
+running 4 tests
+test a_touch_after_the_first_draws_nothing ... ok
+test two_touches_draw_once_and_are_handed_one_frame ... ok
+test a_frame_is_handed_over_with_what_its_drawer_wrote ... ok
+test two_runs_draw_each_page_once ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+exit 0
+== cargo test --manifest-path kernel/loom/Cargo.toml --features slot-install-relaxed --test shm_slot
+   Compiling kernel-loom v0.1.0 (<scratch>/spawnperf/wt/kernel/loom)
+    Finished `test` profile [optimized + debuginfo] target(s) in 2.08s
+     Running tests/shm_slot.rs (target/debug/deps/shm_slot-80ac1b151034fed1)
+
+running 4 tests
+test a_touch_after_the_first_draws_nothing ... ok
+test two_runs_draw_each_page_once ... ok
+test two_touches_draw_once_and_are_handed_one_frame ... FAILED
+test a_frame_is_handed_over_with_what_its_drawer_wrote ... FAILED
+
+failures:
+
+---- two_touches_draw_once_and_are_handed_one_frame stdout ----
+
+thread 'two_touches_draw_once_and_are_handed_one_frame' (36960308) panicked at <cargo-home>/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/rt/location.rs:115:9:
+Causality violation: Concurrent read and write accesses.
+
+
+---- a_frame_is_handed_over_with_what_its_drawer_wrote stdout ----
+
+thread 'a_frame_is_handed_over_with_what_its_drawer_wrote' (36960305) panicked at <cargo-home>/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/rt/location.rs:115:9:
+Causality violation: Concurrent read and write accesses.
+
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    a_frame_is_handed_over_with_what_its_drawer_wrote
+    two_touches_draw_once_and_are_handed_one_frame
+
+test result: FAILED. 2 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--test shm_slot`
+exit 101
+== cargo clippy -p kernel-loom --all-targets -- -W clippy::checked_conversions -W clippy::default_trait_access -W clippy::manual_midpoint -W clippy::redundant_clone -W clippy::unchecked_time_subtraction -W clippy::unnecessary_semicolon -D warnings
+    Checking once_cell v1.21.4
+    Checking regex-syntax v0.8.11
+    Checking log v0.4.29
+    Checking cfg-if v1.0.4
+    Checking lazy_static v1.5.0
+    Checking pin-project-lite v0.2.17
+    Checking nu-ansi-term v0.50.3
+    Checking smallvec v1.15.1
+    Checking scoped-tls v1.0.1
+    Checking toyos-abi v0.16.0 (<scratch>/spawnperf/wt/sdk/abi)
+    Checking libc v0.2.190
+    Checking thread_local v1.1.10
+    Checking sharded-slab v0.1.7
+    Checking tracing-core v0.1.36
+    Checking tracing-log v0.2.0
+    Checking tracing v0.1.44
+    Checking generator v0.8.9
+    Checking regex-automata v0.4.18
+    Checking matchers v0.2.0
+    Checking tracing-subscriber v0.3.23
+    Checking loom v0.7.2 (https://github.com/ToyOSOrg/loom?branch=toyos#dfe37972)
+    Checking kernel-loom v0.1.0 (<scratch>/spawnperf/wt/kernel/loom)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 3.47s
+exit 0
+== cargo clippy -p kernel --target x86_64-unknown-none -- -W clippy::checked_conversions -W clippy::default_trait_access -W clippy::manual_midpoint -W clippy::redundant_clone -W clippy::unchecked_time_subtraction -W clippy::unnecessary_semicolon -D warnings
+    Checking toyos-abi v0.16.0 (<scratch>/spawnperf/wt/sdk/abi)
+    Checking toyos-phys v0.1.0 (<scratch>/spawnperf/wt/kernel/phys)
+    Checking rustc-demangle v0.1.27
+    Checking toyos-tco v0.1.0 (<scratch>/spawnperf/wt/lib/tco)
+    Checking toyos-elide v0.1.0 (<scratch>/spawnperf/wt/lib/elide)
+    Checking cfg-if v1.0.4
+    Checking hashbrown v0.16.1
+    Checking toyos-random v0.1.0 (<scratch>/spawnperf/wt/lib/random)
+    Checking toyos-rootimage v0.1.0 (<scratch>/spawnperf/wt/lib/rootimage)
+    Checking toyos-register v0.1.0 (<scratch>/spawnperf/wt/kernel/register)
+    Checking toyos-microcode v0.1.0 (<scratch>/spawnperf/wt/lib/microcode)
+    Checking toyos-tsc v0.1.0 (<scratch>/spawnperf/wt/lib/tsc)
+    Checking toyos-wallclock v0.1.0 (<scratch>/spawnperf/wt/lib/wallclock)
+    Checking toyos-gicv3 v0.1.0 (<scratch>/spawnperf/wt/kernel/gicv3)
+    Checking dlmalloc v0.2.13
+    Checking toyos-its v0.1.0 (<scratch>/spawnperf/wt/kernel/its)
+    Checking toyos-amdvi v0.1.0 (<scratch>/spawnperf/wt/kernel/amdvi)
+    Checking toyos-bootmap v0.1.0 (<scratch>/spawnperf/wt/lib/bootmap)
+    Checking toyos-symbols v0.1.0 (<scratch>/spawnperf/wt/lib/symbols)
+    Checking toyos-kimage v0.1.0 (<scratch>/spawnperf/wt/lib/kimage)
+    Checking toyos-pci v0.1.0 (<scratch>/spawnperf/wt/kernel/pci)
+    Checking toyos-proclife v0.1.0 (<scratch>/spawnperf/wt/kernel/proclife)
+    Checking toyos-acpi v0.1.0 (<scratch>/spawnperf/wt/lib/acpi)
+    Checking toyos-smmu v0.1.0 (<scratch>/spawnperf/wt/kernel/smmu)
+    Checking toyos-userbound v0.1.0 (<scratch>/spawnperf/wt/lib/userbound)
+    Checking kernel v0.1.0 (<scratch>/spawnperf/wt/kernel)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 3.46s
+exit 0
+== cargo clippy -p kernel --target aarch64-unknown-none-softfloat -- -W clippy::checked_conversions -W clippy::default_trait_access -W clippy::manual_midpoint -W clippy::redundant_clone -W clippy::unchecked_time_subtraction -W clippy::unnecessary_semicolon -D warnings
+    Checking toyos-abi v0.16.0 (<scratch>/spawnperf/wt/sdk/abi)
+    Checking toyos-phys v0.1.0 (<scratch>/spawnperf/wt/kernel/phys)
+    Checking toyos-tco v0.1.0 (<scratch>/spawnperf/wt/lib/tco)
+    Checking cfg-if v1.0.4
+    Checking rustc-demangle v0.1.27
+    Checking toyos-elide v0.1.0 (<scratch>/spawnperf/wt/lib/elide)
+    Checking toyos-gicv3 v0.1.0 (<scratch>/spawnperf/wt/kernel/gicv3)
+    Checking toyos-rootimage v0.1.0 (<scratch>/spawnperf/wt/lib/rootimage)
+    Checking toyos-tsc v0.1.0 (<scratch>/spawnperf/wt/lib/tsc)
+    Checking toyos-random v0.1.0 (<scratch>/spawnperf/wt/lib/random)
+    Checking toyos-microcode v0.1.0 (<scratch>/spawnperf/wt/lib/microcode)
+    Checking toyos-register v0.1.0 (<scratch>/spawnperf/wt/kernel/register)
+    Checking toyos-wallclock v0.1.0 (<scratch>/spawnperf/wt/lib/wallclock)
+    Checking hashbrown v0.16.1
+    Checking dlmalloc v0.2.13
+    Checking toyos-amdvi v0.1.0 (<scratch>/spawnperf/wt/kernel/amdvi)
+    Checking toyos-its v0.1.0 (<scratch>/spawnperf/wt/kernel/its)
+    Checking toyos-bootmap v0.1.0 (<scratch>/spawnperf/wt/lib/bootmap)
+    Checking toyos-kimage v0.1.0 (<scratch>/spawnperf/wt/lib/kimage)
+    Checking toyos-pci v0.1.0 (<scratch>/spawnperf/wt/kernel/pci)
+    Checking toyos-symbols v0.1.0 (<scratch>/spawnperf/wt/lib/symbols)
+    Checking toyos-proclife v0.1.0 (<scratch>/spawnperf/wt/kernel/proclife)
+    Checking toyos-acpi v0.1.0 (<scratch>/spawnperf/wt/lib/acpi)
+    Checking toyos-smmu v0.1.0 (<scratch>/spawnperf/wt/kernel/smmu)
+    Checking toyos-userbound v0.1.0 (<scratch>/spawnperf/wt/lib/userbound)
+    Checking kernel v0.1.0 (<scratch>/spawnperf/wt/kernel)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 3.05s
+exit 0
+== cargo clippy -p kernel --lib --tests --features sched-check -- -W clippy::checked_conversions -W clippy::default_trait_access -W clippy::manual_midpoint -W clippy::redundant_clone -W clippy::unchecked_time_subtraction -W clippy::unnecessary_semicolon -D warnings
+    Checking kernel v0.1.0 (<scratch>/spawnperf/wt/kernel)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 1.91s
+exit 0
+all done

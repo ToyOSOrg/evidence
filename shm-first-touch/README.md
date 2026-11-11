@@ -39,3 +39,9 @@ the two hand-over models failing.
   `cargo test -p kernel --lib --features sched-check` exit 0 (465 passed); kernel clippy for x86_64 (default, boot+test
   actuators, boot actuators), aarch64 (default, boot+test actuators) and the library's tests: exit 0 each.
 - `models-2.log`: the same models and control run beforehand, outside a build slot, with the same results.
+
+## Review r3 (head 917b8ef1a)
+
+- `checks-5.sh` -> `checks-5.log`: `--test shm_slot` exit 0 (4 passed); with `slot-install-relaxed` exit 101, the two
+  hand-over models failing; `kernel-loom` clippy exit 0; kernel clippy for x86_64-unknown-none,
+  aarch64-unknown-none-softfloat and the library's tests: exit 0 each.
