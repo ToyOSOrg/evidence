@@ -1,0 +1,5 @@
+# PR #1269, round 6: review r5 answered, rebased onto #1259 at main 3b93f3770
+
+- `checks-r5.log`, at 26d192003 on macOS arm64, exit 0 each: `cargo test -p kernel --lib --features sched-check` (476 passed, `a_wait_translated_before_a_visit_does_not_arm_on_a_frame_given_back` among them); `cargo test --test toyos-checks suite_split`; `cargo run -- --ci host lint` (5 of 5 green); `cargo run -- --ci host models` (84 of 84 green).
+- `mut-r5-uncounted-visit.patch` / `.log`: the model's visit clearing a leaf without moving its space's count, as `clear_paged` did before 26d192003 (B13). `cargo test -p kernel --lib paged::` exit 101: `a_wait_translated_before_a_visit_does_not_arm_on_a_frame_given_back` red on the model's oracle, "frame 101 given back with a futex waiter keyed on it". Source restored byte-identical (`cmp`).
+- `range-diff-1269-registry.txt`: `git range-diff 8a55a5fcf..e68b379e5 04b1235a2..26d192003`, #1269's own commits before and after the rebase onto #1259's 04b1235a2: three commits change, each only by moving its harness rows into #1254's registry form.
