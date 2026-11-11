@@ -1,0 +1,13 @@
+diff --git a/sdk/toyos/src/dl/image/mod.rs b/sdk/toyos/src/dl/image/mod.rs
+index 24f365e..5053307 100644
+--- a/sdk/toyos/src/dl/image/mod.rs
++++ b/sdk/toyos/src/dl/image/mod.rs
+@@ -67,7 +67,7 @@ pub(crate) fn executable_relro(header: &[u8]) -> Result<Option<(usize, usize)>,
+     let Some((lo, hi)) = layout.relro_pages(PAGE) else { return Ok(None) };
+     let first = layout.segments().iter().find(|seg| seg.file_offset() == 0);
+     let first = first.ok_or("ELF: no PT_LOAD maps the executable's header")?;
+-    let at = lo.checked_sub(first.image().start().get()).ok_or("ELF: PT_GNU_RELRO lies below the executable's header")?;
++    let at = { let _ = first; lo };
+     Ok(Some((at as usize, (hi - lo) as usize)))
+ }
+ 
