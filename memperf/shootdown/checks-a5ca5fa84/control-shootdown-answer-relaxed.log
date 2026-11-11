@@ -1,0 +1,42 @@
+   Compiling kernel-loom v0.1.0 (<path>
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.78s
+     Running tests/tlb_shootdown.rs (target/debug/deps/tlb_shootdown-298c05743544fb8e)
+
+running 11 tests
+test only_a_kernel_half_shootdown_asks_a_wide_answer ... ok
+test each_asker_is_answered_once_with_its_own_range ... ok
+test two_asks_of_one_cpu_are_each_answered_for_their_own_page ... FAILED
+test a_nested_serve_is_not_undone_by_the_one_it_interrupted ... ok
+test an_answered_ask_flushed_its_range_after_the_write ... FAILED
+test an_acknowledged_kernel_half_shootdown_dropped_the_global_translation ... ok
+test a_mailbox_reused_waits_for_its_new_answer ... ok
+test an_acknowledged_flush_postdates_the_page_table_write ... ok
+test a_serve_nested_in_an_unfinished_wide_one_answers_wide ... ok
+test one_serve_answering_a_user_half_and_a_kernel_half_shootdown_answers_wide ... ok
+test one_serve_answers_two_concurrent_shootdowns ... ok
+
+failures:
+
+---- two_asks_of_one_cpu_are_each_answered_for_their_own_page stdout ----
+
+thread 'two_asks_of_one_cpu_are_each_answered_for_their_own_page' (31857171) panicked at kernel/loom/tests/tlb_shootdown.rs:494:13:
+assertion `left == right` failed: cpu 2 was answered while cpu 1 still held page 1
+  left: 1
+ right: 0
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- an_answered_ask_flushed_its_range_after_the_write stdout ----
+
+thread 'an_answered_ask_flushed_its_range_after_the_write' (31857166) panicked at kernel/loom/tests/tlb_shootdown.rs:463:13:
+assertion `left == right` failed: cpu 1 answered the ask while still holding the page asked
+  left: 1
+ right: 0
+
+
+failures:
+    an_answered_ask_flushed_its_range_after_the_write
+    two_asks_of_one_cpu_are_each_answered_for_their_own_page
+
+test result: FAILED. 9 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 6.14s
+
+error: test failed, to rerun pass `-p kernel-loom --test tlb_shootdown`

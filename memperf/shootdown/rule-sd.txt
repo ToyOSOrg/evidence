@@ -1,0 +1,44 @@
+#1267 A/B rule, written 2026-11-11 20:25, before any of these boots ran.
+
+Arms: base memperf-sd-ab-base b48f19fb5 (main 45935f4b9 + memab row + flush probe), head memperf-sd-ab-head
+1466c0362 (cf96bb979 + the same row + the same probe). Row: memab (osbench_system, osbench_mem).
+Order (counterbalanced): T14 base, head, head, base; AMD head, base, base, head. A boot whose verdict is not
+"passed", or whose clock jumped (INVL), is excluded and reported.
+
+Per row and bench: each boot's p50; an arm's value is the mean of its two boots' p50s; ratio = head / base in the
+row's own unit (ns: below 1 is faster).
+- MOVED: both head boots beyond both base boots in the same direction AND the ratio differs from 1 by more than 2%.
+- REGRESSION: a MOVED row that got worse; every one is reported and investigated, expected or not.
+
+Expected, stated before: mem.munmap_touched_remote.4k faster on both benches (T14: a few hundred ns of ~3.3 us by
+the probes' split); mem.munmap_part.4k and mem.mprotect.4k no worse; every other row no change.
+
+Flush probe (both arms, last `tlbprobe:` line of each boot): cycles per flush by kind. Read: target_range cycles
+per page (head: INVPCID by address on the T14, INVLPG on the AMD bench, which has no PCID) against target_full
+cycles per flush (both arms), and own_full count (base: the initiator's self-serve; head: expected only from
+machine-wide rounds). Not judged; reported.
+
+tlb_shootdown_waits (T14, shared-debug, at cf96bb979): must pass. A red is a defect in the ask's wait.
+
+AMENDMENT, 2026-11-11 ~21:00, before any boot ran, carried over from the orchestrator's ruling on rule.txt:
+- A boot that does not pass, or that is INVL, is investigated before it is excluded; a cause in the change under
+  test (every shootdown of a user change goes through it) is a finding, not an exclusion.
+- An arm left with one valid boot gives no verdict; it is run again with its counterpart, counterbalanced.
+- An expected row whose two arms' boots overlap by more than its expected gain is INCONCLUSIVE, not "no change",
+  and more rotated blocks are requested.
+
+AMENDMENT 2, 2026-11-11 ~21:20, before any boot ran (review of #1267):
+- A head boot that does not pass is a possible defect of this PR, not noise: a `tlb: cpu N has not flushed`
+  panic, a lock DEADLOCK report, or any hang is investigated from its readback before anything is concluded, and
+  LAND needs every one of the four head boots to pass or each failure shown independent of the ask protocol.
+- The flush probe costs the arms differently: each probed flush adds two RDTSCs and three LOCK XADDs on adjacent
+  globals that initiator and target both write. Base probes its by-page flush before the IPI and its self-flush in
+  the wait; head's own flush overlaps the IPI's flight. Base therefore pays more probe cost per remote shootdown
+  and more probes in the multi-thread churn rows, which favours head. mem.munmap_touched_remote.4k and the
+  mem.malloc_churn.* rows are read with that caveat stated; a marginal result there is settled by a probe-free
+  pair before LAND.
+- Rows that must show no unexplained REGRESSION for LAND: mem.munmap_touched_remote.4k, mem.munmap_part.4k,
+  mem.mprotect.4k and the multi-thread mem.malloc_churn.* rows. A missing gain on the remote row does not block.
+- Recorded with the result (issue record): per bench, target_full cycles per flush / target_range cycles per page,
+  the page count at which flushing one by one costs a full flush; BY_PAGE (64) is lowered, or the reason not to is
+  recorded, if that count is well below 64.
