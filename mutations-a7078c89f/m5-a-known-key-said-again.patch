@@ -1,0 +1,11 @@
+--- a/sdk/toyos/src/admission.rs	2026-11-11 22:34:07
++++ b/sdk/toyos/src/admission.rs	2026-11-11 22:34:07
+@@ -525,7 +525,7 @@
+         self.said.retain(|(_, at)| now < *at + LIMIT);
+         let shared_free = self.shared.as_ref().is_none_or(|(at, _)| now >= *at + LIMIT);
+         let on_shared = !shared_free && self.shared.as_ref().is_some_and(|(_, k)| k.as_ref() == Some(key));
+-        let said = if on_shared || self.said.iter().any(|(k, _)| k == key) {
++        let said = if on_shared || false && self.said.iter().any(|(k, _)| k == key) {
+             false
+         } else if self.said.len() < self.policy.slots {
+             self.said.push((key.clone(), now));

@@ -1,0 +1,11 @@
+--- a/sdk/toyos/src/admission.rs	2026-11-11 22:34:07
++++ b/sdk/toyos/src/admission.rs	2026-11-11 22:34:18
+@@ -474,7 +474,7 @@
+     pub fn left(&self, now: I) -> Option<Duration> {
+         let until = |at: I| if at > now { at - now } else { Duration::ZERO };
+         let owed = self.last.filter(|_| self.unsaid > 0).map(|last| until(last + LIMIT));
+-        self.waiting.iter().map(|w| until(w.deadline)).chain(owed).min()
++        self.waiting.iter().map(|_| LIMIT).chain(owed).min()
+     }
+ 
+     /// The next connection this pass settles, until `None` ends the pass.

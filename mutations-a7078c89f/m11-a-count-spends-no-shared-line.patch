@@ -1,0 +1,11 @@
+--- a/sdk/toyos/src/admission.rs	2026-11-11 22:34:07
++++ b/sdk/toyos/src/admission.rs	2026-11-11 22:34:07
+@@ -510,7 +510,7 @@
+         // Every line said before `now - LIMIT` has run its limit, so the
+         // shared line is free for the count.
+         if self.unsaid > 0 && self.last.is_some_and(|last| now >= last + LIMIT) {
+-            (self.shared, self.last) = (Some((now, None)), Some(now));
++            self.last = Some(now);
+             return Some(Event::Unsaid(Unsaid(core::mem::take(&mut self.unsaid))));
+         }
+         None

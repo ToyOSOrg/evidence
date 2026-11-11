@@ -30,3 +30,9 @@ Paths are masked: `<worktree>` is the branch's checkout, `<scratch>` the agent's
 
 - `host-5d1abdac1/`: the module's and logkeeper's lint and tests, and a check of the six host-buildable servers, at 5d1abdac1 (`bc262f850 + worktree diff 6e09b8eb22fd` is `git diff bc262f850 5d1abdac1`).
 - `mutations-5d1abdac1/`: the six negative controls of `sdk/toyos/src/admission.rs` at 5d1abdac1, two of them (`m5`, `m6`) of the line bound as it now is.
+
+## Review r3, head a7078c89f
+
+- `host-a7078c89f/`: the module's lint and tests, logkeeper's tests, and the lint (all targets) of the six host-buildable servers, at a7078c89f (`5d1abdac1 + worktree diff e5f05c1bd6b2` is `git diff 5d1abdac1 a7078c89f`).
+- `mutations-a7078c89f/`: eleven negative controls of `sdk/toyos/src/admission.rs` at a7078c89f; `m7` to `m11` hold the count said on its own, the server's wake for it, the keyed shared line, its renewal, and the count spending it.
+- `build-a7078c89f.log`: `cargo run -- --build-only` at a7078c89f, which builds every program for the guest.
