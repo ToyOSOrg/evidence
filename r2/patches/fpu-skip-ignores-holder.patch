@@ -1,0 +1,12 @@
+--- a/kernel/src/arch/x86_64/fpu.rs
++++ b/kernel/src/arch/x86_64/fpu.rs
+@@ -261,7 +261,8 @@
+ /// # Safety
+ /// [`restore`]'s, with `left` the record [`leave`] wrote for this thread.
+ pub unsafe fn resume(area: u64, ctx: u64, left: Left) {
+-    if super::percpu::fpu_holder() == ctx && left.0 == super::percpu::cpu_id() {
++    let _ = (ctx, super::percpu::fpu_holder());
++    if left.0 == super::percpu::cpu_id() {
+         return;
+     }
+     // SAFETY: the caller's.

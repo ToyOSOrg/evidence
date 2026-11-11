@@ -1,0 +1,93 @@
+# switchwake: ToyOSOrg/ToyOS#1251 "A switch loads only what the incoming thread does not already have", round 2.
+# Head f06faad8a (branch switch-drops-unneeded-work), base 6d4b7e4ce (origin/main, the branch's merge-base).
+# Replaces the e63e985c2 request (stage/ is deleted). Every image staged by
+#   cargo test --test toyos-build -- --metal --metal-readback <dir> ...
+# from the worktree <path> nothing has touched a machine.
+# Each invocation is `cargo <words>` from that worktree. Image hashes: logs/stage-r2/sha256.txt.
+#
+# Per bench (T14 and the AMD bench, either order between them):
+#   1. Verdict at the head, one boot per image: testcases, shared-debug, testcases-watchdog.
+#   2. T14 only: two FPU negative controls, each a testcases image running only vector_state, each of which
+#      MUST end red. mutant-left: the restore is skipped wherever the CPU's holder names the thread (the trips
+#      catch it: "held the file it had left there"). mutant-holder: skipped wherever the thread last left this
+#      CPU (the time-shared workers catch it: "changed while it was switched out"). Both kernels checked to
+#      differ from the head's (logs/stage-r2/slotfiles.txt: kernel.img 16fe0c106892 head, 7804eaeb19a1, 288826b488ac).
+#   3. A/B, osbench's benchcase, base (B) and head (H), four boots a side, in this order: B H H B H B B H.
+#      H-1 is also the head's osbench verdict boot. Idle behaviour is unchanged, so no energy rows.
+# Judge (I do it): cargo test --test toyos-build -- --metal --metal-readback <runs-r2>/<bench>/<label> [--metal-host <amd>] boot:<boot>
+# A boot aborted by a network drop is rerun in place.
+
+t14 head testcases
+  image: <path>
+  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check
+t14 head shared-debug
+  image: <path>
+  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check
+t14 head testcases-watchdog
+  image: <path>
+  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check
+t14 mutant-left testcases
+  image: <path>
+  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check
+t14 mutant-holder testcases
+  image: <path>
+  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check
+t14 base-1 benchcase
+  image: <path>
+  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check
+t14 head-1 benchcase
+  image: <path>
+  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check
+t14 head-2 benchcase
+  image: <path>
+  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check
+t14 base-2 benchcase
+  image: <path>
+  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check
+t14 head-3 benchcase
+  image: <path>
+  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check
+t14 base-3 benchcase
+  image: <path>
+  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check
+t14 base-4 benchcase
+  image: <path>
+  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check
+t14 head-4 benchcase
+  image: <path>
+  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check
+
+amd head testcases
+  image: <path>
+  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check --host <amd bench>
+amd head shared-debug
+  image: <path>
+  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check --host <amd bench>
+amd head testcases-watchdog
+  image: <path>
+  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check --host <amd bench>
+amd base-1 benchcase
+  image: <path>
+  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check --host <amd bench>
+amd head-1 benchcase
+  image: <path>
+  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check --host <amd bench>
+amd head-2 benchcase
+  image: <path>
+  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check --host <amd bench>
+amd base-2 benchcase
+  image: <path>
+  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check --host <amd bench>
+amd head-3 benchcase
+  image: <path>
+  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check --host <amd bench>
+amd base-3 benchcase
+  image: <path>
+  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check --host <amd bench>
+amd base-4 benchcase
+  image: <path>
+  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check --host <amd bench>
+amd head-4 benchcase
+  image: <path>
+  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check --host <amd bench>
+
