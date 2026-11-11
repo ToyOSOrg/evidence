@@ -1,0 +1,106 @@
+rev 0c76f7a467c4ebfc6daf710e80d7e607588f06e2
+ M kernel/loom/tests/shm_slot.rs
+ M kernel/src/mm/pmm.rs
+ M kernel/src/mm/space.rs
+ M kernel/src/object/shm.rs
+ M kernel/src/object/shm/slot.rs
+== cargo test --manifest-path kernel/loom/Cargo.toml --test shm_slot
+   Compiling rustversion v1.0.22
+   Compiling find-msvc-tools v0.1.9
+   Compiling shlex v1.3.0
+   Compiling once_cell v1.21.4
+   Compiling cfg-if v1.0.4
+   Compiling libc v0.2.190
+   Compiling log v0.4.29
+   Compiling regex-syntax v0.8.11
+   Compiling lazy_static v1.5.0
+   Compiling pin-project-lite v0.2.17
+   Compiling nu-ansi-term v0.50.3
+   Compiling smallvec v1.15.1
+   Compiling scoped-tls v1.0.1
+   Compiling toyos-abi v0.16.0 (<scratch>/spawnperf/wt/sdk/abi)
+   Compiling thread_local v1.1.10
+   Compiling sharded-slab v0.1.7
+   Compiling tracing-core v0.1.36
+   Compiling cc v1.2.56
+   Compiling tracing-log v0.2.0
+   Compiling tracing v0.1.44
+   Compiling regex-automata v0.4.18
+   Compiling generator v0.8.9
+   Compiling matchers v0.2.0
+   Compiling tracing-subscriber v0.3.23
+   Compiling loom v0.7.2 (https://github.com/ToyOSOrg/loom?branch=toyos#dfe37972)
+   Compiling kernel-loom v0.1.0 (<scratch>/spawnperf/wt/kernel/loom)
+    Finished `test` profile [optimized + debuginfo] target(s) in 7.88s
+     Running tests/shm_slot.rs (target/debug/deps/shm_slot-ac90b682fc578511)
+
+running 4 tests
+test a_touch_after_the_first_draws_nothing ... ok
+test two_touches_draw_once_and_are_handed_one_frame ... ok
+test a_frame_is_handed_over_with_what_its_drawer_wrote ... ok
+test two_runs_draw_each_page_once ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+exit 0
+== cargo test --manifest-path kernel/loom/Cargo.toml --features slot-install-relaxed --test shm_slot
+   Compiling kernel-loom v0.1.0 (<scratch>/spawnperf/wt/kernel/loom)
+    Finished `test` profile [optimized + debuginfo] target(s) in 2.35s
+     Running tests/shm_slot.rs (target/debug/deps/shm_slot-80ac1b151034fed1)
+
+running 4 tests
+test a_touch_after_the_first_draws_nothing ... ok
+test two_touches_draw_once_and_are_handed_one_frame ... FAILED
+test a_frame_is_handed_over_with_what_its_drawer_wrote ... FAILED
+test two_runs_draw_each_page_once ... ok
+
+failures:
+
+---- two_touches_draw_once_and_are_handed_one_frame stdout ----
+
+thread 'two_touches_draw_once_and_are_handed_one_frame' (36168786) panicked at <cargo-home>/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/rt/location.rs:115:9:
+Causality violation: Concurrent read and write accesses.
+
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- a_frame_is_handed_over_with_what_its_drawer_wrote stdout ----
+
+thread 'a_frame_is_handed_over_with_what_its_drawer_wrote' (36168783) panicked at <cargo-home>/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/rt/location.rs:115:9:
+Causality violation: Concurrent read and write accesses.
+
+
+
+failures:
+    a_frame_is_handed_over_with_what_its_drawer_wrote
+    two_touches_draw_once_and_are_handed_one_frame
+
+test result: FAILED. 2 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--test shm_slot`
+exit 101
+== cargo clippy -p kernel-loom --tests -- -D warnings
+    Checking once_cell v1.21.4
+    Checking regex-syntax v0.8.11
+    Checking cfg-if v1.0.4
+    Checking log v0.4.29
+    Checking lazy_static v1.5.0
+    Checking pin-project-lite v0.2.17
+    Checking nu-ansi-term v0.50.3
+    Checking smallvec v1.15.1
+    Checking scoped-tls v1.0.1
+    Checking toyos-abi v0.16.0 (<scratch>/spawnperf/wt/sdk/abi)
+    Checking libc v0.2.190
+    Checking thread_local v1.1.10
+    Checking sharded-slab v0.1.7
+    Checking tracing-core v0.1.36
+    Checking tracing-log v0.2.0
+    Checking tracing v0.1.44
+    Checking generator v0.8.9
+    Checking regex-automata v0.4.18
+    Checking matchers v0.2.0
+    Checking tracing-subscriber v0.3.23
+    Checking loom v0.7.2 (https://github.com/ToyOSOrg/loom?branch=toyos#dfe37972)
+    Checking kernel-loom v0.1.0 (<scratch>/spawnperf/wt/kernel/loom)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 3.02s
+exit 0
+all done

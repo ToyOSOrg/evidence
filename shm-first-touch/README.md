@@ -30,3 +30,12 @@ head (#1250 4e9f6f2b2, #1268 c00a628f1, #1270 0c76f7a46): `vm::` and `frames::` 
 x86_64-unknown-none, x86_64 with `boot-actuators,test-actuators`, aarch64-unknown-none-softfloat and the library's
 tests, exit 0 each. At #1270's head: `--test shm_slot` exit 0 (3 passed), and with `slot-install-relaxed` exit 101,
 the two hand-over models failing.
+
+## The batched object run (head 4c6836706)
+
+- `checks-4.sh` -> `checks-4.log`: `--test shm_slot` exit 0 (4 passed, `two_runs_draw_each_page_once` new: two runs
+  sharing a page draw each page once and are handed the shared page's one frame); with `slot-install-relaxed` exit 101,
+  the two hand-over models failing; `kernel-loom` clippy with and without the control exit 0;
+  `cargo test -p kernel --lib --features sched-check` exit 0 (465 passed); kernel clippy for x86_64 (default, boot+test
+  actuators, boot actuators), aarch64 (default, boot+test actuators) and the library's tests: exit 0 each.
+- `models-2.log`: the same models and control run beforehand, outside a build slot, with the same results.
