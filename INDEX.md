@@ -24,3 +24,4 @@ Paths are masked: `<worktree>` is the branch's checkout, `<scratch>` the agent's
 - `build-602db29e9.log`: `cargo run -- --build-only` at the head, which builds every program for the guest.
 - `metal-stage-602db29e9.log`, `metal-request-602db29e9.txt`: metal images staged at the head; no machine touched.
 - `guest-43050908618-at-97b413994.log`: the job log of guest run 43050908618 at 97b413994, the head before review r1. The runner's machine name is masked as `<host>`.
+- `guest-43066328896-at-602db29e9.log`: the job log of guest run 43066328896 at 602db29e9, all six rows passed. The runner's machine name is masked as `<host>`.
