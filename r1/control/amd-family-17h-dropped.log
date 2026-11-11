@@ -1,0 +1,48 @@
+   Compiling kernel v0.1.0 (<scratch>/wt-mitig/kernel)
+    Finished `test` profile [optimized + debuginfo] target(s) in 2.16s
+     Running unittests pure/lib.rs (target/debug/deps/kernel-fa45b686f8e87f8e)
+
+running 17 tests
+test mitigation::tests::amds_ssbd_is_the_control_it_enumerates ... ok
+test mitigation::tests::a_control_the_cpu_does_not_enumerate_is_lacking ... ok
+test mitigation::tests::a_cpu_without_arch_capabilities_is_decided_by_its_row ... ok
+test mitigation::tests::a_newer_amd_family_is_decided_by_what_it_enumerates ... ok
+test mitigation::tests::a_line_says_what_is_in_force_and_what_is_missing ... FAILED
+test mitigation::tests::amds_documents_for_zen_2_decide_a_family_17h_model_60h ... FAILED
+test mitigation::tests::amds_lfence_serializes_dispatch_by_its_msr_unless_it_always_does ... ok
+test mitigation::tests::an_intel_cpu_the_table_does_not_list_is_assumed_affected ... ok
+test mitigation::tests::another_vendors_cpu_is_unknown ... ok
+test mitigation::tests::every_mitigation_is_named_once ... ok
+test mitigation::tests::the_indirect_predictor_controls_decide_where_enumerated ... ok
+test mitigation::tests::intels_row_for_806c1_decides_a_cpu_with_its_words ... ok
+test mitigation::tests::its_is_the_tables_on_a_host_and_the_hypervisors_in_a_guest ... ok
+test mitigation::tests::family_19h_reads_its_patch_level_for_tsa ... ok
+test mitigation::tests::rfds_is_enumerated_by_rfds_clear_and_listed_without_it ... ok
+test mitigation::tests::taa_follows_rtm_and_takes_the_control_it_has ... ok
+test mitigation::tests::the_tables_rows_are_one_per_cpu ... ok
+
+failures:
+
+---- mitigation::tests::a_line_says_what_is_in_force_and_what_is_missing stdout ----
+
+thread 'mitigation::tests::a_line_says_what_is_in_force_and_what_is_missing' (26982896) panicked at kernel/pure/mitigation.rs:1286:9:
+assertion `left == right` failed
+  left: "vulnerable: needs STIBP for programs that ask, Jmp2Ret; has DE_CFG2[SuppressBPOnNonBr] (no vendor row names this CPU: assumed affected)"
+ right: "vulnerable: needs STIBP for programs that ask, Jmp2Ret; has DE_CFG2[SuppressBPOnNonBr]"
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- mitigation::tests::amds_documents_for_zen_2_decide_a_family_17h_model_60h stdout ----
+
+thread 'mitigation::tests::amds_documents_for_zen_2_decide_a_family_17h_model_60h' (26982898) panicked at kernel/pure/mitigation.rs:1020:9:
+assertion `left == right` failed: retbleed
+  left: Affected { needs: Mitigations(12583936), lacks: Mitigations(0), assumed: true }
+ right: Affected { needs: Mitigations(12583936), lacks: Mitigations(0), assumed: false }
+
+
+failures:
+    mitigation::tests::a_line_says_what_is_in_force_and_what_is_missing
+    mitigation::tests::amds_documents_for_zen_2_decide_a_family_17h_model_60h
+
+test result: FAILED. 15 passed; 2 failed; 0 ignored; 0 measured; 451 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p kernel --lib`
