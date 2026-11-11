@@ -175,3 +175,28 @@ a conflict, onto `422915e2c` (one conflict, in the list of
   stagings against `9349705ce` are deleted.
 
 Not run: metal.
+
+# Round five: `22a577abe7d58ebc6bec25017dd33de4b038221f`
+
+Review r4's three suggestions, one commit on `6d7e3557a`: two comments in `kernel/src/mm/stack.rs`, each rewritten in the
+same number of lines, and the property test's lone taker asserting `begin_flush` in `kernel/pure/stackslots.rs`'s
+`#[cfg(test)]` module.
+
+Where round four's items are, for review r4's list, all at `6d7e3557a`:
+- the host check's log, `r4/ci-host.log`: one red step, the macOS `llvm` test; `the kernel's library` step lists the five
+  `stackslots` tests under their new names; clippy's kernel invocations are there for both targets, ten in all;
+- the control's diff and log, `r4/control-raced-fresh.diff` and `.log`: 3 of 5 red, the take-beside-a-flush test, the
+  spent-range test and the property test.
+
+| check | command | target | exit | log |
+|---|---|---|---|---|
+| the staged images' kernel is unaffected | `shasum -a 256 target/x86_64-unknown-none/toyos/kernel` after `cargo run -- --build-only`, at `6d7e3557a` and at `22a577abe` | macOS arm64 host | identical | `r5/kernel-hashes.txt` |
+| the slots' tests | `cargo test -p kernel --lib stackslots` | macOS arm64 host, `22a577abe` | 0: 5 passed | `r5/stackslots-tests.log` |
+
+- The x86-64 kernel ELF hashes the same before and after. `bootable.img` does not hash the same across two builds of one
+  tree (third entry in the file), so the image's hash says nothing either way; the kernel is the only built artifact these
+  two source files feed.
+- The AArch64 kernel builds at `22a577abe` (`cargo run -- --build-only --arch aarch64`, exit 0; log not published). Its bytes
+  were not compared: no AArch64 image is staged.
+- Not rerun at `22a577abe`: the full host run, clippy and the guest rows. They stand at `6d7e3557a` on the hash above.
+- The staged boots are still the ones built at `6d7e3557a` (head) and `422915e2c` (base).
