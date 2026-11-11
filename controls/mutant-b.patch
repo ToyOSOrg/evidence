@@ -1,0 +1,13 @@
+diff --git a/kernel/src/object/handle.rs b/kernel/src/object/handle.rs
+index 651a39b64..6c4a50550 100644
+--- a/kernel/src/object/handle.rs
++++ b/kernel/src/object/handle.rs
+@@ -399,7 +399,7 @@ impl HandleTable {
+             }
+             Err((batch, e)) => {
+                 for (((h, _), mut entry), held) in handles.iter().zip(batch).zip(held.iter()) {
+-                    entry.rights = *held;
++                    let _ = (&mut entry, held);
+                     self.give_back(*h, entry);
+                 }
+                 Err(e)

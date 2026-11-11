@@ -1,0 +1,31 @@
+# handle-model-security at 3cddff6287ff6ab31fdb37552d455584b6e5575f: four boots.
+# Boots 1-2 are the branch and are expected green.
+# Boots 3-4 are negative controls, each the branch plus one checked patch, and are expected RED on test_rs_moved_rights:
+#   mutant-a (<scratch>/mutant-a.patch): arms 1, 2, 4 and 5 red, arm 3 green.
+#   mutant-b (<scratch>/mutant-b.patch): arm 3 red alone.
+# The red arms are named in the binary's 'moved_rights: red: [...]' line.
+
+## branch
+# One boot per image. Each invocation is `cargo <words>` from this worktree.
+
+shared-debug
+  image: <scratch>/metal/shared-debug/image.img
+  cargo run -p toyos-metal -- --image <scratch>/metal/shared-debug/image.img --readback <scratch>/metal/shared-debug --fat32-check
+
+testcases
+  image: <scratch>/metal/testcases/image.img
+  cargo run -p toyos-metal -- --image <scratch>/metal/testcases/image.img --readback <scratch>/metal/testcases --fat32-check
+
+## mutant-a (expected red)
+# One boot per image. Each invocation is `cargo <words>` from this worktree.
+
+testcases
+  image: <scratch>/metal-mutant-a/testcases/image.img
+  cargo run -p toyos-metal -- --image <scratch>/metal-mutant-a/testcases/image.img --readback <scratch>/metal-mutant-a/testcases --fat32-check
+
+## mutant-b (expected red)
+# One boot per image. Each invocation is `cargo <words>` from this worktree.
+
+testcases
+  image: <scratch>/metal-mutant-b/testcases/image.img
+  cargo run -p toyos-metal -- --image <scratch>/metal-mutant-b/testcases/image.img --readback <scratch>/metal-mutant-b/testcases --fat32-check

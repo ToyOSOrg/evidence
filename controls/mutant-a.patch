@@ -1,0 +1,53 @@
+diff --git a/kernel/src/loader/start.rs b/kernel/src/loader/start.rs
+index 96cd10a9a..fe1607e73 100644
+--- a/kernel/src/loader/start.rs
++++ b/kernel/src/loader/start.rs
+@@ -208,8 +208,8 @@ impl Commit for PendingHandles {
+             let moved = data
+                 .handles
+                 .remove(parent_handle)
+-                .expect("an endowed handle verified under this lock stopped resolving")
+-                .arriving_with(rights);
++                .expect("an endowed handle verified under this lock stopped resolving");
++            let _ = rights;
+             if let KObjectRef::Device(claim) = moved.object() {
+                 handed.extend(claim.take_mappings());
+             }
+diff --git a/kernel/src/object/handle.rs b/kernel/src/object/handle.rs
+index 651a39b64..acc96ffc5 100644
+--- a/kernel/src/object/handle.rs
++++ b/kernel/src/object/handle.rs
+@@ -313,7 +313,6 @@ impl HandleTable {
+             return Err(HandleError::Rights { held, needed: Rights::TRANSFER });
+         }
+         match want {
+-            Some(want) if !want.subset_of(held) => Err(HandleError::Rights { held, needed: want }),
+             want => Ok(want.unwrap_or(held)),
+         }
+     }
+@@ -385,10 +384,10 @@ impl HandleTable {
+         let mut batch = Vec::with_capacity(handles.len());
+         let mut held = [Rights::NONE; MAX_TRANSFER_HANDLES];
+         let held = &mut held[..handles.len()];
+-        for ((h, rights), held) in handles.iter().zip(held.iter_mut()) {
++        for ((h, _), held) in handles.iter().zip(held.iter_mut()) {
+             let entry = self.take_for_transfer(*h).expect("a handle verified under this same hold");
+             *held = entry.rights;
+-            batch.push(entry.arriving_with(*rights));
++            batch.push(entry.arriving_with(*held));
+         }
+         match sink(batch) {
+             Ok(()) => {
+diff --git a/kernel/src/object/ops.rs b/kernel/src/object/ops.rs
+index 348048dd6..e5740e5e9 100644
+--- a/kernel/src/object/ops.rs
++++ b/kernel/src/object/ops.rs
+@@ -37,7 +37,7 @@ pub fn initial_rights(object: &KObjectRef) -> Rights {
+         // No `TRANSFER`: a ring's page is its creator's alone, and its
+         // watches name handles in the table of whoever submits.
+         KObjectRef::Inbox(_) => {
+-            Rights::DUP.union(Rights::WAIT).union(Rights::READ).union(Rights::WRITE).union(Rights::MAP)
++            BASE.union(Rights::READ).union(Rights::WRITE).union(Rights::MAP)
+         }
+         // Every `SysCap` bit is authority the supervisor decides per program: no default, the creator states it.
+         KObjectRef::SysCap(_) => Rights::NONE,

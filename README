@@ -1,0 +1,21 @@
+Evidence for ToyOSOrg/ToyOS#1204 at 3cddff6287ff6ab31fdb37552d455584b6e5575f
+(base origin/main d49f4834e). Host: macOS, aarch64. Paths are masked.
+
+host/ci-host.log               cargo run -- --ci host; exit 1: 1 of 110 steps red,
+                               "the build system" (llvm::tests, the caller's SDKROOT
+                               breaks git on macOS), recorded in ToyOS as
+                               issues/the-llvm-environment-test-breaks-git-on-macos.md.
+                               Run on the tree before tests/guest/rust-tests/src/bin/
+                               moved_rights.rs and messages_are_whole.rs took their last
+                               edits; no host step builds either.
+build/build-only.log           cargo run -- --build-only; exit 0.
+build/guest-binaries-compile.log
+                               cargo test --test toyos-build -- --metal --list; exit 0:
+                               every guest binary compiles and moved_rights is a member
+                               of the testcases boot.
+controls/mutant-{a,b}.patch    the two negative controls of moved_rights.
+controls/build-mutant-{a,b}.log
+                               cargo run -- --build-only with each applied; exit 0.
+metal/stage-*.log              cargo test --test toyos-build -- --metal --metal-readback;
+                               exit 2 is "staged": no machine was touched.
+metal/request.txt              the boots asked of the orchestrator. Not yet run.
