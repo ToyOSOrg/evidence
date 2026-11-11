@@ -58,3 +58,13 @@ Local paths are masked (`<worktree>`, `<scratch>`, `<scratchpad>`, `<home>`, `<t
   crate; every kernel clippy shape of `build/clippy.rs` (host, host with the kernel's controls, x86_64 default, both actuator
   sets, the instrument set, the two heap-band sets; aarch64 default, both actuator sets, its instrument set); clippy on
   `toyos` (all targets, `fd-table`), the libraries, `shell-copies`, `toybox-copies` and `toyos-abi`. All exit 0.
+
+## Review round 4: the history rewritten so every commit checks the x86-64 kernel, head 5dd83dcda
+- `kcheck-range/`: `cargo check -p kernel --target x86_64-unknown-none`, under that target's `-Dwarnings`, at each of the 22
+  commits from main 818809583 to 5dd83dcda (`summary.txt`; one log per commit, each ending with its exit; the commands in
+  `kcheck-range.sh`). All 22 exit 0. The control, the old first commit 150fcb847, exits 101 on the dead `user_str`.
+- The rewrite (`fold_edits.py`, applied to each commit's tree): `user_str`, `MAX_USER_STR`, their import and their mention
+  in `kernel/pure/sched/cpu.rs` leave in the first commit, with the per-thread charge that replaced them, so d7250517f goes;
+  `Handles::table`'s doc drops the stdio clause; `system/diskserver/src/session.rs` says a session reaches its service through
+  a connector. 5dd83dcda's tree differs from 64eb00ee6's only in those two comments, so `r9/` and guest run 43112704482,
+  dispatched at 64eb00ee6, hold for it.
