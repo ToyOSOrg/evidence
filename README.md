@@ -150,3 +150,13 @@ clean and runs the test again.
   judges' start line. `toyos-checks`' `metal_audio_judges` fails with exit 101:
   "a tone after a job's line that reads as its start refused a log it has to
   pass". It passes after the restore.
+
+## r2/metal/ (staged at 6cdc1d015, not yet run)
+
+`staging.log` is `cargo test --test toyos-build -- --metal --metal-readback
+<dir> process_tree` from a clean tree at 6cdc1d015. Its compile lines are
+dropped. It exits 2, the harness's code for "staged, nothing judged": 1
+registration over 1 boot, `proctreecase`. `proctreecase-system.toml` holds the
+job list. `process_tree` has no QEMU row, so this boot is the only place where
+the guest's new assertion (the chain stops at link `MAX_DEPTH - 2` = 62) can
+hold or fail. Every spawn in the boot also goes through the SDK's new path label.
