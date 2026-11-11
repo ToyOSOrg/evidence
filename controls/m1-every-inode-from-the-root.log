@@ -1,0 +1,37 @@
+$ cargo test -p bcachefs --lib ops::   (with m1-every-inode-from-the-root.patch applied)
+
+running 11 tests
+test engine::tests::ops::counts_at_their_edges_and_looping_back_references_are_refused ... ok
+test engine::tests::ops::a_clean_unmount_releases_every_orphan_first ... ok
+test engine::tests::ops::an_orphan_a_crash_leaves_checks_valid_and_is_released_after_mounting ... ok
+test engine::tests::ops::removing_a_directory_deletes_it_with_its_name_and_refuses_one_that_holds_names ... ok
+test engine::tests::ops::an_unnamed_file_replaces_the_document_its_writer_opened_or_is_stale ... ok
+test engine::tests::ops::inodes_read_together_are_those_read_alone ... ok
+test engine::tests::ops::renames_move_names_across_directories_replace_and_exchange ... ok
+test engine::tests::ops::hard_links_count_their_names_and_the_last_unlink_leaves_an_orphan_its_release_frees ... ok
+test engine::tests::ops::a_listing_reads_its_inodes_in_a_pass_over_each_run_of_them ... FAILED
+test engine::tests::ops::a_removed_name_a_later_one_hashes_past_leaves_a_whiteout ... ok
+test engine::tests::ops::a_rename_across_many_leaves_dirties_no_more_nodes_than_its_grant ... ok
+
+failures:
+
+---- engine::tests::ops::a_listing_reads_its_inodes_in_a_pass_over_each_run_of_them stdout ----
+
+thread 'engine::tests::ops::a_listing_reads_its_inodes_in_a_pass_over_each_run_of_them' (19355603) panicked at lib/bcachefs/src/engine/tests/ops.rs:356:9:
+assertion `left == right` failed
+  left: 1003
+ right: 4
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    engine::tests::ops::a_listing_reads_its_inodes_in_a_pass_over_each_run_of_them
+
+test result: FAILED. 10 passed; 1 failed; 0 ignored; 0 measured; 190 filtered out; finished in 11.58s
+
+   Compiling bcachefs v0.1.0 (<path>
+    Finished `test` profile [optimized + debuginfo] target(s) in 7m 22s
+     Running unittests src/lib.rs (target/debug/deps/bcachefs-f2c101278f6c619e)
+error: test failed, to rerun pass `-p bcachefs --lib`
+
+exit 101
