@@ -1,0 +1,19 @@
+1:  ddbcd76d7 ! 1:  12ff7a304 Every kernel stack sits above a page the direct map does not hold
+    @@ kernel/src/loader/start.rs: use crate::object::notice::NoticeObject;
+      use crate::object::process::ProcessObject;
+      use crate::object::{ops, HandleEntry, HandleTable, KObjectRef, Refusal};
+      use crate::process::{
+    --    process_data, Endowments, OwnedAlloc, ENDOW_ENTRY_LEN, KERNEL_STACK_SIZE,
+    -+    process_data, Endowments, ENDOW_ENTRY_LEN, KERNEL_STACK_SIZE,
+    +-    process_data, Endowments, OwnedAlloc, KERNEL_STACK_SIZE,
+    ++    process_data, Endowments, KERNEL_STACK_SIZE,
+      };
+     -use crate::scheduler;
+      use crate::user_ptr::UserBytes;
+2:  ce99e4849 = 2:  5a4b4d32c The boot CPU's stacks are carved once its gs: is valid
+3:  a3373a7e4 = 3:  ebfc46af7 A thread's kernel stack is its job's frames in a kernel range of its own
+4:  e80ef9f54 = 4:  8e44ae8a5 The report arm waits for the first report's records, which the halt drains after the raw line
+5:  585a65e83 = 5:  9aa5b5a4d Review r2 of #1211: slot reuse is pure, fixed-size logic, and a refused spawn leaks nothing
+6:  83095bf81 = 6:  e15f08256 The slots' property test lands a take and a drop inside every flush
+7:  6d7e3557a = 7:  f72e24f46 Review r3 of #1211: a spawn beside a flush waits for the slots it cleans
+8:  22a577abe = 8:  384db8897 Review r4 of #1211: two comments say what the gate and the tables bound are, and the model's test refuses an unowed flush

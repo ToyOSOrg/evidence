@@ -238,3 +238,101 @@ not a judge's verdict, and the timings' check against each bench's recorded valu
   logkeeper has made the log file whole, so the file a readback reads ends before it. `stack=` is therefore unread: no machine
   is shown to have run the flush arm or the gate, and what `abuse_thread_table` exercised (stacks alive together, or retired
   one by one) is not known from these boots.
+
+# Round six: `384db88976fa1cad5cef7bc058ce55a09a031f12`
+
+The eight commits rebased onto main `34cb4c918`, where GitHub showed a conflict. Only the first commit's patch changed
+(`r6/range-diff.txt`): its `crate::process` import in `kernel/src/loader/start.rs`, where main's #1204 had made
+`ENDOW_ENTRY_LEN` private. #1204's other edits to the files it shares with this branch (`loader/start.rs`, `process.rs`)
+are the spawn endowment's wire format and rights; none touches a kernel stack's allocation. Main has since moved to
+`b56693152` by three merges that change only `issues/` and share no file with the branch; `git merge-tree` of the two is
+clean and GitHub reports the PR mergeable, so the branch was not rebased again.
+
+| check | command | target | exit | log |
+|---|---|---|---|---|
+| host checks | `cargo run -- --ci host` | macOS arm64 host, `384db8897` | none recorded: the log ends `Terminated: 15`, a SIGTERM from outside the run in the models stage; every stage before it ran | `r6/ci-host.log` |
+
+What that run covers, stage by stage:
+
+- **the build system**: exit 101, 384 passed and 1 failed, the macOS-only
+  `llvm::tests::the_caller_s_environment_reaches_neither_the_build_nor_the_key`
+  (`issues/the-llvm-environment-test-breaks-git-on-macos.md`). The branch's one change under `build/` is a row removed
+  from `sourcegate.rs`, whose tests passed.
+- **the harness's own checks**, **the workspace's host members**, the three **toyos-crypto** stages and **the licences**:
+  passed.
+- **the kernel's library**, `cargo test -p kernel --lib --features sched-check`: 459 passed, the five `stackslots` tests
+  among them.
+- **clippy, warnings denied**: 26 invocations clean, among them the kernel for x86-64 and AArch64 in every feature set the
+  stage builds, which is what compiles the rebased `loader/start.rs`.
+- **the kernel's models**: not finished. They are not owed by this change: no loom model includes a file this branch
+  changes (the `#[path]` sources of `kernel/loom/src/lib.rs` against `git diff --name-only`), and the scheduler simulator
+  covers `kernel/pure/sched/`, which the branch does not change. They passed at `6d7e3557a` (`r4/ci-host.log`).
+
+The run's log carries no revision line. It is `384db8897`'s by the worktree's reflog: the rebase finished at 15:09
+(+0200) and nothing moved HEAD after it; the log's stamps, in UTC, start at 14:57 (16:57 +0200).
+
+Not rerun after the rebase: the guest rows, the host negative controls and the AArch64 disassembly. The branch's own code
+is the same but for the import, and what the rebase brought in under it is #1204's, which touches no stack code.
+
+## Metal: the four boots, judged
+
+The four readbacks of the section above ("Metal: four boots, not judged") put to the head's own row judges. The judge at
+the head refuses each before it reads a row, because the bench driver that ran the boots predates #1213 and its boot files
+carry no `back_unix_secs`. `r6/judge-local.diff`, applied for these runs and reverted after, never committed, changes two
+things:
+
+- a boot file with no `back_unix_secs` reads as 0 instead of being refused. Only `Readback::ran_within` reads the field,
+  and only the row `wall_clock_is_firmwares` calls it; that row is not among those judged here.
+- the judge reads the benches' records from a copy in the scratch directory instead of the host's store, so judging these
+  readbacks could add nothing to the records the benches are judged by. It added nothing to the copy either: the copy and
+  the store were byte-identical after the four runs, and the store's hashes unchanged.
+
+The row judges (`tests/toyos.rs`, `tests/common/`) are the same at the head as at `6d7e3557a`, and as at `422915e2c` for
+`spawn_cost` and `syscall_cost`; judging ties nothing to the tree's revision. Each image's revision is from its boot's own
+`supervisor: build` record.
+
+| readback | command (`cargo test --test toyos-build -- --metal --metal-readback <dir> …`) | exit | verdict | log |
+|---|---|---|---|---|
+| T14, head `6d7e3557a` | `kernel_wx smp_roster_and_tsc_trail topology_readback pmm_accounting spawn_cost syscall_cost abuse_thread_table` | 0 | 7 passed, 0 failed | `r6/judge-t14-head.log` |
+| AMD bench, head `6d7e3557a` | the same seven | 0 | 7 passed, 0 failed | `r6/judge-amd-head.log` |
+| T14, base `422915e2c` | `spawn_cost syscall_cost` | 0 | 2 passed, 0 failed | `r6/judge-t14-base.log` |
+| AMD bench, base `422915e2c` | `spawn_cost syscall_cost` | 0 | 2 passed, 0 failed | `r6/judge-amd-base.log` |
+
+All four ran from the worktree at `384db8897` with the patch applied, one after another (`r6/judge-run.log`); the
+worktree was clean after.
+
+| | T14 base | T14 head | AMD base | AMD head |
+|---|---|---|---|---|
+| `Boot: complete`, ms (record) | 136 (1152) | 136 (1152) | 241 (1312) | 242 (1312) |
+| back in, s (record) | 56 (50) | 55 (50) | 33 (36) | 37 (36) |
+| `syscall_cost`, cycles a syscall | 159 | 163 | 87 | 87 |
+| `spawn_cost` min / median, µs over 50 | 214 / 241 | 216 / 234 | 209 / 265 | 230 / 280 |
+| `smp_roster_and_tsc_trail` | not judged | 8 CPUs, every AP's TSC within 181 cycles | not judged | 16 CPUs, within 288 cycles |
+| `topology_readback` | | 8 cpus, 4 cores, 1 LLC | | 16 cpus, 8 cores, 2 LLCs |
+| `pmm_accounting` | | 16020 MiB managed, 0 B lost | | 15660 MiB managed, 0 B lost |
+| `kernel_wx` | | 10493 leaves, none W+X | | 10330 leaves, none W+X |
+
+- **The timings rule.** The judge holds each boot's own numbers (`complete_ms`, `back_secs`) to twice the bench's
+  record: none is past it on any of the four. `spawn_cost` and `syscall_cost` are printed for an A/B and have no record
+  on either bench, so the rule has nothing to hold them to; the comparison is the table's, one boot a side, which is not
+  a distribution.
+- **Cost, head against base.** The T14's syscall is 4 cycles dearer; its spawn 2 µs dearer at the minimum and 7 µs
+  cheaper at the median. The AMD bench's syscall is unchanged; its spawn 21 µs dearer at the minimum (10%) and 15 µs at
+  the median (6%).
+- **`smp_roster_and_tsc_trail`** on the head images is the first metal boot of APs that enter on their own idle stacks
+  (above a page taken out of the direct map) under #1212's W^X boot map, on both benches. The base boots ran #1212's boot
+  map with the bring-up stack this branch deletes.
+- **`abuse_thread_table`** passed on both benches: `4095 threads exited unjoined and the next was refused; a join is room
+  for one`. It spawns one thread at a time, waits until that thread has run, and the thread exits right after; a thread's
+  kernel stack is released at the next scheduler pass on its CPU after its exit, not at its join (by reading the
+  scheduler's zombie release). So its stacks retired one by one with few alive at once, and by the slots' logic a spawn
+  flushed each time 64 had retired, about 64 flushes over the row. **That is inference.** The census `tlb:` line, whose
+  `stack=` counts the flushes, is in none of the four readbacks: the kernel writes it where the machine stops, after
+  logkeeper has made the log file whole.
+- **No line naming `LOCK CONTENTION`, `DEADLOCK`, `DOUBLE FAULT` or `KERNEL STACK OVERFLOW`** in any of the four kernel
+  logs, and none naming `mm/stack.rs`.
+- The AMD head's judge printed a `clock: TSC STEP` of 1.72 ms on cpu9. The AMD base boot has the same, 1.69 ms on cpu3;
+  it is `issues/chipset-counters-that-stall-together-read-as-a-tsc-step.md`, not this change.
+
+Not shown on metal: any overflow (a `#DF` halts every CPU before logkeeper can make the log whole, and no metal
+registration judges a boot that dies), the flush path and the gate, and AArch64, which has no bench.
