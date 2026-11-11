@@ -1,0 +1,14 @@
+diff --git a/tests/guest/libc/signal_quit.c b/tests/guest/libc/signal_quit.c
+index 48f779f92..32e576f44 100644
+--- a/tests/guest/libc/signal_quit.c
++++ b/tests/guest/libc/signal_quit.c
+@@ -60,6 +60,9 @@ static int reloads(void) {
+     keep(SIGHUP, take, 0);
+     keep(SIGTERM, end, 0);
+     armed();
++    /* CONTROL, not for merge: the child is 200 ms short of its pause when it
++       says it is armed. */
++    usleep(200000);
+     errno = 0;
+     CHECK(pause() == -1 && errno == EINTR && taken == 1, "pause across the hang-up");
+     printf("reloaded\n");
