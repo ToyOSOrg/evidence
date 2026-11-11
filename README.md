@@ -33,3 +33,13 @@
 - `r2/step1-merge/`: #1258's merge of main (c8095992a): the kernel's three clippy shapes, its pure tests, the SDK's
   and the ABI's checks; `engine/` the engine's and file server's tests and clippy after `write_run` regained its
   placement (the file server's clippy findings are main's four).
+
+## Review round 3 (head 04ced8dae, on #1258's 66de9f97b)
+
+- `r3/checks/`: the tree before its commit and rebase onto #1258's round 6 (`tree.txt`; that rebase touches no file
+  of this change): the SDK's tests and two clippy shapes, toyos-blockring's tests and clippy without the assertion,
+  the file server's tests (which compile its assertion that the SDK's block bound is blockring's) and clippy (main's
+  four findings), nine loom models and the loom crate's clippy.
+- `r3/controls/`: each patch run model by model and restored (`tags-wakes.sh`, `summary.txt`): the three wake
+  deletions, and the hand-on ignoring its connection, red as a deadlock in `a_turn_handed_on_stays_on_its_connection`
+  alone. `flight.rs` is unchanged since round 2, whose turn-per-Dir and fail-ignores-link controls stand.
