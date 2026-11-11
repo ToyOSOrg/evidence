@@ -48,3 +48,8 @@
 - `r3/control-refuse/`: the negative control for pagerprobe's holder writes, the kernel refusing every holder write
   (`refuse-holder-writes.patch`), built into the same image and restored, rc 0 (`refuse-holder-writes.sh`). Its run
   waits for a guest row that runs pagerprobe.
+
+## Review round 4 (head 230a2ad3d)
+
+- `r4/`: the `testcases` image built at 4a2d78dd3 plus the round's diff (`tree.txt`; committed as 230a2ad3d), with
+  pagerprobe compiled after its 65-page check went, rc 0.
