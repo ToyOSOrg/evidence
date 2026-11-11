@@ -1,0 +1,18 @@
+Evidence for ToyOS #1249: issues: close the load-only and stale guest-test records.
+
+The PR's head is ddb6311f8, on b56693152. It changes only issues/ records.
+
+boot-log-readers-b56693152.txt
+    Every boot_log() and Serial::boot reader under tests/ at the base:
+    git grep -n -E 'boot_log\(\)|Serial::boot' b56693152 -- tests
+    These are the sites read for the close of
+    a-test-asserts-a-daemons-line-off-a-boot-log-that-ends-before-it.
+
+nightly-41295058073-iommu_virtio_platform.log
+    The kvm and tcg lanes of nightly run 41295058073 (2026-11-01, 3add613c1, masked):
+    each ran the whole 87-test suite one guest at a time, and iommu_virtio_platform
+    passed in both.
+
+Checks: none run. The change is records only; no record left in the tree names a
+deleted one (git grep of each deleted record's name at the head finds nothing), and no
+manifest's `issue =` field names one.
