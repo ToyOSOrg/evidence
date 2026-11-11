@@ -1,0 +1,51 @@
+# Metal request: PR #1216's no-regression A/B, both benches (the T14, the AMD bench).
+# Rules, fixed before any boot and before the images were staged: <scratch>/metal/rules-ab.txt
+# Nothing here touched a machine. Each image was staged with
+#   cargo test --test toyos-build -- --metal --metal-readback <dir> <row>
+# (exit 2, the harness's "staged"); its own request.txt gives the driver's invocation, run from <scratch>/wt.
+#
+# Images (sha256 of the staged image.img), row osbench_disk unless said; list bound 525 s:
+#   M   822ac54b8 (refs/scratch/seqwrite-M)        main ad5db5a65 + the row only
+#       <scratch>/metal/M/request.txt
+#       9ac00db2dc9d199bff310a29020d819b3398364febe5c3ffc8ebbf7d96885cbd
+#   P   d1ea387ef (refs/scratch/seqwrite-P)        PR head cc718f61f + the row only
+#       <scratch>/metal/P/request.txt
+#       9e7377b8efcd1637cd30aaaf2ad96671f36dc985bc92c86f675a20c447d9839c
+#   C2  (refs/scratch/seqwrite-diag-C2)            P + corrected stage timers; one boot a bench, last; no arm
+#       <scratch>/metal/C2/request.txt
+#       4e976acddc0800824cfbcc6602e69fe8f3249cf6594a5d86ac0ddf9ec780df66
+#   R2  PR head cc718f61f, row bench_data_survives_reboot, two boots (1-write, then 2-read), one bench only,
+#       first: the transactions that point a write's extents changed since R, so the round trip through a
+#       reboot is asked again. If its judge fails, stop and tell me.
+#       <scratch>/metal/R2/request.txt
+#       1-write 75f3c38ed32fc6950f4c0f652db3875126917975e03369c6e92c4467ad01f8b5
+#       2-read  9c379b800ef22781cb999c033cd894cb49569bc76b5bb3555b66ed69dba04237
+# The row and the timers are local scratch commits, never pushed; the PR carries neither.
+#
+# Linux: the diagnostic round's binary and commands, unchanged:
+#   <scratch>/metal/linux/osbench  dac949fb4e95138fd808c8655b8a8a1474d8f2d86f12f9aedb0b0da11ecc3b83
+#   <scratch>/metal/linux/README.txt   (`osbench persist`, no sudo, under 30 s)
+#
+# DATA carries over from boot to boot, which A2 judges. Keep the order.
+#
+# ORDER, the same flat list on each bench (step 0 on one bench only). 9 ToyOS boots and 3 Linux runs a bench,
+# 2 more boots on the bench that takes step 0: 20 boots and 6 Linux runs in all.
+#    0  boot R2 1-write, then boot R2 2-read
+#    1  boot M   round 1
+#    2  boot P   round 1
+#    3  linux L1 osbench persist
+#    4  boot M   round 2
+#    5  boot P   round 2
+#    6  linux L2 osbench persist
+#    7  boot M   round 3
+#    8  boot P   round 3
+#    9  linux L3 osbench persist
+#   10  boot M   round 4
+#   11  boot P   round 4
+#   12  boot C2  (split of P; not an arm)
+# On the T14, if after round 4 either arm has fewer than two boots in the drive's fast mode
+# (persist.write_4k_fsync p50 under 3 ms), up to two more M P pairs would let the fast mode be judged;
+# without them that mode is reported as not established.
+#
+# Wanted back per boot: the readback directory, the driver's exit and the judge's verdict; per Linux run, its
+# stdout, stderr and exit code.

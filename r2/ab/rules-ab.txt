@@ -1,0 +1,34 @@
+# DECISION RULES for PR #1216's A/B, fixed before any boot of it and before its images were staged.
+# Both benches (T14, AMD), row osbench_disk (files, nvme, persist on the bench's NVMe), two clean images:
+#   M  822ac54b8: main ad5db5a65 + the osbench_disk row only            = base arm
+#   P  d1ea387ef: PR #1216's head cc718f61f + the same row only          = change arm
+# No timers in either. Linux on each bench: `osbench persist` (the binary of the diagnostic round; its two extra
+# note lines read /sys only), 3 runs per bench, one after each of rounds 1, 2 and 3.
+# Boots: 4 per image per bench, interleaved M P M P ..., 8 ToyOS boots per bench.
+# Statistic: each boot's row p50 (MB/s rows: the row's own figure), then the median over the arm's boots.
+# "Resolved": every boot of one arm lies beyond every boot of the other.
+#
+# The T14's drive has a slow mode that decides some boots, on both systems. A boot or Linux run is called slow
+# when its persist.write_4k_fsync p50 is over 3 ms. Every table gives each boot and its mode; where an arm's
+# boots are not all of one mode the arms are compared mode by mode as well, and a comparison with fewer than
+# two boots of a mode in either arm is reported as not established, not passed or failed. Linux is compared
+# with ToyOS in the same mode only.
+#
+# A1 No regression: no fs.disk.*, nvme.* or persist.* row is more than 5% worse in P than in M AND resolved.
+# A2 Correct: every P boot passes its judge; no boot's log holds a failed request, a `Lost` flush, a journal
+#    write reissued or a stopped mount; each boot mounts the DATA volume the boot before left.
+# A3 Gain, reported per bench and per boot: persist.seq_write_fsync and fs.disk.seq_write.1048576, P against M.
+# A4 The outcome, reported and not a landing gate of this PR: persist.seq_write_fsync and
+#    fs.disk.seq_write.1048576 in P at or above Linux's, in every boot of a mode against Linux's runs of that
+#    mode. Where it is not, the difference is given with the diagnostic boot's split.
+# READY (to land as a step) iff A1 and A2 hold on both benches. The record
+# issues/a-sequential-durable-write-on-data-runs-at-about-half-linuxs.md stays open unless A4 holds on both.
+#
+# Stated before the boots (host model counts and the diagnostic round, not bench figures for P):
+#   P1 P's round is 4 device writes of 2 MiB at depth, 32 transactions, one journal entry between two Flushes;
+#      M's is 128 writes one at a time, 256 transactions, three entries between five Flushes.
+#   P2 (expected, unmeasured) AMD: P's fsync near 12 to 14 ms against M's 23, the row near 400 MB/s, still
+#      short of Linux's 513 to 520. T14 slow mode: P's fsync near 22 to 26 ms against M's 35 and Linux's 25 to 27.
+#   P3 fs.disk.tree.100 and the 4 KiB rows do not move: they take neither path.
+# One boot of C2 (P + corrected stage timers, refs/scratch/seqwrite-diag-C2) per bench after the A/B gives P's
+# split; it is no arm of the A/B.

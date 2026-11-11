@@ -1,0 +1,32 @@
+# What this round is for, written before any boot. It is a diagnosis, not a verdict: no gate, nothing lands on it.
+#
+# Question: where do persist.seq_write_fsync's ~30 ms a round (8 MiB written in 1 MiB calls, then sync_all) go on
+# ToyOS, against Linux's ~16 ms on the same drive, and how much of it the candidate removes.
+#
+# Images (row osbench_disk: files, nvme, persist on the bench's NVMe):
+#   D  main ad5db5a65 + the osbench_disk row + stage timers          (refs/scratch/seqwrite-diag-D, 93b1279c3)
+#   C  the candidate 5a90355df + the same row + the same timers      (refs/scratch/seqwrite-diag-C)
+# Both carry the timers, so D against C is like for like; neither is the image a no-regression A/B would use.
+#
+# What each boot's log holds, beside the usual osbench lines:
+#   fileserver: SEQDIAG fsync|room|sync: ...   per sync that wrote 16 or more data requests: count x microseconds
+#       per stage (open, window_copy, write_call, reserve, pager_write, pager_read, volume_write_back, data_write,
+#       commit, meta_write, flush). data_write is submit-to-answer of each file-data request as the file server
+#       sees it; flush and meta_write likewise for device flushes and the volume's own blocks.
+#   fileserver: SEQDIAG engine: ...             the engine's share of volume_write_back: lookups, buffer, checksum,
+#       device wait, pointer transactions.
+#   nvme: SEQDIAG ...                           per device Flush after 16 or more writes: writes, sectors, summed and
+#       largest submit-to-completion time as the driver sees it, most commands held at once, flush times.
+#   osbench note=persist.seq_write_fsync.split  create/write/fsync microseconds of each of the row's four rounds.
+# Linux (same osbench revision as C): the same split note, and note=persist.seq_write_fsync.block: the block
+#   layer's write requests, sectors, merges and flushes across the row, and the queue's limits.
+#
+# Stated before the boots, to be confirmed or refuted by them:
+#   H1 (from the host model, counts only): D sends 128 data requests of 16 blocks a round, one on the device at a
+#      time, and its commit is 3 journal writes between 4 Flushes. C sends 4 writes of 512 blocks, each 16 requests
+#      of 32 blocks in flight together; its commit is unchanged.
+#   H2 (unmeasured): in D the 128 round trips are the largest single share of the fsync.
+#   H3 (unmeasured): after C the row is still short of Linux, the remainder being the commit's Flushes, the
+#      128 pointer transactions and the copies; the split says which.
+# The T14's drive has a slow mode that decides some boots: every figure is reported per boot with its mode
+# (persist.write_4k_fsync p50 over 3 ms is slow), never pooled.
