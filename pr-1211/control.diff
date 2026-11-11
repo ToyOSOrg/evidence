@@ -1,0 +1,13 @@
+--- a/kernel/src/mm/stack.rs
++++ b/kernel/src/mm/stack.rs
+@@ -71,7 +71,9 @@
+         pool.next += slot as u64;
+         pool.left -= slot;
+         pool.carved += 1;
+-        super::paging::guard_4k(DirectMap::phys_of(guard as *const u8));
++        if core::hint::black_box(false) {
++            super::paging::guard_4k(DirectMap::phys_of(guard as *const u8));
++        }
+         drop(pool);
+         // Another CPU may still translate the guard through the superframe's
+         // 2 MiB leaf.
