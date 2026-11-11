@@ -1,0 +1,45 @@
+=== cargo test -p toyos-build --lib
+running 1 test
+test llvm::tests::keyed_and_built ... FAILED
+
+failures:
+
+failures:
+    llvm::tests::keyed_and_built
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 403 filtered out; finished in 2.51s
+
+
+thread 'llvm::tests::keyed_and_built' (34439754) panicked at build/sysroot.rs:1210:43:
+git ["config", "--blob", "HEAD:.gitmodules", "--get", "submodule.src/llvm-project.url"] in <tmp>/toyos-<uid>/toyos-tmp-49975-0/llvm-environment-97/same/rust: git: error: Failed to determine realpath of '/no/such.sdk' (errno=No such file or directory)
+git: error: sh -c '/Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild -sdk /no/such.sdk -find git 2> /dev/null' failed with exit code 16384: (null) (errno=No such file or directory)
+xcode-select: Failed to locate 'git', requesting installation of command line developer tools.
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+
+failures:
+    llvm::tests::the_caller_s_environment_reaches_neither_the_build_nor_the_key
+
+test result: FAILED. 386 passed; 1 failed; 17 ignored; 0 measured; 0 filtered out; finished in 14.48s
+
+error: test failed, to rerun pass `-p toyos-build --lib`
+=== exit 101
+=== cargo run -- --ci host lint
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.90s
+21:00:59 === clippy: cargo clippy -p toyos --lib --features fd-table -- $ADOPTED -D warnings
+    Checking toyos v0.18.0 (<worktree>/sdk/toyos)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.50s
+21:00:59 === clippy: cargo clippy -p osbench --target x86_64-unknown-linux-musl -- $ADOPTED -D warnings
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.12s
+21:00:59 === clippy: cargo clippy -p osbench --target aarch64-unknown-linux-musl -- $ADOPTED -D warnings
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.12s
+21:01:00 === clippy: cargo clippy -p toyos-abi --all-targets --keep-going --target-dir target/clippy-abi -- -W clippy::undocumented_unsafe_blocks -D warnings
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.08s
+21:01:00 [ci] clippy, warnings denied: clean
+
+21:01:00 === [ci] nothing left in $TMPDIR or /tmp
+21:01:00 [ci] nothing left in $TMPDIR or /tmp: every test took its scratch with it
+21:01:00 [ci] Host(Some(Lint)): 5 step(s), all green
+=== exit 0
+done
