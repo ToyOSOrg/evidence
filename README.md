@@ -72,3 +72,15 @@ Local paths are masked (`<worktree>`, `<scratch>`, `<scratchpad>`, `<home>`, `<t
 ## The control at main, and 07b5e86b3
 - `guest/run-43102568233.txt`: `kernel_objects_refused_alone` and `a_clean_stop_proves_its_image` at main e10b6fd49, both
   pass. 07b5e86b3 (records only) adds that result to the `kernel_objects_refused` record; its code is 5dd83dcda's.
+
+## Rebased onto main 75bdec3cd (#1259, #1243, #1266, #1232), head 39fa4bba5
+- Four conflicts, all in the first commit: `kernel/src/syscall/dispatch.rs`, `docs/src/using/interface.md`,
+  `tests/guest/rust-tests/src/image.rs`, `tests/guest/rust-tests/src/bin/spawn_image_object.rs`. The rebase stopped at
+  55a19d9a0; 39fa4bba5 differs from it only in the first commit's message (the kernel's size against 75bdec3cd), so every
+  tree below is the final history's.
+- `r10/`: at 55a19d9a0, a clean tree (`summary.txt`, the commands in `checks10.sh`): the image, the host suites of every
+  touched crate, every kernel clippy shape of `build/clippy.rs`, clippy on `toyos`, the libraries, `shell-copies`,
+  `toybox-copies` and `toyos-abi`. All exit 0.
+- `kcheck-range2/`: `cargo check -p kernel --target x86_64-unknown-none` at each of the 23 commits from 75bdec3cd to
+  55a19d9a0, all exit 0; the control, the old first commit 150fcb847, exits 101 on the dead `user_str`.
+- Guest run 43123357772 at 39fa4bba5 carries the ten rows; 43112704482 at 64eb00ee6 was cancelled after it had started.
