@@ -82,3 +82,29 @@ as `<cpu model>` and `<n> core(s)` in every log here.
 Reused from round two: the host run at `7355706db` (`r2/ci-host.log`) and the unaccessed-descriptor control. Round three changes
 which regions the kernel withholds at boot, which no host test executes; clippy compiles it in every kernel shape, and the three
 guest rows boot it on both architectures, each passing the `LoaderData` check for the pool on its firmware's map.
+
+# Metal at `4f3efa786ec1174429aeb766b2bb4c4300c8994f`
+
+One boot per bench of the staged testcases image, run by the orchestrator, judged from the readbacks with
+`cargo test --test toyos-build -- --metal --metal-readback <dir> kernel_wx smp_roster_and_tsc_trail topology_readback pmm_accounting`
+on a tree at `4f3efa786`. Machine model and BIOS strings are masked.
+
+| bench | boot verdict | judge | log | the checklist's lines |
+|---|---|---|---|---|
+| T14 (Intel) | passed | exit 0: 4 passed, 0 failed | `t14/judge.log` | `t14/lines.txt` |
+| AMD bench | passed | exit 0: 4 passed, 0 failed | `amd/judge.log` | `amd/lines.txt` |
+
+`lines.txt` is cut from each readback's `loader.log` and kernel log; the whole logs are not published.
+
+- **Firmware's hand-over differs.** The T14 hands over `EFER.NXE set and CR0.WP set`. The AMD bench hands over
+  `EFER.NXE clear and CR0.WP set`, so its boot is the first where the loader's own `NXE` write mattered: without it the map's
+  data leaves would have set a reserved bit. No firmware seen hands over `WP` clear, so the loader's `WP` write is still
+  established by reading only; the trampoline's is shown by the descriptor control.
+- **Both loaders sat above 4 GiB** (`Loader image: 0x140000000+0x7e000`), so the switch ran from a page outside the low map:
+  `Code pages beside it, mapped read-only: [140002000, 8000]`.
+- **The AMD bench's scanout** is under a second-level table of its own (`in 6 page directories under 2 second-level tables`).
+- **Every CPU came through the trampoline** and holds the declaration: `SMP: 8 of 8` and `control_regs: 8 of 8 cpus hold
+  cr0=0x80010033 … efer=0x0d01` on the T14, `16 of 16` on the AMD bench.
+- **The pool passed the `LoaderData` check on both firmware maps**: both boots got through `mm::init` to their `pmm:` line and on.
+- The AMD judge log carries a `clock: TSC STEP` line from that boot. It is the clock's own report and no row judged it; this
+  change touches no clock code.
