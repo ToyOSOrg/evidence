@@ -1,0 +1,13 @@
+# Excerpt of a development run: tests/toyos.rs row testcases_members_exit_0 at edb33219f (readdir_bound making 6,000 files),
+# x86-64 guest under TCG, 2 vCPUs, -m 4G (Profile::Headless). Not guest-runner evidence; the refusal is deterministic in the guest's memory size.
+608:20:41:11 [serial 0] [---------- -------- --.--- cpu0 kernel] pmm: the firmware map calls 4288393216 bytes usable in 121 entries; managed=3905302528 withheld=383090688 unaligned=0, and the three sum to it; frames=953443 superframes=3072 records=6537216 at 0x100000 base=0x0
+800:20:41:11 [serial 0] [2026-11-11 20:41:08  9.302 fileserver] fileserver: Memory serving /tmp — memory: 1 inodes
+3222: 20:41:58 [serial 0] [2026-11-11 20:41:56 57.315 test-runner] ===TEST_START test_rs_readdir_bound===
+3223: 20:41:58 [serial 0] [2026-11-11 20:41:56 57.339 cpu0 kernel] spawn: pid=329 (total=0ms) /system/bin/test_rs_readdir_bound
+3224: 20:41:59 [serial 0] [2026-11-11 20:41:57 58.340 fileserver] fileserver: a paged object refused: NoRoom
+3225: 20:42:00 [serial 0] [2026-11-11 20:41:58 59.475 test-runner error pid=329] 
+3226: 20:42:00 [serial 0] [2026-11-11 20:41:58 59.475 test-runner error pid=329] thread 'main' (1) panicked at src/bin/readdir_bound.rs:20:13:
+3227: 20:42:00 [serial 0] [2026-11-11 20:41:58 59.475 test-runner error pid=329] create file 3464 of 6000: Error { kind: StorageFull, message: "the volume is full" }
+3228: 20:42:00 [serial 0] [2026-11-11 20:41:58 59.476 test-runner error pid=329] stack backtrace:
+3247: 20:42:00 [serial 0] [2026-11-11 20:41:58 59.548 cpu0 kernel] exit: test_rs_readdir_bound pid=329 code=101 cpu=908ms peak=1MB allocs=15 frees=1 syscalls=27769 syscall_wall=1947ms 6=1 14=3 50=3 51=1 59=10404 63=3 99=1 102=2 105=2 106=3 133=10404 159=6939 170=2 171=1
+3248: 20:42:00 [serial 0] [2026-11-11 20:41:58 59.549 test-runner] ===TEST_END test_rs_readdir_bound exit=101===
