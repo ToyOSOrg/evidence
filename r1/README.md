@@ -11,6 +11,7 @@ directory. Host checks and builds ran on a macOS arm64 development host.
 | AArch64 image | `cargo run -- --build-only --arch aarch64` | `32e11074e` | 0 | `build-aarch64.log` |
 | Metal staging, T14 | `cargo test --test toyos-build -- --metal --metal-readback <scratch>/metal/t14 wall_clock_is_firmwares timer_calibration smp_roster_and_tsc_trail boot:shared-debug` | `32e11074e` | 2 (staged, nothing judged) | `metal-stage-t14.log`, `metal-t14-request.txt` |
 | Metal staging, AMD bench | the same into `<scratch>/metal/amd` | `32e11074e` | 2 (staged, nothing judged) | `metal-stage-amd.log`, `metal-amd-request.txt` |
+| Guest rows | run 42945488277 on the guest runner, filter `a_stepped_tsc_is_slewed_then_demoted a_stalled_hpet_is_left_out virt_wall_clock_utc` | `e03485e1b` | 0: 3 passed, 3 total; 5 steps, all green | `guest-2.log` |
 | Guest rows, first dispatch | run 42943839543, filter `a_stepped_tsc_is_slewed_then_demoted a_stalled_hpet_is_left_out virt_wall_clock_utc file_mtime` | `e03485e1b` | 1: the harness refused `file_mtime`, which is no QEMU row; no guest booted | `guest-1-filter-refused.log` |
 
 The host checks' one red is `the build system: cargo test --lib`, whose
@@ -22,6 +23,12 @@ is not in this change. `checks::a_wall_clock_off_the_hosts_fails_its_row` is in 
 `issues/the-amd-benchs-tsc-steps-1-7-ms-forward-once-a-boot.md`.
 
 No machine was touched: the metal rows are staged and requested, not run.
+
+In `guest-2.log` the x86-64 guest's step is found and slewed in one line, `clock: TSC STEP: the TSC
+stepped 10003353 ns forward against the HPET and the PM timer; the clock slews it away …`, the
+second demotes the TSC, and the stalled HPET's span is left out with the PM timer reading 1487 ns
+apart. Its records are dated by the wall clock the loader handed: `[2026-11-11 02:31:03  3.800 cpu0
+kernel]`, printed by the runner at 02:31:33Z after a 33 s row.
 
 ## What the RTC's edges ever decided
 
