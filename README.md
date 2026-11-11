@@ -59,3 +59,14 @@ r4/toyos-checks-before-fixtures.log
 r4/toyos-checks.log, r4/toyos-build-compiles.log
                     at b7a90efc1, the fixtures' spawn and supervisor lines in main's form: 50 passed; the
                     harness compiles
+
+r5/ (rebased onto main d17f22cc3, head cba026be9; logs on the clean tree):
+r5/range-diff.txt   the branch on e10b6fd49 against the branch on d17f22cc3: the three review commits
+                    unchanged, the first commit differing only where #1244 added a machine test and gave
+                    a_user_copy_faults_in_mid_copy_or_ends_as_bad_address its kernel parameters
+r5/moves.txt        every MACHINE_TESTS entry equals main's run_machine_test arm (two differ only by a
+                    trailing comma inside the call), with main before #1244 as the control; the eight moved
+                    screen tests equal main's arms
+r5/checks.log, r5/metal-unit.log, r5/build-compiles.log, r5/clippy.log
+                    cargo test --test toyos-checks 50 passed; cargo test -p toyos-metal 77 passed; the
+                    harness compiles; clippy on toyos-build and toyos-metal in the workspace's shape, exit 0

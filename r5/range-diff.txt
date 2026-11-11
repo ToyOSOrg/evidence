@@ -1,0 +1,34 @@
+1:  29dc4ce58 ! 1:  14710feba A metal row declares its benches, a boot names its bench, and judges name the one they judged
+    @@ tests/toyos.rs: const MACHINE_TESTS: &[&str] = &[
+          // reaches. One boot of QEMU's x86-64 machine; the shared boots run it on
+          // each bench.
+     -    "a_user_copy_faults_in_mid_copy_or_ends_as_bad_address",
+    -+    ("a_user_copy_faults_in_mid_copy_or_ends_as_bad_address", |test_config| a_user_copy_faults_in_mid_copy_or_ends_as_bad_address(test_config)),
+    ++    ("a_user_copy_faults_in_mid_copy_or_ends_as_bad_address", |test_config| a_user_copy_faults_in_mid_copy_or_ends_as_bad_address(test_config, &[])),
+    +     // The same job with every copy sent highest first, as an x86-64 kernel
+    +     // sends some on a CPU whose forward copy stalls: the descending copy's
+    +     // fixup, which the guest runner's CPU never takes by its own rule. One
+    +     // boot of QEMU's x86-64 machine on the actuator kernel; the AMD bench's
+    +     // shared boot takes it by its rule.
+    +-    "a_user_copy_highest_first_faults_or_ends_as_bad_address",
+    ++    ("a_user_copy_highest_first_faults_or_ends_as_bad_address", |test_config| {
+    ++        a_user_copy_faults_in_mid_copy_or_ends_as_bad_address(test_config, &["copies-go-down"])
+    ++    }),
+          // The boot's log written through usbd onto the stick it booted from, and
+          // still there once the machine has stopped: the path every metal boot's
+          // `/log` takes, which no other QEMU row reads, because their console is
+    @@ tests/toyos.rs: fn scanout_wc(console: &str) -> Result<(), String> {
+     -        "the_uart_carries_the_boot_once_across_the_hand_over" => the_uart_carries_the_boot_once_across_the_hand_over(),
+     -        "a_supervisor_that_fails_early_says_why_on_the_uart" => a_supervisor_that_fails_early_says_why_on_the_uart(),
+     -        "a_spawn_from_an_image_frees_it_when_the_child_ends" => a_spawn_from_an_image_frees_it_when_the_child_ends(test_config),
+    --        "a_user_copy_faults_in_mid_copy_or_ends_as_bad_address" => a_user_copy_faults_in_mid_copy_or_ends_as_bad_address(test_config),
+    +-        "a_user_copy_faults_in_mid_copy_or_ends_as_bad_address" => a_user_copy_faults_in_mid_copy_or_ends_as_bad_address(test_config, &[]),
+    +-        "a_user_copy_highest_first_faults_or_ends_as_bad_address" => {
+    +-            a_user_copy_faults_in_mid_copy_or_ends_as_bad_address(test_config, &["copies-go-down"])
+    +-        }
+     -        "a_bent_supervisor_is_refused_and_nothing_boots" => [qemu::Profile::HeadlessNoConsolePort, qemu::Profile::Virt]
+     -            .into_iter()
+     -            .try_for_each(|profile| a_bent_supervisor_is_refused_and_nothing_boots(profile, test_config)),
+2:  2d41e356c = 2:  e5b47b542 Review r1 of #1254: a run's machine is its bench's own, and no line sends one bench's boots to the other's
+3:  149aaf72e = 3:  9d9302113 Review r2 of #1254: the bench declarations' first judged run is owed on metal
+4:  b7a90efc1 = 4:  cba026be9 Review r3 of #1254: rebased onto main e10b6fd49, and the fixture readbacks' spawn records in main's form
