@@ -1,0 +1,144 @@
+$ cargo test --manifest-path tests/guest/osbench/Cargo.toml
+   Compiling zeroize v1.9.0
+   Compiling rustls v0.23.45
+   Compiling httparse v1.10.1
+   Compiling log v0.4.29
+   Compiling untrusted v0.9.0
+   Compiling bytes v1.12.1
+   Compiling proc-macro2 v1.0.106
+   Compiling libc v0.2.190
+   Compiling once_cell v1.21.4
+   Compiling subtle v2.6.1
+   Compiling itoa v1.0.17
+   Compiling base64 v0.23.1
+   Compiling unicode-ident v1.0.24
+   Compiling utf8-zero v0.8.1
+   Compiling rustls-pki-types v1.15.1
+   Compiling percent-encoding v2.3.2
+   Compiling adler2 v2.0.1
+   Compiling osbench-rules v0.1.0 (<path>
+   Compiling osbench-lan v0.1.0 (<path>
+   Compiling miniz_oxide v0.9.1
+   Compiling rustls-webpki v0.103.15
+   Compiling webpki-roots v1.0.9
+   Compiling http v1.5.0
+   Compiling syn v2.0.117
+   Compiling getrandom v0.3.4 (https://github.com/ToyOSOrg/getrandom?branch=toyos-0.3-sdk-0.12#67c17e0a)
+   Compiling ureq-proto v0.6.4
+   Compiling ureq v3.4.2
+   Compiling toyos-crypto v0.1.0 (<path>
+   Compiling osbench v0.1.0 (<path>
+error: osbench finds a ToyOS CPU's core by its x86-64 APIC ID, which AArch64 has no EL0 equivalent of: issues/osbench-builds-for-no-aarch64-toyos.md
+  --> tests/guest/osbench/src/arch/mod.rs:16:1
+   |
+16 | / compile_error!(
+17 | |     "osbench finds a ToyOS CPU's core by its x86-64 APIC ID, which AArch64 has no EL0 equivalent of: \
+18 | |      issues/osbench-builds-for-no-aarch64-toyos.md"
+19 | | );
+   | |_^
+
+error[E0432]: unresolved import `imp`
+  --> tests/guest/osbench/src/sys/mod.rs:17:9
+   |
+17 | pub use imp::*;
+   |         ^^^ use of unresolved module or unlinked crate `imp`
+   |
+   = help: if you wanted to use a crate named `imp`, use `cargo add imp` to add it to your `Cargo.toml`
+
+error[E0432]: unresolved import `crate::sys::power`
+  --> tests/guest/osbench/src/energy.rs:26:18
+   |
+26 | use crate::sys::{power, CpuPower, Refused, Round};
+   |                  ^^^^^ no `power` in `sys`
+
+error[E0432]: unresolved import `crate::sys::monotonic_ns`
+  --> tests/guest/osbench/src/fair.rs:34:5
+   |
+34 | use crate::sys::monotonic_ns;
+   |     ^^^^^^^^^^^^------------
+   |                 |
+   |                 no `monotonic_ns` in `sys`
+
+error[E0432]: unresolved import `crate::sys::ipc`
+  --> tests/guest/osbench/src/ipc.rs:16:17
+   |
+16 | use crate::sys::ipc::{self, Peer};
+   |                 ^^^ could not find `ipc` in `sys`
+
+warning: unused import: `crate::report::condition`
+  --> tests/guest/osbench/src/boot.rs:13:5
+   |
+13 | use crate::report::condition;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+error[E0599]: no method named `read_at` found for mutable reference `&mut std::fs::File` in the current scope
+   --> tests/guest/osbench/src/files.rs:116:66
+    |
+116 |     each(&name("pread_4k"), 100, 2000, fields, |i| io("pread", f.read_at(buf, page_at(i, pages))).map(drop));
+    |                                                                  ^^^^^^^
+    |
+    = help: items from traits can only be used if the trait is in scope
+help: there is a method `read` with a similar name, but with different arguments
+   --> <path>
+    |
+800 |     fn read(&mut self, buf: &mut [u8]) -> Result<usize>;
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: trait `FileExt` which provides `read_at` is implemented but not in scope; perhaps you want to import it
+    |
+ 14 + use std::os::unix::fs::FileExt;
+    |
+
+error[E0599]: no method named `read_at` found for mutable reference `&mut std::fs::File` in the current scope
+   --> tests/guest/osbench/src/files.rs:117:65
+    |
+117 |     each(&name("pread_8"), 100, 2000, fields, |i| io("pread", f.read_at(&mut buf[..8], page_at(i, pages))).map(drop));
+    |                                                                 ^^^^^^^
+    |
+    = help: items from traits can only be used if the trait is in scope
+help: there is a method `read` with a similar name, but with different arguments
+   --> <path>
+    |
+800 |     fn read(&mut self, buf: &mut [u8]) -> Result<usize>;
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: trait `FileExt` which provides `read_at` is implemented but not in scope; perhaps you want to import it
+    |
+ 14 + use std::os::unix::fs::FileExt;
+    |
+
+error[E0277]: the size for values of type `[u64]` cannot be known at compilation time
+   --> tests/guest/osbench/src/pingpong.rs:181:10
+    |
+181 |     let (mut kept, ping_seen) = match ping_heard.recv() {
+    |          ^^^^^^^^ doesn't have a size known at compile-time
+    |
+    = help: the trait `Sized` is not implemented for `[u64]`
+    = note: all local variables must have a statically known size
+
+error[E0004]: non-exhaustive patterns: `Grouping::Apart` not covered
+   --> tests/guest/osbench/src/fair.rs:236:15
+    |
+236 |         match self {
+    |               ^^^^ pattern `Grouping::Apart` not covered
+    |
+note: `Grouping` defined here
+   --> tests/guest/osbench/src/fair.rs:215:10
+    |
+215 | pub enum Grouping {
+    |          ^^^^^^^^
+...
+219 |     Apart,
+    |     ----- not covered
+    = note: the matched value is of type `Grouping`
+help: ensure that all possible cases are being handled by adding a match arm with a wildcard pattern or an explicit pattern as shown
+    |
+237 ~             Grouping::Shared => Ok(Command::new(exe)),
+238 ~             Grouping::Apart => todo!(),
+    |
+
+Some errors have detailed explanations: E0004, E0277, E0432, E0599.
+For more information about an error, try `rustc --explain E0004`.
+warning: `osbench` (bin "osbench" test) generated 1 warning
+error: could not compile `osbench` (bin "osbench" test) due to 9 previous errors; 1 warning emitted
+exit 101
