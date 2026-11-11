@@ -1,0 +1,61 @@
+diff --git a/kernel/src/arch/x86_64/idt/nmi.rs b/kernel/src/arch/x86_64/idt/nmi.rs
+index 6e4258187..481289158 100644
+--- a/kernel/src/arch/x86_64/idt/nmi.rs
++++ b/kernel/src/arch/x86_64/idt/nmi.rs
+@@ -12,8 +12,7 @@
+ 
+ use core::arch::naked_asm;
+ 
+-use crate::arch::entry::install_kernel_gs;
+-use crate::arch::percpu::{MSR_GS_BASE, OFF_GDT, OFF_NMI_ACTIVE};
++use crate::arch::percpu::OFF_NMI_ACTIVE;
+ 
+ /// The words the entry pushes before it can tell a nested NMI: three
+ /// registers and the GS base it found.
+@@ -36,15 +35,14 @@ pub(super) extern "sysv64" fn nmi_entry() {
+         // And from Ring 3 it arrives with that thread's `AC`, as every gate does.
+         "clac",
+         // Flags are free throughout: iretq restores RFLAGS from the frame.
++        "test byte ptr [rsp + 8], 3",
++        "jz 72f",
++        "swapgs",
++        "72:",
+         "push rax",
+         "push rcx",
+         "push rdx",
+-        "mov ecx, {gs_base_msr}",
+-        "rdmsr",
+-        "shl rdx, 32",
+-        "or rax, rdx",
+         "push rax",
+-        install_kernel_gs!(),
+         "cmp dword ptr gs:[{active}], 0",
+         "jne 2f",
+         "mov dword ptr gs:[{active}], 1",
+@@ -71,13 +69,13 @@ pub(super) extern "sysv64" fn nmi_entry() {
+         "mov dword ptr gs:[{active}], 0",
+         // The base this NMI found, back: nothing after it reads GS.
+         "pop rax",
+-        "mov rdx, rax",
+-        "shr rdx, 32",
+-        "mov ecx, {gs_base_msr}",
+-        "wrmsr",
+         "pop rdx",
+         "pop rcx",
+         "pop rax",
++        "test byte ptr [rsp + 8], 3",
++        "jz 73f",
++        "swapgs",
++        "73:",
+         // No EOI: an NMI isn't delivered through the IRR, and acknowledging one would clear an unrelated interrupt.
+         "iretq",
+         // This frame already overwrote the outer handler's stack: nothing to preserve, so read the two words before aligning.
+@@ -88,8 +86,6 @@ pub(super) extern "sysv64" fn nmi_entry() {
+         "call {nested}",
+         "ud2",
+         active = const OFF_NMI_ACTIVE,
+-        gs_base_msr = const MSR_GS_BASE,
+-        gdt_in_percpu = const OFF_GDT,
+         rflags_offset = const RFLAGS_OFFSET,
+         nested_rip = const NESTED_RIP_OFFSET,
+         nested_rsp = const NESTED_RSP_OFFSET,
