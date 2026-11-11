@@ -60,3 +60,11 @@
   `a_placed_write_sends_each_contiguous_stretch_once_before_any_pointer`) and its clippy; the file server's tests and
   clippy, whose findings are main's four. `each-piece-alone` sends each piece as its own device write: the placed
   test reds on "two writes for one stretch of contiguous sectors", and the file is restored.
+
+## Review round 7 (head 4240a3d79)
+
+- `r7/`: the tree committed as 4240a3d79 (`tree.txt`: 66de9f97b plus the round's diff): `cargo test -p bcachefs
+  --lib` (208, the short pool among them) and its clippy, the file server's tests.
+- `r7/control-build/`: the `testcases` image built at `fileops-step1-ctl-refuse` 05dc29420 (4240a3d79 and the patch
+  refusing every holder write; `tree.txt` shows it differs from the head by that file alone), rc 0
+  (`build-control.sh`).
