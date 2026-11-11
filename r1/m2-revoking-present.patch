@@ -1,0 +1,10 @@
+--- a/kernel/pure/paged.rs
++++ b/kernel/pure/paged.rs
+@@ -744,7 +744,6 @@
+         match self.find(o.id, page).map(|i| self.slot(i)) {
+             None if o.anonymous => Lookup::Zero,
+             None => Lookup::Absent,
+-            Some(s) if s.revoking.is_some() => Lookup::Absent,
+             Some(s) => s.frame.map_or(Lookup::Failed, Lookup::Present),
+         }
+     }

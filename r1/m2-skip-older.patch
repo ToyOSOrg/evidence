@@ -1,0 +1,11 @@
+--- a/kernel/pure/paged.rs
++++ b/kernel/pure/paged.rs
+@@ -696,7 +696,7 @@
+         out: &mut impl FnMut(F, u64, Revoked),
+     ) -> Option<M::Node> {
+         loop {
+-            if let Some(node) = mappers.head().filter(|&n| mappers.seen(n) != o.epoch) {
++            if let Some(node) = mappers.head().filter(|&n| mappers.seen(n) + 1 < o.epoch) {
+                 mappers.visited(node, o.epoch);
+                 return Some(node);
+             }

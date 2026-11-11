@@ -1,0 +1,15 @@
+--- a/kernel/pure/paged.rs
++++ b/kernel/pure/paged.rs
+@@ -701,11 +701,7 @@
+                 return Some(node);
+             }
+             match o.walk {
+-                Walk::Running { again: true } => {
+-                    o.epoch += 1;
+-                    o.walk = Walk::Running { again: false };
+-                }
+-                Walk::Running { again: false } => break,
++                Walk::Running { .. } => break,
+                 Walk::Idle => panic!("paged: a walk of object {} that never began", o.id),
+             }
+         }

@@ -1,0 +1,11 @@
+--- a/kernel/pure/paged.rs
++++ b/kernel/pure/paged.rs
+@@ -1950,7 +1950,7 @@
+                             match self.p.lookup(&self.o, page) {
+                                 // A write or resize ended the wait: ask afresh.
+                                 Lookup::Absent if !self.o.unchanged(since) => {
+-                                    want.anew(page, 1);
++                                    want.ask(page, 1);
+                                     self.parked.push((s, page, want, self.o.version()));
+                                 }
+                                 Lookup::Absent => {

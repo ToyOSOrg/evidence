@@ -1,0 +1,13 @@
+--- a/kernel/pure/paged.rs
++++ b/kernel/pure/paged.rs
+@@ -719,9 +719,7 @@
+                 let becomes = if held && page < o.page_end() { becomes } else { Revoked::Removed };
+                 match becomes {
+                     Revoked::Failed => self.insert(o, page, None, State::CLEAN).expect("paged: the slot just freed"),
+-                    Revoked::Absent => waiters.each(&mut |want| {
+-                        want.withdrawn(page, 1);
+-                    }),
++                    Revoked::Absent => {}
+                     Revoked::Removed => {}
+                 }
+                 out(frame, page, becomes);
