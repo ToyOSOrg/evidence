@@ -1,0 +1,59 @@
+# DECISION RULES for PR #1216's second A/B (P' against M), fixed before any boot of it and before P' was staged.
+# Why a second A/B: review r2 changed the measured path. A group of fresh extents now changes its bucket once (one
+# bucket map, one LRU move) instead of once per extent, so the first A/B's P image no longer is the PR's code.
+#
+# Arms, both benches (T14, AMD), row osbench_disk (files, nvme, persist on the bench's NVMe):
+#   M   822ac54b8: main ad5db5a65 + the osbench_disk row only. The SAME staged image as the first A/B
+#       (sha256 9ac00db2dc9d199bff310a29020d819b3398364febe5c3ffc8ebbf7d96885cbd).
+#   P'  the PR's new head + the same row only (refs/scratch/seqwrite-P2; hash in the request).
+# No timers in either. No Linux run: the first A/B's Linux runs stand for A4, which is no gate.
+#
+# Boots: counterbalanced ABBA on each bench, M P' P' M: 4 a bench, 8 in all. The last M on each bench comes
+# after the last P', so every P' boot's effect on DATA is read by the mount that follows it.
+#
+# Statistic and "resolved" as in the first A/B (r2/ab/rules-ab.txt): each boot's row p50, the median over an
+# arm's boots; resolved when every boot of one arm lies beyond every boot of the other. Here 2 boots an arm a
+# bench. A T14 boot is slow when its persist.write_4k_fsync p50 is over 3 ms; the T14 is compared over all its
+# boots and mode by mode, and a mode with fewer than two boots in either arm is reported as not established.
+#
+# A1' No regression: no fs.disk.*, nvme.* or persist.* row more than 5% worse in P' than in M AND resolved, on
+#     either bench, over the bench's boots of this A/B (and per T14 mode where established).
+# A2' Correct: every P' boot's verdict is passed and its row judge passes; each boot mounts DATA once, formats
+#     nothing, logs no DATA error and none of the storage path's refusal lines (as r3/a2.sh checks).
+# A3' Gain: persist.seq_write_fsync and fs.disk.seq_write.1048576, P' against M, per bench, per boot.
+# FREE (review r2's reading, on each bench): every mount's `bcachefs DATA: <free>/<total> bytes free` is recorded,
+#     with the boot before it. A boot's effect is read only by the mount after it.
+#     - The T14 back at 181360394240 at any mount: the first A/B's drop was transient metadata.
+#     - Steady at 181359869952 across every transition: no recurring loss; the one drop is recorded as
+#       "the free figure fell by 512 KiB: one more occupied bucket or one more btree node".
+#     - Lowered again by any P' boot: treated as a leak; the PR goes back.
+#     The same reading on the AMD (640900923392 throughout the first A/B).
+#
+# What the first A/B carries, and what it does not:
+#   - It stands as the record of P against M (r3 of the evidence). It does not establish P': P' is other code.
+#   - M's four earlier boots a bench are of this same image. Where this A/B's two M boots of a bench lie inside
+#     the first A/B's M range for both target rows (within 5% of its extremes), the sessions agree and the six
+#     M boots together are reported beside this A/B's two; the gate A1' is still judged on this A/B's boots only.
+#   - The T14's fast mode: only r4-M (M) of the first A/B counts toward it, as the same image. P' has no earlier
+#     boot, so the fast mode is established for P' only if this A/B gives two fast P' boots and, with r4-M, two
+#     fast M boots; otherwise it is reported as not established.
+# READY (to land as a step) iff A1' and A2' hold on both benches and FREE shows no further drop by a P' boot.
+#
+# Stated before the boots: P' journals fewer keys a group than P (one LRU move and one alloc change a group
+# instead of one an extent), so its rows are expected at P's or slightly better; P1 to P3 of the first A/B stand.
+#
+# AMENDMENT 2026-11-11T18:02Z, before any boot of this A/B (no readback of it exists). It settles the three notes
+# the PR's second review (r2, on d3d67f8b5) made on these rules, by the orchestrator's decisions. The text above
+# says "review r2" for the PR's first review, r1. Where the amendment and the text above differ, the amendment holds.
+#   N1 r4-M and the fast mode. r4-M counts toward the T14's fast-mode M arm only if this A/B's two T14 M boots pass
+#      the agreement check above (each within 5% of the first A/B's M extremes on both target rows). Otherwise
+#      only this A/B's boots count. The gate A1' is judged on this A/B's boots only, in every mode; r4-M, where it
+#      counts, decides only whether the fast mode is established.
+#   N2 The T14's fast mode not established. If fewer than two P' boots land fast (or the M arm has fewer than two
+#      under N1), no further boots are asked for. The PR description says plainly, for the code that lands, that
+#      the T14's fast mode is not established, and the record keeps it open. The AMD covers the CPU-bound regime.
+#   N3 The free figure.
+#      - A drop read at the mount after an M boot is reported with the boot that preceded it, and is not
+#        attributed to P'.
+#      - A drop read at the mount after any P' boot sends the PR back, even if a later mount reads the figure
+#        back up.

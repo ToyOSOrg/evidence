@@ -268,3 +268,13 @@ each bench, 8 boots, every mount's free figure recorded.
 
 Correction to r4: the review it answers is the PR's first (r1, on e64953f85); r4 and `r4/metal/rules-ab2.txt` call it
 "review r2". Nothing else in them changes.
+
+## r5: the second A/B's rules amended before its boots (`r5/rules-ab2.txt`)
+
+The PR's second review (r2, on d3d67f8b5) left three notes on `r4/metal/rules-ab2.txt`. They are settled by an
+amendment dated 2026-11-11T18:02Z, appended before any boot of the second A/B: r4-M counts toward the T14's
+fast-mode M arm only if this A/B's M boots pass the 5% agreement check, and the gate stays on this A/B's boots; if the
+fast mode is not established no more boots are asked for and the description and the record say so; a drop in the
+free figure after an M boot is reported and not attributed to P', and a drop after any P' boot sends the PR back
+even if a later mount recovers it. `r5/rules-ab2.txt` is the whole file with the amendment; the text above it is
+r4's unchanged.
