@@ -1,0 +1,62 @@
+=== m1-source-half-dropped
+applied
+test checks::a_shared_chunk_stages_every_binary_its_members_name ... ok
+test checks::a_shared_boot_ends_by_its_lists_reboot ... ok
+test checks::a_shared_member_is_judged_by_its_own_end ... FAILED
+thread 'checks::a_shared_member_is_judged_by_its_own_end' (34921279) panicked at tests/checks.rs:1171:9:
+test result: FAILED. 2 passed; 1 failed; 0 ignored; 0 measured; 44 filtered out; finished in 0.00s
+mutated exit=101
+reverted
+=== m2-pid-half-dropped
+applied
+test checks::a_shared_chunk_stages_every_binary_its_members_name ... ok
+test checks::a_shared_boot_ends_by_its_lists_reboot ... ok
+test checks::a_shared_member_is_judged_by_its_own_end ... FAILED
+thread 'checks::a_shared_member_is_judged_by_its_own_end' (34921685) panicked at tests/checks.rs:1164:22:
+test_rs_stuck is Passed, not failed
+test result: FAILED. 2 passed; 1 failed; 0 ignored; 0 measured; 44 filtered out; finished in 0.00s
+mutated exit=101
+reverted
+=== m3-rebooting-not-required
+applied
+test checks::a_shared_member_is_judged_by_its_own_end ... ok
+test checks::a_shared_chunk_stages_every_binary_its_members_name ... ok
+test checks::a_shared_boot_ends_by_its_lists_reboot ... FAILED
+thread 'checks::a_shared_boot_ends_by_its_lists_reboot' (34922135) panicked at tests/checks.rs:1213:71:
+a silent reset after the last member: 1
+test result: FAILED. 2 passed; 1 failed; 0 ignored; 0 measured; 44 filtered out; finished in 0.00s
+mutated exit=101
+reverted
+=== m4-guest-reset-not-required
+applied
+test checks::a_shared_member_is_judged_by_its_own_end ... ok
+test checks::a_shared_chunk_stages_every_binary_its_members_name ... ok
+test checks::a_shared_boot_ends_by_its_lists_reboot ... FAILED
+thread 'checks::a_shared_boot_ends_by_its_lists_reboot' (34922475) panicked at tests/checks.rs:1213:71:
+test result: FAILED. 2 passed; 1 failed; 0 ignored; 0 measured; 44 filtered out; finished in 0.00s
+mutated exit=101
+reverted
+=== m5-rebooting-any-speaker
+applied
+test checks::a_shared_member_is_judged_by_its_own_end ... ok
+test checks::a_shared_chunk_stages_every_binary_its_members_name ... ok
+test checks::a_shared_boot_ends_by_its_lists_reboot ... FAILED
+thread 'checks::a_shared_boot_ends_by_its_lists_reboot' (34922907) panicked at tests/checks.rs:1213:71:
+a program's Rebooting.: 1
+test result: FAILED. 2 passed; 1 failed; 0 ignored; 0 measured; 44 filtered out; finished in 0.00s
+mutated exit=101
+reverted
+=== restored
+test checks::a_shared_boot_ends_by_its_lists_reboot ... ok
+test checks::a_shared_member_is_judged_by_its_own_end ... ok
+test checks::a_shared_chunk_stages_every_binary_its_members_name ... ok
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 44 filtered out; finished in 0.01s
+restored exit=0
+ ...y-is-frozen-so-nothing-runs-the-guest-matrix.md |   6 +
+ ...he-t14-reboots-through-ubuntu-for-every-test.md |   2 +-
+ ...-per-megabyte-of-ram-whatever-the-files-hold.md |  31 +++--
+ tests/checks.rs                                    |  73 ++++++++---
+ tests/common/compile.rs                            |  38 +++---
+ tests/common/libcchildren.rs                       |   4 +-
+ tests/toyos.rs                                     | 143 +++++++++++----------
+ 7 files changed, 175 insertions(+), 122 deletions(-)

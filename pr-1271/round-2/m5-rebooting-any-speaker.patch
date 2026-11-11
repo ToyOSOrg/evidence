@@ -1,0 +1,11 @@
+--- tests/toyos.rs
++++ tests/toyos.rs
+@@ -2320,7 +2320,7 @@
+         Err(why) => Err(why.lines().next().unwrap_or_default().to_string()),
+         Ok(reason) if reason.as_deref() != Some("guest-reset") => Err(format!("QEMU stopped it for {reason:?}, not guest-reset")),
+         Ok(_) if !console.lines().filter_map(toyos_logstream::parse).any(|said| {
+-            said.source == toyos_logstream::Source::Kernel && said.text == bootlog::REBOOTING
++            said.text == bootlog::REBOOTING
+         }) => Err(format!("the kernel never said {:?}", bootlog::REBOOTING)),
+         Ok(_) => Ok(()),
+     };
