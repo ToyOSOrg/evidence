@@ -160,3 +160,26 @@ registration over 1 boot, `proctreecase`. `proctreecase-system.toml` holds the
 job list. `process_tree` has no QEMU row, so this boot is the only place where
 the guest's new assertion (the chain stops at link `MAX_DEPTH - 2` = 62) can
 hold or fail. Every spawn in the boot also goes through the SDK's new path label.
+
+## r2/metal-6cdc1d015/ (the T14 run of that image)
+
+The orchestrator flashed the staged `proctreecase` image to the T14 and read
+back its log partition: toyos-metal's verdict is `passed`. The `proctreecase-*`
+files are the masked readback (`kernel.log`, `loader.log`, `boot.txt`,
+`verdict.txt`).
+
+`judge.sh` judged it from the PR's worktree, detached at 6cdc1d015 with a
+clean tree, through the build slot, and then returned the worktree to the
+branch. `judge.log` is its output without compile lines: `cargo test --test
+toyos-build -- --metal --metal-readback <dir> process_tree` exits 0, with
+"PASS process_tree" and "1 passed, 0 failed, 1 boot(s)".
+
+What the readback shows:
+
+- The guest's line: `a chain of 62 links stopped at a depth refusal (link 62:
+  its next link was refused: out of memory) and died whole`, then
+  `process_tree: PASS` and the job's `exit=0`. At 6cdc1d015 the guest asserts
+  `started == MAX_DEPTH - 2` (62), so the pass is that assertion holding.
+- The judge: every one of the boot's 166 `spawn:` records parses as a landed
+  spawn (`spawn: pid=N (total=Nms) <path>`), so no refusal was recorded.
+- Every job and link in this boot was spawned through the SDK's `path_label`.
