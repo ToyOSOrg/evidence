@@ -7,3 +7,4 @@ Local paths are masked (`<worktree>`, `<scratch>`, `<scratchpad>`, `<home>`, `<t
 - `mutations/`: the SDK's negative controls at 8f5cfaf65, each patch applied, the suite run, the file restored;
   `mut-connect.patch` is the kernel control staged for metal.
 - `clippy-r0/`: clippy with the workspace's adopted lints and `-D warnings` on every shape that builds touched code, at 9186185dd (`rev`); `clippy.sh` and `host.sh` are the commands.
+- `host-r1/`, `clippy-r1/`: the same host suites and clippy shapes again at c06d210be, the PR's head (`rev`), a clean tree.
