@@ -8,3 +8,6 @@
 - `fileops-diagnosis/judge/`: the offline judge's logs (exit 1 for all four: `boot.txt` lacks `back_unix_secs`).
 - `fileops-diagnosis/linux/`: `strace -c` of `osbench files` and `osbench persist` on both benches' Linux.
 - `fileops-diagnosis/diagnosis.md`: the measured split (section 4) and the routing measurement (section 5).
+- `host-checks/`: the host checks at 6f2ea3427 (`revision.txt`), run by `route-checks.sh` (paths masked): the SDK's
+  `files::` tests (12 passed) and clippy's two `toyos` shapes from the build's lint list, warnings denied; each log
+  ends with the command's exit code.
