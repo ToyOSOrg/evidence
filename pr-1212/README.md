@@ -63,3 +63,22 @@ The control's serial also carries the loader's two new lines on OVMF:
 no boot has yet shown them mattering; the benches' logs will say what their firmware hands over.
 
 The control branch `boot-map-wx-nc` was deleted after the run.
+
+# Round three: `4f3efa786ec1174429aeb766b2bb4c4300c8994f`
+
+Review r2's fix: the boot map's tables are named in `kernel_main`'s shared list of the loader's allocations, so both
+architectures withhold them and the `LoaderData` check covers them; `arch::boot::reserved` is one region again.
+The change is `kernel/src/main.rs`, both `boot.rs` and one comment in `lib/bootmap/src/x86_64.rs`.
+
+This branch was recreated once: the guest logs' instrument line carried the runner's CPU model and core count, now masked
+as `<cpu model>` and `<n> core(s)` in every log here.
+
+| check | command | target | exit | log |
+|---|---|---|---|---|
+| guest rows | `gh workflow run guest-rows.yml --ref boot-map-wx -f filter='std_threads_count_the_cpus_and_give_back_ended_threads virt_smp virt_user_mode'` | guest runner, run 42952063386, `4f3efa786` | success, 3 passed | `r3/guest-rows-42952063386.log` |
+| clippy | `cargo run -- --clippy` | macOS arm64 host, `4f3efa786` | 0: 26 invocations clean | `r3/clippy.log` |
+| metal boots staged | `cargo test --test toyos-build -- --metal --metal-readback <dir> kernel_wx smp_roster_and_tsc_trail topology_readback pmm_accounting`, once per bench | no machine touched | 2: staged, not run | `r3/metal-prepare-t14.log`, `r3/metal-prepare-amd.log` |
+
+Reused from round two: the host run at `7355706db` (`r2/ci-host.log`) and the unaccessed-descriptor control. Round three changes
+which regions the kernel withholds at boot, which no host test executes; clippy compiles it in every kernel shape, and the three
+guest rows boot it on both architectures, each passing the `LoaderData` check for the pool on its firmware's map.
