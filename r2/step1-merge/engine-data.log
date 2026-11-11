@@ -1,0 +1,30 @@
+== cargo test -p bcachefs --lib tests::data::
+   Compiling crc32fast v1.5.0
+   Compiling simd-adler32 v0.3.10
+   Compiling adler2 v2.0.1
+   Compiling cfg-if v1.0.4
+   Compiling toyos-crypto v0.1.0 (<scratch>/wt-step1/lib/crypto)
+   Compiling toyos-blockdev v0.1.0 (<scratch>/wt-step1/lib/blockdev)
+   Compiling miniz_oxide v0.9.1
+   Compiling flate2 v1.1.10
+   Compiling bcachefs v0.1.0 (<scratch>/wt-step1/lib/bcachefs)
+error[E0061]: this method takes 5 arguments but 6 arguments were supplied
+   --> lib/bcachefs/src/engine/mount/data.rs:458:32
+    |
+458 | ...= match self.write_run(ino, at, &data[done..(stop - offset) as usize], now, version, Some((pool.id, sector))).await {
+    |                 ^^^^^^^^^                                                               ----------------------- unexpected argument #6 of type `Option<(u64, u64)>`
+    |
+note: method defined here
+   --> lib/bcachefs/src/engine/mount/data.rs:704:14
+    |
+704 |     async fn write_run(&self, ino: u64, at: u64, input: &[u8], now: i64, version: Version) -> Result<usize> {
+    |              ^^^^^^^^^
+help: remove the extra argument
+    |
+458 -             let n = match self.write_run(ino, at, &data[done..(stop - offset) as usize], now, version, Some((pool.id, sector))).await {
+458 +             let n = match self.write_run(ino, at, &data[done..(stop - offset) as usize], now, version).await {
+    |
+
+For more information about this error, try `rustc --explain E0061`.
+error: could not compile `bcachefs` (lib test) due to 1 previous error
+rc=101

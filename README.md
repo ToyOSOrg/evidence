@@ -19,3 +19,17 @@
   back unsent deleted, each red as a deadlock in the models `summary.txt` names; and `fail-ignores-link`, `fail`
   ignoring the connection, red on the fresh-connection model's own assertion. The first round's plain-store control
   is withdrawn: it reds only through loom's partial modification order.
+
+## Review round 2 (head b92c7d2ff, on #1258's merge of main c8095992a)
+
+- `r2/checks/`: the tree before the last model was added (`tree.txt`; that model's test is the only later change):
+  the SDK's tests and two clippy shapes, toyos-blockring's tests and clippy (its assertion that the reply bound lies
+  past its silence bound), seven loom models, and the loom crate's clippy; `loom-flight-8.log` and
+  `clippy-loom-8.log` are all eight models and the loom crate's clippy at the head.
+- `r2/controls/`: `turn-per-dir`, round 1's `flight.rs` under the new model in which each connection receives for
+  itself, red as a deadlock; then each wake deleted, run model by model (`tags-wakes.sh`, `summary.txt`), each red as
+  a deadlock in at least one model, the give's hand-on in the failed-send model; and `fail-ignores-link`, red on the
+  fresh-connection model's own assertion.
+- `r2/step1-merge/`: #1258's merge of main (c8095992a): the kernel's three clippy shapes, its pure tests, the SDK's
+  and the ABI's checks; `engine/` the engine's and file server's tests and clippy after `write_run` regained its
+  placement (the file server's clippy findings are main's four).

@@ -1,0 +1,487 @@
+== each_caller_is_answered_its_own_reply_whoever_receives
+warning: unused variable: `next`
+   --> kernel/loom/src/../../../sdk/toyos/src/fs/flight.rs:183:17
+    |
+183 |             let next = answered.is_some().then(|| {
+    |                 ^^^^ help: if this is intentional, prefix it with an underscore: `_next`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+
+running 1 test
+
+thread 'each_caller_is_answered_its_own_reply_whoever_receives' (35990760) panicked at <home>/.cargo/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/rt/execution.rs:217:13:
+deadlock; threads = [(Id(0), Blocked(Location(None))), (Id(1), Blocked(Location(None))), (Id(2), Terminated)]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'each_caller_is_answered_its_own_reply_whoever_receives' (35990760) panicked at <home>/.cargo/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/rt/thread.rs:276:39:
+called `Option::unwrap()` on a `None` value
+stack backtrace:
+   0:        0x104e8d200 - std[5d97c59e5e5fafcc]::backtrace_rs::backtrace::libunwind::trace
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/../../backtrace/src/backtrace/libunwind.rs:117:9
+   1:        0x104e8d200 - std[5d97c59e5e5fafcc]::backtrace_rs::backtrace::trace_unsynchronized::<std[5d97c59e5e5fafcc]::sys::backtrace::_print_fmt::{closure#1}>
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/../../backtrace/src/backtrace/mod.rs:66:14
+   2:        0x104e8d200 - std[5d97c59e5e5fafcc]::sys::backtrace::_print_fmt
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/sys/backtrace.rs:74:9
+   3:        0x104e8d200 - <<std[5d97c59e5e5fafcc]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[663bb9e1522ba5ef]::fmt::Display>::fmt
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/sys/backtrace.rs:44:26
+   4:        0x104e9e580 - <core[663bb9e1522ba5ef]::fmt::rt::Argument>::fmt
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/fmt/rt.rs:152:76
+   5:        0x104e9e580 - core[663bb9e1522ba5ef]::fmt::write
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/fmt/mod.rs:1687:22
+   6:        0x104e90d78 - std[5d97c59e5e5fafcc]::io::default_write_fmt::<alloc[cc4db322bb1ac55d]::vec::Vec<u8>>
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/io/mod.rs:626:11
+   7:        0x104e90d78 - <alloc[cc4db322bb1ac55d]::vec::Vec<u8> as std[5d97c59e5e5fafcc]::io::Write>::write_fmt
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/io/mod.rs:1730:13
+   8:        0x104e73ef8 - <std[5d97c59e5e5fafcc]::sys::backtrace::BacktraceLock>::print
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/sys/backtrace.rs:47:25
+   9:        0x104e73ef8 - std[5d97c59e5e5fafcc]::panicking::default_hook::{closure#0}
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/panicking.rs:292:27
+  10:        0x104e869b8 - std[5d97c59e5e5fafcc]::panicking::default_hook
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/panicking.rs:316:9
+  11:        0x104e1ebf4 - <alloc[cc4db322bb1ac55d]::boxed::Box<dyn for<'a, 'b> core[663bb9e1522ba5ef]::ops::function::Fn<(&'a std[5d97c59e5e5fafcc]::panic::PanicHookInfo<'b>,), Output = ()> + core[663bb9e1522ba5ef]::marker::Sync + core[663bb9e1522ba5ef]::marker::Send> as core[663bb9e1522ba5ef]::ops::function::Fn<(&std[5d97c59e5e5fafcc]::panic::PanicHookInfo,)>>::call
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/alloc/src/boxed.rs:2333:9
+  12:        0x104e1ebf4 - test[4aa3eea2f4983582]::test_main_inner::<test[4aa3eea2f4983582]::test_main_static::{closure#0}>::{closure#0}
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/test/src/lib.rs:155:21
+  13:        0x104e60f70 - <alloc[cc4db322bb1ac55d]::boxed::Box<dyn for<'a, 'b> core[663bb9e1522ba5ef]::ops::function::Fn<(&'a std[5d97c59e5e5fafcc]::panic::PanicHookInfo<'b>,), Output = ()> + core[663bb9e1522ba5ef]::marker::Sync + core[663bb9e1522ba5ef]::marker::Send> as core[663bb9e1522ba5ef]::ops::function::Fn<(&std[5d97c59e5e5fafcc]::panic::PanicHookInfo,)>>::call
+                               at <home>/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/alloc/src/boxed.rs:2333:9
+  14:        0x104e60f70 - generator[50749e7e4996c531]::detail::gen::catch_unwind_filter::<generator[50749e7e4996c531]::detail::gen::gen_init_impl::{closure#0}, ()>::{closure#0}::{closure#0}
+                               at <home>/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/generator-0.8.9/src/detail/gen.rs:19:13
+  15:        0x104e86ef8 - <alloc[cc4db322bb1ac55d]::boxed::Box<dyn for<'a, 'b> core[663bb9e1522ba5ef]::ops::function::Fn<(&'a std[5d97c59e5e5fafcc]::panic::PanicHookInfo<'b>,), Output = ()> + core[663bb9e1522ba5ef]::marker::Sync + core[663bb9e1522ba5ef]::marker::Send> as core[663bb9e1522ba5ef]::ops::function::Fn<(&std[5d97c59e5e5fafcc]::panic::PanicHookInfo,)>>::call
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/alloc/src/boxed.rs:2333:9
+  16:        0x104e86ef8 - std[5d97c59e5e5fafcc]::panicking::panic_with_hook
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/panicking.rs:823:13
+  17:        0x104e73fac - std[5d97c59e5e5fafcc]::panicking::panic_handler::{closure#0}
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/panicking.rs:681:13
+  18:        0x104e6b084 - std[5d97c59e5e5fafcc]::sys::backtrace::__rust_end_short_backtrace::<std[5d97c59e5e5fafcc]::panicking::panic_handler::{closure#0}, !>
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/sys/backtrace.rs:182:18
+  19:        0x104e74718 - __rustc[100742bb89c490cb]::rust_begin_unwind
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/panicking.rs:679:5
+  20:        0x104eadd68 - core[663bb9e1522ba5ef]::panicking::panic_fmt
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/panicking.rs:80:14
+  21:        0x104eadd40 - core[663bb9e1522ba5ef]::panicking::panic
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/panicking.rs:150:5
+  22:        0x104eadac4 - core[663bb9e1522ba5ef]::option::unwrap_failed
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/option.rs:2251:5
+  23:        0x104e5b2b0 - <core[663bb9e1522ba5ef]::option::Option<usize>>::unwrap
+                               at <home>/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/core/src/option.rs:1014:21
+  24:        0x104e5b2b0 - <loom[709ac591f2027ef2]::rt::thread::Set>::active_mut
+                               at <home>/.cargo/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/rt/thread.rs:276:39
+  25:        0x104e5b2b0 - <loom[709ac591f2027ef2]::rt::object::Ref<loom[709ac591f2027ef2]::rt::arc::State>>::set_action
+                               at <home>/.cargo/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/rt/object.rs:401:27
+  26:        0x104e4bd24 - <loom[709ac591f2027ef2]::rt::object::Ref<loom[709ac591f2027ef2]::rt::arc::State>>::branch_action::<loom[709ac591f2027ef2]::rt::arc::Action>::{closure#0}
+                               at <home>/.cargo/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/rt/object.rs:368:18
+  27:        0x104e4bd24 - loom[709ac591f2027ef2]::rt::branch::<<loom[709ac591f2027ef2]::rt::object::Ref<loom[709ac591f2027ef2]::rt::arc::State>>::branch_action<loom[709ac591f2027ef2]::rt::arc::Action>::{closure#0}, ()>::{closure#0}
+                               at <home>/.cargo/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/rt/mod.rs:122:19
+  28:        0x104e4bd24 - <loom[709ac591f2027ef2]::rt::scheduler::Scheduler>::with_execution::<loom[709ac591f2027ef2]::rt::branch<<loom[709ac591f2027ef2]::rt::object::Ref<loom[709ac591f2027ef2]::rt::arc::State>>::branch_action<loom[709ac591f2027ef2]::rt::arc::Action>::{closure#0}, ()>::{closure#0}, ((), bool)>::{closure#0}
+                               at <home>/.cargo/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/rt/scheduler.rs:43:34
+  29:        0x104e4bd24 - <loom[709ac591f2027ef2]::rt::scheduler::Scheduler>::with_state::<<loom[709ac591f2027ef2]::rt::scheduler::Scheduler>::with_execution<loom[709ac591f2027ef2]::rt::branch<<loom[709ac591f2027ef2]::rt::object::Ref<loom[709ac591f2027ef2]::rt::arc::State>>::branch_action<loom[709ac591f2027ef2]::rt::arc::Action>::{closure#0}, ()>::{closure#0}, ((), bool)>::{closure#0}, ((), bool)>::{closure#0}
+                               at <home>/.cargo/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/rt/scheduler.rs:131:28
+  30:        0x104e4bd24 - <scoped_tls[caeb02954d49b51e]::ScopedKey<core[663bb9e1522ba5ef]::cell::RefCell<loom[709ac591f2027ef2]::rt::scheduler::State>>>::with::<<loom[709ac591f2027ef2]::rt::scheduler::Scheduler>::with_state<<loom[709ac591f2027ef2]::rt::scheduler::Scheduler>::with_execution<loom[709ac591f2027ef2]::rt::branch<<loom[709ac591f2027ef2]::rt::object::Ref<loom[709ac591f2027ef2]::rt::arc::State>>::branch_action<loom[709ac591f2027ef2]::rt::arc::Action>::{closure#0}, ()>::{closure#0}, ((), bool)>::{closure#0}, ((), bool)>::{closure#0}, ((), bool)>
+                               at <home>/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/scoped-tls-1.0.1/src/lib.rs:171:13
+  31:        0x104e57fb8 - <loom[709ac591f2027ef2]::rt::scheduler::Scheduler>::with_state::<<loom[709ac591f2027ef2]::rt::scheduler::Scheduler>::with_execution<loom[709ac591f2027ef2]::rt::branch<<loom[709ac591f2027ef2]::rt::object::Ref<loom[709ac591f2027ef2]::rt::arc::State>>::branch_action<loom[709ac591f2027ef2]::rt::arc::Action>::{closure#0}, ()>::{closure#0}, ((), bool)>::{closure#0}, ((), bool)>
+                               at <home>/.cargo/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/rt/scheduler.rs:131:15
+  32:        0x104e57fb8 - <loom[709ac591f2027ef2]::rt::scheduler::Scheduler>::with_execution::<loom[709ac591f2027ef2]::rt::branch<<loom[709ac591f2027ef2]::rt::object::Ref<loom[709ac591f2027ef2]::rt::arc::State>>::branch_action<loom[709ac591f2027ef2]::rt::arc::Action>::{closure#0}, ()>::{closure#0}, ((), bool)>
+                               at <home>/.cargo/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/rt/scheduler.rs:43:9
+  33:        0x104e57fb8 - loom[709ac591f2027ef2]::rt::execution::<loom[709ac591f2027ef2]::rt::branch<<loom[709ac591f2027ef2]::rt::object::Ref<loom[709ac591f2027ef2]::rt::arc::State>>::branch_action<loom[709ac591f2027ef2]::rt::arc::Action>::{closure#0}, ()>::{closure#0}, ((), bool)>
+                               at <home>/.cargo/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/rt/mod.rs:174:5
+  34:        0x104e57fb8 - loom[709ac591f2027ef2]::rt::branch::<<loom[709ac591f2027ef2]::rt::object::Ref<loom[709ac591f2027ef2]::rt::arc::State>>::branch_action<loom[709ac591f2027ef2]::rt::arc::Action>::{closure#0}, ()>
+                               at <home>/.cargo/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/rt/mod.rs:121:25
+  35:        0x104e57fb8 - <loom[709ac591f2027ef2]::rt::object::Ref<loom[709ac591f2027ef2]::rt::arc::State>>::branch_action::<loom[709ac591f2027ef2]::rt::arc::Action>
+                               at <home>/.cargo/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/rt/object.rs:365:9
+  36:        0x104e57fb8 - <loom[709ac591f2027ef2]::rt::arc::Arc>::branch
+                               at <home>/.cargo/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/rt/arc.rs:160:11
+  37:        0x104e57fb8 - <loom[709ac591f2027ef2]::rt::arc::Arc>::ref_dec
+                               at <home>/.cargo/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/rt/arc.rs:113:14
+  38:        0x104e10ae8 - <loom[709ac591f2027ef2]::sync::arc::Arc<fs_flight[4f84f2d08bb8e1d8]::World> as core[663bb9e1522ba5ef]::ops::drop::Drop>::drop
+                               at <home>/.cargo/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/sync/arc.rs:247:21
+  39:        0x104e10ae8 - core[663bb9e1522ba5ef]::ptr::drop_glue::<loom[709ac591f2027ef2]::sync::arc::Arc<fs_flight[4f84f2d08bb8e1d8]::World>>
+                               at <home>/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/core/src/ptr/mod.rs:823:1
+  40:        0x104e076c4 - <loom[709ac591f2027ef2]::rt::spawn<loom[709ac591f2027ef2]::thread::spawn_internal<fs_flight[4f84f2d08bb8e1d8]::spawn<fs_flight[4f84f2d08bb8e1d8]::each_caller_is_answered_its_own_reply_whoever_receives::{closure#0}::{closure#0}::{closure#0}>::{closure#0}, core[663bb9e1522ba5ef]::result::Result<u64, fs_flight[4f84f2d08bb8e1d8]::Why>>::{closure#0}>::{closure#1} as core[663bb9e1522ba5ef]::ops::function::FnOnce<()>>::call_once::{shim:vtable#0}
+  41:        0x104e564e0 - <alloc[cc4db322bb1ac55d]::boxed::Box<dyn core[663bb9e1522ba5ef]::ops::function::FnOnce<(), Output = ()>> as core[663bb9e1522ba5ef]::ops::function::FnOnce<()>>::call_once
+                               at <home>/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/alloc/src/boxed.rs:2319:9
+  42:        0x104e564e0 - loom[709ac591f2027ef2]::rt::scheduler::spawn_thread::{closure#0}
+                               at <home>/.cargo/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/rt/scheduler.rs:142:17
+  43:        0x104e564e0 - <loom[709ac591f2027ef2]::rt::scheduler::spawn_thread::{closure#0} as core[663bb9e1522ba5ef]::ops::function::FnOnce<()>>::call_once
+                               at <home>/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/core/src/ops/function.rs:250:5
+  44:        0x104e564e0 - <generator[50749e7e4996c531]::gen_impl::GeneratorImpl<core[663bb9e1522ba5ef]::option::Option<alloc[cc4db322bb1ac55d]::boxed::Box<dyn core[663bb9e1522ba5ef]::ops::function::FnOnce<(), Output = ()>>>, ()>>::init_code::<loom[709ac591f2027ef2]::rt::scheduler::spawn_thread::{closure#0}>::{closure#0}
+                               at <home>/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/generator-0.8.9/src/gen_impl.rs:357:21
+  45:        0x104e564e0 - <generator[50749e7e4996c531]::stack::StackBox<<generator[50749e7e4996c531]::gen_impl::GeneratorImpl<core[663bb9e1522ba5ef]::option::Option<alloc[cc4db322bb1ac55d]::boxed::Box<dyn core[663bb9e1522ba5ef]::ops::function::FnOnce<(), Output = ()>>>, ()>>::init_code<loom[709ac591f2027ef2]::rt::scheduler::spawn_thread::{closure#0}>::{closure#0}>>::call_once
+                               at <home>/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/generator-0.8.9/src/stack/mod.rs:137:13
+  46:        0x104ea8950 - <generator[50749e7e4996c531]::stack::Func>::call_once
+                               at <home>/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/generator-0.8.9/src/stack/mod.rs:119:9
+  47:        0x104ea8950 - generator[50749e7e4996c531]::detail::gen::gen_init_impl::{closure#0}
+                               at <home>/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/generator-0.8.9/src/detail/gen.rs:35:14
+  48:        0x104ea8950 - <generator[50749e7e4996c531]::detail::gen::gen_init_impl::{closure#0} as core[663bb9e1522ba5ef]::ops::function::FnOnce<()>>::call_once
+                               at <home>/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/core/src/ops/function.rs:250:5
+  49:        0x104ea8950 - std[5d97c59e5e5fafcc]::panicking::catch_unwind::do_call::<generator[50749e7e4996c531]::detail::gen::gen_init_impl::{closure#0}, ()>
+                               at <home>/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/std/src/panicking.rs:576:43
+  50:        0x104ea8950 - std[5d97c59e5e5fafcc]::panicking::catch_unwind::<(), generator[50749e7e4996c531]::detail::gen::gen_init_impl::{closure#0}>
+                               at <home>/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/std/src/panicking.rs:544:19
+  51:        0x104ea8950 - std[5d97c59e5e5fafcc]::panic::catch_unwind::<generator[50749e7e4996c531]::detail::gen::gen_init_impl::{closure#0}, ()>
+                               at <home>/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/std/src/panic.rs:359:14
+  52:        0x104ea8950 - generator[50749e7e4996c531]::detail::gen::catch_unwind_filter::<generator[50749e7e4996c531]::detail::gen::gen_init_impl::{closure#0}, ()>
+                               at <home>/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/generator-0.8.9/src/detail/gen.rs:23:5
+  53:        0x104ea8950 - generator[50749e7e4996c531]::detail::gen::gen_init_impl
+                               at <home>/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/generator-0.8.9/src/detail/gen.rs:50:25
+  54:        0x104ea88e0 - generator[50749e7e4996c531]::detail::asm::gen_init
+                               at <home>/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/generator-0.8.9/src/detail/aarch64_unix.rs:22:5
+
+thread 'each_caller_is_answered_its_own_reply_whoever_receives' (35990760) panicked at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/panicking.rs:233:5:
+panic in a destructor during cleanup
+thread caused non-unwinding panic. aborting.
+error: test failed, to rerun pass `--test fs_flight`
+
+Caused by:
+  process didn't exit successfully: `<scratch>/wt-tags/target/debug/deps/fs_flight-b693cf224fa05ff7 --exact each_caller_is_answered_its_own_reply_whoever_receives --quiet` (signal: 6, SIGABRT: process abort signal)
+rc=101
+== a_slot_used_again_is_answered_its_own_reply
+warning: unused variable: `next`
+   --> kernel/loom/src/../../../sdk/toyos/src/fs/flight.rs:183:17
+    |
+183 |             let next = answered.is_some().then(|| {
+    |                 ^^^^ help: if this is intentional, prefix it with an underscore: `_next`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+
+running 1 test
+
+thread 'a_slot_used_again_is_answered_its_own_reply' (35991747) panicked at <home>/.cargo/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/rt/execution.rs:217:13:
+deadlock; threads = [(Id(0), Blocked(Location(None))), (Id(1), Blocked(Location(None))), (Id(2), Terminated)]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'a_slot_used_again_is_answered_its_own_reply' (35991747) panicked at <home>/.cargo/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/rt/thread.rs:276:39:
+called `Option::unwrap()` on a `None` value
+stack backtrace:
+   0:        0x1008c5200 - std[5d97c59e5e5fafcc]::backtrace_rs::backtrace::libunwind::trace
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/../../backtrace/src/backtrace/libunwind.rs:117:9
+   1:        0x1008c5200 - std[5d97c59e5e5fafcc]::backtrace_rs::backtrace::trace_unsynchronized::<std[5d97c59e5e5fafcc]::sys::backtrace::_print_fmt::{closure#1}>
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/../../backtrace/src/backtrace/mod.rs:66:14
+   2:        0x1008c5200 - std[5d97c59e5e5fafcc]::sys::backtrace::_print_fmt
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/sys/backtrace.rs:74:9
+   3:        0x1008c5200 - <<std[5d97c59e5e5fafcc]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[663bb9e1522ba5ef]::fmt::Display>::fmt
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/sys/backtrace.rs:44:26
+   4:        0x1008d6580 - <core[663bb9e1522ba5ef]::fmt::rt::Argument>::fmt
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/fmt/rt.rs:152:76
+   5:        0x1008d6580 - core[663bb9e1522ba5ef]::fmt::write
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/fmt/mod.rs:1687:22
+   6:        0x1008c8d78 - std[5d97c59e5e5fafcc]::io::default_write_fmt::<alloc[cc4db322bb1ac55d]::vec::Vec<u8>>
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/io/mod.rs:626:11
+   7:        0x1008c8d78 - <alloc[cc4db322bb1ac55d]::vec::Vec<u8> as std[5d97c59e5e5fafcc]::io::Write>::write_fmt
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/io/mod.rs:1730:13
+   8:        0x1008abef8 - <std[5d97c59e5e5fafcc]::sys::backtrace::BacktraceLock>::print
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/sys/backtrace.rs:47:25
+   9:        0x1008abef8 - std[5d97c59e5e5fafcc]::panicking::default_hook::{closure#0}
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/panicking.rs:292:27
+  10:        0x1008be9b8 - std[5d97c59e5e5fafcc]::panicking::default_hook
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/panicking.rs:316:9
+  11:        0x100856bf4 - <alloc[cc4db322bb1ac55d]::boxed::Box<dyn for<'a, 'b> core[663bb9e1522ba5ef]::ops::function::Fn<(&'a std[5d97c59e5e5fafcc]::panic::PanicHookInfo<'b>,), Output = ()> + core[663bb9e1522ba5ef]::marker::Sync + core[663bb9e1522ba5ef]::marker::Send> as core[663bb9e1522ba5ef]::ops::function::Fn<(&std[5d97c59e5e5fafcc]::panic::PanicHookInfo,)>>::call
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/alloc/src/boxed.rs:2333:9
+  12:        0x100856bf4 - test[4aa3eea2f4983582]::test_main_inner::<test[4aa3eea2f4983582]::test_main_static::{closure#0}>::{closure#0}
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/test/src/lib.rs:155:21
+  13:        0x100898f70 - <alloc[cc4db322bb1ac55d]::boxed::Box<dyn for<'a, 'b> core[663bb9e1522ba5ef]::ops::function::Fn<(&'a std[5d97c59e5e5fafcc]::panic::PanicHookInfo<'b>,), Output = ()> + core[663bb9e1522ba5ef]::marker::Sync + core[663bb9e1522ba5ef]::marker::Send> as core[663bb9e1522ba5ef]::ops::function::Fn<(&std[5d97c59e5e5fafcc]::panic::PanicHookInfo,)>>::call
+                               at <home>/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/alloc/src/boxed.rs:2333:9
+  14:        0x100898f70 - generator[50749e7e4996c531]::detail::gen::catch_unwind_filter::<generator[50749e7e4996c531]::detail::gen::gen_init_impl::{closure#0}, ()>::{closure#0}::{closure#0}
+                               at <home>/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/generator-0.8.9/src/detail/gen.rs:19:13
+  15:        0x1008beef8 - <alloc[cc4db322bb1ac55d]::boxed::Box<dyn for<'a, 'b> core[663bb9e1522ba5ef]::ops::function::Fn<(&'a std[5d97c59e5e5fafcc]::panic::PanicHookInfo<'b>,), Output = ()> + core[663bb9e1522ba5ef]::marker::Sync + core[663bb9e1522ba5ef]::marker::Send> as core[663bb9e1522ba5ef]::ops::function::Fn<(&std[5d97c59e5e5fafcc]::panic::PanicHookInfo,)>>::call
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/alloc/src/boxed.rs:2333:9
+  16:        0x1008beef8 - std[5d97c59e5e5fafcc]::panicking::panic_with_hook
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/panicking.rs:823:13
+  17:        0x1008abfac - std[5d97c59e5e5fafcc]::panicking::panic_handler::{closure#0}
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/panicking.rs:681:13
+  18:        0x1008a3084 - std[5d97c59e5e5fafcc]::sys::backtrace::__rust_end_short_backtrace::<std[5d97c59e5e5fafcc]::panicking::panic_handler::{closure#0}, !>
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/sys/backtrace.rs:182:18
+  19:        0x1008ac718 - __rustc[100742bb89c490cb]::rust_begin_unwind
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/panicking.rs:679:5
+  20:        0x1008e5d68 - core[663bb9e1522ba5ef]::panicking::panic_fmt
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/panicking.rs:80:14
+  21:        0x1008e5d40 - core[663bb9e1522ba5ef]::panicking::panic
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/panicking.rs:150:5
+  22:        0x1008e5ac4 - core[663bb9e1522ba5ef]::option::unwrap_failed
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/option.rs:2251:5
+  23:        0x1008932b0 - <core[663bb9e1522ba5ef]::option::Option<usize>>::unwrap
+                               at <home>/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/core/src/option.rs:1014:21
+  24:        0x1008932b0 - <loom[709ac591f2027ef2]::rt::thread::Set>::active_mut
+                               at <home>/.cargo/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/rt/thread.rs:276:39
+  25:        0x1008932b0 - <loom[709ac591f2027ef2]::rt::object::Ref<loom[709ac591f2027ef2]::rt::arc::State>>::set_action
+                               at <home>/.cargo/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/rt/object.rs:401:27
+  26:        0x100883d24 - <loom[709ac591f2027ef2]::rt::object::Ref<loom[709ac591f2027ef2]::rt::arc::State>>::branch_action::<loom[709ac591f2027ef2]::rt::arc::Action>::{closure#0}
+                               at <home>/.cargo/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/rt/object.rs:368:18
+  27:        0x100883d24 - loom[709ac591f2027ef2]::rt::branch::<<loom[709ac591f2027ef2]::rt::object::Ref<loom[709ac591f2027ef2]::rt::arc::State>>::branch_action<loom[709ac591f2027ef2]::rt::arc::Action>::{closure#0}, ()>::{closure#0}
+                               at <home>/.cargo/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/rt/mod.rs:122:19
+  28:        0x100883d24 - <loom[709ac591f2027ef2]::rt::scheduler::Scheduler>::with_execution::<loom[709ac591f2027ef2]::rt::branch<<loom[709ac591f2027ef2]::rt::object::Ref<loom[709ac591f2027ef2]::rt::arc::State>>::branch_action<loom[709ac591f2027ef2]::rt::arc::Action>::{closure#0}, ()>::{closure#0}, ((), bool)>::{closure#0}
+                               at <home>/.cargo/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/rt/scheduler.rs:43:34
+  29:        0x100883d24 - <loom[709ac591f2027ef2]::rt::scheduler::Scheduler>::with_state::<<loom[709ac591f2027ef2]::rt::scheduler::Scheduler>::with_execution<loom[709ac591f2027ef2]::rt::branch<<loom[709ac591f2027ef2]::rt::object::Ref<loom[709ac591f2027ef2]::rt::arc::State>>::branch_action<loom[709ac591f2027ef2]::rt::arc::Action>::{closure#0}, ()>::{closure#0}, ((), bool)>::{closure#0}, ((), bool)>::{closure#0}
+                               at <home>/.cargo/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/rt/scheduler.rs:131:28
+  30:        0x100883d24 - <scoped_tls[caeb02954d49b51e]::ScopedKey<core[663bb9e1522ba5ef]::cell::RefCell<loom[709ac591f2027ef2]::rt::scheduler::State>>>::with::<<loom[709ac591f2027ef2]::rt::scheduler::Scheduler>::with_state<<loom[709ac591f2027ef2]::rt::scheduler::Scheduler>::with_execution<loom[709ac591f2027ef2]::rt::branch<<loom[709ac591f2027ef2]::rt::object::Ref<loom[709ac591f2027ef2]::rt::arc::State>>::branch_action<loom[709ac591f2027ef2]::rt::arc::Action>::{closure#0}, ()>::{closure#0}, ((), bool)>::{closure#0}, ((), bool)>::{closure#0}, ((), bool)>
+                               at <home>/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/scoped-tls-1.0.1/src/lib.rs:171:13
+  31:        0x10088ffb8 - <loom[709ac591f2027ef2]::rt::scheduler::Scheduler>::with_state::<<loom[709ac591f2027ef2]::rt::scheduler::Scheduler>::with_execution<loom[709ac591f2027ef2]::rt::branch<<loom[709ac591f2027ef2]::rt::object::Ref<loom[709ac591f2027ef2]::rt::arc::State>>::branch_action<loom[709ac591f2027ef2]::rt::arc::Action>::{closure#0}, ()>::{closure#0}, ((), bool)>::{closure#0}, ((), bool)>
+                               at <home>/.cargo/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/rt/scheduler.rs:131:15
+  32:        0x10088ffb8 - <loom[709ac591f2027ef2]::rt::scheduler::Scheduler>::with_execution::<loom[709ac591f2027ef2]::rt::branch<<loom[709ac591f2027ef2]::rt::object::Ref<loom[709ac591f2027ef2]::rt::arc::State>>::branch_action<loom[709ac591f2027ef2]::rt::arc::Action>::{closure#0}, ()>::{closure#0}, ((), bool)>
+                               at <home>/.cargo/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/rt/scheduler.rs:43:9
+  33:        0x10088ffb8 - loom[709ac591f2027ef2]::rt::execution::<loom[709ac591f2027ef2]::rt::branch<<loom[709ac591f2027ef2]::rt::object::Ref<loom[709ac591f2027ef2]::rt::arc::State>>::branch_action<loom[709ac591f2027ef2]::rt::arc::Action>::{closure#0}, ()>::{closure#0}, ((), bool)>
+                               at <home>/.cargo/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/rt/mod.rs:174:5
+  34:        0x10088ffb8 - loom[709ac591f2027ef2]::rt::branch::<<loom[709ac591f2027ef2]::rt::object::Ref<loom[709ac591f2027ef2]::rt::arc::State>>::branch_action<loom[709ac591f2027ef2]::rt::arc::Action>::{closure#0}, ()>
+                               at <home>/.cargo/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/rt/mod.rs:121:25
+  35:        0x10088ffb8 - <loom[709ac591f2027ef2]::rt::object::Ref<loom[709ac591f2027ef2]::rt::arc::State>>::branch_action::<loom[709ac591f2027ef2]::rt::arc::Action>
+                               at <home>/.cargo/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/rt/object.rs:365:9
+  36:        0x10088ffb8 - <loom[709ac591f2027ef2]::rt::arc::Arc>::branch
+                               at <home>/.cargo/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/rt/arc.rs:160:11
+  37:        0x10088ffb8 - <loom[709ac591f2027ef2]::rt::arc::Arc>::ref_dec
+                               at <home>/.cargo/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/rt/arc.rs:113:14
+  38:        0x100848ae8 - <loom[709ac591f2027ef2]::sync::arc::Arc<fs_flight[4f84f2d08bb8e1d8]::World> as core[663bb9e1522ba5ef]::ops::drop::Drop>::drop
+                               at <home>/.cargo/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/sync/arc.rs:247:21
+  39:        0x100848ae8 - core[663bb9e1522ba5ef]::ptr::drop_glue::<loom[709ac591f2027ef2]::sync::arc::Arc<fs_flight[4f84f2d08bb8e1d8]::World>>
+                               at <home>/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/core/src/ptr/mod.rs:823:1
+  40:        0x100840418 - <loom[709ac591f2027ef2]::rt::spawn<loom[709ac591f2027ef2]::thread::spawn_internal<fs_flight[4f84f2d08bb8e1d8]::spawn<fs_flight[4f84f2d08bb8e1d8]::a_slot_used_again_is_answered_its_own_reply::{closure#0}::{closure#0}>::{closure#0}, core[663bb9e1522ba5ef]::result::Result<u64, fs_flight[4f84f2d08bb8e1d8]::Why>>::{closure#0}>::{closure#1} as core[663bb9e1522ba5ef]::ops::function::FnOnce<()>>::call_once::{shim:vtable#0}
+  41:        0x10088e4e0 - <alloc[cc4db322bb1ac55d]::boxed::Box<dyn core[663bb9e1522ba5ef]::ops::function::FnOnce<(), Output = ()>> as core[663bb9e1522ba5ef]::ops::function::FnOnce<()>>::call_once
+                               at <home>/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/alloc/src/boxed.rs:2319:9
+  42:        0x10088e4e0 - loom[709ac591f2027ef2]::rt::scheduler::spawn_thread::{closure#0}
+                               at <home>/.cargo/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/rt/scheduler.rs:142:17
+  43:        0x10088e4e0 - <loom[709ac591f2027ef2]::rt::scheduler::spawn_thread::{closure#0} as core[663bb9e1522ba5ef]::ops::function::FnOnce<()>>::call_once
+                               at <home>/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/core/src/ops/function.rs:250:5
+  44:        0x10088e4e0 - <generator[50749e7e4996c531]::gen_impl::GeneratorImpl<core[663bb9e1522ba5ef]::option::Option<alloc[cc4db322bb1ac55d]::boxed::Box<dyn core[663bb9e1522ba5ef]::ops::function::FnOnce<(), Output = ()>>>, ()>>::init_code::<loom[709ac591f2027ef2]::rt::scheduler::spawn_thread::{closure#0}>::{closure#0}
+                               at <home>/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/generator-0.8.9/src/gen_impl.rs:357:21
+  45:        0x10088e4e0 - <generator[50749e7e4996c531]::stack::StackBox<<generator[50749e7e4996c531]::gen_impl::GeneratorImpl<core[663bb9e1522ba5ef]::option::Option<alloc[cc4db322bb1ac55d]::boxed::Box<dyn core[663bb9e1522ba5ef]::ops::function::FnOnce<(), Output = ()>>>, ()>>::init_code<loom[709ac591f2027ef2]::rt::scheduler::spawn_thread::{closure#0}>::{closure#0}>>::call_once
+                               at <home>/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/generator-0.8.9/src/stack/mod.rs:137:13
+  46:        0x1008e0950 - <generator[50749e7e4996c531]::stack::Func>::call_once
+                               at <home>/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/generator-0.8.9/src/stack/mod.rs:119:9
+  47:        0x1008e0950 - generator[50749e7e4996c531]::detail::gen::gen_init_impl::{closure#0}
+                               at <home>/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/generator-0.8.9/src/detail/gen.rs:35:14
+  48:        0x1008e0950 - <generator[50749e7e4996c531]::detail::gen::gen_init_impl::{closure#0} as core[663bb9e1522ba5ef]::ops::function::FnOnce<()>>::call_once
+                               at <home>/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/core/src/ops/function.rs:250:5
+  49:        0x1008e0950 - std[5d97c59e5e5fafcc]::panicking::catch_unwind::do_call::<generator[50749e7e4996c531]::detail::gen::gen_init_impl::{closure#0}, ()>
+                               at <home>/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/std/src/panicking.rs:576:43
+  50:        0x1008e0950 - std[5d97c59e5e5fafcc]::panicking::catch_unwind::<(), generator[50749e7e4996c531]::detail::gen::gen_init_impl::{closure#0}>
+                               at <home>/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/std/src/panicking.rs:544:19
+  51:        0x1008e0950 - std[5d97c59e5e5fafcc]::panic::catch_unwind::<generator[50749e7e4996c531]::detail::gen::gen_init_impl::{closure#0}, ()>
+                               at <home>/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/std/src/panic.rs:359:14
+  52:        0x1008e0950 - generator[50749e7e4996c531]::detail::gen::catch_unwind_filter::<generator[50749e7e4996c531]::detail::gen::gen_init_impl::{closure#0}, ()>
+                               at <home>/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/generator-0.8.9/src/detail/gen.rs:23:5
+  53:        0x1008e0950 - generator[50749e7e4996c531]::detail::gen::gen_init_impl
+                               at <home>/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/generator-0.8.9/src/detail/gen.rs:50:25
+  54:        0x1008e08e0 - generator[50749e7e4996c531]::detail::asm::gen_init
+                               at <home>/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/generator-0.8.9/src/detail/aarch64_unix.rs:22:5
+
+thread 'a_slot_used_again_is_answered_its_own_reply' (35991747) panicked at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/panicking.rs:233:5:
+panic in a destructor during cleanup
+thread caused non-unwinding panic. aborting.
+error: test failed, to rerun pass `--test fs_flight`
+
+Caused by:
+  process didn't exit successfully: `<scratch>/wt-tags/target/debug/deps/fs_flight-b693cf224fa05ff7 --exact a_slot_used_again_is_answered_its_own_reply --quiet` (signal: 6, SIGABRT: process abort signal)
+rc=101
+== a_connection_that_ends_fails_every_request_on_it
+warning: unused variable: `next`
+   --> kernel/loom/src/../../../sdk/toyos/src/fs/flight.rs:183:17
+    |
+183 |             let next = answered.is_some().then(|| {
+    |                 ^^^^ help: if this is intentional, prefix it with an underscore: `_next`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+
+running 1 test
+.
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out; finished in 8.58s
+
+rc=0
+== a_connection_that_ends_fails_no_request_on_a_fresh_one
+warning: unused variable: `next`
+   --> kernel/loom/src/../../../sdk/toyos/src/fs/flight.rs:183:17
+    |
+183 |             let next = answered.is_some().then(|| {
+    |                 ^^^^ help: if this is intentional, prefix it with an underscore: `_next`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+
+running 1 test
+.
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out; finished in 26.68s
+
+rc=0
+== a_reply_naming_no_request_fails_the_connection
+warning: unused variable: `next`
+   --> kernel/loom/src/../../../sdk/toyos/src/fs/flight.rs:183:17
+    |
+183 |             let next = answered.is_some().then(|| {
+    |                 ^^^^ help: if this is intentional, prefix it with an underscore: `_next`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+
+running 1 test
+.
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.00s
+
+rc=0
+== every_slot_is_held_by_one_caller_alone
+warning: unused variable: `next`
+   --> kernel/loom/src/../../../sdk/toyos/src/fs/flight.rs:183:17
+    |
+183 |             let next = answered.is_some().then(|| {
+    |                 ^^^^ help: if this is intentional, prefix it with an underscore: `_next`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+
+running 1 test
+.
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out; finished in 3.21s
+
+rc=0
+== each_connection_receives_for_itself
+warning: unused variable: `next`
+   --> kernel/loom/src/../../../sdk/toyos/src/fs/flight.rs:183:17
+    |
+183 |             let next = answered.is_some().then(|| {
+    |                 ^^^^ help: if this is intentional, prefix it with an underscore: `_next`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+
+running 1 test
+.
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.93s
+
+rc=0
+== a_failed_send_hands_its_turn_on
+warning: unused variable: `next`
+   --> kernel/loom/src/../../../sdk/toyos/src/fs/flight.rs:183:17
+    |
+183 |             let next = answered.is_some().then(|| {
+    |                 ^^^^ help: if this is intentional, prefix it with an underscore: `_next`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+
+running 1 test
+
+thread 'a_failed_send_hands_its_turn_on' (36009466) panicked at <home>/.cargo/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/rt/execution.rs:217:13:
+deadlock; threads = [(Id(0), Blocked(Location(None))), (Id(1), Terminated), (Id(2), Terminated), (Id(3), Blocked(Location(None)))]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'a_failed_send_hands_its_turn_on' (36009466) panicked at <home>/.cargo/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/rt/thread.rs:276:39:
+called `Option::unwrap()` on a `None` value
+stack backtrace:
+   0:        0x104be5200 - std[5d97c59e5e5fafcc]::backtrace_rs::backtrace::libunwind::trace
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/../../backtrace/src/backtrace/libunwind.rs:117:9
+   1:        0x104be5200 - std[5d97c59e5e5fafcc]::backtrace_rs::backtrace::trace_unsynchronized::<std[5d97c59e5e5fafcc]::sys::backtrace::_print_fmt::{closure#1}>
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/../../backtrace/src/backtrace/mod.rs:66:14
+   2:        0x104be5200 - std[5d97c59e5e5fafcc]::sys::backtrace::_print_fmt
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/sys/backtrace.rs:74:9
+   3:        0x104be5200 - <<std[5d97c59e5e5fafcc]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[663bb9e1522ba5ef]::fmt::Display>::fmt
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/sys/backtrace.rs:44:26
+   4:        0x104bf6580 - <core[663bb9e1522ba5ef]::fmt::rt::Argument>::fmt
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/fmt/rt.rs:152:76
+   5:        0x104bf6580 - core[663bb9e1522ba5ef]::fmt::write
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/fmt/mod.rs:1687:22
+   6:        0x104be8d78 - std[5d97c59e5e5fafcc]::io::default_write_fmt::<alloc[cc4db322bb1ac55d]::vec::Vec<u8>>
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/io/mod.rs:626:11
+   7:        0x104be8d78 - <alloc[cc4db322bb1ac55d]::vec::Vec<u8> as std[5d97c59e5e5fafcc]::io::Write>::write_fmt
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/io/mod.rs:1730:13
+   8:        0x104bcbef8 - <std[5d97c59e5e5fafcc]::sys::backtrace::BacktraceLock>::print
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/sys/backtrace.rs:47:25
+   9:        0x104bcbef8 - std[5d97c59e5e5fafcc]::panicking::default_hook::{closure#0}
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/panicking.rs:292:27
+  10:        0x104bde9b8 - std[5d97c59e5e5fafcc]::panicking::default_hook
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/panicking.rs:316:9
+  11:        0x104b76bf4 - <alloc[cc4db322bb1ac55d]::boxed::Box<dyn for<'a, 'b> core[663bb9e1522ba5ef]::ops::function::Fn<(&'a std[5d97c59e5e5fafcc]::panic::PanicHookInfo<'b>,), Output = ()> + core[663bb9e1522ba5ef]::marker::Sync + core[663bb9e1522ba5ef]::marker::Send> as core[663bb9e1522ba5ef]::ops::function::Fn<(&std[5d97c59e5e5fafcc]::panic::PanicHookInfo,)>>::call
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/alloc/src/boxed.rs:2333:9
+  12:        0x104b76bf4 - test[4aa3eea2f4983582]::test_main_inner::<test[4aa3eea2f4983582]::test_main_static::{closure#0}>::{closure#0}
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/test/src/lib.rs:155:21
+  13:        0x104bb8f70 - <alloc[cc4db322bb1ac55d]::boxed::Box<dyn for<'a, 'b> core[663bb9e1522ba5ef]::ops::function::Fn<(&'a std[5d97c59e5e5fafcc]::panic::PanicHookInfo<'b>,), Output = ()> + core[663bb9e1522ba5ef]::marker::Sync + core[663bb9e1522ba5ef]::marker::Send> as core[663bb9e1522ba5ef]::ops::function::Fn<(&std[5d97c59e5e5fafcc]::panic::PanicHookInfo,)>>::call
+                               at <home>/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/alloc/src/boxed.rs:2333:9
+  14:        0x104bb8f70 - generator[50749e7e4996c531]::detail::gen::catch_unwind_filter::<generator[50749e7e4996c531]::detail::gen::gen_init_impl::{closure#0}, ()>::{closure#0}::{closure#0}
+                               at <home>/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/generator-0.8.9/src/detail/gen.rs:19:13
+  15:        0x104bdeef8 - <alloc[cc4db322bb1ac55d]::boxed::Box<dyn for<'a, 'b> core[663bb9e1522ba5ef]::ops::function::Fn<(&'a std[5d97c59e5e5fafcc]::panic::PanicHookInfo<'b>,), Output = ()> + core[663bb9e1522ba5ef]::marker::Sync + core[663bb9e1522ba5ef]::marker::Send> as core[663bb9e1522ba5ef]::ops::function::Fn<(&std[5d97c59e5e5fafcc]::panic::PanicHookInfo,)>>::call
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/alloc/src/boxed.rs:2333:9
+  16:        0x104bdeef8 - std[5d97c59e5e5fafcc]::panicking::panic_with_hook
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/panicking.rs:823:13
+  17:        0x104bcbfac - std[5d97c59e5e5fafcc]::panicking::panic_handler::{closure#0}
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/panicking.rs:681:13
+  18:        0x104bc3084 - std[5d97c59e5e5fafcc]::sys::backtrace::__rust_end_short_backtrace::<std[5d97c59e5e5fafcc]::panicking::panic_handler::{closure#0}, !>
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/sys/backtrace.rs:182:18
+  19:        0x104bcc718 - __rustc[100742bb89c490cb]::rust_begin_unwind
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/panicking.rs:679:5
+  20:        0x104c05d68 - core[663bb9e1522ba5ef]::panicking::panic_fmt
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/panicking.rs:80:14
+  21:        0x104c05d40 - core[663bb9e1522ba5ef]::panicking::panic
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/panicking.rs:150:5
+  22:        0x104c05ac4 - core[663bb9e1522ba5ef]::option::unwrap_failed
+                               at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/option.rs:2251:5
+  23:        0x104bb32b0 - <core[663bb9e1522ba5ef]::option::Option<usize>>::unwrap
+                               at <home>/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/core/src/option.rs:1014:21
+  24:        0x104bb32b0 - <loom[709ac591f2027ef2]::rt::thread::Set>::active_mut
+                               at <home>/.cargo/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/rt/thread.rs:276:39
+  25:        0x104bb32b0 - <loom[709ac591f2027ef2]::rt::object::Ref<loom[709ac591f2027ef2]::rt::arc::State>>::set_action
+                               at <home>/.cargo/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/rt/object.rs:401:27
+  26:        0x104ba3d24 - <loom[709ac591f2027ef2]::rt::object::Ref<loom[709ac591f2027ef2]::rt::arc::State>>::branch_action::<loom[709ac591f2027ef2]::rt::arc::Action>::{closure#0}
+                               at <home>/.cargo/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/rt/object.rs:368:18
+  27:        0x104ba3d24 - loom[709ac591f2027ef2]::rt::branch::<<loom[709ac591f2027ef2]::rt::object::Ref<loom[709ac591f2027ef2]::rt::arc::State>>::branch_action<loom[709ac591f2027ef2]::rt::arc::Action>::{closure#0}, ()>::{closure#0}
+                               at <home>/.cargo/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/rt/mod.rs:122:19
+  28:        0x104ba3d24 - <loom[709ac591f2027ef2]::rt::scheduler::Scheduler>::with_execution::<loom[709ac591f2027ef2]::rt::branch<<loom[709ac591f2027ef2]::rt::object::Ref<loom[709ac591f2027ef2]::rt::arc::State>>::branch_action<loom[709ac591f2027ef2]::rt::arc::Action>::{closure#0}, ()>::{closure#0}, ((), bool)>::{closure#0}
+                               at <home>/.cargo/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/rt/scheduler.rs:43:34
+  29:        0x104ba3d24 - <loom[709ac591f2027ef2]::rt::scheduler::Scheduler>::with_state::<<loom[709ac591f2027ef2]::rt::scheduler::Scheduler>::with_execution<loom[709ac591f2027ef2]::rt::branch<<loom[709ac591f2027ef2]::rt::object::Ref<loom[709ac591f2027ef2]::rt::arc::State>>::branch_action<loom[709ac591f2027ef2]::rt::arc::Action>::{closure#0}, ()>::{closure#0}, ((), bool)>::{closure#0}, ((), bool)>::{closure#0}
+                               at <home>/.cargo/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/rt/scheduler.rs:131:28
+  30:        0x104ba3d24 - <scoped_tls[caeb02954d49b51e]::ScopedKey<core[663bb9e1522ba5ef]::cell::RefCell<loom[709ac591f2027ef2]::rt::scheduler::State>>>::with::<<loom[709ac591f2027ef2]::rt::scheduler::Scheduler>::with_state<<loom[709ac591f2027ef2]::rt::scheduler::Scheduler>::with_execution<loom[709ac591f2027ef2]::rt::branch<<loom[709ac591f2027ef2]::rt::object::Ref<loom[709ac591f2027ef2]::rt::arc::State>>::branch_action<loom[709ac591f2027ef2]::rt::arc::Action>::{closure#0}, ()>::{closure#0}, ((), bool)>::{closure#0}, ((), bool)>::{closure#0}, ((), bool)>
+                               at <home>/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/scoped-tls-1.0.1/src/lib.rs:171:13
+  31:        0x104baffb8 - <loom[709ac591f2027ef2]::rt::scheduler::Scheduler>::with_state::<<loom[709ac591f2027ef2]::rt::scheduler::Scheduler>::with_execution<loom[709ac591f2027ef2]::rt::branch<<loom[709ac591f2027ef2]::rt::object::Ref<loom[709ac591f2027ef2]::rt::arc::State>>::branch_action<loom[709ac591f2027ef2]::rt::arc::Action>::{closure#0}, ()>::{closure#0}, ((), bool)>::{closure#0}, ((), bool)>
+                               at <home>/.cargo/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/rt/scheduler.rs:131:15
+  32:        0x104baffb8 - <loom[709ac591f2027ef2]::rt::scheduler::Scheduler>::with_execution::<loom[709ac591f2027ef2]::rt::branch<<loom[709ac591f2027ef2]::rt::object::Ref<loom[709ac591f2027ef2]::rt::arc::State>>::branch_action<loom[709ac591f2027ef2]::rt::arc::Action>::{closure#0}, ()>::{closure#0}, ((), bool)>
+                               at <home>/.cargo/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/rt/scheduler.rs:43:9
+  33:        0x104baffb8 - loom[709ac591f2027ef2]::rt::execution::<loom[709ac591f2027ef2]::rt::branch<<loom[709ac591f2027ef2]::rt::object::Ref<loom[709ac591f2027ef2]::rt::arc::State>>::branch_action<loom[709ac591f2027ef2]::rt::arc::Action>::{closure#0}, ()>::{closure#0}, ((), bool)>
+                               at <home>/.cargo/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/rt/mod.rs:174:5
+  34:        0x104baffb8 - loom[709ac591f2027ef2]::rt::branch::<<loom[709ac591f2027ef2]::rt::object::Ref<loom[709ac591f2027ef2]::rt::arc::State>>::branch_action<loom[709ac591f2027ef2]::rt::arc::Action>::{closure#0}, ()>
+                               at <home>/.cargo/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/rt/mod.rs:121:25
+  35:        0x104baffb8 - <loom[709ac591f2027ef2]::rt::object::Ref<loom[709ac591f2027ef2]::rt::arc::State>>::branch_action::<loom[709ac591f2027ef2]::rt::arc::Action>
+                               at <home>/.cargo/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/rt/object.rs:365:9
+  36:        0x104baffb8 - <loom[709ac591f2027ef2]::rt::arc::Arc>::branch
+                               at <home>/.cargo/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/rt/arc.rs:160:11
+  37:        0x104baffb8 - <loom[709ac591f2027ef2]::rt::arc::Arc>::ref_dec
+                               at <home>/.cargo/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/rt/arc.rs:113:14
+  38:        0x104b68ae8 - <loom[709ac591f2027ef2]::sync::arc::Arc<fs_flight[4f84f2d08bb8e1d8]::World> as core[663bb9e1522ba5ef]::ops::drop::Drop>::drop
+                               at <home>/.cargo/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/sync/arc.rs:247:21
+  39:        0x104b68ae8 - core[663bb9e1522ba5ef]::ptr::drop_glue::<loom[709ac591f2027ef2]::sync::arc::Arc<fs_flight[4f84f2d08bb8e1d8]::World>>
+                               at <home>/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/core/src/ptr/mod.rs:823:1
+  40:        0x104b5f264 - <loom[709ac591f2027ef2]::rt::spawn<loom[709ac591f2027ef2]::thread::spawn_internal<fs_flight[4f84f2d08bb8e1d8]::spawn<fs_flight[4f84f2d08bb8e1d8]::a_failed_send_hands_its_turn_on::{closure#0}::{closure#1}::{closure#0}>::{closure#0}, core[663bb9e1522ba5ef]::result::Result<u64, fs_flight[4f84f2d08bb8e1d8]::Why>>::{closure#0}>::{closure#1} as core[663bb9e1522ba5ef]::ops::function::FnOnce<()>>::call_once::{shim:vtable#0}
+  41:        0x104bae4e0 - <alloc[cc4db322bb1ac55d]::boxed::Box<dyn core[663bb9e1522ba5ef]::ops::function::FnOnce<(), Output = ()>> as core[663bb9e1522ba5ef]::ops::function::FnOnce<()>>::call_once
+                               at <home>/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/alloc/src/boxed.rs:2319:9
+  42:        0x104bae4e0 - loom[709ac591f2027ef2]::rt::scheduler::spawn_thread::{closure#0}
+                               at <home>/.cargo/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/rt/scheduler.rs:142:17
+  43:        0x104bae4e0 - <loom[709ac591f2027ef2]::rt::scheduler::spawn_thread::{closure#0} as core[663bb9e1522ba5ef]::ops::function::FnOnce<()>>::call_once
+                               at <home>/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/core/src/ops/function.rs:250:5
+  44:        0x104bae4e0 - <generator[50749e7e4996c531]::gen_impl::GeneratorImpl<core[663bb9e1522ba5ef]::option::Option<alloc[cc4db322bb1ac55d]::boxed::Box<dyn core[663bb9e1522ba5ef]::ops::function::FnOnce<(), Output = ()>>>, ()>>::init_code::<loom[709ac591f2027ef2]::rt::scheduler::spawn_thread::{closure#0}>::{closure#0}
+                               at <home>/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/generator-0.8.9/src/gen_impl.rs:357:21
+  45:        0x104bae4e0 - <generator[50749e7e4996c531]::stack::StackBox<<generator[50749e7e4996c531]::gen_impl::GeneratorImpl<core[663bb9e1522ba5ef]::option::Option<alloc[cc4db322bb1ac55d]::boxed::Box<dyn core[663bb9e1522ba5ef]::ops::function::FnOnce<(), Output = ()>>>, ()>>::init_code<loom[709ac591f2027ef2]::rt::scheduler::spawn_thread::{closure#0}>::{closure#0}>>::call_once
+                               at <home>/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/generator-0.8.9/src/stack/mod.rs:137:13
+  46:        0x104c00950 - <generator[50749e7e4996c531]::stack::Func>::call_once
+                               at <home>/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/generator-0.8.9/src/stack/mod.rs:119:9
+  47:        0x104c00950 - generator[50749e7e4996c531]::detail::gen::gen_init_impl::{closure#0}
+                               at <home>/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/generator-0.8.9/src/detail/gen.rs:35:14
+  48:        0x104c00950 - <generator[50749e7e4996c531]::detail::gen::gen_init_impl::{closure#0} as core[663bb9e1522ba5ef]::ops::function::FnOnce<()>>::call_once
+                               at <home>/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/core/src/ops/function.rs:250:5
+  49:        0x104c00950 - std[5d97c59e5e5fafcc]::panicking::catch_unwind::do_call::<generator[50749e7e4996c531]::detail::gen::gen_init_impl::{closure#0}, ()>
+                               at <home>/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/std/src/panicking.rs:576:43
+  50:        0x104c00950 - std[5d97c59e5e5fafcc]::panicking::catch_unwind::<(), generator[50749e7e4996c531]::detail::gen::gen_init_impl::{closure#0}>
+                               at <home>/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/std/src/panicking.rs:544:19
+  51:        0x104c00950 - std[5d97c59e5e5fafcc]::panic::catch_unwind::<generator[50749e7e4996c531]::detail::gen::gen_init_impl::{closure#0}, ()>
+                               at <home>/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/std/src/panic.rs:359:14
+  52:        0x104c00950 - generator[50749e7e4996c531]::detail::gen::catch_unwind_filter::<generator[50749e7e4996c531]::detail::gen::gen_init_impl::{closure#0}, ()>
+                               at <home>/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/generator-0.8.9/src/detail/gen.rs:23:5
+  53:        0x104c00950 - generator[50749e7e4996c531]::detail::gen::gen_init_impl
+                               at <home>/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/generator-0.8.9/src/detail/gen.rs:50:25
+  54:        0x104c008e0 - generator[50749e7e4996c531]::detail::asm::gen_init
+                               at <home>/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/generator-0.8.9/src/detail/aarch64_unix.rs:22:5
+
+thread 'a_failed_send_hands_its_turn_on' (36009466) panicked at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/panicking.rs:233:5:
+panic in a destructor during cleanup
+thread caused non-unwinding panic. aborting.
+error: test failed, to rerun pass `--test fs_flight`
+
+Caused by:
+  process didn't exit successfully: `<scratch>/wt-tags/target/debug/deps/fs_flight-b693cf224fa05ff7 --exact a_failed_send_hands_its_turn_on --quiet` (signal: 6, SIGABRT: process abort signal)
+rc=101
+restored

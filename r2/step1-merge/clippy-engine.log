@@ -1,0 +1,32 @@
+== cargo clippy -p bcachefs --all-targets -- -W clippy::checked_conversions -W clippy::default_trait_access -W clippy::manual_midpoint -W clippy::redundant_clone -W clippy::unchecked_time_subtraction -W clippy::unnecessary_semicolon -D warnings
+    Checking cfg-if v1.0.4
+    Checking adler2 v2.0.1
+    Checking simd-adler32 v0.3.10
+    Checking toyos-blockdev v0.1.0 (<scratch>/wt-step1/lib/blockdev)
+    Checking toyos-crypto v0.1.0 (<scratch>/wt-step1/lib/crypto)
+    Checking crc32fast v1.5.0
+    Checking miniz_oxide v0.9.1
+    Checking flate2 v1.1.10
+    Checking bcachefs v0.1.0 (<scratch>/wt-step1/lib/bcachefs)
+error[E0061]: this method takes 5 arguments but 6 arguments were supplied
+   --> lib/bcachefs/src/engine/mount/data.rs:458:32
+    |
+458 | ...= match self.write_run(ino, at, &data[done..(stop - offset) as usize], now, version, Some((pool.id, sector))).await {
+    |                 ^^^^^^^^^                                                               ----------------------- unexpected argument #6 of type `std::option::Option<(u64, u64)>`
+    |
+note: method defined here
+   --> lib/bcachefs/src/engine/mount/data.rs:704:14
+    |
+704 |     async fn write_run(&self, ino: u64, at: u64, input: &[u8], now: i64, version: Version) -> Result<usize> {
+    |              ^^^^^^^^^
+help: remove the extra argument
+    |
+458 -             let n = match self.write_run(ino, at, &data[done..(stop - offset) as usize], now, version, Some((pool.id, sector))).await {
+458 +             let n = match self.write_run(ino, at, &data[done..(stop - offset) as usize], now, version).await {
+    |
+
+For more information about this error, try `rustc --explain E0061`.
+error: could not compile `bcachefs` (lib) due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `bcachefs` (lib test) due to 1 previous error
+rc=101
