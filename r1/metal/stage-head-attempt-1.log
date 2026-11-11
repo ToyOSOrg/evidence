@@ -1,0 +1,52 @@
+=== 18:46:46 <scratch> boot:testcases boot:shared-debug boot:proctreecase osbench
+b29fb2b2d9d4dacf21f439873a3341b32e26a028
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+   Compiling toyos-build v0.1.0 (<worktree>)
+    Finished `test` profile [optimized + debuginfo] target(s) in 13.78s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-b8f4c5141ecc8947)
+16:47:01   BUILD x86_64 binaries of tests/guest/rust-tests
+error[E0599]: no method named `handle` found for reference `&toyos::process::Image` in the current scope
+  --> src/bin/../image.rs:49:66
+   |
+49 |     let program = lay_out(image.bytes(), Machine::RUNNING, image.handle()).unwrap_or_else(|why| panic!("lay out an image: {why}"));
+   |                                                                  ^^^^^^ method not found in `&toyos::process::Image`
+
+For more information about this error, try `rustc --explain E0599`.
+error: could not compile `toyos-rust-tests` (bin "spawn_child_ends_first") due to 1 previous error
+
+thread 'main' (27912871) panicked at build/build.rs:503:9:
+cargo build failed in <worktree>/tests/guest/rust-tests
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+16:49:32   FAIL  x86_64 binaries of tests/guest/rust-tests  (152s)
+16:49:32 [toyos] this run's serial logs are kept at <worktree>/target/red-run-serial/toyos-tmp-48823-0
+error: test failed, to rerun pass `--test toyos-build`
+=== exit 101
+=== 18:49:32 <scratch> --metal-host <user>@<amd-bench> boot:testcases boot:shared-debug boot:proctreecase osbench
+b29fb2b2d9d4dacf21f439873a3341b32e26a028
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.53s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-b8f4c5141ecc8947)
+16:49:33   BUILD x86_64 binaries of tests/guest/rust-tests
+error[E0599]: no method named `handle` found for reference `&toyos::process::Image` in the current scope
+  --> src/bin/../image.rs:49:66
+   |
+49 |     let program = lay_out(image.bytes(), Machine::RUNNING, image.handle()).unwrap_or_else(|why| panic!("lay out an image: {why}"));
+   |                                                                  ^^^^^^ method not found in `&toyos::process::Image`
+
+error[E0599]: no method named `handle` found for struct `toyos::process::Image` in the current scope
+  --> src/bin/startup_block.rs:54:59
+   |
+54 |     let laid = lay_out(own.bytes(), Machine::RUNNING, own.handle()).expect("this program lays out");
+   |                                                           ^^^^^^ method not found in `toyos::process::Image`
+
+For more information about this error, try `rustc --explain E0599`.
+error: could not compile `toyos-rust-tests` (bin "startup_block") due to 2 previous errors
+
+thread 'main' (28019933) panicked at build/build.rs:503:9:
+cargo build failed in <worktree>/tests/guest/rust-tests
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+16:49:42   FAIL  x86_64 binaries of tests/guest/rust-tests  (10s)
+16:49:42 [toyos] this run's serial logs are kept at <worktree>/target/red-run-serial/toyos-tmp-74090-0
+error: test failed, to rerun pass `--test toyos-build`
+=== exit 101
+exit 0

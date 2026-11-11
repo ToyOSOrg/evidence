@@ -1,0 +1,57 @@
+=== 18:50:18 <scratch> boot:testcases boot:shared-debug boot:proctreecase osbench
+2c6b52e8964a6d66810ead34c0e44060870057d9
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.38s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-b8f4c5141ecc8947)
+16:50:18   BUILD x86_64 binaries of tests/guest/rust-tests
+error[E0599]: no method named `handle` found for struct `toyos::process::Image` in the current scope
+  --> src/bin/startup_block.rs:54:59
+   |
+54 |     let laid = lay_out(own.bytes(), Machine::RUNNING, own.handle()).expect("this program lays out");
+   |                                                           ^^^^^^ method not found in `toyos::process::Image`
+
+For more information about this error, try `rustc --explain E0599`.
+error: could not compile `toyos-rust-tests` (bin "startup_block") due to 1 previous error
+
+thread 'main' (28052926) panicked at build/build.rs:503:9:
+cargo build failed in <worktree>/tests/guest/rust-tests
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+16:50:26   FAIL  x86_64 binaries of tests/guest/rust-tests  (7s)
+16:50:26 [toyos] this run's serial logs are kept at <worktree>/target/red-run-serial/toyos-tmp-76904-0
+error: test failed, to rerun pass `--test toyos-build`
+=== exit 101
+=== 18:50:26 <scratch> --metal-host <user>@<amd-bench> boot:testcases boot:shared-debug boot:proctreecase osbench
+2c6b52e8964a6d66810ead34c0e44060870057d9
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.13s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-b8f4c5141ecc8947)
+16:50:26   BUILD x86_64 binaries of tests/guest/rust-tests
+error[E0308]: mismatched types
+  --> src/bin/spawn_image_object.rs:37:49
+   |
+37 |     let laid = lay_out(bytes, Machine::RUNNING, u64::from(image.0)).expect("this program lays out").starting_with(&block);
+   |                -------                          ^^^^^^^^^^^^^^^^^^ expected `Source`, found `u64`
+   |                |
+   |                arguments to this function are incorrect
+   |
+note: function defined here
+  --> <worktree>/sdk/toyos/src/elf/program.rs:87:8
+   |
+87 | pub fn lay_out(file: &[u8], machine: Machine, source: Source) -> Result<Program, &'static str> {
+   |        ^^^^^^^
+help: try wrapping the expression in a variant of `Source`
+   |
+37 |     let laid = lay_out(bytes, Machine::RUNNING, toyos::elf::program::Source::Immutable(u64::from(image.0))).expect("this program lays out").starting_with(&block);
+   |                                                 +++++++++++++++++++++++++++++++++++++++                  +
+37 |     let laid = lay_out(bytes, Machine::RUNNING, toyos::elf::program::Source::Copied(u64::from(image.0))).expect("this program lays out").starting_with(&block);
+   |                                                 ++++++++++++++++++++++++++++++++++++                  +
+
+For more information about this error, try `rustc --explain E0308`.
+error: could not compile `toyos-rust-tests` (bin "spawn_image_object") due to 1 previous error
+
+thread 'main' (28057045) panicked at build/build.rs:503:9:
+cargo build failed in <worktree>/tests/guest/rust-tests
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+16:50:32   FAIL  x86_64 binaries of tests/guest/rust-tests  (6s)
+16:50:32 [toyos] this run's serial logs are kept at <worktree>/target/red-run-serial/toyos-tmp-77772-0
+error: test failed, to rerun pass `--test toyos-build`
+=== exit 101
+exit 0

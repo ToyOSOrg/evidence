@@ -1,0 +1,56 @@
+# map7b step 1 (PR #1259) metal request: 22 boots. Nothing here has touched a machine.
+#
+# Branch map7b, head c991bfdb6227e3818ae803ee98452a29069df0c3; base main b5669315202b6bcbac414cc54f52c8b7c02849f5.
+# Head images were staged from the worktree at the head (wt), base images from a check tree at the base
+# (check-base). toyos-metal's source is identical at both (`git diff b56693152 c991bfdb6 -- tests/metal` is
+# empty): run every invocation below from
+#
+#   cd <worktree>
+#
+# Each boot writes its own readback directory, so the four boots of one image keep four logs.
+# Judge afterwards from the same worktree with the staging filters and the same --metal-readback directory
+# (head: `boot:testcases boot:shared-debug boot:proctreecase osbench`; base: `spawn_cost osbench`).
+
+S=<scratch>
+
+# 1. osbench A/B (the `osbench` row's benchcase: proc.spawn_wait.* and the rest), 4 boots a side on each
+#    bench, order base-head-head-base twice. 16 boots. The energybenchcase images staged beside them are not
+#    requested.
+
+## T14 (8 boots)
+cargo run -p toyos-metal -- --image $S/base/t14/benchcase/image.img --readback $S/base/t14/benchcase/boot-1 --fat32-check
+cargo run -p toyos-metal -- --image $S/head/t14/benchcase/image.img --readback $S/head/t14/benchcase/boot-1 --fat32-check
+cargo run -p toyos-metal -- --image $S/head/t14/benchcase/image.img --readback $S/head/t14/benchcase/boot-2 --fat32-check
+cargo run -p toyos-metal -- --image $S/base/t14/benchcase/image.img --readback $S/base/t14/benchcase/boot-2 --fat32-check
+cargo run -p toyos-metal -- --image $S/base/t14/benchcase/image.img --readback $S/base/t14/benchcase/boot-3 --fat32-check
+cargo run -p toyos-metal -- --image $S/head/t14/benchcase/image.img --readback $S/head/t14/benchcase/boot-3 --fat32-check
+cargo run -p toyos-metal -- --image $S/head/t14/benchcase/image.img --readback $S/head/t14/benchcase/boot-4 --fat32-check
+cargo run -p toyos-metal -- --image $S/base/t14/benchcase/image.img --readback $S/base/t14/benchcase/boot-4 --fat32-check
+
+## <amd-bench> (8 boots)
+cargo run -p toyos-metal -- --image $S/base/amd/benchcase/image.img --readback $S/base/amd/benchcase/boot-1 --fat32-check --host <user>@<amd-bench>
+cargo run -p toyos-metal -- --image $S/head/amd/benchcase/image.img --readback $S/head/amd/benchcase/boot-1 --fat32-check --host <user>@<amd-bench>
+cargo run -p toyos-metal -- --image $S/head/amd/benchcase/image.img --readback $S/head/amd/benchcase/boot-2 --fat32-check --host <user>@<amd-bench>
+cargo run -p toyos-metal -- --image $S/base/amd/benchcase/image.img --readback $S/base/amd/benchcase/boot-2 --fat32-check --host <user>@<amd-bench>
+cargo run -p toyos-metal -- --image $S/base/amd/benchcase/image.img --readback $S/base/amd/benchcase/boot-3 --fat32-check --host <user>@<amd-bench>
+cargo run -p toyos-metal -- --image $S/head/amd/benchcase/image.img --readback $S/head/amd/benchcase/boot-3 --fat32-check --host <user>@<amd-bench>
+cargo run -p toyos-metal -- --image $S/head/amd/benchcase/image.img --readback $S/head/amd/benchcase/boot-4 --fat32-check --host <user>@<amd-bench>
+cargo run -p toyos-metal -- --image $S/base/amd/benchcase/image.img --readback $S/base/amd/benchcase/boot-4 --fat32-check --host <user>@<amd-bench>
+
+# 2. The whole shared boots at the head, once on each bench: the syscall and object surface changed
+#    (vm_map replaces shm_map; spawn ranges share an immutable image's pages). testcases carries 257 jobs,
+#    vm_map_shares's x86-64 verdict and spawn_cost among them; testcases-watchdog is the image `boot:testcases`
+#    stages beside it. 6 boots.
+
+## T14 (3 boots)
+cargo run -p toyos-metal -- --image $S/head/t14/testcases/image.img --readback $S/head/t14/testcases --fat32-check
+cargo run -p toyos-metal -- --image $S/head/t14/shared-debug/image.img --readback $S/head/t14/shared-debug --fat32-check
+cargo run -p toyos-metal -- --image $S/head/t14/proctreecase/image.img --readback $S/head/t14/proctreecase --fat32-check
+
+## <amd-bench> (3 boots)
+cargo run -p toyos-metal -- --image $S/head/amd/testcases/image.img --readback $S/head/amd/testcases --fat32-check --host <user>@<amd-bench>
+cargo run -p toyos-metal -- --image $S/head/amd/shared-debug/image.img --readback $S/head/amd/shared-debug --fat32-check --host <user>@<amd-bench>
+cargo run -p toyos-metal -- --image $S/head/amd/proctreecase/image.img --readback $S/head/amd/proctreecase --fat32-check --host <user>@<amd-bench>
+
+# testcases-watchdog (staged, 0 jobs, armed with the watchdog) is listed in head/{t14,amd}/request.txt; run it
+# only if the orchestrator counts it part of the whole testcases boot.

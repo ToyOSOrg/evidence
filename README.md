@@ -24,12 +24,23 @@ The one red host step is `llvm::tests::the_caller_s_environment_reaches_neither_
 `keyed_and_built`, the child it re-runs), red on every macOS host and recorded in
 `issues/the-llvm-environment-test-breaks-git-on-macos.md`. This branch touches nothing it reads.
 
+## r1, continued: head c991bfdb6
+
+c991bfdb6 = b29fb2b2d plus one commit: three guest test sites still passed a bare handle where `lay_out` now
+takes a `Source` (`tests/guest/rust-tests/src/image.rs`, `startup_block.rs`, `spawn_image_object.rs`), so the
+guest test binaries did not build. No host check builds them; the head staging did, and its first two attempts
+are the evidence of the defect (`r1/metal/stage-head-attempt-1.log`, `-2.log`, exit 101 each, `E0599: no method
+named handle`). The commit touches only `tests/guest/`, so every host result above holds for c991bfdb6. The
+step 2 branch named above was rebased onto c991bfdb6 (its `sdk/`, `lib/kimage/` and `kernel/pure/vm.rs`
+unchanged).
+
 ## Guest
 
-Run 43051591773 at b29fb2b2d (QEMU, both architectures):
+Run 43062438931 at c991bfdb6 (QEMU, both architectures):
 `virt_vm_map_shares virt_user_mode bar_map_again bar_map_behind_a_bridge lent_device_memory_refused a_spawn_from_an_image_frees_it_when_the_child_ends libc_children a_drives_row_holds_one_process_per_function session_lifecycle`.
-Queued; its result is added here. Run 43049845595 named shared binaries of the metal boots as QEMU rows and was
-cancelled before it ran: no result.
+Queued; its result is added here. Earlier dispatches, none a result: 43049845595 named shared binaries of the
+metal boots as QEMU rows and was cancelled before it ran; 43051591773, at b29fb2b2d, was cancelled once the
+guest binaries were found not to build.
 
 ## Metal (staged, not run)
 
@@ -38,4 +49,8 @@ exit 2 is "staged, the machine untouched".
 
 - Base, main b56693152, for the A/B: `spawn_cost osbench`, the T14 and the AMD bench, exit 2 each
   (`r1/metal/stage-base.log`).
-- Head, b29fb2b2d: `boot:testcases boot:shared-debug boot:proctreecase osbench`, both benches: staging.
+- Head, c991bfdb6: `boot:testcases boot:shared-debug boot:proctreecase osbench`, the T14 and the AMD bench,
+  exit 2 each, every x86-64 guest test binary built (`r1/metal/stage-head.log`). This is also the build of the
+  image at the head.
+- The request handed to the orchestrator, 22 boots: `r1/metal/request.txt` (osbench A/B, four boots a side per
+  bench, base-head-head-base twice; the whole testcases, shared-debug and proctreecase boots once per bench).
