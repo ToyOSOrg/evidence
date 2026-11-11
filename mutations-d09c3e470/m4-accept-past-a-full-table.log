@@ -1,0 +1,54 @@
+revision d09c3e4702ccd8c885fefac7299de638bbd6153e
+applied m4-accept-past-a-full-table
+diff --git a/sdk/toyos/src/admission.rs b/sdk/toyos/src/admission.rs
+index e2de7a459..303453871 100644
+--- a/sdk/toyos/src/admission.rs
++++ b/sdk/toyos/src/admission.rs
+@@ -401,7 +401,7 @@ where
+     /// left in the port's queue, where the acceptor's readiness says it is
+     /// once its server watches the acceptor again.
+     pub fn accept(&self, acceptor: &impl Queue<Line = L>) -> Option<Result<L, SyscallError>> {
+-        self.has_room().then(|| acceptor.accept())
++        Some(acceptor.accept())
+     }
+ 
+     /// Take `conn`, just accepted, to wait for its first request until
+$ cargo test -p toyos --lib admission
+   Compiling toyos v0.18.0 (<worktree>/sdk/toyos)
+    Finished `test` profile [optimized + debuginfo] target(s) in 2.20s
+     Running unittests src/lib.rs (target/debug/deps/toyos-d609c66f3e36149d)
+
+running 15 tests
+test admission::tests::a_client_that_never_sends_its_request_is_let_go_at_its_limit_and_not_before ... ok
+test admission::tests::a_client_that_reads_no_reply_is_refused_it_and_holds_nobody ... ok
+test admission::tests::a_request_sent_before_the_accept_is_read_at_the_first_pass ... ok
+test admission::tests::a_key_s_refusals_are_said_once_a_limit_with_the_count_between ... ok
+test admission::tests::a_connection_is_read_only_when_it_woke_or_its_limit_passed ... ok
+test admission::tests::a_key_s_malformed_frames_are_said_once_a_limit_and_hang_ups_never ... ok
+test admission::tests::a_frame_no_protocol_describes_and_a_hang_up_each_free_their_slot ... ok
+test admission::tests::a_full_table_has_no_room_and_refuses_the_next ... ok
+test admission::tests::a_request_that_is_whole_is_served_on_a_pass_past_its_limit ... ok
+test admission::tests::a_key_at_its_share_is_refused_while_another_key_is_taken ... ok
+test admission::tests::a_table_remembers_the_lines_of_at_most_its_slots_keys ... ok
+test admission::tests::an_admitted_client_s_requests_come_one_at_a_time ... ok
+test admission::tests::the_wait_is_what_is_left_of_the_oldest_limit ... ok
+test admission::tests::a_full_table_accepts_nothing_and_its_port_keeps_the_connection ... FAILED
+test admission::tests::two_waiting_connections_never_share_a_slot ... ok
+
+failures:
+
+---- admission::tests::a_full_table_accepts_nothing_and_its_port_keeps_the_connection stdout ----
+
+thread 'admission::tests::a_full_table_accepts_nothing_and_its_port_keeps_the_connection' (28575871) panicked at sdk/toyos/src/admission.rs:801:9:
+a full table accepted
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    admission::tests::a_full_table_accepts_nothing_and_its_port_keeps_the_connection
+
+test result: FAILED. 14 passed; 1 failed; 0 ignored; 0 measured; 181 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos --lib`
+m4-accept-past-a-full-table exit 101
+restored

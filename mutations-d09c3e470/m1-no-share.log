@@ -1,0 +1,60 @@
+revision d09c3e4702ccd8c885fefac7299de638bbd6153e
+applied m1-no-share
+diff --git a/sdk/toyos/src/admission.rs b/sdk/toyos/src/admission.rs
+index e2de7a459..6859df657 100644
+--- a/sdk/toyos/src/admission.rs
++++ b/sdk/toyos/src/admission.rs
+@@ -410,7 +410,7 @@ where
+         let Policy { slots, share } = self.policy;
+         let why = if self.waiting.len() >= slots {
+             Some(Full::Table(slots))
+-        } else if self.waiting.iter().filter(|w| w.key == key).count() >= share {
++        } else if false && self.waiting.iter().filter(|w| w.key == key).count() >= share {
+             Some(Full::Share(share))
+         } else {
+             None
+$ cargo test -p toyos --lib admission
+   Compiling toyos v0.18.0 (<worktree>/sdk/toyos)
+    Finished `test` profile [optimized + debuginfo] target(s) in 3.93s
+     Running unittests src/lib.rs (target/debug/deps/toyos-d609c66f3e36149d)
+
+running 15 tests
+test admission::tests::a_client_that_never_sends_its_request_is_let_go_at_its_limit_and_not_before ... ok
+test admission::tests::a_client_that_reads_no_reply_is_refused_it_and_holds_nobody ... ok
+test admission::tests::a_connection_is_read_only_when_it_woke_or_its_limit_passed ... ok
+test admission::tests::a_frame_no_protocol_describes_and_a_hang_up_each_free_their_slot ... ok
+test admission::tests::a_full_table_accepts_nothing_and_its_port_keeps_the_connection ... ok
+test admission::tests::a_full_table_has_no_room_and_refuses_the_next ... ok
+test admission::tests::a_key_at_its_share_is_refused_while_another_key_is_taken ... FAILED
+test admission::tests::a_key_s_malformed_frames_are_said_once_a_limit_and_hang_ups_never ... ok
+test admission::tests::a_key_s_refusals_are_said_once_a_limit_with_the_count_between ... FAILED
+test admission::tests::a_request_sent_before_the_accept_is_read_at_the_first_pass ... ok
+test admission::tests::a_request_that_is_whole_is_served_on_a_pass_past_its_limit ... ok
+test admission::tests::a_table_remembers_the_lines_of_at_most_its_slots_keys ... ok
+test admission::tests::an_admitted_client_s_requests_come_one_at_a_time ... ok
+test admission::tests::the_wait_is_what_is_left_of_the_oldest_limit ... ok
+test admission::tests::two_waiting_connections_never_share_a_slot ... ok
+
+failures:
+
+---- admission::tests::a_key_at_its_share_is_refused_while_another_key_is_taken stdout ----
+
+thread 'admission::tests::a_key_at_its_share_is_refused_while_another_key_is_taken' (28571145) panicked at sdk/toyos/src/admission.rs:715:84:
+taken past its share
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- admission::tests::a_key_s_refusals_are_said_once_a_limit_with_the_count_between stdout ----
+
+thread 'admission::tests::a_key_s_refusals_are_said_once_a_limit_with_the_count_between' (28571147) panicked at sdk/toyos/src/admission.rs:598:77:
+greedy's connection was taken
+
+
+failures:
+    admission::tests::a_key_at_its_share_is_refused_while_another_key_is_taken
+    admission::tests::a_key_s_refusals_are_said_once_a_limit_with_the_count_between
+
+test result: FAILED. 13 passed; 2 failed; 0 ignored; 0 measured; 181 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos --lib`
+m1-no-share exit 101
+restored
