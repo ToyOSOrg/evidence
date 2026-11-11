@@ -1,0 +1,17 @@
+diff --git a/sdk/toyos/src/dl/mod.rs b/sdk/toyos/src/dl/mod.rs
+index f1f702999..1c543ad0e 100644
+--- a/sdk/toyos/src/dl/mod.rs
++++ b/sdk/toyos/src/dl/mod.rs
+@@ -407,11 +407,7 @@ pub unsafe fn start(header: *const u8) {
+         },
+         false => None,
+     };
+-    // SAFETY: the caller's, and every relocation of the executable is applied:
+-    // its own by `crate::relocate`, the rest by the load above.
+-    if let Err(why) = unsafe { seal(header) } {
+-        refuse(alloc::format!("this program's PT_GNU_RELRO could not be made read-only: {why}\n"));
+-    }
++    let _ = seal;
+     if let Some(published) = published {
+         // SAFETY: each a module just published.
+         unsafe { construct(&published.inits) };
