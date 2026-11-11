@@ -20,3 +20,10 @@ r2/mutations/                six mutations, each failing its test (exit 101), an
                              unstarted-255-ridden (a 255 with no `rebooting` line ridden) and reboot-255-refused
                              (a 255 after it refused)
 r2/bounds/slowest-flash.txt  the slowest flash and the slowest log read the transfer bounds rest on
+
+metal/ (the AMD bench, 2026-11-11 17:18-17:26Z, both flashes of boot:testcases staged at #1254's 307457007, run
+through this branch at 01e092da8): the loop's own lines of each flasher log, masked, the boot's log text and
+the machine's SMBIOS line left out. Both exited 0 (the queue runner's rc=0, the loop's PASS), with no Expired
+and no Untaken; each reboot was `echo rebooting && sudo -n '/usr/sbin/reboot'` answered cleanly; every piece
+printed its dd seconds against its bound, the largest share 17.4 s of 1208 s. The two readbacks were deleted
+before a judge read them, so wall_clock_is_firmwares was not judged. The T14's two flashes never ran.

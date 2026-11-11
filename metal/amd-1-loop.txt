@@ -1,0 +1,34 @@
+The loop's own lines of orch/logs/amd-q-metalrows-r1-amd-1.one-1.log (the AMD bench, flashed through
+metal-ssh-bounds at 01e092da8), less cargo's Compiling lines, the boot's log text the loop prints, and the
+machine's SMBIOS line.
+
+saved  67108864 bytes of the install area log to <path>
+61d33c1c2551d5151f5ab6c92e1b29c1a3c68a1e990ced6f3be14ceab3874e7a  <path>
+flasher: HEAD, origin/metal-ssh-bounds, metal-ssh-bounds 01e092da8
+    Finished `dev` profile [optimized + debuginfo] target(s) in 42.03s
+     Running `target/debug/toyos-metal --image <path> --readback <path> --host 'toyos@bench-amd' --fat32-check`
+image <path> Esp 35651584 bytes, Slots 1048576 bytes, Log 35651584 bytes, BootA 35651584 bytes, RootA 406454272 bytes
+image <path> armed with ["boot-deadline=204400"], so it is waited 505 s to come back
+  run: sudo -n '/usr/sbin/sgdisk' '--partition-guid=7:9824F96D-DC9C-45F9-A35F-C6864101BF3D' '--partition-guid=8:1B7EC4B3-3E9A-4D7E-8476-C16CEA284750' '--partition-guid=9:FA6DD4E2-8D64-492E-8B8D-61B8A9C477E5' '--partition-guid=10:4B507950-322E-459D-986D-AE6755AEBDC2' '--partition-guid=11:6FC55BE7-845D-4022-BD04-A2A14B8A1A6B' '/dev/nvme0n1'
+  run: sudo -n '/usr/bin/udevadm' 'settle' '--timeout=180'
+  run: sudo -n '/usr/bin/dd' 'of=/dev/nvme0n1p5' 'bs=4M' 'conv=fsync,nocreat'
+  dd took 6.5 s of its 1208 s bound
+  run: sudo -n '/usr/bin/dd' 'of=/dev/nvme0n1p6' 'bs=4M' 'conv=fsync,nocreat'
+  dd took 0.5 s of its 152 s bound
+  run: sudo -n '/usr/bin/dd' 'of=/dev/nvme0n1p7' 'bs=4M' 'conv=fsync,nocreat'
+  dd took 4.9 s of its 1208 s bound
+  run: sudo -n '/usr/bin/dd' 'of=/dev/nvme0n1p8' 'bs=4M' 'conv=fsync,nocreat'
+  dd took 5.1 s of its 1208 s bound
+  run: sudo -n '/usr/bin/dd' 'of=/dev/nvme0n1p9' 'bs=4M' 'conv=fsync,nocreat'
+  dd took 80.9 s of its 12524 s bound
+installed <path> on /dev/nvme0n1; Boot0002 (ToyOS-internal) boots it
+  run: sudo -n '/usr/bin/efibootmgr' '--bootnext' '0002'
+  run: echo rebooting && sudo -n '/usr/sbin/reboot'
+the machine answered ssh again after 52 s
+  run: sudo -n '/usr/bin/mount' '-o' 'ro' '/dev/nvme0n1p7' '<path>
+  run: sudo -n '/usr/bin/umount' '<path>
+  run: sudo -n '/usr/bin/dd' 'if=/dev/nvme0n1p7' 'bs=4M' 'iflag=count_bytes' 'count=35651584'
+toyos-fat32-check: the log partition's 35651584 bytes check out
+phases: preamble 5.0 s, flash 113.3 s (dd 97.8 s), entry 3.2 s, down 12.0 s, read_log 14.9 s, raw_log 29.8 s
+readback written to <path>
+PASS: the machine booted ToyOS in 242 ms
