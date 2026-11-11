@@ -1,0 +1,32 @@
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.35s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-12dbe9da1a0c6172)
+02:22:51   BUILD x86_64 binaries of tests/guest/rust-tests
+02:22:53   BUILT x86_64 binaries of tests/guest/rust-tests  (2s)
+02:22:53   BUILD x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests
+02:22:54   BUILT x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests  (1s)
+02:22:54 [toyos] Compiling 143 C tests, and attempting 24 declared ones...
+02:22:58 [metal] 12 registration(s) and 9 shared member(s) over 2 boot(s)
+02:22:58   BUILD x86_64 kernel boot-actuators,test-actuators, loader, ROOT of <scratch>/metal/amd/shared-debug/system-cf6f2535ebeca3dd.toml
+02:23:00 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+02:23:00   BUILT x86_64 kernel boot-actuators,test-actuators, loader, ROOT of <scratch>/metal/amd/shared-debug/system-cf6f2535ebeca3dd.toml  (2s)
+02:23:00 [metal] shared-debug: 14 job(s) under a list bound of 62700 ms, armed with ["pci-cap-selftest", "lapic-spurious-selftest", "unclaimed-vector-selftest", "sysret-ss-probe", "hpet-stall"] and a boot deadline of 125400 ms — <scratch>/metal/amd/shared-debug/image.img
+02:23:00   BUILD x86_64 kernel, ROOT of <scratch>/metal/amd/testcases/system-348a97974e8c31f3.toml
+02:23:02 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+02:23:02   BUILT x86_64 kernel, ROOT of <scratch>/metal/amd/testcases/system-348a97974e8c31f3.toml  (2s)
+02:23:02 [metal] testcases: 10 job(s) under a list bound of 60000 ms, armed with [] and a boot deadline of 120000 ms — <scratch>/metal/amd/testcases/image.img
+# One boot per image. Each invocation is `cargo <words>` from this worktree.
+
+shared-debug
+  image: <scratch>/metal/amd/shared-debug/image.img
+  cargo run -p toyos-metal -- --image <scratch>/metal/amd/shared-debug/image.img --readback <scratch>/metal/amd/shared-debug --fat32-check
+
+testcases
+  image: <scratch>/metal/amd/testcases/image.img
+  cargo run -p toyos-metal -- --image <scratch>/metal/amd/testcases/image.img --readback <scratch>/metal/amd/testcases --fat32-check
+02:23:02 [metal] staged 2 image(s); <scratch>/metal/amd/request.txt lists them. The machine was not touched, so this run establishes nothing about it.
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `<wt>/target/debug/deps/toyos_build-12dbe9da1a0c6172 --metal --metal-readback <scratch>/metal/amd wall_clock_is_firmwares timer_calibration smp_roster_and_tsc_trail 'boot:shared-debug'` (exit status: 2)
+exit 2
+32e11074ed3c01f84a0a41630f2f27036468816e
