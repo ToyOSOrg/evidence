@@ -15,3 +15,5 @@ Host checks on a macOS arm64 host. Paths are masked; each log ends with its comm
   990539567 only in the doc comment of `Source::listing`.
 
 The metal A/B of `osbench_disk` is appended here when it is back.
+- `host-r1/`: review r1's commit (`revision.txt`), two comments changed: `cargo clippy -p bcachefs --all-targets`
+  with the same lints (`clippy-bcachefs.log`, exit 0).
