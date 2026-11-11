@@ -44,3 +44,9 @@ Local paths are masked (`<worktree>`, `<scratch>`, `<scratchpad>`, `<home>`, `<t
   `a_clean_stop_proves_its_image` are red; what each said is quoted.
 - `r7/`: `cargo test -p toyos-abi`, `-p kernel --lib --features sched-check` and the kernel's and the ABI's clippy shapes at
   ec556f5ce (`summary.txt`), whose one change is that `SYS_SYSINFO` charges a roster and never the header alone.
+
+## Review round 3, at 90ef8869e
+- `r8/`: `cargo test -p toybox-copies`, `-p kernel --lib --features sched-check`, and clippy on the kernel's shapes,
+  `toybox-copies` and `toyos`, at 90ef8869e (`summary.txt`). The changes: `SYS_SYSINFO` checks its thread bound after the
+  header-only return, and the roster's refusal is named for both its causes in `SysCap::roster`, toybox's roster helper and
+  `ps`.
