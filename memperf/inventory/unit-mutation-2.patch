@@ -1,0 +1,13 @@
+--- ../logs/inv/vm-final.orig	2026-11-11 17:46:28
++++ src/vm.rs	2026-11-11 17:46:29
+@@ -257,9 +257,7 @@
+         let lo = prev.as_ref().map_or(self.floor, |(_, e)| e.end);
+         assert!(lo <= start && end <= hi, "vm: {start:#x}..{end:#x} inserted over held memory");
+         self.free.remove(&(hi - lo, lo));
+-        if lo < start {
+-            self.free.insert((start - lo, lo));
+-        }
++
+         if end < hi {
+             self.free.insert((hi - end, end));
+         }
