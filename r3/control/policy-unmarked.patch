@@ -1,0 +1,13 @@
+diff --git a/kernel/pure/mitigation.rs b/kernel/pure/mitigation.rs
+index 1d2dd0b..f20498d 100644
+--- a/kernel/pure/mitigation.rs
++++ b/kernel/pure/mitigation.rs
+@@ -830,7 +830,7 @@ fn amd(f: &Facts, of: Vulnerability) -> Verdict {
+             Asks::of(Mitigation::Jmp2Ret, true)
+                 // A guest cannot write its host's DE_CFG2.
+                 .and_if(zen2(&id) && !f.hypervisor, Mitigation::SuppressBpOnNonBr, true)
+-                .by_policy(f.smt, Mitigation::Stibp, stibp)
++                .and_if(f.smt, Mitigation::Stibp, stibp)
+                 .assumed(!matches!(id.family, 0x15 | 0x17))
+         }
+         // "Technical Update Regarding Speculative Return Stack Overflow":

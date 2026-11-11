@@ -1,0 +1,15 @@
+diff --git a/kernel/pure/mitigation.rs b/kernel/pure/mitigation.rs
+index 1d2dd0b..90ce68e 100644
+--- a/kernel/pure/mitigation.rs
++++ b/kernel/pure/mitigation.rs
+@@ -729,9 +729,7 @@ fn intel(f: &Facts, of: Vulnerability) -> Verdict {
+                 return Verdict::NotAffected;
+             }
+             let implicit = f.intel_mds() != Verdict::NotAffected && edx & MD_CLEAR != 0 && edx & L1D_FLUSH != 0;
+-            let asks = Asks::NOTHING
+-                .and_if(!f.cap(cap::FBSDP_NO), Mitigation::Verw, f.cap(cap::FB_CLEAR) || implicit)
+-                .and_if(!f.cap(cap::SBDR_SSDP_NO), Mitigation::SrbdsMicrocode, edx & SRBDS_CTRL != 0);
++            let asks = Asks::of(Mitigation::Verw, f.cap(cap::FB_CLEAR) || implicit);
+             if asks.needs.is_empty() {
+                 return Verdict::NotAffected;
+             }

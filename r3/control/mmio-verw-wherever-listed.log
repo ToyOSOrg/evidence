@@ -1,0 +1,73 @@
+   Compiling kernel v0.1.0 (<scratch>/wt-mitig/kernel)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.48s
+     Running unittests pure/lib.rs (target/debug/deps/kernel-fa45b686f8e87f8e)
+
+running 18 tests
+test mitigation::tests::a_newer_amd_family_is_decided_by_what_it_enumerates ... ok
+test mitigation::tests::amds_documents_for_zen_2_decide_a_family_17h_model_60h ... ok
+test mitigation::tests::amds_ssbd_is_the_control_it_enumerates ... ok
+test mitigation::tests::amds_lfence_serializes_dispatch_by_its_msr_unless_it_always_does ... ok
+test mitigation::tests::every_mitigation_is_named_once ... ok
+test mitigation::tests::another_vendors_cpu_is_unknown ... ok
+test mitigation::tests::a_line_says_what_is_in_force_and_what_is_missing ... ok
+test mitigation::tests::rfds_is_enumerated_by_rfds_clear_and_listed_without_it ... ok
+test mitigation::tests::its_is_the_tables_on_a_host_and_the_hypervisors_in_a_guest ... ok
+test mitigation::tests::family_19h_reads_its_patch_level_for_tsa ... ok
+test mitigation::tests::taa_follows_rtm_and_takes_the_control_it_has ... ok
+test mitigation::tests::a_control_the_cpu_does_not_enumerate_is_lacking ... FAILED
+test mitigation::tests::intels_row_for_806c1_decides_a_cpu_with_its_words ... FAILED
+test mitigation::tests::the_indirect_predictor_controls_decide_where_enumerated ... ok
+test mitigation::tests::an_intel_cpu_the_table_does_not_list_is_assumed_affected ... FAILED
+test mitigation::tests::the_tables_rows_are_one_per_cpu ... ok
+test mitigation::tests::a_cpu_without_arch_capabilities_is_decided_by_its_row ... FAILED
+test mitigation::tests::what_is_in_force_is_what_the_registers_show ... FAILED
+
+failures:
+
+---- mitigation::tests::a_control_the_cpu_does_not_enumerate_is_lacking stdout ----
+
+thread 'mitigation::tests::a_control_the_cpu_does_not_enumerate_is_lacking' (30506599) panicked at kernel/pure/mitigation.rs:1200:9:
+assertion `left == right` failed
+  left: Affected { needs: Mitigations(65536), lacks: Mitigations(65536), by_policy: Mitigations(0), assumed: false }
+ right: Affected { needs: Mitigations(589824), lacks: Mitigations(589824), by_policy: Mitigations(0), assumed: false }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- mitigation::tests::intels_row_for_806c1_decides_a_cpu_with_its_words stdout ----
+
+thread 'mitigation::tests::intels_row_for_806c1_decides_a_cpu_with_its_words' (30506610) panicked at kernel/pure/mitigation.rs:1109:9:
+assertion `left == right` failed: mmio_stale_data
+  left: Affected { needs: Mitigations(65536), lacks: Mitigations(65536), by_policy: Mitigations(0), assumed: false }
+ right: Affected { needs: Mitigations(524288), lacks: Mitigations(0), by_policy: Mitigations(0), assumed: false }
+
+---- mitigation::tests::an_intel_cpu_the_table_does_not_list_is_assumed_affected stdout ----
+
+thread 'mitigation::tests::an_intel_cpu_the_table_does_not_list_is_assumed_affected' (30506606) panicked at kernel/pure/mitigation.rs:1274:9:
+assertion `left == right` failed: mmio_stale_data
+  left: Affected { needs: Mitigations(65536), lacks: Mitigations(0), by_policy: Mitigations(0), assumed: true }
+ right: Affected { needs: Mitigations(589824), lacks: Mitigations(524288), by_policy: Mitigations(0), assumed: true }
+
+---- mitigation::tests::a_cpu_without_arch_capabilities_is_decided_by_its_row stdout ----
+
+thread 'mitigation::tests::a_cpu_without_arch_capabilities_is_decided_by_its_row' (30506600) panicked at kernel/pure/mitigation.rs:1174:9:
+assertion `left == right` failed: mmio_stale_data
+  left: Affected { needs: Mitigations(65536), lacks: Mitigations(0), by_policy: Mitigations(0), assumed: false }
+ right: Affected { needs: Mitigations(589824), lacks: Mitigations(0), by_policy: Mitigations(0), assumed: false }
+
+---- mitigation::tests::what_is_in_force_is_what_the_registers_show stdout ----
+
+thread 'mitigation::tests::what_is_in_force_is_what_the_registers_show' (30506616) panicked at kernel/pure/mitigation.rs:1448:9:
+assertion `left == right` failed
+  left: Mitigations(1310725)
+ right: Mitigations(1835013)
+
+
+failures:
+    mitigation::tests::a_control_the_cpu_does_not_enumerate_is_lacking
+    mitigation::tests::a_cpu_without_arch_capabilities_is_decided_by_its_row
+    mitigation::tests::an_intel_cpu_the_table_does_not_list_is_assumed_affected
+    mitigation::tests::intels_row_for_806c1_decides_a_cpu_with_its_words
+    mitigation::tests::what_is_in_force_is_what_the_registers_show
+
+test result: FAILED. 13 passed; 5 failed; 0 ignored; 0 measured; 456 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p kernel --lib`
