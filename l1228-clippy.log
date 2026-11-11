@@ -1,0 +1,80 @@
+worktree wt-logkeeper revision 3713400e759c7cf9b401998afd91d3a36e59be7b + worktree diff da39a3ee5e6b
+$ cargo clippy --manifest-path system/logkeeper/Cargo.toml --all-targets -- -W clippy::checked_conversions -W clippy::default_trait_access -W clippy::manual_midpoint -W clippy::redundant_clone -W clippy::unchecked_time_subtraction -W clippy::unnecessary_semicolon -D warnings
+    Checking logkeeper v0.1.0 ($WORKTREE/system/logkeeper)
+error: this `if` statement can be collapsed
+   --> system/logkeeper/src/inspect.rs:159:9
+    |
+159 | /         if ready.contains(&ACCEPT) {
+160 | |             if let Ok(conn) = acceptor.accept() {
+161 | |                 if pending.len() < MAX_PENDING {
+162 | |                     pending.push(Pending { conn, rx: FrameRx::new(), since: now });
+...   |
+165 | |         }
+    | |_________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#collapsible_if
+    = note: `-D clippy::collapsible-if` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::collapsible_if)]`
+help: collapse nested if block
+    |
+159 ~         if ready.contains(&ACCEPT)
+160 ~             && let Ok(conn) = acceptor.accept() {
+161 |                 if pending.len() < MAX_PENDING {
+162 |                     pending.push(Pending { conn, rx: FrameRx::new(), since: now });
+163 |                 }
+164 ~             }
+    |
+
+error: this `if` statement can be collapsed
+   --> system/logkeeper/src/inspect.rs:160:13
+    |
+160 | /             if let Ok(conn) = acceptor.accept() {
+161 | |                 if pending.len() < MAX_PENDING {
+162 | |                     pending.push(Pending { conn, rx: FrameRx::new(), since: now });
+163 | |                 }
+164 | |             }
+    | |_____________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#collapsible_if
+help: collapse nested if block
+    |
+160 ~             if let Ok(conn) = acceptor.accept()
+161 ~                 && pending.len() < MAX_PENDING {
+162 |                     pending.push(Pending { conn, rx: FrameRx::new(), since: now });
+163 ~                 }
+    |
+
+error: methods called `from_*` usually take no `self`
+   --> system/logkeeper/src/main.rs:386:24
+    |
+386 |     fn from_supervisor(&mut self) -> bool {
+    |                        ^^^^^^^^^
+    |
+    = help: consider choosing a less ambiguous name
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#wrong_self_convention
+    = note: `-D clippy::wrong-self-convention` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::wrong_self_convention)]`
+
+error: methods with the following characteristics: (`to_*` and `self` type is not `Copy`) usually take `self` by reference
+   --> system/logkeeper/src/main.rs:654:18
+    |
+654 |     fn to_volume(&mut self, text: &[u8], sync: bool) {
+    |                  ^^^^^^^^^
+    |
+    = help: consider choosing a less ambiguous name
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#wrong_self_convention
+
+error: could not compile `logkeeper` (bin "logkeeper") due to 4 previous errors
+warning: build failed, waiting for other jobs to finish...
+error: unchecked subtraction of a `Duration`
+  --> system/logkeeper/src/policy.rs:78:32
+   |
+78 |             assert!(!retry.due(next - Duration::from_millis(1)));
+   |                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: try: `next.checked_sub(Duration::from_millis(1)).unwrap()`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#unchecked_time_subtraction
+   = note: `-D clippy::unchecked-time-subtraction` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::unchecked_time_subtraction)]`
+
+error: could not compile `logkeeper` (bin "logkeeper" test) due to 5 previous errors
+exit 101
