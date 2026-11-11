@@ -31,3 +31,15 @@ r2/negative-control/  target_of with the other bench's machine allowed (host-unc
 r2/plans/             both benches' plans at 307457007, identical to plans/list-{t14,amd}.out
 r2/staging/           boot:testcases staged again per bench at 307457007 (exit 2: staged, not judged);
                       every invocation names its --host, the T14's too
+
+r3/ (review round 2: rebased onto main be76e6f85, head 4e529a08c; logs on the clean tree):
+r3/range-diff.txt     git range-diff of the branch before (on b0533900e) and after: the review commit is
+                      unchanged (=), and the first commit differs only in the four screen tests #1247 edited
+r3/armcmp.txt         each of the four moved functions equals main's run_screen_test arm at be76e6f85
+                      (armcmp.pl, leading whitespace stripped, `name` read as the literal); the branch
+                      before this rebase, the control, differs in all four
+r3/toyos-rs-against-main.diff
+                      git diff origin/main 4e529a08c -- tests/toyos.rs, the whole of the PR's change there
+r3/merge-tree.txt     the head merges with origin/main dda500c39 without a conflict
+r3/toyos-build-compiles.log, r3/toyos-checks.log
+                      cargo test --test toyos-build --no-run (exit 0), cargo test --test toyos-checks (49 passed)
