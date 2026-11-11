@@ -1,0 +1,49 @@
+diff --git a/kernel/src/arch/x86_64/idt/nmi.rs b/kernel/src/arch/x86_64/idt/nmi.rs
+index 9fb53054b..c67bd9864 100644
+--- a/kernel/src/arch/x86_64/idt/nmi.rs
++++ b/kernel/src/arch/x86_64/idt/nmi.rs
+@@ -12,8 +12,7 @@
+ 
+ use core::arch::naked_asm;
+ 
+-use crate::arch::entry::install_kernel_gs;
+-use crate::arch::percpu::{MSR_GS_BASE, OFF_GDT, OFF_NMI_ACTIVE};
++use crate::arch::percpu::{MSR_GS_BASE, OFF_NMI_ACTIVE};
+ 
+ /// The words the entry pushes before it can tell a nested NMI: three
+ /// registers and the GS base it found.
+@@ -44,7 +43,10 @@ pub(super) extern "sysv64" fn nmi_entry() {
+         "shl rdx, 32",
+         "or rax, rdx",
+         "push rax",
+-        install_kernel_gs!(),
++        "test rax, rax",
++        "js 72f",
++        "swapgs",
++        "72:",
+         "cmp dword ptr gs:[{active}], 0",
+         "jne 2f",
+         "mov dword ptr gs:[{active}], 1",
+@@ -71,10 +73,10 @@ pub(super) extern "sysv64" fn nmi_entry() {
+         "mov dword ptr gs:[{active}], 0",
+         // The base this NMI found, back: nothing after it reads GS.
+         "pop rax",
+-        "mov rdx, rax",
+-        "shr rdx, 32",
+-        "mov ecx, {gs_base_msr}",
+-        "wrmsr",
++        "test rax, rax",
++        "js 73f",
++        "swapgs",
++        "73:",
+         "pop rdx",
+         "pop rcx",
+         "pop rax",
+@@ -89,7 +91,6 @@ pub(super) extern "sysv64" fn nmi_entry() {
+         "ud2",
+         active = const OFF_NMI_ACTIVE,
+         gs_base_msr = const MSR_GS_BASE,
+-        gdt_in_percpu = const OFF_GDT,
+         rflags_offset = const RFLAGS_OFFSET,
+         nested_rip = const NESTED_RIP_OFFSET,
+         nested_rsp = const NESTED_RSP_OFFSET,
