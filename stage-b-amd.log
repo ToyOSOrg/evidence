@@ -1,0 +1,50 @@
+revision ab336ebb3e043a08e127b9c61a6fdf4b5a6a6060 status [0 changed]
+$ cargo test --test toyos-build -- --metal --metal-readback $SCRATCH/r2/stage-b-amd --metal-host toyos@bench-amd spawn_cost osbench machine_reboot
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.94s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-b8f4c5141ecc8947)
+16:35:50   BUILD x86_64 binaries of tests/guest/rust-tests
+16:35:55   BUILT x86_64 binaries of tests/guest/rust-tests  (6s)
+16:35:55   BUILD x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests
+16:35:59   BUILT x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests  (4s)
+16:35:59 [toyos] Compiling 143 C tests, and attempting 24 declared ones...
+16:36:09 [metal] 4 registration(s) and 0 shared member(s) over 4 boot(s)
+16:36:09   BUILD x86_64 kernel, loader, ROOT of $SCRATCH/r2/stage-b-amd/benchcase/system-dc6cb9c143cd50db.toml
+16:36:14 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+16:36:14   BUILT x86_64 kernel, loader, ROOT of $SCRATCH/r2/stage-b-amd/benchcase/system-dc6cb9c143cd50db.toml  (5s)
+16:36:14 [metal] benchcase: 16 job(s) under a list bound of 525000 ms, armed with [] and a boot deadline of 1050000 ms — $SCRATCH/r2/stage-b-amd/benchcase/image.img
+16:36:14   BUILD x86_64 ROOT of $SCRATCH/r2/stage-b-amd/energybenchcase/system-07be32f936817705.toml
+16:36:17 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+16:36:17   BUILT x86_64 ROOT of $SCRATCH/r2/stage-b-amd/energybenchcase/system-07be32f936817705.toml  (4s)
+16:36:18 [metal] energybenchcase: 1 job(s) under a list bound of 360000 ms, armed with [] and a boot deadline of 720000 ms — $SCRATCH/r2/stage-b-amd/energybenchcase/image.img
+16:36:18   BUILD x86_64 ROOT of $SCRATCH/r2/stage-b-amd/metalcase/system-4ac94ba7ceffec1f.toml
+16:36:20 assets: leaving out share/soundfont.sf2 — only /system/bin/doom opens it and this image builds no doom
+16:36:20 assets: leaving out share/doom1.wad — only /system/bin/doom opens it and this image builds no doom
+16:36:20   BUILT x86_64 ROOT of $SCRATCH/r2/stage-b-amd/metalcase/system-4ac94ba7ceffec1f.toml  (3s)
+16:36:21 [metal] metalcase: 1 job(s) under a list bound of 60000 ms, armed with [] and a boot deadline of 120000 ms — $SCRATCH/r2/stage-b-amd/metalcase/image.img
+16:36:21   BUILD x86_64 ROOT of $SCRATCH/r2/stage-b-amd/testcases/system-348a97974e8c31f3.toml
+16:36:23 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+16:36:23   BUILT x86_64 ROOT of $SCRATCH/r2/stage-b-amd/testcases/system-348a97974e8c31f3.toml  (2s)
+16:36:23 [metal] testcases: 10 job(s) under a list bound of 60000 ms, armed with [] and a boot deadline of 120000 ms — $SCRATCH/r2/stage-b-amd/testcases/image.img
+# One boot per image. Each invocation is `cargo <words>` from this worktree.
+
+benchcase
+  image: $SCRATCH/r2/stage-b-amd/benchcase/image.img
+  cargo run -p toyos-metal -- --image $SCRATCH/r2/stage-b-amd/benchcase/image.img --readback $SCRATCH/r2/stage-b-amd/benchcase --fat32-check --host toyos@bench-amd
+
+energybenchcase
+  image: $SCRATCH/r2/stage-b-amd/energybenchcase/image.img
+  cargo run -p toyos-metal -- --image $SCRATCH/r2/stage-b-amd/energybenchcase/image.img --readback $SCRATCH/r2/stage-b-amd/energybenchcase --fat32-check --host toyos@bench-amd
+
+metalcase
+  image: $SCRATCH/r2/stage-b-amd/metalcase/image.img
+  cargo run -p toyos-metal -- --image $SCRATCH/r2/stage-b-amd/metalcase/image.img --readback $SCRATCH/r2/stage-b-amd/metalcase --fat32-check --host toyos@bench-amd
+
+testcases
+  image: $SCRATCH/r2/stage-b-amd/testcases/image.img
+  cargo run -p toyos-metal -- --image $SCRATCH/r2/stage-b-amd/testcases/image.img --readback $SCRATCH/r2/stage-b-amd/testcases --fat32-check --host toyos@bench-amd
+16:36:23 [metal] staged 4 image(s); $SCRATCH/r2/stage-b-amd/request.txt lists them. The machine was not touched, so this run establishes nothing about it.
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `$WORKTREE/target/debug/deps/toyos_build-b8f4c5141ecc8947 --metal --metal-readback $SCRATCH/r2/stage-b-amd --metal-host 'toyos@bench-amd' spawn_cost osbench machine_reboot` (exit status: 2)
+exit 2

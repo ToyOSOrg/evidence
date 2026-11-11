@@ -1,0 +1,70 @@
+# waits / #1232 (logkeeper writes its partition in batches): metal A/B, T14 and the AMD bench. Nothing here has touched a machine.
+# A = fd5d2628fa7159030aa4a372e85e61abd9b4552d (#1228 + spawn_cost's machine-CPU figure; logkeeper writes and syncs every round)
+# B = ab336ebb3e043a08e127b9c61a6fdf4b5a6a6060 (#1232's head); both pushed on branch logkeeper-batched-writes.
+# Each invocation is `cargo <words>`, run from the worktree that staged it (A: agents/waits/wt-batch-a, B: agents/waits/wt-batch).
+# One boot per image. The readback lands beside its image.
+#
+# PRIORITY 1, per bench, back to back in this order (the A/B is same-session):
+#   testcases A, testcases B  -> spawn_cost: "min .. us median .. us over 50, the machine busy .. us a spawn" is the A/B's
+#                                measure: busy CPU a spawn should drop by the log's per-write cost (~0.4 ms T14, ~1.2 ms AMD)
+#   metalcase B               -> machine_reboot: the stop mark over a flushed log under batching; its last job, ps2server_hold,
+#                                reads the served log, the one metal run of the new reader wake
+# PRIORITY 2 (optional, ~9 min a boot): benchcase A, benchcase B -> osbench (process.spawn_wait, work.build_shaped: did latency move)
+# Not to run: the energybenchcase images the `osbench` filter staged beside them.
+# Every one of these boots ends with a stop; its verdict refuses a boot without the stop mark or the supervisor's stop line.
+
+## t14
+
+t14 testcases A  sha256 7ad8a6ee30660ff3640bb420e740788c8e163dfe8bc7e326d6c675deda048748
+  worktree: $SCRATCH/r2/../wt-batch-a
+  image: $SCRATCH/r2/stage-a-t14/testcases/image.img
+  cargo run -p toyos-metal -- --image $SCRATCH/r2/stage-a-t14/testcases/image.img --readback $SCRATCH/r2/stage-a-t14/testcases --fat32-check
+
+t14 testcases B  sha256 e2ea3e05a4164e5eefab4bb74d68c0aca806d253527d7632cb5c088f3ab76483
+  worktree: $SCRATCH/r2/../wt-batch
+  image: $SCRATCH/r2/stage-b-t14/testcases/image.img
+  cargo run -p toyos-metal -- --image $SCRATCH/r2/stage-b-t14/testcases/image.img --readback $SCRATCH/r2/stage-b-t14/testcases --fat32-check
+
+t14 metalcase B  sha256 b22d12d40ded257e9f38d4a97702574a429b0ce02c41ee0b8c9cba8503397b41
+  worktree: $SCRATCH/r2/../wt-batch
+  image: $SCRATCH/r2/stage-b-t14/metalcase/image.img
+  cargo run -p toyos-metal -- --image $SCRATCH/r2/stage-b-t14/metalcase/image.img --readback $SCRATCH/r2/stage-b-t14/metalcase --fat32-check
+
+t14 benchcase A  sha256 e0c2ba26af33de33a30c866c3c58fca3af8c5a5849453a5bfacaa788b69d89be
+  worktree: $SCRATCH/r2/../wt-batch-a
+  image: $SCRATCH/r2/stage-a-t14/benchcase/image.img
+  cargo run -p toyos-metal -- --image $SCRATCH/r2/stage-a-t14/benchcase/image.img --readback $SCRATCH/r2/stage-a-t14/benchcase --fat32-check
+
+t14 benchcase B  sha256 37e55218dfadc648e490087838850c4bea25e00c04985a53ebbd811f40acb14d
+  worktree: $SCRATCH/r2/../wt-batch
+  image: $SCRATCH/r2/stage-b-t14/benchcase/image.img
+  cargo run -p toyos-metal -- --image $SCRATCH/r2/stage-b-t14/benchcase/image.img --readback $SCRATCH/r2/stage-b-t14/benchcase --fat32-check
+
+## amd
+
+amd testcases A  sha256 a7e25f7a1989ca8b2ef4307fb2c070cbe818a37870f0e3e5008d5a54f601b733
+  worktree: $SCRATCH/r2/../wt-batch-a
+  image: $SCRATCH/r2/stage-a-amd/testcases/image.img
+  cargo run -p toyos-metal -- --image $SCRATCH/r2/stage-a-amd/testcases/image.img --readback $SCRATCH/r2/stage-a-amd/testcases --fat32-check --host toyos@bench-amd
+
+amd testcases B  sha256 6ca96b4c0712159cfaa42dafad1f45ca5b639c85efa831089cbbf08b5384861c
+  worktree: $SCRATCH/r2/../wt-batch
+  image: $SCRATCH/r2/stage-b-amd/testcases/image.img
+  cargo run -p toyos-metal -- --image $SCRATCH/r2/stage-b-amd/testcases/image.img --readback $SCRATCH/r2/stage-b-amd/testcases --fat32-check --host toyos@bench-amd
+
+amd metalcase B  sha256 a2908a5105abe52a42dfecbf30b12ba9a587a3cc4b166746fe7e0cd1aa1e0288
+  worktree: $SCRATCH/r2/../wt-batch
+  image: $SCRATCH/r2/stage-b-amd/metalcase/image.img
+  cargo run -p toyos-metal -- --image $SCRATCH/r2/stage-b-amd/metalcase/image.img --readback $SCRATCH/r2/stage-b-amd/metalcase --fat32-check --host toyos@bench-amd
+
+amd benchcase A  sha256 67b6a435377481b9d6ff717fd9fd3778114d26bf5bc48a66b57c5335859e971d
+  worktree: $SCRATCH/r2/../wt-batch-a
+  image: $SCRATCH/r2/stage-a-amd/benchcase/image.img
+  cargo run -p toyos-metal -- --image $SCRATCH/r2/stage-a-amd/benchcase/image.img --readback $SCRATCH/r2/stage-a-amd/benchcase --fat32-check --host toyos@bench-amd
+
+amd benchcase B  sha256 e704d5f2d2a59709b749853cf43f084cc6f33567a4b5c7088de2d971a87459cc
+  worktree: $SCRATCH/r2/../wt-batch
+  image: $SCRATCH/r2/stage-b-amd/benchcase/image.img
+  cargo run -p toyos-metal -- --image $SCRATCH/r2/stage-b-amd/benchcase/image.img --readback $SCRATCH/r2/stage-b-amd/benchcase --fat32-check --host toyos@bench-amd
+
+# Return to me: the readback directories as filled and each invocation's exit code.
