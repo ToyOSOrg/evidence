@@ -63,3 +63,11 @@ head (#1250 4e9f6f2b2, #1268 c00a628f1, #1270 0c76f7a46): `vm::` and `frames::` 
 x86_64-unknown-none, x86_64 with `boot-actuators,test-actuators`, aarch64-unknown-none-softfloat and the library's
 tests, exit 0 each. At #1270's head: `--test shm_slot` exit 0 (3 passed), and with `slot-install-relaxed` exit 101,
 the two hand-over models failing.
+
+## Rebased onto main 75bdec3cd, after #1259 (2026-11-12)
+
+`rebase2-checks.log`: the one conflict was `kernel/pure/vm.rs`'s tests, where #1259's `an_object_maps_as_what_it_is`
+and #1250's copied-page tests both stay. At each head (#1250 308e990a6, #1268 e23c2d6f8, #1270 ea1010709): `vm::`
+exit 0 (17 passed) and `frames::` exit 0 (39 at #1250, 40 above); kernel clippy for x86_64-unknown-none, x86_64 with
+`boot-actuators,test-actuators`, aarch64-unknown-none-softfloat and the library's tests, exit 0 each. At #1270's head:
+`--test shm_slot` exit 0 (4 passed); with `slot-install-relaxed` exit 101, the two hand-over models failing.
