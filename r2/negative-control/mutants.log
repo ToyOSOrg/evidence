@@ -1,0 +1,73 @@
+rev 307457007396541523fea9c0e52f3308fbce5444 diff e3b0c44298fc1c14
+== mutant host-unchecked
+   Compiling toyos-build v0.1.0 (<path>
+    Finished `test` profile [optimized + debuginfo] target(s) in 8.90s
+     Running tests/checks.rs (target/debug/deps/toyos_checks-17880d9e42fada55)
+
+running 2 tests
+test checks::metal_bench_reaches_the_loop_as_its_host ... ok
+test checks::metal_runs_bench_is_its_readbacks_and_else_the_lines ... FAILED
+
+failures:
+
+---- checks::metal_runs_bench_is_its_readbacks_and_else_the_lines stdout ----
+
+thread 'checks::metal_runs_bench_is_its_readbacks_and_else_the_lines' (28800061) panicked at tests/checks/metal.rs:791:73:
+the T14's rows on the AMD bench: (T14, "toyos@bench-amd")
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    checks::metal_runs_bench_is_its_readbacks_and_else_the_lines
+
+test result: FAILED. 1 passed; 1 failed; 0 ignored; 0 measured; 47 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--test toyos-checks`
+mutant host-unchecked exit 101
+== mutant t14-by-default
+   Compiling toyos-build v0.1.0 (<path>
+    Finished `test` profile [optimized + debuginfo] target(s) in 12.34s
+     Running tests/checks.rs (target/debug/deps/toyos_checks-17880d9e42fada55)
+
+running 2 tests
+test checks::metal_bench_reaches_the_loop_as_its_host ... FAILED
+test checks::metal_runs_bench_is_its_readbacks_and_else_the_lines ... FAILED
+
+failures:
+
+---- checks::metal_bench_reaches_the_loop_as_its_host stdout ----
+
+thread 'checks::metal_bench_reaches_the_loop_as_its_host' (28810030) panicked at tests/checks/metal.rs:70:9:
+assertion `left == right` failed: ["run", "-p", "toyos-metal", "--", "--image", "/i.img", "--readback", "/h", "--fat32-check", "--host", "toyos@bench-t14"]
+  left: "toyos@bench-t14"
+ right: "toyos@bench-amd"
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- checks::metal_runs_bench_is_its_readbacks_and_else_the_lines stdout ----
+
+thread 'checks::metal_runs_bench_is_its_readbacks_and_else_the_lines' (28810031) panicked at tests/checks/metal.rs:786:5:
+assertion `left == right` failed
+  left: Ok((Amd, "toyos@bench-t14"))
+ right: Ok((Amd, "toyos@bench-amd"))
+
+
+failures:
+    checks::metal_bench_reaches_the_loop_as_its_host
+    checks::metal_runs_bench_is_its_readbacks_and_else_the_lines
+
+test result: FAILED. 0 passed; 2 failed; 0 ignored; 0 measured; 47 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--test toyos-checks`
+mutant t14-by-default exit 101
+== restored: diff e3b0c44298fc1c14
+   Compiling toyos-build v0.1.0 (<path>
+    Finished `test` profile [optimized + debuginfo] target(s) in 10.21s
+     Running tests/checks.rs (target/debug/deps/toyos_checks-17880d9e42fada55)
+
+running 2 tests
+test checks::metal_bench_reaches_the_loop_as_its_host ... ok
+test checks::metal_runs_bench_is_its_readbacks_and_else_the_lines ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 47 filtered out; finished in 0.00s
+
+restored exit 0

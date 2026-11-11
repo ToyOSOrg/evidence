@@ -1,0 +1,40 @@
+rev 307457007396541523fea9c0e52f3308fbce5444 diff e3b0c44298fc1c14
+cmd cargo test --test toyos-build -- --metal --metal-readback <path> --metal-bench amd boot:testcases
+    Blocking waiting for file lock on package cache
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.52s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-b8f4c5141ecc8947)
+17:08:06   BUILD x86_64 binaries of tests/guest/rust-tests
+17:08:09   BUILT x86_64 binaries of tests/guest/rust-tests  (3s)
+17:08:09   BUILD x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests
+17:08:12   BUILT x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests  (3s)
+17:08:12 [toyos] Compiling 143 C tests, and attempting 24 declared ones...
+17:08:17 [metal] 31 registration(s) and 236 shared member(s) over 2 boot(s) of the AMD bench
+17:08:17 [metal] not run on the AMD bench: claim_reuses_its_remapping_entry needs an I219, which the AMD bench has not
+17:08:17 [metal] not run on the AMD bench: counters needs hardware-managed P-states, which the AMD bench has not
+17:08:17 [metal] not run on the AMD bench: acpi_server_events needs an embedded controller its tables define, which the AMD bench has not
+17:08:17 [metal] not run on the AMD bench: battery_read needs an embedded controller its tables define, which the AMD bench has not
+17:08:17 [metal] not run on the AMD bench: i219_messages_on_its_msi_vector needs an I219, which the AMD bench has not
+17:08:17 [metal] not run on the AMD bench: usbd_drives_the_type_c_controller needs a VT-d unit, which the AMD bench has not
+17:08:17   BUILD x86_64 kernel, loader, ROOT of <path>
+17:08:21 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+17:08:22   BUILT x86_64 kernel, loader, ROOT of <path>  (5s)
+17:08:23 [metal] testcases: 252 job(s) under a list bound of 102200 ms, armed with [] and a boot deadline of 204400 ms — <path>
+17:08:23   BUILD x86_64 ROOT of <path>
+17:08:25 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+17:08:25   BUILT x86_64 ROOT of <path>  (2s)
+17:08:25 [metal] testcases-watchdog: 0 job(s) under a list bound of 60000 ms, armed with ["watchdog"] and a boot deadline of 120000 ms — <path>
+# One boot per image, staged for the AMD bench. Each invocation is `cargo <words>` from this worktree.
+
+testcases
+  image: <path>
+  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check --host toyos@bench-amd
+
+testcases-watchdog
+  image: <path>
+  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check --host toyos@bench-amd
+17:08:25 [metal] staged 2 image(s); <path> lists them. The machine was not touched, so this run establishes nothing about it.
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `<path> --metal --metal-readback <path> --metal-bench amd 'boot:testcases'` (exit status: 2)
+exit 2

@@ -17,3 +17,17 @@ negative-control/ the I219 row declared for every bench, applied as a checked pa
                   reverted, the metal host tests pass
 staging/          boot:testcases staged per bench at fbe836956 (exit 2 is the harness's "staged, not
                   judged"); the machine was not touched
+
+r2/ (review round 1: rebased onto main b0533900e, then 307457007; every log opens with its revision and
+the diff hash e3b0c44298fc1c14, the clean tree):
+r2/host/              cargo test -p toyos-metal (77 passed), cargo test --test toyos-checks (49 passed),
+                      clippy on toyos-build and toyos-metal (exit 0), and the build system's own lib tests,
+                      cargo test --lib: 384 passed and 1 failed, llvm::tests::the_caller_s_environment_
+                      reaches_neither_the_build_nor_the_key, the macOS git/SDKROOT defect recorded in
+                      issues/the-llvm-environment-test-breaks-git-on-macos.md, in a file this PR does not touch
+r2/negative-control/  target_of with the other bench's machine allowed (host-unchecked) and with the T14's
+                      machine as every bench's default (t14-by-default, the defect review found): each
+                      fails the harness tests; restored, they pass
+r2/plans/             both benches' plans at 307457007, identical to plans/list-{t14,amd}.out
+r2/staging/           boot:testcases staged again per bench at 307457007 (exit 2: staged, not judged);
+                      every invocation names its --host, the T14's too
