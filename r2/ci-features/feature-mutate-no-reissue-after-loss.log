@@ -1,0 +1,136 @@
+$ cargo test -p toyos-blockring --lib --features mutate-no-reissue-after-loss
+   Compiling toyos-blockring v0.1.0 (<path>
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.93s
+     Running unittests src/lib.rs (target/debug/deps/toyos_blockring-c95fa1b5df2af05a)
+
+running 46 tests
+test client::tests::a_flush_every_session_ends_over_is_answered_device ... ok
+test client::tests::a_reissue_answered_a_word_no_server_says_of_it_is_kept ... FAILED
+test client::tests::a_failed_own_flush_refuses_writes_until_a_flush_succeeds ... FAILED
+test client::tests::a_request_without_arena_room_waits_for_it ... ok
+test client::tests::a_second_answer_for_one_tag_is_a_violation ... ok
+test client::tests::a_write_at_the_limit_waits_for_a_callers_flush_on_the_wire ... ok
+test client::tests::a_write_holds_arena_blocks_only_on_the_wire ... ok
+test client::tests::a_reissue_every_session_ends_over_is_given_up ... FAILED
+test client::tests::nothing_goes_out_before_a_session ... ok
+test client::tests::a_lost_flush_reissues_then_asks_again ... FAILED
+test client::tests::a_write_given_up_poisons_every_later_flush ... FAILED
+test client::tests::read_only_answers_a_write_alone ... ok
+test client::tests::overlapping_writes_go_out_again_in_order ... FAILED
+test client::tests::what_was_on_the_wire_at_the_end_is_refused_and_what_was_not_waits ... ok
+test client::tests::writes_past_the_limit_wait_for_the_clients_own_flush ... ok
+test disk::tests::every_frame_survives_its_bytes_and_nothing_else_decodes ... ok
+test ends::tests::a_completion_renews_the_servers_patience ... ok
+test ends::tests::a_completion_that_decodes_to_nothing_ends_the_session ... ok
+test ends::tests::a_dropped_answer_runs_out_the_servers_patience ... ok
+test ends::tests::a_second_answer_for_one_request_ends_the_session ... ok
+test ends::tests::a_server_past_the_completion_ring_ends_the_session ... ok
+test ends::tests::a_server_past_the_request_ring_before_anything_went_ends_over_what_waited ... ok
+test ends::tests::a_server_past_the_request_ring_ends_the_session ... ok
+test ends::tests::a_write_answered_lost_is_answered_by_the_sessions_end ... ok
+test ends::tests::a_server_that_frees_no_request_entry_is_owed_for_what_cannot_go ... ok
+test ends::tests::a_server_that_ends_every_session_over_one_write_holds_nothing_for_good ... FAILED
+test ends::tests::an_answer_for_a_request_never_asked_ends_the_session ... ok
+test ends::tests::requests_go_out_and_their_completions_come_back ... ok
+test ends::tests::an_answer_the_last_send_decides_is_never_waited_past ... FAILED
+test entry::tests::a_completion_survives_its_words_and_refuses_what_it_does_not_define ... ok
+test entry::tests::a_request_outside_its_bounds_is_refused_by_tag ... ok
+test entry::tests::a_request_survives_its_words ... ok
+test server::tests::a_read_only_session_refuses_a_write_unissued ... ok
+test model::tests::a_used_page_reads_fresh_once_a_servers_ends_are_made_over_it ... ok
+test server::tests::a_flush_after_a_loss_answers_lost_once ... ok
+test server::tests::a_reset_answers_in_the_order_taken ... ok
+test server::tests::a_reset_answers_once_and_the_late_device_answer_is_dropped ... ok
+test server::tests::a_tag_in_flight_twice_is_refused_unissued ... ok
+test wire::tests::a_grant_reaches_its_own_partitions_and_decodes_only_whole ... ok
+test wire::tests::opened_and_refusal_survive_their_bytes_and_nothing_else_decodes ... ok
+test model::tests::states_named_alike_act_alike ... ok
+test model::tests::the_model_reaches_the_end_it_should ... ok
+test model::tests::what_a_flush_calls_durable_is_on_the_medium ... FAILED
+test model::tests::the_model_reaches_a_write_given_up ... FAILED
+test model::tests::no_write_goes_out_while_the_client_keeps_its_limit ... ok
+test model::tests::every_request_is_answered_exactly_once ... ok
+
+failures:
+
+---- client::tests::a_reissue_answered_a_word_no_server_says_of_it_is_kept stdout ----
+
+thread 'client::tests::a_reissue_answered_a_word_no_server_says_of_it_is_kept' (28048468) panicked at lib/blockring/src/client.rs:821:43:
+called `Option::unwrap()` on a `None` value
+
+---- client::tests::a_failed_own_flush_refuses_writes_until_a_flush_succeeds stdout ----
+
+thread 'client::tests::a_failed_own_flush_refuses_writes_until_a_flush_succeeds' (28048465) panicked at lib/blockring/src/client.rs:938:17:
+assertion `left == right` failed: the kept write goes again
+  left: Flush
+ right: Write { run: Run { first: 4, count: 2 }, lba: 0 }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- client::tests::a_reissue_every_session_ends_over_is_given_up stdout ----
+
+thread 'client::tests::a_reissue_every_session_ends_over_is_given_up' (28048469) panicked at lib/blockring/src/client.rs:860:13:
+assertion `left == right` failed
+  left: Flush
+ right: Write { run: Run { first: 4, count: 1 }, lba: 0 }
+
+---- client::tests::a_lost_flush_reissues_then_asks_again stdout ----
+
+thread 'client::tests::a_lost_flush_reissues_then_asks_again' (28048467) panicked at lib/blockring/src/client.rs:725:9:
+assertion `left == right` failed
+  left: []
+ right: [(1, 2)]
+
+---- client::tests::a_write_given_up_poisons_every_later_flush stdout ----
+
+thread 'client::tests::a_write_given_up_poisons_every_later_flush' (28048473) panicked at lib/blockring/src/client.rs:771:43:
+called `Option::unwrap()` on a `None` value
+
+---- client::tests::overlapping_writes_go_out_again_in_order stdout ----
+
+thread 'client::tests::overlapping_writes_go_out_again_in_order' (28048476) panicked at lib/blockring/src/client.rs:751:39:
+called `Option::unwrap()` on a `None` value
+
+---- ends::tests::a_server_that_ends_every_session_over_one_write_holds_nothing_for_good stdout ----
+
+thread 'ends::tests::a_server_that_ends_every_session_over_one_write_holds_nothing_for_good' (28048488) panicked at lib/blockring/src/ends.rs:336:13:
+assertion `left == right` failed: the write alone, again
+  left: [Read { run: Run { first: 2, count: 1 }, lba: 4 }]
+ right: [Write { run: Run { first: 1, count: 1 }, lba: 0 }]
+
+---- ends::tests::an_answer_the_last_send_decides_is_never_waited_past stdout ----
+
+thread 'ends::tests::an_answer_the_last_send_decides_is_never_waited_past' (28048492) panicked at lib/blockring/src/ends.rs:280:13:
+the kept write goes out again
+
+---- model::tests::what_a_flush_calls_durable_is_on_the_medium stdout ----
+Failures { resets: 0, crashes: 0, errors: 0 }: 32 end states, 0 with a flush given up, None
+Failures { resets: 1, crashes: 0, errors: 0 }: 32 end states, 0 with a flush given up, Some((Durable, "flush 4 was answered durable with block 0 holding 1, not the 3 acknowledged before it (or a later one of [3]), after ask 0 > ask 1 > ask 2 > take Write { run: Run { first: 0, count: 1 }, lba: 0 }#4 > take Write { run: Run { first: 1, count: 1 }, lba: 1 }#5 > take Flush#6 > done Write { run: Run { first: 0, count: 1 }, lba: 0 }#4 > done Write { run: Run { first: 1, count: 1 }, lba: 1 }#5 > done Flush#6 > read #4 Ok > ask 3 > read #5 Ok > read #6 Ok > take Flush#8 > done Flush#8 > read #8 Ok > take Write { run: Run { first: 3, count: 1 }, lba: 0 }#12 > done Write { run: Run { first: 3, count: 1 }, lba: 0 }#12 > read #12 Ok > ask 4 > take Flush#16 > reset([] [None, None] [1, 2]) > read #16 Device > take Flush#20 > done Flush#20 > read #20 Lost > take Flush#24 > done Flush#24 > read #24 Ok"))
+
+thread 'model::tests::what_a_flush_calls_durable_is_on_the_medium' (28048503) panicked at lib/blockring/src/model.rs:777:17:
+Failures { resets: 1, crashes: 0, errors: 0 }: flush 4 was answered durable with block 0 holding 1, not the 3 acknowledged before it (or a later one of [3]), after ask 0 > ask 1 > ask 2 > take Write { run: Run { first: 0, count: 1 }, lba: 0 }#4 > take Write { run: Run { first: 1, count: 1 }, lba: 1 }#5 > take Flush#6 > done Write { run: Run { first: 0, count: 1 }, lba: 0 }#4 > done Write { run: Run { first: 1, count: 1 }, lba: 1 }#5 > done Flush#6 > read #4 Ok > ask 3 > read #5 Ok > read #6 Ok > take Flush#8 > done Flush#8 > read #8 Ok > take Write { run: Run { first: 3, count: 1 }, lba: 0 }#12 > done Write { run: Run { first: 3, count: 1 }, lba: 0 }#12 > read #12 Ok > ask 4 > take Flush#16 > reset([] [None, None] [1, 2]) > read #16 Device > take Flush#20 > done Flush#20 > read #20 Lost > take Flush#24 > done Flush#24 > read #24 Ok
+
+---- model::tests::the_model_reaches_a_write_given_up stdout ----
+Failures { resets: 0, crashes: 1, errors: 5 }: 314 end states, 54 with a flush given up, Some((Durable, "flush 1 was answered durable with block 0 holding 0, not the 1 acknowledged before it (or a later one of [1]), after ask 0 > take Write { run: Run { first: 0, count: 1 }, lba: 0 }#4 > done Write { run: Run { first: 0, count: 1 }, lba: 0 }#4 > read #4 Ok > ask 1 > take Flush#8 > fail Flush#8 > read #8 Device > take Flush#12 > fail Flush#12 > read #12 Device > take Flush#16 > fail Flush#16 > read #16 Device > take Flush#20 > fail Flush#20 > crash([None, None] [0, 0]) > notice > reconnect > take Flush#24 > done Flush#24 > read #24 Ok"))
+
+thread 'model::tests::the_model_reaches_a_write_given_up' (28048501) panicked at lib/blockring/src/model.rs:811:9:
+assertion `left == right` failed
+  left: Some((Durable, "flush 1 was answered durable with block 0 holding 0, not the 1 acknowledged before it (or a later one of [1]), after ask 0 > take Write { run: Run { first: 0, count: 1 }, lba: 0 }#4 > done Write { run: Run { first: 0, count: 1 }, lba: 0 }#4 > read #4 Ok > ask 1 > take Flush#8 > fail Flush#8 > read #8 Device > take Flush#12 > fail Flush#12 > read #12 Device > take Flush#16 > fail Flush#16 > read #16 Device > take Flush#20 > fail Flush#20 > crash([None, None] [0, 0]) > notice > reconnect > take Flush#24 > done Flush#24 > read #24 Ok"))
+ right: None
+
+
+failures:
+    client::tests::a_failed_own_flush_refuses_writes_until_a_flush_succeeds
+    client::tests::a_lost_flush_reissues_then_asks_again
+    client::tests::a_reissue_answered_a_word_no_server_says_of_it_is_kept
+    client::tests::a_reissue_every_session_ends_over_is_given_up
+    client::tests::a_write_given_up_poisons_every_later_flush
+    client::tests::overlapping_writes_go_out_again_in_order
+    ends::tests::a_server_that_ends_every_session_over_one_write_holds_nothing_for_good
+    ends::tests::an_answer_the_last_send_decides_is_never_waited_past
+    model::tests::the_model_reaches_a_write_given_up
+    model::tests::what_a_flush_calls_durable_is_on_the_medium
+
+test result: FAILED. 36 passed; 10 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.50s
+
+error: test failed, to rerun pass `-p toyos-blockring --lib`
+exit 101

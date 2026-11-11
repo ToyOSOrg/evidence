@@ -1,0 +1,22 @@
+diff --git a/lib/blockring/src/ends.rs b/lib/blockring/src/ends.rs
+index faa6558..d4b94b6 100644
+--- a/lib/blockring/src/ends.rs
++++ b/lib/blockring/src/ends.rs
+@@ -83,7 +83,6 @@ impl ClientEnds {
+         let mut trade = || -> Result<(), Violation> {
+             published |= self.send(page, client, now, &mut place)?;
+             self.receive(page, client, now)?;
+-            published |= self.send(page, client, now, &mut place)?;
+             Ok(())
+         };
+         let next = match (trade(), self.patience(now)) {
+@@ -93,6 +92,9 @@ impl ClientEnds {
+             (Ok(()), Some(left)) => Next::Wait(left),
+             (Ok(()), None) => Next::Idle,
+         };
++        if !matches!(next, Next::End(_)) {
++            published |= self.send(page, client, now, &mut place).unwrap_or(false);
++        }
+         Exchange { next, published }
+     }
+ 

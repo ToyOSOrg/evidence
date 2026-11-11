@@ -1,0 +1,14 @@
+diff --git a/lib/blockring/src/client.rs b/lib/blockring/src/client.rs
+index f95d15f..fc09715 100644
+--- a/lib/blockring/src/client.rs
++++ b/lib/blockring/src/client.rs
+@@ -428,9 +428,6 @@ impl<P: Clone, const D: usize> Client<P, D> {
+         self.wire.end(|_, sent| taken.push(sent));
+         self.released.extend(taken.iter().filter_map(Sent::run));
+         let mut taken: Vec<Queued<P>> = taken.into_iter().map(|sent| sent.queued).collect();
+-        if taken.is_empty() {
+-            taken.extend(self.outbox.pop_front());
+-        }
+         // Flushes first, so a write given up below answers them at once.
+         taken.sort_by_key(|q| matches!(q.kind, Kind::Reissue { .. }));
+         self.lost();

@@ -1,0 +1,13 @@
+diff --git a/lib/blockring/src/client.rs b/lib/blockring/src/client.rs
+index f95d15f..6b61cfa 100644
+--- a/lib/blockring/src/client.rs
++++ b/lib/blockring/src/client.rs
+@@ -193,7 +193,7 @@ impl<P> Sent<P> {
+     fn admits(&self, status: Status) -> bool {
+         match status {
+             Status::Ok | Status::Invalid | Status::Device => true,
+-            Status::Lost => self.op == Op::Flush,
++            Status::Lost => !matches!(self.queued.kind, Kind::User(_)),
+             Status::ReadOnly => matches!((self.queued.kind, self.op), (Kind::User(_), Op::Write { .. })),
+         }
+     }

@@ -1,0 +1,13 @@
+diff --git a/lib/blockring/src/ends.rs b/lib/blockring/src/ends.rs
+index faa6558..1df032c 100644
+--- a/lib/blockring/src/ends.rs
++++ b/lib/blockring/src/ends.rs
+@@ -105,7 +105,7 @@ impl ClientEnds {
+         now: u64,
+         mut place: impl FnMut(Placing<'_, P>) -> Option<Run>,
+     ) -> Result<bool, Violation> {
+-        while self.rings.0.space(page)? > 0 {
++        while self.rings.0.space(page).unwrap_or(0) > 0 {
+             let Some(request) = client.next_request(&mut place) else { break };
+             let pushed = self.rings.0.push(page, request.encode());
+             assert_eq!(pushed, Ok(true), "blockring: a request past the room just counted");

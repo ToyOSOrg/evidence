@@ -1,0 +1,16 @@
+diff --git a/lib/blockring/src/client.rs b/lib/blockring/src/client.rs
+index f95d15f..8d21197 100644
+--- a/lib/blockring/src/client.rs
++++ b/lib/blockring/src/client.rs
+@@ -342,7 +342,10 @@ impl<P: Clone, const D: usize> Client<P, D> {
+     /// What the server answered. A completion refused answers nothing: the
+     /// session is over, and [`Self::session_ended`] answers what it named.
+     pub fn complete(&mut self, completion: Completion) -> Result<(), Violation> {
+-        let sent = self.wire.answer_admitted(completion.tag, |sent| sent.admits(completion.status))?;
++        let sent = self.wire.answer(completion.tag)?;
++        if !sent.admits(completion.status) {
++            return Err(Violation::Entry);
++        }
+         // Answered, whatever the word: its arena blocks are free once a read's
+         // data has been taken, which the caller does before it releases them.
+         self.released.extend(sent.run());

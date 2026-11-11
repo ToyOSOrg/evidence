@@ -1,0 +1,16 @@
+diff --git a/lib/blockring/src/client.rs b/lib/blockring/src/client.rs
+index f95d15f..6980f37 100644
+--- a/lib/blockring/src/client.rs
++++ b/lib/blockring/src/client.rs
+@@ -442,9 +442,8 @@ impl<P: Clone, const D: usize> Client<P, D> {
+                     #[cfg(feature = "mutate-session-end-forgets")]
+                     let _ = ticket;
+                 }
+-                Kind::Reissue { .. } => self.reissue_failed(queued),
+-                Kind::Flush(ticket) => self.flush_failed(ticket),
+-                Kind::Pushback => self.pushback_failed(),
++                Kind::Reissue { .. } => self.requeue_reissue(queued.acked(0)),
++                kind @ (Kind::Flush(_) | Kind::Pushback) => self.queue_flush(kind),
+             }
+         }
+     }
