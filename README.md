@@ -205,3 +205,9 @@ The split of P's round (C2, one boot a bench; `create_write_fsync_us` and the `S
 
 `r3/request-t14-fast.txt`: up to two more M P pairs on the T14 from the same images, as the A/B's request
 provided for.
+
+### The record's update (e64953f85)
+
+The branch's last commit changes only the issue record's text, adding this A/B's figures. The one host check that
+reads a record's body is the identifier gate: `cargo test --lib sourcegate` at e64953f85, exit 0, 10 passed
+(`r3/sourcegate-e64953f85.log`).
