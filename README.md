@@ -22,6 +22,14 @@ The control's red line: `a withdraw of the range's last page goes unheard`.
 
 ## Guest
 
-Dispatched at ab4ba05ab: run 43048940831,
-`a_pager_s_end_answers_its_waiting_holders_gone a_served_file_reads_through_its_paged_object` (QEMU x86-64).
-Its result is added here when it ends.
+Dispatched at ab4ba05ab: run 43048940831, naming
+`a_pager_s_end_answers_its_waiting_holders_gone a_served_file_reads_through_its_paged_object`. The harness refused
+the filter before running anything (`No test matches filter`): both are shared binaries of the metal boots, not
+QEMU rows. A mistake of the dispatch, not a result. No QEMU row reaches a holder's waiting read.
+
+## Metal (staged, not run)
+
+At ab4ba05ab, the T14's `testcases` boot with exactly those two jobs:
+`cargo test --test toyos-build -- --metal --metal-readback <dir> a_pager_s_end_answers_its_waiting_holders_gone a_served_file_reads_through_its_paged_object`,
+exit 2 (staged; the machine untouched), log `r1/metal/stage-t14.log`. Its readback and verdict are added here when
+the orchestrator has run it.
