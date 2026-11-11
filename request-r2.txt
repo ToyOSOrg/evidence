@@ -1,0 +1,17 @@
+# waits / #1232 round 2: machine_reboot at the fixed head, T14 and the AMD bench. Nothing here has touched a machine.
+# Head 9108a464a92803096f9accd02d090aff48ca5a41 (branch logkeeper-batched-writes, pushed): the file thread owns the stop
+# mark's record (B2) and a growth already written starts no wait (B1). Replaces metalcase B in ../r2/request.txt; the T14
+# testcases A/B there (A then B) still stands as the cost measurement.
+# Run each from agents/waits/wt-batch (at that head). One boot per image; the readback lands beside its image.
+# The verdict refuses a boot without the stop mark or the supervisor's stop line; machine_reboot's own judge reads the
+# reset register's line; its last job, test_rs_ps2server_hold, reads the served log.
+
+t14 metalcase  sha256 aadc2e6895056c5efbe435a3f1a3dfcce626f5bfcc52b673f5eb80cf3d004d86
+  image: $SCRATCH/r3/stage-c-t14/metalcase/image.img
+  cargo run -p toyos-metal -- --image $SCRATCH/r3/stage-c-t14/metalcase/image.img --readback $SCRATCH/r3/stage-c-t14/metalcase --fat32-check
+
+amd metalcase  sha256 b1a7007c9f376aa61d100cc2170c62e6f06527bee3197128f3929ddddad5f4d2
+  image: $SCRATCH/r3/stage-c-amd/metalcase/image.img
+  cargo run -p toyos-metal -- --image $SCRATCH/r3/stage-c-amd/metalcase/image.img --readback $SCRATCH/r3/stage-c-amd/metalcase --fat32-check --host toyos@bench-amd
+
+# Return to me: the two readback directories as filled and each invocation's exit code.
