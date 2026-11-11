@@ -1,0 +1,11 @@
+--- a/system/fileserver/src/data.rs
++++ b/system/fileserver/src/data.rs
+@@ -570,7 +570,7 @@
+         while done < data.len() {
+             let page = first + (done / BLOCK) as u64;
+             let Some(&ticket) = open.pages.get(&page) else {
+-                let pool = open.pool.as_mut().ok_or((done, Error::Io))?;
++                let pool = open.pool.as_mut().filter(|_| false).ok_or((done, Error::Io))?;
+                 let run = (page..first + pages).take_while(|p| !open.pages.contains_key(p)).count();
+                 let len = (run * BLOCK).min(data.len() - done);
+                 let written = mapped(

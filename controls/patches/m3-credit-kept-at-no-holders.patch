@@ -1,0 +1,11 @@
+--- a/system/fileserver/src/pages.rs
++++ b/system/fileserver/src/pages.rs
+@@ -811,7 +811,7 @@
+                     f.holder_dirty = false;
+                 }
+                 if std::mem::take(&mut f.granting) && let Ok(credit) = credit {
+-                    volume.ungrant(f.node, credit);
++                    let _ = credit;
+                 }
+                 let owed = f.dirty.is_some() || f.holder_dirty;
+                 if let Err(e) = self.collect_unlinked(volume, identity) {

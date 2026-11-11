@@ -1,0 +1,11 @@
+--- a/system/fileserver/src/pages.rs
++++ b/system/fileserver/src/pages.rs
+@@ -661,7 +661,7 @@
+         let (object, node) = (f.object, f.node);
+         // The pages holders dirtied first, then the size: a page whose write
+         // has not grown the size yet waits for the next write-back.
+-        let taken = self.pg().take_dirtied(object).map_err(word)?;
++        let taken: Option<(u64, u64)> = { let _ = word; None };
+         let status = self.pg().status(object).map_err(word)?;
+         volume.adopt(node, status.size, status.mtime);
+         let f = self.files.get_mut(&identity).expect("found");
