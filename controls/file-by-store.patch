@@ -1,0 +1,11 @@
+--- ../logs/tags-4/flight.rs.orig	2026-11-11 22:35:33
++++ sdk/toyos/src/fs/flight.rs	2026-11-11 22:35:33
+@@ -245,7 +245,7 @@
+         // SAFETY: the receive turn's holder alone writes a waiting slot's
+         // cell, and its caller reads it only after the swap below.
+         self.filed.with_mut(|cell| unsafe { *cell = Some(filed) });
+-        self.state.swap(state, Ordering::Release);
++        self.state.store(state, Ordering::Release);
+         wake_one(&self.state);
+     }
+ 
