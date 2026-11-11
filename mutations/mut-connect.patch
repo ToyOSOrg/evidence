@@ -1,0 +1,13 @@
+diff --git a/kernel/src/syscall/ipc.rs b/kernel/src/syscall/ipc.rs
+index 93ee4a149..3017090f9 100644
+--- a/kernel/src/syscall/ipc.rs
++++ b/kernel/src/syscall/ipc.rs
+@@ -67,7 +67,7 @@ pub(super) fn sys_port_create() -> u64 {
+ /// Open a connection through the connector `h` names, which needs `WRITE`: the client's end is installed and the server's queued on the port.
+ /// `Gone` for a port whose acceptor closed; a handle that is no connector is `InvalidArgument`, since a connector is one a peer sent.
+ pub(super) fn sys_connect(h: RawHandle) -> u64 {
+-    let connector = match process::with_process_data(|data| data.handles.get_sent::<port::Connector>(h, Rights::WRITE)) {
++    let connector = match process::with_process_data(|data| data.handles.get_sent::<port::Connector>(h, Rights::NONE)) {
+         Ok(connector) => connector,
+         Err(e) => return e.refuse(),
+     };
