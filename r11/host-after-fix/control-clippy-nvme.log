@@ -1,0 +1,28 @@
+    Checking nvme v0.0.0 (<scratch>/wt-apst/system/nvme)
+error: large size difference between variants
+   --> system/nvme/src/nvme.rs:102:1
+    |
+102 | / pub enum Power {
+103 | |     /// APSTA's bit 0 is clear: the controller makes no autonomous transition.
+104 | |     Unsupported,
+105 | |     /// The table set, and the states it was built from.
+106 | |     Autonomous { states: Vec<nvme_apst::PowerState>, plan: [Option<nvme_apst::Transition>; nvme_apst::STATES] },
+    | |     ----------------------------------------------------------------------------------------------------------- the largest variant contains at least 792 bytes
+107 | |     /// The controller refused the Set Features, with this status.
+108 | |     Refused(u16),
+    | |     ------------ the second-largest variant contains at least 2 bytes
+109 | | }
+    | |_^ the entire enum is at least 792 bytes
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#large_enum_variant
+    = note: `-D clippy::large-enum-variant` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::large_enum_variant)]`
+help: consider boxing the large fields or introducing indirection in some other way to reduce the total size of the enum
+    |
+106 -     Autonomous { states: Vec<nvme_apst::PowerState>, plan: [Option<nvme_apst::Transition>; nvme_apst::STATES] },
+106 +     Autonomous { states: Vec<nvme_apst::PowerState>, plan: Box<[Option<nvme_apst::Transition>; nvme_apst::STATES]> },
+    |
+
+error: could not compile `nvme` (bin "nvme") due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `nvme` (bin "nvme" test) due to 1 previous error
