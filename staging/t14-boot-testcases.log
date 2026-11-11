@@ -1,0 +1,43 @@
+rev fbe8369563bb0b93847a11b028c0b582acce1e2b
+cmd cargo test --test toyos-build -- --metal --metal-readback <path> --metal-bench t14 boot:testcases
+   Compiling toyos-build v0.1.0 (<path>
+    Finished `test` profile [optimized + debuginfo] target(s) in 32.02s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-b8f4c5141ecc8947)
+15:57:35   BUILD x86_64 binaries of tests/guest/rust-tests
+15:57:38 external deps changed: cleaning <path>
+15:57:40 external deps changed: cleaning <path>
+15:57:40 external deps changed: cleaning <path>
+15:57:40 external deps changed: cleaning <path>
+15:57:40 external deps changed: cleaning <path>
+16:00:19   BUILT x86_64 binaries of tests/guest/rust-tests  (165s)
+16:00:19   BUILD x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests
+16:01:11   BUILT x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests  (51s)
+16:01:11 [toyos] Compiling 143 C tests, and attempting 24 declared ones...
+16:01:18 [metal] 33 registration(s) and 236 shared member(s) over 2 boot(s) of the T14
+16:01:18 [metal] not run on the T14: idle_entered is written for the AMD bench alone
+16:01:18 [metal] not run on the T14: amdvi_translates_the_boot_controller needs an AMD-Vi unit, which the T14 has not
+16:01:18 [metal] not run on the T14: amdvi_remaps_the_boot_controller needs an AMD-Vi unit, which the T14 has not
+16:01:18 [metal] not run on the T14: amdvi_usbd_drives_its_own_entry needs an AMD-Vi unit, which the T14 has not
+16:01:18   BUILD x86_64 kernel, loader, ROOT of <path>
+16:06:14 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+16:06:15   BUILT x86_64 kernel, loader, ROOT of <path>  (297s)
+16:06:16 [metal] testcases: 253 job(s) under a list bound of 102200 ms, armed with [] and a boot deadline of 204400 ms — <path>
+16:06:16   BUILD x86_64 ROOT of <path>
+16:06:20 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+16:06:20   BUILT x86_64 ROOT of <path>  (4s)
+16:06:20 [metal] testcases-watchdog: 0 job(s) under a list bound of 60000 ms, armed with ["watchdog"] and a boot deadline of 120000 ms — <path>
+# One boot per image, staged for the T14. Each invocation is `cargo <words>` from this worktree.
+
+testcases
+  image: <path>
+  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check
+
+testcases-watchdog
+  image: <path>
+  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check
+16:06:20 [metal] staged 2 image(s); <path> lists them. The machine was not touched, so this run establishes nothing about it.
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `<path> --metal --metal-readback <path> --metal-bench t14 'boot:testcases'` (exit status: 2)
+exit 2

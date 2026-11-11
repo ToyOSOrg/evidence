@@ -1,0 +1,39 @@
+rev fbe8369563bb0b93847a11b028c0b582acce1e2b
+cmd cargo test --test toyos-build -- --metal --metal-readback <path> --metal-bench amd --metal-host toyos@bench-amd boot:testcases
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.47s
+     Running tests/toyos.rs (target/debug/deps/toyos_build-b8f4c5141ecc8947)
+16:06:21   BUILD x86_64 binaries of tests/guest/rust-tests
+16:06:24   BUILT x86_64 binaries of tests/guest/rust-tests  (3s)
+16:06:24   BUILD x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests
+16:06:26   BUILT x86_64 crypto_parity (toyos-unasserted) of tests/guest/rust-tests  (2s)
+16:06:26 [toyos] Compiling 143 C tests, and attempting 24 declared ones...
+16:06:37 [metal] 31 registration(s) and 236 shared member(s) over 2 boot(s) of the AMD bench
+16:06:37 [metal] not run on the AMD bench: claim_reuses_its_remapping_entry needs an I219, which the AMD bench has not
+16:06:37 [metal] not run on the AMD bench: counters needs hardware-managed P-states, which the AMD bench has not
+16:06:37 [metal] not run on the AMD bench: acpi_server_events needs an embedded controller its tables define, which the AMD bench has not
+16:06:37 [metal] not run on the AMD bench: battery_read needs an embedded controller its tables define, which the AMD bench has not
+16:06:37 [metal] not run on the AMD bench: i219_messages_on_its_msi_vector needs an I219, which the AMD bench has not
+16:06:37 [metal] not run on the AMD bench: usbd_drives_the_type_c_controller needs a VT-d unit, which the AMD bench has not
+16:06:38   BUILD x86_64 kernel, loader, ROOT of <path>
+16:06:41 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+16:06:42   BUILT x86_64 kernel, loader, ROOT of <path>  (5s)
+16:06:43 [metal] testcases: 252 job(s) under a list bound of 102200 ms, armed with [] and a boot deadline of 204400 ms — <path>
+16:06:43   BUILD x86_64 ROOT of <path>
+16:06:48 assets: leaving out share/wallpaper.rgb — only /system/bin/compositor opens it and this image builds no compositor
+16:06:48   BUILT x86_64 ROOT of <path>  (5s)
+16:06:49 [metal] testcases-watchdog: 0 job(s) under a list bound of 60000 ms, armed with ["watchdog"] and a boot deadline of 120000 ms — <path>
+# One boot per image, staged for the AMD bench. Each invocation is `cargo <words>` from this worktree.
+
+testcases
+  image: <path>
+  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check --host toyos@bench-amd
+
+testcases-watchdog
+  image: <path>
+  cargo run -p toyos-metal -- --image <path> --readback <path> --fat32-check --host toyos@bench-amd
+16:06:49 [metal] staged 2 image(s); <path> lists them. The machine was not touched, so this run establishes nothing about it.
+error: test failed, to rerun pass `--test toyos-build`
+
+Caused by:
+  process didn't exit successfully: `<path> --metal --metal-readback <path> --metal-bench amd --metal-host 'toyos@bench-amd' 'boot:testcases'` (exit status: 2)
+exit 2
