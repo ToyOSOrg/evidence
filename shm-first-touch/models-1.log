@@ -1,0 +1,62 @@
+rev 82555fbde5be0faf6e544e375a68a808ee721861
+ M kernel/Cargo.toml
+ M kernel/loom/Cargo.toml
+ M kernel/loom/src/lib.rs
+ M kernel/src/inbox/mod.rs
+ M kernel/src/mm/pmm.rs
+ M kernel/src/object/shm.rs
+?? kernel/loom/tests/shm_slot.rs
+?? kernel/src/object/shm/
+== cargo test --manifest-path kernel/loom/Cargo.toml --test shm_slot
+   Compiling kernel-loom v0.1.0 (<scratch>/spawnperf/wt/kernel/loom)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.53s
+     Running tests/shm_slot.rs (target/debug/deps/shm_slot-ac90b682fc578511)
+
+running 3 tests
+test a_touch_after_the_first_draws_nothing ... ok
+test a_frame_is_handed_over_with_what_its_drawer_wrote ... ok
+test two_touches_keep_one_frame_and_give_the_other_back ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+exit 0
+== cargo test --manifest-path kernel/loom/Cargo.toml --features slot-install-relaxed --test shm_slot
+   Compiling kernel-loom v0.1.0 (<scratch>/spawnperf/wt/kernel/loom)
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.75s
+     Running tests/shm_slot.rs (target/debug/deps/shm_slot-80ac1b151034fed1)
+
+running 3 tests
+test a_frame_is_handed_over_with_what_its_drawer_wrote ... FAILED
+test a_touch_after_the_first_draws_nothing ... ok
+test two_touches_keep_one_frame_and_give_the_other_back ... FAILED
+
+failures:
+
+---- a_frame_is_handed_over_with_what_its_drawer_wrote stdout ----
+
+thread 'a_frame_is_handed_over_with_what_its_drawer_wrote' (32891530) panicked at <cargo-home>/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/rt/location.rs:115:9:
+Causality violation: Concurrent read and write accesses.
+
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- two_touches_keep_one_frame_and_give_the_other_back stdout ----
+
+thread 'two_touches_keep_one_frame_and_give_the_other_back' (32891532) panicked at <cargo-home>/git/checkouts/loom-906f299ec1581ba6/dfe3797/src/rt/location.rs:115:9:
+Causality violation: Concurrent read and write accesses.
+
+
+
+failures:
+    a_frame_is_handed_over_with_what_its_drawer_wrote
+    two_touches_keep_one_frame_and_give_the_other_back
+
+test result: FAILED. 1 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--test shm_slot`
+exit 101
+== cargo clippy -p kernel-loom --tests -- -D warnings
+    Checking toyos-abi v0.16.0 (<scratch>/spawnperf/wt/sdk/abi)
+    Checking kernel-loom v0.1.0 (<scratch>/spawnperf/wt/kernel/loom)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 1.78s
+exit 0
+all done
