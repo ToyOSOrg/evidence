@@ -39,3 +39,14 @@ label in its guest logs.
 | `host/r2-ci-host.log` | `cargo run -- --ci host` | e9bbb2961 | macOS arm64 host | 1: 1 of 110 steps red, the recorded macOS test |
 | `guest/r2-rows.log` | guest-rows run 42929489113, `libc_children session_lifecycle a_launch_gives_each_unsent_stdio_slot_a_null a_spawn_from_an_image_frees_it_when_the_child_ends console_image_boots virt_smp virt_readonly_copyout virt_user_mode` | e9bbb2961 | guest runner, x86-64 under KVM and AArch64 emulated | red: 7 of 8. `libc_children` ended `tty_interrupt: stalled at the nested line held`, the stall `issues/libc-childrens-tty-interrupt-can-stall-at-the-nested-shells-line.md` records on main |
 | `metal/r2/metal-readback.log`, `metal/r2/request.txt` | `cargo test --test toyos-build -- --metal --metal-readback <dir> startup_block abuse_handle_table spawn_child_ends_first process_tree abuse_spawn_labels abuse_spawn_maps abuse_page_straddle spawn_image_object spawn_lands_claimed start_refuses_itself` | e9bbb2961 | staged for the T14, no machine touched | 2 (staged) |
+
+## Review round 2 fixes
+
+| file | command | revision | target | exit |
+|---|---|---|---|---|
+| `host/r3-ci-host.log` | `cargo run -- --ci host` | 98853704a | macOS arm64 host | 1: 1 of 110 steps red, the recorded macOS test |
+| `metal/r3/metal-readback.log`, `metal/r3/request.txt` | `cargo test --test toyos-build -- --metal --metal-readback <dir> startup_block abuse_handle_table spawn_child_ends_first process_tree abuse_spawn_path_and_name abuse_spawn_maps abuse_page_straddle spawn_image_object spawn_lands_claimed start_refuses_itself` | 98853704a | staged for the T14, no machine touched | 2 (staged) |
+
+No guest row was run at 98853704a: against e9bbb2961 its code changes are
+four lines (a constant's definition, an `expect` for an `unwrap_or`, one
+parameter's type spelling, one `pub` removed) and a test's rename.
