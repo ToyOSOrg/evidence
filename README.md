@@ -76,3 +76,10 @@ not rerun.
 | `host/r5-ci-host.log` | `cargo run -- --ci host` | ebf926940, the branch rebased onto main 1cab347fd | macOS arm64 host | 1: 1 of 110 steps red, `the build system`: 384 passed, 1 failed, `llvm::tests::the_caller_s_environment_reaches_neither_the_build_nor_the_key` (and `keyed_and_built`, the child it runs). Every other `FAILED` in the log is under a `control` step, 73 of them, each a mutation reaching its verdict |
 
 The machine's vendor, model and firmware version are masked.
+
+## The head that lands: 8670c0df5, on main ad5db5a65 (over #1210 and #1214)
+
+| file | command | revision | target | exit |
+|---|---|---|---|---|
+| `guest/r4-rows.log` | guest-rows run 42979143481, `libc_children session_lifecycle a_launch_gives_each_unsent_stdio_slot_a_null console_image_boots virt_user_mode` | 8670c0df5 | guest runner, x86-64 under KVM and AArch64 emulated | green, 5 of 5 |
+| `host/r6-ci-host.log` | `cargo run -- --ci host`, lint included | 8670c0df5 | macOS arm64 host | 1: 1 of 110 steps red, `the build system`: 384 passed, 1 failed, `llvm::tests::the_caller_s_environment_reaches_neither_the_build_nor_the_key` (and `keyed_and_built`, the child it runs). The log has 75 `control` steps, 73 of which print a `FAILED` result; no other step holds one |
