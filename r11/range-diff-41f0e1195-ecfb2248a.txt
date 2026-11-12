@@ -1,0 +1,108 @@
+ 1:  2d1eaccff =  1:  8731b292b A removed page keeps its frame until every mapping of its object let it go
+ 2:  dde0b17db =  2:  a189b6756 The index's revocation, modelled with two spaces mapping it
+ 3:  e6252de31 =  3:  2d15331e4 The model's parked faults all complete once removals stop
+ 4:  f467105e8 =  4:  4aa615394 A fault's wait ends where its object's version moved, and it asks afresh
+ 5:  aa02cd345 =  5:  806bcf6e7 A paged object's range in a space, linked on its object's list of mappers
+ 6:  1e652cf7b =  6:  bc017e438 A fault on an absent paged page parks on its pager and touches it again
+ 7:  7c8eab9e3 =  7:  3659ef264 A process's end empties its space, so a revoker's last reference frees nothing
+ 8:  d110e6d30 =  8:  7e6227160 A served file is mapped read-only through its holder, and libc maps one
+ 9:  68cdd0732 =  9:  cf4086fa5 The file mapping entry names a fixed place as a pointer, and its refusals in each closure's type
+10:  d82a60951 ! 10:  1e796da46 A lost mapped page ends a program as SIGBUS and a copy as Io, and no pinned copy waits
+    @@ kernel/src/user_ptr.rs
+      //!
+      //! Every single-word user read is `read_volatile`, including the futex word
+      //! and the crash dump's walk, both outside this module.
+    -@@ kernel/src/user_ptr.rs: use alloc::string::String;
+    +@@
+      use alloc::vec;
+      use alloc::vec::Vec;
+      use core::marker::PhantomData;
+11:  89d39b01d = 11:  e9a13d543 The manual says how a file mapping shares the cache, waits and ends
+12:  4d66f6a43 = 12:  a8596b1ec A guest probe maps a pager's objects from a child, on both architectures
+13:  f03eefe10 = 13:  70562f94d A mapped object's range count is the kernel's own code under loom
+14:  5ad445972 = 14:  1f48d68a8 osbench: a cached file's pages through a mapping, against Linux's mmap
+15:  7adf4514c = 15:  27a826a84 issues: what step 2 of 7b built, and what it owes
+16:  2dd58492c = 16:  3e3a52cb1 issues: what step 2 owes on metal while the benches are down
+17:  26a32f484 = 17:  acff199b5 Review r1 of #1269: a revocation visit holds the pager's lock only to read, and a touch past a mapped file's end is SIGBUS
+18:  6e66a8cfd ! 18:  5d73370d7 Review r1 of #1269: every copy a syscall makes answers its own cause
+    @@ Commit message
+     
+         B5. The manual says a copying system call answers an I/O error for a mapped
+         file's lost page. Fifteen sites flattened a failed copy to `BadAddress`: the
+    -    argument records of spawn, message send and receive, namespace build,
+    -    `vm_map` and the paged op, a port's badge, an affinity mask and a thread's
+    -    name, the namespace build's two vectors, the three PCI grants' zeroing, a
+    -    device acknowledgement and the log cursor's words. Each now answers the
+    -    copy's own `SyscallError` (`BadAddress` or `Io`), as `user_ptr` makes it. A
+    -    window refused for its bounds stays `BadAddress`.
+    +    argument records of spawn, message send and receive, `vm_map` and the paged
+    +    op, a port's badge, the affinity mask read and written, a thread's name, the
+    +    three PCI grants' zeroing, a device acknowledgement and the log cursor's two
+    +    reads. Each now answers the copy's own `SyscallError` (`BadAddress` or `Io`),
+    +    as `user_ptr` makes it. A window refused for its bounds stays `BadAddress`.
+     
+         Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+     
+    @@ kernel/src/syscall/dispatch.rs: pub(crate) fn syscall_dispatch(num: u64, a1: u64
+                  }
+                  sys_port_mint(RawHandle(a1 as u32), &badge[..len as usize])
+              }
+    -@@ kernel/src/syscall/dispatch.rs: pub(crate) fn syscall_dispatch(num: u64, a1: u64, a2: u64, a3: u64, a4: u64) ->
+    -             sys_port_badge(RawHandle(a1 as u32), RawHandle(a2 as u32), &mut out)
+    -         }
+    -         SYS_NAMESPACE_BUILD => {
+    --            let Ok(args) = ctx.copy_in::<NamespaceBuild>(UserAddr::new(a1)) else {
+    --                return bad_addr;
+    -+            let args = match ctx.copy_in::<NamespaceBuild>(UserAddr::new(a1)) {
+    -+                Ok(args) => args,
+    -+                Err(e) => return e.to_u64(),
+    -             };
+    -             // ctx lets sys_namespace_build bound both counts before it reads either vector.
+    -             sys_namespace_build(&ctx, &args)
+     @@ kernel/src/syscall/dispatch.rs: pub(crate) fn syscall_dispatch(num: u64, a1: u64, a2: u64, a3: u64, a4: u64) ->
+                      return bad_addr;
+                  };
+    @@ kernel/src/syscall/dispatch.rs: pub(crate) fn syscall_dispatch(num: u64, a1: u64
+                  process::set_current_thread_name(&name[..len]);
+                  0
+     
+    - ## kernel/src/syscall/ipc.rs ##
+    -@@ kernel/src/syscall/ipc.rs: pub(super) fn sys_namespace_build(ctx: &SyscallContext, args: &NamespaceBuild) -
+    -         };
+    -         for i in 0..args.keep_n as usize {
+    -             let mut raw = [0u8; 8];
+    --            if keep.read_at(i * 8, &mut raw).is_err() {
+    --                return SyscallError::BadAddress.to_u64();
+    -+            if let Err(faulted) = keep.read_at(i * 8, &mut raw) {
+    -+                return SyscallError::from(faulted).to_u64();
+    -             }
+    -             let off = u32::from_ne_bytes([raw[0], raw[1], raw[2], raw[3]]);
+    -             let len = u32::from_ne_bytes([raw[4], raw[5], raw[6], raw[7]]);
+    -@@ kernel/src/syscall/ipc.rs: pub(super) fn sys_namespace_build(ctx: &SyscallContext, args: &NamespaceBuild) -
+    -         };
+    -         for i in 0..args.add_n as usize {
+    -             let mut raw = [0u8; 16];
+    --            if add.read_at(i * 16, &mut raw).is_err() {
+    --                return SyscallError::BadAddress.to_u64();
+    -+            if let Err(faulted) = add.read_at(i * 16, &mut raw) {
+    -+                return SyscallError::from(faulted).to_u64();
+    -             }
+    -             let off = u32::from_ne_bytes([raw[0], raw[1], raw[2], raw[3]]);
+    -             let len = u32::from_ne_bytes([raw[4], raw[5], raw[6], raw[7]]);
+    -
+      ## kernel/src/syscall/machine.rs ##
+     @@ kernel/src/syscall/machine.rs: fn read_on_cursor(
+          let words = |bytes: &[u8]| -> Vec<u64> {
+19:  6cecae6a9 = 19:  93bfcc29b Review r1 of #1269: the ABI says what a paged holder's mapping is, and the range count's control runs
+20:  153b638ce = 20:  b78b476cc Review r1 of #1269: osbench's map group, with the threads and 255-mapper rows, and a guest row for it
+21:  fc4cfb2aa = 21:  112eca8d9 Review r1 of #1269: the records say what step 2 owes and departs from
+22:  79942b90a = 22:  5eadbcd0a Review r1 of #1269: the source gate counts MapNode's two Send and Sync, and the loom model clones once
+23:  cb84f0084 = 23:  5513d279c Review r2 of #1269: the walk reads its own set of revoking pages, one lock at a time, and a page past the end is a variant of its own
+24:  39fc911d8 = 24:  6455b27bd Review r2 of #1269: the records say what no row prices, and msync's true reason
+25:  cc520da75 = 25:  d59482778 Review r3 of #1269: the walk sweeps again whenever a pass began since its last sweep
+26:  7dc03a9ed = 26:  76bcaa5da Review r4 of #1269: the walk ends itself, and the model's futex waiter is its oracle
+27:  7cb48def9 = 27:  eb7deec71 Review r5 of #1269: a revocation visit's shootdown is counted, and the model's futex wait translates and arms apart
+28:  80e32a8d2 = 28:  d1ad82e61 Review r6 of #1269: the model refuses a waiter keyed on a given-back frame after any step
+29:  a426577f8 = 29:  54c90cc90 Review r8 of #1269: a walk sweeps the futex waits only of an object a mapper ever linked
+30:  80ad4c4ca = 30:  54d6a6a07 Review r8 of #1269: the /tmp record's slot is measured again, at 136 bytes
+31:  41f0e1195 = 31:  ecfb2248a Review r9 of #1269: the index's docs name what is left, and the /tmp record says who measures again
