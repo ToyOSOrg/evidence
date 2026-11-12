@@ -6,7 +6,7 @@ All on macOS arm64.
 
 **The conflicts.** #1252 removed the namespace system calls and label handling from the kernel. The rebase conflicted in `kernel/src/syscall/dispatch.rs` and `kernel/src/syscall/ipc.rs`, in one commit: B5's `Review r1 of #1269: every copy a syscall makes answers its own cause`.
 - B5 had changed three copies inside the namespace build so they answer their own cause. Those were the build's argument record and its two vectors, and #1252 deleted that code.
-- The resolution takes main's side in both hunks. Main's removal stays, and B5's other twelve sites stay.
+- The resolution takes main's side in both hunks. Main's removal stays, and B5's other fifteen sites stay: its rebased commit converts each listed in its message.
 - No line means something different.
 
 **#1252's own new copies.** These are the spawn's endowment list read, and the copy-out of what it lays out. Both already answer `SyscallError::from(faulted)`, so in the composition they answer the copy's own cause through this PR's `Faulted`, as B5 asks.
