@@ -1,0 +1,98 @@
+=== e1c2794f88a77a467730ca3d2846d377b55e4649: cargo run -- --build-only --boot-config tests/images/benchcase.toml
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.14s
+     Running `target/debug/toyos-build --build-only --boot-config tests/images/benchcase.toml`
+06:24:13   BUILD x86_64 kernel, loader, ROOT of tests/images/benchcase.toml
+06:24:14 Building sysroot 03fc5d888c7abf54: ToyOS's std from <worktree>/rust, the compiler <home>/.cache/toyos/compilers/e8093ea010ff6ea7/stage2, the freestanding libraries 52e15ac638322101
+06:24:14 Building bootstrap
+06:24:15     Finished `dev` profile [unoptimized] target(s) in 0.04s
+06:24:15 WARNING: running build in stage 0. This might not work as expected.
+06:24:16 Building stage0 library artifacts{alloc, compiler_builtins, core, panic_abort, panic_unwind, proc_macro, rustc-std-workspace-core, std, std_detect, sysroot, test, unwind} (stage0:aarch64-apple-darwin -> stage0:x86_64-unknown-toyos)
+06:24:16    Compiling compiler_builtins v0.1.160 (<worktree>/rust/library/compiler-builtins/compiler-builtins)
+06:24:16    Compiling core v0.0.0 (<worktree>/rust/library/core)
+06:24:16    Compiling libc v0.2.189
+06:24:16    Compiling object v0.39.1
+06:24:16    Compiling std v0.0.0 (<worktree>/rust/library/std)
+06:24:16    Compiling test v0.0.0 (<worktree>/rust/library/test)
+06:24:31    Compiling rustc-std-workspace-core v1.99.0 (<worktree>/rust/library/rustc-std-workspace-core)
+06:24:31    Compiling alloc v0.0.0 (<worktree>/rust/library/alloc)
+06:24:31    Compiling memchr v2.8.3
+06:24:31    Compiling adler2 v2.0.1
+06:24:31    Compiling cfg-if v1.0.4
+06:24:31    Compiling toyos-abi v0.16.0 (<worktree>/sdk/abi)
+06:24:31    Compiling panic_abort v0.0.0 (<worktree>/rust/library/panic_abort)
+06:24:31    Compiling rustc-demangle v0.1.28
+06:24:31    Compiling rustc-literal-escaper v0.0.8
+06:24:31    Compiling dlmalloc v0.2.14
+06:24:33    Compiling rustc-std-workspace-alloc v1.99.0 (<worktree>/rust/library/rustc-std-workspace-alloc)
+06:24:33    Compiling gimli v0.34.0
+06:24:33    Compiling miniz_oxide v0.9.1
+06:24:33    Compiling hashbrown v0.17.1
+06:24:33    Compiling toyos v0.18.0 (<worktree>/sdk/toyos)
+06:24:33    Compiling std_detect v0.1.5 (<worktree>/rust/library/std_detect)
+06:24:34 warning: unused extern crate
+06:24:34   --> <worktree>/sdk/toyos/src/lib.rs:15:1
+06:24:34    |
+06:24:34 15 | extern crate alloc;
+06:24:34    | ^^^^^^^^^^^^^^^^^^^ unused
+06:24:34    |
+06:24:34    = note: `-W unused-extern-crates` implied by `-W rust-2018-idioms`
+06:24:34    = help: to override `-W rust-2018-idioms` add `#[allow(unused_extern_crates)]`
+06:24:34 help: remove the unused `extern crate`
+06:24:34    |
+06:24:34 15 - extern crate alloc;
+06:24:34    |
+
+06:24:34 warning: hidden lifetime parameters in types are deprecated
+06:24:34    --> <worktree>/sdk/toyos/src/elf/gnu_hash.rs:100:47
+06:24:34     |
+06:24:34 100 |     pub fn lookup(&self, name: &str, symtab: &SymTab) -> Option<usize> {
+06:24:34     |                                               ^^^^^^ expected lifetime parameter
+06:24:34     |
+06:24:34     = note: `-W elided-lifetimes-in-paths` implied by `-W rust-2018-idioms`
+06:24:34     = help: to override `-W rust-2018-idioms` add `#[allow(elided_lifetimes_in_paths)]`
+06:24:34 help: indicate the anonymous lifetime
+06:24:34     |
+06:24:34 100 |     pub fn lookup(&self, name: &str, symtab: &SymTab<'_>) -> Option<usize> {
+06:24:34     |                                                     ++++
+
+06:24:34 error[E0308]: mismatched types
+06:24:34    --> <worktree>/sdk/toyos/src/files/owner.rs:614:26
+06:24:34     |
+06:24:34 614 |         |holder, _| Some(unsafe { holder.map(offset, len, at) }.map(|ptr| ptr.expose_provenance() as u64)),
+06:24:34     |                     ---- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `Result<Result<_, SyscallError>, Error>`, found `Result<u64, SyscallError>`
+06:24:34     |                     |
+06:24:34     |                     arguments to this enum variant are incorrect
+06:24:34     |
+06:24:34     = note: expected enum `Result<Result<_, SyscallError>, files::Error>`
+06:24:34                found enum `Result<u64, SyscallError>`
+06:24:34 help: the type constructed contains `Result<u64, SyscallError>` due to the type of the argument passed
+06:24:34    --> <worktree>/sdk/toyos/src/files/owner.rs:614:21
+06:24:34     |
+06:24:34 614 |         |holder, _| Some(unsafe { holder.map(offset, len, at) }.map(|ptr| ptr.expose_provenance() as u64)),
+06:24:34     |                     ^^^^^--------------------------------------------------------------------------------^
+06:24:34     |                          |
+06:24:34     |                          this argument influences the type of `Some`
+06:24:34 note: tuple variant defined here
+06:24:34    --> library/core/src/option.rs:606:4
+06:24:34 help: try wrapping the expression in `rustc_std_workspace_core::prelude::v1::Ok`
+06:24:34     |
+06:24:34 614 |         |holder, _| Some(rustc_std_workspace_core::prelude::v1::Ok(unsafe { holder.map(offset, len, at) }.map(|ptr| ptr.expose_provenance() as u64))),
+06:24:34     |                          ++++++++++++++++++++++++++++++++++++++++++                                                                                +
+
+06:24:35 For more information about this error, try `rustc --explain E0308`.
+06:24:35 warning: `toyos` (lib) generated 2 warnings
+06:24:35 error: could not compile `toyos` (lib) due to 1 previous error; 2 warnings emitted
+06:24:35 warning: build failed, waiting for other jobs to finish...
+06:24:36 Build completed unsuccessfully in 0:00:21
+
+thread 'main' (43373451) panicked at build/toolchain.rs:576:5:
+std did not compile:
+error[E0308]: mismatched types
+   --> <worktree>/sdk/toyos/src/files/owner.rs:614:26
+    |
+614 |         |holder, _| Some(unsafe { holder.map(offset, len, at) }.map(|ptr| ptr.expose_provenance() as u64)),
+    |                     ---- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `Result<Result<_, SyscallError>, Error>`, found `Result<u64, SyscallError>`
+    |                     |
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+06:24:36   FAIL  x86_64 kernel, loader, ROOT of tests/images/benchcase.toml  (24s)
+=== exit 101

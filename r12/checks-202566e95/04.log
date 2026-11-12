@@ -1,0 +1,177 @@
+=== 202566e95e9f481d6801c1394c1a43160aecd65e: cargo run -- --ci host lint
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.10s
+     Running `target/debug/toyos-build --ci host lint`
+
+06:36:34 === [ci] the change's scope
+06:36:34 [ci] the change's scope: not a merge group, so everything
+
+06:36:34 === [ci] the licences of what ships
+06:36:36   NOTICE section tests/corpus/tinycc/ (LGPL-2.1-or-later AND BSD-3-Clause AND (MIT OR Apache-2.0)) is not shipped
+06:36:36   NOTICE section "Rust crates and the forks" names no files: every crate, fork or not, is judged by the crate half of this gate
+06:36:36   NOTICE section "licenses/CDLA-Permissive-2.0-webpki-root-certs.txt — the Mozilla roots, CDLA-Permissive-2.0" names no files: the roots the build writes out of a crate are judged, with this text beside them, by `judge_trust_roots`
+06:36:36   crate fortanix-sgx-abi 0.6.1 (registry+https://github.com/rust-lang/crates.io-index) is MPL-2.0, via std → fortanix-sgx-abi [x86_64-fortanix-unknown-sgx]
+06:36:36   crate doom 0.1.0 (<worktree>/apps/doom/Cargo.toml) is "GPL-2.0-only": not allowed: GPL-2.0-only; pulled in by doom
+    EXCEPTED, pending the owner, issues/a-package-is-a-directory-under-apps-and-the-installer-is-a-program.md: /system/bin/doom links doomgeneric, id's Doom source by way of Chocolate Doom (NOTICE); it leaves the image as a package at the stage where the apps leave this repository
+06:36:36   crate windows-sys 0.61.100 (<worktree>/rust/library/windows-sys/Cargo.toml) is "": declares no licence; pulled in by std → dlmalloc [cfg(any(all(target_family = "wasm", not(any(unix, target_os = "wasi"))), target_os = "xous", target_os = "vexos", target_os = "toyos", all(target_vendor = "fortanix", target_env = "sgx")))] → windows-sys [cfg(target_os = "windows")]
+    EXCEPTED, reached only under cfg(target_os = "windows"): std's empty in-tree stand-in for windows-sys, which declares no licence
+06:36:36   crate windows-link 0.0.0 (<worktree>/rust/library/windows_link/Cargo.toml) is "": declares no licence; pulled in by std → windows-link [cfg(any(windows, target_os = "cygwin"))]
+    EXCEPTED, reached only under cfg(any(windows, target_os = "cygwin")): std's in-tree stand-in for windows-link, which declares no licence
+06:36:36   file assets/DOOM1.WAD is "LicenseRef-id-Software-DOOM1-Shareware": not allowed: LicenseRef-id-Software-DOOM1-Shareware; pulled in by COMMITTED_FILES
+    EXCEPTED, pending the owner, issues/a-package-is-a-directory-under-apps-and-the-installer-is-a-program.md: id's shareware terms: redistributable unmodified and not for consideration, so an image carrying it may not be sold (NOTICE); it leaves with doom
+06:36:36   file assets/soundfont.sf2 is "LicenseRef-GeneralUser-GS-2.0": not allowed: LicenseRef-GeneralUser-GS-2.0; pulled in by COMMITTED_FILES
+    EXCEPTED, pending the owner, issues/a-package-is-a-directory-under-apps-and-the-installer-is-a-program.md: GeneralUser GS's own permissive licence, no standard one, with its author's caveat on where the samples came from (NOTICE); doom alone opens it, and it leaves with doom
+06:36:36   NOTICE section apps/doom is "GPL-2.0-or-later": not allowed: GPL-2.0-or-later; pulled in by NOTICE
+    EXCEPTED, pending the owner, issues/a-package-is-a-directory-under-apps-and-the-installer-is-a-program.md: doomgeneric, the C half of the doom crate, fetched at build time and compiled into it; it leaves with doom
+06:36:36 [ci] the licences of what ships: 6 exception(s) stand, and nothing else is refused
+
+06:36:36 === [ci] clippy and its targets
+info: component clippy is up to date
+info: component rust-std for target x86_64-unknown-none is up to date
+info: component rust-std for target x86_64-unknown-uefi is up to date
+info: component rust-std for target aarch64-unknown-none-softfloat is up to date
+info: component rust-std for target aarch64-unknown-uefi is up to date
+info: component rust-std for target x86_64-unknown-linux-musl is up to date
+info: component rust-std for target aarch64-unknown-linux-musl is up to date
+06:36:36 [ci] clippy and its targets: installed
+
+06:36:36 === [ci] clippy, warnings denied
+06:36:36 === clippy: cargo clippy --workspace $GUESTS --all-targets --keep-going -- $ADOPTED -D warnings
+    Checking toyos v0.18.0 (<worktree>/sdk/toyos)
+    Checking toyos-manifest v0.1.0 (<worktree>/lib/manifest)
+    Checking toyos-session v0.1.0 (<worktree>/lib/session)
+    Checking toyos-net-node v0.1.0 (<worktree>/system/netstack/node)
+    Checking toyos-blockring v0.1.0 (<worktree>/lib/blockring)
+    Checking toyos-window v0.20.0 (<worktree>/sdk/window)
+    Checking toyos-link v0.1.0 (<worktree>/lib/link)
+    Checking toyos-libc-copies v0.1.0 (<worktree>/sdk/libc/arch)
+    Checking toyos-desktop v0.1.0 (<worktree>/system/compositor/desktop)
+    Checking toyos-swap v0.1.0 (<worktree>/lib/swap)
+    Checking toyos-blockserve v0.1.0 (<worktree>/lib/blockserve)
+    Checking toyos-xhci v0.1.0 (<worktree>/system/usbd/xhci)
+    Checking toyos-supervisor v0.1.0 (<worktree>/system/supervisor/lifecycle)
+    Checking toyos-build v0.1.0 (<worktree>)
+    Checking toyos-metal v0.1.0 (<worktree>/tests/metal)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 7.57s
+06:36:43 === clippy: cargo clippy --workspace $GUESTS --all-targets --keep-going --features $CONTROLS -- $ADOPTED -D warnings
+    Checking toyos v0.18.0 (<worktree>/sdk/toyos)
+    Checking toyos-manifest v0.1.0 (<worktree>/lib/manifest)
+    Checking toyos-session v0.1.0 (<worktree>/lib/session)
+    Checking toyos-net-node v0.1.0 (<worktree>/system/netstack/node)
+    Checking toyos-blockring v0.1.0 (<worktree>/lib/blockring)
+    Checking toyos-window v0.20.0 (<worktree>/sdk/window)
+    Checking toyos-link v0.1.0 (<worktree>/lib/link)
+    Checking toyos-libc-copies v0.1.0 (<worktree>/sdk/libc/arch)
+    Checking toyos-desktop v0.1.0 (<worktree>/system/compositor/desktop)
+    Checking toyos-blockserve v0.1.0 (<worktree>/lib/blockserve)
+    Checking toyos-xhci v0.1.0 (<worktree>/system/usbd/xhci)
+    Checking toyos-swap v0.1.0 (<worktree>/lib/swap)
+    Checking toyos-build v0.1.0 (<worktree>)
+    Checking toyos-supervisor v0.1.0 (<worktree>/system/supervisor/lifecycle)
+    Checking toyos-metal v0.1.0 (<worktree>/tests/metal)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 6.67s
+06:36:50 === clippy: cargo clippy -p kernel --lib --tests --features sched-check -- $ADOPTED -D warnings
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.08s
+06:36:50 === clippy: cargo clippy -p kernel --lib --tests --features sched-check,protocol-port --features $KERNEL_CONTROLS -- $ADOPTED -D warnings
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.08s
+06:36:50 === clippy: cargo clippy -p kernel --target x86_64-unknown-none -- $ADOPTED -D warnings
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.10s
+06:36:51 === clippy: cargo clippy -p kernel --target x86_64-unknown-none --features boot-actuators,test-actuators -- $ADOPTED -D warnings
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.08s
+06:36:51 === clippy: cargo clippy -p kernel --target x86_64-unknown-none --features boot-actuators -- $ADOPTED -D warnings
+    Checking kernel v0.1.0 (<worktree>/kernel)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 2.95s
+06:36:54 === clippy: cargo clippy -p kernel --target x86_64-unknown-none --features debug-wait,sched-check,sched-tripwire,heap-tripwire,heap-sweep,pass-spin,stack-witness,switch-witness,switch-witness-mutate-frame,switch-witness-mutate-rsp,df-witness,df-witness-mutate,entry-df-unclean,mask-windows -- $ADOPTED -D warnings
+    Checking kernel v0.1.0 (<worktree>/kernel)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 2.92s
+06:36:57 === clippy: cargo clippy -p kernel --target x86_64-unknown-none --features heap-band-notail,heap-lockspin -- $ADOPTED -D warnings
+    Checking kernel v0.1.0 (<worktree>/kernel)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 3.86s
+06:37:01 === clippy: cargo clippy -p kernel --target x86_64-unknown-none --features heap-band-nohead -- $ADOPTED -D warnings
+    Checking kernel v0.1.0 (<worktree>/kernel)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 2.90s
+06:37:04 === clippy: cargo clippy -p kernel --target aarch64-unknown-none-softfloat -- $ADOPTED -D warnings
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.11s
+06:37:04 === clippy: cargo clippy -p kernel --target aarch64-unknown-none-softfloat --features boot-actuators,test-actuators -- $ADOPTED -D warnings
+    Checking kernel v0.1.0 (<worktree>/kernel)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 2.65s
+06:37:07 === clippy: cargo clippy -p kernel --target aarch64-unknown-none-softfloat --features boot-actuators -- $ADOPTED -D warnings
+    Checking kernel v0.1.0 (<worktree>/kernel)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 2.53s
+06:37:09 === clippy: cargo clippy -p kernel --target aarch64-unknown-none-softfloat --features debug-wait,sched-check,sched-tripwire,heap-tripwire,heap-sweep,pass-spin,stack-witness,switch-witness,switch-witness-mutate-frame,switch-witness-mutate-rsp,mask-windows -- $ADOPTED -D warnings
+    Checking kernel v0.1.0 (<worktree>/kernel)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 2.65s
+06:37:12 === clippy: cargo clippy -p bootloader --target x86_64-unknown-uefi -- $ADOPTED -W clippy::undocumented_unsafe_blocks -D warnings
+    Checking toyos-abi v0.16.0 (<worktree>/sdk/abi)
+    Checking toyos-crypto v0.1.0 (<worktree>/lib/crypto)
+    Checking toyos-gpt v0.1.0 (<worktree>/lib/gpt)
+    Checking toyos-wallclock v0.1.0 (<worktree>/lib/wallclock)
+    Checking toyos-blockdev v0.1.0 (<worktree>/lib/blockdev)
+    Checking toyos-tco v0.1.0 (<worktree>/lib/tco)
+    Checking toyos-random v0.1.0 (<worktree>/lib/random)
+    Checking toyos-tsc v0.1.0 (<worktree>/lib/tsc)
+    Checking toyos-microcode v0.1.0 (<worktree>/lib/microcode)
+    Checking toyos-rootimage v0.1.0 (<worktree>/lib/rootimage)
+    Checking toyos-devicepath v0.1.0 (<worktree>/lib/devicepath)
+    Checking toyos-bootnames v0.1.0 (<worktree>/lib/bootnames)
+    Checking toyos-bootmap v0.1.0 (<worktree>/lib/bootmap)
+    Checking toyos-logstream v0.1.0 (<worktree>/lib/logstream)
+    Checking toyos-kimage v0.1.0 (<worktree>/lib/kimage)
+    Checking toyos-acpi v0.1.0 (<worktree>/lib/acpi)
+    Checking bcachefs v0.1.0 (<worktree>/lib/bcachefs)
+    Checking toyos-update v0.1.0 (<worktree>/lib/update)
+    Checking bootloader v0.1.0 (<worktree>/loader)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 11.93s
+06:37:24 === clippy: cargo clippy -p bootloader --target aarch64-unknown-uefi -- $ADOPTED -W clippy::undocumented_unsafe_blocks -D warnings
+    Checking toyos-abi v0.16.0 (<worktree>/sdk/abi)
+    Checking toyos-crypto v0.1.0 (<worktree>/lib/crypto)
+    Checking toyos-gpt v0.1.0 (<worktree>/lib/gpt)
+    Checking toyos-wallclock v0.1.0 (<worktree>/lib/wallclock)
+    Checking toyos-blockdev v0.1.0 (<worktree>/lib/blockdev)
+    Checking toyos-tco v0.1.0 (<worktree>/lib/tco)
+    Checking toyos-random v0.1.0 (<worktree>/lib/random)
+    Checking toyos-tsc v0.1.0 (<worktree>/lib/tsc)
+    Checking toyos-microcode v0.1.0 (<worktree>/lib/microcode)
+    Checking toyos-rootimage v0.1.0 (<worktree>/lib/rootimage)
+    Checking toyos-devicepath v0.1.0 (<worktree>/lib/devicepath)
+    Checking toyos-bootnames v0.1.0 (<worktree>/lib/bootnames)
+    Checking toyos-bootmap v0.1.0 (<worktree>/lib/bootmap)
+    Checking toyos-logstream v0.1.0 (<worktree>/lib/logstream)
+    Checking toyos-kimage v0.1.0 (<worktree>/lib/kimage)
+    Checking toyos-acpi v0.1.0 (<worktree>/lib/acpi)
+    Checking toyos-update v0.1.0 (<worktree>/lib/update)
+    Checking bcachefs v0.1.0 (<worktree>/lib/bcachefs)
+    Checking bootloader v0.1.0 (<worktree>/loader)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 11.98s
+06:37:36 === clippy: cargo clippy -p toyos-crypto --all-targets --features std,sign,wpa2,rustls-provider -- $ADOPTED -D warnings
+    Blocking waiting for file lock on package cache
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.17s
+06:37:36 === clippy: cargo clippy -p toyos-crypto --all-targets --all-features -- $ADOPTED -D warnings
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.11s
+06:37:36 === clippy: cargo clippy -p toyos-crypto --all-targets -- $ADOPTED -D warnings
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.11s
+06:37:36 === clippy: cargo clippy -p toyos-pci-claim --all-targets --features host-grant --no-deps --target-dir target/clippy-pci-claim -- $ADOPTED -D warnings
+    Checking toyos v0.18.0 (<worktree>/sdk/toyos)
+    Checking toyos-pci-claim v0.1.0 (<worktree>/lib/pci-claim)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.85s
+06:37:37 === clippy: cargo clippy -p toyos-font --no-default-features --all-targets --target-dir target/clippy-font -- $ADOPTED -D warnings
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.11s
+06:37:38 === clippy: cargo clippy -p toyos --all-targets -- $ADOPTED -D warnings
+    Checking toyos v0.18.0 (<worktree>/sdk/toyos)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 1.95s
+06:37:40 === clippy: cargo clippy -p toyos --lib --features fd-table -- $ADOPTED -D warnings
+    Checking toyos v0.18.0 (<worktree>/sdk/toyos)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 1.78s
+06:37:42 === clippy: cargo clippy -p osbench --target x86_64-unknown-linux-musl -- $ADOPTED -D warnings
+    Checking osbench v0.1.0 (<worktree>/tests/guest/osbench)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.65s
+06:37:42 === clippy: cargo clippy -p osbench --target aarch64-unknown-linux-musl -- $ADOPTED -D warnings
+    Checking osbench v0.1.0 (<worktree>/tests/guest/osbench)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.60s
+06:37:43 === clippy: cargo clippy -p toyos-abi --all-targets --keep-going --target-dir target/clippy-abi -- -W clippy::undocumented_unsafe_blocks -D warnings
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.11s
+06:37:43 [ci] clippy, warnings denied: clean
+
+06:37:43 === [ci] nothing left in $TMPDIR or /tmp
+06:37:43 [ci] nothing left in $TMPDIR or /tmp: every test took its scratch with it
+06:37:43 [ci] Host(Some(Lint)): 5 step(s), all green
+=== exit 0
