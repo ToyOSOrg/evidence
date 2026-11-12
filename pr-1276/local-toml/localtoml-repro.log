@@ -1,0 +1,188 @@
+rev f9e3135d22b4fa3bf06e2bec47b3add543419be5, rust a189b3a6b3346db3c162fc6fd382f9b36b5f3ab1
+== .cargo/local.toml
+[patch.crates-io]
+mio = { path = "<scratch>/mio-fork" }
+
+[patch."https://github.com/ToyOSOrg/mio"]
+mio = { path = "<scratch>/mio-fork" }
+== cargo metadata in rust/library
+error: failed to parse manifest at `<scratch>/wt-mio/rust/library/Cargo.toml`
+
+Caused by:
+  the cargo feature `profile-rustflags` requires a nightly version of Cargo, but this is the `stable` channel
+  See https://doc.rust-lang.org/book/appendix-07-nightly-rust.html for more information about Rust release channels.
+  See https://doc.rust-lang.org/cargo/reference/unstable.html#profile-rustflags-option for more information about using this feature.
+exit=101
+== cargo metadata in rust/src/bootstrap
+warning: patch `mio v1.2.0 (<scratch>/mio-fork)` was not used in the crate graph
+warning: patch `mio v1.2.0 (<scratch>/mio-fork)` was not used in the crate graph
+help: Check that the patched package version and available features are compatible
+      with the dependency requirements. If the patch has a different version from
+      what is locked in the Cargo.lock file, run `cargo update` to use the new
+      version. This may also occur with an optional dependency that is not enabled.
+exit=0
+== cargo metadata in sdk/libc
+warning: patch `mio v1.2.0 (<scratch>/mio-fork)` was not used in the crate graph
+warning: patch `mio v1.2.0 (<scratch>/mio-fork)` was not used in the crate graph
+help: Check that the patched package version and available features are compatible
+      with the dependency requirements. If the patch has a different version from
+      what is locked in the Cargo.lock file, run `cargo update` to use the new
+      version. This may also occur with an optional dependency that is not enabled.
+exit=0
+== git status (monorepo)
+ M rust
+ M sdk/libc/Cargo.lock
+== git status (rust)
+ M src/bootstrap/Cargo.lock
+== diffs
+diff --git a/src/bootstrap/Cargo.lock b/src/bootstrap/Cargo.lock
+index 8406e8e2e48..0bbe34ccf6a 100644
+--- a/src/bootstrap/Cargo.lock
++++ b/src/bootstrap/Cargo.lock
+@@ -1134,3 +1134,11 @@ checksum = "388c44dc09d76f1536602ead6d325eb532f5c122f17782bd57fb47baeeb767e2"
+ dependencies = [
+  "lzma-sys",
+ ]
++
++[[patch.unused]]
++name = "mio"
++version = "1.2.0"
++
++[[patch.unused]]
++name = "mio"
++version = "1.2.0"
+diff --git a/sdk/libc/Cargo.lock b/sdk/libc/Cargo.lock
+index c721dd62b..b1437e46b 100644
+--- a/sdk/libc/Cargo.lock
++++ b/sdk/libc/Cargo.lock
+@@ -64,3 +64,11 @@ checksum = "ae137229bcbd6cdf0f7b80a31df61766145077ddf49416a728b02cb3921ff3fc"
+ dependencies = [
+  "windows-link",
+ ]
++
++[[patch.unused]]
++name = "mio"
++version = "1.2.0"
++
++[[patch.unused]]
++name = "mio"
++version = "1.2.0"
+== cargo run -- --build-only
+    Updating crates.io index
+     Locking 1 package to latest compatible version
+      Adding mio v1.2.0 (<scratch>/mio-fork)
+   Compiling zeroize v1.9.0
+   Compiling proc-macro2 v1.0.106
+   Compiling unicode-ident v1.0.24
+   Compiling quote v1.0.45
+   Compiling untrusted v0.9.0
+   Compiling rustls v0.23.45
+   Compiling log v0.4.29
+   Compiling toyos-abi v0.16.0 (<scratch>/wt-mio/sdk/abi)
+   Compiling serde_core v1.0.228
+   Compiling subtle v2.6.1
+   Compiling once_cell v1.21.4
+   Compiling equivalent v1.0.2
+   Compiling serde v1.0.228
+   Compiling libc v0.2.190
+   Compiling cfg-if v1.0.4
+   Compiling itoa v1.0.17
+   Compiling rustls-pki-types v1.15.1
+   Compiling httparse v1.10.1
+   Compiling toyos-wallclock v0.1.0 (<scratch>/wt-mio/lib/wallclock)
+   Compiling base64 v0.23.1
+   Compiling hashbrown v0.16.1
+   Compiling zmij v1.0.21
+   Compiling foldhash v0.1.5
+   Compiling rustls-webpki v0.103.15
+   Compiling toyos v0.18.0 (<scratch>/wt-mio/sdk/toyos)
+   Compiling allocator-api2 v0.2.21
+   Compiling crc32fast v1.5.0
+   Compiling bytes v1.12.1
+   Compiling libm v0.2.16
+   Compiling hashbrown v0.15.5
+   Compiling indexmap v2.13.0
+   Compiling toyos-logstream v0.1.0 (<scratch>/wt-mio/lib/logstream)
+   Compiling http v1.5.0
+   Compiling toyos-blockdev v0.1.0 (<scratch>/wt-mio/lib/blockdev)
+   Compiling getrandom v0.3.4 (https://github.com/ToyOSOrg/getrandom?branch=toyos-0.3-sdk-0.12#67c17e0a)
+   Compiling simd-adler32 v0.3.10
+   Compiling serde_json v1.0.149
+   Compiling toml_write v0.1.2
+   Compiling ttf-parser v0.21.1
+   Compiling winnow v0.7.15
+   Compiling toyos-ieee80211 v0.1.0 (<scratch>/wt-mio/lib/ieee80211)
+   Compiling adler2 v2.0.1
+   Compiling miniz_oxide v0.9.1
+   Compiling ureq-proto v0.6.4
+   Compiling filetime v0.2.29
+   Compiling toyos-radio v0.1.0 (<scratch>/wt-mio/lib/radio)
+   Compiling syn v2.0.117
+   Compiling toyos-manifest v0.1.0 (<scratch>/wt-mio/lib/manifest)
+   Compiling fontdue v0.9.3
+   Compiling webpki-roots v1.0.9
+   Compiling rustc-demangle v0.1.27
+   Compiling toyos-elide v0.1.0 (<scratch>/wt-mio/lib/elide)
+   Compiling toyos-keymap v0.1.0 (<scratch>/wt-mio/sdk/keymap)
+   Compiling memchr v2.8.0
+   Compiling percent-encoding v2.3.2
+   Compiling utf8-zero v0.8.1
+   Compiling lazy_static v1.5.0
+   Compiling toyos-font v0.2.0 (<scratch>/wt-mio/sdk/font)
+   Compiling iced-x86 v1.21.0
+   Compiling toyos-symbols v0.1.0 (<scratch>/wt-mio/lib/symbols)
+   Compiling serde_derive v1.0.228
+   Compiling toyos-crypto v0.1.0 (<scratch>/wt-mio/lib/crypto)
+   Compiling ureq v3.4.2
+   Compiling toyos-icon v0.1.0 (<scratch>/wt-mio/sdk/icon)
+   Compiling flate2 v1.1.10
+   Compiling toyos-session v0.1.0 (<scratch>/wt-mio/lib/session)
+   Compiling toyos-wifi v0.1.0 (<scratch>/wt-mio/lib/wifi)
+   Compiling tar v0.4.46
+   Compiling toyos-tmpdir v0.1.0 (<scratch>/wt-mio/lib/tmpdir)
+   Compiling toyos-fat32 v0.1.0 (<scratch>/wt-mio/lib/fat32)
+   Compiling toyos-kimage v0.1.0 (<scratch>/wt-mio/lib/kimage)
+   Compiling toyos-input v0.1.0 (<scratch>/wt-mio/lib/input)
+   Compiling pem v4.0.0
+   Compiling webpki-root-certs v1.0.9
+   Compiling toyos-vdagent v0.1.0 (<scratch>/wt-mio/lib/vdagent)
+   Compiling toyos-fat32-check v0.1.0 (<scratch>/wt-mio/lib/fat32/check)
+   Compiling toyos-microcode v0.1.0 (<scratch>/wt-mio/lib/microcode)
+   Compiling toyos-virtio-serial v0.1.0 (<scratch>/wt-mio/lib/virtio-serial)
+   Compiling toyos-osrelease v0.1.0 (<scratch>/wt-mio/sdk/osrelease)
+   Compiling toyos-gpt v0.1.0 (<scratch>/wt-mio/lib/gpt)
+   Compiling toyos-tco v0.1.0 (<scratch>/wt-mio/lib/tco)
+   Compiling serde_spanned v0.6.9
+   Compiling toml_datetime v0.6.11
+   Compiling toml_edit v0.22.27
+   Compiling toml v0.8.23
+   Compiling toyos-update v0.1.0 (<scratch>/wt-mio/lib/update)
+   Compiling toyos-swap v0.1.0 (<scratch>/wt-mio/lib/swap)
+   Compiling bcachefs v0.1.0 (<scratch>/wt-mio/lib/bcachefs)
+   Compiling toyos-ssh v0.1.0 (<scratch>/wt-mio/lib/ssh)
+   Compiling toyos-build v0.1.0 (<scratch>/wt-mio)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 27.47s
+     Running `target/debug/toyos-build --build-only`
+
+thread 'main' (42148562) panicked at build/llvm.rs:329:5:
+<scratch>/wt-mio/rust/src/bootstrap holds changes no commit does, and an LLVM is keyed on the tree its commit records: commit them, and the build makes the LLVM they name
+ M src/bootstrap/Cargo.lock
+
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+build-only exit=101
+== restored
+ M Cargo.lock
+diff --git a/Cargo.lock b/Cargo.lock
+index 2048adbd9..29aee031c 100644
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@ -1760,7 +1760,6 @@ dependencies = [
+ [[package]]
+ name = "mio"
+ version = "1.2.0"
+-source = "git+https://github.com/ToyOSOrg/mio?branch=toyos#3e070f61d683d034def4f20e625cef4c44d5ef8f"
+ dependencies = [
+  "libc",
+  "toyos-abi",
+== restored root Cargo.lock
+== end
