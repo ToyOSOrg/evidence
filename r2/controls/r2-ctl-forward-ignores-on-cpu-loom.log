@@ -1,0 +1,40 @@
+   Compiling kernel-loom v0.1.0 (<path>
+    Finished `release` profile [optimized] target(s) in 1.58s
+     Running tests/loom_claimed_wake.rs (<path>
+
+running 2 tests
+
+thread 'a_claim_sends_a_task_on_only_once_its_home_has_saved_it' (39975065) panicked at <path>
+Causality violation: Concurrent write accesses to `UnsafeCell`.
+
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'a_claim_sends_a_task_on_only_once_its_home_has_saved_it' (39975065) panicked at kernel/loom/src/../../pure/sched/task.rs:828:9:
+task TaskKey(1) dropped outside finalize(): the only legal death is DeadTask::finalize
+stack backtrace:
+   0:        0x10026e2cc - <<std[5d97c59e5e5fafcc]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[663bb9e1522ba5ef]::fmt::Display>::fmt
+   1:        0x10027fb2c - core[663bb9e1522ba5ef]::fmt::write
+   2:        0x100271e44 - <alloc[cc4db322bb1ac55d]::vec::Vec<u8> as std[5d97c59e5e5fafcc]::io::Write>::write_fmt
+   3:        0x100254fc4 - std[5d97c59e5e5fafcc]::panicking::default_hook::{closure#0}
+   4:        0x100267a84 - std[5d97c59e5e5fafcc]::panicking::default_hook
+   5:        0x1001f65f4 - test[4aa3eea2f4983582]::test_main_inner::<test[4aa3eea2f4983582]::test_main_static::{closure#0}>::{closure#0}
+   6:        0x100242a64 - generator[aab3904f37c4313c]::detail::gen::catch_unwind_filter::<generator[aab3904f37c4313c]::detail::gen::gen_init_impl::{closure#0}, ()>::{closure#0}::{closure#0}
+   7:        0x100267fc4 - std[5d97c59e5e5fafcc]::panicking::panic_with_hook
+   8:        0x10025504c - std[5d97c59e5e5fafcc]::panicking::panic_handler::{closure#0}
+   9:        0x10024c150 - std[5d97c59e5e5fafcc]::sys::backtrace::__rust_end_short_backtrace::<std[5d97c59e5e5fafcc]::panicking::panic_handler::{closure#0}, !>
+  10:        0x1002557e4 - __rustc[100742bb89c490cb]::rust_begin_unwind
+  11:        0x10028eb80 - core[663bb9e1522ba5ef]::panicking::panic_fmt
+  12:        0x1001df0e4 - core[663bb9e1522ba5ef]::ptr::drop_glue::<kernel_loom[310937078b521ab5]::sched::task::TaskInner<kernel_loom[310937078b521ab5]::sched_model::Payload>>
+  13:        0x1001dfce4 - core[663bb9e1522ba5ef]::ptr::drop_glue::<loom_claimed_wake[c69336fe73fa0f53]::Cpu>
+  14:        0x1001e0c14 - <loom[3ea9db2d9b7ad43c]::rt::spawn<loom[3ea9db2d9b7ad43c]::thread::spawn_internal<loom_claimed_wake[c69336fe73fa0f53]::a_claim_sends_a_task_on_only_once_its_home_has_saved_it::{closure#0}::{closure#0}, (loom_claimed_wake[c69336fe73fa0f53]::Cpu, kernel_loom[310937078b521ab5]::sched::task::Notify, bool)>::{closure#0}>::{closure#1} as core[663bb9e1522ba5ef]::ops::function::FnOnce<()>>::call_once::{shim:vtable#0}
+  15:        0x1002398f8 - <generator[aab3904f37c4313c]::stack::StackBox<<generator[aab3904f37c4313c]::gen_impl::GeneratorImpl<core[663bb9e1522ba5ef]::option::Option<alloc[cc4db322bb1ac55d]::boxed::Box<dyn core[663bb9e1522ba5ef]::ops::function::FnOnce<(), Output = ()>>>, ()>>::init_code<loom[3ea9db2d9b7ad43c]::rt::scheduler::spawn_thread::{closure#0}>::{closure#0}>>::call_once
+  16:        0x1002898d0 - generator[aab3904f37c4313c]::detail::gen::gen_init_impl
+  17:        0x100289874 - generator[aab3904f37c4313c]::detail::asm::gen_init
+
+thread 'a_claim_sends_a_task_on_only_once_its_home_has_saved_it' (39975065) panicked at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/panicking.rs:233:5:
+panic in a destructor during cleanup
+thread caused non-unwinding panic. aborting.
+error: test failed, to rerun pass `-p kernel-loom --test loom_claimed_wake`
+
+Caused by:
+  process didn't exit successfully: `<path> (signal: 6, SIGABRT: process abort signal)
