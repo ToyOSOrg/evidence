@@ -90,3 +90,13 @@ exit 0 (17 passed) and `frames::` exit 0 (39 at #1250, 40 above); kernel clippy 
 `impl Drop for AddressSpace`, which #1250 rewrote; the resolution keeps that clause and #1250's wording for the rest.
 Every other commit of the stack is `=`. The guest runs at the previous heads (#1250 43135806312 at 9d9d5ee0f, #1268
 43135817474 at c2e8b9fba, #1270 43135829383 at 4765676e3) stand; those heads are kept on `hold-*` branches.
+
+## The member fix and the rebase onto main 29c5f2dfa (2026-11-12)
+
+#1250's past-the-object case in `abuse_spawn_maps` pushed a `SpawnMap` without `backing`, which #1259 added to the
+ABI after the case was written; e343eb551 names it `SpawnBacking::Copy`. `rebase5-checks.log`: at each head (#1250
+e343eb551, #1268 3eef788ab, #1270 e37586ccf) the testcases image builds (`cargo run -- --build-only --boot-config
+tests/images/testcases.toml`, exit 0), `vm::` (17) and `frames::` (39, 40, 40) pass and the kernel's clippy shapes
+exit 0; at #1270's head `shm_slot` passes (4) and its control reds (exit 101), and every guest test member compiles
+(`binaries of tests/guest/rust-tests` built; through a metal readback staging that touches no machine, its image
+deleted, since `--build-only` builds no member).
