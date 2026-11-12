@@ -1,0 +1,13 @@
+diff --git a/kernel/pure/mitigation.rs b/kernel/pure/mitigation.rs
+index f9ef80d09..2aa0cc410 100644
+--- a/kernel/pure/mitigation.rs
++++ b/kernel/pure/mitigation.rs
+@@ -472,7 +472,7 @@ impl Decision {
+     /// one on.
+     pub fn in_force(&self, registers: &Registers) -> Mitigations {
+         let mut on = ALWAYS;
+-        if let Some(spec_ctrl) = registers.spec_ctrl {
++        if let Some(spec_ctrl) = registers.spec_ctrl.filter(|_| false) {
+             for (one, bit) in [
+                 (Mitigation::EnhancedIbrs, msr::IBRS),
+                 (Mitigation::IbrsAlwaysOn, msr::IBRS),
