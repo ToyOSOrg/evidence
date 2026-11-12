@@ -1,0 +1,13 @@
+diff --git a/kernel/src/arch/x86_64/hw.rs b/kernel/src/arch/x86_64/hw.rs
+index 7b26e913c..488a249b6 100644
+--- a/kernel/src/arch/x86_64/hw.rs
++++ b/kernel/src/arch/x86_64/hw.rs
+@@ -370,7 +370,7 @@ impl Hw for KernelHw {
+                         percpu::set_fs_base(incoming.thread_pointer);
+                     }
+                     if percpu::user_gs_base() != incoming.user_bases.gs {
+-                        cpu::write_user_gs_base(incoming.user_bases.gs);
++                        cpu::write_user_gs_base((*save).user_bases.gs);
+                         percpu::set_user_gs_base(incoming.user_bases.gs);
+                     }
+                 }
