@@ -84,3 +84,4 @@ Local paths are masked (`<worktree>`, `<scratch>`, `<scratchpad>`, `<home>`, `<t
 - `kcheck-range2/`: `cargo check -p kernel --target x86_64-unknown-none` at each of the 23 commits from 75bdec3cd to
   55a19d9a0, all exit 0; the control, the old first commit 150fcb847, exits 101 on the dead `user_str`.
 - Guest run 43123357772 at 39fa4bba5 carries the ten rows; 43112704482 at 64eb00ee6 was cancelled after it had started.
+- `guest/run-43123357772.txt`: the ten rows at 39fa4bba5, all pass.
