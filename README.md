@@ -131,3 +131,4 @@ Main moved to a7ca8ad09 while fc9c1e6be was checked; its run 43134232757 was can
 - `r13-guest/`: the guest Rust crates at 19efa9073 against its sysroot: all exit 0 but `pagerprobe`, as before (the
   SDK's `std` feature it does not declare).
 - Guest run 43146959560 at 19efa9073 carries the ten rows; it replaces 43135226971, whose head could no longer merge.
+- `guest/run-43146959560.txt`: the ten rows at 19efa9073, the landing run, all pass.
