@@ -100,3 +100,20 @@ Local paths are masked (`<worktree>`, `<scratch>`, `<scratchpad>`, `<home>`, `<t
   x86_64-unknown-none` and `cargo check -p toyos --all-targets`: all 44 exit 0; the control, the old first commit
   150fcb847, exits 101 on the dead `user_str`.
 - Guest run 43134232757 at fc9c1e6be carries the ten rows.
+
+## Rebased again onto main a7ca8ad09 (#1261), head e76eba7e2
+Main moved to a7ca8ad09 while fc9c1e6be was checked; its run 43134232757 was cancelled while queued.
+- `rebase-a7ca8ad09/`: `git range-diff` of the history from 39fa4bba5 (the last head reviewed) and from fc9c1e6be.
+- `r12/`: at c37b68a61, a clean tree (`summary.txt`, the commands in `checks12.sh`): the image, the host suites of
+  every touched crate, every kernel clippy shape, clippy on the SDK, the libraries and the ABI. All exit 0.
+- `kcheck-range5/`: at each of the 22 commits from a7ca8ad09 to c37b68a61, the x86-64 kernel and the SDK with all
+  targets: all 44 exit 0; the control 150fcb847 exits 101 on the dead `user_str`.
+- `r12-guest/`: the guest Rust crates compiled against the head's sysroot (`guestcheck2.sh`).
+  `rust-tests-at-c37b68a61.log` (exit 101) found two binaries no host check or image build compiles:
+  `adopted_services_stay` calling the now-`unsafe` `adopt_services` outside `unsafe`, and #1261's
+  `poll_belongs_to_its_handle` building a namespace. The first commit fixes both, and every commit of e76eba7e2's range
+  differs from c37b68a61's only in those two files, so `r12/` and `kcheck-range5/` hold for it. At e76eba7e2
+  (`summary.txt`) every crate exits 0 but `kernelprobe`, which refuses any target but AArch64 by design, and
+  `pagerprobe`, which converts `toyos::OwnedHandle` into std's without declaring the SDK's `std` feature that provides
+  the conversion; this change touches neither, and the harness's build of the `testcases` image builds it.
+- Guest run 43135226971 at e76eba7e2 carries the ten rows.

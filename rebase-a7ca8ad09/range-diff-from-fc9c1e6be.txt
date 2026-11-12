@@ -1,0 +1,89 @@
+ 1:  4dac59f14 !  1:  4850e3b91 A child's handles are a list its parent names: labels and namespaces leave the kernel
+    @@ Commit message
+     
+         A block session holds a connector and no service name, so diskserver's two
+         messages for a session's server that broke the protocol or went silent
+    -    name the session by its partition GUID.
+    +    name the session by its partition GUID. #1261's `poll_belongs_to_its_handle`
+    +    connects through its connector, where it opened a one-entry namespace.
+     
+    -    Kernel: 55,742 lines in 212 files at main 429f772b0 to 55,384 in 211.
+    +    Kernel: 55,475 lines in 210 files at main a7ca8ad09 to 55,117 in 209.
+     
+         Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+     
+    @@ kernel/src/object/ops.rs: pub fn other_end_gone(object: &KObjectRef) -> bool {
+          }
+      }
+      
+    -@@ kernel/src/object/ops.rs: fn close_ends_polls(object: &KObjectRef) -> bool {
+    -         },
+    -         KObjectRef::PipeRead(_) | KObjectRef::PipeWrite(_) | KObjectRef::Connection(_)
+    -         | KObjectRef::Acceptor(_) | KObjectRef::Inbox(_)
+    --        | KObjectRef::Connector(_) | KObjectRef::WakeLatency(_) | KObjectRef::EventSignal(_) | KObjectRef::EventWait(_) | KObjectRef::Pager(_) | KObjectRef::Paged(_) | KObjectRef::Namespace(_)
+    -+        | KObjectRef::Connector(_) | KObjectRef::WakeLatency(_) | KObjectRef::EventSignal(_) | KObjectRef::EventWait(_) | KObjectRef::Pager(_) | KObjectRef::Paged(_)
+    -         | KObjectRef::SharedMem(_) | KObjectRef::Null(_) | KObjectRef::Notice(_) => true,
+    -     }
+    - }
+     @@ kernel/src/object/ops.rs: pub fn try_read(object: &KObjectRef, buf: &mut UserBytesMut) -> Option<u64> {
+              // A connection carries whole messages, which `SYS_MESSAGE_RECV` takes.
+              KObjectRef::Connection(_) | KObjectRef::PipeWrite(_) | KObjectRef::Acceptor(_) | KObjectRef::Inbox(_)
+    @@ tests/guest/rust-tests/src/bin/adopted_services_stay.rs (new)
+     +fn adopter() {
+     +    assert_eq!(toyos::endow::services().count(), 0, "the adopter was endowed a service");
+     +    let system: Connector = Endowments::get().take(GIVEN).expect("the adopter is given /system");
+    -+    std::os::toyos::fs::adopt_services(vec![(SYSTEM.to_string(), system.into())]).expect("the adopter adopts /system");
+    ++    // SAFETY: a connector, as this process was endowed it.
+    ++    unsafe { std::os::toyos::fs::adopt_services(vec![(SYSTEM.to_string(), system.into())]) }.expect("the adopter adopts /system");
+     +    // Non-vacuity: the adopter holds it, and its spawn reads the helper's image through it.
+     +    assert_eq!(toyos::endow::services().collect::<Vec<_>>(), [SYSTEM], "what the adopter holds");
+     +    let status = Command::new(SELF).arg("helper").status().expect("spawn the helper through the adopted /system");
+    @@ tests/guest/rust-tests/src/bin/pipe_other_end_gone.rs: fn pipe(unread: &str) ->
+          (client, server)
+      }
+     
+    + ## tests/guest/rust-tests/src/bin/poll_belongs_to_its_handle.rs ##
+    +@@ tests/guest/rust-tests/src/bin/poll_belongs_to_its_handle.rs: use toyos::endow::{Endowments, SYSCAP_LABEL};
+    + use toyos::ipc::Connection;
+    + use toyos::poller::{Poller, READABLE};
+    + use toyos::syscap::SysCap;
+    +-use toyos::{namespace, port, AsHandle, OwnedHandle};
+    ++use toyos::{port, AsHandle, OwnedHandle};
+    + use toyos_abi::inbox::{RingHeader, Submission, OP_WATCH, SUBMISSIONS_OFF, SUBMISSION_RING_OFF};
+    + use toyos_abi::syscall::{self, SyscallError};
+    + use toyos_abi::RawHandle;
+    +@@ tests/guest/rust-tests/src/bin/poll_belongs_to_its_handle.rs: fn a_child_watched_through_a_duplicate_is_answered_at_its_close() {
+    + 
+    + fn a_watched_handle_sent_away_is_answered() {
+    +     let (acceptor, connector) = port::create().expect("a port");
+    +-    let names = namespace::build().add("conn", &connector).finish().expect("a namespace");
+    +-    let client: Connection = names.open("conn").expect("a connection");
+    ++    let client: Connection = connector.connect().expect("a connection");
+    +     let server = acceptor.accept().expect("its other end");
+    +     let (read, _write) = toyos::pipe_pair().expect("a pipe no byte enters");
+    +     let poller = Poller::new(1);
+    +
+      ## tests/guest/rust-tests/src/bin/port_badge.rs ##
+     @@
+      use core::sync::atomic::Ordering;
+ 2:  892adfe24 =  2:  b636854f5 issues: the records this change completes name #1252
+ 3:  4e1d2f0a2 =  3:  f3c06e95e sdk: the early lookup's test calls the walk the lookup makes
+ 4:  aefc15458 =  4:  8a047e9fb sdk: with_prefixed's bound is its buffer
+ 5:  12360845f =  5:  4b1bd9d48 Comments name the services and handles the tree has
+ 6:  32246e2d6 =  6:  2b2c1542d Guest tests compile against the connector API
+ 7:  260b1ef1d =  7:  7307b1583 shell: an interrupt that comes while a -c shell starts its child reaches it
+ 8:  0bada1895 =  8:  97b32e9a1 issues: a -c shell cannot tell a child its quit asked from one that landed after it
+ 9:  f61b69cda =  9:  251789c45 shell: Asked has a Default beside its const new
+10:  7b4a11f02 = 10:  22699a4c2 kernel: SYS_SYSINFO charges its answer to the caller's job while it copies it out
+11:  3d3515b0d = 11:  4cd9877b1 supervisor: a provided connector reaches only a row that receives its name
+12:  adc0fb9b0 = 12:  4d7cd9aaa Four texts still described a namespace
+13:  cd4f02f41 = 13:  d861b66e9 A malformed table says which, and adopted_services_stay says why it is a guest test
+14:  60c411afe = 14:  eb92d9fe1 tests: three image comments say services where they said namespace
+15:  a2abdf704 = 15:  81d084193 soundserver: a policy number's comment names one the kernel still has
+16:  e0bdda271 = 16:  449da62d6 issues: what #1252 owes on metal while the benches are down
+17:  e083a652a = 17:  48d4fffa1 Review r2 of #1252: the last namespace texts, and two inexact ones
+18:  2ac7a0a9b = 18:  71cbea540 kernel: SYS_SYSINFO charges a roster, never the header alone
+19:  0a5e22c2e = 19:  773c7660b issues: a file server whose pager is refused for memory panics, blaming its row
+20:  f031f2f5f = 20:  2e324d263 issues: kernel_objects_refused takes every frame while its own line may still be written
+21:  5284c8d8c = 21:  df2ab77f2 Review r3 of #1252: a header alone is never refused, and ps names both refusals
+22:  fc9c1e6be = 22:  e76eba7e2 issues: kernel_objects_refused's control at main passed

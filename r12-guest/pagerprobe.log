@@ -1,0 +1,30 @@
+revision e76eba7e2aa086947d821bf0e44d757b21ceda9f
+$ guestcheck2.sh tests/guest/pagerprobe
+    Checking pagerprobe v0.1.0 (<scratch>/rewt3/tests/guest/pagerprobe)
+error[E0277]: the trait bound `std::os::toyos::io::OwnedHandle: From<toyos::OwnedHandle>` is not satisfied
+  --> tests/guest/pagerprobe/src/main.rs:82:31
+   |
+82 |         .endow(HOLDER, theirs.into())
+   |                               ^^^^ the trait `From<toyos::OwnedHandle>` is not implemented for `std::os::toyos::io::OwnedHandle`
+   |
+help: the trait `From<toyos::OwnedHandle>` is not implemented for `std::os::toyos::io::OwnedHandle`
+      but trait `From<Child>` is implemented for it
+  --> library/std/src/os/../../../../../sdk/std/os/process.rs:312:0
+   = help: for that trait implementation, expected `Child`, found `toyos::OwnedHandle`
+   = note: required for `toyos::OwnedHandle` to implement `Into<std::os::toyos::io::OwnedHandle>`
+
+error[E0277]: the trait bound `std::os::toyos::io::OwnedHandle: From<toyos::OwnedHandle>` is not satisfied
+  --> tests/guest/pagerprobe/src/main.rs:83:34
+   |
+83 |         .endow(ANONYMOUS, memory.into())
+   |                                  ^^^^ the trait `From<toyos::OwnedHandle>` is not implemented for `std::os::toyos::io::OwnedHandle`
+   |
+help: the trait `From<toyos::OwnedHandle>` is not implemented for `std::os::toyos::io::OwnedHandle`
+      but trait `From<Child>` is implemented for it
+  --> library/std/src/os/../../../../../sdk/std/os/process.rs:312:0
+   = help: for that trait implementation, expected `Child`, found `toyos::OwnedHandle`
+   = note: required for `toyos::OwnedHandle` to implement `Into<std::os::toyos::io::OwnedHandle>`
+
+For more information about this error, try `rustc --explain E0277`.
+error: could not compile `pagerprobe` (bin "pagerprobe") due to 2 previous errors
+exit 101
