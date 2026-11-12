@@ -1,0 +1,50 @@
+== cargo clippy -p supervisor -p pkg --all-targets -- -W clippy::checked_conversions -W clippy::default_trait_access -W clippy::manual_midpoint -W clippy::redundant_clone -W clippy::unchecked_time_subtraction -W clippy::unnecessary_semicolon -D warnings
+    Checking toyos v0.18.0 (<scratch>/wt-tags/sdk/toyos)
+    Checking toyos-crypto v0.1.0 (<scratch>/wt-tags/lib/crypto)
+    Checking toyos-logstream v0.1.0 (<scratch>/wt-tags/lib/logstream)
+    Checking toyos-gpt v0.1.0 (<scratch>/wt-tags/lib/gpt)
+   Compiling crc32fast v1.5.0
+    Checking toyos-blockhold v0.1.0 (<scratch>/wt-tags/lib/blockhold)
+    Checking simd-adler32 v0.3.10
+    Checking adler2 v2.0.1
+    Checking toyos-blockdev v0.1.0 (<scratch>/wt-tags/lib/blockdev)
+    Checking toyos-device-memory v0.1.0 (<scratch>/wt-tags/lib/device-memory)
+    Checking toyos-wallclock v0.1.0 (<scratch>/wt-tags/lib/wallclock)
+    Checking toyos-osrelease v0.1.0 (<scratch>/wt-tags/sdk/osrelease)
+    Checking toyos-quiesce v0.1.0 (<scratch>/wt-tags/lib/quiesce)
+    Checking filetime v0.2.29
+    Checking toyos-tmpdir v0.1.0 (<scratch>/wt-tags/lib/tmpdir)
+    Checking toyos-virtio v0.1.0 (<scratch>/wt-tags/lib/virtio)
+    Checking tar v0.4.46
+    Checking miniz_oxide v0.9.1
+    Checking toyos-devicepath v0.1.0 (<scratch>/wt-tags/lib/devicepath)
+    Checking toyos-bootnames v0.1.0 (<scratch>/wt-tags/lib/bootnames)
+    Checking flate2 v1.1.10
+    Checking toyos-manifest v0.1.0 (<scratch>/wt-tags/lib/manifest)
+    Checking toyos-blockring v0.1.0 (<scratch>/wt-tags/lib/blockring)
+    Checking toyos-pci-claim v0.1.0 (<scratch>/wt-tags/lib/pci-claim)
+    Checking toyos-session v0.1.0 (<scratch>/wt-tags/lib/session)
+    Checking toyos-supervisor v0.1.0 (<scratch>/wt-tags/system/supervisor/lifecycle)
+    Checking bcachefs v0.1.0 (<scratch>/wt-tags/lib/bcachefs)
+    Checking pkg v0.1.0 (<scratch>/wt-tags/system/pkg)
+    Checking toyos-swap v0.1.0 (<scratch>/wt-tags/lib/swap)
+    Checking toyos-update v0.1.0 (<scratch>/wt-tags/lib/update)
+error: redundant clone
+   --> system/pkg/src/archive.rs:177:45
+    |
+177 |     let joined = if prefix.is_empty() { name.clone() } else { format!("{prefix}/{name}") };
+    |                                             ^^^^^^^^ help: remove this
+    |
+note: this value is dropped without further use
+   --> system/pkg/src/archive.rs:177:41
+    |
+177 |     let joined = if prefix.is_empty() { name.clone() } else { format!("{prefix}/{name}") };
+    |                                         ^^^^
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#redundant_clone
+    = note: `-D clippy::redundant-clone` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::redundant_clone)]`
+
+error: could not compile `pkg` (lib) due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `pkg` (lib test) due to 1 previous error
+rc=101

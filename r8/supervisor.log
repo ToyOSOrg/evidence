@@ -1,0 +1,363 @@
+== cargo test -p supervisor
+   Compiling toyos v0.18.0 (<scratch>/wt-tags/sdk/toyos)
+   Compiling toyos-device-memory v0.1.0 (<scratch>/wt-tags/lib/device-memory)
+   Compiling toyos-quiesce v0.1.0 (<scratch>/wt-tags/lib/quiesce)
+   Compiling toyos-devicepath v0.1.0 (<scratch>/wt-tags/lib/devicepath)
+   Compiling toyos-update v0.1.0 (<scratch>/wt-tags/lib/update)
+   Compiling toyos-virtio v0.1.0 (<scratch>/wt-tags/lib/virtio)
+   Compiling toyos-bootnames v0.1.0 (<scratch>/wt-tags/lib/bootnames)
+   Compiling toyos-blockring v0.1.0 (<scratch>/wt-tags/lib/blockring)
+   Compiling toyos-manifest v0.1.0 (<scratch>/wt-tags/lib/manifest)
+   Compiling toyos-session v0.1.0 (<scratch>/wt-tags/lib/session)
+   Compiling toyos-pci-claim v0.1.0 (<scratch>/wt-tags/lib/pci-claim)
+   Compiling toyos-blockserve v0.1.0 (<scratch>/wt-tags/lib/blockserve)
+   Compiling toyos-supervisor v0.1.0 (<scratch>/wt-tags/system/supervisor/lifecycle)
+   Compiling toyos-swap v0.1.0 (<scratch>/wt-tags/lib/swap)
+   Compiling diskserver v0.0.0 (<scratch>/wt-tags/system/diskserver)
+   Compiling supervisor v0.1.0 (<scratch>/wt-tags/system/supervisor)
+error[E0433]: cannot find `toyos` in `os`
+   --> system/supervisor/src/main.rs:106:14
+    |
+106 | use std::os::toyos::io::AsRawHandle;
+    |              ^^^^^ could not find `toyos` in `os`
+
+error[E0433]: cannot find `toyos` in `os`
+   --> system/supervisor/src/main.rs:107:14
+    |
+107 | use std::os::toyos::process::CommandExt;
+    |              ^^^^^ could not find `toyos` in `os`
+
+error[E0433]: cannot find `toyos` in `os`
+   --> system/supervisor/src/main.rs:544:43
+    |
+544 |         if let Err(e) = unsafe { std::os::toyos::fs::adopt_services(copies) } {
+    |                                           ^^^^^ could not find `toyos` in `os`
+
+error[E0433]: cannot find `toyos` in `os`
+    --> system/supervisor/src/main.rs:2725:64
+     |
+2725 |                 let handle = toyos::OwnedHandle::from(std::os::toyos::io::OwnedHandle::from(child));
+     |                                                                ^^^^^ could not find `toyos` in `os`
+
+error[E0599]: no method named `image` found for struct `Command` in the current scope
+   --> system/supervisor/src/main.rs:951:25
+    |
+951 |                 command.image(boot.fileserver.as_handle().into());
+    |                         ^^^^^ method not found in `Command`
+
+error[E0599]: no method named `image` found for struct `Command` in the current scope
+   --> system/supervisor/src/main.rs:956:25
+    |
+956 |                 command.image(swapped.region.as_handle().into());
+    |                         ^^^^^ method not found in `Command`
+
+error[E0599]: no method named `as_raw_handle` found for reference `&Child` in the current scope
+    --> system/supervisor/src/main.rs:1863:36
+     |
+1863 |                 toyos::RawHandle(c.as_raw_handle()),
+     |                                    ^^^^^^^^^^^^^ method not found in `&Child`
+
+error[E0277]: the trait bound `Child: AsHandle` is not satisfied
+    --> system/supervisor/src/main.rs:2043:30
+     |
+2043 |                 poller.watch(&instance.child, READABLE, TOKEN_ENDED);
+     |                        ----- ^^^^^^^^^^^^^^^ the trait `AsHandle` is not implemented for `Child`
+     |                        |
+     |                        required by a bound introduced by this call
+     |
+     = help: the following other types implement trait `AsHandle`:
+               &T
+               AcpiDev
+               BorrowedHandle<'_>
+               FramebufferDev
+               OwnedHandle
+               PciDev
+               ReceivedHandle
+               UartDev
+             and 19 others
+note: required by a bound in `Poller::watch`
+    --> sdk/toyos/src/poller.rs:267:39
+     |
+ 267 |     pub fn watch(&self, handle: &impl AsHandle, flags: u32, token: u64) {
+     |                                       ^^^^^^^^ required by this bound in `Poller::watch`
+
+error[E0277]: the trait bound `Child: AsHandle` is not satisfied
+    --> system/supervisor/src/main.rs:2103:27
+     |
+2103 |             poller.watch(&child, READABLE, TOKEN_ENDED);
+     |                    -----  ^^^^^ the trait `AsHandle` is not implemented for `Child`
+     |                    |
+     |                    required by a bound introduced by this call
+     |
+     = help: the following other types implement trait `AsHandle`:
+               &T
+               AcpiDev
+               BorrowedHandle<'_>
+               FramebufferDev
+               OwnedHandle
+               PciDev
+               ReceivedHandle
+               UartDev
+             and 19 others
+     = note: required for `&Child` to implement `AsHandle`
+note: required by a bound in `Poller::watch`
+    --> sdk/toyos/src/poller.rs:267:39
+     |
+ 267 |     pub fn watch(&self, handle: &impl AsHandle, flags: u32, token: u64) {
+     |                                       ^^^^^^^^ required by this bound in `Poller::watch`
+
+error[E0599]: no method named `under` found for struct `Command` in the current scope
+    --> system/supervisor/src/main.rs:2434:21
+     |
+2434 |             command.under(place.into());
+     |                     ^^^^^ method not found in `Command`
+
+error[E0599]: no method named `job` found for struct `Command` in the current scope
+    --> system/supervisor/src/main.rs:2476:17
+     |
+2476 |         command.job(job.as_handle().into());
+     |                 ^^^ method not found in `Command`
+
+error[E0599]: no method named `image_from` found for struct `Command` in the current scope
+    --> system/supervisor/src/main.rs:2492:43
+     |
+2492 |                     Some(path) => command.image_from(Path::new(path)).prepare().map(drop),
+     |                                           ^^^^^^^^^^ method not found in `Command`
+
+error[E0599]: no method named `prepared_image` found for struct `Command` in the current scope
+    --> system/supervisor/src/main.rs:2497:26
+     |
+2496 | /                     command
+2497 | |                         .prepared_image()
+     | |                         -^^^^^^^^^^^^^^ method not found in `Command`
+     | |_________________________|
+     |
+
+error[E0277]: the size for values of type `str` cannot be known at compilation time
+    --> system/supervisor/src/main.rs:2565:18
+     |
+2565 |         let Some(binary) = binary else {
+     |                  ^^^^^^ doesn't have a size known at compile-time
+     |
+     = help: the trait `Sized` is not implemented for `str`
+     = note: all local variables must have a statically known size
+
+error[E0277]: the size for values of type `str` cannot be known at compilation time
+    --> system/supervisor/src/main.rs:2565:13
+     |
+2565 |         let Some(binary) = binary else {
+     |             ^^^^^^^^^^^^ doesn't have a size known at compile-time
+     |
+     = help: the trait `Sized` is not implemented for `str`
+note: required by a bound in `Some`
+    --> <home>/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/core/src/option.rs:598:17
+     |
+ 598 | pub enum Option<T> {
+     |                 ^ required by this bound in `Some`
+...
+ 606 |     Some(#[stable(feature = "rust1", since = "1.0.0")] T),
+     |     ---- required by a bound in this tuple variant
+
+error[E0308]: mismatched types
+    --> system/supervisor/src/main.rs:2582:47
+     |
+2582 |             Decision::Ask => self.ask(launch, binary, parked),
+     |                                   ---         ^^^^^^ expected `String`, found `str`
+     |                                   |
+     |                                   arguments to this method are incorrect
+     |
+note: method defined here
+    --> system/supervisor/src/main.rs:2590:8
+     |
+2590 |     fn ask(&mut self, launch: Launch, binary: String, parked: &mut Option<Parked>) {
+     |        ^^^                            --------------
+help: try using a conversion method
+     |
+2582 |             Decision::Ask => self.ask(launch, binary.to_string(), parked),
+     |                                                     ++++++++++++
+
+error[E0599]: no method named `prepare` found for mutable reference `&mut Command` in the current scope
+    --> system/supervisor/src/main.rs:2671:43
+     |
+2671 |                 command.current_dir(&cwd).prepare().map_err(|e| format!("{cwd} is no working directory: {e}"))?;
+     |                                           ^^^^^^^ method not found in `&mut Command`
+
+error[E0277]: the trait bound `Child: AsHandle` is not satisfied
+    --> system/supervisor/src/main.rs:2724:84
+     |
+2724 |                 self.started_in(session, &program.name, toyos::AsHandle::as_handle(&child));
+     |                                                         -------------------------- ^^^^^^ the trait `AsHandle` is not implemented for `Child`
+     |                                                         |
+     |                                                         required by a bound introduced by this call
+     |
+     = help: the following other types implement trait `AsHandle`:
+               &T
+               AcpiDev
+               BorrowedHandle<'_>
+               FramebufferDev
+               OwnedHandle
+               PciDev
+               ReceivedHandle
+               UartDev
+             and 19 others
+
+error[E0599]: no method named `as_raw_handle` found for reference `&Child` in the current scope
+    --> system/supervisor/src/main.rs:2993:86
+     |
+2993 |     restart::exited(toyos_abi::syscall::process_wait_nonblock(toyos::RawHandle(child.as_raw_handle())))
+     |                                                                                      ^^^^^^^^^^^^^ method not found in `&Child`
+
+error[E0599]: no method named `endow` found for struct `Command` in the current scope
+    --> system/supervisor/src/main.rs:3043:17
+     |
+3043 |         command.endow(&label, claim.into());
+     |                 ^^^^^ method not found in `Command`
+
+error[E0599]: no method named `endow` found for struct `Command` in the current scope
+    --> system/supervisor/src/main.rs:3046:17
+     |
+3046 |         command.endow(toyos_quiesce::DRIVER_STOP, stop.into());
+     |                 ^^^^^ method not found in `Command`
+
+error[E0599]: no method named `endow` found for struct `Command` in the current scope
+    --> system/supervisor/src/main.rs:3049:17
+     |
+3049 |         command.endow(ROOT_IMAGE_LABEL, root.into());
+     |                 ^^^^^ method not found in `Command`
+
+error[E0599]: no method named `endow` found for struct `Command` in the current scope
+    --> system/supervisor/src/main.rs:3052:17
+     |
+3052 |         command.endow(label, handle.into());
+     |                 ^^^^^ method not found in `Command`
+
+error[E0599]: no method named `endow` found for struct `Command` in the current scope
+    --> system/supervisor/src/main.rs:3060:17
+     |
+3060 |         command.endow(&service_label(SVC_PREFIX, &name), connector.into());
+     |                 ^^^^^ method not found in `Command`
+
+error[E0599]: no method named `endow_narrowed` found for struct `Command` in the current scope
+    --> system/supervisor/src/main.rs:3072:17
+     |
+3072 |         command.endow_narrowed(toyos_swap::LABEL, connector.into(), Rights::WRITE.bits());
+     |                 ^^^^^^^^^^^^^^ method not found in `Command`
+
+error[E0599]: no method named `endow` found for struct `Command` in the current scope
+    --> system/supervisor/src/main.rs:3075:17
+     |
+3075 |         command.endow(LAUNCHER, badged(program, LAUNCHER, launcher, session).into());
+     |                 ^^^^^ method not found in `Command`
+
+error[E0599]: no method named `endow` found for struct `Command` in the current scope
+    --> system/supervisor/src/main.rs:3080:21
+     |
+3080 |             command.endow(name, badged(program, name, acceptor, minting.session).into());
+     |                     ^^^^^ method not found in `Command`
+
+error[E0599]: no method named `endow` found for struct `Command` in the current scope
+    --> system/supervisor/src/main.rs:3088:17
+     |
+3088 |         command.endow(toyos_session::LOGIN_PORT, connector.into());
+     |                 ^^^^^ method not found in `Command`
+
+error[E0599]: no method named `endow_narrowed` found for struct `Command` in the current scope
+    --> system/supervisor/src/main.rs:3097:21
+     |
+3097 |             command.endow_narrowed(&service_label(PROVIDE_PREFIX, &name), connector.into(), PROVIDED.bits());
+     |                     ^^^^^^^^^^^^^^ method not found in `Command`
+
+error[E0599]: no method named `endow` found for struct `Command` in the current scope
+    --> system/supervisor/src/main.rs:3165:25
+     |
+3165 |                 command.endow(&format!("{DEV_PREFIX}{name}"), claim.into());
+     |                         ^^^^^ method not found in `Command`
+
+error[E0599]: no method named `pager` found for struct `Command` in the current scope
+    --> system/supervisor/src/main.rs:3186:17
+     |
+3186 |         command.pager(syscap.as_handle().into());
+     |                 ^^^^^ method not found in `Command`
+
+error[E0599]: no method named `endow_narrowed` found for struct `Command` in the current scope
+    --> system/supervisor/src/main.rs:3197:17
+     |
+3197 |         command.endow_narrowed(SYSCAP_LABEL, copy.into(), rights.bits());
+     |                 ^^^^^^^^^^^^^^ method not found in `Command`
+
+error[E0599]: no method named `job` found for struct `Command` in the current scope
+    --> system/supervisor/src/main.rs:3216:21
+     |
+3216 |             command.job(job.as_handle().into());
+     |                     ^^^ method not found in `Command`
+
+error[E0599]: no method named `inherit_handle` found for struct `Command` in the current scope
+    --> system/supervisor/src/main.rs:3217:21
+     |
+3217 |             command.inherit_handle(0, log.stdin.as_handle().into());
+     |                     ^^^^^^^^^^^^^^ method not found in `Command`
+
+error[E0599]: no method named `inherit_handle` found for struct `Command` in the current scope
+    --> system/supervisor/src/main.rs:3218:21
+     |
+3218 |             command.inherit_handle(1, ring.as_handle().into());
+     |                     ^^^^^^^^^^^^^^ method not found in `Command`
+
+error[E0599]: no method named `inherit_handle` found for struct `Command` in the current scope
+    --> system/supervisor/src/main.rs:3219:21
+     |
+3219 |             command.inherit_handle(2, ring.as_handle().into());
+     |                     ^^^^^^^^^^^^^^ method not found in `Command`
+
+error[E0599]: no method named `endow` found for struct `Command` in the current scope
+    --> system/supervisor/src/main.rs:3228:25
+     |
+3228 |                 command.endow(ORIGINS, origins.into());
+     |                         ^^^^^ method not found in `Command`
+
+error[E0599]: no method named `endow` found for struct `Command` in the current scope
+    --> system/supervisor/src/main.rs:3237:25
+     |
+3237 |                 command.endow(CONSOLE_INPUT, input.into());
+     |                         ^^^^^ method not found in `Command`
+
+error[E0599]: no method named `inherit_handle` found for struct `Command` in the current scope
+    --> system/supervisor/src/main.rs:3247:33
+     |
+3247 |                         command.inherit_handle(*fd, ring.as_handle().into());
+     |                                 ^^^^^^^^^^^^^^ method not found in `Command`
+
+error[E0599]: no method named `inherit_handle` found for struct `Command` in the current scope
+    --> system/supervisor/src/main.rs:3250:33
+     |
+3250 |                         command.inherit_handle(*fd, handle.as_handle().into());
+     |                                 ^^^^^^^^^^^^^^ method not found in `Command`
+
+error[E0599]: no method named `inherit_file` found for struct `Command` in the current scope
+    --> system/supervisor/src/main.rs:3253:33
+     |
+3253 |                         command.inherit_file(*fd, handle.as_handle().into());
+     |                                 ^^^^^^^^^^^^ method not found in `Command`
+
+error[E0599]: no method named `inherit_exported` found for struct `Command` in the current scope
+    --> system/supervisor/src/main.rs:3256:33
+     |
+3256 |                         command.inherit_exported(*fd, handle.as_handle().into());
+     |                                 ^^^^^^^^^^^^^^^^ method not found in `Command`
+
+error[E0599]: no method named `endow` found for struct `Command` in the current scope
+    --> system/supervisor/src/main.rs:3269:17
+     |
+3269 |         command.endow(ALIVE, waker.into());
+     |                 ^^^^^ method not found in `Command`
+
+error[E0599]: no method named `endow` found for mutable reference `&mut Command` in the current scope
+    --> system/supervisor/src/main.rs:3303:13
+     |
+3303 |     command.endow(&format!("{SERVE_PREFIX}{name}"), handed.into());
+     |             ^^^^^ method not found in `&mut Command`
+
+Some errors have detailed explanations: E0277, E0308, E0433, E0599.
+For more information about an error, try `rustc --explain E0277`.
+error: could not compile `supervisor` (bin "supervisor" test) due to 44 previous errors
+rc=101

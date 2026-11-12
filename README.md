@@ -73,3 +73,17 @@
   `the_data_partition_beside_the_stick_is_designated`, `the_log_lands_on_the_boot_stick`, `virt_user_mode` and
   `testcases_members_exit_0` passed, "testcases: 242 member(s) exited 0, and the list's reboot ended the boot";
   the runner's host name, home and temporary paths masked.
+
+## Rebased onto main ee15a2e5b (#1258 merged, beside #1252), head d88c74fa1
+
+- `r8/range-diff.txt`: `git range-diff cb8701bee..2e7dd79aa origin/main..d88c74fa1`. #1252 made a directory
+  capability a connector the process holds (`Dir::connect(BorrowedHandle)`, `Dir::named`) where it had been a name
+  in a namespace. The rebase keeps that and this PR's shared connection: `connect` makes the `Dir` and its first
+  connection through `connection()`, `reconnect(&self)` connects through the held connector (`PermissionDenied` is
+  `NotHeld`, as main has it), the SDK's capability table keeps `Arc<Dir>`, the supervisor's sync and three guest
+  tests drop the `mut` their `Dir` no longer needs. Commit 4 is `=`.
+- `r8/`: at the head (`tree.txt`): the SDK's tests and two clippy shapes, nine loom models, the file server's
+  tests, the `testcases` image (its sysroot, libc and std, the supervisor and pkg compiled without a warning of
+  theirs), and every `tests/guest/rust-tests` binary type-checked against that image's sysroot, rc 0.
+  `supervisor.log` and `clippy-supervisor-pkg.log` are rc 101 because the supervisor is a ToyOS program that does
+  not build for the host (`os::toyos`); the image build is its compile.

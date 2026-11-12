@@ -1,0 +1,182 @@
+1:  44bc8307d ! 1:  3237a8c9b A process's threads have their requests to a directory in flight at once
+    @@ kernel/loom/tests/fs_flight.rs (new)
+     +}
+     
+      ## sdk/toyos/src/files/owner.rs ##
+    -@@ sdk/toyos/src/files/owner.rs: use super::namespace::Routed;
+    +@@ sdk/toyos/src/files/owner.rs: use super::routing::Routed;
+      use super::{encode, At, Error, Open, Stat, MAX_LINKS, SEEK_CURRENT, SEEK_END, SEEK_START};
+      use crate::fd::{self, Fd, Object, SERVED_FILE};
+      use crate::fs::{self, Base, Change, Dir, Fid, Refused};
+    @@ sdk/toyos/src/files/owner.rs: fn utf8(path: &[u8]) -> Result<&str, Error> {
+          if let Some(found) = CAPABILITIES.lock().get(prefix) {
+              return Ok(Arc::clone(found));
+          }
+    -     let names = crate::endow::namespace().ok_or(Error::Served(fs::Error::NotHeld))?;
+          let name = alloc::format!("{}{prefix}", fs::CAPABILITY_PREFIX);
+    -     let dir = Dir::connect(names, &name).map_err(Error::Served)?;
+    +     let dir = Dir::named(&name).map_err(Error::Served)?;
+     -    let found = Arc::new(Capability { dir: Turnstile::new(dir) });
+     -    Ok(Arc::clone(CAPABILITIES.lock().entry(String::from(prefix)).or_insert(found)))
+     +    Ok(Arc::clone(CAPABILITIES.lock().entry(String::from(prefix)).or_insert(Arc::new(dir))))
+    @@ sdk/toyos/src/fs.rs
+      use alloc::vec::Vec;
+     +use core::sync::atomic::{AtomicU64, Ordering};
+      
+    - use toyos_abi::syscall::{SyscallError, MAX_BADGE, MAX_SERVICE_NAME};
+    + use toyos_abi::syscall::{SyscallError, MAX_BADGE};
+      
+    -@@ sdk/toyos/src/fs.rs: use crate::ipc::{Connection, FrameRx, IpcError};
+    + use crate::ipc::{Connection, FrameRx, IpcError};
+      use crate::ipc_payload;
+    - use crate::namespace::Namespace;
+      use crate::shm::{Bytes, SharedMemory};
+     +use crate::sync::Lock;
+      use crate::Pipe;
+    @@ sdk/toyos/src/fs.rs: use crate::ipc::{Connection, FrameRx, IpcError};
+     +    }
+     +}
+     +
+    - /// What a directory capability's namespace name begins with.
+    + /// What a directory capability's service name begins with.
+      pub const CAPABILITY_PREFIX: &str = "fs:";
+      
+     @@ sdk/toyos/src/fs.rs: impl Change {
+    @@ sdk/toyos/src/fs.rs: enum Source {
+      }
+      
+      impl Dir {
+    -@@ sdk/toyos/src/fs.rs: impl Dir {
+    -         }
+    -         let mut buf = [0u8; MAX_SERVICE_NAME];
+    -         buf[..name.len()].copy_from_slice(name.as_bytes());
+    --        let mut dir = Self::unconnected(Source::Named { names, name: buf, len: name.len() })?;
+    +     /// Connect to the directory capability `connector`, which this process
+    +     /// holds for its life: [`Error::NotHeld`] for one it may only pass on.
+    +     pub fn connect(connector: crate::BorrowedHandle<'static>) -> Result<Self, Error> {
+    +-        let mut dir = Self::unconnected(Source::Held(connector))?;
+     -        dir.reconnect()?;
+    -+        let dir = Self::unconnected(Source::Named { names, name: buf, len: name.len() })?;
+    ++        let dir = Self::unconnected(Source::Held(connector))?;
+     +        dir.connection()?;
+              Ok(dir)
+          }
+    @@ sdk/toyos/src/fs.rs: impl Dir {
+     +    /// The old one's file ids name nothing on it; an exported connection has
+     +    /// no connector, and stays gone.
+     +    fn reconnect(&self) -> Result<Link, Error> {
+    -         let Source::Named { names, name, len } = &self.source else { return Err(Error::Gone) };
+    -         let name = core::str::from_utf8(&name[..*len]).expect("copied from a str");
+    -         let conn = match names.open(name) {
+    +         let Source::Held(connector) = self.source else { return Err(Error::Gone) };
+    +         let conn = match crate::port::connect(connector) {
+    +             Ok(conn) => conn,
+     @@ sdk/toyos/src/fs.rs: impl Dir {
+              self.attach(conn)
+          }
+    @@ system/pkg/src/main.rs: fn install(file: &Path, assume_yes: bool) -> Result<(),
+      ## system/supervisor/src/main.rs ##
+     @@ system/supervisor/src/main.rs: impl<'a> Supervisor<'a> {
+                  let (done_tx, done_rx) = std::sync::mpsc::channel();
+    -             let (asked, names) = (name.clone(), self.files);
+    +             let Some((_, held)) = self.files.iter().find(|(held, _)| *held == name) else { continue };
+                  let spawned = std::thread::Builder::new().name(format!("sync-{role}")).spawn(move || {
+    --                let answer = toyos::fs::Dir::connect(names, &asked).and_then(|mut dir| dir.sync());
+    -+                let answer = toyos::fs::Dir::connect(names, &asked).and_then(|dir| dir.sync());
+    +-                let answer = toyos::fs::Dir::connect(held.as_handle()).and_then(|mut dir| dir.sync());
+    ++                let answer = toyos::fs::Dir::connect(held.as_handle()).and_then(|dir| dir.sync());
+                      let _ = done_tx.send(answer);
+                  });
+                  match spawned {
+    @@ tests/guest/osbench/src/sys/toyos.rs: pub mod direct {
+     
+      ## tests/guest/rust-tests/src/bin/a_served_file_reads_through_its_paged_object.rs ##
+     @@ tests/guest/rust-tests/src/bin/a_served_file_reads_through_its_paged_object.rs: fn read(holder: &Paged, offset: u64, len: usize) -> Vec<u8> {
+    + }
+      
+      fn main() {
+    -     let names = toyos::endow::namespace().expect("a test is endowed a namespace");
+    --    let mut dir = Dir::connect(names, DIR).expect("the home directory");
+    -+    let dir = Dir::connect(names, DIR).expect("the home directory");
+    +-    let mut dir = Dir::named(DIR).expect("the home directory");
+    ++    let dir = Dir::named(DIR).expect("the home directory");
+          let data = pattern(5 * 4096 + 123);
+      
+          let mut writer = dir.open(Base::Root, NAME, O_WRITE | O_CREATE | O_TRUNCATE).expect("open to write");
+     
+      ## tests/guest/rust-tests/src/bin/an_export_shares_its_descriptions.rs ##
+    -@@ tests/guest/rust-tests/src/bin/an_export_shares_its_descriptions.rs: const STREAM_BYTES: usize = 1 << 20;
+    +@@ tests/guest/rust-tests/src/bin/an_export_shares_its_descriptions.rs: const STREAMED: &str = "an-export-shares-its-descriptions-streamed";
+    + const STREAM_BYTES: usize = 1 << 20;
+      
+      fn main() {
+    -     let names = toyos::endow::namespace().expect("a test is endowed a namespace");
+    --    let mut parent = Dir::connect(names, DIR).expect("the home directory");
+    -+    let parent = Dir::connect(names, DIR).expect("the home directory");
+    +-    let mut parent = Dir::named(DIR).expect("the home directory");
+    ++    let parent = Dir::named(DIR).expect("the home directory");
+          let fid = parent.open(Base::Root, FILE, O_READ | O_WRITE | O_CREATE | O_TRUNCATE).expect("open").fid;
+          let written = parent.write(fid, b"abcdef").expect("write");
+          assert_eq!((written.len, written.offset), (6, 6));
+    @@ tests/guest/rust-tests/src/bin/an_export_shares_its_descriptions.rs: const STREA
+     
+      ## tests/guest/rust-tests/src/bin/app_view.rs ##
+     @@ tests/guest/rust-tests/src/bin/app_view.rs: fn app() {
+    -     let names = toyos::endow::namespace().expect("an app is endowed a namespace");
+    -     match Dir::connect(names, &format!("fs:{PACKAGE}")) {
+    + 
+    +     match Dir::named(&format!("fs:{PACKAGE}")) {
+              Err(e) => red.push(format!("fs:{PACKAGE} would not connect: {e:?}")),
+     -        Ok(mut dir) => {
+     +        Ok(dir) => {
+    @@ tests/guest/rust-tests/src/bin/stat_identity.rs: fn directory_replacement(root:
+          fs::create_dir(&source).unwrap();
+          fs::create_dir(&target).unwrap();
+          write(&format!("{source}/file"));
+    --    let mut directory = Dir::connect(toyos::endow::namespace().unwrap(), &format!("fs:{root}")).unwrap();
+    -+    let directory = Dir::connect(toyos::endow::namespace().unwrap(), &format!("fs:{root}")).unwrap();
+    +-    let mut directory = Dir::named(&format!("fs:{root}")).unwrap();
+    ++    let directory = Dir::named(&format!("fs:{root}")).unwrap();
+          let original = directory.open(Base::Root, "stat-identity-source", O_DIRECTORY | O_READ).unwrap().fid;
+          let alias = directory.dup(original).unwrap();
+          let replaced = directory.open(Base::Root, "stat-identity-target", O_DIRECTORY | O_READ).unwrap().fid;
+2:  88ee040b8 ! 2:  7baeae8c7 Review r1 of #1272: requests in flight change under one lock, and every reply wait is bounded
+    @@ sdk/toyos/src/fs.rs: use flight::{Flight, Taken};
+     -    }
+      }
+      
+    - /// What a directory capability's namespace name begins with.
+    + /// What a directory capability's service name begins with.
+     @@ sdk/toyos/src/fs.rs: errors! {
+              NotHeld = 0x81,
+              /// The server answered something this protocol does not say.
+    @@ sdk/toyos/src/fs.rs: pub struct Dir {
+          /// Whether its grant lets this process change what it names.
+          writable: bool,
+     @@ sdk/toyos/src/fs.rs: impl Dir {
+    -         }
+    -         let mut buf = [0u8; MAX_SERVICE_NAME];
+    -         buf[..name.len()].copy_from_slice(name.as_bytes());
+    --        let dir = Self::unconnected(Source::Named { names, name: buf, len: name.len() })?;
+    -+        let dir = Self::unconnected(Source::Named { names, name: buf, len: name.len() });
+    +     /// Connect to the directory capability `connector`, which this process
+    +     /// holds for its life: [`Error::NotHeld`] for one it may only pass on.
+    +     pub fn connect(connector: crate::BorrowedHandle<'static>) -> Result<Self, Error> {
+    +-        let dir = Self::unconnected(Source::Held(connector))?;
+    ++        let dir = Self::unconnected(Source::Held(connector));
+              dir.connection()?;
+              Ok(dir)
+          }
+3:  d37bc862e ! 3:  8f896d3cf Review r2 of #1272: each connection receives for itself, a slot comes before its connection, and the reply bound is derived
+    @@ sdk/toyos/src/fs.rs: impl Dir {
+     +    /// own. The old one's file ids name nothing on it; an exported connection
+     +    /// has no connector, and stays gone.
+          fn reconnect(&self) -> Result<Link, Error> {
+    -         let Source::Named { names, name, len } = &self.source else { return Err(Error::Gone) };
+    -         let name = core::str::from_utf8(&name[..*len]).expect("copied from a str");
+    +         let Source::Held(connector) = self.source else { return Err(Error::Gone) };
+    +         let conn = match crate::port::connect(connector) {
+     @@ sdk/toyos/src/fs.rs: impl Dir {
+      
+          /// A share of the window for a request of `span` bytes, on the current
+4:  2e7dd79aa = 4:  d88c74fa1 Review r3 of #1272: the file server holds the client's block bound to its source, and a turn handed on stays on its connection
