@@ -77,3 +77,5 @@
   compiles pagerprobe without its object count.
 - `r8/slot-sizes.log`: a temporary test, never committed, measuring the real `Slot<Entry, 2>` over a replica of the
   paged object's `Entry` fields: object 112 bytes, entry 192, mark 12, a slot 216.
+- `r8/control-build/`: the `testcases` image built at `fileops-step1-ctl-refuse` 12735044f (a2e4dfdac and the patch
+  refusing every holder write), rc 0.
