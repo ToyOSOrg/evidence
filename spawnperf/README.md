@@ -71,3 +71,15 @@ and #1250's copied-page tests both stay. At each head (#1250 308e990a6, #1268 e2
 exit 0 (17 passed) and `frames::` exit 0 (39 at #1250, 40 above); kernel clippy for x86_64-unknown-none, x86_64 with
 `boot-actuators,test-actuators`, aarch64-unknown-none-softfloat and the library's tests, exit 0 each. At #1270's head:
 `--test shm_slot` exit 0 (4 passed); with `slot-install-relaxed` exit 101, the two hand-over models failing.
+
+## Rebased onto main a7ca8ad09, after #1223 and #1261 (2026-11-12)
+
+- `rebase3-range-diff-1250.txt`: #1250's round-1 commit changed to compose with #1223, which gave
+  `sched::futex::revoke_frames` the space's wait count: `discard`'s call is `revoke_frames(&self.futex, frames)`.
+  Every other commit of the stack is unchanged (`=`); #1270's first commit differs only in `kernel/loom/src/lib.rs`'s
+  context, where #1261 removed the poll modules beside which `shm_slot` was declared
+  (`rebase3-range-diff-1270.txt`).
+- `rebase3-checks.log`: at each head (#1250 9d9d5ee0f, #1268 c2e8b9fba, #1270 4765676e3) `vm::` exit 0 (17 passed),
+  `frames::` exit 0 (39, 40, 40); kernel clippy for x86_64-unknown-none, x86_64 with `boot-actuators,test-actuators`,
+  aarch64-unknown-none-softfloat and the library's tests, exit 0 each. At #1270's head `--test shm_slot` exit 0
+  (4 passed); with `slot-install-relaxed` exit 101, the two hand-over models failing.
