@@ -66,3 +66,10 @@
   head (`tree.txt`) against the ToyOS sysroot #1258's round-8 image built, with the harness's guest C
   environment: rc 0, no warnings. The host checks of `r5/` stand: the rebase changed no file of this PR's but that
   context line.
+
+## Guest run at 2e7dd79aa
+
+- `r7/run-job.log`: guest-rows 43152649297 at the head 2e7dd79aa: `nvme_disk_boots`,
+  `the_data_partition_beside_the_stick_is_designated`, `the_log_lands_on_the_boot_stick`, `virt_user_mode` and
+  `testcases_members_exit_0` passed, "testcases: 242 member(s) exited 0, and the list's reboot ended the boot";
+  the runner's host name, home and temporary paths masked.
