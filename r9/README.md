@@ -46,3 +46,20 @@ Each log is exit 0:
 **Per-commit coverage.** The round's two commits differ only in a record, so these checks cover both. The 28 commits before them have the same trees as fd13c116e's commits, which the r8 review checked commit by commit.
 
 **A void first run.** The first run of these checks is void and is not published. Its build directory had been shared with a worktree at d1cefbaf9 for the base-size probe. That stale build gave the x86-64 kernel checks main's `toyos-abi`, which lacks `Fault::Mapping`. The run was stopped and the directory deleted, and this run built everything afresh.
+
+## `images/`: the guest crates compile, at f3e456f22
+
+**Why this section exists.** Run 43143902443 at fd13c116e went red at its build step, on `tests/guest/mapprobe/src/main.rs:282`. The error was `error[E0308]: mismatched types … expected Pipe, found OwnedHandle`. Main's typed handles (#1239, #1242) make `Endowments::take` answer the type asked for, so `Pipe::from(OwnedHandle)` no longer exists. None of the checks above build a guest crate.
+
+**The fix.** `pipe_end` takes its pipe end typed. The fix is folded into the probe commit and every later commit that carries the line. Nothing else changed: `range-diff-25a203053-f3e456f22.txt` shows one `!`, the probe commit, and every later commit `=`. Every commit message and author is kept, and every commit is signed. The eleven commits before the probe keep their hashes.
+
+**Each build at f3e456f22, exit 0, full output.** These are the images the six guest rows boot, and both default images:
+- `01.log`: `cargo run -- --build-only --boot-config tests/images/testcases.toml`. This compiles `mapprobe` and adds `bin/mapprobe`.
+- `02.log`: `cargo run -- --build-only --boot-config tests/images/benchcase.toml`, with osbench.
+- `03.log`: `cargo run -- --build-only --arch aarch64 --boot-config tests/images/virtjobcase.toml`. This compiles `mapprobe` for AArch64.
+- `04.log`: `cargo run -- --build-only --arch x86_64`.
+- `05.log`: `cargo run -- --build-only --arch aarch64`.
+
+**The head, 4a4d3fe23.** It differs from f3e456f22 only in doc comments and the `/tmp` record. `check-4a4d3fe23.log` shows `cargo check -p kernel --target x86_64-unknown-none` and `cargo check -p kernel --lib --tests --features sched-check` exit 0 there.
+
+**The `checks/` above** ran at 25a203053. That tree differs from f3e456f22 only in `mapprobe`, which none of those checks build.
