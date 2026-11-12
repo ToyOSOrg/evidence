@@ -56,3 +56,13 @@
 - `r5/`: the head's tree (`tree.txt`, clean): the SDK's tests (214) and two clippy shapes, nine loom models, the file
   server's tests, and the `testcases` image, whose sysroot builds libc's and std's arms from both branches; each log
   ends with rc 0.
+
+## Rebased onto #1258's round 9 (cb8701bee), head 2e7dd79aa
+
+- `r6/range-diff.txt`: `git range-diff 358182128..6bf86dd13 cb8701bee..2e7dd79aa`. Commits 2 to 4 are `=`; the
+  first differs only in a context line of `a_served_file_reads_through_its_paged_object.rs`, whose writer binding
+  round 9 made `mut`.
+- `r6/check-rust-tests.log`: every `tests/guest/rust-tests` binary type-checked for `x86_64-unknown-toyos` at the
+  head (`tree.txt`) against the ToyOS sysroot #1258's round-8 image built, with the harness's guest C
+  environment: rc 0, no warnings. The host checks of `r5/` stand: the rebase changed no file of this PR's but that
+  context line.

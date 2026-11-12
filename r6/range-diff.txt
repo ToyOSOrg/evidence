@@ -1,0 +1,13 @@
+1:  dfb74360f ! 1:  44bc8307d A process's threads have their requests to a directory in flight at once
+    @@ tests/guest/rust-tests/src/bin/a_served_file_reads_through_its_paged_object.rs:
+     +    let dir = Dir::connect(names, DIR).expect("the home directory");
+          let data = pattern(5 * 4096 + 123);
+      
+    -     let writer = dir.open(Base::Root, NAME, O_WRITE | O_CREATE | O_TRUNCATE).expect("open to write");
+    +     let mut writer = dir.open(Base::Root, NAME, O_WRITE | O_CREATE | O_TRUNCATE).expect("open to write");
+     
+      ## tests/guest/rust-tests/src/bin/an_export_shares_its_descriptions.rs ##
+     @@ tests/guest/rust-tests/src/bin/an_export_shares_its_descriptions.rs: const STREAM_BYTES: usize = 1 << 20;
+2:  170c71494 = 2:  88ee040b8 Review r1 of #1272: requests in flight change under one lock, and every reply wait is bounded
+3:  689bb2980 = 3:  d37bc862e Review r2 of #1272: each connection receives for itself, a slot comes before its connection, and the reply bound is derived
+4:  6bf86dd13 = 4:  2e7dd79aa Review r3 of #1272: the file server holds the client's block bound to its source, and a turn handed on stays on its connection
