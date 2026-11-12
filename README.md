@@ -118,3 +118,16 @@ Main moved to a7ca8ad09 while fc9c1e6be was checked; its run 43134232757 was can
   the conversion; this change touches neither, and the harness's build of the `testcases` image builds it.
 - Guest run 43135226971 at e76eba7e2 carries the ten rows.
 - `guest/run-43135226971.txt`: the ten rows at e76eba7e2, whose code is the head 258a5e9a9's, all pass.
+
+## Rebased onto main d1cefbaf9 (#1242, #1251, #1257, #1262, #1273), head 19efa9073
+- `rebase-d1cefbaf9/range-diff-from-258a5e9a9.txt`: only the first commit differs from the history before this rebase.
+- `r13/`: at e4c6da589, a clean tree (`summary.txt`, `checks13.sh`): the host suites, every kernel clippy shape and the
+  other clippy exit 0; the image (`build-only`) exits 101 on an unused `Endowments` import in the supervisor, which the
+  resolution of #1242's import line had kept. 19efa9073 drops it in the first commit; every commit of its range differs
+  from e4c6da589's only in that line of `system/supervisor/src/main.rs`, which no host suite or clippy shape builds.
+- `r13b/build-only.log`: the image at 19efa9073, exit 0.
+- `kcheck-range6/`: at each of the 23 commits from d1cefbaf9 to e4c6da589, the x86-64 kernel and the SDK with all
+  targets: all 46 exit 0; the control 150fcb847 exits 101. Neither check builds the supervisor, so it holds for 19efa9073.
+- `r13-guest/`: the guest Rust crates at 19efa9073 against its sysroot: all exit 0 but `pagerprobe`, as before (the
+  SDK's `std` feature it does not declare).
+- Guest run 43146959560 at 19efa9073 carries the ten rows; it replaces 43135226971, whose head could no longer merge.

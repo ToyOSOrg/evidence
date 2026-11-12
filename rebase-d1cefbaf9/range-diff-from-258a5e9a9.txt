@@ -1,0 +1,98 @@
+ 1:  4850e3b91 !  1:  658fba5e3 A child's handles are a list its parent names: labels and namespaces leave the kernel
+    @@ Commit message
+         name the session by its partition GUID. #1261's `poll_belongs_to_its_handle`
+         connects through its connector, where it opened a one-entry namespace.
+     
+    -    Kernel: 55,475 lines in 210 files at main a7ca8ad09 to 55,117 in 209.
+    +    Kernel: 56,188 lines in 212 files at main d1cefbaf9 to 55,830 in 211.
+     
+         Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+     
+    @@ issues/one-manifest-row-grants-every-applet-and-one-is-compared.md: endowed a du
+      `endowment_denied`'s `every_applet_holds_only_what_its_policy_names` reads the
+     
+      ## issues/one-program-that-fills-a-servers-table-holds-every-other-client-out.md ##
+    -@@ issues/one-program-that-fills-a-servers-table-holds-every-other-client-out.md: Only fileserver shares its table out: one share holds at most `HANDSHAKE_SHARE`,
+    - connection's badge names, which the supervisor mints per session, not per program
+    - (`system/supervisor/src/main.rs`, `mint`). A badge naming the program, its row and session, is on
+    - every connection to netstack and to the supervisor's launcher and grants ports
+    --(`Grants::netstack`, `launcher_namespace`, `grants_namespace`); diskserver's names a partition, and
+    -+(`Grants::netstack`, `badged`); diskserver's names a partition, and
+    - the others' connections carry none. `issues/netstacks-places-are-one-number-for-every-client.md` and
+    - `issues/netstack-lookup-slots-have-no-per-client-share.md` record the same hole on netstack's places
+    - and lookups. The supervisor mints the connector of every server it spawns, but not a surface
+    +@@ issues/one-program-that-fills-a-servers-table-holds-every-other-client-out.md: names the holder:
+    + 
+    + The supervisor mints the connector of every server it spawns, but hands out
+    + one unbadged connector per port to every row that receives it
+    +-(`build_namespace`); console and terminal each create their own surface port
+    ++(`received`); console and terminal each create their own surface port
+    + and move its connector only into the shell they spawn. A program that holds
+    + several sessions, or that launches other rows, holds as many keys:
+    + `issues/four-shares-take-a-file-server.md`.
+     
+      ## issues/storage-rows-start-holding-the-supervisors-whole-tree.md (deleted) ##
+     @@
+    @@ system/fileserver/src/main.rs: const STREAM_READ: usize = 64 * 1024;
+     -const EXPORT_PORT: &str = "export";
+     -
+      // One wait watches the acceptor, every connection and every stream at once.
+    - const _: () = assert!(1 + MAX_SERVED + MAX_HANDSHAKES + MAX_STREAMS <= Poller::MAX_HANDLES as usize);
+    + const _: () = assert!(1 + MAX_SERVED + HANDSHAKES.slots + MAX_STREAMS <= Poller::MAX_HANDLES as usize);
+      
+     @@ system/fileserver/src/main.rs: struct Stream {
+          armed: bool,
+    @@ system/fileserver/src/main.rs: struct Stream {
+              let ours = self.acceptor.accept().unwrap_or_else(|e| panic!("fileserver: the export port refused an accept ({e:?})"));
+              Ok((theirs, ours))
+          }
+    -@@ system/fileserver/src/main.rs: fn pager(role: Role, anonymous: bool) -> Option<toyos::paged::Pager> {
+    +@@ system/fileserver/src/main.rs: fn pager(role: Role, anonymous: bool) -> (Option<toyos::paged::Pager>, Option<us
+      
+      /// A session on the partition diskserver serves under `guid`.
+      fn served(guid: [u8; 16]) -> Option<Served> {
+    @@ system/supervisor/src/main.rs
+      //! instruction whether or not the server has reached `accept` or has even been
+      //! spawned, there is no instant at which a name is not bound yet, and there is
+      //! nothing anywhere to retry.
+    -@@ system/supervisor/src/main.rs: use toyos_supervisor::declaration::{self, declares, is_block, is_disk_driver, is
+    - use toyos_abi::devset::Declaration;
+    +@@ system/supervisor/src/main.rs: use toyos_abi::devset::Declaration;
+      use toyos_supervisor::drives::{self, Act, Drives};
+      use toyos_supervisor::restart::{self, AfterEnd, Budget};
+    + use toyos::admission::{self, Admission, Event, Policy, Refused};
+     -use toyos::endow::{Endowments, FromHandle};
+     +use toyos::endow::{service_label, FromHandle, DEV_PREFIX, PROVIDE_PREFIX, SERVE_PREFIX, SVC_PREFIX, SYSCAP_LABEL};
+      use toyos::fs::{Access, Grant, CAPABILITY_PREFIX};
+    @@ system/usbd/src/main.rs
+      
+     -use toyos::endow::{self, EndowError, Endowments};
+     +use toyos::endow::{self, EndowError, Endowments, DEV_PREFIX};
+    - use toyos::ipc::{Connection, FrameRx, RxStep, TrySendError};
+    + use toyos::admission::{self, Admission, Client, Policy};
+    + use toyos::ipc::{Connection, TrySendError};
+      use toyos::poller::{Poller, READABLE, WRITABLE};
+      use toyos::{AsHandle, PciDev};
+     -use toyos_abi::syscall::{SyscallError, DEV_PREFIX};
+ 2:  b636854f5 =  2:  d6b2b305c issues: the records this change completes name #1252
+ 3:  f3c06e95e =  3:  b9beddf55 sdk: the early lookup's test calls the walk the lookup makes
+ 4:  8a047e9fb =  4:  5484de451 sdk: with_prefixed's bound is its buffer
+ 5:  4b1bd9d48 =  5:  1e2723d1c Comments name the services and handles the tree has
+ 6:  2b2c1542d =  6:  f33dae232 Guest tests compile against the connector API
+ 7:  7307b1583 =  7:  1e40cf9f0 shell: an interrupt that comes while a -c shell starts its child reaches it
+ 8:  97b32e9a1 =  8:  e06195ccf issues: a -c shell cannot tell a child its quit asked from one that landed after it
+ 9:  251789c45 =  9:  6d609c80f shell: Asked has a Default beside its const new
+10:  22699a4c2 = 10:  b175ae1c7 kernel: SYS_SYSINFO charges its answer to the caller's job while it copies it out
+11:  4cd9877b1 = 11:  499e34013 supervisor: a provided connector reaches only a row that receives its name
+12:  4d7cd9aaa = 12:  3cec47680 Four texts still described a namespace
+13:  d861b66e9 = 13:  8e7f8621e A malformed table says which, and adopted_services_stay says why it is a guest test
+14:  eb92d9fe1 = 14:  576338e18 tests: three image comments say services where they said namespace
+15:  81d084193 = 15:  627580c97 soundserver: a policy number's comment names one the kernel still has
+16:  449da62d6 = 16:  51e4a844d issues: what #1252 owes on metal while the benches are down
+17:  48d4fffa1 = 17:  ed68af928 Review r2 of #1252: the last namespace texts, and two inexact ones
+18:  71cbea540 = 18:  f3b039670 kernel: SYS_SYSINFO charges a roster, never the header alone
+19:  773c7660b = 19:  d9339fd8b issues: a file server whose pager is refused for memory panics, blaming its row
+20:  2e324d263 = 20:  d3d4000d8 issues: kernel_objects_refused takes every frame while its own line may still be written
+21:  df2ab77f2 = 21:  3667db7cd Review r3 of #1252: a header alone is never refused, and ps names both refusals
+22:  e76eba7e2 = 22:  135fcb48c issues: kernel_objects_refused's control at main passed
+23:  258a5e9a9 = 23:  19efa9073 issues: the members #1252 adapted and only compiled are owed on metal
