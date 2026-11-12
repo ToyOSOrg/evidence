@@ -1,0 +1,14 @@
+--- a/src/sys/toyos/selector.rs (fork ed29321)	2026-11-12 08:18:25
++++ b/tests/guest/rust-tests/mio-control/src/sys/toyos/selector.rs (control 95301017f)	2026-11-12 08:18:25
+@@ -208,10 +208,7 @@
+     /// Wake a select waiting on its copy of the registrations, which are
+     /// about to change.
+     fn change(&mut self) -> io::Result<()> {
+-        if self.selecting && !self.signalled {
+-            self.changed.signal()?;
+-            self.signalled = true;
+-        }
++        // Control: a change signals nothing, so a parked select is not woken.
+         Ok(())
+     }
+ 
