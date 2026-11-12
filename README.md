@@ -117,3 +117,4 @@ Main moved to a7ca8ad09 while fc9c1e6be was checked; its run 43134232757 was can
   `pagerprobe`, which converts `toyos::OwnedHandle` into std's without declaring the SDK's `std` feature that provides
   the conversion; this change touches neither, and the harness's build of the `testcases` image builds it.
 - Guest run 43135226971 at e76eba7e2 carries the ten rows.
+- `guest/run-43135226971.txt`: the ten rows at e76eba7e2, whose code is the head 258a5e9a9's, all pass.
