@@ -1,0 +1,34 @@
+== cargo test -p kernel --lib slots::
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.08s
+     Running unittests pure/lib.rs (target/debug/deps/kernel-fa45b686f8e87f8e)
+
+running 10 tests
+test slots::tests::a_marked_slot_is_taken_once_unless_unmarked_or_removed_first ... ok
+test slots::tests::a_growth_costs_what_it_said_it_would ... ok
+test slots::tests::a_slot_past_the_table_names_nothing ... ok
+test slots::tests::a_slot_names_its_value_until_it_goes_and_is_taken_next ... ok
+test stackslots::tests::a_slot_taken_and_not_mapped_is_handed_out_again_without_a_flush ... ok
+test stackslots::tests::fresh_slots_come_in_order_and_nothing_flushes_below_the_batch ... ok
+test stackslots::tests::a_take_beside_a_flush_waits_for_it_and_a_slot_retired_during_it_waits_for_the_next ... ok
+test slots::tests::each_list_marks_apart_and_a_removal_unmarks_every_list ... FAILED
+test stackslots::tests::a_spent_range_flushes_for_one_retired_slot_and_refuses_with_none ... ok
+test stackslots::tests::no_slot_retired_since_the_last_flush_is_handed_out_and_none_is_drawn_beside_a_flush ... ok
+
+failures:
+
+---- slots::tests::each_list_marks_apart_and_a_removal_unmarks_every_list stdout ----
+
+thread 'slots::tests::each_list_marks_apart_and_a_removal_unmarks_every_list' (39265235) panicked at kernel/pure/slots.rs:314:9:
+assertion `left == right` failed
+  left: []
+ right: [2]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    slots::tests::each_list_marks_apart_and_a_removal_unmarks_every_list
+
+test result: FAILED. 9 passed; 1 failed; 0 ignored; 0 measured; 497 filtered out; finished in 0.48s
+
+error: test failed, to rerun pass `-p kernel --lib`
+rc=101

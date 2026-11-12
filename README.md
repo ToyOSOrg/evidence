@@ -79,3 +79,17 @@
   paged object's `Entry` fields: object 112 bytes, entry 192, mark 12, a slot 216.
 - `r8/control-build/`: the `testcases` image built at `fileops-step1-ctl-refuse` 12735044f (a2e4dfdac and the patch
   refusing every holder write), rc 0.
+
+## Review round 8 (head 358182128)
+
+- `r8b/checks/`: the tree committed as d1a85549b (`tree.txt`, clean): the slot table's control first,
+  `control-one-list.patch` (a removal that unmarks list 0 alone), which builds and reds
+  `each_list_marks_apart_and_a_removal_unmarks_every_list` on its list-1 assertion (slot 3 still marked), then
+  restored; every kernel library test (510) with `sched-check`, the kernel's three clippy shapes, the SDK's tests (215)
+  and two clippy shapes, the ABI's tests and clippy, and the `testcases` image, whose sysroot builds libc's ETXTBSY and
+  std's `ExecutableFileBusy` arms for both architectures. Each log ends with its exit code.
+- `r8b/merge/`: main 3c5c55584 (#1271) merged as 358182128, no file changed on both sides: `cargo test --test
+  toyos-checks`, rc 0.
+- `r8b/control/`: `fileops-step1-ctl-refuse` remade on 358182128 as c97966eb2 by `ctl-rebuild.sh` (the head's tree
+  and `refuse-holder-writes.patch`); its `testcases` image built by `build-control.sh`, rc 0 (`tree.txt` shows it
+  differs from the head by that file alone).

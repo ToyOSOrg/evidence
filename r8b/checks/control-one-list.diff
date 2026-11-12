@@ -1,0 +1,15 @@
+diff --git a/kernel/pure/slots.rs b/kernel/pure/slots.rs
+index 426aac61f..dcbf3252e 100644
+--- a/kernel/pure/slots.rs
++++ b/kernel/pure/slots.rs
+@@ -139,9 +139,7 @@ impl<T, const LISTS: usize> Slots<T, LISTS> {
+     /// The value at `slot`, unmarked on every list and its slot free from
+     /// here; `None` where it holds none.
+     pub fn remove(&mut self, slot: u32) -> Option<T> {
+-        for list in 0..LISTS {
+-            self.unmark(list, slot);
+-        }
++        self.unmark(0, slot);
+         let free = self.free;
+         let at = self.at_mut(slot)?;
+         if let Slot::Free(_) = at {
