@@ -1,0 +1,64 @@
+1:  46539ce64 ! 1:  4d2397542 One table reads every refusal, and each runtime keeps one from it to its word
+    @@ sdk/libc/arch/src/errno_codes.rs: fn every_code_libc_answers_with_is_errno_h_s()
+     +        (Io, "EIO"),
+     +        (Gone, "EPIPE"),
+     +        (Busy, "EBUSY"),
+    ++        (TextBusy, "ETXTBSY"),
+     +        (Unknown, "EIO"),
+     +    ] {
+     +        assert_eq!(of(word), header::int(ERRNO_H, errno), "{word:?}");
+    @@ sdk/libc/src/errcode.rs: pub(crate) const EHOSTUNREACH: i32 = 113;
+     -        SyscallError::ResourceExhausted => ENOMEM,
+     -        SyscallError::NotSupported => EOPNOTSUPP,
+     -        SyscallError::Busy => EBUSY,
+    +-        SyscallError::TextBusy => ETXTBSY,
+     -        _ => EINVAL,
+     +        Failure::BrokenPipe => EPIPE,
+     +        Failure::BadDescriptor | Failure::WrongDescriptor | Failure::NotOpenForWriting => EBADF,
+    @@ sdk/libc/src/errcode.rs: pub(crate) const EHOSTUNREACH: i32 = 113;
+     +        Failure::NameTooLong => ENAMETOOLONG,
+     +        Failure::ReadOnly => EROFS,
+     +        Failure::Busy => EBUSY,
+    ++        Failure::TextBusy => ETXTBSY,
+     +        Failure::NoSpace => ENOSPC,
+     +        Failure::FileTooLarge => EFBIG,
+     +        Failure::TooManyOpenFiles => ENFILE,
+    @@ sdk/std/sys/pal/mod.rs: mod unsupported_common;
+     -        SyscallError::Io => ErrorKind::Other,
+     -        SyscallError::Gone => ErrorKind::BrokenPipe,
+     -        SyscallError::Busy => ErrorKind::ResourceBusy,
+    +-        SyscallError::TextBusy => ErrorKind::ExecutableFileBusy,
+     -    };
+     -    crate::io::Error::from(kind)
+     +/// Exhaustive: a new `Failure` has to be given a kind here.
+    @@ sdk/std/sys/pal/mod.rs: mod unsupported_common;
+     +        Failure::ReadOnly => const_error!(Kind::PermissionDenied, "the directory is read-only to this process"),
+     +        Failure::NotOpenForWriting => const_error!(Kind::PermissionDenied, "the file is not open for writing"),
+     +        Failure::Busy => const_error!(Kind::ResourceBusy, "it is in use where it is"),
+    ++        Failure::TextBusy => const_error!(Kind::ExecutableFileBusy, "a program runs from the file"),
+     +        Failure::NoSpace => const_error!(Kind::StorageFull, "the volume is full"),
+     +        Failure::FileTooLarge => const_error!(Kind::FileTooLarge, "the file would be too large"),
+     +        Failure::Quota => const_error!(Kind::QuotaExceeded, "past a bound its server keeps"),
+    @@ sdk/toyos/src/failure.rs (new)
+     +    NotOpenForWriting,
+     +    /// It is in use as something that stays where it is.
+     +    Busy,
+    ++    /// A file a program runs from, which is not written while it does.
+    ++    TextBusy,
+     +    NoSpace,
+     +    FileTooLarge,
+     +    /// Past a bound a server keeps, which clears when something is let go.
+    @@ sdk/toyos/src/failure.rs (new)
+     +            SyscallError::Io => Self::Io,
+     +            SyscallError::Gone => Self::BrokenPipe,
+     +            SyscallError::Busy => Self::Busy,
+    ++            SyscallError::TextBusy => Self::TextBusy,
+     +        }
+     +    }
+     +}
+2:  0034c1f71 = 2:  ac0923a63 libc: _SC_ARG_MAX is what a caller's own arguments and environment may come to
+3:  0a377f728 = 3:  4290f02a2 Review r1 of #1227: a spawn's refusals say what they are, and no test restates a match
+4:  ab44bed4d = 4:  67081437b Review r2 of #1227: a Block holds only what startup::bytes laid out
+5:  0d7382974 = 5:  b2b46c5c8 issues: what #1227 owes on metal while the benches are down
+6:  b2946a672 = 6:  2308c073d startup: a names table has a bound of its own, and _SC_ARG_MAX leaves it out
+7:  c40194e84 = 7:  31855f8b4 Review of #1227's rebase: owed items match what a guest row now runs, and std's word for too big is E2BIG's
