@@ -38,4 +38,4 @@ before the `STLRB`.
 
 `models/ci-host-models.log`: `cargo run -- --ci host models` reads "95 step(s), all green", exit 0 (`models-rc.txt`). The three `forward-ignores-on-cpu` controls reach their verdicts there.
 
-Guest run 43173669251 is at this head, with the ten rows round 3 ran..
+Guest run 43173669251 is at this head, with the ten rows round 3 ran.
