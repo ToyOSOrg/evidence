@@ -30,11 +30,12 @@ All on macOS arm64.
 
 The tree is `e1c2794f8`. It differs from `ea33f5ad9` only in `sdk/toyos/src/files/owner.rs`.
 - **`a-01`–`a-08`:** `b84dd6b25` and `24fdb44c4` each compile. Each runs `cargo check -p kernel` for both targets, `cargo check -p toyos -p toyos-abi`, and the kernel's tests built (`--no-run`). Each exits 0.
-- **`a-09`–`a-13`:** at `e1c2794f8`, exit 0 for:
-  - kernel tests, 525 passed;
-  - the four kernel clippy shapes;
-  - `cargo test --test toyos-checks`, 55 passed;
-  - models, 93 of 93.
+- **`a-09`–`a-13`:** at `e1c2794f8`:
+  - `a-09`, kernel tests: 525 passed, exit 0;
+  - `a-10`, the four kernel clippy shapes: exit 0;
+  - `a-11`, `cargo test --test toyos-checks`: 55 passed, exit 0;
+  - `a-12`, lint: red;
+  - `a-13`, models: 93 of 93, exit 0.
 - **`a-12` and `a-14`–`a-18` were red:** lint, and every `--build-only`. `toyos_fs_map`'s holder closure did not answer #1258's `on_fd_held` type, and only the target build of the SDK compiles it. The fix was folded into the merge, which gives `6e43e99f0`, `9a29a356f` and `ea33f5ad9`.
 - **`b-01`–`b-06`:** at `ea33f5ad9`, lint is 5 of 5 green, and `--build-only` of `testcases`, `benchcase`, AArch64's `virtjobcase` and both default images each exit 0.
 
