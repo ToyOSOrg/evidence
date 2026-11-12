@@ -1,6 +1,9 @@
 # PR #1269, round 9: review r8 (the sweep gate, the slot size, text)
 
-All on macOS arm64. The tree is ToyOS's `map7b-2` at cb82a3ee0, the reworded r8 head on main d1cefbaf9, plus the round's uncommitted change (`+wip`). That change is the commit `Review r8 of #1269: a walk sweeps the futex waits only of an object a mapper ever linked` and the kernel's doc fixes.
+All on macOS arm64.
+
+- **`sizes/` and `controls/`** ran on ToyOS's `map7b-2` at cb82a3ee0 plus the round's uncommitted change (`+wip`). cb82a3ee0 is the reworded r8 head on main d1cefbaf9. The change was then committed unchanged as c03760fd1, `Review r8 of #1269: a walk sweeps the futex waits only of an object a mapper ever linked`. Its `kernel/pure/paged.rs` and `kernel/src/object/paged.rs` are byte-identical to the sources measured here (`cmp`).
+- **`checks/`** ran at the head 25a203053. That head differs from c03760fd1 only in the `/tmp` record.
 
 ## `sizes/`: a pager's object slot, measured by the compiler
 
@@ -29,3 +32,17 @@ Each control is a checked patch to `kernel/pure/paged.rs`. The run applies it wi
 - **`c4-pre-r3-rule`: the sweep repeats only after a visit.** This is the faithful pre-r3 rule, with a reset at each walk's start and at each visit, under the `u64` epoch. 2 tests are red, the same two as r4's control:
   - `a_waiter_an_unmap_left_…`, on the oracle with frame 101;
   - `a_page_marked_during_the_sweep_…`, with "a pass began since the sweep".
+
+## `checks/`: at 25a203053, from an empty build directory, each command's full output
+
+Each log is exit 0:
+- `01`–`04.log`: `cargo check -p kernel` for `x86_64-unknown-none` and for `aarch64-unknown-none-softfloat`, each with no features and with `boot-actuators,test-actuators`.
+- `05.log`: `cargo check -p toyos -p toyos-abi`.
+- `06.log`: `cargo check -p kernel --lib --tests --features sched-check`.
+- `07.log`: `cargo test -p kernel --lib --features sched-check`, 514 passed.
+- `08.log`: `cargo run -- --ci host lint`, 5 of 5 steps green.
+- `09.log`: `cargo run -- --ci host models`, 93 of 93 steps green.
+
+**Per-commit coverage.** The round's two commits differ only in a record, so these checks cover both. The 28 commits before them have the same trees as fd13c116e's commits, which the r8 review checked commit by commit.
+
+**A void first run.** The first run of these checks is void and is not published. Its build directory had been shared with a worktree at d1cefbaf9 for the base-size probe. That stale build gave the x86-64 kernel checks main's `toyos-abi`, which lacks `Fault::Mapping`. The run was stopped and the directory deleted, and this run built everything afresh.
