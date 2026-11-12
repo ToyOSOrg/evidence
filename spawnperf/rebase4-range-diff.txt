@@ -1,0 +1,22 @@
+1:  e1f06e852 = 1:  d2822d823 A spawn reserves its stack once, and a copied page is written once
+2:  ab79640d5 = 2:  cd87db7fb A copy source writes every byte it is asked for
+3:  a6dd2b26e = 3:  d2630ea2d A pinned frame a discard keeps is filled as new, written once
+4:  035f950ab ! 4:  f9ca6c5a7 A page past its source reads nothing from it, and a page's frame is never kept
+    @@ kernel/src/mm/space.rs: fn copyable(entry: &SpaceEntry) -> bool {
+      /// Every frame the space owns goes back; its tables go with `UserTables`.
+      ///
+      /// Not through [`AddressSpace::clear`]: no thread runs in a space that drops,
+    --/// and a private frame is mapped in no other, so no CPU caches its leaves, no
+    --/// futex waiter is keyed on its frames and no copy pins them.
+    -+/// and a private frame is mapped in no other, so no CPU caches its leaves and
+    -+/// no futex waiter is keyed on its frames.
+    + /// no CPU holds its root ([`Space::retire`]), and a private frame is mapped in
+    +-/// no other, so no CPU caches its leaves, no futex waiter is keyed on its
+    +-/// frames and no copy pins them.
+    ++/// no other, so no CPU caches its leaves and no futex waiter is keyed on its
+    ++/// frames.
+      impl Drop for AddressSpace {
+          fn drop(&mut self) {
+              let committed = self.committed_pages(FLOOR, TOP);
+5:  00f9d4d44 = 5:  2664ab840 Review r2 of #1250: free_drawn's precondition, and the past-end page as a range the loader takes
+6:  9d9d5ee0f = 6:  db234843b issues: what #1250 owes on metal
