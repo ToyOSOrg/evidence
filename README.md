@@ -49,3 +49,10 @@
   file server's tests and clippy (main's four findings), and the default and `testcases` images, all rc 0 but that
   clippy. The rebase took main's typed received handles (`one` answers a `ReceivedHandle`, which `export` and
   `stream` type) and `adopt` taking a `Connection`.
+
+## Rebased onto #1258's round 8 and main 3c5c55584 (358182128), head 6bf86dd13
+
+- `r5/range-diff.txt`: `git range-diff a2e4dfdac..ba7b635ec 358182128..6bf86dd13`, every commit `=`.
+- `r5/`: the head's tree (`tree.txt`, clean): the SDK's tests (214) and two clippy shapes, nine loom models, the file
+  server's tests, and the `testcases` image, whose sysroot builds libc's and std's arms from both branches; each log
+  ends with rc 0.
