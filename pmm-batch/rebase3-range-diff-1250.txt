@@ -1,0 +1,20 @@
+1:  4d12f3a5c = 1:  e1f06e852 A spawn reserves its stack once, and a copied page is written once
+2:  fd87e3d5e = 2:  ab79640d5 A copy source writes every byte it is asked for
+3:  ce902987f = 3:  a6dd2b26e A pinned frame a discard keeps is filled as new, written once
+4:  1b9f61625 ! 4:  035f950ab A page past its source reads nothing from it, and a page's frame is never kept
+    @@ kernel/src/mm/space.rs: impl AddressSpace {
+     -            let sorted = &mut sorted[..frames.len()];
+     -            sorted.copy_from_slice(frames);
+     -            sorted.sort_unstable();
+    --            crate::sched::futex::revoke_frames(sorted);
+    +-            crate::sched::futex::revoke_frames(&self.futex, sorted);
+     -            for ((&phys, &va), kept) in frames.iter().zip(vas).zip(kept.iter_mut()) {
+     +        self.tables.take_owned(start, end, |frames| {
+     +            frames.sort_unstable();
+    -+            crate::sched::futex::revoke_frames(frames);
+    ++            crate::sched::futex::revoke_frames(&self.futex, frames);
+     +            for &phys in frames.iter() {
+                      // SAFETY: a frame an owned leaf held, which no leaf on any CPU
+     -                // maps now and no waiter is keyed on; one kept is the page's.
+5:  d735a0656 = 5:  00f9d4d44 Review r2 of #1250: free_drawn's precondition, and the past-end page as a range the loader takes
+6:  308e990a6 = 6:  9d9d5ee0f issues: what #1250 owes on metal
