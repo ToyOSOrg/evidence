@@ -1,0 +1,618 @@
+ 1:  946997c14 !  1:  4dac59f14 A child's handles are a list its parent names: labels and namespaces leave the kernel
+    @@ Commit message
+           `MAX_SPAWN_ENDOWMENTS` is 96: the 30 a spawn carried plus the 64 a
+           namespace held, so everything one table and one namespace expressed still
+           fits. The names are bounded by the startup block alone.
+    +    - `ObjectKind::Namespace` goes and its word 8 stays unused, as `ObjectKind`
+    +      says a word that goes does: `SysCap` through `DeviceSet` keep 9 to 19,
+    +      `from_word` looks a word up rather than indexing by it, the SDK's census
+    +      finds a kind's count by its place in `ALL`, and the SDK's receive test
+    +      takes word 8 and the word past the last kind as ones no kind has.
+         - The supervisor, whose parent is the kernel, starts holding its system
+           capability, the file server's image, ROOT's and the boot names at the four
+           handles `toyos_abi::boot::supervisor` states.
+    @@ Commit message
+         inherits: so a storage row, whose view is empty, now starts holding no file
+         grant, where it inherited the supervisor's whole tree.
+     
+    +    A connector a peer sent, as a session's launcher and controls are, is typed
+    +    only where the kernel reported a connector (`ReceivedHandle::typed`), and an
+    +    endowed one on its parent's word. std's `adopt_services` is `unsafe`, as
+    +    `adopt_namespace` was: the handles it takes are its caller's word.
+    +
+         `SYS_NAMESPACE_OPEN`'s name was the last caller of `SyscallContext::user_str`,
+         since #1238 reads a spawn's path as bytes bounded by `MAX_PATH`. So
+         `user_str` and `MAX_USER_STR` go. `KernelStack::heap` charged every thread
+    @@ Commit message
+         messages for a session's server that broke the protocol or went silent
+         name the session by its partition GUID.
+     
+    -    Kernel: 55,416 lines in 212 files at main 75bdec3cd to 55,058 in 211.
+    +    Kernel: 55,742 lines in 212 files at main 429f772b0 to 55,384 in 211.
+     
+         Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+     
+    @@ issues/a-driver-that-lends-its-device-a-handle-a-peer-sent-is-ended-when-it-is-n
+      handle a peer sent with (`kernel/src/object/handle.rs`).
+      
+      The region a holder lends is a peer's by contract: `toyos_pci_claim::lend` maps
+    -@@ issues/a-driver-that-lends-its-device-a-handle-a-peer-sent-is-ended-when-it-is-no-region.md: so this is not `issues/a-received-handle-has-no-knowable-type.md`'s case.
+    +@@ issues/a-driver-that-lends-its-device-a-handle-a-peer-sent-is-ended-when-it-is-no-region.md: as a region before the session lends it (`Sessions::open`,
+      
+      The kernel owns the fix rather than each lender: what a holder lends is a
+      peer's by `lend`'s contract, and the kernel already answers a peer's handle of
+    @@ issues/a-namespace-is-a-kernel-object-and-service-lookup-is-kept-out-of-the-kern
+     -the first this file is deleted, under the second it becomes a stage of the
+     -track.
+     
+    - ## issues/a-received-handle-has-no-knowable-type.md ##
+    -@@ issues/a-received-handle-has-no-knowable-type.md: answers only *how many*. `SYS_FSTAT` answers what any handle is, needing no righ
+    - settles two kinds: only a region of memory the kernel allocated answers
+    - `SharedMemory`, which is how `SharedMemory::lent` refuses every other handle
+    - before it maps one (`sdk/toyos/src/shm.rs`), and only a `Connection` answers
+    --`Socket`. It settles no other. A `Process`, a `Namespace`, a `Connector`, an
+    -+`Socket`. It settles no other. A `Process`, a `Connector`, an
+    - `Inbox` and a `SysCap` all answer `Unknown`, and an `Acceptor` answers `Pipe`,
+    - as a pipe end does (`fstat` in `kernel/src/object/ops.rs`).
+    - 
+    -@@ issues/a-received-handle-has-no-knowable-type.md: uses it typed can be ended by whoever sent it.** The sender needs nothing but
+    - A generic use is not reached: a read or a write a handle cannot do answers
+    - `PermissionDenied`, and a watch `NotSupported`, never `WrongType`, which is how
+    - netstack's piped ends are refused (`system/netstack/src/pipes.rs`). The
+    --supervisor hands what a launch's client sent to `SYS_SPAWN` and
+    --`SYS_NAMESPACE_BUILD`, which answer a handle of the wrong kind
+    --`InvalidArgument`.
+    -+supervisor moves what a launch's client sent on to the program unread, whose
+    -+`SYS_CONNECT` answers a handle of the wrong kind `InvalidArgument`.
+    - 
+    - Nothing in the tree is hostile today, so nothing fails. The property the
+    - architecture claims — that a process cannot be harmed by what it was not given —
+    -
+      ## issues/desktop-window-child-freeze.md ##
+     @@ issues/desktop-window-child-freeze.md: manifest does not carry with nothing.
+      
+    @@ kernel/src/syscall/ipc.rs: use crate::message::{MessageBounce, QueueRef, SendRef
+     -use crate::UserAddr;
+      use crate::{message, pipe, process};
+      
+    - use toyos_abi::handle::{NotRights, RawHandle, Rights, TransferEntry};
+    + use toyos_abi::handle::{NotRights, RawHandle, ReceivedEntry, Rights, TransferEntry};
+     @@ kernel/src/syscall/ipc.rs: pub(super) fn sys_port_create() -> u64 {
+          }
+      }
+    @@ lib/session/src/lib.rs: impl Listed {
+              let frame = rx.recv(&conn).map_err(|e| format!("the open was not answered: {e:?}"))?;
+              if frame.msg_type != MSG_OPENED {
+     @@ lib/session/src/lib.rs: pub fn open(
+    +             return Err(format!("the supervisor refused a session: {why}"));
+              }
+              let [launcher, controls] = rx.take_handles::<2>().ok_or("the session came without its handles")?;
+    +-        let namespace = |handle: toyos::ipc::ReceivedHandle| {
+    +-            handle.typed::<toyos::namespace::Namespace>().map_err(|why| format!("the session's handles are not namespaces: {why}"))
+    ++        let connector = |handle: toyos::ipc::ReceivedHandle| {
+    ++            handle.typed::<toyos::port::Connector>().map_err(|why| format!("the session's handles are not connectors: {why}"))
+    +         };
+    +-        let (launcher, controls) = (namespace(launcher)?, namespace(controls)?);
+    ++        let (launcher, controls) = (connector(launcher)?, connector(controls)?);
+              asks += 1;
+    --        match toyos::namespace::Namespace::received(controls).open(CONTROL) {
+    --            Ok(control) => return Ok((toyos::namespace::Namespace::received(launcher), control)),
+    -+        match toyos::port::Connector::received(controls).connect() {
+    -+            Ok(control) => return Ok((toyos::port::Connector::received(launcher), control)),
+    +-        match controls.open(CONTROL) {
+    ++        match controls.connect() {
+    +             Ok(control) => return Ok((launcher, control)),
+                  Err(toyos_abi::syscall::SyscallError::Gone) if began.elapsed() < ENDED_UNREAD => {}
+                  Err(toyos_abi::syscall::SyscallError::Gone) => {
+    -                 return Err(format!(
+     
+      ## lib/swap/src/lib.rs ##
+     @@
+    @@ sdk/abi/src/handle.rs: impl RawHandle {
+          pub const fn generation(self) -> u32 {
+              self.0 >> Self::SLOT_BITS
+          }
+    +@@ sdk/abi/src/handle.rs: pub const HANDLE_INVALID: RawHandle = RawHandle(u32::MAX);
+    + ///
+    + /// **A kind's word is ABI: it is never renumbered and never given to another
+    + /// kind.** A new kind takes the next word, a kind that goes leaves its word
+    +-/// unused for good, and a receiver refuses a word it does not know.
+    ++/// unused for good, as 8, the namespace's, is, and a receiver refuses a word it
+    ++/// does not know.
+    + #[repr(u32)]
+    + #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+    + pub enum ObjectKind {
+     @@ sdk/abi/src/handle.rs: pub enum ObjectKind {
+          Inbox = 5,
+          SharedMem = 6,
+          Connector = 7,
+     -    Namespace = 8,
+    --    SysCap = 9,
+    --    Process = 10,
+    --    Null = 11,
+    --    Job = 12,
+    --    Notice = 13,
+    --    WakeLatency = 14,
+    --    EventSignal = 15,
+    --    EventWait = 16,
+    --    Pager = 17,
+    --    Paged = 18,
+    --    DeviceSet = 19,
+    -+    SysCap = 8,
+    -+    Process = 9,
+    -+    Null = 10,
+    -+    Job = 11,
+    -+    Notice = 12,
+    -+    WakeLatency = 13,
+    -+    EventSignal = 14,
+    -+    EventWait = 15,
+    -+    Pager = 16,
+    -+    Paged = 17,
+    -+    DeviceSet = 18,
+    +     SysCap = 9,
+    +     Process = 10,
+    +     Null = 11,
+    +@@ sdk/abi/src/handle.rs: pub enum ObjectKind {
+      }
+      
+      impl ObjectKind {
+     -    pub const ALL: [ObjectKind; 20] = [
+    ++    /// Every kind, in word order.
+     +    pub const ALL: [ObjectKind; 19] = [
+              Self::PipeRead,
+              Self::PipeWrite,
+    @@ sdk/abi/src/handle.rs: impl ObjectKind {
+              Self::SysCap,
+              Self::Process,
+              Self::Null,
+    +@@ sdk/abi/src/handle.rs: impl ObjectKind {
+    +         Self::DeviceSet,
+    +     ];
+    + 
+    ++    /// The kind `word` names: `None` for a word no kind has, a retired one's among them.
+    +     pub const fn from_word(word: u32) -> Option<Self> {
+    +-        if (word as usize) < Self::ALL.len() { Some(Self::ALL[word as usize]) } else { None }
+    ++        let mut i = 0;
+    ++        while i < Self::ALL.len() {
+    ++            if Self::ALL[i] as u32 == word {
+    ++                return Some(Self::ALL[i]);
+    ++            }
+    ++            i += 1;
+    ++        }
+    ++        None
+    +     }
+    + }
+    + 
+    +-// `from_word` indexes `ALL` by the word: a row out of order would count a
+    +-// kind's neighbour.
+    ++// `ALL` lists each kind once, in word order, and the namespace's word stays retired.
+    + const _: () = {
+    +-    let mut i = 0;
+    ++    let mut i = 1;
+    +     while i < ObjectKind::ALL.len() {
+    +-        assert!(ObjectKind::ALL[i] as usize == i, "ObjectKind::ALL is out of word order");
+    ++        assert!((ObjectKind::ALL[i - 1] as u32) < ObjectKind::ALL[i] as u32, "ObjectKind::ALL is out of word order");
+    +         i += 1;
+    +     }
+    ++    assert!(ObjectKind::from_word(8).is_none(), "word 8, the namespace's, was reassigned");
+    + };
+    + 
+    + /// What the holder of a handle may do with the object behind it.
+     @@ sdk/abi/src/handle.rs: impl Rights {
+      
+      crate::user_safe! {
+    @@ sdk/abi/src/syscall.rs: pub const MAX_SPAWN_MAPS: usize = 64;
+     +pub const MAX_SPAWN_ENDOWMENTS: usize = 96;
+      
+      use crate::end::End;
+    - use crate::handle::{Rights, TransferEntry};
+    + use crate::handle::{ReceivedEntry, Rights, TransferEntry};
+     @@ sdk/abi/src/syscall.rs: pub enum SyscallError {
+          /// The object was there and its other end is not.
+          ///
+    @@ sdk/std/os/fs.rs: pub fn symlink<P: AsRef<Path>, Q: AsRef<Path>>(original: P, li
+     +/// machine's directory capabilities itself. No child inherits them. Refused,
+     +/// and the connectors closed, when this process has adopted some already or
+     +/// has resolved a file.
+    + ///
+    + /// # Safety
+    +-/// `namespace` names a namespace: the kernel ends a process that opens a name
+    +-/// through a handle to anything else.
+    ++/// Each handle names a connector: it is taken as one on the caller's word.
+      #[stable(feature = "toyos_ext", since = "1.0.0")]
+    --pub fn adopt_namespace(namespace: crate::os::toyos::io::OwnedHandle) -> io::Result<()> {
+    --    toyos::endow::adopt_namespace(toyos::endow::FromHandle::from_handle(namespace.into_inner()))
+    +-pub unsafe fn adopt_namespace(namespace: crate::os::toyos::io::OwnedHandle) -> io::Result<()> {
+    ++pub unsafe fn adopt_services(services: Vec<(String, crate::os::toyos::io::OwnedHandle)>) -> io::Result<()> {
+    +     // SAFETY: the caller's.
+    +-    let namespace = unsafe { toyos::endow::FromHandle::from_handle(namespace.into_inner()) };
+    +-    toyos::endow::adopt_namespace(namespace)
+     -        .map_err(|_| io::const_error!(io::ErrorKind::AlreadyExists, "this process already has a namespace"))
+    -+pub fn adopt_services(services: Vec<(String, crate::os::toyos::io::OwnedHandle)>) -> io::Result<()> {
+    -+    let services = services.into_iter().map(|(name, connector)| (name, toyos::port::Connector::received(connector.into_inner()))).collect();
+    ++    let services = services.into_iter().map(|(name, connector)| (name, unsafe { toyos::endow::FromHandle::from_handle(connector.into_inner()) })).collect();
+     +    toyos::endow::adopt(services)
+     +        .map(drop)
+     +        .map_err(|_| io::const_error!(io::ErrorKind::AlreadyExists, "this process already resolves its files"))
+    @@ sdk/std/sys/process.rs: impl Command {
+                  parent,
+                  independent: self.independent,
+     
+    + ## sdk/toyos/src/census.rs ##
+    +@@ sdk/toyos/src/census.rs: impl Census {
+    + 
+    +     /// Live objects of one kind.
+    +     pub fn kind(&self, kind: ObjectKind) -> u64 {
+    +-        self.0[kind as usize]
+    ++        let at = ObjectKind::ALL.iter().position(|listed| *listed == kind).expect("ObjectKind::ALL lists every kind");
+    ++        self.0[at]
+    +     }
+    + 
+    +     pub fn total(&self) -> u64 {
+    +
+      ## sdk/toyos/src/endow.rs ##
+     @@
+     -//! What this process was given, and the only place a service name resolves.
+    @@ sdk/toyos/src/endow.rs
+      use core::mem::MaybeUninit;
+      use core::sync::atomic::{AtomicU32, AtomicU8, Ordering};
+      
+    - use toyos_abi::handle::HANDLE_INVALID;
+    + use toyos_abi::handle::{ObjectKind, HANDLE_INVALID};
+     -use toyos_abi::syscall::{
+     -    self, DeviceRequest, DeviceType, SyscallError, MAX_ENDOWMENTS, MAX_LABELS_LEN,
+     -};
+    @@ sdk/toyos/src/endow.rs
+          NotEndowed,
+          /// The server exited. Its acceptor's last handle went with it and the port
+          /// is closed for good.
+    -@@ sdk/toyos/src/endow.rs: from_handle! {
+    -     OwnedHandle => |h| h,
+    -     Acceptor => Acceptor,
+    -     Connector => Connector,
+    --    Namespace => Namespace,
+    -     SysCap => SysCap,
+    -     Job => Job,
+    -     Device => Device,
+    -@@ sdk/toyos/src/endow.rs: from_handle! {
+    -     crate::UartDev => |h| crate::UartDev(Device(h)),
+    - }
+    +@@ sdk/toyos/src/endow.rs: pub(crate) use from_handle;
+    + from_handle! {
+    +     Acceptor: Acceptor => Acceptor,
+    +     Connector: Connector => Connector,
+    +-    Namespace: Namespace => Namespace,
+    +     SysCap: SysCap => SysCap,
+    +     Job: Job => Job,
+    +     Process: Process => Process,
+    +@@ sdk/toyos/src/endow.rs: macro_rules! class_of_claim {
+    + 
+    + class_of_claim!(crate::FramebufferDev, crate::PciDev, crate::AcpiDev, crate::UartDev);
+      
+     -/// This process's endowment table, parsed once.
+     +/// This process's endowment table, read once.
+    @@ sdk/toyos/src/fs.rs: impl Dir {
+              };
+              self.attach(conn)
+     
+    + ## sdk/toyos/src/ipc.rs ##
+    +@@ sdk/toyos/src/ipc.rs: mod tests {
+    +             admit(crate::process::Process::KINDS, ObjectKind::PipeRead as u32),
+    +             Err(WrongKind { wanted: &[ObjectKind::Process], got: Some(ObjectKind::PipeRead) })
+    +         );
+    +-        let unknown = ObjectKind::ALL.len() as u32;
+    +-        assert_eq!(admit(Bell::KINDS, unknown), Err(WrongKind { wanted: Bell::KINDS, got: None }));
+    ++        let past_the_last = ObjectKind::ALL[ObjectKind::ALL.len() - 1] as u32 + 1;
+    ++        assert_eq!(admit(Bell::KINDS, past_the_last), Err(WrongKind { wanted: Bell::KINDS, got: None }));
+    ++        assert_eq!(admit(Bell::KINDS, 8), Err(WrongKind { wanted: Bell::KINDS, got: None }), "the namespace's retired word");
+    +         assert_eq!(admit(Bell::KINDS, ReceivedEntry::NONE.kind), Err(WrongKind { wanted: Bell::KINDS, got: None }));
+    +     }
+    + 
+    +
+      ## sdk/toyos/src/job.rs ##
+     @@
+      //! A job: the owner a process's threads, and its children's unless a spawn
+    @@ sdk/toyos/src/namespace.rs (deleted)
+     -        self.0.try_clone().map(Self)
+     -    }
+     -
+    --    /// A namespace a peer sent, consumed. Its type is the sender's word: the
+    --    /// kernel refuses each namespace call on a handle of another type, as it
+    --    /// does a connection's ([`Connection::received`]).
+    --    pub fn received(handle: OwnedHandle) -> Self {
+    --        Self(handle)
+    --    }
+    --
+     -    /// # Safety
+     -    /// `raw` must be a live namespace handle this process owns and nothing else
+     -    /// answers for.
+    @@ sdk/toyos/src/port.rs: impl Acceptor {
+     +    pub fn connect(&self) -> Result<Connection, SyscallError> {
+     +        connect(self.as_handle())
+     +    }
+    -+
+    -+    /// A connector a peer sent, consumed. Its type is the sender's word: the
+    -+    /// kernel refuses a connect through a handle of another type.
+    -+    pub fn received(handle: OwnedHandle) -> Self {
+    -+        Self(handle)
+    -+    }
+     +
+          /// A second connector to the same port, for a holder handing one on while
+          /// keeping its own.
+          pub fn duplicate(&self) -> Result<Self, SyscallError> {
+     
+      ## sdk/toyos/src/quit.rs ##
+    -@@
+    - pub use toyos_abi::quit::Reason;
+    - use toyos_abi::syscall::{self, SyscallError};
+    - 
+    --use crate::endow::{FromHandle, Once};
+    -+use crate::endow::Once;
+    - use crate::{AsHandle, OwnedHandle, RawHandle};
+    - 
+    - /// This process's notice.
+     @@ sdk/toyos/src/quit.rs: impl AsHandle for Notice {
+          }
+      }
+      
+    --impl FromHandle for Notice {
+    --    fn from_handle(handle: OwnedHandle) -> Self {
+    --        Self(handle)
+    --    }
+    --}
+    +-crate::endow::from_handle! { Notice: Notice => Notice }
+     -
+     -/// This process's notice, from the kernel under `QUIT_LABEL`. Borrowed, as
+     -/// [`crate::endow::this_process`] is.
+    @@ system/diskserver/src/session.rs: fn transfer_blocks(blocks: usize) -> u32 {
+     +/// A connector of the caller's own to the block service this process holds
+     +/// as the service `name`: [`Error::NotHeld`] for a name it was not given.
+     +pub fn held(name: &str) -> Result<Connector, Error> {
+    -+    let held = toyos::endow::connector(name).ok_or(Error::NotHeld)?;
+    -+    held.try_clone_to_owned().map(Connector::received).map_err(Error::Kernel)
+    ++    let copy = toyos::endow::connector(name).ok_or(Error::NotHeld)?.try_clone_to_owned().map_err(Error::Kernel)?;
+    ++    // SAFETY: a duplicate of a connector this process was endowed or adopted
+    ++    // as a service, which is its parent's word or its own.
+    ++    Ok(unsafe { <Connector as toyos::endow::FromHandle>::from_handle(copy) })
+     +}
+     +
+     +pub(crate) fn connect(service: BorrowedHandle<'_>) -> Result<Connection, Error> {
+    @@ system/supervisor/src/main.rs: fn make_dir(path: &str) -> std::io::Result<()> {
+     -            .take(SYSCAP_LABEL)
+     -            .expect("supervisor: the kernel spawns this program holding the system capability"),
+     -    ));
+    -+    let syscap: &'static SysCap = Box::leak(Box::new(SysCap::from_handle(kernel_gave(toyos_abi::boot::supervisor::SYSCAP))));
+    ++    // SAFETY: the kernel starts the supervisor holding its system capability
+    ++    // at this handle (`toyos_abi::boot::supervisor`).
+    ++    let syscap = unsafe { SysCap::from_handle(kernel_gave(toyos_abi::boot::supervisor::SYSCAP)) };
+    ++    let syscap: &'static SysCap = Box::leak(Box::new(syscap));
+          say_last_words_on_panic(syscap);
+          // Before anything is started, and before the supervisor says anything: from here
+          // the supervisor's own lines are records in its ring.
+    @@ system/supervisor/src/main.rs: fn main() {
+     -            }
+     -            builder.finish().expect("supervisor: no namespace for its own files")
+     -        };
+    --        if let Err(e) = std::os::toyos::fs::adopt_namespace(build().into()) {
+    +-        // SAFETY: the namespace built just above.
+    +-        if let Err(e) = unsafe { std::os::toyos::fs::adopt_namespace(build().into()) } {
+     -            panic!("supervisor: std would not take its namespace ({e}), and the supervisor is endowed none");
+     +        let copies = own
+     +            .iter()
+     +            .map(|(name, connector)| (name.clone(), connector.duplicate().expect("supervisor: no copy of a grant of its own").into()))
+     +            .collect();
+    -+        if let Err(e) = std::os::toyos::fs::adopt_services(copies) {
+    ++        // SAFETY: each is a duplicate of a connector minted just above.
+    ++        if let Err(e) = unsafe { std::os::toyos::fs::adopt_services(copies) } {
+     +            panic!("supervisor: std would not take its files ({e}), and the supervisor is endowed none");
+              }
+     -        Box::leak(Box::new(build()))
+    @@ system/supervisor/src/main.rs: impl<'a> Supervisor<'a> {
+     @@ system/supervisor/src/main.rs: impl Supervisor<'_> {
+              // descriptors, the extras, the place if it names one, and the job.
+              let mut carried = carried;
+    -         let fds: Vec<toyos::OwnedHandle> = carried.by_ref().take(request.fd_count()).collect();
+    +         let fds: Vec<toyos::OwnedHandle> = carried.by_ref().take(request.fd_count()).map(Into::into).collect();
+     -        // `SYS_NAMESPACE_BUILD` copies a connector into the namespace and
+     -        // leaves the caller's handle, and the supervisor's copy of a client's
+    --        // connector has no life beyond this launch. **Not a claim about the
+    --        // type** — a client sends what it likes, and everything below treats a
+    --        // wrong one as a refused launch rather than as the supervisor's own bug.
+    -+        // **Not a claim about the type**: a client sends what it likes, and
+    -+        // what it sent is moved on to the program as it is, whose connect
+    -+        // through a handle that is no connector the kernel refuses.
+    -         let extras: Vec<(String, Connector)> =
+    -             names.into_iter().zip(carried.by_ref()).map(|(name, handle)| (name.to_string(), Connector::from_handle(handle))).collect();
+    -         let mut rest: Vec<toyos::OwnedHandle> = carried.collect();
+    +-        // connector has no life beyond this launch.
+    +         let extras: Result<Vec<(String, Connector)>, ipc::WrongKind> =
+    +             names.into_iter().zip(carried.by_ref()).map(|(name, handle)| Ok((name.to_string(), handle.typed()?))).collect();
+    +         let mut rest: Vec<ipc::ReceivedHandle> = carried.collect();
+     @@ system/supervisor/src/main.rs: impl Supervisor<'_> {
+                  false => None,
+              };
+    @@ tests/guest/rust-tests/src/bin/memory_floor.rs: fn directions_are_the_clients(ca
+      ## tests/guest/rust-tests/src/bin/messages_are_whole.rs ##
+     @@
+      
+    - use toyos::ipc::Connection;
+    + use toyos::ipc::{Connection, FrameRx, WrongKind};
+      use toyos::poller::OTHER_END_GONE;
+     -use toyos::{namespace, pipe_pair, port, AsHandle, OwnedHandle, Pipe};
+     +use toyos::{pipe_pair, port, AsHandle, OwnedHandle, Pipe};
+    @@ tests/guest/rust-tests/src/bin/moved_rights.rs
+     -use toyos::{namespace, port, AsHandle};
+     +use toyos::{port, AsHandle};
+      use toyos_abi::end::End;
+    - use toyos_abi::handle::{Rights, TransferEntry};
+    + use toyos_abi::handle::{ReceivedEntry, Rights, TransferEntry};
+     -use toyos_abi::syscall::{self, SpawnArgs, SpawnEndow, SyscallError, MAX_TRANSFER_HANDLES};
+     +use toyos_abi::syscall::{self, SpawnArgs, SyscallError, MAX_TRANSFER_HANDLES};
+      use toyos_abi::RawHandle;
+    @@ tests/guest/rust-tests/src/bin/msix_in_place.rs: mod function;
+      
+     
+      ## tests/guest/rust-tests/src/bin/mutual_kill.rs ##
+    -@@ tests/guest/rust-tests/src/bin/mutual_kill.rs: use toyos::ipc::Connection;
+    +@@ tests/guest/rust-tests/src/bin/mutual_kill.rs: use std::sync::atomic::{AtomicU32, Ordering};
+    + use toyos::ipc::Connection;
+      use toyos::process::Process;
+      use toyos::shm::SharedMemory;
+    - use toyos::endow::FromHandle;
+     -use toyos::{endow, namespace, port, OwnedHandle};
+     -use toyos_abi::syscall::{self, SVC_LABEL};
+     +use toyos::endow::{self, service_label, SVC_PREFIX};
+    @@ tests/guest/rust-tests/src/bin/process_tree.rs: use std::io::{BufRead, BufReader
+      use std::os::toyos::process::CommandExt;
+      use std::process::{Child, ChildStdin, Command, Stdio};
+      
+    --use toyos::endow::{self, Endowments, FromHandle, SVC_LABEL, SYSCAP_LABEL};
+    -+use toyos::endow::{self, service_label, Endowments, FromHandle, SVC_PREFIX, SYSCAP_LABEL};
+    +-use toyos::endow::{self, Endowments, SVC_LABEL, SYSCAP_LABEL};
+    ++use toyos::endow::{self, service_label, Endowments, SVC_PREFIX, SYSCAP_LABEL};
+      use toyos::ipc::Connection;
+      use toyos::launch::{self, Launch, Outcome, Parent, LAUNCHER};
+      use toyos::process::Process;
+ 2:  3fddaa389 =  2:  892adfe24 issues: the records this change completes name #1252
+ 3:  95f22fa00 =  3:  4e1d2f0a2 sdk: the early lookup's test calls the walk the lookup makes
+ 4:  d7c3357cc =  4:  aefc15458 sdk: with_prefixed's bound is its buffer
+ 5:  6c6f2ff92 !  5:  12360845f Comments name the services and handles the tree has
+    @@ sdk/toyos/src/launch.rs
+      //! that the program is spawned under, so the caller's end takes it down; or
+      //! detached, under the launcher's owner, the one way for a program to outlive
+      //! whoever started it.
+    -@@ sdk/toyos/src/launch.rs: use crate::fd::Kind;
+    - use crate::ipc::{Connection, IpcError};
+    +@@ sdk/toyos/src/launch.rs: use crate::ipc::{Connection, IpcError};
+    + use crate::process::Process;
+      use crate::OwnedHandle;
+      
+     -/// The label a holder is endowed its launcher under, and the one name in that
+    @@ sdk/toyos/src/net.rs: impl TcpOptions {
+          ///
+          /// **There was a retry loop here and it is gone.** It spun a hundred times
+          /// at ten milliseconds waiting for a name to appear in a global registry;
+    -@@ sdk/toyos/src/net.rs: pub fn adopt_exported(end: OwnedHandle) -> Option<crate::fd::Object> {
+    +@@ sdk/toyos/src/net.rs: pub fn adopt_exported(connection: Connection) -> Option<crate::fd::Object> {
+      
+      /// A netstack that hung up mid-exchange is a netstack that is not there.
+      ///
+ 6:  db0310d89 =  6:  32246e2d6 Guest tests compile against the connector API
+ 7:  efe654600 <  -:  --------- ObjectKind's words are ABI: the namespace's 8 is retired, not reused
+ 8:  4c3ae9a79 =  7:  260b1ef1d shell: an interrupt that comes while a -c shell starts its child reaches it
+ 9:  70fe69b56 =  8:  0bada1895 issues: a -c shell cannot tell a child its quit asked from one that landed after it
+10:  4d17fa2c1 =  9:  f61b69cda shell: Asked has a Default beside its const new
+11:  f38d9f6e0 = 10:  7b4a11f02 kernel: SYS_SYSINFO charges its answer to the caller's job while it copies it out
+12:  74a18d307 ! 11:  3d3515b0d supervisor: a provided connector reaches only a row that receives its name
+    @@ Commit message
+         A row that does receive it is endowed the client's handle narrowed to
+         `DUP | TRANSFER | WRITE`. A client's handle without those rights refuses the
+         launch at its spawn. Before, a handle without `DUP` broke every helper spawn
+    -    of the program, and one without `WRITE` answered `NotEndowed`. Whether the
+    -    handle is a connector at all is checked at the program's connect.
+    +    of the program, and one without `WRITE` answered `NotEndowed`. One that is no
+    +    connector the supervisor refuses by name, as it does every launch handle the
+    +    kernel reports as another kind.
+     
+         The manual's services section, the SDK's `provide:` and `NotEndowed` words,
+         std's `provide`, and `endowment_denied`'s description now say this.
+    @@ sdk/toyos/src/port.rs: pub struct Connector(pub(crate) OwnedHandle);
+     
+      ## system/supervisor/src/main.rs ##
+     @@ system/supervisor/src/main.rs: impl Supervisor<'_> {
+    -         // descriptors, the extras, the place if it names one, and the job.
+    -         let mut carried = carried;
+    -         let fds: Vec<toyos::OwnedHandle> = carried.by_ref().take(request.fd_count()).collect();
+    --        // **Not a claim about the type**: a client sends what it likes, and
+    --        // what it sent is moved on to the program as it is, whose connect
+    --        // through a handle that is no connector the kernel refuses.
+    -+        // **Not a claim about the type**: a client sends what it likes. A
+    -+        // handle without the rights a provided connector carries refuses the
+    -+        // launch at its spawn (`PROVIDED`), and one that is no connector is
+    -+        // refused at the program's connect.
+    -         let extras: Vec<(String, Connector)> =
+    -             names.into_iter().zip(carried.by_ref()).map(|(name, handle)| (name.to_string(), Connector::from_handle(handle))).collect();
+    -         let mut rest: Vec<toyos::OwnedHandle> = carried.collect();
+    +         let job = rest.pop().expect("a launch's batch ends with its job").typed::<toyos::job::Job>();
+    +         let place = rest.pop().map(ipc::ReceivedHandle::typed::<toyos::process::Process>).transpose();
+    +         // A client sends what it likes: what its frame calls a connector, a
+    +-        // place or a job and the kernel does not is a refused launch.
+    ++        // place or a job and the kernel does not is a refused launch, and a
+    ++        // connector without the rights a provided one carries (`PROVIDED`)
+    ++        // refuses it at its spawn.
+    +         let (extras, job, place) = match (extras, job, place) {
+    +             (Ok(extras), Ok(job), Ok(place)) => (extras, job, place),
+    +             (Err(why), ..) | (_, Err(why), _) | (.., Err(why)) => {
+     @@ system/supervisor/src/main.rs: fn start<'a>(
+          }
+      
+13:  4d5e29b38 = 12:  adc0fb9b0 Four texts still described a namespace
+14:  a5e4a25f6 ! 13:  cd4f02f41 A malformed table says which, and received is for what a peer sent
+    @@ Metadata
+     Author: <user> <<user>>
+     
+      ## Commit message ##
+    -    A malformed table says which, and received is for what a peer sent
+    +    A malformed table says which, and adopted_services_stay says why it is a guest test
+     
+         - A child whose endowment table is malformed now writes the reason on its
+           `fd:2`, as the manual says, one fixed line per `startup::Malformed`.
+    -    - `Connector::received` is kept for a connector a peer sent (the session's
+    -      two). A copy of a process's own endowment (`diskserver::held`) and the
+    -      supervisor's own connectors handed to std (`adopt_services`) are typed
+    -      as endowments are, through `FromHandle`.
+         - `adopted_services_stay` says why it is a guest test: it runs the
+           supervisor's path whole.
+     
+         Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+     
+    - ## sdk/std/os/fs.rs ##
+    -@@ sdk/std/os/fs.rs: pub fn symlink<P: AsRef<Path>, Q: AsRef<Path>>(original: P, link: Q) -> io::Resu
+    - /// has resolved a file.
+    - #[stable(feature = "toyos_ext", since = "1.0.0")]
+    - pub fn adopt_services(services: Vec<(String, crate::os::toyos::io::OwnedHandle)>) -> io::Result<()> {
+    --    let services = services.into_iter().map(|(name, connector)| (name, toyos::port::Connector::received(connector.into_inner()))).collect();
+    -+    use toyos::endow::FromHandle;
+    -+    let services = services.into_iter().map(|(name, connector)| (name, toyos::port::Connector::from_handle(connector.into_inner()))).collect();
+    -     toyos::endow::adopt(services)
+    -         .map(drop)
+    -         .map_err(|_| io::const_error!(io::ErrorKind::AlreadyExists, "this process already resolves its files"))
+    -
+      ## sdk/toyos/src/endow.rs ##
+     @@ sdk/toyos/src/endow.rs: struct LauncherCell(Once<Option<Connector>>);
+      struct ProcessCell(Once<Process>);
+    @@ sdk/toyos/src/startup.rs: pub enum Malformed {
+          let bytes = table.get(at..at.checked_add(4)?)?;
+          Some(u32::from_ne_bytes([*bytes.first()?, *bytes.get(1)?, *bytes.get(2)?, *bytes.get(3)?]))
+     
+    - ## system/diskserver/src/session.rs ##
+    -@@
+    - use std::collections::BTreeMap;
+    - 
+    - use toyos::ipc::{Connection, Frame, FrameRx};
+    -+use toyos::endow::FromHandle;
+    - use toyos::port::Connector;
+    - use toyos::{AsHandle, BorrowedHandle};
+    - use toyos::poller::READABLE;
+    -@@ system/diskserver/src/session.rs: fn transfer_blocks(blocks: usize) -> u32 {
+    - /// as the service `name`: [`Error::NotHeld`] for a name it was not given.
+    - pub fn held(name: &str) -> Result<Connector, Error> {
+    -     let held = toyos::endow::connector(name).ok_or(Error::NotHeld)?;
+    --    held.try_clone_to_owned().map(Connector::received).map_err(Error::Kernel)
+    -+    held.try_clone_to_owned().map(Connector::from_handle).map_err(Error::Kernel)
+    - }
+    - 
+    - pub(crate) fn connect(service: BorrowedHandle<'_>) -> Result<Connection, Error> {
+    -
+      ## tests/guest/rust-tests/src/bin/adopted_services_stay.rs ##
+     @@
+      //! test's `fs:/system`, reads its helper's image through it, and the helper
+15:  170edc8f9 = 14:  60c411afe tests: three image comments say services where they said namespace
+16:  ed3e0fbe1 = 15:  a2abdf704 soundserver: a policy number's comment names one the kernel still has
+17:  9444043dd = 16:  e0bdda271 issues: what #1252 owes on metal while the benches are down
+18:  3d4135fb8 = 17:  e083a652a Review r2 of #1252: the last namespace texts, and two inexact ones
+19:  66e4b4fc6 = 18:  2ac7a0a9b kernel: SYS_SYSINFO charges a roster, never the header alone
+20:  b9cfc8cce = 19:  0a5e22c2e issues: a file server whose pager is refused for memory panics, blaming its row
+21:  e0708076a = 20:  f031f2f5f issues: kernel_objects_refused takes every frame while its own line may still be written
+22:  7f62504b0 = 21:  5284c8d8c Review r3 of #1252: a header alone is never refused, and ps names both refusals
+23:  39fa4bba5 = 22:  fc9c1e6be issues: kernel_objects_refused's control at main passed

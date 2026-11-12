@@ -85,3 +85,18 @@ Local paths are masked (`<worktree>`, `<scratch>`, `<scratchpad>`, `<home>`, `<t
   55a19d9a0, all exit 0; the control, the old first commit 150fcb847, exits 101 on the dead `user_str`.
 - Guest run 43123357772 at 39fa4bba5 carries the ten rows; 43112704482 at 64eb00ee6 was cancelled after it had started.
 - `guest/run-43123357772.txt`: the ten rows at 39fa4bba5, all pass.
+
+## Rebased onto main 429f772b0 (#1239, #1267, #1263, #1223, #1237), head fc9c1e6be
+- `rebase-429f772b0/range-diff.txt`: `git range-diff 75bdec3cd..39fa4bba5 429f772b0..fc9c1e6be`, every commit's change
+  against the history before this rebase.
+- `r11/`: at 43f760fad, a clean tree (`summary.txt`, the commands in `checks11.sh`): the image, the host suites of every
+  touched crate, every kernel clippy shape, clippy on the SDK, the libraries and the ABI. All exit 0 but `test-sdk`
+  (exit 101): #1239's `a_received_handle_is_typed_only_as_the_kind_the_kernel_reported` took `ObjectKind::ALL.len()`,
+  19, as a word no kind has, which `DeviceSet` has since word 8 is retired.
+- `r11b/`: at fc9c1e6be, whose only change from 43f760fad is that test in every commit (it takes word 8 and the word
+  past the last kind instead): `cargo test -p toyos` and clippy on `toyos --all-targets`, both exit 0. The rest of `r11/`
+  holds for fc9c1e6be, since the change is test code alone.
+- `kcheck-range4/`: at each of the 22 commits from 429f772b0 to fc9c1e6be, `cargo check -p kernel --target
+  x86_64-unknown-none` and `cargo check -p toyos --all-targets`: all 44 exit 0; the control, the old first commit
+  150fcb847, exits 101 on the dead `user_str`.
+- Guest run 43134232757 at fc9c1e6be carries the ten rows.
