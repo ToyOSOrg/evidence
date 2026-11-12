@@ -41,3 +41,8 @@ Paths are masked: `<worktree>` is the branch's checkout, `<scratch>` the agent's
 
 - `host-833fd607f/`: `admission`'s tests and `toyos`'s two clippy shapes at 833fd607f (`a7078c89f + worktree diff` as logged is `git diff a7078c89f 833fd607f`).
 - `build-833fd607f.log`: `cargo run -- --build-only` at 833fd607f.
+
+## Rebase onto main 2c8d8bb68, head d5efd6cc0
+
+- `host-d5efd6cc0/`: at d5efd6cc0 with a clean worktree: `admission`'s tests, `toyos`'s two clippy shapes, diskserver's tests and lint, logkeeper's tests, and a check of every host-buildable converted server and `toyos-desktop`.
+- `build-d5efd6cc0.log`: `cargo run -- --build-only` at d5efd6cc0.
