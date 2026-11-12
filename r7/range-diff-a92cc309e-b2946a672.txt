@@ -1,0 +1,349 @@
+1:  b463f21df = 1:  46539ce64 One table reads every refusal, and each runtime keeps one from it to its word
+2:  e6b171b6c ! 2:  0034c1f71 libc: _SC_ARG_MAX is what a caller's own arguments and environment may come to
+    @@ Commit message
+         libc: _SC_ARG_MAX is what a caller's own arguments and environment may come to
+     
+         sysconf(_SC_ARG_MAX) answered the whole startup block, MAX_BLOCK. A
+    -    helper's block also holds the argument count and the PWD=<cwd> entry the
+    -    spawn states (files::starting_in), so a caller's own argv and envp, counted
+    -    as POSIX counts them (each string with its NUL, a pointer to each and the
+    -    null ending each list), had 21 + len(cwd) bytes less than reported, up to
+    -    4117 with a MAX_PATH directory.
+    +    helper's block also holds the names' address, the argument count and the
+    +    PWD=<cwd> entry the spawn states (files::starting_in), so a caller's own
+    +    argv and envp, counted as ToyOS counts them (each string with its NUL, a
+    +    pointer to each and the null ending each list), had 29 + len(cwd) bytes
+    +    less than reported, up to 4125 with a MAX_PATH directory.
+     
+    -    toyos::spawn::MAX_ARGS is the block less its count word and the longest
+    -    stated entry: a pointer, PWD=, MAX_PATH bytes and a NUL, from
+    -    startup::MAX_BLOCK, startup::WORD and files::MAX_STATED, so the limit and
+    -    the block cannot drift. libc answers it: 2088939. A host test composes what
+    -    Helper::spawn composes, the longest stated directory and then the block,
+    -    for a caller's MAX_ARGS bytes, and one byte more is refused.
+    +    toyos::spawn::MAX_ARGS is the block less its names' address and count
+    +    words and the longest stated entry: a pointer, PWD=, MAX_PATH bytes and a
+    +    NUL, from startup::MAX_BLOCK, startup::WORD and files::MAX_STATED, so the
+    +    limit and the block cannot drift. libc answers it. A host test composes the
+    +    longest stated directory and then the block, with no names, for a caller's
+    +    MAX_ARGS bytes, and one byte more is refused. The names table is counted
+    +    in a later commit.
+     
+         206_libc_refusals.expect, which #1219 set to MAX_BLOCK's 2093056, says
+    -    2088939.
+    +    2088931.
+     
+         Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+     
+    @@ sdk/toyos/src/spawn.rs: use alloc::vec::Vec;
+     +/// The most bytes of its own arguments and environment a caller can give a
+     +/// helper, counted as POSIX's `ARG_MAX` counts them: each string with its NUL,
+     +/// a pointer to each and the null ending each list. The child's block
+    -+/// ([`crate::startup`]) holds beside them its argument count and the starting
+    -+/// directory the spawn states, a pointer, an entry and a NUL, counted at its
+    -+/// longest ([`crate::files::MAX_STATED`]).
+    ++/// ([`crate::startup`]) holds beside them the names' address, its argument
+    ++/// count and the starting directory the spawn states, a pointer, an entry and
+    ++/// a NUL, counted at its longest ([`crate::files::MAX_STATED`]).
+     +pub const MAX_ARGS: usize =
+    -+    crate::startup::MAX_BLOCK - crate::startup::WORD - (crate::startup::WORD + crate::files::MAX_STATED + 1);
+    ++    crate::startup::MAX_BLOCK - 2 * crate::startup::WORD - (crate::startup::WORD + crate::files::MAX_STATED + 1);
+     +
+      /// Whom a child is placed under, whose end takes it down.
+      #[derive(Clone, Copy, PartialEq, Eq, Debug)]
+    @@ sdk/toyos/src/spawn.rs: mod tests {
+     +        argv.push(0);
+     +        assert_eq!(counted(&argv), MAX_ARGS);
+     +        let stated = crate::files::starting_in(env, &cwd).expect("the longest directory is stated");
+    -+        assert!(startup::bytes(&argv, &stated).is_some(), "a caller's MAX_ARGS bytes");
+    ++        assert!(startup::bytes(&argv, &stated, &[]).is_some(), "a caller's MAX_ARGS bytes");
+     +        argv.insert(0, b'a');
+     +        assert_eq!(counted(&argv), MAX_ARGS + 1);
+    -+        assert_eq!(startup::bytes(&argv, &stated), None, "one byte past MAX_ARGS");
+    ++        assert_eq!(startup::bytes(&argv, &stated, &[]), None, "one byte past MAX_ARGS");
+     +    }
+      }
+     
+    @@ sdk/toyos/src/startup.rs: pub const AT: u64 = BASE - RESERVED;
+      /// The most bytes of a block: a reserved page is left below the program.
+      pub const MAX_BLOCK: usize = (RESERVED - PAGE_SIZE as u64) as usize;
+      
+    -+/// The bytes of the count and of each pointer.
+    ++/// The bytes of the names' address, the count and of each pointer.
+     +pub const WORD: usize = 8;
+     +
+    - fn strings(run: &[u8]) -> impl Iterator<Item = &[u8]> {
+    -     run.split(|&b| b == 0).filter(|s| !s.is_empty())
+    - }
+    + /// A table's two counts.
+    + const TABLE_HEADER: usize = 8;
+    + 
+    +@@ sdk/toyos/src/startup.rs: fn table(names: &[&str]) -> Option<Vec<u8>> {
+      
+    - /// The bytes of the block that says `args` and `env`. `None` past [`MAX_BLOCK`].
+    --fn bytes(args: &[u8], env: &[u8]) -> Option<Vec<u8>> {
+    -+pub(crate) fn bytes(args: &[u8], env: &[u8]) -> Option<Vec<u8>> {
+    + /// The bytes of the block that says `args`, `env` and `names`. `None` past
+    + /// [`MAX_BLOCK`], or for names [`table`] makes none of.
+    +-fn bytes(args: &[u8], env: &[u8], names: &[&str]) -> Option<Vec<u8>> {
+    ++pub(crate) fn bytes(args: &[u8], env: &[u8], names: &[&str]) -> Option<Vec<u8>> {
+    +     let table = if names.is_empty() { Vec::new() } else { table(names)? };
+          let argc = strings(args).count();
+    -     let words = argc + strings(env).count() + 3;
+    +     let words = argc + strings(env).count() + 4;
+          let text: usize = strings(args).chain(strings(env)).map(|s| s.len() + 1).sum();
+    --    if words * 8 + text > MAX_BLOCK {
+    -+    if words * WORD + text > MAX_BLOCK {
+    +-    if words * 8 + text + table.len() > MAX_BLOCK {
+    ++    if words * WORD + text + table.len() > MAX_BLOCK {
+              return None;
+          }
+     -    let mut block = alloc::vec![0u8; words * 8];
+     +    let mut block = alloc::vec![0u8; words * WORD];
+    -     block.reserve_exact(text);
+    --    block[..8].copy_from_slice(&(argc as u64).to_ne_bytes());
+    -+    block[..WORD].copy_from_slice(&(argc as u64).to_ne_bytes());
+    -     let mut word = 1;
+    +     block.reserve_exact(text + table.len());
+    +-    block[8..16].copy_from_slice(&(argc as u64).to_ne_bytes());
+    ++    block[WORD..2 * WORD].copy_from_slice(&(argc as u64).to_ne_bytes());
+    +     let mut word = 2;
+          for run in [args, env] {
+              for string in strings(run) {
+                  let at = AT + block.len() as u64;
+    @@ sdk/toyos/src/startup.rs: pub const AT: u64 = BASE - RESERVED;
+                  block.extend_from_slice(string);
+                  block.push(0);
+                  word += 1;
+    +@@ sdk/toyos/src/startup.rs: fn bytes(args: &[u8], env: &[u8], names: &[&str]) -> Option<Vec<u8>> {
+    +     }
+    +     if !table.is_empty() {
+    +         let at = AT + block.len() as u64;
+    +-        block[..8].copy_from_slice(&at.to_ne_bytes());
+    ++        block[..WORD].copy_from_slice(&at.to_ne_bytes());
+    +         block.extend_from_slice(&table);
+    +     }
+    +     Some(block)
+     @@ sdk/toyos/src/startup.rs: mod tests {
+          /// A block ends below the program with a page to spare, and one byte more is refused.
+          #[test]
+          fn a_block_past_its_reservation_is_refused() {
+    --        let fits = alloc::vec![b'a'; MAX_BLOCK - 4 * 8 - 1];
+    -+        let fits = alloc::vec![b'a'; MAX_BLOCK - 4 * WORD - 1];
+    -         assert_eq!(bytes(&fits, b"").map(|block| block.len()), Some(MAX_BLOCK));
+    +-        let fits = alloc::vec![b'a'; MAX_BLOCK - 5 * 8 - 1];
+    ++        let fits = alloc::vec![b'a'; MAX_BLOCK - 5 * WORD - 1];
+    +         assert_eq!(bytes(&fits, b"", &[]).map(|block| block.len()), Some(MAX_BLOCK));
+              let mut past = fits;
+              past.push(b'a');
+     
+    @@ tests/corpus/tinycc/206_libc_refusals.expect: munmap 5000 bytes by 8192: 0, no e
+      calloc SIZE_MAX 2: -1, ENOMEM
+      realloc SIZE_MAX: -1, ENOMEM
+     -sysconf _SC_ARG_MAX: 2093056, no errno
+    -+sysconf _SC_ARG_MAX: 2088939, no errno
+    ++sysconf _SC_ARG_MAX: 2088931, no errno
+      sysconf _SC_GETPW_R_SIZE_MAX: -1, no errno
+      sysconf 12345: -1, EINVAL
+      posix_madvise WILLNEED: 0
+3:  9838b68f4 ! 3:  0a377f728 Review r1 of #1227: a spawn's refusals say what they are, and no test restates a match
+    @@ sdk/toyos/src/spawn.rs: use alloc::vec::Vec;
+      /// The most bytes of its own arguments and environment a caller can give a
+     -/// helper, counted as POSIX's `ARG_MAX` counts them: each string with its NUL,
+     -/// a pointer to each and the null ending each list. The child's block
+    --/// ([`crate::startup`]) holds beside them its argument count and the starting
+    +-/// ([`crate::startup`]) holds beside them the names' address, its argument
+     +/// helper, as ToyOS counts them for `ARG_MAX` (POSIX leaves whether pointers
+     +/// and terminators count to the implementation): each string with its NUL, a
+     +/// pointer to each and the null ending each list. The child's block
+    -+/// (`starting_block`) holds beside them its argument count and the starting
+    - /// directory the spawn states, a pointer, an entry and a NUL, counted at its
+    - /// longest ([`crate::files::MAX_STATED`]).
+    ++/// (`starting_block`) holds beside them the names' address, its argument
+    + /// count and the starting directory the spawn states, a pointer, an entry and
+    + /// a NUL, counted at its longest ([`crate::files::MAX_STATED`]).
+      pub const MAX_ARGS: usize =
+    -@@ sdk/toyos/src/spawn.rs: pub struct Spawn<'a> {
+    +@@ sdk/toyos/src/spawn.rs: fn fd_label(fd: u32, handle: RawHandle, kind: FdKind, fds: &[(u32, BorrowedHandl
+      pub enum Refused {
+          /// Not permitted, for this reason.
+          Permission(&'static str),
+    @@ sdk/toyos/src/spawn.rs: impl Helper<'_> {
+              let name = name(s.argv.split(|&b| b == 0).find(|arg| !arg.is_empty()).unwrap_or(s.program.as_bytes()));
+     -        let env = crate::files::starting_in(s.env, s.cwd)
+     -            .ok_or(Refused::Invalid("a working directory that is not absolute, is too long or holds a NUL"))?;
+    -+        let said = starting_block(s.argv, s.env, s.cwd)?;
+    +         // What the child is endowed and what it calls each, in the order the
+    +         // kernel installs them. Duplicates rather than this process's own
+    +         // handles: an endowment is a move, and a parent that gave its
+    +@@ sdk/toyos/src/spawn.rs: impl Helper<'_> {
+    +             table.push((fd_label(fd, handle.raw(), kind, s.fds), copy.into()));
+    +         }
+    +         if table.len() > MAX_SPAWN_ENDOWMENTS {
+    +-            return Err(Refused::Invalid("more endowments and descriptors than a spawn carries"));
+    ++            return Err(Refused::TooBig("more endowments and descriptors than a spawn carries"));
+    +         }
+    +         let names: Vec<&str> = table.iter().map(|(label, _)| label.as_str()).collect();
+    +         if names.iter().enumerate().any(|(i, label)| names[..i].contains(label)) {
+    +@@ sdk/toyos/src/spawn.rs: impl Helper<'_> {
+    +             return Err(Refused::Invalid("an endowment under no name"));
+    +         }
+    +         let entries: Vec<TransferEntry> = table.iter().map(|(_, moved)| moved.entry()).collect();
+    ++        let said = starting_block(s.argv, s.env, s.cwd, &names)?;
+              // Held until the spawn answers: the child copies its pages from it.
+    -         let job = s.endow.iter().find(|(label, _)| *label == JOB_LABEL).map(|(_, job)| job.as_handle());
+    --        let block = crate::startup::Block::new(s.argv, &env, job).map_err(|why| match why {
+    --            crate::startup::Refused::TooLarge => Refused::Invalid("arguments and an environment past what a child starts with"),
+    +-        let block = crate::startup::Block::new(s.argv, &env, &names, s.job).map_err(|why| match why {
+    +-            crate::startup::Refused::TooLarge => Refused::Invalid("arguments, an environment and names past what a child starts with"),
+     -            crate::startup::Refused::Memory(e) => Refused::Syscall(e),
+     -        })?;
+    -+        let block = crate::startup::Block::new(&said, job).map_err(Refused::Syscall)?;
+    ++        let block = crate::startup::Block::new(&said, s.job).map_err(Refused::Syscall)?;
+              let program = crate::elf::program::lay_out(image.bytes(), crate::elf::Machine::RUNNING, image.source())
+     -            .map_err(Refused::Invalid)?
+     +            .map_err(Refused::NotExecutable)?
+                  .starting_with(&block);
+              let maps = program.maps();
+              let build_id = program.build_id();
+    -         let names_svc = s.endow.iter().any(|(label, _)| *label == SVC_LABEL);
+    -         if s.endow.len() + s.fds.len() + usize::from(!names_svc) > MAX_SPAWN_ENDOWMENTS {
+    --            return Err(Refused::Invalid("more endowments and descriptors than a spawn carries"));
+    -+            return Err(Refused::TooBig("more endowments and descriptors than a spawn carries"));
+    -         }
+    -         let mut entries = [SpawnEndow { label_off: 0, label_len: 0, moved: TransferEntry::unchanged(RawHandle(0)) }; MAX_SPAWN_ENDOWMENTS];
+    -         let mut labels = [0u8; MAX_SPAWN_LABELS_LEN];
+    -@@ sdk/toyos/src/spawn.rs: impl Helper<'_> {
+    -         let mut group_number = [0u8; 10];
+    -         let mut put = |label: &[&[u8]], moved: TransferEntry, count: &mut usize, used: &mut usize| {
+    -             let len: usize = label.iter().map(|part| part.len()).sum();
+    --            let room = labels.get_mut(*used..*used + len).ok_or(Refused::Invalid("endowment labels past what a spawn carries"))?;
+    -+            let room = labels.get_mut(*used..*used + len).ok_or(Refused::TooBig("endowment labels past what a spawn carries"))?;
+    -             let mut at = 0;
+    -             for part in label {
+    -                 room[at..at + part.len()].copy_from_slice(part);
+     @@ sdk/toyos/src/spawn.rs: impl Independent<'_> {
+                  Parent::Caller => Some(crate::endow::this_process().as_handle()),
+              };
+    @@ sdk/toyos/src/spawn.rs: fn path_label(path: &str) -> String {
+      }
+      
+     +/// The bytes of the block a helper's child starts with ([`crate::startup`]):
+    -+/// `argv`, and `env` stating `cwd` as its starting directory
+    -+/// ([`crate::files::starting_in`]).
+    -+fn starting_block(argv: &[u8], env: &[u8], cwd: &str) -> Result<Vec<u8>, Refused> {
+    ++/// `argv`, `env` stating `cwd` as its starting directory
+    ++/// ([`crate::files::starting_in`]), and the child's names for its endowments.
+    ++fn starting_block(argv: &[u8], env: &[u8], cwd: &str, names: &[&str]) -> Result<Vec<u8>, Refused> {
+     +    let env = crate::files::starting_in(env, cwd)
+     +        .ok_or(Refused::Invalid("a working directory that is not absolute, is too long or holds a NUL"))?;
+    -+    crate::startup::bytes(argv, &env).ok_or(Refused::TooBig("arguments and an environment past what a child starts with"))
+    ++    crate::startup::bytes(argv, &env, names)
+    ++        .ok_or(Refused::TooBig("arguments, an environment and names past what a child starts with"))
+     +}
+     +
+      /// What a helper runs, and the name it runs it under: the image named, else
+    @@ sdk/toyos/src/spawn.rs: mod tests {
+              argv.push(0);
+              assert_eq!(counted(&argv), MAX_ARGS);
+     -        let stated = crate::files::starting_in(env, &cwd).expect("the longest directory is stated");
+    --        assert!(startup::bytes(&argv, &stated).is_some(), "a caller's MAX_ARGS bytes");
+    -+        assert!(starting_block(&argv, env, &cwd).is_ok(), "a caller's MAX_ARGS bytes");
+    +-        assert!(startup::bytes(&argv, &stated, &[]).is_some(), "a caller's MAX_ARGS bytes");
+    ++        assert!(starting_block(&argv, env, &cwd, &[]).is_ok(), "a caller's MAX_ARGS bytes");
+              argv.insert(0, b'a');
+              assert_eq!(counted(&argv), MAX_ARGS + 1);
+    --        assert_eq!(startup::bytes(&argv, &stated), None, "one byte past MAX_ARGS");
+    -+        assert!(matches!(starting_block(&argv, env, &cwd), Err(Refused::TooBig(_))), "one byte past MAX_ARGS");
+    +-        assert_eq!(startup::bytes(&argv, &stated, &[]), None, "one byte past MAX_ARGS");
+    ++        assert!(matches!(starting_block(&argv, env, &cwd, &[]), Err(Refused::TooBig(_))), "one byte past MAX_ARGS");
+          }
+      }
+     
+      ## sdk/toyos/src/startup.rs ##
+    -@@ sdk/toyos/src/startup.rs: fn strings(run: &[u8]) -> impl Iterator<Item = &[u8]> {
+    -     run.split(|&b| b == 0).filter(|s| !s.is_empty())
+    +@@ sdk/toyos/src/startup.rs: fn table(names: &[&str]) -> Option<Vec<u8>> {
+    +     Some(table)
+      }
+      
+    --/// The bytes of the block that says `args` and `env`. `None` past [`MAX_BLOCK`].
+    --pub(crate) fn bytes(args: &[u8], env: &[u8]) -> Option<Vec<u8>> {
+    +-/// The bytes of the block that says `args`, `env` and `names`. `None` past
+    +-/// [`MAX_BLOCK`], or for names [`table`] makes none of.
+    +-pub(crate) fn bytes(args: &[u8], env: &[u8], names: &[&str]) -> Option<Vec<u8>> {
+     +/// The bytes of the block that says `args` and `env`, each a run of strings a
+    -+/// NUL separates, an empty one skipped. `None` past [`MAX_BLOCK`].
+    -+pub fn bytes(args: &[u8], env: &[u8]) -> Option<Vec<u8>> {
+    ++/// NUL separates, an empty one skipped, and calls the spawn's `i`th endowment
+    ++/// `names[i]`. `None` past [`MAX_BLOCK`], or for names [`table`] makes none of.
+    ++pub fn bytes(args: &[u8], env: &[u8], names: &[&str]) -> Option<Vec<u8>> {
+    +     let table = if names.is_empty() { Vec::new() } else { table(names)? };
+          let argc = strings(args).count();
+    -     let words = argc + strings(env).count() + 3;
+    -     let text: usize = strings(args).chain(strings(env)).map(|s| s.len() + 1).sum();
+    -@@ sdk/toyos/src/startup.rs: pub(crate) fn bytes(args: &[u8], env: &[u8]) -> Option<Vec<u8>> {
+    +     let words = argc + strings(env).count() + 4;
+    +@@ sdk/toyos/src/startup.rs: pub(crate) fn bytes(args: &[u8], env: &[u8], names: &[&str]) -> Option<Vec<u8>>
+          Some(block)
+      }
+      
+     -/// Why no block was made.
+     -#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+     -pub enum Refused {
+    --    /// The arguments and environment are past [`MAX_BLOCK`].
+    +-    /// The arguments, environment and names are past [`MAX_BLOCK`], or the
+    +-    /// names more than a spawn endows.
+     -    TooLarge,
+     -    /// The kernel made no memory for it.
+     -    Memory(SyscallError),
+    @@ sdk/toyos/src/startup.rs: pub struct Block {
+      
+      impl Block {
+     -    /// The block that says `args` and `env`, each a run of strings a NUL
+    --    /// separates, an empty one skipped, in memory counted to the job `job` is
+    --    /// a handle to carrying `WRITE`, the one the child runs in, or else to
+    --    /// this process's own.
+    --    pub fn new(args: &[u8], env: &[u8], job: Option<BorrowedHandle<'_>>) -> Result<Block, Refused> {
+    --        let bytes = bytes(args, env).ok_or(Refused::TooLarge)?;
+    +-    /// separates, an empty one skipped, and calls the spawn's `i`th endowment
+    +-    /// `names[i]`, in memory counted to the job `job` is a handle to carrying
+    +-    /// `WRITE`, the one the child runs in, or else to this process's own.
+    +-    pub fn new(args: &[u8], env: &[u8], names: &[&str], job: Option<BorrowedHandle<'_>>) -> Result<Block, Refused> {
+    +-        let bytes = bytes(args, env, names).ok_or(Refused::TooLarge)?;
+     +    /// A block holding `bytes` ([`bytes`]), in memory counted to the job
+     +    /// `job` is a handle to carrying `WRITE`, the one the child runs in, or
+     +    /// else to this process's own.
+    @@ tests/guest/rust-tests/src/bin/spawn_image_object.rs: fn object_of(path: &str) -
+      
+      /// Spawn the program `bytes`, laid out from the object `image` names.
+      fn spawn(image: RawHandle, bytes: &[u8]) -> Result<RawHandle, SyscallError> {
+    --    let block = Block::new(format!("{SELF}\0{CHILD}").as_bytes(), b"", None).expect("a startup block");
+    -+    let said = toyos::startup::bytes(format!("{SELF}\0{CHILD}").as_bytes(), b"").expect("arguments a startup block holds");
+    +-    let block = Block::new(format!("{SELF}\0{CHILD}").as_bytes(), b"", &[], None).expect("a startup block");
+    ++    let said = toyos::startup::bytes(format!("{SELF}\0{CHILD}").as_bytes(), b"", &[]).expect("arguments a startup block holds");
+     +    let block = Block::new(&said, None).expect("a startup block");
+          let laid = lay_out(bytes, Machine::RUNNING, Source::Copied(u64::from(image.0))).expect("this program lays out").starting_with(&block);
+          // SAFETY: every pointer names a live local for the whole call.
+          unsafe {
+     
+      ## tests/guest/rust-tests/src/image.rs ##
+    -@@ tests/guest/rust-tests/src/image.rs: impl std::ops::Deref for Laid {
+    - /// with `argv`, NUL-separated, and no environment: a raw `SpawnArgs` names
+    - /// its ranges (`maps_ptr`, `maps_count`), `entry`, `image_base` and build-id.
+    - pub fn laid(image: &Image, argv: &str) -> Laid {
+    --    let block = Block::new(argv.as_bytes(), b"", None).unwrap_or_else(|e| panic!("a startup block: {e:?}"));
+    -+    let said = toyos::startup::bytes(argv.as_bytes(), b"").expect("arguments a startup block holds");
+    +@@ tests/guest/rust-tests/src/image.rs: pub fn laid(image: &Image, argv: &str) -> Laid {
+    + 
+    + /// [`laid`], its child calling the spawn's `i`th endowment `names[i]`.
+    + pub fn laid_naming(image: &Image, argv: &str, names: &[&str]) -> Laid {
+    +-    let block = Block::new(argv.as_bytes(), b"", names, None).unwrap_or_else(|e| panic!("a startup block: {e:?}"));
+    ++    let said = toyos::startup::bytes(argv.as_bytes(), b"", names).expect("arguments and names a startup block holds");
+     +    let block = Block::new(&said, None).unwrap_or_else(|e| panic!("a startup block: {e:?}"));
+          let program = lay_out(image.bytes(), Machine::RUNNING, image.source()).unwrap_or_else(|why| panic!("lay out an image: {why}"));
+          Laid { program: program.starting_with(&block), _block: block }
+4:  59cf51980 < -:  --------- Review r2 of #1227: a Block holds only what startup::bytes laid out
+-:  --------- > 4:  ab44bed4d Review r2 of #1227: a Block holds only what startup::bytes laid out
+5:  a92cc309e = 5:  0d7382974 issues: what #1227 owes on metal while the benches are down
+-:  --------- > 6:  b2946a672 startup: a names table has a bound of its own, and _SC_ARG_MAX leaves it out
