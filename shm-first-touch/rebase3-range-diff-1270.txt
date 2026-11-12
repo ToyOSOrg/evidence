@@ -1,0 +1,30 @@
+1:  a0fd2b9d2 ! 1:  08b0eee73 A shared-memory region draws each page's frame at its first touch
+    @@ kernel/loom/Cargo.toml: lock-acquire-off = []
+      # postdates the initiator's page-table write, and `tlb_shootdown.rs` must red:
+     
+      ## kernel/loom/src/lib.rs ##
+    -@@ kernel/loom/src/lib.rs: pub mod device_irq;
+    - #[path = "../../src/inbox/once.rs"]
+    - pub mod poll_once;
+    +@@ kernel/loom/src/lib.rs: pub mod reap_gate;
+    + #[path = "../../src/pcidev/record.rs"]
+    + pub mod device_irq;
+      
+     +/// A region page's frame, which the first touch installs and every other
+     +/// touch is handed. It names atomics and nothing else.
+     +#[path = "../../src/object/shm/slot.rs"]
+     +pub mod shm_slot;
+     +
+    - /// `polls.rs` names its one-shot as `super::once`, which in the kernel is
+    - /// `crate::inbox::once`; this is what makes that path resolve here.
+    - pub use poll_once as once;
+    + extern crate alloc;
+    + 
+    + /// The panic snapshot's owner and access state, driven together by
+     
+      ## kernel/loom/tests/shm_slot.rs (new) ##
+     @@
+2:  ecc7faac3 = 2:  6f0a16a49 issues: what the first-touch region owes on metal
+3:  210b579ed = 3:  5325d8456 Review r1 of #1270: a page draws once, under its region's first-touch lock
+4:  540f05ab7 = 4:  d6be747f0 An object range's fault draws its run's holes in one hold of the allocator's lock
+5:  ea1010709 = 5:  4765676e3 Review r3 of #1270: the record says how a region is drawn now, and the install zips holes with draws
