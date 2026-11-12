@@ -42,3 +42,10 @@
 - `r3/controls/`: each patch run model by model and restored (`tags-wakes.sh`, `summary.txt`): the three wake
   deletions, and the hand-on ignoring its connection, red as a deadlock in `a_turn_handed_on_stays_on_its_connection`
   alone. `flight.rs` is unchanged since round 2, whose turn-per-Dir and fail-ignores-link controls stand.
+
+## Rebased onto #1258's merge of main (a2e4dfdac), head ba7b635ec
+
+- `r4/`: the head's tree: the SDK's tests and clippy, blockring's, nine loom models and the loom crate's clippy, the
+  file server's tests and clippy (main's four findings), and the default and `testcases` images, all rc 0 but that
+  clippy. The rebase took main's typed received handles (`one` answers a `ReceivedHandle`, which `export` and
+  `stream` type) and `adopt` taking a `Connection`.
