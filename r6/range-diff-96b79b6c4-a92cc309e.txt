@@ -1,0 +1,49 @@
+1:  979028b36 ! 1:  b463f21df One table reads every refusal, and each runtime keeps one from it to its word
+    @@ sdk/libc/arch/src/errno_codes.rs: fn every_code_libc_answers_with_is_errno_h_s()
+     +        (NotSupported, "EOPNOTSUPP"),
+     +        (Io, "EIO"),
+     +        (Gone, "EPIPE"),
+    ++        (Busy, "EBUSY"),
+     +        (Unknown, "EIO"),
+     +    ] {
+     +        assert_eq!(of(word), header::int(ERRNO_H, errno), "{word:?}");
+    @@ sdk/libc/src/errcode.rs: pub(crate) const EHOSTUNREACH: i32 = 113;
+     -        // The kernel's word for a full handle table and for no memory alike.
+     -        SyscallError::ResourceExhausted => ENOMEM,
+     -        SyscallError::NotSupported => EOPNOTSUPP,
+    +-        SyscallError::Busy => EBUSY,
+     -        _ => EINVAL,
+     +        Failure::BrokenPipe => EPIPE,
+     +        Failure::BadDescriptor | Failure::WrongDescriptor | Failure::NotOpenForWriting => EBADF,
+    @@ sdk/libc/src/posix_io.rs: pub(crate) fn open_handle(path: &[u8], flags: i32, _mo
+              return syscall::null(null_rights(how.read, how.write)).map(|h| (h, toyos::fd::Kind::Handle)).map_err(crate::errcode::of);
+          }
+     -    let fd = files::open(At::Cwd, path, how).map_err(crate::errcode::of_files)?;
+    --    let exported = files::export(fd).map(|h| (h.into_raw(), toyos::fd::Kind::File)).map_err(crate::errcode::of_files);
+    +-    let exported = files::export(fd).map(|h| (h.into_owned().into_raw(), toyos::fd::Kind::File)).map_err(crate::errcode::of_files);
+     +    let fd = files::open(At::Cwd, path, how).map_err(crate::errcode::of)?;
+    -+    let exported = files::export(fd).map(|h| (h.into_raw(), toyos::fd::Kind::File)).map_err(crate::errcode::of);
+    ++    let exported = files::export(fd).map(|h| (h.into_owned().into_raw(), toyos::fd::Kind::File)).map_err(crate::errcode::of);
+          // SAFETY: this function's descriptor, after the server exported its description.
+          let _ = unsafe { toyos::fd::close(fd) };
+          exported
+    @@ sdk/std/sys/pal/mod.rs: mod unsupported_common;
+     -        SyscallError::NotSupported => ErrorKind::Unsupported,
+     -        SyscallError::Io => ErrorKind::Other,
+     -        SyscallError::Gone => ErrorKind::BrokenPipe,
+    +-        SyscallError::Busy => ErrorKind::ResourceBusy,
+     -    };
+     -    crate::io::Error::from(kind)
+     +/// Exhaustive: a new `Failure` has to be given a kind here.
+    @@ sdk/toyos/src/failure.rs (new)
+     +            SyscallError::NotSupported => Self::Unsupported,
+     +            SyscallError::Io => Self::Io,
+     +            SyscallError::Gone => Self::BrokenPipe,
+    ++            SyscallError::Busy => Self::Busy,
+     +        }
+     +    }
+     +}
+2:  c99b1057c = 2:  e6b171b6c libc: _SC_ARG_MAX is what a caller's own arguments and environment may come to
+3:  f13f5bcdc = 3:  9838b68f4 Review r1 of #1227: a spawn's refusals say what they are, and no test restates a match
+4:  bb47427a3 = 4:  59cf51980 Review r2 of #1227: a Block holds only what startup::bytes laid out
+5:  96b79b6c4 = 5:  a92cc309e issues: what #1227 owes on metal while the benches are down
