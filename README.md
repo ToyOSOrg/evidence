@@ -93,3 +93,18 @@
 - `r8b/control/`: `fileops-step1-ctl-refuse` remade on 358182128 as c97966eb2 by `ctl-rebuild.sh` (the head's tree
   and `refuse-holder-writes.patch`); its `testcases` image built by `build-control.sh`, rc 0 (`tree.txt` shows it
   differs from the head by that file alone).
+
+## Review round 9 (head cb8701bee)
+
+- `r9/control-run/`: guest-rows 43146956481 at `fileops-step1-ctl-refuse` c97966eb2 (358182128 and the kernel
+  refusing every holder write), `testcases_members_exit_0`: the job's log and the run's `serial` artifact, the
+  runner's host name, home and temporary paths masked. Two of 242 members red:
+  `a_pager_s_end_answers_its_waiting_holders_gone` (pagerprobe exits 101 with `syscall_wall=30493ms`, its
+  30-second wait for the helper's dirtying; the verdict keeps the last 40 of its 102 lines, the backtrace without
+  the panic's message) and `a_served_file_reads_through_its_paged_object` at "an open to write alone carries no
+  holder", the stale assertion cb8701bee replaces.
+- `r9/member/check-head.log`: the replaced member type-checked for `x86_64-unknown-toyos` against the sysroot the
+  round-8 `testcases` image built, with the guest C environment the harness sets, on the tree committed unchanged
+  as cb8701bee: rc 0.
+- `r9/member/check-rust-tests-1272.log`: every `tests/guest/rust-tests` binary type-checked the same way at #1272's
+  head 2e7dd79aa (`tree-1272.txt`), rebased onto cb8701bee: rc 0, no warnings.
