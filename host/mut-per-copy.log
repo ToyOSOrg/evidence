@@ -1,0 +1,43 @@
+revision bd5851cf09a9ca24ed8410bb2688cd5d1da38a45 + mut-per-copy.patch
+   Compiling toyos v0.18.0 (<worktree>3/sdk/toyos)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.72s
+     Running unittests src/lib.rs (target/debug/deps/toyos-d609c66f3e36149d)
+
+running 10 tests
+test fd::table::tests::an_endowment_is_installed_at_its_number_or_refused ... ok
+test fd::table::tests::endowed_aliases_share_one_object_and_cannot_displace_an_endowment ... ok
+test endow::tests::a_service_is_named_under_either_prefix_and_nothing_else_is_one ... ok
+test endow::tests::a_service_stays_in_the_table ... ok
+test endow::tests::a_name_is_the_handle_endowed_at_its_place_and_is_taken_once ... ok
+test endow::tests::the_adopted_set_is_made_once_and_ended_by_a_lookup ... ok
+test startup::tests::a_block_s_names_read_back_in_the_order_endowed ... ok
+test startup::tests::a_table_holds_as_many_names_as_a_spawn_endows ... ok
+test endow::tests::every_copy_is_lent_the_one_launcher ... FAILED
+test endow::tests::a_name_answers_once_whichever_copy_takes_it ... FAILED
+
+failures:
+
+---- endow::tests::every_copy_is_lent_the_one_launcher stdout ----
+
+thread 'endow::tests::every_copy_is_lent_the_one_launcher' (43775233) panicked at sdk/toyos/src/endow.rs:797:9:
+assertion `left == right` failed: the launcher the process keeps
+  left: Some(RawHandle(3))
+ right: None
+
+---- endow::tests::a_name_answers_once_whichever_copy_takes_it stdout ----
+
+thread 'endow::tests::a_name_answers_once_whichever_copy_takes_it' (43775229) panicked at sdk/toyos/src/endow.rs:785:9:
+assertion `left == right` failed: a name the other copy took
+  left: Some(RawHandle(4))
+ right: None
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    endow::tests::a_name_answers_once_whichever_copy_takes_it
+    endow::tests::every_copy_is_lent_the_one_launcher
+
+test result: FAILED. 8 passed; 2 failed; 0 ignored; 0 measured; 221 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p toyos --lib`
+exit 101

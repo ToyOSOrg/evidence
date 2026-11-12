@@ -1,0 +1,13 @@
+diff --git a/sdk/toyos/src/endow.rs b/sdk/toyos/src/endow.rs
+index 6a414094d..2c54e518a 100644
+--- a/sdk/toyos/src/endow.rs
++++ b/sdk/toyos/src/endow.rs
+@@ -771,7 +771,7 @@ mod tests {
+     /// What a second copy of this crate in the process reads: the same table,
+     /// and the process's one state.
+     fn another_copy(table: &Endowments) -> Endowments {
+-        Endowments { names: table.names, count: table.count, state: table.state }
++        Endowments { names: table.names, count: table.count, state: alloc::boxed::Box::leak(alloc::boxed::Box::new(State::new())) }
+     }
+ 
+     /// A name answers once in the process, whichever copy asks: a handle one
