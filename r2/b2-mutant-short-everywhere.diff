@@ -1,0 +1,13 @@
+--- ../b/mitigation.rs.keep	2026-11-12 07:34:52
++++ kernel/pure/mitigation.rs	2026-11-12 07:34:52
+@@ -892,8 +892,8 @@
+                 match f.intel_lists(BHI_SOFTWARE) {
+                     _ if f.hypervisor => Asks::of(Mitigation::BhbClear, true).affected(),
+                     Some(true) => Asks::of(Mitigation::BhbClear, true).affected(),
+-                    Some(false) => Asks::of(Mitigation::BhiDisS, false).affected(),
+-                    None => Asks::of(Mitigation::BhiDisS, false).assumed(true),
++                    Some(false) => Asks::of(Mitigation::BhbClear, true).affected(),
++                    None => Asks::of(Mitigation::BhbClear, true).affected(),
+                 }
+             } else if f.hypervisor && ibrs && (f.intel_rsba() || f.cap(cap::RRSBA)) {
+                 // A guest that enumerates IBRS and not IBRS_ALL may run on

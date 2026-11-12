@@ -1,0 +1,26 @@
+diff --git a/kernel/src/arch/x86_64/idt/mod.rs b/kernel/src/arch/x86_64/idt/mod.rs
+index 545d87ec6..bedfb121f 100644
+--- a/kernel/src/arch/x86_64/idt/mod.rs
++++ b/kernel/src/arch/x86_64/idt/mod.rs
+@@ -537,7 +537,7 @@ pub fn init(clears_branch_history: bool) {
+ /// clear where `clears_branch_history`, and the one past it elsewhere: what
+ /// this CPU's decision names. After [`init`].
+ pub fn load(clears_branch_history: bool) -> IdtPointer {
+-    let table = if clears_branch_history { &AT_PREFIX } else { &PAST_PREFIX };
++    let table = if !clears_branch_history { &AT_PREFIX } else { &PAST_PREFIX };
+     let ptr = IdtPointer { limit: (core::mem::size_of::<Idt>() - 1) as u16, base: table.data_ptr() as u64 };
+     // SAFETY: `ptr` names one of the two static tables `init` filled whole.
+     unsafe { cpu::lidt(&ptr as *const IdtPointer as *const u8) };
+diff --git a/kernel/src/arch/x86_64/syscall.rs b/kernel/src/arch/x86_64/syscall.rs
+index caea47cd0..30edd2218 100644
+--- a/kernel/src/arch/x86_64/syscall.rs
++++ b/kernel/src/arch/x86_64/syscall.rs
+@@ -24,7 +24,7 @@ pub fn init(clears_branch_history: bool) {
+     unsafe {
+         cpu::wrmsr(MSR_STAR, star);
+         let entry: extern "sysv64" fn() =
+-            if clears_branch_history { syscall_entry_clearing_branch_history } else { syscall_entry };
++            if !clears_branch_history { syscall_entry_clearing_branch_history } else { syscall_entry };
+         cpu::wrmsr(MSR_LSTAR, entry as *const () as u64);
+         // `SYSCALL` clears exactly the bits named here; every bit left out carries a Ring 3 thread's flag into Ring 0.
+         // The pre-mask `RFLAGS` survives in `r11` and `sysretq` restores it to the thread regardless — `FMASK` only decides what the kernel itself runs with.
