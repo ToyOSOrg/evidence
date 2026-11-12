@@ -108,3 +108,9 @@
   as cb8701bee: rc 0.
 - `r9/member/check-rust-tests-1272.log`: every `tests/guest/rust-tests` binary type-checked the same way at #1272's
   head 2e7dd79aa (`tree-1272.txt`), rebased onto cb8701bee: rc 0, no warnings.
+
+## Review round 10 (head 001f81279, text only over cb8701bee)
+
+- `r10/head-run-job.log`: guest-rows 43152496728 at cb8701bee, the code of the head: the five rows and
+  `testcases_members_exit_0` passed, "testcases: 242 member(s) exited 0, and the list's reboot ended the boot";
+  the runner's host name, home and temporary paths masked. A green run keeps no console.
