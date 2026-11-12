@@ -1,0 +1,101 @@
+ 1:  347c7c066 =  1:  2d1eaccff A removed page keeps its frame until every mapping of its object let it go
+ 2:  e7f58f712 =  2:  dde0b17db The index's revocation, modelled with two spaces mapping it
+ 3:  37b9a32d8 =  3:  e6252de31 The model's parked faults all complete once removals stop
+ 4:  8cd71f069 =  4:  f467105e8 A fault's wait ends where its object's version moved, and it asks afresh
+ 5:  02d107631 =  5:  aa02cd345 A paged object's range in a space, linked on its object's list of mappers
+ 6:  6ae967d1b =  6:  1e652cf7b A fault on an absent paged page parks on its pager and touches it again
+ 7:  4be38bf71 =  7:  7c8eab9e3 A process's end empties its space, so a revoker's last reference frees nothing
+ 8:  e9e3eddb4 =  8:  d110e6d30 A served file is mapped read-only through its holder, and libc maps one
+ 9:  ac27bbd0e =  9:  68cdd0732 The file mapping entry names a fixed place as a pointer, and its refusals in each closure's type
+10:  a66127567 = 10:  d82a60951 A lost mapped page ends a program as SIGBUS and a copy as Io, and no pinned copy waits
+11:  7d42a6cf9 = 11:  89d39b01d The manual says how a file mapping shares the cache, waits and ends
+12:  7971e87e5 ! 12:  4d66f6a43 A guest probe maps a pager's objects from a child, on both architectures
+    @@ tests/toyos.rs: const DRIVEN_AND_SHARED: &[&str] = &[
+          // Its shared run is the x86-64 verdict; `virt_jobs_at_el2` builds it for
+          // AArch64 and runs it on that architecture's job case.
+          "relro_sealed",
+    -+    // Its shared run is each bench's verdict; `a_mapped_file_follows_its_pager`
+    -+    // runs it under QEMU with the kernel's reports, and `virt_mapped_file` on
+    -+    // AArch64's job case.
+    ++    // Its shared run is the x86-64 verdict on its cases;
+    ++    // `a_mapped_file_follows_its_pager` runs it again for the kernel's report
+    ++    // on serial, and `virt_mapped_file` on AArch64's job case.
+     +    "mapped_file",
+      ];
+      
+      /// What the boot's audit of the kernel's tables says when every leaf passed
+     @@ tests/toyos.rs: const SCREEN_TESTS: &[ScreenTest] = &[
+    -     // `tmp_holds_empty_files_by_what_each_costs` on AArch64: the paged
+    -     // objects' table and its notices are shared memory-management code.
+    +     // `tmp_empty_files` on AArch64: the paged objects' table and its notices
+    +     // are shared memory-management code.
+          ("virt_tmp_holds_empty_files_by_what_each_costs", qemu::Profile::Virt, |profile, _| virt_tmp_holds_empty_files_by_what_each_costs(profile)),
+     +    // `a_mapped_file_follows_its_pager` on AArch64: a fault that parks on its
+     +    // pager there, the CPU's fault mark down while it waits.
+    @@ tests/toyos.rs: const SCREEN_TESTS: &[ScreenTest] = &[
+          // Emulated, with `virt_el1_smp`, `virt_off_names_the_cpus_left_on` and
+          // `virt_reboot`: under HVF a woken thread can go undispatched for seconds
+     @@ tests/toyos.rs: const MACHINE_TESTS: &[MachineTest] = &[
+    -     // no host build has. One boot of QEMU's x86-64 machine; the shared boots
+    -     // run it on each bench.
+    -     ("tmp_holds_empty_files_by_what_each_costs", |test_config| tmp_holds_empty_files_by_what_each_costs(test_config)),
+    -+    // A paged object mapped by a second process (`tests/guest/mapprobe`): a
+    -+    // fault that waits on its pager and one refused, a revocation under a
+    -+    // mapper, a kill in a parked fault, and the kernel's report of a supply
+    -+    // held past the pager's report time, which the job's own lines do not
+    -+    // carry. Two processes, real tables and the kernel's fault path, which no
+    -+    // host test has. One boot of QEMU's x86-64 machine; the shared boots run
+    -+    // it on each bench, and `virt_mapped_file` on AArch64.
+    +     ("a_user_copy_highest_first_faults_or_ends_as_bad_address", |test_config| {
+    +         a_user_copy_faults_in_mid_copy_or_ends_as_bad_address(test_config, &["copies-go-down"])
+    +     }),
+    ++    // A paged object mapped by a second process (`tests/guest/mapprobe`), and
+    ++    // the kernel's report that a mapper's fault waited past its pager's
+    ++    // report time and then no longer did. That report is on serial and not
+    ++    // the job's, and `testcases_members_exit_0` judges the member by its exit
+    ++    // alone, so this boot of QEMU's x86-64 machine is its own. The job's
+    ++    // cases, two processes, real tables and the kernel's fault path, which no
+    ++    // host test has, are the shared run's too, and `virt_mapped_file` runs
+    ++    // them on AArch64.
+     +    ("a_mapped_file_follows_its_pager", |test_config| a_mapped_file_follows_its_pager(test_config)),
+          // The boot's log written through usbd onto the stick it booted from, and
+          // still there once the machine has stopped: the path every metal boot's
+13:  1c158445f = 13:  f03eefe10 A mapped object's range count is the kernel's own code under loom
+14:  8bebc9123 = 14:  5ad445972 osbench: a cached file's pages through a mapping, against Linux's mmap
+15:  634cbafa4 = 15:  7adf4514c issues: what step 2 of 7b built, and what it owes
+16:  8e83c0f11 = 16:  2dd58492c issues: what step 2 owes on metal while the benches are down
+17:  8309a280d = 17:  26a32f484 Review r1 of #1269: a revocation visit holds the pager's lock only to read, and a touch past a mapped file's end is SIGBUS
+18:  e4d69abd0 = 18:  6e66a8cfd Review r1 of #1269: every copy a syscall makes answers its own cause
+19:  1b52ce30b = 19:  6cecae6a9 Review r1 of #1269: the ABI says what a paged holder's mapping is, and the range count's control runs
+20:  fabba4329 = 20:  153b638ce Review r1 of #1269: osbench's map group, with the threads and 255-mapper rows, and a guest row for it
+21:  02d8534f8 = 21:  fc4cfb2aa Review r1 of #1269: the records say what step 2 owes and departs from
+22:  3591357bd = 22:  79942b90a Review r1 of #1269: the source gate counts MapNode's two Send and Sync, and the loom model clones once
+23:  5424295ca = 23:  cb84f0084 Review r2 of #1269: the walk reads its own set of revoking pages, one lock at a time, and a page past the end is a variant of its own
+24:  55d51fa68 = 24:  39fc911d8 Review r2 of #1269: the records say what no row prices, and msync's true reason
+25:  83f20cb19 = 25:  cc520da75 Review r3 of #1269: the walk sweeps again whenever a pass began since its last sweep
+26:  5d9ac79eb = 26:  7dc03a9ed Review r4 of #1269: the walk ends itself, and the model's futex waiter is its oracle
+27:  cecdb89ac = 27:  7cb48def9 Review r5 of #1269: a revocation visit's shootdown is counted, and the model's futex wait translates and arms apart
+28:  e7fffa42e = 28:  80e32a8d2 Review r6 of #1269: the model refuses a waiter keyed on a given-back frame after any step
+29:  9ee8d92d9 ! 29:  a426577f8 Review r8 of #1269: a walk sweeps the futex waits only of an object a mapper ever linked
+    @@ Metadata
+      ## Commit message ##
+         Review r8 of #1269: a walk sweeps the futex waits only of an object a mapper ever linked
+     
+    -    #1223 took the walk of all 64 futex buckets off unmaps. Step 2's revocation
+    +    Main's #1223 took the walk of all 64 futex buckets off unmaps. Step 2's revocation
+         walk put it back on every removal of present pages from any paged object:
+         once per 64 frames on each withdraw, fail, shrink and release. That covered
+         `/tmp` deletes and the cache's withdraws, nearly all of whose objects were
+30:  f3e456f22 = 30:  80ad4c4ca Review r8 of #1269: the /tmp record's slot is measured again, at 136 bytes
+31:  4a4d3fe23 ! 31:  41f0e1195 Review r9 of #1269: the index's docs name what is left, and the /tmp record says who measures again
+    @@ Commit message
+     
+         B19. The `Mappers` doc pointed at `Object::epoch`, which r8 replaced with
+         `Object::link`. `Pages::object` said a released object's id may be reused
+    -    because `release` takes its pages, but `release` went in the composition with
+    -    #1273. The docs now say a node is seen at the epoch `link` answers, and an id
+    +    because `release` takes its pages, but `release` went in the composition
+    +    with #1273. The docs now say a node is seen at the epoch `link` answers, and an id
+         is reused once its object is empty: `invalidate` marks its pages and the
+         walk's end takes them.
+     
