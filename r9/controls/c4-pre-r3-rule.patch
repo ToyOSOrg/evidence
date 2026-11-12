@@ -1,0 +1,27 @@
+--- a/kernel/pure/paged.rs	2026-11-12 05:12:50
++++ b/kernel/pure/paged.rs	2026-11-12 05:12:50
+@@ -476,6 +476,7 @@
+             Walk::Idle => {
+                 self.epoch += 1;
+                 self.walk = Walk::Running { again: false };
++                self.swept = 0;
+                 Revoke::Walk
+             }
+             Walk::Running { .. } => {
+@@ -759,6 +760,7 @@
+         loop {
+             if let Some(node) = mappers.head().filter(|&n| mappers.seen(n) != o.epoch) {
+                 mappers.visited(node, o.epoch);
++                o.swept = 0;
+                 return Next::Visit(node);
+             }
+             match o.walk {
+@@ -766,7 +768,7 @@
+                     o.epoch += 1;
+                     o.walk = Walk::Running { again: false };
+                 }
+-                Walk::Running { again: false } if o.linked && o.swept != o.epoch => {
++                Walk::Running { again: false } if o.linked && o.swept == 0 => {
+                     o.swept = o.epoch;
+                     return Next::Sweep;
+                 }

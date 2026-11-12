@@ -1,0 +1,85 @@
+=== d1cefbaf9+probe cargo check -p kernel --target x86_64-unknown-none (pure lib probe first)
+    Checking toyos-abi v0.16.0 (<worktree>-base-sizes/sdk/abi)
+    Checking toyos-phys v0.1.0 (<worktree>-base-sizes/kernel/phys)
+    Checking toyos-elide v0.1.0 (<worktree>-base-sizes/lib/elide)
+    Checking toyos-tco v0.1.0 (<worktree>-base-sizes/lib/tco)
+    Checking toyos-register v0.1.0 (<worktree>-base-sizes/kernel/register)
+    Checking toyos-microcode v0.1.0 (<worktree>-base-sizes/lib/microcode)
+    Checking toyos-tsc v0.1.0 (<worktree>-base-sizes/lib/tsc)
+    Checking toyos-gicv3 v0.1.0 (<worktree>-base-sizes/kernel/gicv3)
+    Checking toyos-random v0.1.0 (<worktree>-base-sizes/lib/random)
+    Checking toyos-rootimage v0.1.0 (<worktree>-base-sizes/lib/rootimage)
+    Checking toyos-wallclock v0.1.0 (<worktree>-base-sizes/lib/wallclock)
+    Checking toyos-amdvi v0.1.0 (<worktree>-base-sizes/kernel/amdvi)
+    Checking toyos-its v0.1.0 (<worktree>-base-sizes/kernel/its)
+    Checking toyos-bootmap v0.1.0 (<worktree>-base-sizes/lib/bootmap)
+    Checking toyos-kimage v0.1.0 (<worktree>-base-sizes/lib/kimage)
+    Checking toyos-proclife v0.1.0 (<worktree>-base-sizes/kernel/proclife)
+    Checking toyos-pci v0.1.0 (<worktree>-base-sizes/kernel/pci)
+    Checking toyos-symbols v0.1.0 (<worktree>-base-sizes/lib/symbols)
+    Checking toyos-acpi v0.1.0 (<worktree>-base-sizes/lib/acpi)
+    Checking toyos-smmu v0.1.0 (<worktree>-base-sizes/kernel/smmu)
+    Checking toyos-userbound v0.1.0 (<worktree>-base-sizes/lib/userbound)
+    Checking kernel v0.1.0 (<worktree>-base-sizes/kernel)
+error[E0308]: mismatched types
+  --> kernel/pure/slots.rs:36:20
+   |
+36 | const _: [(); 3] = [(); core::mem::size_of::<Mark>()];
+   |          -------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected an array with a size of 3, found one with a size of 12
+   |          |
+   |          expected because of the type of the constant
+   |
+help: consider specifying the actual array length
+   |
+36 - const _: [(); 3] = [(); core::mem::size_of::<Mark>()];
+36 + const _: [(); 12] = [(); core::mem::size_of::<Mark>()];
+   |
+
+For more information about this error, try `rustc --explain E0308`.
+error: could not compile `kernel` (lib) due to 1 previous error
+=== exit 101
+    Checking kernel v0.1.0 (<worktree>-base-sizes/kernel)
+error[E0308]: mismatched types
+  --> kernel/src/object/paged.rs:73:20
+   |
+73 | const _: [(); 0] = [(); core::mem::size_of::<Entry>()];
+   |          -------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected an array with a size of 0, found one with a size of 56
+   |          |
+   |          expected because of the type of the constant
+   |
+help: consider specifying the actual array length
+   |
+73 - const _: [(); 0] = [(); core::mem::size_of::<Entry>()];
+73 + const _: [(); 56] = [(); core::mem::size_of::<Entry>()];
+   |
+
+error[E0308]: mismatched types
+  --> kernel/src/object/paged.rs:74:20
+   |
+74 | const _: [(); 1] = [(); core::mem::size_of::<Object>()];
+   |          -------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected an array with a size of 1, found one with a size of 40
+   |          |
+   |          expected because of the type of the constant
+   |
+help: consider specifying the actual array length
+   |
+74 - const _: [(); 1] = [(); core::mem::size_of::<Object>()];
+74 + const _: [(); 40] = [(); core::mem::size_of::<Object>()];
+   |
+
+error[E0308]: mismatched types
+  --> kernel/src/object/paged.rs:75:20
+   |
+75 | const _: [(); 2] = [(); Slots::<Entry>::PIECE_BYTES / kernel::slots::PIECE];
+   |          -------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected an array with a size of 2, found one with a size of 72
+   |          |
+   |          expected because of the type of the constant
+   |
+help: consider specifying the actual array length
+   |
+75 | const _: [(); 72] = [(); Slots::<Entry>::PIECE_BYTES / kernel::slots::PIECE];
+   |               +
+
+For more information about this error, try `rustc --explain E0308`.
+error: could not compile `kernel` (bin "kernel") due to 3 previous errors
+=== exit 101

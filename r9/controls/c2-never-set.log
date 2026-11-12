@@ -1,0 +1,126 @@
+=== base cb82a3ee0+wip; patch c2-never-set.patch
+=== cargo test -p kernel --lib --features sched-check paged::
+   Compiling kernel v0.1.0 (<worktree>/kernel)
+    Finished `test` profile [optimized + debuginfo] target(s) in 8.13s
+     Running unittests pure/lib.rs (target/debug/deps/kernel-a7ca71f2661cd543)
+
+running 35 tests
+test paged::tests::a_clean_supply_past_the_size_is_refused_and_a_dirty_one_extends_it ... ok
+test paged::tests::a_core_is_kept_whatever_the_allocator_refuses ... ok
+test paged::tests::a_failed_page_answers_failed_until_supplied_again ... ok
+test paged::tests::a_fault_answered_then_shrunk_and_grown_asks_afresh ... FAILED
+test paged::tests::a_holders_wait_ends_where_its_page_or_its_object_changed ... ok
+test paged::tests::a_mapper_linked_during_a_walk_is_passed_by ... FAILED
+test paged::tests::a_range_ends_once_in_leading_parts_and_keeps_its_unwritten_suffix ... ok
+test paged::tests::a_read_counts_only_where_no_write_began_or_was_under_way ... ok
+test paged::tests::a_reader_racing_an_extending_write_never_sees_its_unwritten_bytes ... ok
+test paged::tests::a_page_marked_during_the_sweep_is_swept_before_its_frame_goes_back ... FAILED
+test paged::tests::a_revoking_page_ends_failed_only_where_the_object_still_holds_it ... ok
+test paged::tests::a_revoking_page_keeps_its_one_frame_until_every_mapper_is_visited ... FAILED
+test paged::tests::a_removal_during_a_walk_is_taken_by_a_second_pass ... FAILED
+test paged::tests::a_full_table_refuses_and_every_slot_is_reached_after_churn ... ok
+test paged::tests::a_short_call_holds_the_write_until_its_end ... ok
+test paged::tests::a_shrink_removes_dirty_pages_releases_their_slots_and_names_the_tail ... ok
+test paged::tests::a_supplied_page_is_found_and_a_second_supply_changes_nothing ... ok
+test paged::tests::a_wait_translated_before_a_removal_never_arms_on_a_frame_given_back ... FAILED
+test paged::tests::a_waiter_an_unmap_left_is_never_on_a_frame_given_back ... FAILED
+test paged::tests::a_wait_translated_before_a_visit_does_not_arm_on_a_frame_given_back ... FAILED
+test paged::tests::a_want_is_named_once_while_waited_and_again_after_a_withdraw ... ok
+test paged::tests::a_withdrawal_of_a_long_range_walks_the_objects_pages ... ok
+test paged::tests::an_abandoned_write_pin_grows_nothing_and_holds_nothing ... ok
+test paged::tests::an_invalidated_object_answers_gone_and_gives_every_frame_back ... ok
+test paged::tests::an_offset_or_range_past_the_last_page_is_out_of_reach ... ok
+test paged::tests::an_unpin_after_a_shrink_removed_the_page_grows_nothing ... ok
+test paged::tests::anonymous_bytes_survive_cache_operations_and_release_with_the_object ... ok
+test paged::tests::every_interleaving_keeps_each_leaf_on_its_pages_one_frame ... FAILED
+test paged::tests::kept_is_exactly_the_pages_dirtied_or_pinned_since_the_begin_or_unwritten ... ok
+test paged::tests::only_clean_unheld_pages_are_withdrawn ... ok
+test paged::tests::the_walks_set_is_read_a_batch_at_a_time_in_marking_order ... ok
+test paged::tests::long_runs_keep_each_leaf_on_its_pages_one_frame ... FAILED
+test paged::tests::the_dirty_ceiling_refuses_and_a_write_back_frees_it ... ok
+test paged::tests::no_interleaving_leaves_a_read_waiting_unasked ... ok
+test paged::tests::a_walk_begun_before_any_mapping_gives_back_no_frame_a_waiter_is_keyed_on ... FAILED
+
+failures:
+
+---- paged::tests::a_fault_answered_then_shrunk_and_grown_asks_afresh stdout ----
+
+thread 'paged::tests::a_fault_answered_then_shrunk_and_grown_asks_afresh' (39423353) panicked at kernel/pure/paged.rs:2385:22:
+every step is taken
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- paged::tests::a_mapper_linked_during_a_walk_is_passed_by stdout ----
+
+thread 'paged::tests::a_mapper_linked_during_a_walk_is_passed_by' (39423356) panicked at kernel/pure/paged.rs:1309:9:
+assertion `left == right` failed
+  left: Finished
+ right: Sweep
+
+---- paged::tests::a_page_marked_during_the_sweep_is_swept_before_its_frame_goes_back stdout ----
+
+thread 'paged::tests::a_page_marked_during_the_sweep_is_swept_before_its_frame_goes_back' (39423357) panicked at kernel/pure/paged.rs:1191:9:
+assertion `left == right` failed
+  left: Finished
+ right: Sweep
+
+---- paged::tests::a_revoking_page_keeps_its_one_frame_until_every_mapper_is_visited stdout ----
+
+thread 'paged::tests::a_revoking_page_keeps_its_one_frame_until_every_mapper_is_visited' (39423363) panicked at kernel/pure/paged.rs:1254:9:
+assertion `left == right` failed
+  left: Finished
+ right: Sweep
+
+---- paged::tests::a_removal_during_a_walk_is_taken_by_a_second_pass stdout ----
+
+thread 'paged::tests::a_removal_during_a_walk_is_taken_by_a_second_pass' (39423361) panicked at kernel/pure/paged.rs:776:31:
+paged: a walk of object 1 that never began
+
+---- paged::tests::a_wait_translated_before_a_removal_never_arms_on_a_frame_given_back stdout ----
+
+thread 'paged::tests::a_wait_translated_before_a_removal_never_arms_on_a_frame_given_back' (39423367) panicked at kernel/pure/paged.rs:2100:29:
+frame 101 given back with a futex waiter keyed on it
+
+---- paged::tests::a_waiter_an_unmap_left_is_never_on_a_frame_given_back stdout ----
+
+thread 'paged::tests::a_waiter_an_unmap_left_is_never_on_a_frame_given_back' (39423369) panicked at kernel/pure/paged.rs:2100:29:
+frame 101 given back with a futex waiter keyed on it
+
+---- paged::tests::a_wait_translated_before_a_visit_does_not_arm_on_a_frame_given_back stdout ----
+
+thread 'paged::tests::a_wait_translated_before_a_visit_does_not_arm_on_a_frame_given_back' (39423368) panicked at kernel/pure/paged.rs:2305:22:
+every step is taken
+
+---- paged::tests::every_interleaving_keeps_each_leaf_on_its_pages_one_frame stdout ----
+
+thread 'paged::tests::every_interleaving_keeps_each_leaf_on_its_pages_one_frame' (39423378) panicked at kernel/pure/paged.rs:2100:29:
+frame 102 given back with a futex waiter keyed on it
+
+---- paged::tests::long_runs_keep_each_leaf_on_its_pages_one_frame stdout ----
+
+thread 'paged::tests::long_runs_keep_each_leaf_on_its_pages_one_frame' (39423380) panicked at kernel/pure/paged.rs:2100:29:
+frame 105 given back with a futex waiter keyed on it
+
+---- paged::tests::a_walk_begun_before_any_mapping_gives_back_no_frame_a_waiter_is_keyed_on stdout ----
+
+thread 'paged::tests::a_walk_begun_before_any_mapping_gives_back_no_frame_a_waiter_is_keyed_on' (39423370) panicked at kernel/pure/paged.rs:2100:29:
+frame 102 given back with a futex waiter keyed on it
+
+
+failures:
+    paged::tests::a_fault_answered_then_shrunk_and_grown_asks_afresh
+    paged::tests::a_mapper_linked_during_a_walk_is_passed_by
+    paged::tests::a_page_marked_during_the_sweep_is_swept_before_its_frame_goes_back
+    paged::tests::a_removal_during_a_walk_is_taken_by_a_second_pass
+    paged::tests::a_revoking_page_keeps_its_one_frame_until_every_mapper_is_visited
+    paged::tests::a_wait_translated_before_a_removal_never_arms_on_a_frame_given_back
+    paged::tests::a_wait_translated_before_a_visit_does_not_arm_on_a_frame_given_back
+    paged::tests::a_waiter_an_unmap_left_is_never_on_a_frame_given_back
+    paged::tests::a_walk_begun_before_any_mapping_gives_back_no_frame_a_waiter_is_keyed_on
+    paged::tests::every_interleaving_keeps_each_leaf_on_its_pages_one_frame
+    paged::tests::long_runs_keep_each_leaf_on_its_pages_one_frame
+
+test result: FAILED. 24 passed; 11 failed; 0 ignored; 0 measured; 479 filtered out; finished in 0.16s
+
+error: test failed, to rerun pass `-p kernel --lib`
+=== exit 101
+=== restored, byte-identical
