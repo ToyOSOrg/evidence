@@ -1,0 +1,13 @@
+--- a/kernel/src/object/paged.rs	2026-11-12 08:04:35
++++ b/kernel/src/object/paged.rs	2026-11-12 08:04:35
+@@ -97,6 +97,10 @@
+ // Two pieces of a table and their allocator headers share one superframe.
+ const _: () = assert!(2 * kernel::chunked::CHUNK_BYTES < crate::mm::MAX_HEAP_ALLOC);
+ 
++// size probe: each array's length below is the size the error names.
++const _: [(); 0] = [(); core::mem::size_of::<Entry>()];
++const _: [(); 1] = [(); core::mem::size_of::<Object>()];
++const _: [(); 2] = [(); Slots::<Entry, 2>::PIECE_BYTES / kernel::slots::PIECE];
+ // A piece of slots is one allocation the heap takes.
+ const _: () = assert!(Slots::<Entry, 2>::PIECE_BYTES <= kernel::chunked::CHUNK_BYTES);
+ 
