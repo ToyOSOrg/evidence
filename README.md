@@ -68,3 +68,12 @@
 - `r7/control-build/`: the `testcases` image built at `fileops-step1-ctl-refuse` 05dc29420 (4240a3d79 and the patch
   refusing every holder write; `tree.txt` shows it differs from the head by that file alone), rc 0
   (`build-control.sh`).
+
+## #1273 merged in (main d1cefbaf9)
+
+- `r8/`: the merge's resolved tree, staged (`tree.txt`: 4240a3d79 with main as MERGE_HEAD): every kernel library
+  test (510, the slot table's lists among them) and the kernel's three clippy shapes; bcachefs's (208) and the file
+  server's (132 + 3) tests and clippy (main's four findings); the SDK's and the ABI's; the `testcases` image, which
+  compiles pagerprobe without its object count.
+- `r8/slot-sizes.log`: a temporary test, never committed, measuring the real `Slot<Entry, 2>` over a replica of the
+  paged object's `Entry` fields: object 112 bytes, entry 192, mark 12, a slot 216.
