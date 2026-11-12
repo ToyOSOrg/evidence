@@ -44,3 +44,10 @@ exit 0 (17 passed) and `frames::` exit 0 (39 at #1250, 40 above); kernel clippy 
   `frames::` exit 0 (39, 40, 40); kernel clippy for x86_64-unknown-none, x86_64 with `boot-actuators,test-actuators`,
   aarch64-unknown-none-softfloat and the library's tests, exit 0 each. At #1270's head `--test shm_slot` exit 0
   (4 passed); with `slot-install-relaxed` exit 101, the two hand-over models failing.
+
+## Rebased onto main 3c5c55584, after #1251 and #1271 (2026-11-12)
+
+`rebase4-range-diff.txt`: comment-only. #1251 added "no CPU holds its root ([`Space::retire`])" to the doc on
+`impl Drop for AddressSpace`, which #1250 rewrote; the resolution keeps that clause and #1250's wording for the rest.
+Every other commit of the stack is `=`. The guest runs at the previous heads (#1250 43135806312 at 9d9d5ee0f, #1268
+43135817474 at c2e8b9fba, #1270 43135829383 at 4765676e3) stand; those heads are kept on `hold-*` branches.
