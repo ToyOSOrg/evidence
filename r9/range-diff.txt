@@ -1,0 +1,36 @@
+1:  3237a8c9b = 1:  4b65ceee2 A process's threads have their requests to a directory in flight at once
+2:  7baeae8c7 ! 2:  6f6665171 Review r1 of #1272: requests in flight change under one lock, and every reply wait is bounded
+    @@ kernel/loom/tests/fs_flight.rs: fn each_caller_is_answered_its_own_reply_whoever
+          });
+      }
+     
+    - ## sdk/libc/src/errcode.rs ##
+    -@@ sdk/libc/src/errcode.rs: fn of_served(e: toyos::fs::Error) -> i32 {
+    -         Error::Stale | Error::Gone => ESTALE,
+    -         Error::Unsupported => EOPNOTSUPP,
+    -         Error::OutOfResources => ENOMEM,
+    -+        Error::Unanswered => ETIMEDOUT,
+    -     }
+    - }
+    -
+    - ## sdk/std/sys/pal/mod.rs ##
+    -@@ sdk/std/sys/pal/mod.rs: pub fn served_error(e: toyos::fs::Error) -> crate::io::Error {
+    -         Error::Gone => io::const_error!(Kind::StaleNetworkFileHandle, "the file server is gone"),
+    -         Error::NotHeld => io::const_error!(Kind::NotFound, "this process holds no such directory"),
+    -         Error::Malformed => io::const_error!(Kind::InvalidData, "the file server answered outside its protocol"),
+    -+        Error::Unanswered => io::const_error!(Kind::TimedOut, "the file server answered nothing while a reply was owed"),
+    + ## sdk/toyos/src/failure.rs ##
+    +@@ sdk/toyos/src/failure.rs: impl From<fs::Error> for Failure {
+    +             Error::Unsupported => Self::Unsupported,
+    +             Error::OutOfResources => Self::OutOfMemory,
+    +             Error::Malformed => Self::Protocol,
+    ++            Error::Unanswered => Self::TimedOut,
+    +         }
+          }
+      }
+    - 
+     
+      ## sdk/toyos/src/fs.rs ##
+     @@
+3:  8f896d3cf = 3:  15b621d5c Review r2 of #1272: each connection receives for itself, a slot comes before its connection, and the reply bound is derived
+4:  d88c74fa1 = 4:  4227aa4ae Review r3 of #1272: the file server holds the client's block bound to its source, and a turn handed on stays on its connection

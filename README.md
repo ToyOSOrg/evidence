@@ -87,3 +87,18 @@
   theirs), and every `tests/guest/rust-tests` binary type-checked against that image's sysroot, rc 0.
   `supervisor.log` and `clippy-supervisor-pkg.log` are rc 101 because the supervisor is a ToyOS program that does
   not build for the host (`os::toyos`); the image build is its compile.
+
+## Rebased onto main 29c5f2dfa (#1227, #1264, #1280), head 4227aa4ae
+
+- `r9/range-diff.txt`: `git range-diff ee15a2e5b..d88c74fa1 origin/main..4227aa4ae`. Commits 1, 3 and 4 are `=`.
+  Commit 2 loses its libc and std arms for `Error::Unanswered`, whose tables #1227 replaced with one `Failure`
+  table, and gains that table's arm, `Error::Unanswered => Self::TimedOut`, which libc answers as ETIMEDOUT and std
+  as `TimedOut`. `From<fs::Error> for Failure` is an exhaustive match, so the compile settles that the arm is there.
+- `r9/`: at the head (`tree.txt`): the SDK's tests (227) and two clippy shapes, nine loom models, the file server's
+  tests, the `testcases` image (a fresh sysroot: libc and std built from the table), and every
+  `tests/guest/rust-tests` binary type-checked against that sysroot; `check-pkg.log`, `cargo check -p pkg
+  --all-targets` on the host, its library and binary, no warning: each rc 0.
+- About `r8/`: `supervisor.log` (rc 101) is `cargo test -p supervisor`, which cannot build on the host because the
+  supervisor is a ToyOS program (`std::os::toyos`); the `testcases` image is its compile. `clippy-supervisor-pkg.log`
+  (rc 101) stops at `redundant_clone` in `system/pkg/src/archive.rs:177`, a line this PR does not touch and the same
+  on main. Neither depends on this PR.
